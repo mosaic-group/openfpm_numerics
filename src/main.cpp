@@ -2,3 +2,5 @@
 #define BOOST_TEST_MODULE "C++ test module for OpenFPM_numerics project"
 #include <boost/test/included/unit_test.hpp>
 
+#include "Equations/eq_unit_tests.hpp"
+#include "FiniteDifference/FDScheme_unit_tests.hpp"
