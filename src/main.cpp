@@ -4,3 +4,5 @@
 
 #include "Equations/eq_unit_tests.hpp"
 #include "FiniteDifference/FDScheme_unit_tests.hpp"
+#include "FiniteDifference/util/common_test.hpp"
+#include "FiniteDifference/eq_unit_test.hpp"
