@@ -11,6 +11,9 @@
 #include "Laplacian.hpp"
 #include "FiniteDifference/eq.hpp"
 #include "FiniteDifference/sum.hpp"
+#include "Grid/grid_dist_id.hpp"
+#include "data_type/scalar.hpp"
+#include "Decomposition/CartDecomposition.hpp"
 
 // Stokes flow
 
@@ -25,8 +28,14 @@ struct lid_nn
 	// boundary at X and Y
 	static const bool boundary[];
 
+	//
+	static constexpr unsigned int num_cfields = 0;
+
 	// type of space float, double, ...
 	typedef float stype;
+
+	// type of base grid
+	typedef grid_dist_id<2,float,scalar<float>,CartDecomposition<2,float>> b_grid;
 };
 
 const bool lid_nn::boundary[] = {NON_PERIODIC,NON_PERIODIC};
@@ -50,7 +59,7 @@ typedef Field<P,lid_nn> Prs;
 
 typedef mul<eta,Lap<v_x,lid_nn>,lid_nn> eta_lap_vx;
 typedef D<x,Prs,lid_nn> p_x;
-typedef sum<eta_lap_vx,p_x> vx_eq;
+typedef sum<eta_lap_vx,p_x,lid_nn> vx_eq;
 
 // Eq2 V_y
 
@@ -68,8 +77,34 @@ typedef sum<dx_vx,dy_vy> incompressibility;
 
 BOOST_AUTO_TEST_CASE( lid_driven_cavity )
 {
+	// Domain
+	Box<2,float> domain({0.0,0.0},{1.0,1.0});
 
+	// Ghost
+	Ghost<2,float> g(0.01);
+
+	size_t sz[] = {32,32};
+
+	// Initialize the global VCluster
+	init_global_v_cluster(&boost::unit_test::framework::master_test_suite().argc,&boost::unit_test::framework::master_test_suite().argv);
+
+	// Initialize openfpm
+	grid_dist_id<2,float,scalar<float>,CartDecomposition<2,float>> g_dist(sz,domain,g);
+
+	// Distributed grid
+	FDScheme<lid_nn> fd;
+
+	// start and end of the bulk
+	grid_key_dx<2> bulk_start(1,1);
+	grid_key_dx<2> bulk_end(sz[0]-1,sz[1]-1);
+
+	// Impose the vx equation
+	vx_eq vx;
+	fd.impose(vx, g_dist.getGridInfo() , g_dist.getSubDomainIterator(bulk_start,bulk_end));
+
+	// Impose the vy equation
+	vy_eq vy;
+	fd.impose(vy, g_dist.getGridInfo(), g_dist.getSubDomainIterator(bulk_start,bulk_end));
 }
-
 
 #endif /* OPENFPM_NUMERICS_SRC_FINITEDIFFERENCE_EQ_UNIT_TEST_HPP_ */

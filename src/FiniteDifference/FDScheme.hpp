@@ -9,6 +9,7 @@
 #define OPENFPM_NUMERICS_SRC_FINITEDIFFERENCE_FDSCHEME_HPP_
 
 #include "Grid/grid_dist_id.hpp"
+#include "Grid/grid_dist_id_iterator_sub.hpp"
 #include "Matrix/Matrix.hpp"
 #include "eq.hpp"
 
@@ -23,12 +24,14 @@ class FDScheme
 {
 	openfpm::vector<triplet<typename Sys_eqs::stype>> trpl;
 
+public:
+
 	/*! \brief Impose an operator
 	 *
 	 *
 	 *
 	 */
-/*	template<typename T> void impose(T & op, grid_key_dx_dist_iterator_sub & it)
+	template<typename T> void impose(T & op, const grid_sm<Sys_eqs::dims,void> & gs , grid_dist_iterator_sub<Sys_eqs::dims,typename Sys_eqs::b_grid::d_grid> it)
 	{
 		size_t lin = 0;
 
@@ -41,10 +44,10 @@ class FDScheme
 			auto key = it.get();
 
 			// convert into global coordinate the position
-			auto keyg = g.getGKey(key);
+			auto keyg = it.getGKey(key);
 
 			// Convert local key into global key
-			T::value(op,cols);
+			T::value(keyg,gs,cols,1.0);
 
 			// create the triplet
 
@@ -60,17 +63,33 @@ class FDScheme
 
 			cols.clear();
 
-			++loc_cnt;
 			++it;
 		}
-	}*/
+	}
 
 	/*! \brief produce the Matrix
 	 *
 	 *  \tparam Syst_eq System of equations, or a single equation
 	 *
 	 */
-	template<typename Grid> SparseMatrix<typename Sys_eqs::stype> getMatrix(const Grid & g, const ConstField(& fld)[Sys_eqs::num_cfields::value] )
+	template<typename Grid> SparseMatrix<typename Sys_eqs::stype> getMatrix(const Grid & g)
+	{
+#ifdef SE_CLASS1
+		if (Sys_eqs::num_cfields)
+			std::cerr << __FILE__ << ":" << __LINE__ << " if you do not provide ConstantFields in getMatrix, the system should not contain any constant field, while" << Sys_eqs::num_cfields << "\n";
+#endif
+
+		const ConstField fld[Sys_eqs::num_cfields];
+
+		getMatrix(g,fld);
+	}
+
+	/*! \brief produce the Matrix
+	 *
+	 *  \tparam Syst_eq System of equations, or a single equation
+	 *
+	 */
+	template<typename Grid> SparseMatrix<typename Sys_eqs::stype> getMatrix(const Grid & g, const ConstField(& fld)[Sys_eqs::num_cfields] )
 	{
 		// iterate across the full domain
 
