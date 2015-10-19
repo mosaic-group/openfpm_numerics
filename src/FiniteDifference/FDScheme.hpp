@@ -57,11 +57,12 @@ public:
 				trpl.last().i = lin;
 				trpl.last().j = it->first;
 				trpl.last().value = it->second;
+
+				std::cout << "(" << trpl.last().i << "," << trpl.last().j << "," << trpl.last().value << ")" << "\n";
 			}
 
-			std::cout << " " << it->first << ":" << it->second;
-
 			cols.clear();
+			std::cout << "\n";
 
 			++it;
 		}
