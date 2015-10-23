@@ -6,3 +6,4 @@
 #include "FiniteDifference/FDScheme_unit_tests.hpp"
 #include "FiniteDifference/util/common_test.hpp"
 #include "FiniteDifference/eq_unit_test.hpp"
+#include "util/util_num_unit_tests.hpp"

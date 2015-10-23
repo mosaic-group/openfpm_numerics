@@ -11,6 +11,7 @@
 #include "Laplacian.hpp"
 #include "FiniteDifference/eq.hpp"
 #include "FiniteDifference/sum.hpp"
+#include "FiniteDifference/mul.hpp"
 #include "Grid/grid_dist_id.hpp"
 #include "data_type/scalar.hpp"
 #include "Decomposition/CartDecomposition.hpp"
@@ -41,12 +42,12 @@ struct lid_nn
 const bool lid_nn::boundary[] = {NON_PERIODIC,NON_PERIODIC};
 
 // Constant Field
-
 struct eta
 {
+	float val()	{return 1.0;}
 };
 
-// Model the equation
+// Model the equations
 
 constexpr unsigned int v[] = {0,1};
 constexpr unsigned int P = 2;
@@ -72,6 +73,8 @@ typedef sum<eta_lap_vy,p_x,lid_nn> vy_eq;
 typedef D<x,v_x,lid_nn> dx_vx;
 typedef D<y,v_y,lid_nn> dy_vy;
 typedef sum<dx_vx,dy_vy> incompressibility;
+
+BOOST_AUTO_TEST_SUITE( eq_test_suite )
 
 // Lid driven cavity, uncompressible fluid
 
@@ -106,5 +109,7 @@ BOOST_AUTO_TEST_CASE( lid_driven_cavity )
 	vy_eq vy;
 	fd.impose(vy, g_dist.getGridInfo(), g_dist.getSubDomainIterator(bulk_start,bulk_end));
 }
+
+BOOST_AUTO_TEST_SUITE_END()
 
 #endif /* OPENFPM_NUMERICS_SRC_FINITEDIFFERENCE_EQ_UNIT_TEST_HPP_ */

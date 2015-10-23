@@ -46,7 +46,7 @@ public:
 			// convert into global coordinate the position
 			auto keyg = it.getGKey(key);
 
-			// Convert local key into global key
+			// Calculate the non-zero colums
 			T::value(keyg,gs,cols,1.0);
 
 			// create the triplet

@@ -9,6 +9,46 @@
 #define OPENFPM_NUMERICS_SRC_FINITEDIFFERENCE_SUM_HPP_
 
 #include <boost/mpl/vector.hpp>
+#include "config.h"
+#include <unordered_map>
+#include "util/for_each_ref.hpp"
+
+template<typename v_expr>
+struct sum_functor_value
+{
+	//! Number of elements in the vector v_expr
+	typedef boost::mpl::size<v_expr> size;
+
+	//! Last element of sum
+	typedef typename boost::mpl::at<v_expr,boost::mpl::int_<size::value-1> >::type last;
+
+	//! sum functor
+	std::unordered_map<long int,typename last::stype> & cols;
+
+	const grid_sm<last::dims,void> & gs;
+
+	//! position
+	grid_key_dx<last::dims> & key;
+
+	//! coefficent
+	typename last::stype coeff;
+
+	/*! \brief constructor
+	 *
+	 */
+	sum_functor_value(grid_key_dx<last::dims> & key, const grid_sm<last::dims,void> & gs, typename last::stype coeff)
+	:cols(cols),gs(gs),key(key),coeff(coeff)
+	{};
+
+
+
+	//! It call this function for every expression in the sum
+	template<typename T>
+	void operator()(T& t) const
+	{
+		boost::mpl::at<v_expr, boost::mpl::int_<T::value> >::type::value(key,gs,cols,coeff);
+	}
+};
 
 /*! \brief It model an expression expr1 + ... exprn
  *
@@ -32,9 +72,13 @@ struct sum
 	 * \tparam ord
 	 *
 	 */
-	inline static std::unordered_map<long int,typename Sys_eqs::stype> value(grid_key_dx<Sys_eqs::dims> & pos, const grid_sm<Sys_eqs::dims,void> & gs, std::unordered_map<long int,typename Sys_eqs::stype > & cols, typename Sys_eqs::stype coeff)
+	inline static void value(grid_key_dx<Sys_eqs::dims> & pos, const grid_sm<Sys_eqs::dims,void> & gs, std::unordered_map<long int,typename Sys_eqs::stype > & cols, typename Sys_eqs::stype coeff)
 	{
-		std::cerr << "Error " << __FILE__ << ":" << __LINE__ << " only CENTRAL, FORWARD, BACKWARD derivative are defined";
+		// Sum functor
+		sum_functor_value<v_expr> sm(pos,gs,coeff);
+
+		// for each element in the expression calculate the non-zero Matrix elements
+		boost::mpl::for_each_ref< boost::mpl::range_c<int,0,v_sz::type::value - 1> >(sm);
 	}
 
 	/*! \brief Calculate the position where the derivative is calculated

@@ -103,49 +103,6 @@ class minus
 	}
 };
 
-/*! \brief It model an expression expr1 * expr2
- *
- * \warning expr1 MUST be a constant expression
- *
- * \tparam expr1
- * \tparam expr2
- *
- */
-template<typename expr1,typename expr2, typename Sys_eqs>
-class mul
-{
-	/*! \brief Create the row of the Matrix
-	 *
-	 * \tparam ord
-	 *
-	 */
-	template<unsigned int ord=EQS_FIELD> static void value(const grid_key_dx<Sys_eqs::dims> & pos)
-	{
-		if (EQS_FIELD)
-			value_f(pos);
-		else
-			value_s(pos);
-	}
-
-	/*! \brief fill the row
-	 *
-	 *
-	 */
-	static openfpm::vector<triplet<typename Sys_eqs::stype>> value_s(grid_key_dx<Sys_eqs::dims> & it)
-	{
-		return expr1::const_value(it) * expr2::value_s(it);
-	}
-
-	/*! \brief fill the row
-	 *
-	 *
-	 */
-	static void value_f(grid_key_dx<Sys_eqs::dims> & it)
-	{
-		return expr1::const_value(it) * expr2::value_s(it);
-	}
-};
-
 // spatial position + value
 
 template<unsigned int dim,typename T>
