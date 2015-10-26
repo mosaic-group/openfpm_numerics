@@ -10,6 +10,7 @@
 
 #define CENTRAL 0
 #define CENTRAL_B_ONE_SIDE 1
+#define FORWARD 2
 
 #include "util/mathutil.hpp"
 #include "Vector/map_vector.hpp"
@@ -63,6 +64,13 @@ class D<d,arg,Sys_eqs,CENTRAL>
 	 */
 	inline static void value(grid_key_dx<Sys_eqs::dims> & pos, const grid_sm<Sys_eqs::dims,void> & gs, std::unordered_map<long int,typename Sys_eqs::stype > & cols, typename Sys_eqs::stype coeff)
 	{
+		// if the system is staggered the CENTRAL derivative is equivalent to a forward derivative
+		if (is_grid_staggered<Sys_eqs>::value() == true)
+		{
+			D<d,arg,Sys_eqs,FORWARD>::value(pos,gs,cols,coeff);
+			return;
+		}
+
 		// forward
 		if (Sys_eqs::boundary[d] == PERIODIC )
 		{
@@ -226,6 +234,58 @@ public:
 	}
 };
 
+
+/*! \brief Derivative FORWARD on direction i
+ *
+ *
+ */
+template<unsigned int d, typename arg, typename Sys_eqs>
+class D<d,arg,Sys_eqs,FORWARD>
+{
+	public:
+
+	/*! \brief fill the row
+	 *
+	 *
+	 */
+	inline static void value(grid_key_dx<Sys_eqs::dims> & pos, const grid_sm<Sys_eqs::dims,void> & gs, std::unordered_map<long int,typename Sys_eqs::stype > & cols, typename Sys_eqs::stype coeff)
+	{
+		// forward
+		if (Sys_eqs::boundary[d] == PERIODIC )
+		{
+			long int old_val = pos.get(d);
+			pos.set_d(d, openfpm::math::positive_modulo(pos.get(d) + 1, gs.size(d)));
+			arg::value(pos,gs,cols,coeff);
+			pos.set_d(d,old_val);
+		}
+		else
+		{
+			long int old_val = pos.get(d);
+			pos.set_d(d, pos.get(d) + 1);
+			arg::value(pos,gs,cols,coeff);
+			pos.set_d(d,old_val);
+		}
+
+		// backward
+		arg::value(pos,gs,cols,-coeff);
+	}
+
+
+	/*! \brief Calculate the position where the derivative is calculated
+	 *
+	 * In case on non staggered case this function just return pos, in case of staggered,
+	 *  it calculate where the operator is calculated on a staggered grid
+	 *
+	 *  \param pos from the position
+	 *  \param fld Field we are deriving, if not provided the function just return pos
+	 *  \param s_pos position of the properties in the staggered grid
+	 *
+	 */
+	inline static grid_key_dx<Sys_eqs::dims> position(grid_key_dx<Sys_eqs::dims> & pos, long int fld = -1, const openfpm::vector<comb<Sys_eqs::dims>> & s_pos = openfpm::vector<comb<Sys_eqs::dims>>())
+	{
+		return pos;
+	}
+};
 
 
 #endif /* OPENFPM_NUMERICS_SRC_FINITEDIFFERENCE_DERIVATIVE_HPP_ */

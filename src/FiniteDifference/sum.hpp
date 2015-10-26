@@ -36,7 +36,7 @@ struct sum_functor_value
 	/*! \brief constructor
 	 *
 	 */
-	sum_functor_value(grid_key_dx<last::dims> & key, const grid_sm<last::dims,void> & gs, typename last::stype coeff)
+	sum_functor_value(grid_key_dx<last::dims> & key, const grid_sm<last::dims,void> & gs, std::unordered_map<long int,typename last::stype> & cols, typename last::stype coeff)
 	:cols(cols),gs(gs),key(key),coeff(coeff)
 	{};
 
@@ -75,7 +75,7 @@ struct sum
 	inline static void value(grid_key_dx<Sys_eqs::dims> & pos, const grid_sm<Sys_eqs::dims,void> & gs, std::unordered_map<long int,typename Sys_eqs::stype > & cols, typename Sys_eqs::stype coeff)
 	{
 		// Sum functor
-		sum_functor_value<v_expr> sm(pos,gs,coeff);
+		sum_functor_value<v_expr> sm(pos,gs,cols,coeff);
 
 		// for each element in the expression calculate the non-zero Matrix elements
 		boost::mpl::for_each_ref< boost::mpl::range_c<int,0,v_sz::type::value - 1> >(sm);

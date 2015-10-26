@@ -132,7 +132,7 @@ public:
 	static void value(grid_key_dx<Sys_eqs::dims> & pos, const grid_sm<Sys_eqs::dims,void> & gs, std::unordered_map<long int,typename Sys_eqs::stype > & cols, typename Sys_eqs::stype coeff)
 	{
 		if (Sys_eqs::ord == EQS_FIELD)
-			cols[gs.LinId(pos) + f] += coeff;
+			cols[gs.LinId(pos)*Sys_eqs::nvar + f] += coeff;
 		else
 			cols[gs.LinId(pos) + f * gs.size()] += coeff;
 	}

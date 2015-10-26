@@ -59,7 +59,7 @@ struct syss_nn
 	static const unsigned int nvar = 1;
 	static const unsigned int ord = EQS_FIELD;
 
-	static const unsigned int grid = STAGGERED_GRID;
+	static const unsigned int grid_type = STAGGERED_GRID;
 
 	// boundary at X and Y
 	static const bool boundary[];
@@ -78,7 +78,7 @@ struct syss_pp
 	static const unsigned int nvar = 1;
 	static const unsigned int ord = EQS_FIELD;
 
-	static const unsigned int grid = STAGGERED_GRID;
+	static const unsigned int grid_type = STAGGERED_GRID;
 
 	// boundary at X and Y
 	static const bool boundary[];
@@ -310,6 +310,52 @@ BOOST_AUTO_TEST_CASE( fd_test_use_periodic)
 
 	BOOST_REQUIRE_EQUAL(cols_y[0*16+15],1);
 	BOOST_REQUIRE_EQUAL(cols_y[14*16+15],-1);
+}
+
+BOOST_AUTO_TEST_CASE( fd_test_use_staggered_non_periodic)
+{
+	// grid size
+	size_t sz[2]={16,16};
+
+	// grid_sm
+	grid_sm<2,void> ginfo(sz);
+
+	// Create a derivative row Matrix
+	grid_key_dx<2> key11(1,1);
+	grid_key_dx<2> key00(0,0);
+	grid_key_dx<2> key22(2,2);
+	grid_key_dx<2> key1515(15,15);
+
+	// filled colums
+	std::unordered_map<long int,float> cols_x;
+	std::unordered_map<long int,float> cols_y;
+
+	D<x,Field<V,syss_pp>,syss_pp>::value(key11,ginfo,cols_x,1);
+	D<y,Field<V,syss_pp>,syss_pp>::value(key11,ginfo,cols_y,1);
+
+	BOOST_REQUIRE_EQUAL(cols_x.size(),2);
+	BOOST_REQUIRE_EQUAL(cols_y.size(),2);
+
+	BOOST_REQUIRE_EQUAL(cols_x[17+1],1);
+	BOOST_REQUIRE_EQUAL(cols_x[17],-1);
+
+	BOOST_REQUIRE_EQUAL(cols_y[17+16],1);
+	BOOST_REQUIRE_EQUAL(cols_y[17],-1);
+
+	cols_x.clear();
+	cols_y.clear();
+
+	D<x,Field<V,syss_pp>,syss_pp>::value(key00,ginfo,cols_x,1);
+	D<y,Field<V,syss_pp>,syss_pp>::value(key00,ginfo,cols_y,1);
+
+	BOOST_REQUIRE_EQUAL(cols_x.size(),2);
+	BOOST_REQUIRE_EQUAL(cols_y.size(),2);
+
+	BOOST_REQUIRE_EQUAL(cols_x[1],1);
+	BOOST_REQUIRE_EQUAL(cols_x[0],-1);
+
+	BOOST_REQUIRE_EQUAL(cols_y[16],1);
+	BOOST_REQUIRE_EQUAL(cols_y[0],-1);
 }
 
 /////////////// Laplacian test
