@@ -25,6 +25,12 @@ struct sum_functor_value
 	//! sum functor
 	std::unordered_map<long int,typename last::stype> & cols;
 
+	// grid mapping
+	const grid_dist_id<last::dims,typename last::stype,scalar<size_t>,typename last::b_grid::decomposition> & g_map;
+
+	// grid position
+	grid_dist_key_dx<last::dims> & kmap;
+
 	const grid_sm<last::dims,void> & gs;
 
 	//! position
@@ -36,8 +42,8 @@ struct sum_functor_value
 	/*! \brief constructor
 	 *
 	 */
-	sum_functor_value(grid_key_dx<last::dims> & key, const grid_sm<last::dims,void> & gs, std::unordered_map<long int,typename last::stype> & cols, typename last::stype coeff)
-	:cols(cols),gs(gs),key(key),coeff(coeff)
+	sum_functor_value(const grid_dist_id<last::dims,typename last::stype,scalar<size_t>,typename last::b_grid::decomposition> & g_map, grid_dist_key_dx<last::dims> & kmap, const grid_sm<last::dims,void> & gs, std::unordered_map<long int,typename last::stype> & cols, typename last::stype coeff)
+	:g_map(g_map),kmap(kmap),cols(cols),gs(gs),key(key),coeff(coeff)
 	{};
 
 
@@ -46,7 +52,7 @@ struct sum_functor_value
 	template<typename T>
 	void operator()(T& t) const
 	{
-		boost::mpl::at<v_expr, boost::mpl::int_<T::value> >::type::value(key,gs,cols,coeff);
+		boost::mpl::at<v_expr, boost::mpl::int_<T::value> >::type::value(g_map,kmap,gs,cols,coeff);
 	}
 };
 
@@ -72,10 +78,10 @@ struct sum
 	 * \tparam ord
 	 *
 	 */
-	inline static void value(grid_key_dx<Sys_eqs::dims> & pos, const grid_sm<Sys_eqs::dims,void> & gs, std::unordered_map<long int,typename Sys_eqs::stype > & cols, typename Sys_eqs::stype coeff)
+	inline static void value(const grid_dist_id<Sys_eqs::dims,typename Sys_eqs::stype,scalar<size_t>,typename Sys_eqs::b_grid::decomposition> & g_map, grid_dist_key_dx<Sys_eqs::dims> & kmap, const grid_sm<Sys_eqs::dims,void> & gs, std::unordered_map<long int,typename Sys_eqs::stype > & cols, typename Sys_eqs::stype coeff)
 	{
 		// Sum functor
-		sum_functor_value<v_expr> sm(pos,gs,cols,coeff);
+		sum_functor_value<v_expr> sm(g_map,kmap,gs,cols,coeff);
 
 		// for each element in the expression calculate the non-zero Matrix elements
 		boost::mpl::for_each_ref< boost::mpl::range_c<int,0,v_sz::type::value - 1> >(sm);

@@ -62,46 +62,25 @@ class D<d,arg,Sys_eqs,CENTRAL>
 	 *
 	 *
 	 */
-	inline static void value(grid_key_dx<Sys_eqs::dims> & pos, const grid_sm<Sys_eqs::dims,void> & gs, std::unordered_map<long int,typename Sys_eqs::stype > & cols, typename Sys_eqs::stype coeff)
+	inline static void value(const grid_dist_id<Sys_eqs::dims,typename Sys_eqs::stype,scalar<size_t>,typename Sys_eqs::b_grid::decomposition> & g_map, grid_dist_key_dx<Sys_eqs::dims> & kmap , const grid_sm<Sys_eqs::dims,void> & gs, std::unordered_map<long int,typename Sys_eqs::stype > & cols, typename Sys_eqs::stype coeff)
 	{
 		// if the system is staggered the CENTRAL derivative is equivalent to a forward derivative
 		if (is_grid_staggered<Sys_eqs>::value() == true)
 		{
-			D<d,arg,Sys_eqs,FORWARD>::value(pos,gs,cols,coeff);
+			D<d,arg,Sys_eqs,FORWARD>::value(g_map,kmap,gs,cols,coeff);
 			return;
 		}
 
-		// forward
-		if (Sys_eqs::boundary[d] == PERIODIC )
-		{
-			long int old_val = pos.get(d);
-			pos.set_d(d, openfpm::math::positive_modulo(pos.get(d) + 1, gs.size(d)));
-			arg::value(pos,gs,cols,coeff);
-			pos.set_d(d,old_val);
-		}
-		else
-		{
-			long int old_val = pos.get(d);
-			pos.set_d(d, pos.get(d) + 1);
-			arg::value(pos,gs,cols,coeff);
-			pos.set_d(d,old_val);
-		}
+		long int old_val = kmap.getKeyRef().get(d);
+		kmap.getKeyRef().set_d(d, kmap.getKeyRef().get(d) + 1);
+		arg::value(g_map,kmap,gs,cols,coeff);
+		kmap.getKeyRef().set_d(d,old_val);
 
-		// backward
-		if (Sys_eqs::boundary[d] == PERIODIC )
-		{
-			long int old_val = pos.get(d);
-			pos.set_d(d, openfpm::math::positive_modulo(pos.get(d) - 1, gs.size(d)));
-			arg::value(pos,gs,cols,-coeff);
-			pos.set_d(d,old_val);
-		}
-		else
-		{
-			long int old_val = pos.get(d);
-			pos.set_d(d, pos.get(d) - 1);
-			arg::value(pos,gs,cols,-coeff);
-			pos.set_d(d,old_val);
-		}
+
+		old_val = kmap.getKeyRef().get(d);
+		kmap.getKeyRef().set_d(d, kmap.getKeyRef().get(d) - 1);
+		arg::value(g_map,kmap,gs,cols,-coeff);
+		kmap.getKeyRef().set_d(d,old_val);
 	}
 
 
@@ -154,52 +133,54 @@ public:
 	 *
 	 *
 	 */
-	static void value(grid_key_dx<Sys_eqs::dims> & pos, const grid_sm<Sys_eqs::dims,void> & gs, std::unordered_map<long int,typename Sys_eqs::stype> & cols, typename Sys_eqs::stype coeff)
+	static void value(const grid_dist_id<Sys_eqs::dims,typename Sys_eqs::stype,scalar<size_t>,typename Sys_eqs::b_grid::decomposition> & g_map, grid_dist_key_dx<Sys_eqs::dims> & kmap , const grid_sm<Sys_eqs::dims,void> & gs, std::unordered_map<long int,typename Sys_eqs::stype > & cols, typename Sys_eqs::stype coeff)
 	{
 #ifdef SE_CLASS1
 		if (Sys_eqs::boundary[d] == PERIODIC)
 			std::cerr << __FILE__ << ":" << __LINE__ << " error, it make no sense use one sided derivation with periodic boundary\n";
 #endif
 
+		grid_key_dx<Sys_eqs::dims> pos = g_map.getGKey(kmap);
+
 		if (pos.get(d) == (long int)gs.size(d)-1 )
 		{
 			arg::value(pos,gs,cols,1.5*coeff);
 
-			long int old_val = pos.get(d);
-			pos.set_d(d, pos.get(d) - 1);
-			arg::value(pos,gs,cols,-2.0*coeff);
-			pos.set_d(d,old_val);
+			long int old_val = kmap.getKeyRef().get(d);
+			kmap.getKeyRef().set_d(d, kmap.getKeyRef().get(d) - 1);
+			arg::value(g_map,kmap,gs,cols,-2.0*coeff);
+			kmap.getKeyRef().set_d(d,old_val);
 
-			old_val = pos.get(d);
-			pos.set_d(d, pos.get(d) - 2);
-			arg::value(pos,gs,cols,0.5*coeff);
-			pos.set_d(d,old_val);
+			old_val = kmap.getKeyRef().get(d);
+			pos.set_d(d, kmap.getKeyRef().get(d) - 2);
+			arg::value(g_map,kmap,gs,cols,0.5*coeff);
+			kmap.getKeyRef().set_d(d,old_val);
 		}
 		else if (pos.get(d) == 0)
 		{
 			arg::value(pos,gs,cols,-1.5*coeff);
 
-			long int old_val = pos.get(d);
-			pos.set_d(d, pos.get(d) + 1);
-			arg::value(pos,gs,cols,2.0*coeff);
-			pos.set_d(d,old_val);
+			long int old_val = kmap.getKeyRef().get(d);
+			kmap.getKeyRef().set_d(d, kmap.getKeyRef().get(d) + 1);
+			arg::value(g_map,kmap,gs,cols,2.0*coeff);
+			kmap.getKeyRef().set_d(d,old_val);
 
-			old_val = pos.get(d);
-			pos.set_d(d, pos.get(d) + 2);
-			arg::value(pos,gs,cols,-0.5*coeff);
-			pos.set_d(d,old_val);
+			old_val = kmap.getKeyRef().get(d);
+			pos.set_d(d, kmap.getKeyRef().get(d) + 2);
+			arg::value(g_map,kmap,gs,cols,-0.5*coeff);
+			kmap.getKeyRef().set_d(d,old_val);
 		}
 		else
 		{
-			long int old_val = pos.get(d);
-			pos.set_d(d, pos.get(d) + 1);
-			arg::value(pos,gs,cols,coeff);
-			pos.set_d(d,old_val);
+			long int old_val = kmap.getKeyRef().get(d);
+			kmap.getKeyRef().set_d(d, kmap.getKeyRef().get(d) + 1);
+			arg::value(g_map,kmap,gs,cols,coeff);
+			kmap.getKeyRef().set_d(d,old_val);
 
-			old_val = pos.get(d);
-			pos.set_d(d, pos.get(d) - 1);
-			arg::value(pos,gs,cols,-coeff);
-			pos.set_d(d,old_val);
+			old_val = kmap.getKeyRef().get(d);
+			kmap.getKeyRef().set_d(d, kmap.getKeyRef().get(d) - 1);
+			arg::value(g_map,kmap,gs,cols,-coeff);
+			kmap.getKeyRef().set_d(d,old_val);
 		}
 	}
 
@@ -237,7 +218,7 @@ public:
 
 /*! \brief Derivative FORWARD on direction i
  *
- *
+ *g
  */
 template<unsigned int d, typename arg, typename Sys_eqs>
 class D<d,arg,Sys_eqs,FORWARD>
@@ -248,26 +229,16 @@ class D<d,arg,Sys_eqs,FORWARD>
 	 *
 	 *
 	 */
-	inline static void value(grid_key_dx<Sys_eqs::dims> & pos, const grid_sm<Sys_eqs::dims,void> & gs, std::unordered_map<long int,typename Sys_eqs::stype > & cols, typename Sys_eqs::stype coeff)
+	inline static void value(const grid_dist_id<Sys_eqs::dims,typename Sys_eqs::stype,scalar<size_t>,typename Sys_eqs::b_grid::decomposition> & g_map, grid_dist_key_dx<Sys_eqs::dims> & kmap , const grid_sm<Sys_eqs::dims,void> & gs, std::unordered_map<long int,typename Sys_eqs::stype > & cols, typename Sys_eqs::stype coeff)
 	{
-		// forward
-		if (Sys_eqs::boundary[d] == PERIODIC )
-		{
-			long int old_val = pos.get(d);
-			pos.set_d(d, openfpm::math::positive_modulo(pos.get(d) + 1, gs.size(d)));
-			arg::value(pos,gs,cols,coeff);
-			pos.set_d(d,old_val);
-		}
-		else
-		{
-			long int old_val = pos.get(d);
-			pos.set_d(d, pos.get(d) + 1);
-			arg::value(pos,gs,cols,coeff);
-			pos.set_d(d,old_val);
-		}
+
+		long int old_val = kmap.getKeyRef().get(d);
+		kmap.getKeyRef().set_d(d, kmap.getKeyRef().get(d) + 1);
+		arg::value(g_map,kmap,gs,cols,coeff);
+		kmap.getKeyRef().set_d(d,old_val);
 
 		// backward
-		arg::value(pos,gs,cols,-coeff);
+		arg::value(g_map,kmap,gs,cols,-coeff);
 	}
 
 

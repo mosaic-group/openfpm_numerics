@@ -17,6 +17,8 @@
 #define PERIODIC true
 #define NON_PERIODIC false
 
+#include "data_type/scalar.hpp"
+
 /*! \brief Equation
  *
  * It model an equation like expr1 = expr2
@@ -129,12 +131,12 @@ public:
 	 *
 	 *
 	 */
-	static void value(grid_key_dx<Sys_eqs::dims> & pos, const grid_sm<Sys_eqs::dims,void> & gs, std::unordered_map<long int,typename Sys_eqs::stype > & cols, typename Sys_eqs::stype coeff)
+	static void value(const grid_dist_id<Sys_eqs::dims,typename Sys_eqs::stype,scalar<size_t>,typename Sys_eqs::b_grid::decomposition> & g_map, grid_dist_key_dx<Sys_eqs::dims> & kmap, const grid_sm<Sys_eqs::dims,void> & gs, std::unordered_map<long int,typename Sys_eqs::stype > & cols, typename Sys_eqs::stype coeff)
 	{
 		if (Sys_eqs::ord == EQS_FIELD)
-			cols[gs.LinId(pos)*Sys_eqs::nvar + f] += coeff;
+			cols[g_map.template get<0>(kmap)*Sys_eqs::nvar + f] += coeff;
 		else
-			cols[gs.LinId(pos) + f * gs.size()] += coeff;
+			cols[g_map.template get<0>(kmap) + f * gs.size()] += coeff;
 	}
 };
 

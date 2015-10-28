@@ -100,7 +100,7 @@ BOOST_AUTO_TEST_CASE( lid_driven_cavity )
 	grid_dist_id<2,float,scalar<float>,CartDecomposition<2,float>> g_dist(sz,domain,g);
 
 	// Distributed grid
-	FDScheme<lid_nn> fd(pd, g_dist.getGridInfo());
+	FDScheme<lid_nn> fd(pd,domain,g_dist.getGridInfo(),g_dist.getDecomposition(),g_dist.getVC());
 
 	// start and end of the bulk
 	grid_key_dx<2> bulk_start(0,0);

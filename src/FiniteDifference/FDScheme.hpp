@@ -12,8 +12,59 @@
 #include "Grid/grid_dist_id_iterator_sub.hpp"
 #include "Matrix/Matrix.hpp"
 #include "eq.hpp"
+#include "data_type/scalar.hpp"
 
 /*! \brief Finite Differences
+ *
+ * This class is able to discreatize on a Matrix any operator. In order to create a consistent
+ * Matrix it is required that each processor must contain a contiguois range on grid points without
+ * hole. In order to ensure this, each processor produce a contiguos local labelling of its local
+ * points. Each processor also add an offset equal to the number of local
+ * points of the processors with id smaller than him, to produce a global and non overlapping
+ * labelling. An example is shown in the figures down, here we have
+ * a grid 8x6 divided across two processor each processor label locally its grid points
+ *
+ * \verbatim
+ *
++--------------------------+
+| 1   2   3   4| 1  2  3  4|
+|              |           |
+| 5   6   7   8| 5  6  7  8|
+|              |           |
+| 9  10  11  12| 9 10 11 12|
++--------------------------+
+|13  14  15| 13 14 15 16 17|
+|          |               |
+|16  17  18| 18 19 20 21 22|
+|          |               |
+|19  20  21| 23 24 25 26 27|
++--------------------------+
+
+ *
+ *
+ * \endverbatim
+ *
+ * To the local relabelling is added an offset to make the local id global and non overlapping
+ *
+ *
+ * \verbatim
+ *
++--------------------------+
+| 1   2   3   4|23 24 25 26|
+|              |           |
+| 5   6   7   8|27 28 29 30|
+|              |           |
+| 9  10  12  13|31 32 33 34|
++--------------------------+
+|14  15  16| 35 36 37 38 39|
+|          |               |
+|17  18  19| 40 41 42 43 44|
+|          |               |
+|20  21  22| 45 46 47 48 49|
++--------------------------+
+ *
+ *
+ * \endverbatim
  *
  * \tparam dim Dimensionality of the finite differences scheme
  *
@@ -34,13 +85,22 @@ class FDScheme
 	const grid_sm<Sys_eqs::dims,void> & gs;
 
 	// mapping grid
-	grid_dist_id<Sys_eqs::dims,Sys_eqs::stype,scalar<size_t>,Sys_eqs::grid_type::decomposition> g_map;
+	grid_dist_id<Sys_eqs::dims,typename Sys_eqs::stype,scalar<size_t>,typename Sys_eqs::b_grid::decomposition> g_map;
 
 	// row of the matrix
 	size_t row;
 
 	// row on b
 	size_t row_b;
+
+	// Grid points that has each processor
+	openfpm::vector<size_t> pnt;
+
+	// Each point in the grid has a global id, to decompose correctly the Matrix each processor contain a
+	// contiguos range of global id, example processor 0 can have from 0 to 234 and processor 1 from 235 to 512
+	// no processors can have holes in the sequence, this number indicate where the sequence start for this
+	// processor
+	size_t s_pnt;
 
 	/*! \brief Check if the Matrix is consistent
 	 *
@@ -90,9 +150,21 @@ public:
 	 * \param gs grid infos where Finite differences work
 	 *
 	 */
-	FDScheme(Padding<Sys_eqs::dims> & pd, const grid_sm<Sys_eqs::dims,void> & gs)
-	:pd(pd),gs(gs)
+	FDScheme(Padding<Sys_eqs::dims> & pd, const Box<Sys_eqs::dims,typename Sys_eqs::stype> & domain, const grid_sm<Sys_eqs::dims,void> & gs, typename Sys_eqs::b_grid::decomposition & dec, Vcluster & v_cl)
+	:pd(pd),gs(gs),g_map(dec,gs.getSize(),domain,Ghost<Sys_eqs::dims,size_t>(1))
 	{
+		// Calculate the size of the local domain
+		size_t sz = g_map.getLocalDomainSize();
+
+		// Get the total size of the local grids on each processors
+		v_cl.allGather(sz,pnt);
+
+		// calculate the starting point for this processor
+		for (size_t i = 0 ; i < v_cl.getProcessUnitID() ; i++)
+			s_pnt += pnt.get(0);
+
+		// Calculate the starting point
+
 		// Counter
 		size_t cnt = 0;
 
@@ -106,13 +178,15 @@ public:
 		{
 			auto key = it.get();
 
-			g_map.get(key) = cnt;
+			g_map.template get<0>(key) = cnt + s_pnt;
 
 			++cnt;
 			++it;
 		}
 
+		// sync the ghost
 
+		g_map.template ghost_get<0>();
 	}
 
 	/*! \brief Impose an operator
@@ -134,7 +208,7 @@ public:
 			auto keyg = it.getGKey(key);
 
 			// Calculate the non-zero colums
-			T::value(keyg,gs,cols,1.0);
+			T::value(g_map,key,gs,cols,1.0);
 
 			// create the triplet
 
