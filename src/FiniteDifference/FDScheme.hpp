@@ -17,8 +17,8 @@
 /*! \brief Finite Differences
  *
  * This class is able to discreatize on a Matrix any operator. In order to create a consistent
- * Matrix it is required that each processor must contain a contiguois range on grid points without
- * hole. In order to ensure this, each processor produce a contiguos local labelling of its local
+ * Matrix it is required that each processor must contain a contiguos range on grid points without
+ * holes. In order to ensure this, each processor produce a contiguos local labelling of its local
  * points. Each processor also add an offset equal to the number of local
  * points of the processors with id smaller than him, to produce a global and non overlapping
  * labelling. An example is shown in the figures down, here we have
@@ -142,6 +142,16 @@ class FDScheme
 		}
 	}
 
+	/*! \brief Convert from integer ghost to continuos
+	 *
+	 * \return the continuos version of the ghost
+	 *
+	 */
+	Ghost<dim,Sys_eqs::stype> convert_into_cg()
+	{
+
+	}
+
 public:
 
 	/*! \brief Constructor
@@ -151,7 +161,7 @@ public:
 	 *
 	 */
 	FDScheme(Padding<Sys_eqs::dims> & pd, const Box<Sys_eqs::dims,typename Sys_eqs::stype> & domain, const grid_sm<Sys_eqs::dims,void> & gs, typename Sys_eqs::b_grid::decomposition & dec, Vcluster & v_cl)
-	:pd(pd),gs(gs),g_map(dec,gs.getSize(),domain,Ghost<Sys_eqs::dims,size_t>(1))
+	:pd(pd),gs(gs),g_map(dec.duplicate(Ghost<Sys_eqs::dims,long int>(1)),gs.getSize(),domain)
 	{
 		// Calculate the size of the local domain
 		size_t sz = g_map.getLocalDomainSize();
@@ -203,9 +213,6 @@ public:
 		{
 			// get the position
 			auto key = it.get();
-
-			// convert into global coordinate the position
-			auto keyg = it.getGKey(key);
 
 			// Calculate the non-zero colums
 			T::value(g_map,key,gs,cols,1.0);

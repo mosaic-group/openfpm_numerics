@@ -25,13 +25,14 @@ struct sum_functor_value
 	//! sum functor
 	std::unordered_map<long int,typename last::stype> & cols;
 
+	//! Grid info
+	const grid_sm<last::dims,void> & gs;
+
 	// grid mapping
 	const grid_dist_id<last::dims,typename last::stype,scalar<size_t>,typename last::b_grid::decomposition> & g_map;
 
 	// grid position
 	grid_dist_key_dx<last::dims> & kmap;
-
-	const grid_sm<last::dims,void> & gs;
 
 	//! position
 	grid_key_dx<last::dims> & key;
@@ -43,7 +44,7 @@ struct sum_functor_value
 	 *
 	 */
 	sum_functor_value(const grid_dist_id<last::dims,typename last::stype,scalar<size_t>,typename last::b_grid::decomposition> & g_map, grid_dist_key_dx<last::dims> & kmap, const grid_sm<last::dims,void> & gs, std::unordered_map<long int,typename last::stype> & cols, typename last::stype coeff)
-	:g_map(g_map),kmap(kmap),cols(cols),gs(gs),key(key),coeff(coeff)
+	:cols(cols),gs(gs),g_map(g_map),kmap(kmap),key(key),coeff(coeff)
 	{};
 
 

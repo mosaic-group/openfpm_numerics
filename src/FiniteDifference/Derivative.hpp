@@ -16,6 +16,7 @@
 #include "Vector/map_vector.hpp"
 #include "Grid/comb.hpp"
 #include "FiniteDifference/util/common.hpp"
+#include "util/util_num.hpp"
 
 /*! \brief Derivative second order on h (spacing)
  *
@@ -62,7 +63,7 @@ class D<d,arg,Sys_eqs,CENTRAL>
 	 *
 	 *
 	 */
-	inline static void value(const grid_dist_id<Sys_eqs::dims,typename Sys_eqs::stype,scalar<size_t>,typename Sys_eqs::b_grid::decomposition> & g_map, grid_dist_key_dx<Sys_eqs::dims> & kmap , const grid_sm<Sys_eqs::dims,void> & gs, std::unordered_map<long int,typename Sys_eqs::stype > & cols, typename Sys_eqs::stype coeff)
+	inline static void value(const typename stub_or_real<Sys_eqs,Sys_eqs::dims,typename Sys_eqs::stype,typename Sys_eqs::b_grid::decomposition>::type & g_map, grid_dist_key_dx<Sys_eqs::dims> & kmap , const grid_sm<Sys_eqs::dims,void> & gs, std::unordered_map<long int,typename Sys_eqs::stype > & cols, typename Sys_eqs::stype coeff)
 	{
 		// if the system is staggered the CENTRAL derivative is equivalent to a forward derivative
 		if (is_grid_staggered<Sys_eqs>::value() == true)
@@ -133,7 +134,7 @@ public:
 	 *
 	 *
 	 */
-	static void value(const grid_dist_id<Sys_eqs::dims,typename Sys_eqs::stype,scalar<size_t>,typename Sys_eqs::b_grid::decomposition> & g_map, grid_dist_key_dx<Sys_eqs::dims> & kmap , const grid_sm<Sys_eqs::dims,void> & gs, std::unordered_map<long int,typename Sys_eqs::stype > & cols, typename Sys_eqs::stype coeff)
+	static void value(const typename stub_or_real<Sys_eqs,Sys_eqs::dims,typename Sys_eqs::stype,typename Sys_eqs::b_grid::decomposition>::type & g_map, grid_dist_key_dx<Sys_eqs::dims> & kmap , const grid_sm<Sys_eqs::dims,void> & gs, std::unordered_map<long int,typename Sys_eqs::stype > & cols, typename Sys_eqs::stype coeff)
 	{
 #ifdef SE_CLASS1
 		if (Sys_eqs::boundary[d] == PERIODIC)
@@ -144,7 +145,7 @@ public:
 
 		if (pos.get(d) == (long int)gs.size(d)-1 )
 		{
-			arg::value(pos,gs,cols,1.5*coeff);
+			arg::value(g_map,kmap,gs,cols,1.5*coeff);
 
 			long int old_val = kmap.getKeyRef().get(d);
 			kmap.getKeyRef().set_d(d, kmap.getKeyRef().get(d) - 1);
@@ -152,13 +153,13 @@ public:
 			kmap.getKeyRef().set_d(d,old_val);
 
 			old_val = kmap.getKeyRef().get(d);
-			pos.set_d(d, kmap.getKeyRef().get(d) - 2);
+			kmap.getKeyRef().set_d(d, kmap.getKeyRef().get(d) - 2);
 			arg::value(g_map,kmap,gs,cols,0.5*coeff);
 			kmap.getKeyRef().set_d(d,old_val);
 		}
 		else if (pos.get(d) == 0)
 		{
-			arg::value(pos,gs,cols,-1.5*coeff);
+			arg::value(g_map,kmap,gs,cols,-1.5*coeff);
 
 			long int old_val = kmap.getKeyRef().get(d);
 			kmap.getKeyRef().set_d(d, kmap.getKeyRef().get(d) + 1);
@@ -166,7 +167,7 @@ public:
 			kmap.getKeyRef().set_d(d,old_val);
 
 			old_val = kmap.getKeyRef().get(d);
-			pos.set_d(d, kmap.getKeyRef().get(d) + 2);
+			kmap.getKeyRef().set_d(d, kmap.getKeyRef().get(d) + 2);
 			arg::value(g_map,kmap,gs,cols,-0.5*coeff);
 			kmap.getKeyRef().set_d(d,old_val);
 		}
@@ -229,7 +230,7 @@ class D<d,arg,Sys_eqs,FORWARD>
 	 *
 	 *
 	 */
-	inline static void value(const grid_dist_id<Sys_eqs::dims,typename Sys_eqs::stype,scalar<size_t>,typename Sys_eqs::b_grid::decomposition> & g_map, grid_dist_key_dx<Sys_eqs::dims> & kmap , const grid_sm<Sys_eqs::dims,void> & gs, std::unordered_map<long int,typename Sys_eqs::stype > & cols, typename Sys_eqs::stype coeff)
+	inline static void value(const typename stub_or_real<Sys_eqs,Sys_eqs::dims,typename Sys_eqs::stype,typename Sys_eqs::b_grid::decomposition>::type & g_map, grid_dist_key_dx<Sys_eqs::dims> & kmap , const grid_sm<Sys_eqs::dims,void> & gs, std::unordered_map<long int,typename Sys_eqs::stype > & cols, typename Sys_eqs::stype coeff)
 	{
 
 		long int old_val = kmap.getKeyRef().get(d);

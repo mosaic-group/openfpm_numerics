@@ -18,6 +18,7 @@
 #define NON_PERIODIC false
 
 #include "data_type/scalar.hpp"
+#include "util/util_num.hpp"
 
 /*! \brief Equation
  *
@@ -125,13 +126,15 @@ struct pos_val
 template<unsigned int f, typename Sys_eqs>
 class Field
 {
+	typedef typename stub_or_real<Sys_eqs,Sys_eqs::dims,typename Sys_eqs::stype,typename Sys_eqs::b_grid::decomposition>::type map_grid;
+
 public:
 
 	/*! \brief fill the row
 	 *
 	 *
 	 */
-	static void value(const grid_dist_id<Sys_eqs::dims,typename Sys_eqs::stype,scalar<size_t>,typename Sys_eqs::b_grid::decomposition> & g_map, grid_dist_key_dx<Sys_eqs::dims> & kmap, const grid_sm<Sys_eqs::dims,void> & gs, std::unordered_map<long int,typename Sys_eqs::stype > & cols, typename Sys_eqs::stype coeff)
+	static void value(const map_grid & g_map, grid_dist_key_dx<Sys_eqs::dims> & kmap, const grid_sm<Sys_eqs::dims,void> & gs, std::unordered_map<long int,typename Sys_eqs::stype > & cols, typename Sys_eqs::stype coeff)
 	{
 		if (Sys_eqs::ord == EQS_FIELD)
 			cols[g_map.template get<0>(kmap)*Sys_eqs::nvar + f] += coeff;

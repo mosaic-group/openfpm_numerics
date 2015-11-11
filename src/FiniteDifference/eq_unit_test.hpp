@@ -90,7 +90,7 @@ BOOST_AUTO_TEST_CASE( lid_driven_cavity )
 	// Ghost
 	Ghost<2,float> g(0.01);
 
-	size_t sz[] = {32,32};
+	size_t sz[] = {256,256};
 	Padding<2> pd({1,2},{1,2});
 
 	// Initialize the global VCluster
@@ -103,7 +103,7 @@ BOOST_AUTO_TEST_CASE( lid_driven_cavity )
 	FDScheme<lid_nn> fd(pd,domain,g_dist.getGridInfo(),g_dist.getDecomposition(),g_dist.getVC());
 
 	// start and end of the bulk
-	grid_key_dx<2> bulk_start(0,0);
+/*	grid_key_dx<2> bulk_start(0,0);
 	grid_key_dx<2> bulk_end(sz[0],sz[1]);
 
 	// Impose the vx and vy equation in the bulk
@@ -172,7 +172,7 @@ BOOST_AUTO_TEST_CASE( lid_driven_cavity )
 	grid_key_dx<2> pvtop_start(0,33);
 	grid_key_dx<2> pvtop_end(31,33);
 	fd.imposeA(v_x(), g_dist.getSubDomainIterator(pvtop_start,pvtop_end));
-	fd.imposeB(0.0, g_dist.getSubDomainIterator(pvtop_start,pvtop_end));
+	fd.imposeB(0.0, g_dist.getSubDomainIterator(pvtop_start,pvtop_end));*/
 }
 
 BOOST_AUTO_TEST_SUITE_END()
