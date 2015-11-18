@@ -84,8 +84,10 @@ class FDScheme
 	// Domain Grid informations
 	const grid_sm<Sys_eqs::dims,void> & gs;
 
+	typedef grid_dist_id<Sys_eqs::dims,typename Sys_eqs::stype,scalar<size_t>,typename Sys_eqs::b_grid::decomposition> g_map_type;
+
 	// mapping grid
-	grid_dist_id<Sys_eqs::dims,typename Sys_eqs::stype,scalar<size_t>,typename Sys_eqs::b_grid::decomposition> g_map;
+	g_map_type g_map;
 
 	// row of the matrix
 	size_t row;
@@ -101,6 +103,23 @@ class FDScheme
 	// no processors can have holes in the sequence, this number indicate where the sequence start for this
 	// processor
 	size_t s_pnt;
+
+	/* \brief calculate the mapping grid size with padding
+	 *
+	 * \param gs original grid size
+	 *
+	 * \return padded grid size
+	 *
+	 */
+	inline const std::vector<size_t> padding( const size_t (& sz)[Sys_eqs::dims], Padding<Sys_eqs::dims> & pd)
+	{
+		std::vector<size_t> g_sz_pad(Sys_eqs::dims);
+
+		for (size_t i = 0 ; i < Sys_eqs::dims ; i++)
+			g_sz_pad[i] = sz[i] + pd.getLow(i) + pd.getHigh(i);
+
+		return g_sz_pad;
+	}
 
 	/*! \brief Check if the Matrix is consistent
 	 *
@@ -142,14 +161,14 @@ class FDScheme
 		}
 	}
 
-	/*! \brief Convert from integer ghost to continuos
+	/* \brief Convert discrete ghost into continous ghost
 	 *
-	 * \return the continuos version of the ghost
+	 * \param Ghost
 	 *
 	 */
-	Ghost<dim,Sys_eqs::stype> convert_into_cg()
+	inline Ghost<Sys_eqs::dims,typename Sys_eqs::stype> convert_dg_cg(const Ghost<Sys_eqs::dims,typename Sys_eqs::stype> & g)
 	{
-
+		return g_map_type::convert_ghost(g,g_map.getCellDecomposer());
 	}
 
 public:
@@ -160,18 +179,20 @@ public:
 	 * \param gs grid infos where Finite differences work
 	 *
 	 */
-	FDScheme(Padding<Sys_eqs::dims> & pd, const Box<Sys_eqs::dims,typename Sys_eqs::stype> & domain, const grid_sm<Sys_eqs::dims,void> & gs, typename Sys_eqs::b_grid::decomposition & dec, Vcluster & v_cl)
-	:pd(pd),gs(gs),g_map(dec.duplicate(Ghost<Sys_eqs::dims,long int>(1)),gs.getSize(),domain)
+	FDScheme(Padding<Sys_eqs::dims> & pd, const Box<Sys_eqs::dims,typename Sys_eqs::stype> & domain, const grid_sm<Sys_eqs::dims,void> & gs, const typename Sys_eqs::b_grid::decomposition & dec, Vcluster & v_cl)
+	:pd(pd),gs(gs),g_map(dec,padding(gs.getSize(),pd),domain,Ghost<Sys_eqs::dims,typename Sys_eqs::stype>(1)),row(0),row_b(0)
 	{
 		// Calculate the size of the local domain
 		size_t sz = g_map.getLocalDomainSize();
 
 		// Get the total size of the local grids on each processors
 		v_cl.allGather(sz,pnt);
+		v_cl.execute();
+		s_pnt = 0;
 
 		// calculate the starting point for this processor
 		for (size_t i = 0 ; i < v_cl.getProcessUnitID() ; i++)
-			s_pnt += pnt.get(0);
+			s_pnt += pnt.get(i);
 
 		// Calculate the starting point
 
@@ -204,8 +225,18 @@ public:
 	 *
 	 *
 	 */
-	template<typename T> void imposeA(const T & op , grid_dist_iterator_sub<Sys_eqs::dims,typename Sys_eqs::b_grid::d_grid> it)
+	template<typename T> void imposeA(const T & op , grid_dist_iterator_sub<Sys_eqs::dims,typename Sys_eqs::b_grid::d_grid> it_d)
 	{
+		// key one
+		grid_key_dx<Sys_eqs::dims> gk_one;
+		gk_one.one();
+
+		// add padding to start and stop
+		grid_key_dx<Sys_eqs::dims> start = it_d.getStart() + pd.getKP1();
+		grid_key_dx<Sys_eqs::dims> stop = it_d.getStop() + pd.getKP1();
+
+		auto it = g_map.getSubDomainIterator(start,stop);
+
 		std::unordered_map<long int,float> cols;
 
 		// iterate all the grid points

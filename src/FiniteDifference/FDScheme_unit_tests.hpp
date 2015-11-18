@@ -12,6 +12,7 @@
 #include "FiniteDifference/Laplacian.hpp"
 #include "Decomposition/CartDecomposition.hpp"
 #include "util/grid_dist_testing.hpp"
+#include "FiniteDifference/Average.hpp"
 
 constexpr unsigned int x = 0;
 constexpr unsigned int y = 1;
@@ -113,7 +114,7 @@ const bool syss_pp::boundary[] = {PERIODIC,PERIODIC};
 
 BOOST_AUTO_TEST_SUITE( fd_test )
 
-BOOST_AUTO_TEST_CASE( fd_test_use_non_periodic)
+BOOST_AUTO_TEST_CASE( fd_test_use_der_non_periodic)
 {
 	// grid size
 	size_t sz[2]={16,16};
@@ -239,8 +240,78 @@ BOOST_AUTO_TEST_CASE( fd_test_use_non_periodic)
 	BOOST_REQUIRE_EQUAL(cols_y[13*16+15],0.5);
 }
 
+BOOST_AUTO_TEST_CASE( fd_test_use_avg_non_periodic)
+{
+	// grid size
+	size_t sz[2]={16,16};
 
-BOOST_AUTO_TEST_CASE( fd_test_use_staggered_non_periodic)
+	// grid_dist_testing
+	grid_dist_testing<2> g_map(sz);
+
+	// grid_sm
+	grid_sm<2,void> ginfo(sz);
+
+	// Create several keys
+	grid_dist_key_dx<2> key11(0,grid_key_dx<2>(1,1));
+	grid_dist_key_dx<2> key00(0,grid_key_dx<2>(0,0));
+	grid_dist_key_dx<2> key22(0,grid_key_dx<2>(2,2));
+	grid_dist_key_dx<2> key1515(0,grid_key_dx<2>(15,15));
+
+	// filled colums
+	std::unordered_map<long int,float> cols_x;
+	std::unordered_map<long int,float> cols_y;
+
+	Avg<x,Field<V,sys_nn>,sys_nn>::value(g_map,key11,ginfo,cols_x,1);
+	Avg<y,Field<V,sys_nn>,sys_nn>::value(g_map,key11,ginfo,cols_y,1);
+
+	BOOST_REQUIRE_EQUAL(cols_x.size(),2);
+	BOOST_REQUIRE_EQUAL(cols_y.size(),2);
+
+	BOOST_REQUIRE_EQUAL(cols_x[17+1],1);
+	BOOST_REQUIRE_EQUAL(cols_x[17-1],1);
+
+	BOOST_REQUIRE_EQUAL(cols_y[17+16],1);
+	BOOST_REQUIRE_EQUAL(cols_y[17-16],1);
+
+	// filled colums
+
+	std::unordered_map<long int,float> cols_xx;
+	std::unordered_map<long int,float> cols_xy;
+	std::unordered_map<long int,float> cols_yx;
+	std::unordered_map<long int,float> cols_yy;
+
+	// Composed derivative
+
+	Avg<x,Avg<x,Field<V,sys_nn>,sys_nn>,sys_nn>::value(g_map,key22,ginfo,cols_xx,1);
+	Avg<x,Avg<y,Field<V,sys_nn>,sys_nn>,sys_nn>::value(g_map,key22,ginfo,cols_xy,1);
+	Avg<y,Avg<x,Field<V,sys_nn>,sys_nn>,sys_nn>::value(g_map,key22,ginfo,cols_yx,1);
+	Avg<y,Avg<y,Field<V,sys_nn>,sys_nn>,sys_nn>::value(g_map,key22,ginfo,cols_yy,1);
+
+	BOOST_REQUIRE_EQUAL(cols_xx.size(),3);
+	BOOST_REQUIRE_EQUAL(cols_xy.size(),4);
+	BOOST_REQUIRE_EQUAL(cols_yx.size(),4);
+	BOOST_REQUIRE_EQUAL(cols_yy.size(),3);
+
+	BOOST_REQUIRE_EQUAL(cols_xx[32],1);
+	BOOST_REQUIRE_EQUAL(cols_xx[34],2);
+	BOOST_REQUIRE_EQUAL(cols_xx[36],1);
+
+	BOOST_REQUIRE_EQUAL(cols_xy[17],1);
+	BOOST_REQUIRE_EQUAL(cols_xy[19],1);
+	BOOST_REQUIRE_EQUAL(cols_xy[49],1);
+	BOOST_REQUIRE_EQUAL(cols_xy[51],1);
+
+	BOOST_REQUIRE_EQUAL(cols_yx[17],1);
+	BOOST_REQUIRE_EQUAL(cols_yx[19],1);
+	BOOST_REQUIRE_EQUAL(cols_yx[49],1);
+	BOOST_REQUIRE_EQUAL(cols_xy[51],1);
+
+	BOOST_REQUIRE_EQUAL(cols_yy[2],1);
+	BOOST_REQUIRE_EQUAL(cols_yy[34],2);
+	BOOST_REQUIRE_EQUAL(cols_yy[66],1);
+}
+
+BOOST_AUTO_TEST_CASE( fd_test_use_staggered_der_non_periodic)
 {
 	// grid size
 	size_t sz[2]={16,16};
@@ -271,6 +342,42 @@ BOOST_AUTO_TEST_CASE( fd_test_use_staggered_non_periodic)
 
 	BOOST_REQUIRE_EQUAL(cols_y[17+16],1);
 	BOOST_REQUIRE_EQUAL(cols_y[17],-1);
+
+	cols_x.clear();
+	cols_y.clear();
+}
+
+BOOST_AUTO_TEST_CASE( fd_test_use_staggered_avg_non_periodic)
+{
+	// grid size
+	size_t sz[2]={16,16};
+
+	// grid_sm
+	grid_sm<2,void> ginfo(sz);
+
+	// grid_dist_testing
+	grid_dist_testing<2> g_map(sz);
+
+	// Create several keys
+	grid_dist_key_dx<2> key11(0,grid_key_dx<2>(1,1));
+	grid_dist_key_dx<2> key22(0,grid_key_dx<2>(2,2));
+	grid_dist_key_dx<2> key1515(0,grid_key_dx<2>(15,15));
+
+	// filled colums
+	std::unordered_map<long int,float> cols_x;
+	std::unordered_map<long int,float> cols_y;
+
+	Avg<x,Field<V,syss_pp>,syss_pp>::value(g_map,key11,ginfo,cols_x,1);
+	Avg<y,Field<V,syss_pp>,syss_pp>::value(g_map,key11,ginfo,cols_y,1);
+
+	BOOST_REQUIRE_EQUAL(cols_x.size(),2);
+	BOOST_REQUIRE_EQUAL(cols_y.size(),2);
+
+	BOOST_REQUIRE_EQUAL(cols_x[17+1],1);
+	BOOST_REQUIRE_EQUAL(cols_x[17],1);
+
+	BOOST_REQUIRE_EQUAL(cols_y[17+16],1);
+	BOOST_REQUIRE_EQUAL(cols_y[17],1);
 
 	cols_x.clear();
 	cols_y.clear();
