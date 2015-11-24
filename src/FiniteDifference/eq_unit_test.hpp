@@ -109,39 +109,39 @@ BOOST_AUTO_TEST_CASE( lid_driven_cavity )
 
 	// start and end of the bulk
 
-	fd.imposeA(ic_eq(), g_dist.getSubDomainIterator(grid_key_dx<2>(1,1),grid_key_dx<2>(sz[0]-1,sz[1]-1));
-	fd.imposeA(vx_eq(), g_dist.getSubDomainIterator(grid_key_dx<2>(1,0),grid_key_dx<2>(sz[0]-1,sz[1]-1));
-	fd.imposeA(vy_eq(), g_dist.getSubDomainIterator(grid_key_dx<2>(0,1),grid_key_dx<2>(sz[0]-1,sz[1]-1));
+	fd.imposeA(ic_eq(), g_dist.getSubDomainIterator(grid_key_dx<2>(1,1),grid_key_dx<2>(sz[0]-1,sz[1]-1)));
+	fd.imposeA(vx_eq(), g_dist.getSubDomainIterator(grid_key_dx<2>(1,0),grid_key_dx<2>(sz[0]-1,sz[1]-1)));
+	fd.imposeA(vy_eq(), g_dist.getSubDomainIterator(grid_key_dx<2>(0,1),grid_key_dx<2>(sz[0]-1,sz[1]-1)));
 
 	// v_x R L T B
 
 	// R L
-	fd.imposeA(v_x(), g_dist.getSubDomainIterator(grid_key_dx<2>(0,0),grid_key_dx<2>(0,sz[1]-2));
-	fd.imposeA(v_x(), g_dist.getSubDomainIterator(grid_key_dx<2>(sz[0]-1,0),grid_key_dx<2>(sz[0]-1,sz[1]-2));
+	fd.imposeA(v_x(), g_dist.getSubDomainIterator(grid_key_dx<2>(0,0),grid_key_dx<2>(0,sz[1]-2)));
+	fd.imposeA(v_x(), g_dist.getSubDomainIterator(grid_key_dx<2>(sz[0]-1,0),grid_key_dx<2>(sz[0]-1,sz[1]-2)));
 
 	// T B
-	fd.imposeA(avg_eq(), g_dist.getSubDomainIterator(grid_key_dx<2>(0,0),grid_key_dx<2>(0,sz[1]-1));
-	fd.imposeA(avg_eq(), g_dist.getSubDomainIterator(grid_key_dx<2>(sz[0]-1,sz[0]-1),grid_key_dx<2>(sz[0]-1,sz[1]-1));
+	fd.imposeA(avg_vx(), g_dist.getSubDomainIterator(grid_key_dx<2>(0,0),grid_key_dx<2>(0,sz[1]-1)));
+	fd.imposeA(avg_vx(), g_dist.getSubDomainIterator(grid_key_dx<2>(sz[0]-1,sz[0]-1),grid_key_dx<2>(sz[0]-1,sz[1]-1)));
 
 	// v_y R L T B
 
 	// R L
-	fd.imposeA(v_y(), g_dist.getSubDomainIterator(grid_key_dx<2>(0,0),grid_key_dx<2>(sz[0]-2,0));
-	fd.imposeA(v_y(), g_dist.getSubDomainIterator(grid_key_dx<2>(0,sz[1]-1),grid_key_dx<2>(sz[0]-2,sz[1]-1));
+	fd.imposeA(v_y(), g_dist.getSubDomainIterator(grid_key_dx<2>(0,0),grid_key_dx<2>(sz[0]-2,0)));
+	fd.imposeA(v_y(), g_dist.getSubDomainIterator(grid_key_dx<2>(0,sz[1]-1),grid_key_dx<2>(sz[0]-2,sz[1]-1)));
 
 	// T B
-	fd.imposeA(avg_eq(), g_dist.getSubDomainIterator(grid_key_dx<2>(0,0),grid_key_dx<2>(0,sz[1]-1));
-	fd.imposeA(avg_eq(), g_dist.getSubDomainIterator(grid_key_dx<2>(sz[0]-1,0),grid_key_dx<2>(sz[0]-1,sz[1]-1));
+	fd.imposeA(avg_vy(), g_dist.getSubDomainIterator(grid_key_dx<2>(0,0),grid_key_dx<2>(0,sz[1]-1)));
+	fd.imposeA(avg_vy(), g_dist.getSubDomainIterator(grid_key_dx<2>(sz[0]-1,0),grid_key_dx<2>(sz[0]-1,sz[1]-1)));
 
 	// Padding pressure
-	fd.imposeA(Prs, g_dist.getSubDomainIterator(grid_key_dx<2>(-1,-1),grid_key_dx<2>(sz[0]-1,-1));
-	fd.imposeA(Prs, g_dist.getSubDomainIterator(grid_key_dx<2>(-1,sz[1]-1),grid_key_dx<2>(sz[0]-1,sz[1]-1));
-	fd.imposeA(Prs, g_dist.getSubDomainIterator(grid_key_dx<2>(0,-1),grid_key_dx<2>(sz[0]-2,-1));
-	fd.imposeA(Prs, g_dist.getSubDomainIterator(grid_key_dx<2>(sz[0]-1,-1),grid_key_dx<2>(sz[0]-1,-1));
+	fd.imposeA(Prs(), g_dist.getSubDomainIterator(grid_key_dx<2>(-1,-1),grid_key_dx<2>(sz[0]-1,-1)));
+	fd.imposeA(Prs(), g_dist.getSubDomainIterator(grid_key_dx<2>(-1,sz[1]-1),grid_key_dx<2>(sz[0]-1,sz[1]-1)));
+	fd.imposeA(Prs(), g_dist.getSubDomainIterator(grid_key_dx<2>(0,-1),grid_key_dx<2>(sz[0]-2,-1)));
+	fd.imposeA(Prs(), g_dist.getSubDomainIterator(grid_key_dx<2>(sz[0]-1,-1),grid_key_dx<2>(sz[0]-1,-1)));
 
 	// Impose v_x Padding Impose v_y padding
-	fd.imposeA(v_x, g_dist.getSubDomainIterator(grid_key_dx<2>(-1,-1),grid_key_dx<2>(-1,sz[0]-1));
-	fd.imposeA(v_y, g_dist.getSubDomainIterator(grid_key_dx<2>(-1,-1),grid_key_dx<2>(-1,sz[1]-1));
+	fd.imposeA(v_x(), g_dist.getSubDomainIterator(grid_key_dx<2>(-1,-1),grid_key_dx<2>(-1,sz[0]-1)));
+	fd.imposeA(v_y(), g_dist.getSubDomainIterator(grid_key_dx<2>(-1,-1),grid_key_dx<2>(-1,sz[1]-1)));
 
 	// Top boundary condition v_y
 	grid_key_dx<2> btop_start_vy(0,7);
@@ -154,10 +154,6 @@ BOOST_AUTO_TEST_CASE( lid_driven_cavity )
 	grid_key_dx<2> btop_end_vx(7,7);
 	fd.imposeA(avg_vx(), g_dist.getSubDomainIterator(btop_start_vx,btop_end_vx));
 	fd.imposeB(1.0, g_dist.getSubDomainIterator(btop_start_vx,btop_end_vx));
-
-
-
-
 }
 
 BOOST_AUTO_TEST_SUITE_END()
