@@ -1,0 +1,136 @@
+/*
+ * mul.hpp
+ *
+ *  Created on: Oct 22, 2015
+ *      Author: i-bird
+ */
+
+#ifndef OPENFPM_NUMERICS_SRC_FINITEDIFFERENCE_MUL_HPP_
+#define OPENFPM_NUMERICS_SRC_FINITEDIFFERENCE_MUL_HPP_
+
+#include <typeinfo>
+#include "util/util_debug.hpp"
+#include "util/util_num.hpp"
+
+#define HAS_VAL 1
+#define HAS_POS_VAL 2
+
+
+template <unsigned int, typename T>
+struct has_val
+{
+	static float call_val()
+	{
+		std::cerr << "Error the type " << demangle(typeid(T).name()) << "interpreted as constant field, does not have a function val() or val_pos(), please see the numeric examples in Finite Differences for more information\n";
+		return 0;
+	}
+};
+
+template <typename T>
+struct has_val<HAS_VAL,T>
+{
+	static decltype(T::val()) call_val()
+	{
+		return T::val();
+	}
+};
+
+
+template<typename v_expr>
+struct const_mul_functor_value
+{
+	//! Number of elements in the vector v_expr
+	typedef boost::mpl::size<v_expr> size;
+
+	//! Last element of sum
+	typedef typename boost::mpl::at<v_expr,boost::mpl::int_<size::value-1> >::type last;
+
+	//! sum functor
+	std::unordered_map<long int,typename last::stype> & cols;
+
+	const grid_sm<last::dims,void> & gs;
+
+	// grid mapping
+	const grid_dist_id<last::dims,typename last::stype,scalar<size_t>,typename last::b_grid::decomposition> & g_map;
+
+	// grid position
+	grid_dist_key_dx<last::dims> & kmap;
+
+	//! coefficent
+	typename last::stype coeff;
+
+	/*! \brief constructor
+	 *
+	 */
+	const_mul_functor_value(const grid_dist_id<last::dims,typename last::stype,scalar<size_t>,typename last::b_grid::decomposition> & g_map, grid_dist_key_dx<last::dims> & kmap, const grid_sm<last::dims,void> & gs, std::unordered_map<long int,typename last::stype> & cols, typename last::stype coeff)
+	:cols(cols),gs(gs),g_map(g_map),kmap(kmap),coeff(coeff)
+	{};
+
+
+
+	//! It call this function for every constant expression in the mul
+	template<typename T>
+	void operator()(T& t)
+	{
+		typedef typename boost::mpl::at<v_expr, boost::mpl::int_<T::value> >::type cfield;
+
+		coeff *= has_val<is_const_field<cfield>::value * 1,cfield>::call_val();
+	}
+
+	typename last::stype getCoeff()
+	{
+		return coeff;
+	}
+};
+
+/*! \brief It model an expression expr1 * expr2
+ *
+ * \warning expr1 MUST be a constant expression
+ *
+ * \tparam expr1
+ * \tparam expr2
+ *
+ */
+template<typename ... expr >
+struct mul
+{
+	// Transform from variadic template to boost mpl vector
+	typedef boost::mpl::vector<expr... > v_expr;
+
+	// size of v_expr
+	typedef typename boost::mpl::size<v_expr>::type v_sz;
+
+	typedef typename boost::mpl::at<v_expr, boost::mpl::int_<v_sz::type::value - 1> >::type Sys_eqs;
+
+	/*! \brief Create the row of the Matrix
+	 *
+	 * \tparam ord
+	 *
+	 */
+	inline static void value(const grid_dist_id<Sys_eqs::dims,typename Sys_eqs::stype,scalar<size_t>,typename Sys_eqs::b_grid::decomposition> & g_map, grid_dist_key_dx<Sys_eqs::dims> & kmap, const grid_sm<Sys_eqs::dims,void> & gs, std::unordered_map<long int,typename Sys_eqs::stype > & cols, typename Sys_eqs::stype coeff)
+	{
+		const_mul_functor_value<v_expr> mfv(g_map,kmap,gs,cols,coeff);
+
+		//
+		boost::mpl::for_each_ref< boost::mpl::range_c<int,0,v_sz::type::value - 2> >(mfv);
+
+		//! Last element of multiplication
+		typedef typename boost::mpl::at< v_expr ,boost::mpl::int_<v_sz::value-2> >::type last_m;
+
+		last_m::value(g_map,kmap,gs,cols,mfv.coeff);
+	}
+
+	/*! \brief Calculate the position where the derivative is calculated
+	 *
+	 * In case on non staggered case this function just return pos, in case of staggered,
+	 *  it calculate where the operator is calculated on a staggered grid
+	 *
+	 */
+	inline static grid_key_dx<Sys_eqs::dims> position(grid_key_dx<Sys_eqs::dims> & pos, const grid_sm<Sys_eqs::dims,void> & gs)
+	{
+		std::cerr << "Error " << __FILE__ << ":" << __LINE__ << " only CENTRAL, FORWARD, BACKWARD derivative are defined";
+	}
+};
+
+
+#endif /* OPENFPM_NUMERICS_SRC_FINITEDIFFERENCE_MUL_HPP_ */
