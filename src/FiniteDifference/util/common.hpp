@@ -13,24 +13,27 @@ template<typename T, typename Sfinae = void>
 struct has_grid_type: std::false_type {};
 
 
-/*! \brief has_noPointers check if a type has defined a
- * method called noPointers
+/*! \brief has_grid_type check if T has defined the member grid_type
  *
- * ### Example
- *
- * \snippet util.hpp Check no pointers
- *
- * return true if T::noPointers() is a valid expression (function pointers)
- * and produce a defined type
+ * # Define structures with information inside
+ * \snippet common_test.hpp Define structures
+ * # Usage on the defined structures
+ * \snippet common_test.hpp Check has grid_type
  *
  */
 template<typename T>
 struct has_grid_type<T, typename Void<decltype( T::grid_type )>::type> : std::true_type
 {};
 
-/*! \brief is_grid_staggered analyse T if it has a property that define the type of grid
+/*! \brief is_grid_staggered analyse T if it has a property grid_type defined and indicate that
+ *         the grid is staggered
  *
- * This struct define a method value that return id T define a staggered or normal grid
+ * This struct define a method value that return true if the grid is staggered, false otherwise
+ *
+ * # Define structures with information inside
+ * \snippet common_test.hpp Define structures
+ * # Usage on the defined structures
+ * \snippet common_test.hpp Check grid_type staggered
  *
  */
 template<typename T, bool has_gt = has_grid_type<T>::type::value >
@@ -46,13 +49,18 @@ struct is_grid_staggered
 	 */
 	static bool value()
 	{
-		return T::grid_type;
+		return T::grid_type == STAGGERED_GRID;
 	};
 };
 
 /*! \brief is_grid_staggered analyse T if it has a property that define the type of grid
  *
  * This struct define a method value that return id T define a staggered or normal grid
+ *
+ * ### Structures that define a grid type
+ * \snippet util_num_unit_tests.hpp grid_type_struct
+ * ### Usage on the defined structures
+ * \snippet util_num_unit_tests.hpp Usage of is_grid_staggered
  *
  */
 template<typename T>

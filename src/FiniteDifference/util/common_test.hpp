@@ -10,6 +10,8 @@
 
 #include "FiniteDifference/util/common.hpp"
 
+//! [Define structures]
+
 struct test_grid_type_staggered
 {
 	static const int grid_type = STAGGERED_GRID;
@@ -24,18 +26,20 @@ struct test_grid_type_no_def
 {
 };
 
+//! [Define structures]
+
 BOOST_AUTO_TEST_SUITE( util_pdata_test )
 
 BOOST_AUTO_TEST_CASE( check_pdata_templates_util_function )
 {
 	{
-	//! [Check grid_type]
+	//! [Check has grid_type]
 
 	BOOST_REQUIRE_EQUAL(has_grid_type<test_grid_type_staggered>::type::value,true);
 	BOOST_REQUIRE_EQUAL(has_grid_type<test_grid_type_normal>::type::value,true);
 	BOOST_REQUIRE_EQUAL(has_grid_type<test_grid_type_no_def>::type::value,false);
 
-	//! [Check grid_type]
+	//! [Check has grid_type]
 	}
 
 	{

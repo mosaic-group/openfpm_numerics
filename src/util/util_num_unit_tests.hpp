@@ -44,8 +44,6 @@ struct not_on_test
 {
 };
 
-//! [Is on test struct definition]
-
 BOOST_AUTO_TEST_SUITE( util_num_suite )
 
 BOOST_AUTO_TEST_CASE( util_num )

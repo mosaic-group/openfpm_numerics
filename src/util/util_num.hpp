@@ -14,7 +14,6 @@
 template<typename T, typename Sfinae = void>
 struct is_const_field: std::false_type {};
 
-
 /*! \brief is_constant check if a type define a constant field
  *
  * ### Example

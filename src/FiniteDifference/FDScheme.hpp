@@ -8,9 +8,9 @@
 #ifndef OPENFPM_NUMERICS_SRC_FINITEDIFFERENCE_FDSCHEME_HPP_
 #define OPENFPM_NUMERICS_SRC_FINITEDIFFERENCE_FDSCHEME_HPP_
 
+#include "../Matrix/SparseMatrix.hpp"
 #include "Grid/grid_dist_id.hpp"
 #include "Grid/grid_dist_id_iterator_sub.hpp"
-#include "Matrix/Matrix.hpp"
 #include "eq.hpp"
 #include "data_type/scalar.hpp"
 
@@ -76,8 +76,10 @@ class FDScheme
 	// Padding
 	Padding<Sys_eqs::dims> pd;
 
+	typedef typename Sys_eqs::SparseMatrix_type::triplet_type triplet;
+
 	// Sparse Matrix
-	openfpm::vector<triplet<typename Sys_eqs::stype>> trpl;
+	openfpm::vector<triplet> trpl;
 
 	openfpm::vector<typename Sys_eqs::stype> b;
 
@@ -131,33 +133,35 @@ class FDScheme
 			std::cerr << "Error " << __FILE__ << ":" << __LINE__ << "the term B and the Matrix A for Ax=B must contain the same number of rows\n";
 
 		// Indicate all the non zero rows
-		openfpm::vector<bool> nz_rows;
+		openfpm::vector<unsigned char> nz_rows;
 		nz_rows.resize(row_b);
 
 		for (size_t i = 0 ; i < trpl.size() ; i++)
 		{
-			nz_rows.get(trpl.get(i).i) = true;
+			nz_rows.get(trpl.get(i).row()) = true;
 		}
 
 		// Indicate all the non zero colums
-		openfpm::vector<bool> nz_cols;
+		openfpm::vector<unsigned> nz_cols;
+		nz_cols.resize(row_b);
+
 		for (size_t i = 0 ; i < trpl.size() ; i++)
 		{
-			nz_cols.get(trpl.get(i).j) = true;
+			nz_cols.get(trpl.get(i).col()) = true;
 		}
 
 		// all the rows must have a non zero element
 		for (size_t i = 0 ; i < nz_rows.size() ; i++)
 		{
 			if (nz_rows.get(i) == false)
-				std::cerr << "Error: " << __FILE__ << ":" << __LINE__ << " Ill posed matrix not all the row are filled\n";
+				std::cerr << "Error: " << __FILE__ << ":" << __LINE__ << " Ill posed matrix not all the rows are filled\n";
 		}
 
 		// all the colums must have a non zero element
 		for (size_t i = 0 ; i < nz_cols.size() ; i++)
 		{
 			if (nz_cols.get(i) == false)
-				std::cerr << "Error: " << __FILE__ << ":" << __LINE__ << " Ill posed matrix not all the row are filled\n";
+				std::cerr << "Error: " << __FILE__ << ":" << __LINE__ << " Ill posed matrix not all the colums are filled\n";
 		}
 	}
 
@@ -199,9 +203,6 @@ public:
 		// Counter
 		size_t cnt = 0;
 
-		// Resize the b term
-		b.resize(gs.size());
-
 		// Create the re-mapping-grid
 		auto it = g_map.getDomainIterator();
 
@@ -225,7 +226,7 @@ public:
 	 *
 	 *
 	 */
-	template<typename T> void imposeA(const T & op , grid_dist_iterator_sub<Sys_eqs::dims,typename Sys_eqs::b_grid::d_grid> it_d)
+	template<typename T> void imposeA(const T & op , grid_dist_iterator_sub<Sys_eqs::dims,typename Sys_eqs::b_grid::d_grid> it_d, bool skip_first = false)
 	{
 		// key one
 		grid_key_dx<Sys_eqs::dims> gk_one;
@@ -239,9 +240,18 @@ public:
 
 		std::unordered_map<long int,float> cols;
 
+		bool is_first = skip_first;
+
 		// iterate all the grid points
 		while (it.isNext())
 		{
+			if (is_first == true)
+			{
+				++it;
+				is_first = false;
+				continue;
+			}
+
 			// get the position
 			auto key = it.get();
 
@@ -253,11 +263,11 @@ public:
 			for ( auto it = cols.begin(); it != cols.end(); ++it )
 			{
 				trpl.add();
-				trpl.last().i = row;
-				trpl.last().j = it->first;
-				trpl.last().value = it->second;
+				trpl.last().row() = row;
+				trpl.last().col() = it->first;
+				trpl.last().value() = it->second;
 
-				std::cout << "(" << trpl.last().i << "," << trpl.last().j << "," << trpl.last().value << ")" << "\n";
+				std::cout << "(" << trpl.last().row() << "," << trpl.last().col() << "," << trpl.last().value() << ")" << "\n";
 			}
 
 			cols.clear();
@@ -273,33 +283,83 @@ public:
 	 *
 	 *
 	 */
-	void imposeB(typename Sys_eqs::stype num , grid_dist_iterator_sub<Sys_eqs::dims,typename Sys_eqs::b_grid::d_grid> it)
+	void imposeB(typename Sys_eqs::stype num , grid_dist_iterator_sub<Sys_eqs::dims,typename Sys_eqs::b_grid::d_grid> it_d, bool skip_first = false)
 	{
+		// key one
+		grid_key_dx<Sys_eqs::dims> gk_one;
+		gk_one.one();
+
+		// add padding to start and stop
+		grid_key_dx<Sys_eqs::dims> start = it_d.getStart() + pd.getKP1();
+		grid_key_dx<Sys_eqs::dims> stop = it_d.getStop() + pd.getKP1();
+
+		auto it = g_map.getSubDomainIterator(start,stop);
+
 		std::unordered_map<long int,float> cols;
+
+		bool is_first = skip_first;
 
 		// iterate all the grid points
 		while (it.isNext())
 		{
+			if (is_first == true)
+			{
+				++it;
+				is_first = false;
+				continue;
+			}
 
-			b.get(row_b) = num;
+			// get the position
+			auto key = it.get();
+
+			b.add(num);
+
+			cols.clear();
 
 			++row_b;
 			++it;
 		}
 	}
 
+	typename Sys_eqs::SparseMatrix_type A;
+
 	/*! \brief produce the Matrix
 	 *
 	 *  \tparam Syst_eq System of equations, or a single equation
 	 *
 	 */
-	template<typename Grid> SparseMatrix<typename Sys_eqs::stype> getMatrix()
+	typename Sys_eqs::SparseMatrix_type & getA()
+	{
+#ifdef SE_CLASS1
+		consistency();
+#endif
+		A.resize(row,row);
+		A.setFromTriplets(trpl);
+
+		return A;
+
+	}
+
+	typename Sys_eqs::Vector_type B;
+
+	/*! \brief produce the B vector
+	 *
+	 *  \tparam Syst_eq System of equations, or a single equation
+	 *
+	 */
+	typename Sys_eqs::Vector_type & getB()
 	{
 #ifdef SE_CLASS1
 		consistency();
 #endif
 
+		B.resize(row_b);
 
+		// copy the vector
+		for (size_t i = 0; i < row_b; i++)
+			B.get(i) = b.get(i);
+
+		return B;
 	}
 };
 

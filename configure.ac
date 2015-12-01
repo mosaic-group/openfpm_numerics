@@ -1,34 +1,45 @@
 #                                               -*- Autoconf -*-
 # Process this file with autoconf to produce a configure script.
 
+## Take all the options with the exception of --enable-install-req
 
 AC_PREREQ(2.59)
 AC_INIT(FULL-PACKAGE-NAME, VERSION, BUG-REPORT-ADDRESS)
 AC_CANONICAL_SYSTEM
 AC_CONFIG_SRCDIR([src/main.cpp])
+
 AM_INIT_AUTOMAKE
 AC_CONFIG_HEADER([src/config/config.h])
 m4_ifdef([ACX_PTHREAD],,[m4_include([m4/acx_pthread.m4])])
-m4_ifdef([AX_BOOST],,[m4_include([m4/ax_boost.m4])])
 m4_ifdef([ACX_MPI],,[m4_include([m4/acx_mpi.m4])])
 m4_ifdef([AX_OPENMP],,[m4_include([m4/ax_openmp.m4])])
 m4_ifdef([AX_CUDA],,[m4_include([m4/ax_cuda.m4])])
 m4_ifdef([IMMDX_LIB_METIS],,[m4_include([m4/immdx_lib_metis.m4])])
+m4_ifdef([AX_BOOST_BASE],,[m4_include([m4/ax_boost_base.m4])])
+m4_ifdef([AX_BOOST_IOSTREAMS],,[m4_include([m4/ax_boost_iostreams.m4])])
+m4_ifdef([AX_BOOST_PROGRAM_OPTIONS],,[m4_include([m4/ax_boost_program_options.m4])])
+m4_ifdef([AX_BOOST_UNIT_TEST_FRAMEWORK],,[m4_include([m4/ax_boost_unit_test_framework.m4])])
+m4_ifdef([AX_BLAS],,[m4_include([m4/ax_blas.m4])])
+m4_ifdef([AX_LAPACK],,[m4_include([m4/ax_lapack.m4])])
+m4_ifdef([AX_SUITESPARSE],,[m4_include([m4/ax_suitesparse.m4])])
+m4_ifdef([AX_EIGEN],,[m4_include([m4/ax_eigen.m4])])
 
-CXXFLAGS+=" --std=c++11 -march=native -mtune=native -Wno-unused-local-typedefs -Wextra -Wno-unused-parameter "
+CXXFLAGS+=" --std=c++11 "
 NVCCFLAGS=" "
 INCLUDES_PATH=" "
 
-# Add openfpm_vcluster to prefix forlder (if prefix end if openfpm_pdata remove that path)
+# set default prefix
+if test "$prefix" = "NONE"; then
+   prefix="/usr/local"
+fi
+
+# Add openfpm_numerics to prefix forlder (if prefix end if openfpm_pdata remove that path)
 if [ echo "$prefix" | grep -qE "/openfpm_pdata$" ]; then
   prefix=$(echo "$prefix" | sed 's/\(.*\)\/openfpm_pdata$/\1/g')
 fi
 
-prefix="$prefix/openfpm_vcluster"
+prefix="$prefix/openfpm_numerics"
 echo "Installation dir is: $prefix"
-
-AC_PROG_RANLIB
-AM_PROG_AR
 
 # Checks for programs.
 AC_PROG_CXX
@@ -37,24 +48,16 @@ AC_PROG_CXX
 
 AC_CANONICAL_HOST
 
-###### Check for verbose
+# Check that the compiler support mpi
 
-AC_MSG_CHECKING(whether to build with verbose print)
-verbose=no
-AC_ARG_ENABLE(verbose,
-	AC_HELP_STRING(
-	    [--enable-verbose],
-	    [enable verbose print (def=no)]
-	),
-  	verbose="$enableval"
-)
+AC_LANG_PUSH([C++])
+AC_CHECK_HEADER(mpi.h,[],[echo "mpi.h not found"
+                          exit 200])
+AC_LANG_POP([C++])
 
+# Check target architetture
 
-
-AC_MSG_RESULT($verbose)
-if test x"$verbose" = x"yes"; then
-	AC_DEFINE([VERBOSE_TEST],[],[Verbose test])
-fi
+#AX_GCC_ARCHFLAG([], [CXXFLAGS="$CXXFLAGS $ax_cv_gcc_archflag"], [])
 
 ###### Check for debug compilation
 
@@ -84,84 +87,196 @@ fi
 #########
 
 ## Check for Metis
+####### include openfpm_devices include path
 
 IMMDX_LIB_METIS([],[echo "Cannot detect metis, use the --with-metis option if it is not installed in the default location"
                     exit 201])
 
-####### include openfpm_devices include path
+####### include OpenFPM_numerics include path"
 
 INCLUDES_PATH+=" -I/usr/local/include -I. -Iconfig -I../../openfpm_devices/src -I../../openfpm_data/src -I../../openfpm_io/src -I../../openfpm_vcluster/src -I../../src"
 
-###### Check for memleak check compilation
+###### Check for se-class1
 
-AC_MSG_CHECKING(whether to build with memory check)
-mem_check=no
-AC_ARG_ENABLE(memcheck,
-	AC_HELP_STRING(
-	    [--enable-memcheck],
-	    [enable memory checking (def=no)]
-	),
-  	mem_check="$enableval"
+AC_MSG_CHECKING(whether to build with security enhancement class1)
+se_class1=no
+AC_ARG_ENABLE(se-class1,
+        AC_HELP_STRING(
+            [--enable-se-class1],
+            [enable security enhancement class1]
+        ),
+        se_class1="$enableval"
 )
 
 
-AC_MSG_RESULT($mem_check)
-if test x"$mem_check" = x"yes"; then
-	AC_DEFINE([MEMLEAK_CHECK],[],[Memory check])
+
+AC_MSG_RESULT($se_class1)
+if test x"$se_class1" = x"yes"; then
+        AC_DEFINE([SE_CLASS1],[],[Security enhancement class 1])
 fi
 
-####################################
 
-DEFAULT_LIB=""
-# At least for glibc, clock_gettime is in librt.  But don't pull that
-# in if it still doesn't give us the function we want.
-AC_CHECK_LIB(rt, clock_gettime,[DEFAULT_LIB+=" -lrt "],[],[])
+###### Check for se-class 2
+
+AC_MSG_CHECKING(whether to build with security enhancement class 2)
+se_class2=no
+AC_ARG_ENABLE(se-class2,
+        AC_HELP_STRING(
+            [--enable-se-class2],
+            [enable security enhancement class 2]
+        ),
+        se_class2="$enableval"
+)
+
+
+AC_MSG_RESULT($se_class2)
+if test x"$se_class2" = x"yes"; then
+        AC_DEFINE([SE_CLASS2],[],[Security enhancement class 2])
+fi
+
+###### Check for se-class 3
+
+AC_MSG_CHECKING(whether to build with security enhancement class 3)
+se_class3=no
+AC_ARG_ENABLE(se-class3,
+        AC_HELP_STRING(
+            [--enable-se-class3],
+            [enable security enhancement class 3]
+        ),
+        se_class3="$enableval"
+)
+
+
+
+AC_MSG_RESULT($se_class3)
+if test x"$se_class3" = x"yes"; then
+        AC_DEFINE([SE_CLASS3],[],[Security enhancement class 3])
+fi
+
+###### Check for action on error
+
+action_on_e=continue
+AC_ARG_WITH([action-on-error],
+             AS_HELP_STRING([--with-action-on-error=stop,throw,continue],
+             [specify the action to do in case of error]),
+             [action_on_e="$withval"],
+             [action_on_e=continue])
+
+if test x"$action_on_e" = x"stop"; then
+           AC_DEFINE([STOP_ON_ERROR],[],[If an error occur stop the program])
+fi
+if test x"$action_on_e" = x"throw"; then
+           AC_DEFINE([THROW_ON_ERROR],[],[when an error accur continue but avoid unsafe operation])
+fi
 
 ##### CHECK FOR BOOST ##############
 
-AX_BOOST([1.52],[],[])
+AX_BOOST_BASE([1.52],[],[echo "boost not found"
+                    exit 202])
+AX_BOOST_UNIT_TEST_FRAMEWORK
+AX_BOOST_PROGRAM_OPTIONS
+AX_BOOST_IOSTREAMS
+
+if test x"$ax_cv_boost_unit_test_framework" = x"no"; then
+  echo "Notify boost not usable"
+  exit 202
+fi
+
+if test x"$ax_cv_boost_iostreams" = x"no"; then
+  echo "Notify boost not usable"
+  exit 202
+fi
+
+if test x"$ax_cv_boost_programs_options" = x"no"; then
+  echo "Notify boost not usable"
+  exit 202
+fi
+
+### Unfortunately a lot of linux distros install a pretty old MPI in the system wide folder,
+### override such MPI with the installed one is extremely difficult and tricky, because we want
+### to include "some" system library but exclude mpi. One possibility is to give specifically
+### the wanted libmpi.so directly to the linker. But this is not possible because this lib is
+### given by mpic++ in the form -L/path/to/mpi -lmpi, the other is completely eliminate every
+### -L with a system default library
+###
+
+# eliminate any /usr/lib and and /usr/include from $BOOST_LIB and $BOOST_INCLUDE
+
+BOOST_LDFLAGS=$(echo "$BOOST_LDFLAGS" | sed -e 's/ -L\/usr\/lib64[ \b]//g' | sed -e 's/ -L\/usr\/lib[ \b]//g')
+BOOST_CPPFLAGS=$(echo "$BOOST_CPPFLAGS" | sed -e 's/-I\/usr\/include[ \b]//g')
+
+AC_SUBST(BOOST_LDFLAGS)
+AC_SUBST(BOOST_CPPFLAGS)
+
+###### Checking for OpenBLAS
+
+AX_BLAS([],[echo "blas not found"
+                    exit 204])
+
+AX_LAPACK([],[echo "lapack not found"
+                    exit 204])
+
+###### Checking for SUITESPARSE
+
+AX_SUITESPARSE([],[echo "suitesparse not found"
+                    exit 205])
+
+###### Checking for EIGEN
+
+AX_EIGEN([],[echo "eigen not found"
+                    exit 206])
 
 ####### Checking for GPU support
 
 AX_CUDA
 
+## detect for NVCC
+
 if test x"$NVCC_EXIST" = x"yes"; then
   AC_MSG_CHECKING(whether to build with GPU support)
   gpu_support=yes
   AC_ARG_ENABLE(gpu,
-        AC_HELP_STRING(
-            [--enable-gpu],
-            [enable gpu support]
-        ),
-        gpu_support="$enableval"
+	AC_HELP_STRING(
+	    [--enable-gpu],
+	    [enable gpu support]
+	),
+  	gpu_support="$enableval"
   )
 
   AC_MSG_RESULT($gpu_support)
   if test x"$gpu_support" = x"yes"; then
-        AC_DEFINE([CUDA_GPU],[],[CUDA GPU support])
+	AC_DEFINE([GPU],[],[GPU support])
+  else
+	CUDA_LIBS=""
+	CUDA_CFLAGS=""
   fi
 else
   gpu_support=no
 fi
 
+if test x$gpu_support = x"no"; then
+     CUDA_LIBS=""
+     CUDA_CFLAGS=""
+fi
 
 # Set this conditional if cuda is wanted
 
-#
+AM_CONDITIONAL(BUILDCUDA, test ! x$NVCC = x"no")
 
-AM_CONDITIONAL(BUILDCUDA, test x$gpu_support = x"yes")
+###########################
 
-##########################
+# Define that there is MPI
+
+AC_DEFINE([HAVE_MPI],[],[MPI Enabled])
 
 AC_SUBST(NVCCFLAGS)
 AC_SUBST(INCLUDES_PATH)
-AC_SUBST(DEFAULT_LIB)
 
 # Checks for typedefs, structures, and compiler characteristics.
 
 # Checks for library functions.
 
-AC_CONFIG_FILES([Makefile src/Makefile])
+AC_CONFIG_FILES([Makefile src/Makefile ])
 AC_OUTPUT
 echo ""
 echo   "***********************************"
@@ -180,6 +295,21 @@ if [ test x"$debuger" = x"yes" ]; then
   echo "*    debug: yes                   *"
 else
   echo "*    debug: no                    *"
+fi
+if [ test x"$se_class1" = x"yes" ]; then
+  echo "*    se-class1: yes               *"
+else
+  echo "*    se-class1: no                *"
+fi
+if [ test x"$se_class2" = x"yes" ]; then
+  echo "*    se-class2: yes               *"
+else
+  echo "*    se-class2: no                *"
+fi
+if [ test x"$se_class3" = x"yes" ]; then
+  echo "*    se-class3: yes               *"
+else
+  echo "*    se-class3: no                *"
 fi
 if [ test x"$gpu_support" = x"no" ]; then
   echo "*    gpu: no                      *"

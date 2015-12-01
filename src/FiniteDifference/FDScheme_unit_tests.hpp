@@ -114,7 +114,10 @@ const bool syss_pp::boundary[] = {PERIODIC,PERIODIC};
 
 BOOST_AUTO_TEST_SUITE( fd_test )
 
-BOOST_AUTO_TEST_CASE( fd_test_use_der_non_periodic)
+// Derivative central, composed central derivative,
+// and central bulk + one-sided non periodic
+
+BOOST_AUTO_TEST_CASE( der_central_non_periodic)
 {
 	// grid size
 	size_t sz[2]={16,16};
@@ -240,7 +243,60 @@ BOOST_AUTO_TEST_CASE( fd_test_use_der_non_periodic)
 	BOOST_REQUIRE_EQUAL(cols_y[13*16+15],0.5);
 }
 
-BOOST_AUTO_TEST_CASE( fd_test_use_avg_non_periodic)
+// Derivative forward and backward non periodic
+
+BOOST_AUTO_TEST_CASE( der_forward_backward_non_periodic )
+{
+	// grid size
+	size_t sz[2]={16,16};
+
+	// grid_dist_testing
+	grid_dist_testing<2> g_map(sz);
+
+	// grid_sm
+	grid_sm<2,void> ginfo(sz);
+
+	// Create several keys
+	grid_dist_key_dx<2> key11(0,grid_key_dx<2>(1,1));
+	grid_dist_key_dx<2> key00(0,grid_key_dx<2>(0,0));
+	grid_dist_key_dx<2> key22(0,grid_key_dx<2>(2,2));
+	grid_dist_key_dx<2> key1515(0,grid_key_dx<2>(15,15));
+
+	// filled colums
+	std::unordered_map<long int,float> cols_x;
+	std::unordered_map<long int,float> cols_y;
+
+	D<x,Field<V,sys_nn>,sys_nn,FORWARD>::value(g_map,key11,ginfo,cols_x,1);
+	D<y,Field<V,sys_nn>,sys_nn,FORWARD>::value(g_map,key11,ginfo,cols_y,1);
+
+	BOOST_REQUIRE_EQUAL(cols_x.size(),2);
+	BOOST_REQUIRE_EQUAL(cols_y.size(),2);
+
+	BOOST_REQUIRE_EQUAL(cols_x[17+1],1);
+	BOOST_REQUIRE_EQUAL(cols_x[17],-1);
+
+	BOOST_REQUIRE_EQUAL(cols_y[17+16],1);
+	BOOST_REQUIRE_EQUAL(cols_y[17],-1);
+
+	cols_x.clear();
+	cols_y.clear();
+
+	D<x,Field<V,sys_nn>,sys_nn,BACKWARD>::value(g_map,key11,ginfo,cols_x,1);
+	D<y,Field<V,sys_nn>,sys_nn,BACKWARD>::value(g_map,key11,ginfo,cols_y,1);
+
+	BOOST_REQUIRE_EQUAL(cols_x.size(),2);
+	BOOST_REQUIRE_EQUAL(cols_y.size(),2);
+
+	BOOST_REQUIRE_EQUAL(cols_x[17],1);
+	BOOST_REQUIRE_EQUAL(cols_x[17-1],-1);
+
+	BOOST_REQUIRE_EQUAL(cols_y[17],1);
+	BOOST_REQUIRE_EQUAL(cols_y[17-16],-1);
+}
+
+// Average central non periodic
+
+BOOST_AUTO_TEST_CASE( avg_central_non_periodic)
 {
 	// grid size
 	size_t sz[2]={16,16};
@@ -311,7 +367,9 @@ BOOST_AUTO_TEST_CASE( fd_test_use_avg_non_periodic)
 	BOOST_REQUIRE_EQUAL(cols_yy[66],1);
 }
 
-BOOST_AUTO_TEST_CASE( fd_test_use_staggered_der_non_periodic)
+
+
+BOOST_AUTO_TEST_CASE( der_central_staggered_non_periodic)
 {
 	// grid size
 	size_t sz[2]={16,16};
@@ -331,23 +389,23 @@ BOOST_AUTO_TEST_CASE( fd_test_use_staggered_der_non_periodic)
 	std::unordered_map<long int,float> cols_x;
 	std::unordered_map<long int,float> cols_y;
 
-	D<x,Field<V,syss_pp>,syss_pp>::value(g_map,key11,ginfo,cols_x,1);
-	D<y,Field<V,syss_pp>,syss_pp>::value(g_map,key11,ginfo,cols_y,1);
+	D<x,Field<V,syss_nn>,syss_pp>::value(g_map,key11,ginfo,cols_x,1);
+	D<y,Field<V,syss_nn>,syss_pp>::value(g_map,key11,ginfo,cols_y,1);
 
 	BOOST_REQUIRE_EQUAL(cols_x.size(),2);
 	BOOST_REQUIRE_EQUAL(cols_y.size(),2);
 
-	BOOST_REQUIRE_EQUAL(cols_x[17+1],1);
-	BOOST_REQUIRE_EQUAL(cols_x[17],-1);
+	BOOST_REQUIRE_EQUAL(cols_x[17],1);
+	BOOST_REQUIRE_EQUAL(cols_x[17-1],-1);
 
-	BOOST_REQUIRE_EQUAL(cols_y[17+16],1);
-	BOOST_REQUIRE_EQUAL(cols_y[17],-1);
+	BOOST_REQUIRE_EQUAL(cols_y[17],1);
+	BOOST_REQUIRE_EQUAL(cols_y[17-16],-1);
 
 	cols_x.clear();
 	cols_y.clear();
 }
 
-BOOST_AUTO_TEST_CASE( fd_test_use_staggered_avg_non_periodic)
+BOOST_AUTO_TEST_CASE( avg_central_staggered_non_periodic)
 {
 	// grid size
 	size_t sz[2]={16,16};
@@ -385,7 +443,7 @@ BOOST_AUTO_TEST_CASE( fd_test_use_staggered_avg_non_periodic)
 
 /////////////// Laplacian test
 
-BOOST_AUTO_TEST_CASE( fd_test_lap_use_periodic)
+BOOST_AUTO_TEST_CASE( lap_periodic)
 {
 	// grid size
 	size_t sz[2]={16,16};
