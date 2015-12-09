@@ -53,23 +53,23 @@ public:
 	 *
 	 *
 	 */
-	inline static void value(const typename stub_or_real<Sys_eqs,Sys_eqs::dims,typename Sys_eqs::stype,typename Sys_eqs::b_grid::decomposition>::type & g_map, grid_dist_key_dx<Sys_eqs::dims> & kmap , const grid_sm<Sys_eqs::dims,void> & gs, std::unordered_map<long int,typename Sys_eqs::stype > & cols, typename Sys_eqs::stype coeff)
+	inline static void value(const typename stub_or_real<Sys_eqs,Sys_eqs::dims,typename Sys_eqs::stype,typename Sys_eqs::b_grid::decomposition>::type & g_map, grid_dist_key_dx<Sys_eqs::dims> & kmap , const grid_sm<Sys_eqs::dims,void> & gs, typename Sys_eqs::stype (& spacing )[Sys_eqs::dims] , std::unordered_map<long int,typename Sys_eqs::stype > & cols, typename Sys_eqs::stype coeff)
 	{
 		// for each dimension
 		for (size_t i = 0 ; i < Sys_eqs::dims ; i++)
 		{
 			long int old_val = kmap.getKeyRef().get(i);
 			kmap.getKeyRef().set_d(i, kmap.getKeyRef().get(i) + 1);
-			arg::value(g_map,kmap,gs,cols,coeff);
+			arg::value(g_map,kmap,gs,spacing,cols,coeff/spacing[i]/spacing[i]);
 			kmap.getKeyRef().set_d(i,old_val);
 
 			old_val = kmap.getKeyRef().get(i);
 			kmap.getKeyRef().set_d(i, kmap.getKeyRef().get(i) - 1);
-			arg::value(g_map,kmap,gs,cols,coeff);
+			arg::value(g_map,kmap,gs,spacing,cols,coeff/spacing[i]/spacing[i]);
 			kmap.getKeyRef().set_d(i,old_val);
-		}
 
-		arg::value(g_map,kmap,gs,cols, - 2.0 * Sys_eqs::dims * coeff);
+			arg::value(g_map,kmap,gs,spacing,cols, - 2.0 * coeff/spacing[i]/spacing[i]);
+		}
 	}
 
 

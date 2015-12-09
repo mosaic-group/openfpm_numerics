@@ -59,11 +59,14 @@ struct const_mul_functor_value
 	//! coefficent
 	typename last::stype coeff;
 
+	//! spacing
+	typename last::stype (& spacing)[last::dims];
+
 	/*! \brief constructor
 	 *
 	 */
-	const_mul_functor_value(const grid_dist_id<last::dims,typename last::stype,scalar<size_t>,typename last::b_grid::decomposition> & g_map, grid_dist_key_dx<last::dims> & kmap, const grid_sm<last::dims,void> & gs, std::unordered_map<long int,typename last::stype> & cols, typename last::stype coeff)
-	:cols(cols),gs(gs),g_map(g_map),kmap(kmap),coeff(coeff)
+	const_mul_functor_value(const grid_dist_id<last::dims,typename last::stype,scalar<size_t>,typename last::b_grid::decomposition> & g_map, grid_dist_key_dx<last::dims> & kmap, const grid_sm<last::dims,void> & gs, typename last::stype (& spacing)[last::dims], std::unordered_map<long int,typename last::stype> & cols, typename last::stype coeff)
+	:cols(cols),gs(gs),g_map(g_map),kmap(kmap),coeff(coeff),spacing(spacing)
 	{};
 
 
@@ -107,9 +110,9 @@ struct mul
 	 * \tparam ord
 	 *
 	 */
-	inline static void value(const grid_dist_id<Sys_eqs::dims,typename Sys_eqs::stype,scalar<size_t>,typename Sys_eqs::b_grid::decomposition> & g_map, grid_dist_key_dx<Sys_eqs::dims> & kmap, const grid_sm<Sys_eqs::dims,void> & gs, std::unordered_map<long int,typename Sys_eqs::stype > & cols, typename Sys_eqs::stype coeff)
+	inline static void value(const grid_dist_id<Sys_eqs::dims,typename Sys_eqs::stype,scalar<size_t>,typename Sys_eqs::b_grid::decomposition> & g_map, grid_dist_key_dx<Sys_eqs::dims> & kmap, const grid_sm<Sys_eqs::dims,void> & gs, typename Sys_eqs::stype (& spacing )[Sys_eqs::dims] , std::unordered_map<long int,typename Sys_eqs::stype > & cols, typename Sys_eqs::stype coeff)
 	{
-		const_mul_functor_value<v_expr> mfv(g_map,kmap,gs,cols,coeff);
+		const_mul_functor_value<v_expr> mfv(g_map,kmap,gs,spacing,cols,coeff);
 
 		//
 		boost::mpl::for_each_ref< boost::mpl::range_c<int,0,v_sz::type::value - 2> >(mfv);
@@ -117,7 +120,7 @@ struct mul
 		//! Last element of multiplication
 		typedef typename boost::mpl::at< v_expr ,boost::mpl::int_<v_sz::value-2> >::type last_m;
 
-		last_m::value(g_map,kmap,gs,cols,mfv.coeff);
+		last_m::value(g_map,kmap,gs,spacing,cols,mfv.coeff);
 	}
 
 	/*! \brief Calculate the position where the derivative is calculated

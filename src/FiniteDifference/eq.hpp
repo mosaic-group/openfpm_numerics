@@ -92,7 +92,7 @@ public:
 	 *
 	 *
 	 */
-	static void value(const map_grid & g_map, grid_dist_key_dx<Sys_eqs::dims> & kmap, const grid_sm<Sys_eqs::dims,void> & gs, std::unordered_map<long int,typename Sys_eqs::stype > & cols, typename Sys_eqs::stype coeff)
+	static void value(const map_grid & g_map, grid_dist_key_dx<Sys_eqs::dims> & kmap, const grid_sm<Sys_eqs::dims,void> & gs, typename Sys_eqs::stype (& spacing )[Sys_eqs::dims] , std::unordered_map<long int,typename Sys_eqs::stype > & cols, typename Sys_eqs::stype coeff)
 	{
 		if (Sys_eqs::ord == EQS_FIELD)
 			cols[g_map.template get<0>(kmap)*Sys_eqs::nvar + f] += coeff;

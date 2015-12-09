@@ -65,24 +65,24 @@ class Avg<d,arg,Sys_eqs,CENTRAL>
 	 *
 	 *
 	 */
-	inline static void value(const typename stub_or_real<Sys_eqs,Sys_eqs::dims,typename Sys_eqs::stype,typename Sys_eqs::b_grid::decomposition>::type & g_map, grid_dist_key_dx<Sys_eqs::dims> & kmap , const grid_sm<Sys_eqs::dims,void> & gs, std::unordered_map<long int,typename Sys_eqs::stype > & cols, typename Sys_eqs::stype coeff)
+	inline static void value(const typename stub_or_real<Sys_eqs,Sys_eqs::dims,typename Sys_eqs::stype,typename Sys_eqs::b_grid::decomposition>::type & g_map, grid_dist_key_dx<Sys_eqs::dims> & kmap , const grid_sm<Sys_eqs::dims,void> & gs, typename Sys_eqs::stype (& spacing )[Sys_eqs::dims] , std::unordered_map<long int,typename Sys_eqs::stype > & cols, typename Sys_eqs::stype coeff)
 	{
 		// if the system is staggered the CENTRAL derivative is equivalent to a forward derivative
 		if (is_grid_staggered<Sys_eqs>::value())
 		{
-			Avg<d,arg,Sys_eqs,BACKWARD>::value(g_map,kmap,gs,cols,coeff);
+			Avg<d,arg,Sys_eqs,BACKWARD>::value(g_map,kmap,gs,spacing,cols,coeff);
 			return;
 		}
 
 		long int old_val = kmap.getKeyRef().get(d);
 		kmap.getKeyRef().set_d(d, kmap.getKeyRef().get(d) + 1);
-		arg::value(g_map,kmap,gs,cols,coeff);
+		arg::value(g_map,kmap,gs,spacing,cols,coeff/2);
 		kmap.getKeyRef().set_d(d,old_val);
 
 
 		old_val = kmap.getKeyRef().get(d);
 		kmap.getKeyRef().set_d(d, kmap.getKeyRef().get(d) - 1);
-		arg::value(g_map,kmap,gs,cols,coeff);
+		arg::value(g_map,kmap,gs,spacing,cols,coeff/2);
 		kmap.getKeyRef().set_d(d,old_val);
 	}
 
@@ -135,16 +135,16 @@ class Avg<d,arg,Sys_eqs,FORWARD>
 	 *
 	 *
 	 */
-	inline static void value(const typename stub_or_real<Sys_eqs,Sys_eqs::dims,typename Sys_eqs::stype,typename Sys_eqs::b_grid::decomposition>::type & g_map, grid_dist_key_dx<Sys_eqs::dims> & kmap , const grid_sm<Sys_eqs::dims,void> & gs, std::unordered_map<long int,typename Sys_eqs::stype > & cols, typename Sys_eqs::stype coeff)
+	inline static void value(const typename stub_or_real<Sys_eqs,Sys_eqs::dims,typename Sys_eqs::stype,typename Sys_eqs::b_grid::decomposition>::type & g_map, grid_dist_key_dx<Sys_eqs::dims> & kmap , const grid_sm<Sys_eqs::dims,void> & gs, typename Sys_eqs::stype (& spacing )[Sys_eqs::dims] , std::unordered_map<long int,typename Sys_eqs::stype > & cols, typename Sys_eqs::stype coeff)
 	{
 
 		long int old_val = kmap.getKeyRef().get(d);
 		kmap.getKeyRef().set_d(d, kmap.getKeyRef().get(d) + 1);
-		arg::value(g_map,kmap,gs,cols,coeff);
+		arg::value(g_map,kmap,gs,spacing,cols,coeff/2);
 		kmap.getKeyRef().set_d(d,old_val);
 
 		// backward
-		arg::value(g_map,kmap,gs,cols,coeff);
+		arg::value(g_map,kmap,gs,spacing,cols,coeff/2);
 	}
 
 
@@ -177,15 +177,15 @@ class Avg<d,arg,Sys_eqs,BACKWARD>
 	 *
 	 *
 	 */
-	inline static void value(const typename stub_or_real<Sys_eqs,Sys_eqs::dims,typename Sys_eqs::stype,typename Sys_eqs::b_grid::decomposition>::type & g_map, grid_dist_key_dx<Sys_eqs::dims> & kmap , const grid_sm<Sys_eqs::dims,void> & gs, std::unordered_map<long int,typename Sys_eqs::stype > & cols, typename Sys_eqs::stype coeff)
+	inline static void value(const typename stub_or_real<Sys_eqs,Sys_eqs::dims,typename Sys_eqs::stype,typename Sys_eqs::b_grid::decomposition>::type & g_map, grid_dist_key_dx<Sys_eqs::dims> & kmap , const grid_sm<Sys_eqs::dims,void> & gs, typename Sys_eqs::stype (& spacing )[Sys_eqs::dims], std::unordered_map<long int,typename Sys_eqs::stype > & cols, typename Sys_eqs::stype coeff)
 	{
 		long int old_val = kmap.getKeyRef().get(d);
 		kmap.getKeyRef().set_d(d, kmap.getKeyRef().get(d) - 1);
-		arg::value(g_map,kmap,gs,cols,coeff);
+		arg::value(g_map,kmap,gs,spacing,cols,coeff/2);
 		kmap.getKeyRef().set_d(d,old_val);
 
 		// forward
-		arg::value(g_map,kmap,gs,cols,coeff);
+		arg::value(g_map,kmap,gs,spacing,cols,coeff/2);
 	}
 
 

@@ -29,7 +29,7 @@ struct sum_functor_value
 	const grid_sm<last::dims,void> & gs;
 
 	// grid mapping
-	const grid_dist_id<last::dims,typename last::stype,scalar<size_t>,typename last::b_grid::decomposition> & g_map;
+	const typename stub_or_real<last,last::dims,typename last::stype,typename last::b_grid::decomposition>::type & g_map;
 
 	// grid position
 	grid_dist_key_dx<last::dims> & kmap;
@@ -40,11 +40,15 @@ struct sum_functor_value
 	//! coefficent
 	typename last::stype coeff;
 
+	//! spacing
+	typename last::stype (& spacing)[last::dims];
+
+
 	/*! \brief constructor
 	 *
 	 */
-	sum_functor_value(const grid_dist_id<last::dims,typename last::stype,scalar<size_t>,typename last::b_grid::decomposition> & g_map, grid_dist_key_dx<last::dims> & kmap, const grid_sm<last::dims,void> & gs, std::unordered_map<long int,typename last::stype> & cols, typename last::stype coeff)
-	:cols(cols),gs(gs),g_map(g_map),kmap(kmap),key(key),coeff(coeff)
+	sum_functor_value(const typename stub_or_real<last,last::dims,typename last::stype,typename last::b_grid::decomposition>::type & g_map, grid_dist_key_dx<last::dims> & kmap, const grid_sm<last::dims,void> & gs, typename last::stype (& spacing)[last::dims], std::unordered_map<long int,typename last::stype> & cols, typename last::stype coeff)
+	:cols(cols),gs(gs),g_map(g_map),kmap(kmap),key(key),coeff(coeff),spacing(spacing)
 	{};
 
 
@@ -53,7 +57,7 @@ struct sum_functor_value
 	template<typename T>
 	void operator()(T& t) const
 	{
-		boost::mpl::at<v_expr, boost::mpl::int_<T::value> >::type::value(g_map,kmap,gs,cols,coeff);
+		boost::mpl::at<v_expr, boost::mpl::int_<T::value> >::type::value(g_map,kmap,gs,spacing,cols,coeff);
 	}
 };
 
@@ -79,10 +83,10 @@ struct sum
 	 * \tparam ord
 	 *
 	 */
-	inline static void value(const grid_dist_id<Sys_eqs::dims,typename Sys_eqs::stype,scalar<size_t>,typename Sys_eqs::b_grid::decomposition> & g_map, grid_dist_key_dx<Sys_eqs::dims> & kmap, const grid_sm<Sys_eqs::dims,void> & gs, std::unordered_map<long int,typename Sys_eqs::stype > & cols, typename Sys_eqs::stype coeff)
+	inline static void value(const typename stub_or_real<Sys_eqs,Sys_eqs::dims,typename Sys_eqs::stype,typename Sys_eqs::b_grid::decomposition>::type & g_map, grid_dist_key_dx<Sys_eqs::dims> & kmap, const grid_sm<Sys_eqs::dims,void> & gs, typename Sys_eqs::stype (& spacing )[Sys_eqs::dims] , std::unordered_map<long int,typename Sys_eqs::stype > & cols, typename Sys_eqs::stype coeff)
 	{
 		// Sum functor
-		sum_functor_value<v_expr> sm(g_map,kmap,gs,cols,coeff);
+		sum_functor_value<v_expr> sm(g_map,kmap,gs,spacing,cols,coeff);
 
 		// for each element in the expression calculate the non-zero Matrix elements
 		boost::mpl::for_each_ref< boost::mpl::range_c<int,0,v_sz::type::value - 1> >(sm);
@@ -100,5 +104,30 @@ struct sum
 	}
 };
 
+
+template<typename arg, typename Sys_eqs>
+struct minus
+{
+	/*! \brief Create the row of the Matrix
+	 *
+	 * \tparam ord
+	 *
+	 */
+	inline static void value(const typename stub_or_real<Sys_eqs,Sys_eqs::dims,typename Sys_eqs::stype,typename Sys_eqs::b_grid::decomposition>::type & g_map, grid_dist_key_dx<Sys_eqs::dims> & kmap, const grid_sm<Sys_eqs::dims,void> & gs, typename Sys_eqs::stype (& spacing )[Sys_eqs::dims] , std::unordered_map<long int,typename Sys_eqs::stype > & cols, typename Sys_eqs::stype coeff)
+	{
+		arg::value(g_map,kmap,gs,spacing,cols,-coeff);
+	}
+
+	/*! \brief Calculate the position where the derivative is calculated
+	 *
+	 * In case on non staggered case this function just return pos, in case of staggered,
+	 *  it calculate where the operator is calculated on a staggered grid
+	 *
+	 */
+	inline static grid_key_dx<Sys_eqs::dims> position(grid_key_dx<Sys_eqs::dims> & pos, const grid_sm<Sys_eqs::dims,void> & gs)
+	{
+		std::cerr << "Error " << __FILE__ << ":" << __LINE__ << " only CENTRAL, FORWARD, BACKWARD derivative are defined";
+	}
+};
 
 #endif /* OPENFPM_NUMERICS_SRC_FINITEDIFFERENCE_SUM_HPP_ */

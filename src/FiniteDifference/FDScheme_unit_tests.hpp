@@ -13,6 +13,7 @@
 #include "Decomposition/CartDecomposition.hpp"
 #include "util/grid_dist_testing.hpp"
 #include "FiniteDifference/Average.hpp"
+#include "FiniteDifference/sum.hpp"
 
 constexpr unsigned int x = 0;
 constexpr unsigned int y = 1;
@@ -128,6 +129,9 @@ BOOST_AUTO_TEST_CASE( der_central_non_periodic)
 	// grid_sm
 	grid_sm<2,void> ginfo(sz);
 
+	// spacing
+	float spacing[2] = {0.5,0.3};
+
 	// Create several keys
 	grid_dist_key_dx<2> key11(0,grid_key_dx<2>(1,1));
 	grid_dist_key_dx<2> key00(0,grid_key_dx<2>(0,0));
@@ -138,17 +142,17 @@ BOOST_AUTO_TEST_CASE( der_central_non_periodic)
 	std::unordered_map<long int,float> cols_x;
 	std::unordered_map<long int,float> cols_y;
 
-	D<x,Field<V,sys_nn>,sys_nn>::value(g_map,key11,ginfo,cols_x,1);
-	D<y,Field<V,sys_nn>,sys_nn>::value(g_map,key11,ginfo,cols_y,1);
+	D<x,Field<V,sys_nn>,sys_nn>::value(g_map,key11,ginfo,spacing,cols_x,1);
+	D<y,Field<V,sys_nn>,sys_nn>::value(g_map,key11,ginfo,spacing,cols_y,1);
 
-	BOOST_REQUIRE_EQUAL(cols_x.size(),2);
-	BOOST_REQUIRE_EQUAL(cols_y.size(),2);
+	BOOST_REQUIRE_EQUAL(cols_x.size(),2ul);
+	BOOST_REQUIRE_EQUAL(cols_y.size(),2ul);
 
-	BOOST_REQUIRE_EQUAL(cols_x[17+1],1);
-	BOOST_REQUIRE_EQUAL(cols_x[17-1],-1);
+	BOOST_REQUIRE_EQUAL(cols_x[17+1],1/spacing[0]);
+	BOOST_REQUIRE_EQUAL(cols_x[17-1],-1/spacing[0]);
 
-	BOOST_REQUIRE_EQUAL(cols_y[17+16],1);
-	BOOST_REQUIRE_EQUAL(cols_y[17-16],-1);
+	BOOST_REQUIRE_EQUAL(cols_y[17+16],1/spacing[1]);
+	BOOST_REQUIRE_EQUAL(cols_y[17-16],-1/spacing[1]);
 
 	// filled colums
 
@@ -159,88 +163,88 @@ BOOST_AUTO_TEST_CASE( der_central_non_periodic)
 
 	// Composed derivative
 
-	D<x,D<x,Field<V,sys_nn>,sys_nn>,sys_nn>::value(g_map,key22,ginfo,cols_xx,1);
-	D<x,D<y,Field<V,sys_nn>,sys_nn>,sys_nn>::value(g_map,key22,ginfo,cols_xy,1);
-	D<y,D<x,Field<V,sys_nn>,sys_nn>,sys_nn>::value(g_map,key22,ginfo,cols_yx,1);
-	D<y,D<y,Field<V,sys_nn>,sys_nn>,sys_nn>::value(g_map,key22,ginfo,cols_yy,1);
+	D<x,D<x,Field<V,sys_nn>,sys_nn>,sys_nn>::value(g_map,key22,ginfo,spacing,cols_xx,1);
+	D<x,D<y,Field<V,sys_nn>,sys_nn>,sys_nn>::value(g_map,key22,ginfo,spacing,cols_xy,1);
+	D<y,D<x,Field<V,sys_nn>,sys_nn>,sys_nn>::value(g_map,key22,ginfo,spacing,cols_yx,1);
+	D<y,D<y,Field<V,sys_nn>,sys_nn>,sys_nn>::value(g_map,key22,ginfo,spacing,cols_yy,1);
 
-	BOOST_REQUIRE_EQUAL(cols_xx.size(),3);
-	BOOST_REQUIRE_EQUAL(cols_xy.size(),4);
-	BOOST_REQUIRE_EQUAL(cols_yx.size(),4);
-	BOOST_REQUIRE_EQUAL(cols_yy.size(),3);
+	BOOST_REQUIRE_EQUAL(cols_xx.size(),3ul);
+	BOOST_REQUIRE_EQUAL(cols_xy.size(),4ul);
+	BOOST_REQUIRE_EQUAL(cols_yx.size(),4ul);
+	BOOST_REQUIRE_EQUAL(cols_yy.size(),3ul);
 
-	BOOST_REQUIRE_EQUAL(cols_xx[32],1);
-	BOOST_REQUIRE_EQUAL(cols_xx[34],-2);
-	BOOST_REQUIRE_EQUAL(cols_xx[36],1);
+	BOOST_REQUIRE_EQUAL(cols_xx[32],1/spacing[0]/spacing[0]);
+	BOOST_REQUIRE_EQUAL(cols_xx[34],-2/spacing[0]/spacing[0]);
+	BOOST_REQUIRE_EQUAL(cols_xx[36],1/spacing[0]/spacing[0]);
 
-	BOOST_REQUIRE_EQUAL(cols_xy[17],1);
-	BOOST_REQUIRE_EQUAL(cols_xy[19],-1);
-	BOOST_REQUIRE_EQUAL(cols_xy[49],-1);
-	BOOST_REQUIRE_EQUAL(cols_xy[51],1);
+	BOOST_REQUIRE_EQUAL(cols_xy[17],1/spacing[0]/spacing[1]);
+	BOOST_REQUIRE_EQUAL(cols_xy[19],-1/spacing[0]/spacing[1]);
+	BOOST_REQUIRE_EQUAL(cols_xy[49],-1/spacing[0]/spacing[1]);
+	BOOST_REQUIRE_EQUAL(cols_xy[51],1/spacing[0]/spacing[1]);
 
-	BOOST_REQUIRE_EQUAL(cols_yx[17],1);
-	BOOST_REQUIRE_EQUAL(cols_yx[19],-1);
-	BOOST_REQUIRE_EQUAL(cols_yx[49],-1);
-	BOOST_REQUIRE_EQUAL(cols_xy[51],1);
+	BOOST_REQUIRE_EQUAL(cols_yx[17],1/spacing[0]/spacing[1]);
+	BOOST_REQUIRE_EQUAL(cols_yx[19],-1/spacing[0]/spacing[1]);
+	BOOST_REQUIRE_EQUAL(cols_yx[49],-1/spacing[0]/spacing[1]);
+	BOOST_REQUIRE_EQUAL(cols_xy[51],1/spacing[0]/spacing[1]);
 
-	BOOST_REQUIRE_EQUAL(cols_yy[2],1);
-	BOOST_REQUIRE_EQUAL(cols_yy[34],-2);
-	BOOST_REQUIRE_EQUAL(cols_yy[66],1);
+	BOOST_REQUIRE_EQUAL(cols_yy[2],1/spacing[1]/spacing[1]);
+	BOOST_REQUIRE_EQUAL(cols_yy[34],-2/spacing[1]/spacing[1]);
+	BOOST_REQUIRE_EQUAL(cols_yy[66],1/spacing[1]/spacing[1]);
 
 	// Non periodic with one sided
 
 	cols_x.clear();
 	cols_y.clear();
 
-	D<x,Field<V,sys_nn>,sys_nn,CENTRAL_B_ONE_SIDE>::value(g_map,key11,ginfo,cols_x,1);
-	D<y,Field<V,sys_nn>,sys_nn,CENTRAL_B_ONE_SIDE>::value(g_map,key11,ginfo,cols_y,1);
+	D<x,Field<V,sys_nn>,sys_nn,CENTRAL_B_ONE_SIDE>::value(g_map,key11,ginfo,spacing,cols_x,1);
+	D<y,Field<V,sys_nn>,sys_nn,CENTRAL_B_ONE_SIDE>::value(g_map,key11,ginfo,spacing,cols_y,1);
 
-	BOOST_REQUIRE_EQUAL(cols_x.size(),2);
-	BOOST_REQUIRE_EQUAL(cols_y.size(),2);
+	BOOST_REQUIRE_EQUAL(cols_x.size(),2ul);
+	BOOST_REQUIRE_EQUAL(cols_y.size(),2ul);
 
-	BOOST_REQUIRE_EQUAL(cols_x[17+1],1);
-	BOOST_REQUIRE_EQUAL(cols_x[17-1],-1);
+	BOOST_REQUIRE_EQUAL(cols_x[17+1],1/spacing[0]);
+	BOOST_REQUIRE_EQUAL(cols_x[17-1],-1/spacing[0]);
 
-	BOOST_REQUIRE_EQUAL(cols_y[17+16],1);
-	BOOST_REQUIRE_EQUAL(cols_y[17-16],-1);
+	BOOST_REQUIRE_EQUAL(cols_y[17+16],1/spacing[1]);
+	BOOST_REQUIRE_EQUAL(cols_y[17-16],-1/spacing[1]);
 
 	// Border left
 
 	cols_x.clear();
 	cols_y.clear();
 
-	D<x,Field<V,sys_nn>,sys_nn,CENTRAL_B_ONE_SIDE>::value(g_map,key00,ginfo,cols_x,1);
-	D<y,Field<V,sys_nn>,sys_nn,CENTRAL_B_ONE_SIDE>::value(g_map,key00,ginfo,cols_y,1);
+	D<x,Field<V,sys_nn>,sys_nn,CENTRAL_B_ONE_SIDE>::value(g_map,key00,ginfo,spacing,cols_x,1);
+	D<y,Field<V,sys_nn>,sys_nn,CENTRAL_B_ONE_SIDE>::value(g_map,key00,ginfo,spacing,cols_y,1);
 
-	BOOST_REQUIRE_EQUAL(cols_x.size(),3);
-	BOOST_REQUIRE_EQUAL(cols_y.size(),3);
+	BOOST_REQUIRE_EQUAL(cols_x.size(),3ul);
+	BOOST_REQUIRE_EQUAL(cols_y.size(),3ul);
 
-	BOOST_REQUIRE_EQUAL(cols_x[0],-1.5);
-	BOOST_REQUIRE_EQUAL(cols_x[1],2);
-	BOOST_REQUIRE_EQUAL(cols_x[2],-0.5);
+	BOOST_REQUIRE_EQUAL(cols_x[0],-1.5/spacing[0]);
+	BOOST_REQUIRE_EQUAL(cols_x[1],2/spacing[0]);
+	BOOST_REQUIRE_EQUAL(cols_x[2],-0.5/spacing[0]);
 
-	BOOST_REQUIRE_EQUAL(cols_y[0],-1.5);
-	BOOST_REQUIRE_EQUAL(cols_y[16],2);
-	BOOST_REQUIRE_EQUAL(cols_y[32],-0.5);
+	BOOST_REQUIRE_CLOSE(cols_y[0],-1.5/spacing[1],0.001);
+	BOOST_REQUIRE_CLOSE(cols_y[16],2/spacing[1],0.001);
+	BOOST_REQUIRE_CLOSE(cols_y[32],-0.5/spacing[1],0.001);
 
 	// Border Top right
 
 	cols_x.clear();
 	cols_y.clear();
 
-	D<x,Field<V,sys_nn>,sys_nn,CENTRAL_B_ONE_SIDE>::value(g_map,key1515,ginfo,cols_x,1);
-	D<y,Field<V,sys_nn>,sys_nn,CENTRAL_B_ONE_SIDE>::value(g_map,key1515,ginfo,cols_y,1);
+	D<x,Field<V,sys_nn>,sys_nn,CENTRAL_B_ONE_SIDE>::value(g_map,key1515,ginfo,spacing,cols_x,1);
+	D<y,Field<V,sys_nn>,sys_nn,CENTRAL_B_ONE_SIDE>::value(g_map,key1515,ginfo,spacing,cols_y,1);
 
-	BOOST_REQUIRE_EQUAL(cols_x.size(),3);
-	BOOST_REQUIRE_EQUAL(cols_y.size(),3);
+	BOOST_REQUIRE_EQUAL(cols_x.size(),3ul);
+	BOOST_REQUIRE_EQUAL(cols_y.size(),3ul);
 
-	BOOST_REQUIRE_EQUAL(cols_x[15*16+15],1.5);
-	BOOST_REQUIRE_EQUAL(cols_x[15*16+14],-2);
-	BOOST_REQUIRE_EQUAL(cols_x[15*16+13],0.5);
+	BOOST_REQUIRE_EQUAL(cols_x[15*16+15],1.5/spacing[0]);
+	BOOST_REQUIRE_EQUAL(cols_x[15*16+14],-2/spacing[0]);
+	BOOST_REQUIRE_EQUAL(cols_x[15*16+13],0.5/spacing[0]);
 
-	BOOST_REQUIRE_EQUAL(cols_y[15*16+15],1.5);
-	BOOST_REQUIRE_EQUAL(cols_y[14*16+15],-2);
-	BOOST_REQUIRE_EQUAL(cols_y[13*16+15],0.5);
+	BOOST_REQUIRE_CLOSE(cols_y[15*16+15],1.5/spacing[1],0.001);
+	BOOST_REQUIRE_CLOSE(cols_y[14*16+15],-2/spacing[1],0.001);
+	BOOST_REQUIRE_CLOSE(cols_y[13*16+15],0.5/spacing[1],0.001);
 }
 
 // Derivative forward and backward non periodic
@@ -250,6 +254,9 @@ BOOST_AUTO_TEST_CASE( der_forward_backward_non_periodic )
 	// grid size
 	size_t sz[2]={16,16};
 
+	// spacing
+	float spacing[2] = {0.5,0.3};
+
 	// grid_dist_testing
 	grid_dist_testing<2> g_map(sz);
 
@@ -266,32 +273,32 @@ BOOST_AUTO_TEST_CASE( der_forward_backward_non_periodic )
 	std::unordered_map<long int,float> cols_x;
 	std::unordered_map<long int,float> cols_y;
 
-	D<x,Field<V,sys_nn>,sys_nn,FORWARD>::value(g_map,key11,ginfo,cols_x,1);
-	D<y,Field<V,sys_nn>,sys_nn,FORWARD>::value(g_map,key11,ginfo,cols_y,1);
+	D<x,Field<V,sys_nn>,sys_nn,FORWARD>::value(g_map,key11,ginfo,spacing,cols_x,1);
+	D<y,Field<V,sys_nn>,sys_nn,FORWARD>::value(g_map,key11,ginfo,spacing,cols_y,1);
 
-	BOOST_REQUIRE_EQUAL(cols_x.size(),2);
-	BOOST_REQUIRE_EQUAL(cols_y.size(),2);
+	BOOST_REQUIRE_EQUAL(cols_x.size(),2ul);
+	BOOST_REQUIRE_EQUAL(cols_y.size(),2ul);
 
-	BOOST_REQUIRE_EQUAL(cols_x[17+1],1);
-	BOOST_REQUIRE_EQUAL(cols_x[17],-1);
+	BOOST_REQUIRE_EQUAL(cols_x[17+1],1/spacing[0]);
+	BOOST_REQUIRE_EQUAL(cols_x[17],-1/spacing[0]);
 
-	BOOST_REQUIRE_EQUAL(cols_y[17+16],1);
-	BOOST_REQUIRE_EQUAL(cols_y[17],-1);
+	BOOST_REQUIRE_EQUAL(cols_y[17+16],1/spacing[1]);
+	BOOST_REQUIRE_EQUAL(cols_y[17],-1/spacing[1]);
 
 	cols_x.clear();
 	cols_y.clear();
 
-	D<x,Field<V,sys_nn>,sys_nn,BACKWARD>::value(g_map,key11,ginfo,cols_x,1);
-	D<y,Field<V,sys_nn>,sys_nn,BACKWARD>::value(g_map,key11,ginfo,cols_y,1);
+	D<x,Field<V,sys_nn>,sys_nn,BACKWARD>::value(g_map,key11,ginfo,spacing,cols_x,1);
+	D<y,Field<V,sys_nn>,sys_nn,BACKWARD>::value(g_map,key11,ginfo,spacing,cols_y,1);
 
-	BOOST_REQUIRE_EQUAL(cols_x.size(),2);
-	BOOST_REQUIRE_EQUAL(cols_y.size(),2);
+	BOOST_REQUIRE_EQUAL(cols_x.size(),2ul);
+	BOOST_REQUIRE_EQUAL(cols_y.size(),2ul);
 
-	BOOST_REQUIRE_EQUAL(cols_x[17],1);
-	BOOST_REQUIRE_EQUAL(cols_x[17-1],-1);
+	BOOST_REQUIRE_EQUAL(cols_x[17],1/spacing[0]);
+	BOOST_REQUIRE_EQUAL(cols_x[17-1],-1/spacing[0]);
 
-	BOOST_REQUIRE_EQUAL(cols_y[17],1);
-	BOOST_REQUIRE_EQUAL(cols_y[17-16],-1);
+	BOOST_REQUIRE_EQUAL(cols_y[17],1/spacing[1]);
+	BOOST_REQUIRE_EQUAL(cols_y[17-16],-1/spacing[1]);
 }
 
 // Average central non periodic
@@ -301,6 +308,9 @@ BOOST_AUTO_TEST_CASE( avg_central_non_periodic)
 	// grid size
 	size_t sz[2]={16,16};
 
+	// spacing
+	float spacing[2] = {0.5,0.3};
+
 	// grid_dist_testing
 	grid_dist_testing<2> g_map(sz);
 
@@ -317,17 +327,17 @@ BOOST_AUTO_TEST_CASE( avg_central_non_periodic)
 	std::unordered_map<long int,float> cols_x;
 	std::unordered_map<long int,float> cols_y;
 
-	Avg<x,Field<V,sys_nn>,sys_nn>::value(g_map,key11,ginfo,cols_x,1);
-	Avg<y,Field<V,sys_nn>,sys_nn>::value(g_map,key11,ginfo,cols_y,1);
+	Avg<x,Field<V,sys_nn>,sys_nn>::value(g_map,key11,ginfo,spacing,cols_x,1);
+	Avg<y,Field<V,sys_nn>,sys_nn>::value(g_map,key11,ginfo,spacing,cols_y,1);
 
-	BOOST_REQUIRE_EQUAL(cols_x.size(),2);
-	BOOST_REQUIRE_EQUAL(cols_y.size(),2);
+	BOOST_REQUIRE_EQUAL(cols_x.size(),2ul);
+	BOOST_REQUIRE_EQUAL(cols_y.size(),2ul);
 
-	BOOST_REQUIRE_EQUAL(cols_x[17+1],1);
-	BOOST_REQUIRE_EQUAL(cols_x[17-1],1);
+	BOOST_REQUIRE_EQUAL(cols_x[17+1],0.5);
+	BOOST_REQUIRE_EQUAL(cols_x[17-1],0.5);
 
-	BOOST_REQUIRE_EQUAL(cols_y[17+16],1);
-	BOOST_REQUIRE_EQUAL(cols_y[17-16],1);
+	BOOST_REQUIRE_EQUAL(cols_y[17+16],0.5);
+	BOOST_REQUIRE_EQUAL(cols_y[17-16],0.5);
 
 	// filled colums
 
@@ -338,33 +348,33 @@ BOOST_AUTO_TEST_CASE( avg_central_non_periodic)
 
 	// Composed derivative
 
-	Avg<x,Avg<x,Field<V,sys_nn>,sys_nn>,sys_nn>::value(g_map,key22,ginfo,cols_xx,1);
-	Avg<x,Avg<y,Field<V,sys_nn>,sys_nn>,sys_nn>::value(g_map,key22,ginfo,cols_xy,1);
-	Avg<y,Avg<x,Field<V,sys_nn>,sys_nn>,sys_nn>::value(g_map,key22,ginfo,cols_yx,1);
-	Avg<y,Avg<y,Field<V,sys_nn>,sys_nn>,sys_nn>::value(g_map,key22,ginfo,cols_yy,1);
+	Avg<x,Avg<x,Field<V,sys_nn>,sys_nn>,sys_nn>::value(g_map,key22,ginfo,spacing,cols_xx,1);
+	Avg<x,Avg<y,Field<V,sys_nn>,sys_nn>,sys_nn>::value(g_map,key22,ginfo,spacing,cols_xy,1);
+	Avg<y,Avg<x,Field<V,sys_nn>,sys_nn>,sys_nn>::value(g_map,key22,ginfo,spacing,cols_yx,1);
+	Avg<y,Avg<y,Field<V,sys_nn>,sys_nn>,sys_nn>::value(g_map,key22,ginfo,spacing,cols_yy,1);
 
-	BOOST_REQUIRE_EQUAL(cols_xx.size(),3);
-	BOOST_REQUIRE_EQUAL(cols_xy.size(),4);
-	BOOST_REQUIRE_EQUAL(cols_yx.size(),4);
-	BOOST_REQUIRE_EQUAL(cols_yy.size(),3);
+	BOOST_REQUIRE_EQUAL(cols_xx.size(),3ul);
+	BOOST_REQUIRE_EQUAL(cols_xy.size(),4ul);
+	BOOST_REQUIRE_EQUAL(cols_yx.size(),4ul);
+	BOOST_REQUIRE_EQUAL(cols_yy.size(),3ul);
 
-	BOOST_REQUIRE_EQUAL(cols_xx[32],1);
-	BOOST_REQUIRE_EQUAL(cols_xx[34],2);
-	BOOST_REQUIRE_EQUAL(cols_xx[36],1);
+	BOOST_REQUIRE_EQUAL(cols_xx[32],1/2.0/2.0);
+	BOOST_REQUIRE_EQUAL(cols_xx[34],2/2.0/2.0);
+	BOOST_REQUIRE_EQUAL(cols_xx[36],1/2.0/2.0);
 
-	BOOST_REQUIRE_EQUAL(cols_xy[17],1);
-	BOOST_REQUIRE_EQUAL(cols_xy[19],1);
-	BOOST_REQUIRE_EQUAL(cols_xy[49],1);
-	BOOST_REQUIRE_EQUAL(cols_xy[51],1);
+	BOOST_REQUIRE_EQUAL(cols_xy[17],1/2.0/2.0);
+	BOOST_REQUIRE_EQUAL(cols_xy[19],1/2.0/2.0);
+	BOOST_REQUIRE_EQUAL(cols_xy[49],1/2.0/2.0);
+	BOOST_REQUIRE_EQUAL(cols_xy[51],1/2.0/2.0);
 
-	BOOST_REQUIRE_EQUAL(cols_yx[17],1);
-	BOOST_REQUIRE_EQUAL(cols_yx[19],1);
-	BOOST_REQUIRE_EQUAL(cols_yx[49],1);
-	BOOST_REQUIRE_EQUAL(cols_xy[51],1);
+	BOOST_REQUIRE_EQUAL(cols_yx[17],1/2.0/2.0);
+	BOOST_REQUIRE_EQUAL(cols_yx[19],1/2.0/2.0);
+	BOOST_REQUIRE_EQUAL(cols_yx[49],1/2.0/2.0);
+	BOOST_REQUIRE_EQUAL(cols_xy[51],1/2.0/2.0);
 
-	BOOST_REQUIRE_EQUAL(cols_yy[2],1);
-	BOOST_REQUIRE_EQUAL(cols_yy[34],2);
-	BOOST_REQUIRE_EQUAL(cols_yy[66],1);
+	BOOST_REQUIRE_EQUAL(cols_yy[2],1/2.0/2.0);
+	BOOST_REQUIRE_EQUAL(cols_yy[34],2/2.0/2.0);
+	BOOST_REQUIRE_EQUAL(cols_yy[66],1/2.0/2.0);
 }
 
 
@@ -373,6 +383,9 @@ BOOST_AUTO_TEST_CASE( der_central_staggered_non_periodic)
 {
 	// grid size
 	size_t sz[2]={16,16};
+
+	// spacing
+	float spacing[2] = {0.5,0.3};
 
 	// grid_sm
 	grid_sm<2,void> ginfo(sz);
@@ -389,17 +402,17 @@ BOOST_AUTO_TEST_CASE( der_central_staggered_non_periodic)
 	std::unordered_map<long int,float> cols_x;
 	std::unordered_map<long int,float> cols_y;
 
-	D<x,Field<V,syss_nn>,syss_pp>::value(g_map,key11,ginfo,cols_x,1);
-	D<y,Field<V,syss_nn>,syss_pp>::value(g_map,key11,ginfo,cols_y,1);
+	D<x,Field<V,syss_nn>,syss_pp>::value(g_map,key11,ginfo,spacing,cols_x,1);
+	D<y,Field<V,syss_nn>,syss_pp>::value(g_map,key11,ginfo,spacing,cols_y,1);
 
-	BOOST_REQUIRE_EQUAL(cols_x.size(),2);
-	BOOST_REQUIRE_EQUAL(cols_y.size(),2);
+	BOOST_REQUIRE_EQUAL(cols_x.size(),2ul);
+	BOOST_REQUIRE_EQUAL(cols_y.size(),2ul);
 
-	BOOST_REQUIRE_EQUAL(cols_x[17],1);
-	BOOST_REQUIRE_EQUAL(cols_x[17-1],-1);
+	BOOST_REQUIRE_EQUAL(cols_x[17],1/spacing[0]);
+	BOOST_REQUIRE_EQUAL(cols_x[17-1],-1/spacing[0]);
 
-	BOOST_REQUIRE_EQUAL(cols_y[17],1);
-	BOOST_REQUIRE_EQUAL(cols_y[17-16],-1);
+	BOOST_REQUIRE_EQUAL(cols_y[17],1/spacing[1]);
+	BOOST_REQUIRE_EQUAL(cols_y[17-16],-1/spacing[1]);
 
 	cols_x.clear();
 	cols_y.clear();
@@ -410,6 +423,9 @@ BOOST_AUTO_TEST_CASE( avg_central_staggered_non_periodic)
 	// grid size
 	size_t sz[2]={16,16};
 
+	// spacing
+	float spacing[2] = {0.5,0.3};
+
 	// grid_sm
 	grid_sm<2,void> ginfo(sz);
 
@@ -425,17 +441,17 @@ BOOST_AUTO_TEST_CASE( avg_central_staggered_non_periodic)
 	std::unordered_map<long int,float> cols_x;
 	std::unordered_map<long int,float> cols_y;
 
-	Avg<x,Field<V,syss_pp>,syss_pp>::value(g_map,key11,ginfo,cols_x,1);
-	Avg<y,Field<V,syss_pp>,syss_pp>::value(g_map,key11,ginfo,cols_y,1);
+	Avg<x,Field<V,syss_pp>,syss_pp>::value(g_map,key11,ginfo,spacing,cols_x,1);
+	Avg<y,Field<V,syss_pp>,syss_pp>::value(g_map,key11,ginfo,spacing,cols_y,1);
 
-	BOOST_REQUIRE_EQUAL(cols_x.size(),2);
-	BOOST_REQUIRE_EQUAL(cols_y.size(),2);
+	BOOST_REQUIRE_EQUAL(cols_x.size(),2ul);
+	BOOST_REQUIRE_EQUAL(cols_y.size(),2ul);
 
-	BOOST_REQUIRE_EQUAL(cols_x[17+1],1);
-	BOOST_REQUIRE_EQUAL(cols_x[17],1);
+	BOOST_REQUIRE_EQUAL(cols_x[17],1/2.0);
+	BOOST_REQUIRE_EQUAL(cols_x[17-1],1/2.0);
 
-	BOOST_REQUIRE_EQUAL(cols_y[17+16],1);
-	BOOST_REQUIRE_EQUAL(cols_y[17],1);
+	BOOST_REQUIRE_EQUAL(cols_y[17],1/2.0);
+	BOOST_REQUIRE_EQUAL(cols_y[17-16],1/2.0);
 
 	cols_x.clear();
 	cols_y.clear();
@@ -451,6 +467,9 @@ BOOST_AUTO_TEST_CASE( lap_periodic)
 	// grid_sm
 	grid_sm<2,void> ginfo(sz);
 
+	// spacing
+	float spacing[2] = {0.5,0.3};
+
 	// grid_dist_testing
 	grid_dist_testing<2> g_map(sz);
 
@@ -462,29 +481,77 @@ BOOST_AUTO_TEST_CASE( lap_periodic)
 	// filled colums
 	std::unordered_map<long int,float> cols;
 
-	Lap<Field<V,sys_pp>,sys_pp>::value(g_map,key11,ginfo,cols,1);
+	Lap<Field<V,sys_pp>,sys_pp>::value(g_map,key11,ginfo,spacing,cols,1);
 
-	BOOST_REQUIRE_EQUAL(cols.size(),5);
+	BOOST_REQUIRE_EQUAL(cols.size(),5ul);
 
-	BOOST_REQUIRE_EQUAL(cols[1],1);
-	BOOST_REQUIRE_EQUAL(cols[17-1],1);
-	BOOST_REQUIRE_EQUAL(cols[17+1],1);
-	BOOST_REQUIRE_EQUAL(cols[17+16],1);
+	BOOST_REQUIRE_EQUAL(cols[1],1/spacing[1]/spacing[1]);
+	BOOST_REQUIRE_EQUAL(cols[17-1],1/spacing[0]/spacing[0]);
+	BOOST_REQUIRE_EQUAL(cols[17+1],1/spacing[0]/spacing[0]);
+	BOOST_REQUIRE_EQUAL(cols[17+16],1/spacing[1]/spacing[1]);
 
-	BOOST_REQUIRE_EQUAL(cols[17],-4);
+	BOOST_REQUIRE_EQUAL(cols[17],-2/spacing[0]/spacing[0] - 2/spacing[1]/spacing[1]);
 
 	cols.clear();
 
-	Lap<Field<V,sys_pp>,sys_pp>::value(g_map,key1414,ginfo,cols,1);
+	Lap<Field<V,sys_pp>,sys_pp>::value(g_map,key1414,ginfo,spacing,cols,1);
 
-	BOOST_REQUIRE_EQUAL(cols.size(),5);
+	BOOST_REQUIRE_EQUAL(cols.size(),5ul);
 
-	BOOST_REQUIRE_EQUAL(cols[14*16+13],1);
-	BOOST_REQUIRE_EQUAL(cols[14*16+15],1);
-	BOOST_REQUIRE_EQUAL(cols[13*16+14],1);
-	BOOST_REQUIRE_EQUAL(cols[15*16+14],1);
+	BOOST_REQUIRE_EQUAL(cols[14*16+13],1.0/spacing[0]/spacing[0]);
+	BOOST_REQUIRE_EQUAL(cols[14*16+15],1.0/spacing[0]/spacing[0]);
+	BOOST_REQUIRE_CLOSE(cols[13*16+14],1.0/spacing[1]/spacing[1],0.001);
+	BOOST_REQUIRE_CLOSE(cols[15*16+14],1.0/spacing[1]/spacing[1],0.001);
 
-	BOOST_REQUIRE_EQUAL(cols[14*16+14],-4);
+	BOOST_REQUIRE_EQUAL(cols[14*16+14],-2/spacing[0]/spacing[0] - 2/spacing[1]/spacing[1]);
+}
+
+// sum test
+
+
+BOOST_AUTO_TEST_CASE( sum_periodic)
+{
+	// grid size
+	size_t sz[2]={16,16};
+
+	// spacing
+	float spacing[2] = {0.5,0.3};
+
+	// grid_sm
+	grid_sm<2,void> ginfo(sz);
+
+	// grid_dist_testing
+	grid_dist_testing<2> g_map(sz);
+
+	// Create several keys
+	grid_dist_key_dx<2> key11(0,grid_key_dx<2>(1,1));
+	grid_dist_key_dx<2> key22(0,grid_key_dx<2>(2,2));
+	grid_dist_key_dx<2> key1414(0,grid_key_dx<2>(14,14));
+
+	// filled colums
+	std::unordered_map<long int,float> cols;
+
+	sum<Field<V,sys_pp>,Field<V,sys_pp>,sys_pp>::value(g_map,key11,ginfo,spacing,cols,1);
+
+	BOOST_REQUIRE_EQUAL(cols.size(),1ul);
+
+	BOOST_REQUIRE_EQUAL(cols[17],2);
+
+	cols.clear();
+
+	sum<Field<V,sys_pp>, Field<V,sys_pp> , Field<V,sys_pp> ,sys_pp>::value(g_map,key11,ginfo,spacing,cols,1);
+
+	BOOST_REQUIRE_EQUAL(cols.size(),1ul);
+
+	BOOST_REQUIRE_EQUAL(cols[17],3);
+
+	cols.clear();
+
+	sum<Field<V,sys_pp>, Field<V,sys_pp> , minus<Field<V,sys_pp>,sys_pp> ,sys_pp>::value(g_map,key11,ginfo,spacing,cols,1);
+
+	BOOST_REQUIRE_EQUAL(cols.size(),1ul);
+
+	BOOST_REQUIRE_EQUAL(cols[17],1ul);
 }
 
 //////////////// Position ////////////////////

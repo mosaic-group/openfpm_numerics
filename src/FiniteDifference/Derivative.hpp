@@ -64,24 +64,24 @@ class D<d,arg,Sys_eqs,CENTRAL>
 	 *
 	 *
 	 */
-	inline static void value(const typename stub_or_real<Sys_eqs,Sys_eqs::dims,typename Sys_eqs::stype,typename Sys_eqs::b_grid::decomposition>::type & g_map, grid_dist_key_dx<Sys_eqs::dims> & kmap , const grid_sm<Sys_eqs::dims,void> & gs, std::unordered_map<long int,typename Sys_eqs::stype > & cols, typename Sys_eqs::stype coeff)
+	inline static void value(const typename stub_or_real<Sys_eqs,Sys_eqs::dims,typename Sys_eqs::stype,typename Sys_eqs::b_grid::decomposition>::type & g_map, grid_dist_key_dx<Sys_eqs::dims> & kmap , const grid_sm<Sys_eqs::dims,void> & gs, typename Sys_eqs::stype (& spacing )[Sys_eqs::dims] , std::unordered_map<long int,typename Sys_eqs::stype > & cols, typename Sys_eqs::stype coeff)
 	{
 		// if the system is staggered the CENTRAL derivative is equivalent to a forward derivative
 		if (is_grid_staggered<Sys_eqs>::value())
 		{
-			D<d,arg,Sys_eqs,BACKWARD>::value(g_map,kmap,gs,cols,coeff);
+			D<d,arg,Sys_eqs,BACKWARD>::value(g_map,kmap,gs,spacing,cols,coeff);
 			return;
 		}
 
 		long int old_val = kmap.getKeyRef().get(d);
 		kmap.getKeyRef().set_d(d, kmap.getKeyRef().get(d) + 1);
-		arg::value(g_map,kmap,gs,cols,coeff);
+		arg::value(g_map,kmap,gs,spacing,cols,coeff/spacing[d]/2.0 );
 		kmap.getKeyRef().set_d(d,old_val);
 
 
 		old_val = kmap.getKeyRef().get(d);
 		kmap.getKeyRef().set_d(d, kmap.getKeyRef().get(d) - 1);
-		arg::value(g_map,kmap,gs,cols,-coeff);
+		arg::value(g_map,kmap,gs,spacing,cols,-coeff/spacing[d]/2.0 );
 		kmap.getKeyRef().set_d(d,old_val);
 	}
 
@@ -135,7 +135,7 @@ public:
 	 *
 	 *
 	 */
-	static void value(const typename stub_or_real<Sys_eqs,Sys_eqs::dims,typename Sys_eqs::stype,typename Sys_eqs::b_grid::decomposition>::type & g_map, grid_dist_key_dx<Sys_eqs::dims> & kmap , const grid_sm<Sys_eqs::dims,void> & gs, std::unordered_map<long int,typename Sys_eqs::stype > & cols, typename Sys_eqs::stype coeff)
+	static void value(const typename stub_or_real<Sys_eqs,Sys_eqs::dims,typename Sys_eqs::stype,typename Sys_eqs::b_grid::decomposition>::type & g_map, grid_dist_key_dx<Sys_eqs::dims> & kmap , const grid_sm<Sys_eqs::dims,void> & gs, typename Sys_eqs::stype (& spacing )[Sys_eqs::dims] , std::unordered_map<long int,typename Sys_eqs::stype > & cols, typename Sys_eqs::stype coeff)
 	{
 #ifdef SE_CLASS1
 		if (Sys_eqs::boundary[d] == PERIODIC)
@@ -146,42 +146,42 @@ public:
 
 		if (pos.get(d) == (long int)gs.size(d)-1 )
 		{
-			arg::value(g_map,kmap,gs,cols,1.5*coeff);
+			arg::value(g_map,kmap,gs,spacing,cols,1.5*coeff/spacing[d]);
 
 			long int old_val = kmap.getKeyRef().get(d);
 			kmap.getKeyRef().set_d(d, kmap.getKeyRef().get(d) - 1);
-			arg::value(g_map,kmap,gs,cols,-2.0*coeff);
+			arg::value(g_map,kmap,gs,spacing,cols,-2.0*coeff/spacing[d]);
 			kmap.getKeyRef().set_d(d,old_val);
 
 			old_val = kmap.getKeyRef().get(d);
 			kmap.getKeyRef().set_d(d, kmap.getKeyRef().get(d) - 2);
-			arg::value(g_map,kmap,gs,cols,0.5*coeff);
+			arg::value(g_map,kmap,gs,spacing,cols,0.5*coeff/spacing[d]);
 			kmap.getKeyRef().set_d(d,old_val);
 		}
 		else if (pos.get(d) == 0)
 		{
-			arg::value(g_map,kmap,gs,cols,-1.5*coeff);
+			arg::value(g_map,kmap,gs,spacing,cols,-1.5*coeff/spacing[d]);
 
 			long int old_val = kmap.getKeyRef().get(d);
 			kmap.getKeyRef().set_d(d, kmap.getKeyRef().get(d) + 1);
-			arg::value(g_map,kmap,gs,cols,2.0*coeff);
+			arg::value(g_map,kmap,gs,spacing,cols,2.0*coeff/spacing[d]);
 			kmap.getKeyRef().set_d(d,old_val);
 
 			old_val = kmap.getKeyRef().get(d);
 			kmap.getKeyRef().set_d(d, kmap.getKeyRef().get(d) + 2);
-			arg::value(g_map,kmap,gs,cols,-0.5*coeff);
+			arg::value(g_map,kmap,gs,spacing,cols,-0.5*coeff/spacing[d]);
 			kmap.getKeyRef().set_d(d,old_val);
 		}
 		else
 		{
 			long int old_val = kmap.getKeyRef().get(d);
 			kmap.getKeyRef().set_d(d, kmap.getKeyRef().get(d) + 1);
-			arg::value(g_map,kmap,gs,cols,coeff);
+			arg::value(g_map,kmap,gs,spacing,cols,coeff/spacing[d]);
 			kmap.getKeyRef().set_d(d,old_val);
 
 			old_val = kmap.getKeyRef().get(d);
 			kmap.getKeyRef().set_d(d, kmap.getKeyRef().get(d) - 1);
-			arg::value(g_map,kmap,gs,cols,-coeff);
+			arg::value(g_map,kmap,gs,spacing,cols,-coeff/spacing[d]);
 			kmap.getKeyRef().set_d(d,old_val);
 		}
 	}
@@ -231,16 +231,16 @@ class D<d,arg,Sys_eqs,FORWARD>
 	 *
 	 *
 	 */
-	inline static void value(const typename stub_or_real<Sys_eqs,Sys_eqs::dims,typename Sys_eqs::stype,typename Sys_eqs::b_grid::decomposition>::type & g_map, grid_dist_key_dx<Sys_eqs::dims> & kmap , const grid_sm<Sys_eqs::dims,void> & gs, std::unordered_map<long int,typename Sys_eqs::stype > & cols, typename Sys_eqs::stype coeff)
+	inline static void value(const typename stub_or_real<Sys_eqs,Sys_eqs::dims,typename Sys_eqs::stype,typename Sys_eqs::b_grid::decomposition>::type & g_map, grid_dist_key_dx<Sys_eqs::dims> & kmap , const grid_sm<Sys_eqs::dims,void> & gs, typename Sys_eqs::stype (& spacing )[Sys_eqs::dims] ,std::unordered_map<long int,typename Sys_eqs::stype > & cols, typename Sys_eqs::stype coeff)
 	{
 
 		long int old_val = kmap.getKeyRef().get(d);
 		kmap.getKeyRef().set_d(d, kmap.getKeyRef().get(d) + 1);
-		arg::value(g_map,kmap,gs,cols,coeff);
+		arg::value(g_map,kmap,gs,spacing,cols,coeff/spacing[d]);
 		kmap.getKeyRef().set_d(d,old_val);
 
 		// backward
-		arg::value(g_map,kmap,gs,cols,-coeff);
+		arg::value(g_map,kmap,gs,spacing,cols,-coeff/spacing[d]);
 	}
 
 
@@ -273,16 +273,16 @@ class D<d,arg,Sys_eqs,BACKWARD>
 	 *
 	 *
 	 */
-	inline static void value(const typename stub_or_real<Sys_eqs,Sys_eqs::dims,typename Sys_eqs::stype,typename Sys_eqs::b_grid::decomposition>::type & g_map, grid_dist_key_dx<Sys_eqs::dims> & kmap , const grid_sm<Sys_eqs::dims,void> & gs, std::unordered_map<long int,typename Sys_eqs::stype > & cols, typename Sys_eqs::stype coeff)
+	inline static void value(const typename stub_or_real<Sys_eqs,Sys_eqs::dims,typename Sys_eqs::stype,typename Sys_eqs::b_grid::decomposition>::type & g_map, grid_dist_key_dx<Sys_eqs::dims> & kmap , const grid_sm<Sys_eqs::dims,void> & gs, typename Sys_eqs::stype (& spacing )[Sys_eqs::dims], std::unordered_map<long int,typename Sys_eqs::stype > & cols , typename Sys_eqs::stype coeff)
 	{
 
 		long int old_val = kmap.getKeyRef().get(d);
 		kmap.getKeyRef().set_d(d, kmap.getKeyRef().get(d) - 1);
-		arg::value(g_map,kmap,gs,cols,-coeff);
+		arg::value(g_map,kmap,gs,spacing,cols,-coeff/spacing[d]);
 		kmap.getKeyRef().set_d(d,old_val);
 
 		// forward
-		arg::value(g_map,kmap,gs,cols,coeff);
+		arg::value(g_map,kmap,gs,spacing,cols,coeff/spacing[d]);
 	}
 
 

@@ -75,24 +75,33 @@ typedef Field<P,lid_nn> Prs;
 
 typedef mul<eta,Lap<v_x,lid_nn>,lid_nn> eta_lap_vx;
 typedef D<x,Prs,lid_nn> p_x;
-typedef sum<eta_lap_vx,p_x,lid_nn> vx_eq;
+typedef minus<p_x,lid_nn> m_p_x;
+typedef sum<eta_lap_vx,m_p_x,lid_nn> vx_eq;
 
 // Eq2 V_y
 
 typedef mul<eta,Lap<v_y,lid_nn>,lid_nn> eta_lap_vy;
-typedef D<x,Prs,lid_nn> p_x;
-typedef sum<eta_lap_vy,p_x,lid_nn> vy_eq;
+typedef D<y,Prs,lid_nn> p_y;
+typedef minus<p_y,lid_nn> m_p_y;
+typedef sum<eta_lap_vy,m_p_y,lid_nn> vy_eq;
 
 // Eq3 Incompressibility
 
-typedef D<x,v_x,lid_nn> dx_vx;
-typedef D<y,v_y,lid_nn> dy_vy;
+typedef D<x,v_x,lid_nn,FORWARD> dx_vx;
+typedef D<y,v_y,lid_nn,FORWARD> dy_vy;
 typedef sum<dx_vx,dy_vy,lid_nn> ic_eq;
 
 
 // Directional Avg
 typedef Avg<x,v_y,lid_nn> avg_vy;
 typedef Avg<y,v_x,lid_nn> avg_vx;
+
+typedef Avg<x,v_y,lid_nn,FORWARD> avg_vy_f;
+typedef Avg<y,v_x,lid_nn,FORWARD> avg_vx_f;
+
+#define EQ_1 0
+#define EQ_2 1
+#define EQ_3 2
 
 BOOST_AUTO_TEST_SUITE( eq_test_suite )
 
@@ -106,7 +115,10 @@ BOOST_AUTO_TEST_CASE(lid_driven_cavity)
 	// Ghost
 	Ghost<2,float> g(0.01);
 
-	size_t sz[] = {8,8};
+	long int sz[] = {8,8};
+	size_t szu[2];
+	szu[0] = (size_t)sz[0];
+	szu[1] = (size_t)sz[1];
 
 	Padding<2> pd({1,1},{0,0});
 
@@ -114,70 +126,52 @@ BOOST_AUTO_TEST_CASE(lid_driven_cavity)
 	init_global_v_cluster(&boost::unit_test::framework::master_test_suite().argc,&boost::unit_test::framework::master_test_suite().argv);
 
 	// Initialize openfpm
-	grid_dist_id<2,float,aggregate<float[2],float>,CartDecomposition<2,float>> g_dist(sz,domain,g);
+	grid_dist_id<2,float,aggregate<float[2],float>,CartDecomposition<2,float>> g_dist(szu,domain,g);
 
 	// Distributed grid
 	FDScheme<lid_nn> fd(pd,domain,g_dist.getGridInfo(),g_dist.getDecomposition(),g_dist.getVC());
 
 	// start and end of the bulk
 
-	fd.imposeA(ic_eq(), g_dist.getSubDomainIterator(grid_key_dx<2>(0,0),grid_key_dx<2>(sz[1]-2,sz[0]-2)),true);
-	fd.imposeB(0.0,g_dist.getSubDomainIterator(grid_key_dx<2>(0,0),grid_key_dx<2>(sz[1]-2,sz[0]-2)),true);
-	fd.imposeA(Prs(), g_dist.getSubDomainIterator(grid_key_dx<2>(0,0),grid_key_dx<2>(0,0)));
-	fd.imposeB(0.0, g_dist.getSubDomainIterator(grid_key_dx<2>(0,0),grid_key_dx<2>(0,0)));
-	fd.imposeA(vx_eq(), g_dist.getSubDomainIterator(grid_key_dx<2>(0,1),grid_key_dx<2>(sz[1]-2,sz[0]-2)));
-	fd.imposeB(0.0, g_dist.getSubDomainIterator(grid_key_dx<2>(0,1),grid_key_dx<2>(sz[1]-2,sz[0]-2)));
-	fd.imposeA(vy_eq(), g_dist.getSubDomainIterator(grid_key_dx<2>(1,0),grid_key_dx<2>(sz[1]-2,sz[0]-2)));
-	fd.imposeB(0.0, g_dist.getSubDomainIterator(grid_key_dx<2>(1,0),grid_key_dx<2>(sz[1]-2,sz[0]-2)));
+	fd.impose(ic_eq(),0.0, EQ_3, {0,0},{sz[0]-2,sz[1]-2},true);
+	fd.impose(Prs(),  0.0, EQ_3, {0,0},{0,0});
+	fd.impose(vx_eq(),0.0, EQ_1, {1,0},{sz[0]-2,sz[1]-2});
+	fd.impose(vy_eq(),0.0, EQ_2, {0,1},{sz[0]-2,sz[1]-2});
 
-	// v_x R L T B
-
+	// v_x
 	// R L
-	fd.imposeA(v_x(), g_dist.getSubDomainIterator(grid_key_dx<2>(0,0),grid_key_dx<2>(sz[1]-2,0)));
-	fd.imposeB(0.0, g_dist.getSubDomainIterator(grid_key_dx<2>(0,0),grid_key_dx<2>(sz[1]-2,0)));
-	fd.imposeA(v_x(), g_dist.getSubDomainIterator(grid_key_dx<2>(0,sz[0]-1),grid_key_dx<2>(sz[1]-2,sz[0]-1)));
-	fd.imposeB(1.0, g_dist.getSubDomainIterator(grid_key_dx<2>(0,sz[0]-1),grid_key_dx<2>(sz[1]-2,sz[0]-1)));
+	fd.impose(v_x(),0.0, EQ_1, {0,0},{0,sz[1]-2});
+	fd.impose(v_x(),0.0, EQ_1, {sz[0]-1,0},{sz[0]-1,sz[1]-2});
 
 	// T B
-	fd.imposeA(avg_vx(), g_dist.getSubDomainIterator(grid_key_dx<2>(0,0),grid_key_dx<2>(0,sz[0]-1)));
-	fd.imposeB(0.0, g_dist.getSubDomainIterator(grid_key_dx<2>(0,0),grid_key_dx<2>(0,sz[0]-1)));
-	fd.imposeA(avg_vx(), g_dist.getSubDomainIterator(grid_key_dx<2>(sz[1]-1,0),grid_key_dx<2>(sz[1]-1,sz[0]-1)));
-	fd.imposeB(0.0, g_dist.getSubDomainIterator(grid_key_dx<2>(sz[1]-1,0),grid_key_dx<2>(sz[1]-1,sz[0]-1)));
+	fd.impose(avg_vx_f(),0.0, EQ_1, {0,-1},{sz[0]-1,-1});
+	fd.impose(avg_vx(),0.0, EQ_1,   {0,sz[1]-1},{sz[0]-1,sz[1]-1});
 
-	// v_y R L T B
-
+	// v_y
 	// R L
-	fd.imposeA(avg_vy(), g_dist.getSubDomainIterator(grid_key_dx<2>(0,0),grid_key_dx<2>(sz[1]-1,0)));
-	fd.imposeB(0.0, g_dist.getSubDomainIterator(grid_key_dx<2>(0,0),grid_key_dx<2>(sz[1]-1,0)));
-	fd.imposeA(avg_vy(), g_dist.getSubDomainIterator(grid_key_dx<2>(0,sz[0]-1),grid_key_dx<2>(sz[1]-1,sz[0]-1)));
-	fd.imposeB(0.0, g_dist.getSubDomainIterator(grid_key_dx<2>(0,sz[0]-1),grid_key_dx<2>(sz[1]-1,sz[0]-1)));
+	fd.impose(avg_vy_f(),0.0, EQ_2 , {-1,0},{-1,sz[1]-1});
+	fd.impose(avg_vy(),1.0, EQ_2,    {sz[0]-1,0},{sz[0]-1,sz[1]-1});
 
 	// T B
-	fd.imposeA(v_y(), g_dist.getSubDomainIterator(grid_key_dx<2>(0,0),grid_key_dx<2>(0,sz[0]-2)));
-	fd.imposeB(0.0, g_dist.getSubDomainIterator(grid_key_dx<2>(0,0),grid_key_dx<2>(0,sz[0]-2)));
-	fd.imposeA(v_y(), g_dist.getSubDomainIterator(grid_key_dx<2>(sz[1]-1,0),grid_key_dx<2>(sz[1]-1,sz[0]-2)));
-	fd.imposeB(0.0, g_dist.getSubDomainIterator(grid_key_dx<2>(sz[1]-1,0),grid_key_dx<2>(sz[1]-1,sz[0]-2)));
+	fd.impose(v_y(), 0.0, EQ_2, {0,0},{sz[0]-2,0});
+	fd.impose(v_y(), 0.0, EQ_2, {0,sz[1]-1},{sz[0]-2,sz[1]-1});
 
 	// Padding pressure
-	fd.imposeA(Prs(), g_dist.getSubDomainIterator(grid_key_dx<2>(-1,-1),grid_key_dx<2>(-1,sz[0]-1)));
-	fd.imposeB(0.0, g_dist.getSubDomainIterator(grid_key_dx<2>(-1,-1),grid_key_dx<2>(-1,sz[0]-1)));
-	fd.imposeA(Prs(), g_dist.getSubDomainIterator(grid_key_dx<2>(sz[1]-1,-1),grid_key_dx<2>(sz[1]-1,sz[0]-1)));
-	fd.imposeB(0.0, g_dist.getSubDomainIterator(grid_key_dx<2>(sz[1]-1,-1),grid_key_dx<2>(sz[1]-1,sz[0]-1)));
-	fd.imposeA(Prs(), g_dist.getSubDomainIterator(grid_key_dx<2>(0,-1),grid_key_dx<2>(sz[1]-2,-1)));
-	fd.imposeB(0.0, g_dist.getSubDomainIterator(grid_key_dx<2>(0,-1),grid_key_dx<2>(sz[1]-2,-1)));
-	fd.imposeA(Prs(), g_dist.getSubDomainIterator(grid_key_dx<2>(0,sz[0]-1),grid_key_dx<2>(sz[1]-2,sz[0]-1)));
-	fd.imposeB(0.0, g_dist.getSubDomainIterator(grid_key_dx<2>(0,sz[0]-1),grid_key_dx<2>(sz[1]-2,sz[0]-1)));
+	fd.impose(Prs(), 0.0, EQ_3, {-1,-1},{sz[0]-1,-1});
+	fd.impose(Prs(), 0.0, EQ_3, {-1,sz[1]-1},{sz[0]-1,sz[1]-1});
+	fd.impose(Prs(), 0.0, EQ_3, {-1,0},{-1,sz[1]-2});
+	fd.impose(Prs(), 0.0, EQ_3, {sz[0]-1,0},{sz[0]-1,sz[1]-2});
 
 	// Impose v_x Padding Impose v_y padding
-	fd.imposeA(v_x(), g_dist.getSubDomainIterator(grid_key_dx<2>(-1,-1),grid_key_dx<2>(sz[1]-1,-1)));
-	fd.imposeB(0.0, g_dist.getSubDomainIterator(grid_key_dx<2>(-1,-1),grid_key_dx<2>(sz[1]-1,-1)));
-	fd.imposeA(v_y(), g_dist.getSubDomainIterator(grid_key_dx<2>(-1,-1),grid_key_dx<2>(-1,sz[0]-1)));
-	fd.imposeB(0.0, g_dist.getSubDomainIterator(grid_key_dx<2>(-1,-1),grid_key_dx<2>(-1,sz[0]-1)));
+	fd.impose(v_x(), 0.0, EQ_1, {-1,-1},{-1,sz[1]-1});
+	fd.impose(v_y(), 0.0, EQ_2, {-1,-1},{sz[0]-1,-1});
 
 	auto x = umfpack_solver<double>::solve(fd.getA(),fd.getB());
 
 	// Bring the solution to grid
-	x.copy<lid_nn,grid_dist_id<2,float,aggregate<float[2],float>,CartDecomposition<2,float>>,0,1>(g_dist,g_dist.getSubDomainIterator(grid_key_dx<2>(0,0),grid_key_dx<2>(sz[1]-2,sz[0]-2)));
+	x.copy<FDScheme<lid_nn>,decltype(g_dist),0,1>(fd,{0,0},{sz[0]-1,sz[1]-1},g_dist);
+
+	g_dist.write("lid_driven_cavity");
 }
 
 BOOST_AUTO_TEST_SUITE_END()

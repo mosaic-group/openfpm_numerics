@@ -10,6 +10,8 @@
 
 #include "Vector/Vector.hpp"
 #include "Eigen/UmfPackSupport"
+#include <Eigen/SparseLU>
+
 
 template<typename T>
 class umfpack_solver
@@ -22,12 +24,16 @@ public:
 	}
 };
 
+#define SOLVER_NOOPTION 0
+#define SOLVER_PRINT_RESIDUAL_NORM_INFINITY 1
+#define SOLVER_PRINT_DETERMINANT 2
+
 template<>
 class umfpack_solver<double>
 {
 public:
 
-	template<typename impl> static Vector<double> solve(const SparseMatrix<double,int,impl> & A, const Vector<double> & b)
+	template<typename impl> static Vector<double> solve(const SparseMatrix<double,int,impl> & A, const Vector<double> & b, size_t opt = NONE)
 	{
 		Vector<double> x;
 
@@ -41,7 +47,21 @@ public:
 			std::cout << __FILE__ << ":" << __LINE__ << " solver failed" << "\n";
 			return x;
 		}
+
 		x.getVec() = solver.solve(b.getVec());
+
+		if (opt & SOLVER_PRINT_RESIDUAL_NORM_INFINITY)
+		{
+			Vector<double> res;
+			res.getVec() = A.getMat() * x.getVec() - b.getVec();
+
+			std::cout << "Infinity norm: " << res.getVec().lpNorm<Eigen::Infinity>() << "\n";
+		}
+
+		if (opt & SOLVER_PRINT_DETERMINANT)
+		{
+			std::cout << " Determinant: " << solver.determinant() << "\n";
+		}
 
 		return x;
 	}

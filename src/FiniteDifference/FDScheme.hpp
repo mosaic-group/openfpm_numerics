@@ -13,6 +13,7 @@
 #include "Grid/grid_dist_id_iterator_sub.hpp"
 #include "eq.hpp"
 #include "data_type/scalar.hpp"
+#include "NN/CellList/CellDecomposer.hpp"
 
 /*! \brief Finite Differences
  *
@@ -73,6 +74,15 @@
 template<typename Sys_eqs>
 class FDScheme
 {
+public:
+
+	// Distributed grid map
+	typedef grid_dist_id<Sys_eqs::dims,typename Sys_eqs::stype,scalar<size_t>,typename Sys_eqs::b_grid::decomposition> g_map_type;
+
+	typedef Sys_eqs Sys_eqs_typ;
+
+private:
+
 	// Padding
 	Padding<Sys_eqs::dims> pd;
 
@@ -86,7 +96,8 @@ class FDScheme
 	// Domain Grid informations
 	const grid_sm<Sys_eqs::dims,void> & gs;
 
-	typedef grid_dist_id<Sys_eqs::dims,typename Sys_eqs::stype,scalar<size_t>,typename Sys_eqs::b_grid::decomposition> g_map_type;
+	// Get the grid spacing
+	typename Sys_eqs::stype spacing[Sys_eqs::dims];
 
 	// mapping grid
 	g_map_type g_map;
@@ -154,14 +165,14 @@ class FDScheme
 		for (size_t i = 0 ; i < nz_rows.size() ; i++)
 		{
 			if (nz_rows.get(i) == false)
-				std::cerr << "Error: " << __FILE__ << ":" << __LINE__ << " Ill posed matrix not all the rows are filled\n";
+				std::cerr << "Error: " << __FILE__ << ":" << __LINE__ << " Ill posed matrix row " << i <<  " is not filled\n";
 		}
 
 		// all the colums must have a non zero element
 		for (size_t i = 0 ; i < nz_cols.size() ; i++)
 		{
 			if (nz_cols.get(i) == false)
-				std::cerr << "Error: " << __FILE__ << ":" << __LINE__ << " Ill posed matrix not all the colums are filled\n";
+				std::cerr << "Error: " << __FILE__ << ":" << __LINE__ << " Ill posed matrix colum " << i << " is not filled\n";
 		}
 	}
 
@@ -176,6 +187,26 @@ class FDScheme
 	}
 
 public:
+
+	/*! \brief Get the grid padding
+	 *
+	 * \return the grid padding
+	 *
+	 */
+	const Padding<Sys_eqs::dims> & getPadding()
+	{
+		return pd;
+	}
+
+	/*! \brief Return the map between the grid index position and the position in the distributed vector
+	 *
+	 * \return the map
+	 *
+	 */
+	const g_map_type & getMap()
+	{
+		return g_map;
+	}
 
 	/*! \brief Constructor
 	 *
@@ -219,26 +250,68 @@ public:
 		// sync the ghost
 
 		g_map.template ghost_get<0>();
+
+		// Create a CellDecomposer and calculate the spacing
+
+		size_t sz_g[Sys_eqs::dims];
+		for (size_t i = 0 ; i < Sys_eqs::dims ; i++)
+			sz_g[i] = gs.getSize()[i] - 1;
+
+		CellDecomposer_sm<Sys_eqs::dims,typename Sys_eqs::stype> cd(domain,sz_g,0);
+
+		for (size_t i = 0 ; i < Sys_eqs::dims ; i++)
+			spacing[i] = cd.getCellBox().getHigh(i);
 	}
 
 	/*! \brief Impose an operator
 	 *
+	 * This function impose an operator on a box region to produce the system
 	 *
+	 * Ax = b
+	 *
+	 * ## Stokes equation, lid driven cavity with one splipping wall
+	 *
+	 * \param op Operator to impose (A term)
+	 * \param num right hand side of the term (b term)
+	 * \param id Equation id in the system that we are imposing
+	 * \param start starting point of the box
+	 * \param stop stop point of the box
 	 *
 	 */
-	template<typename T> void imposeA(const T & op , grid_dist_iterator_sub<Sys_eqs::dims,typename Sys_eqs::b_grid::d_grid> it_d, bool skip_first = false)
+	template<typename T> void impose(const T & op , typename Sys_eqs::stype num ,long int id ,const long int (& start)[Sys_eqs::dims], const long int (& stop)[Sys_eqs::dims], bool skip_first = false)
 	{
-		// key one
-		grid_key_dx<Sys_eqs::dims> gk_one;
-		gk_one.one();
-
 		// add padding to start and stop
-		grid_key_dx<Sys_eqs::dims> start = it_d.getStart() + pd.getKP1();
-		grid_key_dx<Sys_eqs::dims> stop = it_d.getStop() + pd.getKP1();
+		grid_key_dx<Sys_eqs::dims> start_k = grid_key_dx<Sys_eqs::dims>(start) + pd.getKP1();
+		grid_key_dx<Sys_eqs::dims> stop_k = grid_key_dx<Sys_eqs::dims>(stop) + pd.getKP1();
 
-		auto it = g_map.getSubDomainIterator(start,stop);
+		auto it = g_map.getSubDomainIterator(start_k,stop_k);
+
+		impose(op,num,id,it,skip_first);
+	}
+
+	/*! \brief Impose an operator
+	 *
+	 * This function impose an operator on a particular grid region to produce the system
+	 *
+	 * Ax = b
+	 *
+	 * ## Stokes equation, lid driven cavity with one splipping wall
+	 *
+	 * \param op Operator to impose (A term)
+	 * \param num right hand side of the term (b term)
+	 * \param id Equation id in the system that we are imposing
+	 * \param it_d iterator that define where you want to impose
+	 *
+	 */
+	template<typename T> void impose(const T & op , typename Sys_eqs::stype num ,long int id ,grid_dist_iterator_sub<Sys_eqs::dims,typename g_map_type::d_grid> it_d, bool skip_first = false)
+	{
+		auto it = it_d;
+		grid_sm<Sys_eqs::dims,void> gs = g_map.getGridInfoVoid();
 
 		std::unordered_map<long int,float> cols;
+
+		// resize b if needed
+		b.resize(Sys_eqs::nvar * gs.size());
 
 		bool is_first = skip_first;
 
@@ -254,68 +327,29 @@ public:
 
 			// get the position
 			auto key = it.get();
+			grid_key_dx<2> gkey = g_map.getGKey(key);
 
 			// Calculate the non-zero colums
-			T::value(g_map,key,gs,cols,1.0);
+			T::value(g_map,key,gs,spacing,cols,1.0);
 
 			// create the triplet
 
 			for ( auto it = cols.begin(); it != cols.end(); ++it )
 			{
 				trpl.add();
-				trpl.last().row() = row;
+				trpl.last().row() = Sys_eqs::nvar * gs.LinId(gkey) + id;
 				trpl.last().col() = it->first;
 				trpl.last().value() = it->second;
 
 				std::cout << "(" << trpl.last().row() << "," << trpl.last().col() << "," << trpl.last().value() << ")" << "\n";
 			}
 
+			b.get(Sys_eqs::nvar * gs.LinId(gkey) + id) = num;
+
 			cols.clear();
 			std::cout << "\n";
 
 			++row;
-			++it;
-		}
-	}
-
-	/*! \brief Impose an operator
-	 *
-	 *
-	 *
-	 */
-	void imposeB(typename Sys_eqs::stype num , grid_dist_iterator_sub<Sys_eqs::dims,typename Sys_eqs::b_grid::d_grid> it_d, bool skip_first = false)
-	{
-		// key one
-		grid_key_dx<Sys_eqs::dims> gk_one;
-		gk_one.one();
-
-		// add padding to start and stop
-		grid_key_dx<Sys_eqs::dims> start = it_d.getStart() + pd.getKP1();
-		grid_key_dx<Sys_eqs::dims> stop = it_d.getStop() + pd.getKP1();
-
-		auto it = g_map.getSubDomainIterator(start,stop);
-
-		std::unordered_map<long int,float> cols;
-
-		bool is_first = skip_first;
-
-		// iterate all the grid points
-		while (it.isNext())
-		{
-			if (is_first == true)
-			{
-				++it;
-				is_first = false;
-				continue;
-			}
-
-			// get the position
-			auto key = it.get();
-
-			b.add(num);
-
-			cols.clear();
-
 			++row_b;
 			++it;
 		}
