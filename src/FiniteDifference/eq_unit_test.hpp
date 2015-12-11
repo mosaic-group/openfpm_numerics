@@ -110,12 +110,12 @@ BOOST_AUTO_TEST_SUITE( eq_test_suite )
 BOOST_AUTO_TEST_CASE(lid_driven_cavity)
 {
 	// Domain
-	Box<2,float> domain({0.0,0.0},{1.0,1.0});
+	Box<2,float> domain({0.0,0.0},{3.0,1.0});
 
 	// Ghost
 	Ghost<2,float> g(0.01);
 
-	long int sz[] = {8,8};
+	long int sz[] = {256,64};
 	size_t szu[2];
 	szu[0] = (size_t)sz[0];
 	szu[1] = (size_t)sz[1];

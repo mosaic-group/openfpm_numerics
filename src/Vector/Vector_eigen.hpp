@@ -123,11 +123,17 @@ class Vector<T,Eigen::Matrix<T, Eigen::Dynamic, 1>>
 		// set the staggered position of the property
 		openfpm::vector<comb<scheme::Sys_eqs_typ::dims>> stag_pos[sizeof...(pos)];
 
+		// interpolation points for each property
+		openfpm::vector<std::vector<comb<scheme::Sys_eqs_typ::dims>>> interp_pos[sizeof...(pos)];
+
 		// fill the staggered position vector for each property
 		stag_set_position<scheme::Sys_eqs_typ::dims,typename Grid_dst::value_type::type> ssp(stag_pos);
 
 		typedef boost::mpl::vector_c<unsigned int,pos ... > v_pos_type;
 		boost::mpl::for_each_ref<v_pos_type>(ssp);
+
+		interp_points<scheme::Sys_eqs_typ::dims,v_pos_type,typename Grid_dst::value_type::type> itp(interp_pos,stag_pos);
+		boost::mpl::for_each_ref<v_pos_type>(itp);
 
 		// shift the start and stop by the padding
 		grid_key_dx<scheme::Sys_eqs_typ::dims> start_k = grid_key_dx<scheme::Sys_eqs_typ::dims>(start) + pd.getKP1();
@@ -154,7 +160,7 @@ class Vector<T,Eigen::Matrix<T, Eigen::Dynamic, 1>>
 
 			// Transform this id into an id for the Eigen vector
 
-			interp_ele<scheme,Grid_dst,Eigen::Matrix<T, Eigen::Dynamic, 1>,T,sizeof...(pos)> cp(key_dst,g_dst,v,key_src,g_map,stag_pos);
+			interp_ele<scheme,Grid_dst,Eigen::Matrix<T, Eigen::Dynamic, 1>,T,sizeof...(pos)> cp(key_dst,g_dst,v,key_src,g_map,interp_pos);
 
 			boost::mpl::for_each_ref<boost::mpl::range_c<int,0,v_size::value>>(cp);
 
