@@ -17,6 +17,7 @@
 
 constexpr unsigned int x = 0;
 constexpr unsigned int y = 1;
+constexpr unsigned int z = 2;
 constexpr unsigned int V = 0;
 
 struct sys_nn
@@ -148,11 +149,11 @@ BOOST_AUTO_TEST_CASE( der_central_non_periodic)
 	BOOST_REQUIRE_EQUAL(cols_x.size(),2ul);
 	BOOST_REQUIRE_EQUAL(cols_y.size(),2ul);
 
-	BOOST_REQUIRE_EQUAL(cols_x[17+1],1/spacing[0]);
-	BOOST_REQUIRE_EQUAL(cols_x[17-1],-1/spacing[0]);
+	BOOST_REQUIRE_EQUAL(cols_x[17+1],1/spacing[0]/2.0);
+	BOOST_REQUIRE_EQUAL(cols_x[17-1],-1/spacing[0]/2.0);
 
-	BOOST_REQUIRE_EQUAL(cols_y[17+16],1/spacing[1]);
-	BOOST_REQUIRE_EQUAL(cols_y[17-16],-1/spacing[1]);
+	BOOST_REQUIRE_EQUAL(cols_y[17+16],1/spacing[1]/2.0);
+	BOOST_REQUIRE_EQUAL(cols_y[17-16],-1/spacing[1]/2.0);
 
 	// filled colums
 
@@ -173,9 +174,9 @@ BOOST_AUTO_TEST_CASE( der_central_non_periodic)
 	BOOST_REQUIRE_EQUAL(cols_yx.size(),4ul);
 	BOOST_REQUIRE_EQUAL(cols_yy.size(),3ul);
 
-	BOOST_REQUIRE_EQUAL(cols_xx[32],1/spacing[0]/spacing[0]);
-	BOOST_REQUIRE_EQUAL(cols_xx[34],-2/spacing[0]/spacing[0]);
-	BOOST_REQUIRE_EQUAL(cols_xx[36],1/spacing[0]/spacing[0]);
+	BOOST_REQUIRE_EQUAL(cols_xx[32],1/spacing[0]/spacing[0]/2.0/2.0);
+	BOOST_REQUIRE_EQUAL(cols_xx[34],-2/spacing[0]/spacing[0]/2.0/2.0);
+	BOOST_REQUIRE_EQUAL(cols_xx[36],1/spacing[0]/spacing[0]/2.0/2.0);
 
 	BOOST_REQUIRE_EQUAL(cols_xy[17],1/spacing[0]/spacing[1]);
 	BOOST_REQUIRE_EQUAL(cols_xy[19],-1/spacing[0]/spacing[1]);

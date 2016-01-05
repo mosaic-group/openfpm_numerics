@@ -327,7 +327,7 @@ public:
 
 			// get the position
 			auto key = it.get();
-			grid_key_dx<2> gkey = g_map.getGKey(key);
+			grid_key_dx<Sys_eqs::dims> gkey = g_map.getGKey(key);
 
 			// Calculate the non-zero colums
 			T::value(g_map,key,gs,spacing,cols,1.0);

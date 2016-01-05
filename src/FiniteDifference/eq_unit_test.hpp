@@ -19,6 +19,8 @@
 #include "Solvers/umfpack_solver.hpp"
 #include "data_type/aggregate.hpp"
 
+BOOST_AUTO_TEST_SUITE( eq_test_suite )
+
 // Stokes flow
 
 struct lid_nn
@@ -102,8 +104,6 @@ typedef Avg<y,v_x,lid_nn,FORWARD> avg_vx_f;
 #define EQ_1 0
 #define EQ_2 1
 #define EQ_3 2
-
-BOOST_AUTO_TEST_SUITE( eq_test_suite )
 
 // Lid driven cavity, uncompressible fluid
 
