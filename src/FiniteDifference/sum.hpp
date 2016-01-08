@@ -51,20 +51,23 @@ struct sum_functor_value
 	:cols(cols),gs(gs),g_map(g_map),kmap(kmap),key(key),coeff(coeff),spacing(spacing)
 	{};
 
-
-
 	//! It call this function for every expression in the sum
 	template<typename T>
 	void operator()(T& t) const
 	{
 		boost::mpl::at<v_expr, boost::mpl::int_<T::value> >::type::value(g_map,kmap,gs,spacing,cols,coeff);
 	}
+
 };
 
 /*! \brief It model an expression expr1 + ... exprn
  *
  * \tparam expr.. two or more expression to be summed
  * \tparam Sys_eqs stystem specification
+ *
+ * ## Example
+ *
+ * \snippet FDScheme_unit_tests.hpp sum example
  *
  */
 template<typename ... expr>
@@ -78,9 +81,16 @@ struct sum
 
 	typedef typename boost::mpl::at<v_expr, boost::mpl::int_<v_sz::type::value - 1> >::type Sys_eqs;
 
-	/*! \brief Create the row of the Matrix
+	/*! \brief Calculate which colums of the Matrix are non zero
 	 *
-	 * \tparam ord
+	 * \param pos position where the derivative is calculated
+	 * \param gs Grid info
+	 * \param cols non-zero colums calculated by the function
+	 * \param coeff coefficent (constant in front of the derivative)
+	 *
+	 * ### Example
+	 *
+	 * \snippet FDScheme_unit_tests.hpp sum example
 	 *
 	 */
 	inline static void value(const typename stub_or_real<Sys_eqs,Sys_eqs::dims,typename Sys_eqs::stype,typename Sys_eqs::b_grid::decomposition>::type & g_map, grid_dist_key_dx<Sys_eqs::dims> & kmap, const grid_sm<Sys_eqs::dims,void> & gs, typename Sys_eqs::stype (& spacing )[Sys_eqs::dims] , std::unordered_map<long int,typename Sys_eqs::stype > & cols, typename Sys_eqs::stype coeff)
@@ -92,15 +102,19 @@ struct sum
 		boost::mpl::for_each_ref< boost::mpl::range_c<int,0,v_sz::type::value - 1> >(sm);
 	}
 
-	/*! \brief Calculate the position where the derivative is calculated
+	/*! \brief Calculate the position in the cell where the sum operator is performed
 	 *
-	 * In case on non staggered case this function just return pos, in case of staggered,
-	 *  it calculate where the operator is calculated on a staggered grid
+	 * it is done for the first element, the others are supposed to be in the same position
+	 * it just return the position of the staggered property in the first expression
+	 *
+	 * \param position where we are calculating the derivative
+	 * \param gs Grid info
+	 * \param s_pos staggered position of the properties
 	 *
 	 */
-	inline static grid_key_dx<Sys_eqs::dims> position(grid_key_dx<Sys_eqs::dims> & pos, const grid_sm<Sys_eqs::dims,void> & gs)
+	inline static grid_key_dx<Sys_eqs::dims> position(grid_key_dx<Sys_eqs::dims> & pos, const grid_sm<Sys_eqs::dims,void> & gs, const comb<Sys_eqs::dims> (& s_pos)[Sys_eqs::nvar])
 	{
-		std::cerr << "Error " << __FILE__ << ":" << __LINE__ << " only CENTRAL, FORWARD, BACKWARD derivative are defined";
+		return boost::mpl::at<v_expr, boost::mpl::int_<0> >::type::position(pos,gs,s_pos);
 	}
 };
 
@@ -112,19 +126,20 @@ struct minus
 	 *
 	 * \tparam ord
 	 *
+	 * \snipper FDScheme_unit_tests.hpp minus example
+	 *
 	 */
 	inline static void value(const typename stub_or_real<Sys_eqs,Sys_eqs::dims,typename Sys_eqs::stype,typename Sys_eqs::b_grid::decomposition>::type & g_map, grid_dist_key_dx<Sys_eqs::dims> & kmap, const grid_sm<Sys_eqs::dims,void> & gs, typename Sys_eqs::stype (& spacing )[Sys_eqs::dims] , std::unordered_map<long int,typename Sys_eqs::stype > & cols, typename Sys_eqs::stype coeff)
 	{
 		arg::value(g_map,kmap,gs,spacing,cols,-coeff);
 	}
 
-	/*! \brief Calculate the position where the derivative is calculated
+	/*! \brief Calculate the position where the minus is calculated
 	 *
-	 * In case on non staggered case this function just return pos, in case of staggered,
-	 *  it calculate where the operator is calculated on a staggered grid
+	 * it just return the position of the staggered property at first expression
 	 *
 	 */
-	inline static grid_key_dx<Sys_eqs::dims> position(grid_key_dx<Sys_eqs::dims> & pos, const grid_sm<Sys_eqs::dims,void> & gs)
+	inline static grid_key_dx<Sys_eqs::dims> position(grid_key_dx<Sys_eqs::dims> & pos, const grid_sm<Sys_eqs::dims,void> & gs, const comb<Sys_eqs::dims> (& s_pos)[Sys_eqs::nvar])
 	{
 		std::cerr << "Error " << __FILE__ << ":" << __LINE__ << " only CENTRAL, FORWARD, BACKWARD derivative are defined";
 	}

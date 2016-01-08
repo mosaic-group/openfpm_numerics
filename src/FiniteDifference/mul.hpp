@@ -88,7 +88,7 @@ struct const_mul_functor_value
 
 /*! \brief It model an expression expr1 * expr2
  *
- * \warning expr1 MUST be a constant expression
+ * \warning expr1 MUST be a constant expression only expr2 depend form variable, this requirement ensure linearity in the solving variable of the equations
  *
  * \tparam expr1
  * \tparam expr2
@@ -105,9 +105,12 @@ struct mul
 
 	typedef typename boost::mpl::at<v_expr, boost::mpl::int_<v_sz::type::value - 1> >::type Sys_eqs;
 
-	/*! \brief Create the row of the Matrix
+	/*! \brief Calculate which colums of the Matrix are non zero
 	 *
-	 * \tparam ord
+	 * \param pos position where the multiplication is calculated
+	 * \param gs Grid info
+	 * \param cols non-zero colums calculated by the function
+	 * \param coeff coefficent (constant in front of the derivative)
 	 *
 	 */
 	inline static void value(const grid_dist_id<Sys_eqs::dims,typename Sys_eqs::stype,scalar<size_t>,typename Sys_eqs::b_grid::decomposition> & g_map, grid_dist_key_dx<Sys_eqs::dims> & kmap, const grid_sm<Sys_eqs::dims,void> & gs, typename Sys_eqs::stype (& spacing )[Sys_eqs::dims] , std::unordered_map<long int,typename Sys_eqs::stype > & cols, typename Sys_eqs::stype coeff)
@@ -123,15 +126,18 @@ struct mul
 		last_m::value(g_map,kmap,gs,spacing,cols,mfv.coeff);
 	}
 
-	/*! \brief Calculate the position where the derivative is calculated
+	/*! \brief Calculate the position in the cell where the mul operator is performed
 	 *
-	 * In case on non staggered case this function just return pos, in case of staggered,
-	 *  it calculate where the operator is calculated on a staggered grid
+	 * it just return the position of the staggered property in the last expression
+	 *
+	 * \param position where we are calculating the derivative
+	 * \param gs Grid info
+	 * \param s_pos staggered position of the properties
 	 *
 	 */
-	inline static grid_key_dx<Sys_eqs::dims> position(grid_key_dx<Sys_eqs::dims> & pos, const grid_sm<Sys_eqs::dims,void> & gs)
+	inline static grid_key_dx<Sys_eqs::dims> position(grid_key_dx<Sys_eqs::dims> & pos, const grid_sm<Sys_eqs::dims,void> & gs, const comb<Sys_eqs::dims> (& s_pos)[Sys_eqs::nvar])
 	{
-		std::cerr << "Error " << __FILE__ << ":" << __LINE__ << " only CENTRAL, FORWARD, BACKWARD derivative are defined";
+		return boost::mpl::at<v_expr, boost::mpl::int_<v_sz::type::value - 2> >::type::position(pos,gs,s_pos);
 	}
 };
 

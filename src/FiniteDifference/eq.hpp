@@ -14,8 +14,8 @@
 #define STAGGERED_GRID 1
 #define NORMAL_GRID 0
 
-#define PERIODIC true
-#define NON_PERIODIC false
+//#define PERIODIC true
+//#define NON_PERIODIC false
 
 #include "data_type/scalar.hpp"
 #include "util/util_num.hpp"
@@ -94,10 +94,16 @@ public:
 	 */
 	static void value(const map_grid & g_map, grid_dist_key_dx<Sys_eqs::dims> & kmap, const grid_sm<Sys_eqs::dims,void> & gs, typename Sys_eqs::stype (& spacing )[Sys_eqs::dims] , std::unordered_map<long int,typename Sys_eqs::stype > & cols, typename Sys_eqs::stype coeff)
 	{
-		if (Sys_eqs::ord == EQS_FIELD)
-			cols[g_map.template get<0>(kmap)*Sys_eqs::nvar + f] += coeff;
-		else
-			cols[g_map.template get<0>(kmap) + f * gs.size()] += coeff;
+		cols[g_map.template get<0>(kmap)*Sys_eqs::nvar + f] += coeff;
+	}
+
+	/*! \brief
+	 *
+	 *
+	 */
+	static grid_key_dx<Sys_eqs::dims> position(grid_key_dx<Sys_eqs::dims> & pos, const grid_sm<Sys_eqs::dims,void> & gs, const comb<Sys_eqs::dims> (& s_pos)[Sys_eqs::nvar])
+	{
+			return grid_key_dx<Sys_eqs::dims>(s_pos[f]);
 	}
 };
 
@@ -108,10 +114,7 @@ class ConstField
 
 inline size_t mat_factor(size_t nvar, size_t sz, const size_t ord)
 {
-	if (ord == EQS_FIELD)
-		return nvar;
-	else
-		return sz;
+	return nvar;
 }
 
 #endif /* OPENFPM_NUMERICS_SRC_FINITEDIFFERENCE_EQ_HPP_ */

@@ -22,10 +22,7 @@ struct copy_ele_sca_array
 {
 	template<typename Grid> inline static void copy(Grid & grid_dst, const grid_dist_key_dx<Eqs_sys::dims> & key, const Ev & x,size_t lin_id, size_t base_id, size_t gs_size)
 	{
-		if (Eqs_sys::ord == EQS_FIELD)
-			grid_dst.template get<T::value>(key) = x(lin_id * Eqs_sys::nvar + base_id);
-		else
-			grid_dst.template get<T::value>(key) = x(base_id * gs_size + lin_id);
+		grid_dst.template get<T::value>(key) = x(lin_id * Eqs_sys::nvar + base_id);
 	}
 };
 
@@ -45,10 +42,7 @@ struct copy_ele_sca_array<copy_type,T,Ev,Eqs_sys,1>
 	{
 		for (size_t i = 0 ; i < std::extent<copy_type>::value ; i++)
 		{
-			if (Eqs_sys::ord == EQS_FIELD)
-				grid_dst.template get<T::value>(key)[i] = x(lin_id * Eqs_sys::nvar + base_id + i);
-			else
-				grid_dst.template get<T::value>(key)[i] = x(base_id * gs_size + lin_id);
+			grid_dst.template get<T::value>(key)[i] = x(lin_id * Eqs_sys::nvar + base_id + i);
 		}
 	}
 };
@@ -70,14 +64,10 @@ struct interp_ele_sca_array
 
 		for (size_t i = 0 ; i < interp_pos.get(0).size() ; i++)
 		{
-				size_t gs_size = g_map.getGridInfoVoid().size();
 				auto key_m = key_src.move(interp_pos.get(0)[i]);
 				size_t lin_id = g_map.template get<0>(key_m);
 
-				if (scheme::Sys_eqs_typ::ord == EQS_FIELD)
-					grid_dst.template get<T::value>(key) += x(lin_id * scheme::Sys_eqs_typ::nvar + base_id);
-				else
-					grid_dst.template get<T::value>(key) += x(base_id * gs_size + lin_id);
+				grid_dst.template get<T::value>(key) += x(lin_id * scheme::Sys_eqs_typ::nvar + base_id);
 
 				division += 1.0;
 		}
@@ -106,14 +96,10 @@ struct interp_ele_sca_array<copy_type,T,Ev,scheme,1>
 			division = 0.0;
 			for (size_t i = 0 ; i < interp_pos.get(j).size() ; i++)
 			{
-					size_t gs_size = g_map.getGridInfoVoid().size();
 					auto key_m = key_src.move(interp_pos.get(j)[i]);
 					size_t lin_id = g_map.template get<0>(key_m);
 
-					if (scheme::Sys_eqs_typ::ord == EQS_FIELD)
-						grid_dst.template get<T::value>(key)[j] += x(lin_id * scheme::Sys_eqs_typ::nvar + base_id);
-					else
-						grid_dst.template get<T::value>(key)[j] += x(base_id * gs_size + lin_id);
+					grid_dst.template get<T::value>(key)[j] += x(lin_id * scheme::Sys_eqs_typ::nvar + base_id);
 
 					division += 1.0;
 			}

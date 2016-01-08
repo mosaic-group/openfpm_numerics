@@ -42,18 +42,28 @@ class Avg
 
 	/*! \brief Calculate the position where the derivative is calculated
 	 *
-	 * In case on non staggered case this function just return pos, in case of staggered,
-	 *  it calculate where the operator is calculated on a staggered grid
+	 * In case of non staggered case this function just return a null grid_key, in case of staggered,
+	 *  it calculate how the operator shift the calculation in the cell
+	 *
+	 * \param position where we are calculating the derivative
+	 * \param gs Grid info
+	 * \param s_pos staggered position of the properties
 	 *
 	 */
-	inline static grid_key_dx<Sys_eqs::dims> position(grid_key_dx<Sys_eqs::dims> & pos, const grid_sm<Sys_eqs::dims,void> & gs)
+	inline static grid_key_dx<Sys_eqs::dims> position(grid_key_dx<Sys_eqs::dims> & pos, const grid_sm<Sys_eqs::dims,void> & gs, const openfpm::vector<comb<Sys_eqs::dims>> & s_pos = openfpm::vector<comb<Sys_eqs::dims>>())
 	{
 		std::cerr << "Error " << __FILE__ << ":" << __LINE__ << " only CENTRAL, FORWARD, BACKWARD derivative are defined";
 	}
 };
 
-/*! \brief Average on direction i
+/*! \brief Central average scheme on direction i
  *
+ * \verbatim
+ *
+ *  +0.5     +0.5
+ *   *---+---*
+ *
+ * \endverbatim
  *
  */
 template<unsigned int d, typename arg, typename Sys_eqs>
@@ -61,8 +71,20 @@ class Avg<d,arg,Sys_eqs,CENTRAL>
 {
 	public:
 
-	/*! \brief fill the row
+	/*! \brief Calculate which colums of the Matrix are non zero
 	 *
+	 * stub_or_real it is just for change the argument type when testing, in normal
+	 * conditions it is a distributed map
+	 *
+	 * \param g_map It is the map explained in FDScheme
+	 * \param k_map position where the average is calculated
+	 * \param gs Grid info
+	 * \param cols non-zero colums calculated by the function
+	 * \param coeff coefficent (constant in front of the derivative)
+	 *
+	 * ### Example
+	 *
+	 * \snippet FDScheme_unit_tests.hpp Usage of stencil derivative
 	 *
 	 */
 	inline static void value(const typename stub_or_real<Sys_eqs,Sys_eqs::dims,typename Sys_eqs::stype,typename Sys_eqs::b_grid::decomposition>::type & g_map, grid_dist_key_dx<Sys_eqs::dims> & kmap , const grid_sm<Sys_eqs::dims,void> & gs, typename Sys_eqs::stype (& spacing )[Sys_eqs::dims] , std::unordered_map<long int,typename Sys_eqs::stype > & cols, typename Sys_eqs::stype coeff)
@@ -87,43 +109,44 @@ class Avg<d,arg,Sys_eqs,CENTRAL>
 	}
 
 
-	/*! \brief Calculate the position where the derivative is calculated
+	/*! \brief Calculate the position where the average is calculated
 	 *
-	 * In case on non staggered case this function just return pos, in case of staggered,
-	 *  it calculate where the operator is calculated on a staggered grid
+	 * It follow the same concept of central derivative
 	 *
-	 *  \param pos from the position
-	 *  \param fld Field we are deriving, if not provided the function just return pos
-	 *  \param s_pos position of the properties in the staggered grid
+	 * \param position where we are calculating the derivative
+	 * \param gs Grid info
+	 * \param s_pos staggered position of the properties
 	 *
 	 */
-	inline static grid_key_dx<Sys_eqs::dims> position(grid_key_dx<Sys_eqs::dims> & pos, long int fld = -1, const openfpm::vector<comb<Sys_eqs::dims>> & s_pos = openfpm::vector<comb<Sys_eqs::dims>>())
+	inline static grid_key_dx<Sys_eqs::dims> position(grid_key_dx<Sys_eqs::dims> & pos, const grid_sm<Sys_eqs::dims,void> & gs, const comb<Sys_eqs::dims> (& s_pos)[Sys_eqs::nvar])
 	{
+		auto arg_pos = arg::position(pos,gs,s_pos);
 		if (is_grid_staggered<Sys_eqs>::value())
 		{
-			if (fld == -1)
-				return pos;
-
-			if (s_pos[fld][d] == 1)
+			if (arg_pos.get(d) == -1)
 			{
-				grid_key_dx<Sys_eqs::dims> ret = pos;
-				ret.set_d(d,0);
-				return pos;
+				arg_pos.set_d(d,0);
+				return arg_pos;
 			}
 			else
 			{
-				grid_key_dx<Sys_eqs::dims> ret = pos;
-				ret.set_d(d,1);
-				return pos;
+				arg_pos.set_d(d,-1);
+				return arg_pos;
 			}
 		}
 
-		return pos;
+		return arg_pos;
 	}
 };
 
-/*! \brief Average FORWARD on direction i
+/*! \brief FORWARD average on direction i
  *
+ * \verbatim
+ *
+ *  +0.5    0.5
+ *    +------*
+ *
+ * \endverbatim
  *
  */
 template<unsigned int d, typename arg, typename Sys_eqs>
@@ -131,8 +154,20 @@ class Avg<d,arg,Sys_eqs,FORWARD>
 {
 	public:
 
-	/*! \brief fill the row
+	/*! \brief Calculate which colums of the Matrix are non zero
 	 *
+	 * stub_or_real it is just for change the argument type when testing, in normal
+	 * conditions it is a distributed map
+	 *
+	 * \param g_map It is the map explained in FDScheme
+	 * \param k_map position where the average is calculated
+	 * \param gs Grid info
+	 * \param cols non-zero colums calculated by the function
+	 * \param coeff coefficent (constant in front of the derivative)
+	 *
+	 * ### Example
+	 *
+	 * \snippet FDScheme_unit_tests.hpp Usage of stencil derivative
 	 *
 	 */
 	inline static void value(const typename stub_or_real<Sys_eqs,Sys_eqs::dims,typename Sys_eqs::stype,typename Sys_eqs::b_grid::decomposition>::type & g_map, grid_dist_key_dx<Sys_eqs::dims> & kmap , const grid_sm<Sys_eqs::dims,void> & gs, typename Sys_eqs::stype (& spacing )[Sys_eqs::dims] , std::unordered_map<long int,typename Sys_eqs::stype > & cols, typename Sys_eqs::stype coeff)
@@ -148,24 +183,30 @@ class Avg<d,arg,Sys_eqs,FORWARD>
 	}
 
 
-	/*! \brief Calculate the position where the derivative is calculated
+	/*! \brief Calculate the position in the cell where the average is calculated
 	 *
-	 * In case on non staggered case this function just return pos, in case of staggered,
-	 *  it calculate where the operator is calculated on a staggered grid
+	 * In case of non staggered case this function just return a null grid_key, in case of staggered,
+	 * the FORWARD scheme return the position of the staggered property
 	 *
-	 *  \param pos from the position
-	 *  \param fld Field we are deriving, if not provided the function just return pos
-	 *  \param s_pos position of the properties in the staggered grid
+	 * \param position where we are calculating the derivative
+	 * \param gs Grid info
+	 * \param s_pos staggered position of the properties
 	 *
 	 */
-	inline static grid_key_dx<Sys_eqs::dims> position(grid_key_dx<Sys_eqs::dims> & pos, long int fld = -1, const openfpm::vector<comb<Sys_eqs::dims>> & s_pos = openfpm::vector<comb<Sys_eqs::dims>>())
+	inline static grid_key_dx<Sys_eqs::dims> position(grid_key_dx<Sys_eqs::dims> & pos, const grid_sm<Sys_eqs::dims,void> & gs, const comb<Sys_eqs::dims> (& s_pos)[Sys_eqs::nvar])
 	{
-		return pos;
+		return arg::position(pos,gs,s_pos);
 	}
 };
 
-/*! \brief Average BACKWARD on direction i
+/*! \brief First order BACKWARD derivative on direction i
  *
+ * \verbatim
+ *
+ *  +0.5    0.5
+ *    *------+
+ *
+ * \endverbatim
  *
  */
 template<unsigned int d, typename arg, typename Sys_eqs>
@@ -173,8 +214,20 @@ class Avg<d,arg,Sys_eqs,BACKWARD>
 {
 	public:
 
-	/*! \brief fill the row
+	/*! \brief Calculate which colums of the Matrix are non zero
 	 *
+	 * stub_or_real it is just for change the argument type when testing, in normal
+	 * conditions it is a distributed map
+	 *
+	 * \param g_map It is the map explained in FDScheme
+	 * \param k_map position where the average is calculated
+	 * \param gs Grid info
+	 * \param cols non-zero colums calculated by the function
+	 * \param coeff coefficent (constant in front of the derivative)
+	 *
+	 * ### Example
+	 *
+	 * \snippet FDScheme_unit_tests.hpp Usage of stencil derivative
 	 *
 	 */
 	inline static void value(const typename stub_or_real<Sys_eqs,Sys_eqs::dims,typename Sys_eqs::stype,typename Sys_eqs::b_grid::decomposition>::type & g_map, grid_dist_key_dx<Sys_eqs::dims> & kmap , const grid_sm<Sys_eqs::dims,void> & gs, typename Sys_eqs::stype (& spacing )[Sys_eqs::dims], std::unordered_map<long int,typename Sys_eqs::stype > & cols, typename Sys_eqs::stype coeff)
@@ -189,19 +242,19 @@ class Avg<d,arg,Sys_eqs,BACKWARD>
 	}
 
 
-	/*! \brief Calculate the position where the derivative is calculated
+	/*! \brief Calculate the position in the cell where the average is calculated
 	 *
-	 * In case on non staggered case this function just return pos, in case of staggered,
-	 *  it calculate where the operator is calculated on a staggered grid
+	 * In case of non staggered case this function just return a null grid_key, in case of staggered,
+	 * the BACKWARD scheme return the position of the staggered property
 	 *
-	 *  \param pos from the position
-	 *  \param fld Field we are deriving, if not provided the function just return pos
-	 *  \param s_pos position of the properties in the staggered grid
+	 * \param position where we are calculating the derivative
+	 * \param gs Grid info
+	 * \param s_pos staggered position of the properties
 	 *
 	 */
-	inline static grid_key_dx<Sys_eqs::dims> position(grid_key_dx<Sys_eqs::dims> & pos, long int fld = -1, const openfpm::vector<comb<Sys_eqs::dims>> & s_pos = openfpm::vector<comb<Sys_eqs::dims>>())
+	inline static grid_key_dx<Sys_eqs::dims> position(grid_key_dx<Sys_eqs::dims> & pos, const grid_sm<Sys_eqs::dims,void> & gs, const comb<Sys_eqs::dims> (& s_pos)[Sys_eqs::nvar])
 	{
-		return pos;
+		return arg::position(pos,gs,s_pos);
 	}
 };
 

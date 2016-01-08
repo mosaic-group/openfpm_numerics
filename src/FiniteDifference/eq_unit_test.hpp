@@ -21,39 +21,43 @@
 
 BOOST_AUTO_TEST_SUITE( eq_test_suite )
 
-// Stokes flow
+//! [Definition of the system]
 
 struct lid_nn
 {
 	// dimensionaly of the equation (2D problem 3D problem ...)
 	static const unsigned int dims = 2;
-	// number of fields in the system
+
+	// number of fields in the system v_x, v_y, P so a total of 3
 	static const unsigned int nvar = 3;
-	static const unsigned int ord = EQS_FIELD;
 
-	// boundary at X and Y
+	// boundary conditions PERIODIC OR NON_PERIODIC
 	static const bool boundary[];
-
-	//
-	static constexpr unsigned int num_cfields = 0;
 
 	// type of space float, double, ...
 	typedef float stype;
 
-	// type of base grid
+	// type of base grid, it is the distributed grid that will store the result
+	// Note the first property is a 2D vector (velocity), the second is a scalar
 	typedef grid_dist_id<2,float,aggregate<float[2],float>,CartDecomposition<2,float>> b_grid;
 
-	// type of SparseMatrix
+	// type of SparseMatrix, for the linear system, this parameter is bounded by the solver
+	// that you are using
 	typedef SparseMatrix<double,int> SparseMatrix_type;
 
-	// type of Vector
+	// type of Vector for the linear system, this parameter is bounded by the solver
+	// that you are using
 	typedef Vector<double> Vector_type;
 
-	// Define the the underline grid is staggered
+	// Define that the underline grid where we discretize the operators is staggered
 	static const int grid_type = STAGGERED_GRID;
 };
 
 const bool lid_nn::boundary[] = {NON_PERIODIC,NON_PERIODIC};
+
+//! [Definition of the system]
+
+//! [Definition of the equation of the system in the bulk and at the boundary]
 
 // Constant Field
 struct eta
@@ -63,12 +67,12 @@ struct eta
 	static float val()	{return 1.0;}
 };
 
-// Model the equations
-
+// Convenient constants
 constexpr unsigned int v[] = {0,1};
 constexpr unsigned int P = 2;
 constexpr unsigned int ic = 2;
 
+// Create field that we have v_x, v_y, P
 typedef Field<v[x],lid_nn> v_x;
 typedef Field<v[y],lid_nn> v_y;
 typedef Field<P,lid_nn> Prs;
@@ -94,6 +98,30 @@ typedef D<y,v_y,lid_nn,FORWARD> dy_vy;
 typedef sum<dx_vx,dy_vy,lid_nn> ic_eq;
 
 
+// Equation for boundary conditions
+
+/* Consider the staggered cell
+ *
+ 	 	 \verbatim
+
+		+--$--+
+		|     |
+		#  *  #
+		|     |
+		0--$--+
+
+	  # = velocity(y)
+	  $ = velocity(x)
+	  * = pressure
+
+		\endverbatim
+ *
+ *
+ * If we want to impose v_y = 0 on 0 we have to interpolate between # of this cell
+ * and # of the previous cell on y, (Average) or Avg operator
+ *
+ */
+
 // Directional Avg
 typedef Avg<x,v_y,lid_nn> avg_vy;
 typedef Avg<y,v_x,lid_nn> avg_vx;
@@ -105,56 +133,73 @@ typedef Avg<y,v_x,lid_nn,FORWARD> avg_vx_f;
 #define EQ_2 1
 #define EQ_3 2
 
-// Lid driven cavity, uncompressible fluid
+//! [Definition of the equation of the system in the bulk and at the boundary]
+
+// Lid driven cavity, incompressible fluid
 
 BOOST_AUTO_TEST_CASE(lid_driven_cavity)
 {
-	// Domain
+	//! [lid-driven cavity 2D]
+
+	// Domain, a rectangle
 	Box<2,float> domain({0.0,0.0},{3.0,1.0});
 
-	// Ghost
+	// Ghost (Not important in this case but required)
 	Ghost<2,float> g(0.01);
 
+	// Grid points on x=256 and y=64
 	long int sz[] = {256,64};
 	size_t szu[2];
 	szu[0] = (size_t)sz[0];
 	szu[1] = (size_t)sz[1];
 
+	// We need one more point on the left and down part of the domain
+	// This is given by the boundary conditions that we impose, the
+	// reason is mathematical in order to have a well defined system
+	// and cannot be discussed here
 	Padding<2> pd({1,1},{0,0});
 
-	// Initialize the global VCluster
+	// Initialize openfpm
 	init_global_v_cluster(&boost::unit_test::framework::master_test_suite().argc,&boost::unit_test::framework::master_test_suite().argv);
 
-	// Initialize openfpm
+	// Distributed grid that store the solution
 	grid_dist_id<2,float,aggregate<float[2],float>,CartDecomposition<2,float>> g_dist(szu,domain,g);
 
-	// Distributed grid
-	FDScheme<lid_nn> fd(pd,domain,g_dist.getGridInfo(),g_dist.getDecomposition(),g_dist.getVC());
+	// Finite difference scheme
+	FDScheme<lid_nn> fd(pd,domain,g_dist.getGridInfo(),g_dist.getDecomposition());
 
-	// start and end of the bulk
-
+	// Here we impose the equation, we start from the incompressibility Eq imposed in the bulk with the
+	// exception of the first point {0,0} and than we set P = 0 in {0,0}, why we are doing this is again
+	// mathematical to have a well defined system, an intuitive explanation is that P and P + c are both
+	// solution for the incompressibility equation, this produce an ill-posed problem to make it well posed
+	// we set one point in this case {0,0} the pressure to a fixed constant for convenience P = 0
 	fd.impose(ic_eq(),0.0, EQ_3, {0,0},{sz[0]-2,sz[1]-2},true);
 	fd.impose(Prs(),  0.0, EQ_3, {0,0},{0,0});
+
+	// Here we impose the Eq1 and Eq2
 	fd.impose(vx_eq(),0.0, EQ_1, {1,0},{sz[0]-2,sz[1]-2});
 	fd.impose(vy_eq(),0.0, EQ_2, {0,1},{sz[0]-2,sz[1]-2});
 
-	// v_x
-	// R L
+	// v_x and v_y
+	// Imposing B1
 	fd.impose(v_x(),0.0, EQ_1, {0,0},{0,sz[1]-2});
-	fd.impose(v_x(),0.0, EQ_1, {sz[0]-1,0},{sz[0]-1,sz[1]-2});
-
-	// T B
-	fd.impose(avg_vx_f(),0.0, EQ_1, {0,-1},{sz[0]-1,-1});
-	fd.impose(avg_vx(),0.0, EQ_1,   {0,sz[1]-1},{sz[0]-1,sz[1]-1});
-
-	// v_y
-	// R L
 	fd.impose(avg_vy_f(),0.0, EQ_2 , {-1,0},{-1,sz[1]-1});
+	// Imposing B2
+	fd.impose(v_x(),0.0, EQ_1, {sz[0]-1,0},{sz[0]-1,sz[1]-2});
 	fd.impose(avg_vy(),1.0, EQ_2,    {sz[0]-1,0},{sz[0]-1,sz[1]-1});
 
-	// T B
+	// Imposing B3
+	fd.impose(avg_vx_f(),0.0, EQ_1, {0,-1},{sz[0]-1,-1});
 	fd.impose(v_y(), 0.0, EQ_2, {0,0},{sz[0]-2,0});
+	// Imposing B4
+	fd.impose(avg_vx(),0.0, EQ_1,   {0,sz[1]-1},{sz[0]-1,sz[1]-1});
 	fd.impose(v_y(), 0.0, EQ_2, {0,sz[1]-1},{sz[0]-2,sz[1]-1});
+
+	// When we pad the grid, there are points of the grid that are not
+	// touched by the previous condition. Mathematically this lead
+	// to have too many variables for the conditions that we are imposing.
+	// Here we are imposing variables that we do not touch to zero
+	//
 
 	// Padding pressure
 	fd.impose(Prs(), 0.0, EQ_3, {-1,-1},{sz[0]-1,-1});
@@ -168,8 +213,10 @@ BOOST_AUTO_TEST_CASE(lid_driven_cavity)
 
 	auto x = umfpack_solver<double>::solve(fd.getA(),fd.getB());
 
-	// Bring the solution to grid
+	// Copy the solution to grid
 	x.copy<FDScheme<lid_nn>,decltype(g_dist),0,1>(fd,{0,0},{sz[0]-1,sz[1]-1},g_dist);
+
+	//! [lid-driven cavity 2D]
 
 	g_dist.write("lid_driven_cavity");
 }

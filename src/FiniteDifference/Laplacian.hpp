@@ -18,9 +18,19 @@
 template<typename arg, typename Sys_eqs, unsigned int impl=CENTRAL>
 class Lap
 {
-	/*! \brief Create the row of the Matrix
+	/*! \brief Calculate which colums of the Matrix are non zero
 	 *
-	 * \tparam ord
+	 * stub_or_real it is just for change the argument type when testing, in normal
+	 * conditions it is a distributed map
+	 *
+	 * \param pos position where the laplacian is calculated
+	 * \param gs Grid info
+	 * \param cols non-zero colums calculated by the function
+	 * \param coeff coefficent (constant in front of the derivative)
+	 *
+	 * ### Example
+	 *
+	 * \snippet FDScheme_unit_tests.hpp Laplacian usage
 	 *
 	 */
 	inline static void value(const typename stub_or_real<Sys_eqs,Sys_eqs::dims,typename Sys_eqs::stype,typename Sys_eqs::b_grid::decomposition>::type & g_map, grid_dist_key_dx<Sys_eqs::dims> & kmap , const grid_sm<Sys_eqs::dims,void> & gs, std::unordered_map<long int,typename Sys_eqs::stype > & cols, typename Sys_eqs::stype coeff)
@@ -28,10 +38,11 @@ class Lap
 		std::cerr << "Error " << __FILE__ << ":" << __LINE__ << " only CENTRAL, FORWARD, BACKWARD derivative are defined";
 	}
 
-	/*! \brief Calculate the position where the laplacian is calculated
+	/*! \brief Calculate the position where the derivative is calculated
 	 *
-	 * In case on non staggered case this function just return pos, in case of staggered,
-	 *  it calculate where the operator is calculated on a staggered grid
+	 * \param position where we are calculating the derivative
+	 * \param gs Grid info
+	 * \param s_pos staggered position of the properties
 	 *
 	 */
 	inline static grid_key_dx<Sys_eqs::dims> position(grid_key_dx<Sys_eqs::dims> & pos, const grid_sm<Sys_eqs::dims,void> & gs)
@@ -40,7 +51,19 @@ class Lap
 	}
 };
 
-/*! \brief Derivative on direction i
+/*! \brief Laplacian second order approximation CENTRAL Scheme
+ *
+ * \verbatim
+
+          1.0
+           *
+           | -4.0
+   1.0 *---+---* 1.0
+           |
+           *
+          1.0
+
+ * \endverbatim
  *
  *
  */
@@ -49,8 +72,20 @@ class Lap<arg,Sys_eqs,CENTRAL>
 {
 public:
 
-	/*! \brief fill the row
+
+	/*! \brief Calculate which colums of the Matrix are non zero
 	 *
+	 * stub_or_real it is just for change the argument type when testing, in normal
+	 * conditions it is a distributed map
+	 *
+	 * \param pos position where the laplacian is calculated
+	 * \param gs Grid info
+	 * \param cols non-zero colums calculated by the function
+	 * \param coeff coefficent (constant in front of the derivative)
+	 *
+	 * ### Example
+	 *
+	 * \snippet FDScheme_unit_tests.hpp Laplacian usage
 	 *
 	 */
 	inline static void value(const typename stub_or_real<Sys_eqs,Sys_eqs::dims,typename Sys_eqs::stype,typename Sys_eqs::b_grid::decomposition>::type & g_map, grid_dist_key_dx<Sys_eqs::dims> & kmap , const grid_sm<Sys_eqs::dims,void> & gs, typename Sys_eqs::stype (& spacing )[Sys_eqs::dims] , std::unordered_map<long int,typename Sys_eqs::stype > & cols, typename Sys_eqs::stype coeff)
@@ -75,13 +110,17 @@ public:
 
 	/*! \brief Calculate the position where the derivative is calculated
 	 *
-	 * In case of non staggered case this function just return pos, in case of staggered,
-	 * it calculate where the operator is calculated on a staggered grid
+	 * In case of non staggered case this function just return a null grid_key, in case of staggered,
+	 * the CENTRAL Laplacian scheme return the position of the staggered property
+	 *
+	 * \param position where we are calculating the derivative
+	 * \param gs Grid info
+	 * \param s_pos staggered position of the properties
 	 *
 	 */
-	inline static grid_key_dx<Sys_eqs::dims> position(grid_key_dx<Sys_eqs::dims> & pos, const openfpm::vector<comb<Sys_eqs::dims>> & s_pos, long int & fld)
+	inline static grid_key_dx<Sys_eqs::dims> position(grid_key_dx<Sys_eqs::dims> & pos, const grid_sm<Sys_eqs::dims,void> & gs, const comb<Sys_eqs::dims> (& s_pos)[Sys_eqs::nvar])
 	{
-		return pos;
+		return arg::position(pos,gs,s_pos);
 	}
 };
 
