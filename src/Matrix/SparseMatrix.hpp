@@ -46,9 +46,9 @@ template<typename T, unsigned int impl> struct triplet
 	}
 };
 
-/* ! \brief Sparse Matrix implementation
+/*! \brief Sparse Matrix implementation
  *
- * \tparam T Type of the sparse Matrix
+ * \tparam T Type of the sparse Matrix store on each row,colums
  * \tparam id_t type of id
  * \tparam impl implementation
  *

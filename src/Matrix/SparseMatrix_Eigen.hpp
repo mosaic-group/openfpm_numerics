@@ -13,6 +13,12 @@
 
 #define EIGEN_TRIPLET 1
 
+/*! \brief It store one non-zero element in the sparse matrix
+ *
+ * Given a row, and a column, store a value
+ *
+ *
+ */
 template<typename T>
 struct triplet<T,EIGEN_TRIPLET>
 {
@@ -40,6 +46,13 @@ struct triplet<T,EIGEN_TRIPLET>
 	}
 };
 
+/* ! \brief Sparse Matrix implementation, that map over Eigen
+ *
+ * \tparam T Type of the sparse Matrix store on each row,colums
+ * \tparam id_t type of id
+ * \tparam impl implementation
+ *
+ */
 template<typename T, typename id_t>
 class SparseMatrix<T,id_t,Eigen::SparseMatrix<T,0,id_t>>
 {

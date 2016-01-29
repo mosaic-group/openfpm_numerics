@@ -6,6 +6,7 @@ numerics_SOURCES = main.cpp ../../openfpm_vcluster/src/VCluster.cpp ../../openfp
 numerics_CXXFLAGS = $(INCLUDES_PATH) $(BOOST_CPPFLAGS) $(SUITESPARSE_INCLUDE) $(METIS_INCLUDE) $(EIGEN_INCLUDE) -Wno-deprecated-declarations -Wunused-local-typedefs
 numerics_CFLAGS = $(CUDA_CFLAGS)
 numerics_LDADD = $(LINKLIBS) -lmetis
+nobase_include_HEADERS = PSE/Kernels.hpp
 
 .cu.o :
 	$(NVCC) $(NVCCFLAGS) -o $@ -c $<
