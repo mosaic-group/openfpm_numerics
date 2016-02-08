@@ -219,6 +219,11 @@ BOOST_AUTO_TEST_CASE(lid_driven_cavity)
 	//! [lid-driven cavity 2D]
 
 	g_dist.write("lid_driven_cavity");
+
+
+	// Check that match
+	bool test = compare("lid_driven_cavity_grid_0_test.vtk","lid_driven_cavity_grid_0.vtk");
+	BOOST_REQUIRE_EQUAL(test,true);
 }
 
 BOOST_AUTO_TEST_SUITE_END()

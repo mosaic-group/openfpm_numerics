@@ -229,6 +229,10 @@ BOOST_AUTO_TEST_CASE(lid_driven_cavity)
 	x.copy<FDScheme<lid_nn_3d>,decltype(g_dist),velocity,pressure>(fd,{0,0},{sz[0]-1,sz[1]-1,sz[2]-1},g_dist);
 
 	g_dist.write("lid_driven_cavity_3d");
+
+	// Check that match
+	bool test = compare("lid_driven_cavity_3d_grid_0.vtk","lid_driven_cavity_3d_grid_0_test.vtk");
+	BOOST_REQUIRE_EQUAL(test,true);
 }
 
 BOOST_AUTO_TEST_SUITE_END()

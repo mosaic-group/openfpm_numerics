@@ -228,6 +228,32 @@ public:
 		}
 	}
 
+	/*! \brief Collect the vector into one processor
+	 *
+	 * Eigen does not have a real parallel vector, so in order to work we have to collect
+	 * the vector in one processor
+	 *
+	 * This function collect the information from all the other processor into one
+	 *
+	 */
+	void collect()
+	{
+
+	}
+
+	/*! \brief Scatter the vector information to the other processors
+	 *
+	 * Eigen does not have a real parallel vector, so in order to work we have to scatter
+	 * the vector from one processor to the other
+	 *
+	 * This function scatter the information to all the other processors
+	 *
+	 */
+	void scatter()
+	{
+
+	}
+
 	/*! \brief Load from file
 	 *
 	 *
