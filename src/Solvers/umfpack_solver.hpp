@@ -44,7 +44,7 @@ public:
 	 *	\tparam impl Implementation of the SparseMatrix
 	 *
 	 */
-	template<typename impl> static Vector<double> solve(const SparseMatrix<double,int,impl> & A, const Vector<double> & b, size_t opt = UMFPACK_NONE)
+	template<typename impl> static Vector<double> solve(SparseMatrix<double,int,impl> & A, const Vector<double> & b, size_t opt = UMFPACK_NONE)
 	{
 		Vcluster & v_cl = *global_v_cluster;
 
@@ -80,7 +80,7 @@ public:
 			}
 
 			// Vector is only on master, scatter back the information
-			x.sync();
+			x.scatter();
 		}
 		return x;
 	}

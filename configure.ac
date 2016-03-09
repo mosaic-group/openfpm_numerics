@@ -15,6 +15,7 @@ m4_ifdef([ACX_MPI],,[m4_include([m4/acx_mpi.m4])])
 m4_ifdef([AX_OPENMP],,[m4_include([m4/ax_openmp.m4])])
 m4_ifdef([AX_CUDA],,[m4_include([m4/ax_cuda.m4])])
 m4_ifdef([IMMDX_LIB_METIS],,[m4_include([m4/immdx_lib_metis.m4])])
+m4_ifdef([IMMDX_LIB_PARMETIS],,[m4_include([m4/immdx_lib_parmetis.m4])])
 m4_ifdef([AX_BOOST_BASE],,[m4_include([m4/ax_boost_base.m4])])
 m4_ifdef([AX_BOOST_IOSTREAMS],,[m4_include([m4/ax_boost_iostreams.m4])])
 m4_ifdef([AX_BOOST_PROGRAM_OPTIONS],,[m4_include([m4/ax_boost_program_options.m4])])
@@ -23,8 +24,19 @@ m4_ifdef([AX_BLAS],,[m4_include([m4/ax_blas.m4])])
 m4_ifdef([AX_LAPACK],,[m4_include([m4/ax_lapack.m4])])
 m4_ifdef([AX_SUITESPARSE],,[m4_include([m4/ax_suitesparse.m4])])
 m4_ifdef([AX_EIGEN],,[m4_include([m4/ax_eigen.m4])])
+m4_ifdef([AX_LIB_HDF5],,[m4_include([m4/ax_lib_hdf5.m4])]])
 
-CXXFLAGS+=" --std=c++11 "
+case $host_os in
+   *cygwin*)
+        # Do something specific for cygwin
+        CXXFLAGS+=" --std=gnu++11 "
+        ;;
+    *)
+        #Default Case
+        CXXFLAGS+=" --std=c++11 "
+        ;;
+esac
+
 NVCCFLAGS=" "
 INCLUDES_PATH=" "
 
@@ -91,6 +103,23 @@ fi
 
 IMMDX_LIB_METIS([],[echo "Cannot detect metis, use the --with-metis option if it is not installed in the default location"
                     exit 201])
+
+## Check for parMetis
+
+IMMDX_LIB_PARMETIS([],[echo "Cannot detect parmetis, use the --with-parmetis option if it is not installed in the default location"
+                    exit 203])
+
+#########
+
+## Check for HDF5
+
+AX_LIB_HDF5([parallel])
+
+if test x"$with_hdf5" = x"no"; then
+    echo "Cannot detect hdf5, use the --with-hdf5 option if it is not installed in the default location"
+    exit 207
+fi
+
 
 ####### include OpenFPM_numerics include path"
 

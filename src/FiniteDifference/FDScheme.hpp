@@ -135,9 +135,6 @@ private:
 
 	typedef typename Sys_eqs::SparseMatrix_type::triplet_type triplet;
 
-	// Sparse Matrix
-	openfpm::vector<triplet> trpl;
-
 	openfpm::vector<typename Sys_eqs::stype> b;
 
 	// Domain Grid informations
@@ -226,6 +223,8 @@ private:
 	 */
 	void consistency()
 	{
+		openfpm::vector<triplet> & trpl = A.getMatrixTriplets();
+
 		// A and B must have the same rows
 		if (row != row_b)
 			std::cerr << "Error " << __FILE__ << ":" << __LINE__ << "the term B and the Matrix A for Ax=B must contain the same number of rows\n";
@@ -351,7 +350,7 @@ public:
 		// Counter
 		size_t cnt = 0;
 
-		// Create the re-mapping-grid
+		// Create the re-mapping grid
 		auto it = g_map.getDomainIterator();
 
 		while (it.isNext())
@@ -422,6 +421,8 @@ public:
 	 */
 	template<typename T> void impose(const T & op , typename Sys_eqs::stype num ,long int id ,grid_dist_iterator_sub<Sys_eqs::dims,typename g_map_type::d_grid> it_d, bool skip_first = false)
 	{
+		openfpm::vector<triplet> & trpl = A.getMatrixTriplets();
+
 		auto it = it_d;
 		grid_sm<Sys_eqs::dims,void> gs = g_map.getGridInfoVoid();
 
@@ -489,7 +490,6 @@ public:
 		consistency();
 #endif
 		A.resize(row,row);
-		A.setFromTriplets(trpl);
 
 		return A;
 
