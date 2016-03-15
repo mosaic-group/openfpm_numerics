@@ -468,7 +468,7 @@ public:
 
 			// if SE_CLASS1 is defined check the position
 #ifdef SE_CLASS1
-			T::position(gkey,gs,s_pos);
+//			T::position(key,gs,s_pos);
 #endif
 
 			++row;
