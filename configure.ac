@@ -83,8 +83,6 @@ AC_ARG_ENABLE(debug,
   	debuger="$enableval"
 )
 
-
-
 AC_MSG_RESULT($debuger)
 if test x"$debuger" = x"yes"; then
 	AC_DEFINE([DEBUG_MODE],[],[Debug])
@@ -254,6 +252,19 @@ AX_SUITESPARSE([],[echo "suitesparse not found"
 
 AX_EIGEN([],[echo "eigen not found"
                     exit 206])
+
+###### Checking for compiler flags -fext-numeric-literals
+
+my_save_cflags="$CFLAGS"
+CFLAGS=-fext-numeric-literals
+AC_MSG_CHECKING([whether CXX supports -fext-numeric-literals])
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([])],
+    [AC_MSG_RESULT([yes])]
+    [AM_CXXFLAGS=-fext-numeric-literals],
+    [AC_MSG_RESULT([no])]
+)
+CFLAGS="$my_save_cflags"
+AC_SUBST([AM_CXXFLAGS])
 
 ####### Checking for GPU support
 
