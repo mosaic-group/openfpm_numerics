@@ -5,7 +5,7 @@ noinst_PROGRAMS = numerics
 numerics_SOURCES = main.cpp ../../openfpm_vcluster/src/VCluster.cpp ../../openfpm_devices/src/memory/HeapMemory.cpp ../../openfpm_devices/src/memory/PtrMemory.cpp ../../openfpm_devices/src/Memleak_check.cpp
 numerics_CXXFLAGS = $(AM_CXXFLAGS) $(HDF5_CPPFLAGS) $(INCLUDES_PATH) $(BOOST_CPPFLAGS) $(SUITESPARSE_INCLUDE) $(METIS_INCLUDE) $(PARMETIS_INCLUDE)  $(EIGEN_INCLUDE) -Wno-deprecated-declarations -Wno-unused-local-typedefs
 numerics_CFLAGS = $(CUDA_CFLAGS)
-numerics_LDADD = $(LINKLIBS) -lmetis -lquadmath -lparmetis
+numerics_LDADD = $(LINKLIBS) -lquadmath -lparmetis -lmetis
 nobase_include_HEADERS = PSE/Kernels.hpp PSE/Kernels_test_util.hpp
 
 .cu.o :
