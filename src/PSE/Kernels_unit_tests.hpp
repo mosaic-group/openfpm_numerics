@@ -9,7 +9,9 @@
 #define OPENFPM_NUMERICS_SRC_PSE_KERNELS_UNIT_TESTS_HPP_
 
 #include "PSE/Kernels_test_util.hpp"
+#if defined(__GNUG__) && !defined(__clang__)
 #include <boost/multiprecision/float128.hpp>
+#endif
 
 BOOST_AUTO_TEST_SUITE( pse_kernels_unit_tests )
 
@@ -36,11 +38,15 @@ BOOST_AUTO_TEST_CASE( pse_ker )
 
 		/////// Order 2 //////////////
 
+#if defined(__GNUG__) && !defined(__clang__)
+
 		PSE_test<boost::multiprecision::float128,Lap_PSE<1,boost::multiprecision::float128,2>>(i,2,err);
 		y.last().add(err.linf_error);
 
 		PSE_test<boost::multiprecision::float128,Lap_PSE<1,boost::multiprecision::float128,2>>(i,4,err);
 		y.last().add(err.linf_error);
+
+#endif
 
 		PSE_test<double,Lap_PSE<1,double,2>>(i,2,err);
 		y.last().add(err.linf_error);
@@ -56,14 +62,16 @@ BOOST_AUTO_TEST_CASE( pse_ker )
 
 		//////// Order 4 /////////////
 
+#if defined(__GNUG__) && !defined(__clang__)
+
 		PSE_test<boost::multiprecision::float128,Lap_PSE<1,boost::multiprecision::float128,4>>(i,2,err);
 		y.last().add(err.linf_error);
 
 		PSE_test<boost::multiprecision::float128,Lap_PSE<1,boost::multiprecision::float128,4>>(i,4,err);
 		y.last().add(err.linf_error);
 
-
 		//////// Order 6 /////////////
+
 
 		PSE_test<boost::multiprecision::float128,Lap_PSE<1,boost::multiprecision::float128,6>>(i,2,err);
 		y.last().add(err.linf_error);
@@ -71,13 +79,18 @@ BOOST_AUTO_TEST_CASE( pse_ker )
 		PSE_test<boost::multiprecision::float128,Lap_PSE<1,boost::multiprecision::float128,6>>(i,4,err);
 		y.last().add(err.linf_error);
 
+
 		//////// Order 8 /////////////
+
 
 		PSE_test<boost::multiprecision::float128,Lap_PSE<1,boost::multiprecision::float128,8>>(i,8,err);
 		y.last().add(err.linf_error);
 
 		PSE_test<boost::multiprecision::float128,Lap_PSE<1,boost::multiprecision::float128,8>>(i,16,err);
 		y.last().add(err.linf_error);
+
+#endif
+
 	}
 
 	// Check the result

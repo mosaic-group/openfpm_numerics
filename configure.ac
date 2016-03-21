@@ -253,6 +253,11 @@ AX_SUITESPARSE([],[echo "suitesparse not found"
 AX_EIGEN([],[echo "eigen not found"
                     exit 206])
 
+###### Checking for libquadmath
+
+AC_CHECK_LIB(quadmath, sinq, [ LIBQUADMATH=-lquadmath  ], [ LIBQUADMATH= ])
+AC_SUBST(LIBQUADMATH)
+
 ###### Checking for compiler flags -fext-numeric-literals
 
 my_save_cflags="$CFLAGS"
