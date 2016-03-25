@@ -127,6 +127,13 @@ AC_CHECK_LIB(quadmath, sinq, [AC_DEFINE(HAVE_LIBQUADMATH,[],[Have quad math lib]
 				LIBQUADMATH=" -lquadmath "
 				], [])
 
+###### RT runtime lib
+
+AC_CHECK_LIB(rt, clock_gettime, [AC_DEFINE([HAVE_CLOCK_GETTIME],[],[Have clock time])
+                                 OPT_LIBS="$OPT_LIBS -lrt"
+                                ])
+
+
 ####### include OpenFPM_numerics include path"
 
 INCLUDES_PATH+=" -I/usr/local/include -I. -Iconfig -I../../openfpm_devices/src -I../../openfpm_data/src -I../../openfpm_io/src -I../../openfpm_vcluster/src -I../../src"
@@ -320,6 +327,7 @@ AC_DEFINE([HAVE_MPI],[],[MPI Enabled])
 AC_SUBST(NVCCFLAGS)
 AC_SUBST(INCLUDES_PATH)
 AC_SUBST(LIBQUADMATH)
+AC_SUBST(OPT_LIBS)
 
 # Checks for typedefs, structures, and compiler characteristics.
 
