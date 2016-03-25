@@ -268,6 +268,12 @@ AX_SUITESPARSE([],[echo "suitesparse not found"
 AX_EIGEN([],[echo "eigen not found"
                     exit 206])
 
+##### Checking for rt
+
+AC_CHECK_LIB(rt, clock_gettime, [AC_DEFINE([HAVE_CLOCK_GETTIME],[],[Have clock time])
+                                 OPT_LIBS="$OPT_LIBS -lrt"
+                                ])
+
 ###### Checking for compiler flags -fext-numeric-literals
 
 my_save_cflags="$CFLAGS"
