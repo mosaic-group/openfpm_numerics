@@ -365,7 +365,9 @@ public:
 
 		// sync the ghost
 
+		g_map.write("g_map_before_ghost.vtk");
 		g_map.template ghost_get<0>();
+		g_map.write("g_map_after_ghost.vtk");
 
 		// Create a CellDecomposer and calculate the spacing
 
@@ -512,7 +514,7 @@ public:
 
 		// copy the vector
 		for (size_t i = 0; i < row_b; i++)
-			B.get(i) = b.get(i);
+			B.insert(i,b.get(i));
 
 		return B;
 	}

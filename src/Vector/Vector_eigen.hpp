@@ -13,13 +13,80 @@
 #include <fstream>
 #include "Vector_eigen_util.hpp"
 #include "Grid/staggered_dist_grid_util.hpp"
+#include "Space/Ghost.hpp"
+#include "FiniteDifference/util/common.hpp"
 #include <boost/mpl/vector_c.hpp>
+#include <unordered_map>
 
+#define EIGEN_RVAL 1
+
+/*! \brief It store one row value of a vector
+ *
+ * Given a row, store a value
+ *
+ *
+ */
+template<typename T>
+class rval<T,EIGEN_RVAL>
+{
+	// row
+	long int r;
+
+	// value
+	T val;
+
+public:
+
+	// Get the row
+	long int & row()
+	{
+		return r;
+	}
+
+	// Get the value
+	T & value()
+	{
+		return val;
+	}
+
+	/*! \brief Default constructor
+	 *
+	 */
+	rval()	{}
+
+	/*! \brief Constructor from row, colum and value
+	 *
+	 * \param i row
+	 * \param val value
+	 *
+	 */
+	rval(long int i, T val)
+	{
+		row() = i;
+		value() = val;
+	}
+};
 
 template<typename T>
 class Vector<T,Eigen::Matrix<T, Eigen::Dynamic, 1>>
 {
-	Eigen::Matrix<T, Eigen::Dynamic, 1> v;
+	mutable Eigen::Matrix<T, Eigen::Dynamic, 1> v;
+
+	// row value vector
+	mutable openfpm::vector<rval<T,EIGEN_RVAL>> row_val;
+	mutable openfpm::vector<rval<T,EIGEN_RVAL>> row_val_recv;
+
+	// global to local map
+	mutable std::unordered_map<size_t,size_t> map;
+
+	// invalid
+	T invalid;
+
+	// Processors from where we gather
+	mutable openfpm::vector<size_t> prc;
+
+	//size of each chunk
+	mutable openfpm::vector<size_t> sz;
 
 	/*! \brief Check that the size of the iterators match
 	 *
@@ -169,7 +236,89 @@ class Vector<T,Eigen::Matrix<T, Eigen::Dynamic, 1>>
 		}
 	}
 
+
+	/*! \brief Here we collect the full matrix on master
+	 *
+	 */
+	void collect() const
+	{
+		Vcluster & vcl = *global_v_cluster;
+
+		row_val_recv.clear();
+
+		// here we collect all the triplet in one array on the root node
+		vcl.SGather(row_val,row_val_recv,prc,sz,0);
+
+		if (vcl.getProcessUnitID() != 0)
+			row_val.resize(0);
+		else
+			row_val.swap(row_val_recv);
+
+		build_map();
+	}
+
+	/*! \brief Set the Eigen internal vector
+	 *
+	 *
+	 */
+	void setEigen() const
+	{
+		// set the vector
+
+		for (size_t i = 0 ; i < row_val.size() ; i++)
+			v[row_val.get(i).row()] = row_val.get(i).value();
+	}
+
+	/*! \brief Build the map
+	 *
+	 *
+	 */
+	void build_map() const
+	{
+		map.clear();
+
+		for (size_t i = 0 ; i < row_val.size() ; i++)
+			map[row_val.get(i).row()] = i;
+	}
+
 public:
+
+	/*! \brief Copy the vector
+	 *
+	 * \param v vector to copy
+	 *
+	 */
+	Vector(const Vector<T> & v)
+	{
+		this->operator=(v);
+	}
+
+	/*! \brief Copy the vector
+	 *
+	 * \param v vector to copy
+	 *
+	 */
+	Vector(const Vector<T> && v)
+	{
+		this->operator=(v);
+	}
+
+	/*! \brief Create a vector with n elements
+	 *
+	 * \param n number of elements in the vector
+	 *
+	 */
+	Vector(size_t n)
+	{
+		resize(n);
+	}
+
+	/*! \brief Create a vector with 0 elements
+	 *
+	 */
+	Vector()
+	{
+	}
 
 	/*! \brief Resize the Vector
 	 *
@@ -188,9 +337,44 @@ public:
 	 * \return reference to the element vector
 	 *
 	 */
-	T & get(size_t i)
+	void insert(size_t i, T val)
 	{
-		return v(i);
+		row_val.add();
+
+		// Map
+		map[i] = row_val.size()-1;
+
+		row_val.last().row() = i;
+		row_val.last().value() = val;
+	}
+
+	/*! \brief Return a reference to the vector element
+	 *
+	 * \warning The element must exist
+	 *
+	 * \param i element
+	 *
+	 * \return reference to the element vector
+	 *
+	 */
+	T & operator()(size_t i)
+	{
+		// Search if exist
+
+		std::unordered_map<size_t,size_t>::iterator it = map.find(i);
+
+		if ( it == map.end() )
+		{
+			// Does not exist
+
+			std::cerr << __FILE__ << ":" << __LINE__ << " value does not exist " << std::endl;
+
+			return invalid;
+		}
+		else
+			return row_val.get(it->second).value();
+
+		return invalid;
 	}
 
 	/*! \brief Get the Eigen Vector object
@@ -200,6 +384,9 @@ public:
 	 */
 	const Eigen::Matrix<T, Eigen::Dynamic, 1> & getVec() const
 	{
+		collect();
+		setEigen();
+
 		return v;
 	}
 
@@ -210,6 +397,9 @@ public:
 	 */
 	Eigen::Matrix<T, Eigen::Dynamic, 1> & getVec()
 	{
+		collect();
+		setEigen();
+
 		return v;
 	}
 
@@ -228,30 +418,28 @@ public:
 		}
 	}
 
-	/*! \brief Collect the vector into one processor
-	 *
-	 * Eigen does not have a real parallel vector, so in order to work we have to collect
-	 * the vector in one processor
-	 *
-	 * This function collect the information from all the other processor into one
-	 *
-	 */
-	void collect()
-	{
-
-	}
-
 	/*! \brief Scatter the vector information to the other processors
 	 *
 	 * Eigen does not have a real parallel vector, so in order to work we have to scatter
 	 * the vector from one processor to the other
 	 *
-	 * This function scatter the information to all the other processors
 	 *
 	 */
 	void scatter()
 	{
+		row_val_recv.clear();
+		Vcluster & vcl = *global_v_cluster;
 
+		vcl.SScatter(row_val,row_val_recv,prc,sz,0);
+
+		// if we do not receive anything a previous collect has not been performed
+		// and so nothing is scattered
+		if (row_val_recv.size() != 0)
+		{
+			row_val.clear();
+			row_val.add(row_val_recv);
+			build_map();
+		}
 	}
 
 	/*! \brief Load from file
@@ -269,6 +457,51 @@ public:
 
 		inputf.close();
 
+	}
+
+	/*! \brief Copy the vector
+	 *
+	 * \param v vector to copy
+	 *
+	 */
+	Vector<T> & operator=(const Vector<T> & v)
+	{
+		prc = v.prc;
+		sz = v.sz;
+		map = v.map;
+		row_val = v.row_val;
+
+		return *this;
+	}
+
+	/*! \brief Copy the vector
+	 *
+	 * \param v vector to copy
+	 *
+	 */
+	Vector<T> & operator=(const Vector<T> && v)
+	{
+		prc = v.prc;
+		sz = v.sz;
+		map = v.map;
+		row_val = v.row_val;
+
+		return *this;
+	}
+
+	/*! \brief Copy the vector (it is used for special purpose)
+	 *
+	 * \warning v MUST contain at least all the elements of the vector
+	 *
+	 * \param v base eigen vector to copy
+	 *
+	 */
+	Vector<T> & operator=(Eigen::Matrix<T, Eigen::Dynamic, 1> & v)
+	{
+		for (size_t i = 0 ; i < row_val.size() ; i++)
+			row_val.get(i).value() = v(row_val.get(i).row());
+
+		return *this;
 	}
 };
 

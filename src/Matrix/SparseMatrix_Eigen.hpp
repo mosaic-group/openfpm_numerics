@@ -21,30 +21,49 @@
  *
  */
 template<typename T>
-struct triplet<T,EIGEN_TRIPLET>
+class triplet<T,EIGEN_TRIPLET>
 {
-	Eigen::Triplet<T,long int> triplet;
+	Eigen::Triplet<T,long int> triplet_ei;
+
+public:
 
 	long int & row()
 	{
-		size_t ptr = (size_t)&triplet.row();
+		size_t ptr = (size_t)&triplet_ei.row();
 
 		return (long int &)*(long int *)ptr;
 	}
 
 	long int & col()
 	{
-		size_t ptr = (size_t)&triplet.col();
+		size_t ptr = (size_t)&triplet_ei.col();
 
 		return (long int &)*(long int *)ptr;
 	}
 
 	T & value()
 	{
-		size_t ptr = (size_t)&triplet.value();
+		size_t ptr = (size_t)&triplet_ei.value();
 
 		return (T &)*(T *)ptr;
 	}
+
+	/*! \brief Constructor from row, colum and value
+	 *
+	 * \param i row
+	 * \param j colum
+	 * \param val value
+	 *
+	 */
+	triplet(long int i, long int j, T val)
+	{
+		row() = i;
+		col() = j;
+		value() = val;
+	}
+
+	// Default constructor
+	triplet()	{};
 };
 
 /* ! \brief Sparse Matrix implementation, that map over Eigen
@@ -73,8 +92,6 @@ private:
 
 	/*! \brief Assemble the matrix
 	 *
-	 * \param trpl Matrix in form of triplets
-	 * \param mat Matrix to assemble
 	 *
 	 */
 	void assemble()
@@ -186,6 +203,16 @@ public:
 	void resize(size_t row, size_t col)
 	{
 		mat.resize(row,col);
+	}
+
+	/*! \brief Get the row i and the colum j of the Matrix
+	 *
+	 * \return the value of the matrix at row i colum j
+	 *
+	 */
+	T operator()(id_t i, id_t j)
+	{
+		return mat.coeffRef(i,j);
 	}
 };
 

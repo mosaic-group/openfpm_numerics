@@ -4,6 +4,8 @@
 
 #include "unit_test_init_cleanup.hpp"
 
+#include "Vector/Vector_unit_tests.hpp"
+#include "Matrix/SparseMatrix_unit_tests.hpp"
 #include "Equations/eq_unit_tests.hpp"
 #include "FiniteDifference/FDScheme_unit_tests.hpp"
 #include "FiniteDifference/util/common_test.hpp"

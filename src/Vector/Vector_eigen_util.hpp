@@ -8,6 +8,8 @@
 #ifndef OPENFPM_NUMERICS_SRC_VECTOR_VECTOR_EIGEN_UTIL_HPP_
 #define OPENFPM_NUMERICS_SRC_VECTOR_VECTOR_EIGEN_UTIL_HPP_
 
+#include "Grid/grid_dist_key.hpp"
+#include "Space/Shape/HyperCube.hpp"
 
 /*!	\brief Copy scalar elements
  *

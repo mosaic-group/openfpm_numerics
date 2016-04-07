@@ -142,13 +142,13 @@ BOOST_AUTO_TEST_CASE(lid_driven_cavity)
 	//! [lid-driven cavity 2D]
 
 	// Domain, a rectangle
-	Box<2,float> domain({0.0,0.0},{3.0,1.0});
+	Box<2,float> domain({0.0,0.0},{1.0,1.0});
 
 	// Ghost (Not important in this case but required)
 	Ghost<2,float> g(0.01);
 
 	// Grid points on x=256 and y=64
-	long int sz[] = {256,64};
+	long int sz[] = {8,8};
 	size_t szu[2];
 	szu[0] = (size_t)sz[0];
 	szu[1] = (size_t)sz[1];

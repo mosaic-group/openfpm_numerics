@@ -8,6 +8,8 @@
 #ifndef OPENFPM_NUMERICS_SRC_UTIL_COMMON_HPP_
 #define OPENFPM_NUMERICS_SRC_UTIL_COMMON_HPP_
 
+#define STAGGERED_GRID 1
+#define NORMAL_GRID 0
 
 template<typename T, typename Sfinae = void>
 struct has_grid_type: std::false_type {};

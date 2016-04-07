@@ -46,16 +46,27 @@ public:
 	 */
 	template<typename impl> static Vector<double> solve(SparseMatrix<double,int,impl> & A, const Vector<double> & b, size_t opt = UMFPACK_NONE)
 	{
-		Vcluster & v_cl = *global_v_cluster;
+		Vcluster & vcl = *global_v_cluster;
 
 		Vector<double> x;
+
 		// only master processor solve
+		Eigen::UmfPackLU<Eigen::SparseMatrix<double,0,int> > solver;
 
-		if (v_cl.getProcessUnitID() == 0)
+		// Collect the matrix on master
+		auto mat_ei = A.getMat();
+
+		Eigen::Matrix<double, Eigen::Dynamic, 1> x_ei;
+
+		// Collect the vector on master
+		auto b_ei = b.getVec();
+
+		// Copy b into x, this also copy the information on how to scatter back the information on x
+		x = b;
+
+		if (vcl.getProcessUnitID() == 0)
 		{
-			Eigen::UmfPackLU<Eigen::SparseMatrix<double,0,int> > solver;
-
-			solver.compute(A.getMat());
+			solver.compute(mat_ei);
 
 			if(solver.info()!=Eigen::Success)
 			{
@@ -64,14 +75,14 @@ public:
 				return x;
 			}
 
-			x.getVec() = solver.solve(b.getVec());
+			x_ei = solver.solve(b_ei);
 
 			if (opt & SOLVER_PRINT_RESIDUAL_NORM_INFINITY)
 			{
-				Vector<double> res;
-				res.getVec() = A.getMat() * x.getVec() - b.getVec();
+				Eigen::Matrix<double, Eigen::Dynamic, 1> res;
+				res = mat_ei * x_ei - b_ei;
 
-				std::cout << "Infinity norm: " << res.getVec().lpNorm<Eigen::Infinity>() << "\n";
+				std::cout << "Infinity norm: " << res.lpNorm<Eigen::Infinity>() << "\n";
 			}
 
 			if (opt & SOLVER_PRINT_DETERMINANT)
@@ -79,9 +90,12 @@ public:
 				std::cout << " Determinant: " << solver.determinant() << "\n";
 			}
 
-			// Vector is only on master, scatter back the information
-			x.scatter();
+			x = x_ei;
 		}
+
+		// Vector is only on master, scatter back the information
+		x.scatter();
+
 		return x;
 	}
 };

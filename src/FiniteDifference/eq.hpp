@@ -11,9 +11,6 @@
 #define EQS_FIELD 0
 #define EQS_POS 1
 
-#define STAGGERED_GRID 1
-#define NORMAL_GRID 0
-
 //#define PERIODIC true
 //#define NON_PERIODIC false
 
