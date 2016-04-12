@@ -130,6 +130,8 @@ typedef Avg<x,v_z,lid_nn_3d,FORWARD> avg_x_vz_f;
 
 BOOST_AUTO_TEST_CASE(lid_driven_cavity)
 {
+	Vcluster & v_cl = *global_v_cluster;
+
 	// Domain
 	Box<3,float> domain({0.0,0.0,0.0},{3.0,1.0,1.0});
 
@@ -154,8 +156,11 @@ BOOST_AUTO_TEST_CASE(lid_driven_cavity)
 	// Initialize openfpm
 	grid_dist_id<3,float,aggregate<float[3],float>,CartDecomposition<3,float>> g_dist(szu,domain,g);
 
+	// Ghost stencil
+	Ghost<3,long int> stencil_max(1);
+
 	// Distributed grid
-	FDScheme<lid_nn_3d> fd(pd,domain,g_dist.getGridInfo(),g_dist.getDecomposition());
+	FDScheme<lid_nn_3d> fd(pd,stencil_max,domain,g_dist.getGridInfo(),g_dist);
 
 	// start and end of the bulk
 
@@ -228,11 +233,35 @@ BOOST_AUTO_TEST_CASE(lid_driven_cavity)
 	// Bring the solution to grid
 	x.copy<FDScheme<lid_nn_3d>,decltype(g_dist),velocity,pressure>(fd,{0,0},{sz[0]-1,sz[1]-1,sz[2]-1},g_dist);
 
-	g_dist.write("lid_driven_cavity_3d");
+	g_dist.write("lid_driven_cavity_3d_p" + std::to_string(v_cl.getProcessingUnits()));
 
-	// Check that match
-	bool test = compare("lid_driven_cavity_3d_grid_0.vtk","lid_driven_cavity_3d_grid_0_test.vtk");
-	BOOST_REQUIRE_EQUAL(test,true);
+	if (v_cl.getProcessUnitID() == 0)
+	{
+		if (v_cl.getProcessingUnits() == 1)
+		{
+			// Check that match
+			bool test = compare("lid_driven_cavity_3d_p1_grid_0_test.vtk","lid_driven_cavity_3d_p1_grid_0.vtk");
+			BOOST_REQUIRE_EQUAL(test,true);
+		}
+		else if (v_cl.getProcessingUnits() == 2)
+		{
+			// Check that match
+			bool test = compare("lid_driven_cavity_p2_grid_0_test.vtk","lid_driven_cavity_p2_grid_0.vtk");
+			BOOST_REQUIRE_EQUAL(test,true);
+			test = compare("lid_driven_cavity_p2_grid_1_test.vtk","lid_driven_cavity_p2_grid_1.vtk");
+			BOOST_REQUIRE_EQUAL(test,true);
+		}
+		else if (v_cl.getProcessingUnits() == 3)
+		{
+			// Check that match
+			bool test = compare("lid_driven_cavity_p3_grid_0_test.vtk","lid_driven_cavity_p3_grid_0.vtk");
+			BOOST_REQUIRE_EQUAL(test,true);
+			test = compare("lid_driven_cavity_p3_grid_1_test.vtk","lid_driven_cavity_p3_grid_1.vtk");
+			BOOST_REQUIRE_EQUAL(test,true);
+			test = compare("lid_driven_cavity_p3_grid_2_test.vtk","lid_driven_cavity_p3_grid_2.vtk");
+			BOOST_REQUIRE_EQUAL(test,true);
+		}
+	}
 }
 
 BOOST_AUTO_TEST_SUITE_END()

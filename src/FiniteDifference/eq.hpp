@@ -81,7 +81,7 @@ struct pos_val
 template<unsigned int f, typename Sys_eqs>
 class Field
 {
-	typedef typename stub_or_real<Sys_eqs,Sys_eqs::dims,typename Sys_eqs::stype,typename Sys_eqs::b_grid::decomposition>::type map_grid;
+	typedef typename stub_or_real<Sys_eqs,Sys_eqs::dims,typename Sys_eqs::stype,typename Sys_eqs::b_grid::decomposition::extended_type::extended_type>::type map_grid;
 
 public:
 

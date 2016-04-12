@@ -18,6 +18,7 @@
 #include "Vector/Vector.hpp"
 #include "Solvers/umfpack_solver.hpp"
 #include "data_type/aggregate.hpp"
+#include "FiniteDifference/FDScheme.hpp"
 
 BOOST_AUTO_TEST_SUITE( eq_test_suite )
 
@@ -139,16 +140,18 @@ typedef Avg<y,v_x,lid_nn,FORWARD> avg_vx_f;
 
 BOOST_AUTO_TEST_CASE(lid_driven_cavity)
 {
+	Vcluster & v_cl = *global_v_cluster;
+
 	//! [lid-driven cavity 2D]
 
 	// Domain, a rectangle
-	Box<2,float> domain({0.0,0.0},{1.0,1.0});
+	Box<2,float> domain({0.0,0.0},{3.0,1.0});
 
 	// Ghost (Not important in this case but required)
 	Ghost<2,float> g(0.01);
 
 	// Grid points on x=256 and y=64
-	long int sz[] = {8,8};
+	long int sz[] = {256,64};
 	size_t szu[2];
 	szu[0] = (size_t)sz[0];
 	szu[1] = (size_t)sz[1];
@@ -165,8 +168,11 @@ BOOST_AUTO_TEST_CASE(lid_driven_cavity)
 	// Distributed grid that store the solution
 	grid_dist_id<2,float,aggregate<float[2],float>,CartDecomposition<2,float>> g_dist(szu,domain,g);
 
+	// Ghost stencil
+	Ghost<2,long int> stencil_max(1);
+
 	// Finite difference scheme
-	FDScheme<lid_nn> fd(pd,domain,g_dist.getGridInfo(),g_dist.getDecomposition());
+	FDScheme<lid_nn> fd(pd, stencil_max, domain, g_dist.getGridInfo(), g_dist);
 
 	// Here we impose the equation, we start from the incompressibility Eq imposed in the bulk with the
 	// exception of the first point {0,0} and than we set P = 0 in {0,0}, why we are doing this is again
@@ -218,12 +224,35 @@ BOOST_AUTO_TEST_CASE(lid_driven_cavity)
 
 	//! [lid-driven cavity 2D]
 
-	g_dist.write("lid_driven_cavity");
+	g_dist.write("lid_driven_cavity_p" + std::to_string(v_cl.getProcessingUnits()));
 
-
-	// Check that match
-	bool test = compare("lid_driven_cavity_grid_0_test.vtk","lid_driven_cavity_grid_0.vtk");
-	BOOST_REQUIRE_EQUAL(test,true);
+	if (v_cl.getProcessUnitID() == 0)
+	{
+		if (v_cl.getProcessingUnits() == 1)
+		{
+			// Check that match
+			bool test = compare("lid_driven_cavity_p1_grid_0_test.vtk","lid_driven_cavity_grid_0.vtk");
+			BOOST_REQUIRE_EQUAL(test,true);
+		}
+		else if (v_cl.getProcessingUnits() == 2)
+		{
+			// Check that match
+			bool test = compare("lid_driven_cavity_p2_grid_0_test.vtk","lid_driven_cavity_p2_grid_0.vtk");
+			BOOST_REQUIRE_EQUAL(test,true);
+			test = compare("lid_driven_cavity_p2_grid_1_test.vtk","lid_driven_cavity_p2_grid_1.vtk");
+			BOOST_REQUIRE_EQUAL(test,true);
+		}
+		else if (v_cl.getProcessingUnits() == 3)
+		{
+			// Check that match
+			bool test = compare("lid_driven_cavity_p3_grid_0_test.vtk","lid_driven_cavity_p3_grid_0.vtk");
+			BOOST_REQUIRE_EQUAL(test,true);
+			test = compare("lid_driven_cavity_p3_grid_1_test.vtk","lid_driven_cavity_p3_grid_1.vtk");
+			BOOST_REQUIRE_EQUAL(test,true);
+			test = compare("lid_driven_cavity_p3_grid_2_test.vtk","lid_driven_cavity_p3_grid_2.vtk");
+			BOOST_REQUIRE_EQUAL(test,true);
+		}
+	}
 }
 
 BOOST_AUTO_TEST_SUITE_END()

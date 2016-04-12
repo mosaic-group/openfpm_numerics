@@ -124,7 +124,7 @@ class FDScheme
 public:
 
 	// Distributed grid map
-	typedef grid_dist_id<Sys_eqs::dims,typename Sys_eqs::stype,scalar<size_t>,typename Sys_eqs::b_grid::decomposition> g_map_type;
+	typedef grid_dist_id<Sys_eqs::dims,typename Sys_eqs::stype,scalar<size_t>,typename Sys_eqs::b_grid::decomposition::extended_type> g_map_type;
 
 	typedef Sys_eqs Sys_eqs_typ;
 
@@ -135,7 +135,8 @@ private:
 
 	typedef typename Sys_eqs::SparseMatrix_type::triplet_type triplet;
 
-	openfpm::vector<typename Sys_eqs::stype> b;
+	// Vector b
+	typename Sys_eqs::Vector_type b;
 
 	// Domain Grid informations
 	const grid_sm<Sys_eqs::dims,void> & gs;
@@ -325,13 +326,14 @@ public:
 	 * \param pd Padding, how many points out of boundary are present
 	 * \param domain extension of the domain
 	 * \param gs grid infos where Finite differences work
+	 * \param stencil maximum extension of the stencil on each directions
 	 * \param dec Decomposition of the domain
 	 *
 	 */
-	FDScheme(Padding<Sys_eqs::dims> & pd, const Box<Sys_eqs::dims,typename Sys_eqs::stype> & domain, const grid_sm<Sys_eqs::dims,void> & gs, const typename Sys_eqs::b_grid::decomposition & dec)
-	:pd(pd),gs(gs),g_map(dec,padding(gs.getSize(),pd),domain,Ghost<Sys_eqs::dims,typename Sys_eqs::stype>(1)),row(0),row_b(0)
+	FDScheme(Padding<Sys_eqs::dims> & pd, const Ghost<Sys_eqs::dims,long int> & stencil, const Box<Sys_eqs::dims,typename Sys_eqs::stype> & domain, const grid_sm<Sys_eqs::dims,void> & gs, const typename Sys_eqs::b_grid & b_g)
+	:pd(pd),gs(gs),g_map(b_g,stencil,pd),row(0),row_b(0)
 	{
-		Vcluster & v_cl = dec.getVC();
+		Vcluster & v_cl = b_g.getDecomposition().getVC();
 
 		// Calculate the size of the local domain
 		size_t sz = g_map.getLocalDomainSize();
@@ -364,10 +366,7 @@ public:
 		}
 
 		// sync the ghost
-
-		g_map.write("g_map_before_ghost.vtk");
 		g_map.template ghost_get<0>();
-		g_map.write("g_map_after_ghost.vtk");
 
 		// Create a CellDecomposer and calculate the spacing
 
@@ -399,8 +398,8 @@ public:
 	template<typename T> void impose(const T & op , typename Sys_eqs::stype num ,long int id ,const long int (& start)[Sys_eqs::dims], const long int (& stop)[Sys_eqs::dims], bool skip_first = false)
 	{
 		// add padding to start and stop
-		grid_key_dx<Sys_eqs::dims> start_k = grid_key_dx<Sys_eqs::dims>(start) + pd.getKP1();
-		grid_key_dx<Sys_eqs::dims> stop_k = grid_key_dx<Sys_eqs::dims>(stop) + pd.getKP1();
+		grid_key_dx<Sys_eqs::dims> start_k = grid_key_dx<Sys_eqs::dims>(start);
+		grid_key_dx<Sys_eqs::dims> stop_k = grid_key_dx<Sys_eqs::dims>(stop);
 
 		auto it = g_map.getSubDomainIterator(start_k,stop_k);
 
@@ -423,6 +422,8 @@ public:
 	 */
 	template<typename T> void impose(const T & op , typename Sys_eqs::stype num ,long int id ,grid_dist_iterator_sub<Sys_eqs::dims,typename g_map_type::d_grid> it_d, bool skip_first = false)
 	{
+		Vcluster & v_cl = *global_v_cluster;
+
 		openfpm::vector<triplet> & trpl = A.getMatrixTriplets();
 
 		auto it = it_d;
@@ -431,19 +432,21 @@ public:
 		std::unordered_map<long int,float> cols;
 
 		// resize b if needed
-		b.resize(Sys_eqs::nvar * gs.size());
+		b.resize(Sys_eqs::nvar * g_map.size());
 
 		bool is_first = skip_first;
 
 		// iterate all the grid points
 		while (it.isNext())
 		{
-			if (is_first == true)
+			if (is_first == true && v_cl.getProcessUnitID() == 0)
 			{
 				++it;
 				is_first = false;
 				continue;
 			}
+			else
+				is_first = false;
 
 			// get the position
 			auto key = it.get();
@@ -463,7 +466,7 @@ public:
 //				std::cout << "(" << trpl.last().row() << "," << trpl.last().col() << "," << trpl.last().value() << ")" << "\n";
 			}
 
-			b.get(g_map.template get<0>(key)*Sys_eqs::nvar + id) = num;
+			b(g_map.template get<0>(key)*Sys_eqs::nvar + id) = num;
 
 			cols.clear();
 //			std::cout << "\n";
@@ -491,13 +494,11 @@ public:
 #ifdef SE_CLASS1
 		consistency();
 #endif
-		A.resize(row,row);
+		A.resize(g_map.size()*Sys_eqs::nvar,g_map.size()*Sys_eqs::nvar);
 
 		return A;
 
 	}
-
-	typename Sys_eqs::Vector_type B;
 
 	/*! \brief produce the B vector
 	 *
@@ -510,13 +511,7 @@ public:
 		consistency();
 #endif
 
-		B.resize(row_b);
-
-		// copy the vector
-		for (size_t i = 0; i < row_b; i++)
-			B.insert(i,b.get(i));
-
-		return B;
+		return b;
 	}
 };
 

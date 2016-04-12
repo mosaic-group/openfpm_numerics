@@ -12,7 +12,7 @@
 #include "util/mul_array_extents.hpp"
 #include <fstream>
 #include "Vector_eigen_util.hpp"
-#include "Grid/staggered_dist_grid_util.hpp"
+#include "Grid/staggered_dist_grid.hpp"
 #include "Space/Ghost.hpp"
 #include "FiniteDifference/util/common.hpp"
 #include <boost/mpl/vector_c.hpp>
@@ -88,70 +88,30 @@ class Vector<T,Eigen::Matrix<T, Eigen::Dynamic, 1>>
 	//size of each chunk
 	mutable openfpm::vector<size_t> sz;
 
-	/*! \brief Check that the size of the iterators match
-	 *
-	 * It check the the boxes that the sub iterator defines has same dimensions, for example
-	 * if the first sub-iterator, iterate from (1,1) to (5,3) and the second from (2,2) to (6,4)
-	 * they match (2,2) to (4,6) they do not match
-	 *
-	 * \tparam Grid_map type of the map grid
-	 * \tparam Grid_dst type of the destination grid
-	 *
-	 * \param it1 Iterator1
-	 * \param it2 Iterator2
-	 *
-	 * \return true if they match
-	 *
-	 */
-	template<typename Eqs_sys, typename it1_type, typename it2_type> bool checkIterator(const it1_type & it1, const it2_type & it2)
-	{
-#ifdef SE_CLASS1
-
-		grid_key_dx<Eqs_sys::dims> it1_k = it1.getStop() - it1.getStart();
-		grid_key_dx<Eqs_sys::dims> it2_k = it2.getStop() - it2.getStart();
-
-		for (size_t i = 0 ; i < Eqs_sys::dims ; i++)
-		{
-			if (it1_k.get(i) !=  it2_k.get(i))
-			{
-				std::cerr << __FILE__ << ":" << __LINE__ << " error src iterator and destination iterator does not match in size\n";
-				return false;
-			}
-		}
-
-		return true;
-#else
-
-		return true;
-
-#endif
-	}
-
-
 	/*! \brief Copy in a staggered grid
 	 *
 	 *
 	 */
-	template<typename scheme, typename Grid_dst ,unsigned int ... pos> void copy_staggered_to_staggered(scheme & sc,const long int (& start)[scheme::Sys_eqs_typ::dims], const long int (& stop)[scheme::Sys_eqs_typ::dims], Grid_dst & g_dst)
+	template<typename scheme, typename Grid_dst ,unsigned int ... pos> void copy_staggered_to_staggered(scheme & sc, Grid_dst & g_dst)
 	{
 		// get the map
 		const auto & g_map = sc.getMap();
 
-		// get the grid padding
-		const Padding<scheme::Sys_eqs_typ::dims> & pd = sc.getPadding();
+		// check that g_dst is staggered
+		if (is_grid_staggered<Grid_dst>::value() == false)
+			std::cerr << __FILE__ << ":" << __LINE__ << " The destination grid must be staggered " << std::endl;
 
-		// shift the start and stop by the padding
-		grid_key_dx<scheme::Sys_eqs_typ::dims> start_k = grid_key_dx<scheme::Sys_eqs_typ::dims>(start) + pd.getKP1();
-		grid_key_dx<scheme::Sys_eqs_typ::dims> stop_k = grid_key_dx<scheme::Sys_eqs_typ::dims>(stop) + pd.getKP1();
+#ifdef SE_CLASS1
+
+		if (g_map.getLocalDomainSize() != g_dst.getLocalDomainSize())
+			std::cerr << __FILE__ << ":" << __LINE__ << " The staggered and destination grid in size does not match " << std::endl;
+#endif
 
 		// sub-grid iterator over the grid map
-		auto g_map_it = g_map.getSubDomainIterator(start_k,stop_k);
+		auto g_map_it = g_map.getDomainIterator();
 
 		// Iterator over the destination grid
 		auto g_dst_it = g_dst.getDomainIterator();
-
-		// Check that the 2 iterator has the same size
-		checkIterator<typename scheme::Sys_eqs_typ,decltype(g_map_it),decltype(g_dst_it)>(g_map_it,g_dst_it);
 
 		while (g_map_it.isNext() == true)
 		{
@@ -166,68 +126,7 @@ class Vector<T,Eigen::Matrix<T, Eigen::Dynamic, 1>>
 
 			// Transform this id into an id for the Eigen vector
 
-			copy_ele<typename scheme::Sys_eqs_typ,Grid_dst,Eigen::Matrix<T, Eigen::Dynamic, 1>> cp(key_dst,g_dst,v,lin_id,g_map.size());
-
-			boost::mpl::for_each_ref<boost::mpl::range_c<int,0,v_size::value>>(cp);
-
-			++g_map_it;
-			++g_dst_it;
-		}
-	}
-
-	/*! \brief Copy in a normal grid
-	 *
-	 *
-	 */
-	template<typename scheme, typename Grid_dst ,unsigned int ... pos> void copy_staggered_to_normal(scheme & sc,const long int (& start)[scheme::Sys_eqs_typ::dims], const long int (& stop)[scheme::Sys_eqs_typ::dims], Grid_dst & g_dst)
-	{
-		// get the map
-		const auto & g_map = sc.getMap();
-
-		// get the grid padding
-		const Padding<scheme::Sys_eqs_typ::dims> & pd = sc.getPadding();
-
-		// set the staggered position of the property
-		openfpm::vector<comb<scheme::Sys_eqs_typ::dims>> stag_pos[sizeof...(pos)];
-
-		// interpolation points for each property
-		openfpm::vector<std::vector<comb<scheme::Sys_eqs_typ::dims>>> interp_pos[sizeof...(pos)];
-
-		// fill the staggered position vector for each property
-		stag_set_position<scheme::Sys_eqs_typ::dims,typename Grid_dst::value_type::type> ssp(stag_pos);
-
-		typedef boost::mpl::vector_c<unsigned int,pos ... > v_pos_type;
-		boost::mpl::for_each_ref<v_pos_type>(ssp);
-
-		interp_points<scheme::Sys_eqs_typ::dims,v_pos_type,typename Grid_dst::value_type::type> itp(interp_pos,stag_pos);
-		boost::mpl::for_each_ref<v_pos_type>(itp);
-
-		// shift the start and stop by the padding
-		grid_key_dx<scheme::Sys_eqs_typ::dims> start_k = grid_key_dx<scheme::Sys_eqs_typ::dims>(start) + pd.getKP1();
-		grid_key_dx<scheme::Sys_eqs_typ::dims> stop_k = grid_key_dx<scheme::Sys_eqs_typ::dims>(stop) + pd.getKP1();
-
-		// sub-grid iterator over the grid map
-		auto g_map_it = g_map.getSubDomainIterator(start_k,stop_k);
-
-		// Iterator over the destination grid
-		auto g_dst_it = g_dst.getDomainIterator();
-
-		// Check that the 2 iterator has the same size
-		checkIterator<typename scheme::Sys_eqs_typ,decltype(g_map_it),decltype(g_dst_it)>(g_map_it,g_dst_it);
-
-		while (g_map_it.isNext() == true)
-		{
-			typedef typename to_boost_vmpl<pos...>::type vid;
-			typedef boost::mpl::size<vid> v_size;
-
-			auto key_src = g_map_it.get();
-
-			// destination point
-			auto key_dst = g_dst_it.get();
-
-			// Transform this id into an id for the Eigen vector
-
-			interp_ele<scheme,Grid_dst,Eigen::Matrix<T, Eigen::Dynamic, 1>,T,sizeof...(pos)> cp(key_dst,g_dst,v,key_src,g_map,interp_pos);
+			copy_ele<typename scheme::Sys_eqs_typ,Grid_dst,typename std::remove_reference<decltype(*this)>::type> cp(key_dst,g_dst,*this,lin_id,g_map.size());
 
 			boost::mpl::for_each_ref<boost::mpl::range_c<int,0,v_size::value>>(cp);
 
@@ -333,8 +232,7 @@ public:
 	/*! \brief Return a reference to the vector element
 	 *
 	 * \param i element
-	 *
-	 * \return reference to the element vector
+	 * \param val value
 	 *
 	 */
 	void insert(size_t i, T val)
@@ -346,6 +244,63 @@ public:
 
 		row_val.last().row() = i;
 		row_val.last().value() = val;
+	}
+
+	/*! \brief Return a reference to the vector element
+	 *
+	 * \param i element
+	 *
+	 * \return reference to the element vector
+	 *
+	 */
+	inline T & insert(size_t i)
+	{
+		row_val.add();
+
+		// Map
+		map[i] = row_val.size()-1;
+
+		row_val.last().row() = i;
+		return row_val.last().value();
+	}
+
+	/*! \brief Return a reference to the vector element
+	 *
+	 * \param i element
+	 *
+	 * \return reference to the element vector
+	 *
+	 */
+	inline const T & insert(size_t i) const
+	{
+		row_val.add();
+
+		// Map
+		map[i] = row_val.size()-1;
+
+		row_val.last().row() = i;
+		return row_val.last().value();
+	}
+
+	/*! \brief Return a reference to the vector element
+	 *
+	 * \warning The element must exist
+	 *
+	 * \param i element
+	 *
+	 * \return reference to the element vector
+	 *
+	 */
+	const T & operator()(size_t i) const
+	{
+		// Search if exist
+
+		std::unordered_map<size_t,size_t>::iterator it = map.find(i);
+
+		if ( it != map.end() )
+			return row_val.get(it->second).value();
+
+		return insert(i);
 	}
 
 	/*! \brief Return a reference to the vector element
@@ -363,18 +318,10 @@ public:
 
 		std::unordered_map<size_t,size_t>::iterator it = map.find(i);
 
-		if ( it == map.end() )
-		{
-			// Does not exist
-
-			std::cerr << __FILE__ << ":" << __LINE__ << " value does not exist " << std::endl;
-
-			return invalid;
-		}
-		else
+		if ( it != map.end() )
 			return row_val.get(it->second).value();
 
-		return invalid;
+		return insert(i);
 	}
 
 	/*! \brief Get the Eigen Vector object
@@ -405,6 +352,17 @@ public:
 
 	/*! \brief Copy the vector into the grid
 	 *
+	 * ## Copy from the vector to the destination grid
+	 * \snippet eq_unit_tests.hpp
+	 *
+	 * \tparam scheme Discretization scheme
+	 * \tparam Grid_dst type of the target grid
+	 * \tparam pos target properties
+	 *
+	 * \param scheme Discretization scheme
+	 * \param start point
+	 * \param stop point
+	 * \param g_dst Destination grid
 	 *
 	 */
 	template<typename scheme, typename Grid_dst ,unsigned int ... pos> void copy(scheme & sc,const long int (& start)[scheme::Sys_eqs_typ::dims], const long int (& stop)[scheme::Sys_eqs_typ::dims], Grid_dst & g_dst)
@@ -412,9 +370,19 @@ public:
 		if (is_grid_staggered<typename scheme::Sys_eqs_typ>::value())
 		{
 			if (g_dst.is_staggered() == true)
-				copy_staggered_to_staggered<scheme,Grid_dst,pos...>(sc,start,stop,g_dst);
+				copy_staggered_to_staggered<scheme,Grid_dst,pos...>(sc,g_dst);
 			else
-				copy_staggered_to_normal<scheme,Grid_dst,pos...>(sc,start,stop,g_dst);
+			{
+				// Create a temporal staggered grid and copy the data there
+				auto & g_map = sc.getMap();
+				staggered_grid_dist<Grid_dst::dims,typename Grid_dst::stype,typename Grid_dst::value_type,typename Grid_dst::decomposition::extended_type, typename Grid_dst::memory_type, typename Grid_dst::device_grid_type> stg(g_dst,g_map.getDecomposition().getGhost(),sc.getPadding());
+				stg.setDefaultStagPosition();
+				copy_staggered_to_staggered<scheme,decltype(stg),pos...>(sc,stg);
+
+				// sync the ghost and interpolate to the normal grid
+				stg.template ghost_get<pos...>();
+				stg.template to_normal<Grid_dst,pos...>(g_dst,sc.getPadding(),start,stop);
+			}
 		}
 	}
 
