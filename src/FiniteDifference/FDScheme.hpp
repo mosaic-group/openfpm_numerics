@@ -18,13 +18,13 @@
 
 /*! \brief Finite Differences
  *
- * This class is able to discreatize on a Matrix any system of equations producing a linear system of type \f$Ax=B\f$. In order to create a consistent
- * Matrix it is required that each processor must contain a contiguos range on grid points without
- * holes. In order to ensure this, each processor produce a contiguos local labelling of its local
+ * This class is able to discretize on a Matrix any system of equations producing a linear system of type \f$Ax=b\f$. In order to create a consistent
+ * Matrix it is required that each processor must contain a contiguous range on grid points without
+ * holes. In order to ensure this, each processor produce a contiguous local labeling of its local
  * points. Each processor also add an offset equal to the number of local
  * points of the processors with id smaller than him, to produce a global and non overlapping
- * labelling. An example is shown in the figures down, here we have
- * a grid 8x6 divided across two processor each processor label locally its grid points
+ * labeling. An example is shown in the figures down, here we have
+ * a grid 8x6 divided across four processors each processor label locally its grid points
  *
  * \verbatim
  *
@@ -266,6 +266,56 @@ private:
 		}
 	}
 
+	/*! \brief Copy a given solution vector in a staggered grid
+	 *
+	 * \tparam Vct Vector type
+	 * \tparam Grid_dst target grid
+	 * \tparam pos set of properties
+	 *
+	 * \param v Vector
+	 * \param g_dst target staggered grid
+	 *
+	 */
+	template<typename Vct, typename Grid_dst ,unsigned int ... pos> void copy_staggered(Vct & v, Grid_dst & g_dst)
+	{
+		// check that g_dst is staggered
+		if (g_dst.is_staggered() == false)
+			std::cerr << __FILE__ << ":" << __LINE__ << " The destination grid must be staggered " << std::endl;
+
+#ifdef SE_CLASS1
+
+		if (g_map.getLocalDomainSize() != g_dst.getLocalDomainSize())
+			std::cerr << __FILE__ << ":" << __LINE__ << " The staggered and destination grid in size does not match " << std::endl;
+#endif
+
+		// sub-grid iterator over the grid map
+		auto g_map_it = g_map.getDomainIterator();
+
+		// Iterator over the destination grid
+		auto g_dst_it = g_dst.getDomainIterator();
+
+		while (g_map_it.isNext() == true)
+		{
+			typedef typename to_boost_vmpl<pos...>::type vid;
+			typedef boost::mpl::size<vid> v_size;
+
+			auto key_src = g_map_it.get();
+			size_t lin_id = g_map.template get<0>(key_src);
+
+			// destination point
+			auto key_dst = g_dst_it.get();
+
+			// Transform this id into an id for the Eigen vector
+
+			copy_ele<Sys_eqs_typ, Grid_dst,Vct> cp(key_dst,g_dst,v,lin_id,g_map.size());
+
+			boost::mpl::for_each_ref<boost::mpl::range_c<int,0,v_size::value>>(cp);
+
+			++g_map_it;
+			++g_dst_it;
+		}
+	}
+
 public:
 
 	/*! \brief set the staggered position for each property
@@ -387,6 +437,7 @@ public:
 	 * Ax = b
 	 *
 	 * ## Stokes equation, lid driven cavity with one splipping wall
+	 * \snippet eq_unit_test.hpp lid-driven cavity 2D
 	 *
 	 * \param op Operator to impose (A term)
 	 * \param num right hand side of the term (b term)
@@ -412,7 +463,8 @@ public:
 	 *
 	 * Ax = b
 	 *
-	 * ## Stokes equation, lid driven cavity with one splipping wall
+	 * ## Stokes equation 2D, lid driven cavity with one splipping wall
+	 * \snippet eq_unit_test.hpp Copy the solution to grid
 	 *
 	 * \param op Operator to impose (A term)
 	 * \param num right hand side of the term (b term)
@@ -512,6 +564,42 @@ public:
 #endif
 
 		return b;
+	}
+
+	/*! \brief Copy the vector into the grid
+	 *
+	 * ## Copy the solution into the grid
+	 * \snippet eq_unit_test.hpp Copy the solution to grid
+	 *
+	 * \tparam scheme Discretization scheme
+	 * \tparam Grid_dst type of the target grid
+	 * \tparam pos target properties
+	 *
+	 * \param scheme Discretization scheme
+	 * \param start point
+	 * \param stop point
+	 * \param g_dst Destination grid
+	 *
+	 */
+	template<unsigned int ... pos, typename Vct, typename Grid_dst> void copy(Vct & v,const long int (& start)[Sys_eqs_typ::dims], const long int (& stop)[Sys_eqs_typ::dims], Grid_dst & g_dst)
+	{
+		if (is_grid_staggered<Sys_eqs>::value())
+		{
+			if (g_dst.is_staggered() == true)
+				copy_staggered<Vct,Grid_dst,pos...>(v,g_dst);
+			else
+			{
+				// Create a temporal staggered grid and copy the data there
+				auto & g_map = this->getMap();
+				staggered_grid_dist<Grid_dst::dims,typename Grid_dst::stype,typename Grid_dst::value_type,typename Grid_dst::decomposition::extended_type, typename Grid_dst::memory_type, typename Grid_dst::device_grid_type> stg(g_dst,g_map.getDecomposition().getGhost(),this->getPadding());
+				stg.setDefaultStagPosition();
+				copy_staggered<Vct,decltype(stg),pos...>(v,stg);
+
+				// sync the ghost and interpolate to the normal grid
+				stg.template ghost_get<pos...>();
+				stg.template to_normal<Grid_dst,pos...>(g_dst,this->getPadding(),start,stop);
+			}
+		}
 	}
 };
 

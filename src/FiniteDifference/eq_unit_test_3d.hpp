@@ -132,6 +132,9 @@ BOOST_AUTO_TEST_CASE(lid_driven_cavity)
 {
 	Vcluster & v_cl = *global_v_cluster;
 
+	if (v_cl.getProcessingUnits() > 3)
+		return;
+
 	// Domain
 	Box<3,float> domain({0.0,0.0,0.0},{3.0,1.0,1.0});
 
@@ -231,7 +234,7 @@ BOOST_AUTO_TEST_CASE(lid_driven_cavity)
 	auto x = umfpack_solver<double>::solve(fd.getA(),fd.getB());
 
 	// Bring the solution to grid
-	x.copy<FDScheme<lid_nn_3d>,decltype(g_dist),velocity,pressure>(fd,{0,0},{sz[0]-1,sz[1]-1,sz[2]-1},g_dist);
+	fd.copy<velocity,pressure>(x,{0,0},{sz[0]-1,sz[1]-1,sz[2]-1},g_dist);
 
 	g_dist.write("lid_driven_cavity_3d_p" + std::to_string(v_cl.getProcessingUnits()));
 

@@ -88,53 +88,6 @@ class Vector<T,Eigen::Matrix<T, Eigen::Dynamic, 1>>
 	//size of each chunk
 	mutable openfpm::vector<size_t> sz;
 
-	/*! \brief Copy in a staggered grid
-	 *
-	 *
-	 */
-	template<typename scheme, typename Grid_dst ,unsigned int ... pos> void copy_staggered_to_staggered(scheme & sc, Grid_dst & g_dst)
-	{
-		// get the map
-		const auto & g_map = sc.getMap();
-
-		// check that g_dst is staggered
-		if (is_grid_staggered<Grid_dst>::value() == false)
-			std::cerr << __FILE__ << ":" << __LINE__ << " The destination grid must be staggered " << std::endl;
-
-#ifdef SE_CLASS1
-
-		if (g_map.getLocalDomainSize() != g_dst.getLocalDomainSize())
-			std::cerr << __FILE__ << ":" << __LINE__ << " The staggered and destination grid in size does not match " << std::endl;
-#endif
-
-		// sub-grid iterator over the grid map
-		auto g_map_it = g_map.getDomainIterator();
-
-		// Iterator over the destination grid
-		auto g_dst_it = g_dst.getDomainIterator();
-
-		while (g_map_it.isNext() == true)
-		{
-			typedef typename to_boost_vmpl<pos...>::type vid;
-			typedef boost::mpl::size<vid> v_size;
-
-			auto key_src = g_map_it.get();
-			size_t lin_id = g_map.template get<0>(key_src);
-
-			// destination point
-			auto key_dst = g_dst_it.get();
-
-			// Transform this id into an id for the Eigen vector
-
-			copy_ele<typename scheme::Sys_eqs_typ,Grid_dst,typename std::remove_reference<decltype(*this)>::type> cp(key_dst,g_dst,*this,lin_id,g_map.size());
-
-			boost::mpl::for_each_ref<boost::mpl::range_c<int,0,v_size::value>>(cp);
-
-			++g_map_it;
-			++g_dst_it;
-		}
-	}
-
 
 	/*! \brief Here we collect the full matrix on master
 	 *
@@ -348,42 +301,6 @@ public:
 		setEigen();
 
 		return v;
-	}
-
-	/*! \brief Copy the vector into the grid
-	 *
-	 * ## Copy from the vector to the destination grid
-	 * \snippet eq_unit_tests.hpp
-	 *
-	 * \tparam scheme Discretization scheme
-	 * \tparam Grid_dst type of the target grid
-	 * \tparam pos target properties
-	 *
-	 * \param scheme Discretization scheme
-	 * \param start point
-	 * \param stop point
-	 * \param g_dst Destination grid
-	 *
-	 */
-	template<typename scheme, typename Grid_dst ,unsigned int ... pos> void copy(scheme & sc,const long int (& start)[scheme::Sys_eqs_typ::dims], const long int (& stop)[scheme::Sys_eqs_typ::dims], Grid_dst & g_dst)
-	{
-		if (is_grid_staggered<typename scheme::Sys_eqs_typ>::value())
-		{
-			if (g_dst.is_staggered() == true)
-				copy_staggered_to_staggered<scheme,Grid_dst,pos...>(sc,g_dst);
-			else
-			{
-				// Create a temporal staggered grid and copy the data there
-				auto & g_map = sc.getMap();
-				staggered_grid_dist<Grid_dst::dims,typename Grid_dst::stype,typename Grid_dst::value_type,typename Grid_dst::decomposition::extended_type, typename Grid_dst::memory_type, typename Grid_dst::device_grid_type> stg(g_dst,g_map.getDecomposition().getGhost(),sc.getPadding());
-				stg.setDefaultStagPosition();
-				copy_staggered_to_staggered<scheme,decltype(stg),pos...>(sc,stg);
-
-				// sync the ghost and interpolate to the normal grid
-				stg.template ghost_get<pos...>();
-				stg.template to_normal<Grid_dst,pos...>(g_dst,sc.getPadding(),start,stop);
-			}
-		}
 	}
 
 	/*! \brief Scatter the vector information to the other processors
