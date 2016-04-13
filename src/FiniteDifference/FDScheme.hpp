@@ -474,7 +474,7 @@ public:
 	 */
 	template<typename T> void impose(const T & op , typename Sys_eqs::stype num ,long int id ,grid_dist_iterator_sub<Sys_eqs::dims,typename g_map_type::d_grid> it_d, bool skip_first = false)
 	{
-		Vcluster & v_cl = *global_v_cluster;
+		Vcluster & v_cl = create_vcluster();
 
 		openfpm::vector<triplet> & trpl = A.getMatrixTriplets();
 

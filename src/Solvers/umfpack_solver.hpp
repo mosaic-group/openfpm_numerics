@@ -46,7 +46,7 @@ public:
 	 */
 	template<typename impl> static Vector<double> solve(SparseMatrix<double,int,impl> & A, const Vector<double> & b, size_t opt = UMFPACK_NONE)
 	{
-		Vcluster & vcl = *global_v_cluster;
+		Vcluster & vcl = create_vcluster();
 
 		Vector<double> x;
 

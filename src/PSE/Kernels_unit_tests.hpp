@@ -17,7 +17,7 @@ BOOST_AUTO_TEST_SUITE( pse_kernels_unit_tests )
 
 BOOST_AUTO_TEST_CASE( pse_ker )
 {
-	Vcluster & v_cl = *global_v_cluster;
+	Vcluster & v_cl = create_vcluster();
 
 	// This test is not made to run in parallel
 	if (v_cl.getProcessingUnits() > 1)

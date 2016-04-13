@@ -96,7 +96,7 @@ private:
 	 */
 	void assemble()
 	{
-		Vcluster & vcl = *global_v_cluster;
+		Vcluster & vcl = create_vcluster();
 
 		////// On Master and only here
 		// we assemble the Matrix from the collected data
@@ -116,7 +116,7 @@ private:
 	 */
 	void collect()
 	{
-		Vcluster & vcl = *global_v_cluster;
+		Vcluster & vcl = create_vcluster();
 
 		trpl_recv.clear();
 

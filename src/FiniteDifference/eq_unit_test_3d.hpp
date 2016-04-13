@@ -130,7 +130,7 @@ typedef Avg<x,v_z,lid_nn_3d,FORWARD> avg_x_vz_f;
 
 BOOST_AUTO_TEST_CASE(lid_driven_cavity)
 {
-	Vcluster & v_cl = *global_v_cluster;
+	Vcluster & v_cl = create_vcluster();
 
 	if (v_cl.getProcessingUnits() > 3)
 		return;
@@ -148,9 +148,6 @@ BOOST_AUTO_TEST_CASE(lid_driven_cavity)
 	szu[2] = (size_t)sz[2];
 
 	Padding<3> pd({1,1,1},{0,0,0});
-
-	// Initialize the global VCluster
-	init_global_v_cluster(&boost::unit_test::framework::master_test_suite().argc,&boost::unit_test::framework::master_test_suite().argv);
 
 	// velocity in the grid is the property 0, pressure is the property 1
 	constexpr int velocity = 0;

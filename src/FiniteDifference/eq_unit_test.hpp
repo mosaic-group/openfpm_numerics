@@ -140,7 +140,7 @@ typedef Avg<y,v_x,lid_nn,FORWARD> avg_vx_f;
 
 BOOST_AUTO_TEST_CASE(lid_driven_cavity)
 {
-	Vcluster & v_cl = *global_v_cluster;
+	Vcluster & v_cl = create_vcluster();
 
 	if (v_cl.getProcessingUnits() > 3)
 		return;
@@ -168,9 +168,6 @@ BOOST_AUTO_TEST_CASE(lid_driven_cavity)
 	// reason is mathematical in order to have a well defined system
 	// and cannot be discussed here
 	Padding<2> pd({1,1},{0,0});
-
-	// Initialize openfpm
-	init_global_v_cluster(&boost::unit_test::framework::master_test_suite().argc,&boost::unit_test::framework::master_test_suite().argv);
 
 	// Distributed grid that store the solution
 	grid_dist_id<2,float,aggregate<float[2],float>,CartDecomposition<2,float>> g_dist(szu,domain,g);

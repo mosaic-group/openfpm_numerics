@@ -18,7 +18,7 @@ BOOST_AUTO_TEST_SUITE( sparse_matrix_test_suite )
 
 BOOST_AUTO_TEST_CASE(sparse_matrix_eigen_parallel)
 {
-	Vcluster & vcl = *global_v_cluster;
+	Vcluster & vcl = create_vcluster();
 
 	if (vcl.getProcessingUnits() != 3)
 		return;
