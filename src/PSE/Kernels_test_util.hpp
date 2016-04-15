@@ -95,9 +95,9 @@ template<typename T, typename Kernel> void PSE_test(size_t Npart, size_t overlap
 		auto key = it2.get();
 
 		// set the position of the particles
-		vd.template getPos<0>(key)[0] = 0.448000 - ((long int)key.getKey() - mp) * spacing;
+		vd.getPos(key)[0] = 0.448000 - ((long int)key.getKey() - mp) * spacing;
 		//set the property of the particles
-		vd.template getProp<0>(key) = f_xex2(vd.template getPos<0>(key)[0]);
+		vd.template getProp<0>(key) = f_xex2(vd.getPos(key)[0]);
 
 		++it2;
 	}
@@ -115,7 +115,7 @@ template<typename T, typename Kernel> void PSE_test(size_t Npart, size_t overlap
     T pse = 0;
 
     // Get the position of the particle
-    Point<1,T> p = vd.template getPos<0>(key);
+    Point<1,T> p = vd.getPos(key);
 
     // Get f(x) at the position of the particle
     T prp_x = vd.template getProp<0>(key);
@@ -131,7 +131,7 @@ template<typename T, typename Kernel> void PSE_test(size_t Npart, size_t overlap
     	if (nnp != key.getKey())
     	{
     		// W(x-y)
-    		T ker = lker.value(p,vd.template getPos<0>(nnp));
+    		T ker = lker.value(p,vd.getPos(nnp));
 
     		// f(y)
     		T prp_y = vd.template getProp<0>(nnp);
