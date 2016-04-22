@@ -46,7 +46,6 @@ BOOST_AUTO_TEST_CASE( pse_ker )
 
 		PSE_test<boost::multiprecision::float128,Lap_PSE<1,boost::multiprecision::float128,2>>(i,4,err);
 		y.last().add(err.linf_error);
-#endif
 
 #endif
 
