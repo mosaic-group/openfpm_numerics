@@ -18,13 +18,13 @@
 
 /*! \brief Finite Differences
  *
- * This class is able to discreatize on a Matrix any system of equations producing a linear system of type \f$Ax=B\f$. In order to create a consistent
- * Matrix it is required that each processor must contain a contiguos range on grid points without
- * holes. In order to ensure this, each processor produce a contiguos local labelling of its local
+ * This class is able to discretize on a Matrix any system of equations producing a linear system of type \f$Ax=b\f$. In order to create a consistent
+ * Matrix it is required that each processor must contain a contiguous range on grid points without
+ * holes. In order to ensure this, each processor produce a contiguous local labeling of its local
  * points. Each processor also add an offset equal to the number of local
  * points of the processors with id smaller than him, to produce a global and non overlapping
- * labelling. An example is shown in the figures down, here we have
- * a grid 8x6 divided across two processor each processor label locally its grid points
+ * labeling. An example is shown in the figures down, here we have
+ * a grid 8x6 divided across four processors each processor label locally its grid points
  *
  * \verbatim
  *
@@ -124,7 +124,7 @@ class FDScheme
 public:
 
 	// Distributed grid map
-	typedef grid_dist_id<Sys_eqs::dims,typename Sys_eqs::stype,scalar<size_t>,typename Sys_eqs::b_grid::decomposition> g_map_type;
+	typedef grid_dist_id<Sys_eqs::dims,typename Sys_eqs::stype,scalar<size_t>,typename Sys_eqs::b_grid::decomposition::extended_type> g_map_type;
 
 	typedef Sys_eqs Sys_eqs_typ;
 
@@ -135,7 +135,8 @@ private:
 
 	typedef typename Sys_eqs::SparseMatrix_type::triplet_type triplet;
 
-	openfpm::vector<typename Sys_eqs::stype> b;
+	// Vector b
+	typename Sys_eqs::Vector_type b;
 
 	// Domain Grid informations
 	const grid_sm<Sys_eqs::dims,void> & gs;
@@ -265,6 +266,56 @@ private:
 		}
 	}
 
+	/*! \brief Copy a given solution vector in a staggered grid
+	 *
+	 * \tparam Vct Vector type
+	 * \tparam Grid_dst target grid
+	 * \tparam pos set of properties
+	 *
+	 * \param v Vector
+	 * \param g_dst target staggered grid
+	 *
+	 */
+	template<typename Vct, typename Grid_dst ,unsigned int ... pos> void copy_staggered(Vct & v, Grid_dst & g_dst)
+	{
+		// check that g_dst is staggered
+		if (g_dst.is_staggered() == false)
+			std::cerr << __FILE__ << ":" << __LINE__ << " The destination grid must be staggered " << std::endl;
+
+#ifdef SE_CLASS1
+
+		if (g_map.getLocalDomainSize() != g_dst.getLocalDomainSize())
+			std::cerr << __FILE__ << ":" << __LINE__ << " The staggered and destination grid in size does not match " << std::endl;
+#endif
+
+		// sub-grid iterator over the grid map
+		auto g_map_it = g_map.getDomainIterator();
+
+		// Iterator over the destination grid
+		auto g_dst_it = g_dst.getDomainIterator();
+
+		while (g_map_it.isNext() == true)
+		{
+			typedef typename to_boost_vmpl<pos...>::type vid;
+			typedef boost::mpl::size<vid> v_size;
+
+			auto key_src = g_map_it.get();
+			size_t lin_id = g_map.template get<0>(key_src);
+
+			// destination point
+			auto key_dst = g_dst_it.get();
+
+			// Transform this id into an id for the Eigen vector
+
+			copy_ele<Sys_eqs_typ, Grid_dst,Vct> cp(key_dst,g_dst,v,lin_id,g_map.size());
+
+			boost::mpl::for_each_ref<boost::mpl::range_c<int,0,v_size::value>>(cp);
+
+			++g_map_it;
+			++g_dst_it;
+		}
+	}
+
 public:
 
 	/*! \brief set the staggered position for each property
@@ -325,13 +376,14 @@ public:
 	 * \param pd Padding, how many points out of boundary are present
 	 * \param domain extension of the domain
 	 * \param gs grid infos where Finite differences work
+	 * \param stencil maximum extension of the stencil on each directions
 	 * \param dec Decomposition of the domain
 	 *
 	 */
-	FDScheme(Padding<Sys_eqs::dims> & pd, const Box<Sys_eqs::dims,typename Sys_eqs::stype> & domain, const grid_sm<Sys_eqs::dims,void> & gs, const typename Sys_eqs::b_grid::decomposition & dec)
-	:pd(pd),gs(gs),g_map(dec,padding(gs.getSize(),pd),domain,Ghost<Sys_eqs::dims,typename Sys_eqs::stype>(1)),row(0),row_b(0)
+	FDScheme(Padding<Sys_eqs::dims> & pd, const Ghost<Sys_eqs::dims,long int> & stencil, const Box<Sys_eqs::dims,typename Sys_eqs::stype> & domain, const grid_sm<Sys_eqs::dims,void> & gs, const typename Sys_eqs::b_grid & b_g)
+	:pd(pd),gs(gs),g_map(b_g,stencil,pd),row(0),row_b(0)
 	{
-		Vcluster & v_cl = dec.getVC();
+		Vcluster & v_cl = b_g.getDecomposition().getVC();
 
 		// Calculate the size of the local domain
 		size_t sz = g_map.getLocalDomainSize();
@@ -364,7 +416,6 @@ public:
 		}
 
 		// sync the ghost
-
 		g_map.template ghost_get<0>();
 
 		// Create a CellDecomposer and calculate the spacing
@@ -386,6 +437,7 @@ public:
 	 * Ax = b
 	 *
 	 * ## Stokes equation, lid driven cavity with one splipping wall
+	 * \snippet eq_unit_test.hpp lid-driven cavity 2D
 	 *
 	 * \param op Operator to impose (A term)
 	 * \param num right hand side of the term (b term)
@@ -397,8 +449,8 @@ public:
 	template<typename T> void impose(const T & op , typename Sys_eqs::stype num ,long int id ,const long int (& start)[Sys_eqs::dims], const long int (& stop)[Sys_eqs::dims], bool skip_first = false)
 	{
 		// add padding to start and stop
-		grid_key_dx<Sys_eqs::dims> start_k = grid_key_dx<Sys_eqs::dims>(start) + pd.getKP1();
-		grid_key_dx<Sys_eqs::dims> stop_k = grid_key_dx<Sys_eqs::dims>(stop) + pd.getKP1();
+		grid_key_dx<Sys_eqs::dims> start_k = grid_key_dx<Sys_eqs::dims>(start);
+		grid_key_dx<Sys_eqs::dims> stop_k = grid_key_dx<Sys_eqs::dims>(stop);
 
 		auto it = g_map.getSubDomainIterator(start_k,stop_k);
 
@@ -411,7 +463,8 @@ public:
 	 *
 	 * Ax = b
 	 *
-	 * ## Stokes equation, lid driven cavity with one splipping wall
+	 * ## Stokes equation 2D, lid driven cavity with one splipping wall
+	 * \snippet eq_unit_test.hpp Copy the solution to grid
 	 *
 	 * \param op Operator to impose (A term)
 	 * \param num right hand side of the term (b term)
@@ -421,6 +474,8 @@ public:
 	 */
 	template<typename T> void impose(const T & op , typename Sys_eqs::stype num ,long int id ,grid_dist_iterator_sub<Sys_eqs::dims,typename g_map_type::d_grid> it_d, bool skip_first = false)
 	{
+		Vcluster & v_cl = create_vcluster();
+
 		openfpm::vector<triplet> & trpl = A.getMatrixTriplets();
 
 		auto it = it_d;
@@ -429,19 +484,21 @@ public:
 		std::unordered_map<long int,float> cols;
 
 		// resize b if needed
-		b.resize(Sys_eqs::nvar * gs.size());
+		b.resize(Sys_eqs::nvar * g_map.size());
 
 		bool is_first = skip_first;
 
 		// iterate all the grid points
 		while (it.isNext())
 		{
-			if (is_first == true)
+			if (is_first == true && v_cl.getProcessUnitID() == 0)
 			{
 				++it;
 				is_first = false;
 				continue;
 			}
+			else
+				is_first = false;
 
 			// get the position
 			auto key = it.get();
@@ -461,7 +518,7 @@ public:
 //				std::cout << "(" << trpl.last().row() << "," << trpl.last().col() << "," << trpl.last().value() << ")" << "\n";
 			}
 
-			b.get(g_map.template get<0>(key)*Sys_eqs::nvar + id) = num;
+			b(g_map.template get<0>(key)*Sys_eqs::nvar + id) = num;
 
 			cols.clear();
 //			std::cout << "\n";
@@ -489,13 +546,11 @@ public:
 #ifdef SE_CLASS1
 		consistency();
 #endif
-		A.resize(row,row);
+		A.resize(g_map.size()*Sys_eqs::nvar,g_map.size()*Sys_eqs::nvar);
 
 		return A;
 
 	}
-
-	typename Sys_eqs::Vector_type B;
 
 	/*! \brief produce the B vector
 	 *
@@ -508,13 +563,43 @@ public:
 		consistency();
 #endif
 
-		B.resize(row_b);
+		return b;
+	}
 
-		// copy the vector
-		for (size_t i = 0; i < row_b; i++)
-			B.get(i) = b.get(i);
+	/*! \brief Copy the vector into the grid
+	 *
+	 * ## Copy the solution into the grid
+	 * \snippet eq_unit_test.hpp Copy the solution to grid
+	 *
+	 * \tparam scheme Discretization scheme
+	 * \tparam Grid_dst type of the target grid
+	 * \tparam pos target properties
+	 *
+	 * \param scheme Discretization scheme
+	 * \param start point
+	 * \param stop point
+	 * \param g_dst Destination grid
+	 *
+	 */
+	template<unsigned int ... pos, typename Vct, typename Grid_dst> void copy(Vct & v,const long int (& start)[Sys_eqs_typ::dims], const long int (& stop)[Sys_eqs_typ::dims], Grid_dst & g_dst)
+	{
+		if (is_grid_staggered<Sys_eqs>::value())
+		{
+			if (g_dst.is_staggered() == true)
+				copy_staggered<Vct,Grid_dst,pos...>(v,g_dst);
+			else
+			{
+				// Create a temporal staggered grid and copy the data there
+				auto & g_map = this->getMap();
+				staggered_grid_dist<Grid_dst::dims,typename Grid_dst::stype,typename Grid_dst::value_type,typename Grid_dst::decomposition::extended_type, typename Grid_dst::memory_type, typename Grid_dst::device_grid_type> stg(g_dst,g_map.getDecomposition().getGhost(),this->getPadding());
+				stg.setDefaultStagPosition();
+				copy_staggered<Vct,decltype(stg),pos...>(v,stg);
 
-		return B;
+				// sync the ghost and interpolate to the normal grid
+				stg.template ghost_get<pos...>();
+				stg.template to_normal<Grid_dst,pos...>(g_dst,this->getPadding(),start,stop);
+			}
+		}
 	}
 };
 

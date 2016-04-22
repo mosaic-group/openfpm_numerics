@@ -18,6 +18,7 @@
 #include "Vector/Vector.hpp"
 #include "Solvers/umfpack_solver.hpp"
 #include "data_type/aggregate.hpp"
+#include "FiniteDifference/FDScheme.hpp"
 
 BOOST_AUTO_TEST_SUITE( eq_test_suite )
 
@@ -38,18 +39,18 @@ struct lid_nn
 	typedef float stype;
 
 	// type of base grid, it is the distributed grid that will store the result
-	// Note the first property is a 2D vector (velocity), the second is a scalar
+	// Note the first property is a 2D vector (velocity), the second is a scalar (Pressure)
 	typedef grid_dist_id<2,float,aggregate<float[2],float>,CartDecomposition<2,float>> b_grid;
 
 	// type of SparseMatrix, for the linear system, this parameter is bounded by the solver
-	// that you are using
+	// that you are using, in case of umfpack it is the only possible choice
 	typedef SparseMatrix<double,int> SparseMatrix_type;
 
 	// type of Vector for the linear system, this parameter is bounded by the solver
-	// that you are using
+	// that you are using, in case of umfpack it is the only possible choice
 	typedef Vector<double> Vector_type;
 
-	// Define that the underline grid where we discretize the operators is staggered
+	// Define that the underline grid where we discretize the system of equation is staggered
 	static const int grid_type = STAGGERED_GRID;
 };
 
@@ -139,7 +140,16 @@ typedef Avg<y,v_x,lid_nn,FORWARD> avg_vx_f;
 
 BOOST_AUTO_TEST_CASE(lid_driven_cavity)
 {
+	Vcluster & v_cl = create_vcluster();
+
+	if (v_cl.getProcessingUnits() > 3)
+		return;
+
 	//! [lid-driven cavity 2D]
+
+	// velocity in the grid is the property 0, pressure is the property 1
+	constexpr int velocity = 0;
+	constexpr int pressure = 1;
 
 	// Domain, a rectangle
 	Box<2,float> domain({0.0,0.0},{3.0,1.0});
@@ -159,14 +169,14 @@ BOOST_AUTO_TEST_CASE(lid_driven_cavity)
 	// and cannot be discussed here
 	Padding<2> pd({1,1},{0,0});
 
-	// Initialize openfpm
-	init_global_v_cluster(&boost::unit_test::framework::master_test_suite().argc,&boost::unit_test::framework::master_test_suite().argv);
-
 	// Distributed grid that store the solution
 	grid_dist_id<2,float,aggregate<float[2],float>,CartDecomposition<2,float>> g_dist(szu,domain,g);
 
+	// It is the maximum extension of the stencil
+	Ghost<2,long int> stencil_max(1);
+
 	// Finite difference scheme
-	FDScheme<lid_nn> fd(pd,domain,g_dist.getGridInfo(),g_dist.getDecomposition());
+	FDScheme<lid_nn> fd(pd, stencil_max, domain, g_dist.getGridInfo(), g_dist);
 
 	// Here we impose the equation, we start from the incompressibility Eq imposed in the bulk with the
 	// exception of the first point {0,0} and than we set P = 0 in {0,0}, why we are doing this is again
@@ -213,17 +223,43 @@ BOOST_AUTO_TEST_CASE(lid_driven_cavity)
 
 	auto x = umfpack_solver<double>::solve(fd.getA(),fd.getB());
 
-	// Copy the solution to grid
-	x.copy<FDScheme<lid_nn>,decltype(g_dist),0,1>(fd,{0,0},{sz[0]-1,sz[1]-1},g_dist);
-
 	//! [lid-driven cavity 2D]
 
-	g_dist.write("lid_driven_cavity");
+	//! [Copy the solution to grid]
 
+	fd.copy<velocity,pressure>(x,{0,0},{sz[0]-1,sz[1]-1},g_dist);
 
-	// Check that match
-	bool test = compare("lid_driven_cavity_grid_0_test.vtk","lid_driven_cavity_grid_0.vtk");
-	BOOST_REQUIRE_EQUAL(test,true);
+	//! [Copy the solution to grid]
+
+	g_dist.write("lid_driven_cavity_p" + std::to_string(v_cl.getProcessingUnits()));
+
+	if (v_cl.getProcessUnitID() == 0)
+	{
+		if (v_cl.getProcessingUnits() == 1)
+		{
+			// Check that match
+			bool test = compare("lid_driven_cavity_p1_grid_0_test.vtk","lid_driven_cavity_grid_0.vtk");
+			BOOST_REQUIRE_EQUAL(test,true);
+		}
+		else if (v_cl.getProcessingUnits() == 2)
+		{
+			// Check that match
+			bool test = compare("lid_driven_cavity_p2_grid_0_test.vtk","lid_driven_cavity_p2_grid_0.vtk");
+			BOOST_REQUIRE_EQUAL(test,true);
+			test = compare("lid_driven_cavity_p2_grid_1_test.vtk","lid_driven_cavity_p2_grid_1.vtk");
+			BOOST_REQUIRE_EQUAL(test,true);
+		}
+		else if (v_cl.getProcessingUnits() == 3)
+		{
+			// Check that match
+			bool test = compare("lid_driven_cavity_p3_grid_0_test.vtk","lid_driven_cavity_p3_grid_0.vtk");
+			BOOST_REQUIRE_EQUAL(test,true);
+			test = compare("lid_driven_cavity_p3_grid_1_test.vtk","lid_driven_cavity_p3_grid_1.vtk");
+			BOOST_REQUIRE_EQUAL(test,true);
+			test = compare("lid_driven_cavity_p3_grid_2_test.vtk","lid_driven_cavity_p3_grid_2.vtk");
+			BOOST_REQUIRE_EQUAL(test,true);
+		}
+	}
 }
 
 BOOST_AUTO_TEST_SUITE_END()

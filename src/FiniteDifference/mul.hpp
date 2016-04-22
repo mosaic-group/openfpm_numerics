@@ -51,7 +51,7 @@ struct const_mul_functor_value
 	const grid_sm<last::dims,void> & gs;
 
 	// grid mapping
-	const grid_dist_id<last::dims,typename last::stype,scalar<size_t>,typename last::b_grid::decomposition> & g_map;
+	const grid_dist_id<last::dims,typename last::stype,scalar<size_t>,typename last::b_grid::decomposition::extended_type> & g_map;
 
 	// grid position
 	grid_dist_key_dx<last::dims> & kmap;
@@ -65,7 +65,7 @@ struct const_mul_functor_value
 	/*! \brief constructor
 	 *
 	 */
-	const_mul_functor_value(const grid_dist_id<last::dims,typename last::stype,scalar<size_t>,typename last::b_grid::decomposition> & g_map, grid_dist_key_dx<last::dims> & kmap, const grid_sm<last::dims,void> & gs, typename last::stype (& spacing)[last::dims], std::unordered_map<long int,typename last::stype> & cols, typename last::stype coeff)
+	const_mul_functor_value(const grid_dist_id<last::dims,typename last::stype,scalar<size_t>,typename last::b_grid::decomposition::extended_type> & g_map, grid_dist_key_dx<last::dims> & kmap, const grid_sm<last::dims,void> & gs, typename last::stype (& spacing)[last::dims], std::unordered_map<long int,typename last::stype> & cols, typename last::stype coeff)
 	:cols(cols),gs(gs),g_map(g_map),kmap(kmap),coeff(coeff),spacing(spacing)
 	{};
 
@@ -113,7 +113,7 @@ struct mul
 	 * \param coeff coefficent (constant in front of the derivative)
 	 *
 	 */
-	inline static void value(const grid_dist_id<Sys_eqs::dims,typename Sys_eqs::stype,scalar<size_t>,typename Sys_eqs::b_grid::decomposition> & g_map, grid_dist_key_dx<Sys_eqs::dims> & kmap, const grid_sm<Sys_eqs::dims,void> & gs, typename Sys_eqs::stype (& spacing )[Sys_eqs::dims] , std::unordered_map<long int,typename Sys_eqs::stype > & cols, typename Sys_eqs::stype coeff)
+	inline static void value(const grid_dist_id<Sys_eqs::dims,typename Sys_eqs::stype,scalar<size_t>,typename Sys_eqs::b_grid::decomposition::extended_type> & g_map, grid_dist_key_dx<Sys_eqs::dims> & kmap, const grid_sm<Sys_eqs::dims,void> & gs, typename Sys_eqs::stype (& spacing )[Sys_eqs::dims] , std::unordered_map<long int,typename Sys_eqs::stype > & cols, typename Sys_eqs::stype coeff)
 	{
 		const_mul_functor_value<v_expr> mfv(g_map,kmap,gs,spacing,cols,coeff);
 

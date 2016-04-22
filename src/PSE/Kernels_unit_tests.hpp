@@ -17,7 +17,7 @@ BOOST_AUTO_TEST_SUITE( pse_kernels_unit_tests )
 
 BOOST_AUTO_TEST_CASE( pse_ker )
 {
-	Vcluster & v_cl = *global_v_cluster;
+	Vcluster & v_cl = create_vcluster();
 
 	// This test is not made to run in parallel
 	if (v_cl.getProcessingUnits() > 1)
@@ -38,6 +38,7 @@ BOOST_AUTO_TEST_CASE( pse_ker )
 
 		/////// Order 2 //////////////
 
+
 #if defined(__GNUG__) && !defined(__clang__)
 
 		PSE_test<boost::multiprecision::float128,Lap_PSE<1,boost::multiprecision::float128,2>>(i,2,err);
@@ -45,6 +46,7 @@ BOOST_AUTO_TEST_CASE( pse_ker )
 
 		PSE_test<boost::multiprecision::float128,Lap_PSE<1,boost::multiprecision::float128,2>>(i,4,err);
 		y.last().add(err.linf_error);
+#endif
 
 #endif
 
@@ -61,6 +63,7 @@ BOOST_AUTO_TEST_CASE( pse_ker )
 		y.last().add(err.linf_error);
 
 		//////// Order 4 /////////////
+
 
 #if defined(__GNUG__) && !defined(__clang__)
 

@@ -14,6 +14,7 @@
 #include "util/grid_dist_testing.hpp"
 #include "FiniteDifference/Average.hpp"
 #include "FiniteDifference/sum.hpp"
+#include "eq.hpp"
 
 constexpr unsigned int x = 0;
 constexpr unsigned int y = 1;

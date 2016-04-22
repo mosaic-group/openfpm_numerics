@@ -29,7 +29,7 @@ struct sum_functor_value
 	const grid_sm<last::dims,void> & gs;
 
 	// grid mapping
-	const typename stub_or_real<last,last::dims,typename last::stype,typename last::b_grid::decomposition>::type & g_map;
+	const typename stub_or_real<last,last::dims,typename last::stype,typename last::b_grid::decomposition::extended_type>::type & g_map;
 
 	// grid position
 	grid_dist_key_dx<last::dims> & kmap;
@@ -47,7 +47,7 @@ struct sum_functor_value
 	/*! \brief constructor
 	 *
 	 */
-	sum_functor_value(const typename stub_or_real<last,last::dims,typename last::stype,typename last::b_grid::decomposition>::type & g_map, grid_dist_key_dx<last::dims> & kmap, const grid_sm<last::dims,void> & gs, typename last::stype (& spacing)[last::dims], std::unordered_map<long int,typename last::stype> & cols, typename last::stype coeff)
+	sum_functor_value(const typename stub_or_real<last,last::dims,typename last::stype,typename last::b_grid::decomposition::extended_type>::type & g_map, grid_dist_key_dx<last::dims> & kmap, const grid_sm<last::dims,void> & gs, typename last::stype (& spacing)[last::dims], std::unordered_map<long int,typename last::stype> & cols, typename last::stype coeff)
 	:cols(cols),gs(gs),g_map(g_map),kmap(kmap),key(key),coeff(coeff),spacing(spacing)
 	{};
 
@@ -93,7 +93,7 @@ struct sum
 	 * \snippet FDScheme_unit_tests.hpp sum example
 	 *
 	 */
-	inline static void value(const typename stub_or_real<Sys_eqs,Sys_eqs::dims,typename Sys_eqs::stype,typename Sys_eqs::b_grid::decomposition>::type & g_map, grid_dist_key_dx<Sys_eqs::dims> & kmap, const grid_sm<Sys_eqs::dims,void> & gs, typename Sys_eqs::stype (& spacing )[Sys_eqs::dims] , std::unordered_map<long int,typename Sys_eqs::stype > & cols, typename Sys_eqs::stype coeff)
+	inline static void value(const typename stub_or_real<Sys_eqs,Sys_eqs::dims,typename Sys_eqs::stype,typename Sys_eqs::b_grid::decomposition::extended_type>::type & g_map, grid_dist_key_dx<Sys_eqs::dims> & kmap, const grid_sm<Sys_eqs::dims,void> & gs, typename Sys_eqs::stype (& spacing )[Sys_eqs::dims] , std::unordered_map<long int,typename Sys_eqs::stype > & cols, typename Sys_eqs::stype coeff)
 	{
 		// Sum functor
 		sum_functor_value<v_expr> sm(g_map,kmap,gs,spacing,cols,coeff);
@@ -129,7 +129,7 @@ struct minus
 	 * \snipper FDScheme_unit_tests.hpp minus example
 	 *
 	 */
-	inline static void value(const typename stub_or_real<Sys_eqs,Sys_eqs::dims,typename Sys_eqs::stype,typename Sys_eqs::b_grid::decomposition>::type & g_map, grid_dist_key_dx<Sys_eqs::dims> & kmap, const grid_sm<Sys_eqs::dims,void> & gs, typename Sys_eqs::stype (& spacing )[Sys_eqs::dims] , std::unordered_map<long int,typename Sys_eqs::stype > & cols, typename Sys_eqs::stype coeff)
+	inline static void value(const typename stub_or_real<Sys_eqs,Sys_eqs::dims,typename Sys_eqs::stype,typename Sys_eqs::b_grid::decomposition::extended_type>::type & g_map, grid_dist_key_dx<Sys_eqs::dims> & kmap, const grid_sm<Sys_eqs::dims,void> & gs, typename Sys_eqs::stype (& spacing )[Sys_eqs::dims] , std::unordered_map<long int,typename Sys_eqs::stype > & cols, typename Sys_eqs::stype coeff)
 	{
 		arg::value(g_map,kmap,gs,spacing,cols,-coeff);
 	}
