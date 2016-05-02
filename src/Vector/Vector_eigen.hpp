@@ -89,7 +89,7 @@ class Vector<T,Eigen::Matrix<T, Eigen::Dynamic, 1>>
 	mutable openfpm::vector<size_t> sz;
 
 
-	/*! \brief Here we collect the full matrix on master
+	/*! \brief Here we collect the full vector on master
 	 *
 	 */
 	void collect() const

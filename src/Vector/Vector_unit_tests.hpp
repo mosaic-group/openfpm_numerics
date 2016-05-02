@@ -130,6 +130,96 @@ BOOST_AUTO_TEST_CASE(vector_eigen_parallel)
 }
 
 
+BOOST_AUTO_TEST_CASE(vector_petsc_parallel)
+{
+	Vcluster & vcl = create_vcluster();
+
+	if (vcl.getProcessingUnits() != 3)
+		return;
+
+	// 3 Processors 9x9 Matrix to invert
+
+	Vector<double,Vec> v(9);
+
+	if (vcl.getProcessUnitID() == 0)
+	{
+		// v row1
+		v.insert(0,0);
+		v.insert(1,1);
+		v.insert(2,2);
+	}
+	else if (vcl.getProcessUnitID() == 1)
+	{
+		v.insert(3,3);
+		v.insert(4,4);
+		v.insert(5,5);
+	}
+	else if (vcl.getProcessUnitID() == 2)
+	{
+		v.insert(6,6);
+		v.insert(7,7);
+		v.insert(8,8);
+	}
+
+	Vector<double,Vec> v3;
+	v3 = v;
+
+	if (vcl.getProcessUnitID() == 0)
+	{
+		// v row1
+		v(0) = 8;
+		v(1) = 7;
+		v(2) = 6;
+	}
+	else if (vcl.getProcessUnitID() == 1)
+	{
+		v(3) = 5;
+		v(4) = 4;
+		v(5) = 3;
+	}
+	else if (vcl.getProcessUnitID() == 2)
+	{
+		v(6) = 2;
+		v(7) = 1;
+		v(8) = 0;
+	}
+
+	// Master has the full vector
+
+	if (vcl.getProcessUnitID() == 0)
+	{
+		BOOST_REQUIRE_EQUAL(v(0),8);
+		BOOST_REQUIRE_EQUAL(v(1),7);
+		BOOST_REQUIRE_EQUAL(v(2),6);
+
+		BOOST_REQUIRE_EQUAL(v3(0),0);
+		BOOST_REQUIRE_EQUAL(v3(1),1);
+		BOOST_REQUIRE_EQUAL(v3(2),2);
+	}
+	else if (vcl.getProcessUnitID() == 1)
+	{
+		BOOST_REQUIRE_EQUAL(v(3),5);
+		BOOST_REQUIRE_EQUAL(v(4),4);
+		BOOST_REQUIRE_EQUAL(v(5),3);
+
+		BOOST_REQUIRE_EQUAL(v3(0),3);
+		BOOST_REQUIRE_EQUAL(v3(1),4);
+		BOOST_REQUIRE_EQUAL(v3(2),5);
+	}
+	else if (vcl.getProcessUnitID() == 2)
+	{
+		BOOST_REQUIRE_EQUAL(v(6),2);
+		BOOST_REQUIRE_EQUAL(v(7),1);
+		BOOST_REQUIRE_EQUAL(v(8),0);
+
+		BOOST_REQUIRE_EQUAL(v3(0),6);
+		BOOST_REQUIRE_EQUAL(v3(1),7);
+		BOOST_REQUIRE_EQUAL(v3(2),9);
+	}
+
+	Vec & v2 = v.getVec();
+}
+
 BOOST_AUTO_TEST_SUITE_END()
 
 

@@ -34,6 +34,6 @@ class Vector
 };
 
 #include "Vector_eigen.hpp"
-
+#include "Vector_petsc.hpp"
 
 #endif /* OPENFPM_NUMERICS_SRC_VECTOR_VECTOR_HPP_ */

@@ -25,6 +25,7 @@ m4_ifdef([AX_LAPACK],,[m4_include([m4/ax_lapack.m4])])
 m4_ifdef([AX_SUITESPARSE],,[m4_include([m4/ax_suitesparse.m4])])
 m4_ifdef([AX_EIGEN],,[m4_include([m4/ax_eigen.m4])])
 m4_ifdef([AX_LIB_HDF5],,[m4_include([m4/ax_lib_hdf5.m4])]])
+m4_ifdef([AX_PETSC_LIB],,[m4/ax_petsc_lib.m4])
 
 case $host_os in
    *cygwin*)
@@ -106,6 +107,10 @@ IMMDX_LIB_METIS([],[echo "Cannot detect metis, use the --with-metis option if it
 
 IMMDX_LIB_PARMETIS([],[echo "Cannot detect parmetis, use the --with-parmetis option if it is not installed in the default location"
                     exit 203])
+
+## Check for PETSC
+
+AX_LIB_PETSC()
 
 #########
 

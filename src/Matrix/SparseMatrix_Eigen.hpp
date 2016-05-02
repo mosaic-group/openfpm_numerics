@@ -139,18 +139,6 @@ public:
 	{
 	}
 
-	/*! \brief Create a Matrix from a set of triplet
-	 *
-	 * \param N1 number of row
-	 * \param N2 number of colums
-	 * \param trpl triplet set
-	 *
-	 */
-	SparseMatrix(size_t N1, size_t N2, const openfpm::vector<Eigen::Triplet<T,id_t>> & trpl)
-	:mat(N1,N2)
-	{
-		this->trpl = trpl;
-	}
 
 	/*! \brief Create an empty Matrix
 	 *

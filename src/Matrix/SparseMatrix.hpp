@@ -50,7 +50,7 @@ template<typename T, unsigned int impl> struct triplet
  *
  * \tparam T Type of the sparse Matrix store on each row,colums
  * \tparam id_t type of id
- * \tparam impl implementation
+ * \tparam Mi implementation
  *
  */
 template<typename T,typename id_t ,typename Mi = Eigen::SparseMatrix<T,0,id_t>>
