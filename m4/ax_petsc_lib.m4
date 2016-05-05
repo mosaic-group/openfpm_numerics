@@ -119,9 +119,9 @@ AC_MSG_WARN([could not find header file petsc.h]))
                         CC=$old_CC
 
                         AC_MSG_CHECKING(PETSC in $with_petsc)
-                        if test "$petsc_lib" = "yes" -a "$petsc_h" = "yes" ; then
+                        if test x"$petsc_lib" = x"yes" -a x"$petsc_h" = x"yes" ; then
                                 AC_SUBST(PETSC_INCLUDE, [-I$with_petsc/include])
-                                AC_SUBST(PETSC_LIB, [-L$with_petsc/lib])
+                                AC_SUBST(PETSC_LIB, ["-L$with_petsc/lib -lpetsc"])
                                 AC_MSG_RESULT(ok)
  				AC_DEFINE(HAVE_PETSC,1,[Define if you have PETSC library])
                         else
