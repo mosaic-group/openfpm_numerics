@@ -257,21 +257,17 @@ AC_SUBST(BOOST_CPPFLAGS)
 
 ###### Checking for OpenBLAS
 
-AX_BLAS([],[echo "blas not found"
-                    exit 204])
+AX_BLAS([],[])
 
-AX_LAPACK([],[echo "lapack not found"
-                    exit 204])
+AX_LAPACK([],[])
 
 ###### Checking for SUITESPARSE
 
-AX_SUITESPARSE([],[echo "suitesparse not found"
-                    exit 205])
+AX_SUITESPARSE([],[])
 
 ###### Checking for EIGEN
 
-AX_EIGEN([],[echo "eigen not found"
-                    exit 206])
+AX_EIGEN([],[])
 
 ###### Checking for compiler flags -fext-numeric-literals
 
