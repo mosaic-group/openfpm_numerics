@@ -18,7 +18,7 @@
 #include "Grid/comb.hpp"
 #include "FiniteDifference/util/common.hpp"
 #include "util/util_num.hpp"
-
+#include <unordered_map>
 
 /*! \brief Derivative second order on h (spacing)
  *

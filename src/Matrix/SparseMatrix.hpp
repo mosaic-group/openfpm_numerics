@@ -8,7 +8,12 @@
 #ifndef OPENFPM_NUMERICS_SRC_MATRIX_SPARSEMATRIX_HPP_
 #define OPENFPM_NUMERICS_SRC_MATRIX_SPARSEMATRIX_HPP_
 
+#ifdef HAVE_EIGEN
 #include <Eigen/Sparse>
+#define DEFAULT_MATRIX  = Eigen::SparseMatrix<T,0,id_t>
+#else
+#define DEFAULT_MATRIX = void
+#endif
 
 /*! \brief It store the non zero elements of the matrix
  *
@@ -29,6 +34,17 @@ template<typename T, unsigned int impl> struct triplet
 	long int i;
 	long int j;
 	T val;
+
+	triplet(long int i, long int j, T val)
+	{
+		row() = i;
+		col() = j;
+		value() = val;
+	}
+
+	triplet()
+	{
+	}
 
 	long int & row()
 	{
@@ -53,11 +69,38 @@ template<typename T, unsigned int impl> struct triplet
  * \tparam Mi implementation
  *
  */
-template<typename T,typename id_t ,typename Mi = Eigen::SparseMatrix<T,0,id_t>>
+template<typename T,typename id_t ,typename Mi DEFAULT_MATRIX>
 class SparseMatrix
 {
+public:
+
+	//! Triplet implementation id
+	typedef boost::mpl::int_<-1> triplet_impl;
+
+	//! Triplet type
+	typedef triplet<T,-1> triplet_type;
+
+	openfpm::vector<triplet_type> stub_vt;
+	int stub_i;
+	T stub_t;
+
+public:
+
+
+	SparseMatrix(size_t N1, size_t N2) {std::cerr << __FILE__ << ":" << __LINE__ << " Error in order to use this class you must compile OpenFPM with linear algebra support" << std::endl;}
+	SparseMatrix()	{std::cerr << __FILE__ << ":" << __LINE__ << " Error in order to use this class you must compile OpenFPM with linear algebra support" << std::endl;}
+	openfpm::vector<triplet_type> & getMatrixTriplets() {std::cerr << __FILE__ << ":" << __LINE__ << " Error in order to use this class you must compile OpenFPM with linear algebra support" << std::endl; return stub_vt;}
+	const int & getMat() const {std::cerr << __FILE__ << ":" << __LINE__ << " Error in order to use this class you must compile OpenFPM with linear algebra support" << std::endl; return stub_i;}
+	int & getMat() {std::cerr << __FILE__ << ":" << __LINE__ << " Error in order to use this class you must compile OpenFPM with linear algebra support" << std::endl; return stub_i;}
+	void resize(size_t row, size_t col) {std::cerr << __FILE__ << ":" << __LINE__ << " Error in order to use this class you must compile OpenFPM with linear algebra support" << std::endl;}
+	T operator()(id_t i, id_t j) {std::cerr << __FILE__ << ":" << __LINE__ << " Error in order to use this class you must compile OpenFPM with linear algebra support" << std::endl; return stub_t;}
+	bool save(const std::string & file) const {std::cerr << __FILE__ << ":" << __LINE__ << " Error in order to use this class you must compile OpenFPM with linear algebra support" << std::endl;return true;}
+	bool load(const std::string & file) {std::cerr << __FILE__ << ":" << __LINE__ << " Error in order to use this class you must compile OpenFPM with linear algebra support" << std::endl; return false;}
+	T getValue(size_t r, size_t c) {std::cerr << __FILE__ << ":" << __LINE__ << " Error in order to use this class you must compile OpenFPM with linear algebra support" << std::endl; return stub_i;}
 };
 
+#ifdef HAVE_EIGEN
 #include "SparseMatrix_Eigen.hpp"
+#endif
 
 #endif /* OPENFPM_NUMERICS_SRC_MATRIX_SPARSEMATRIX_HPP_ */

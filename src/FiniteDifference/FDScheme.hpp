@@ -15,6 +15,9 @@
 #include "data_type/scalar.hpp"
 #include "NN/CellList/CellDecomposer.hpp"
 #include "Grid/staggered_dist_grid_util.hpp"
+#include "Grid/grid_dist_id.hpp"
+#include "Vector/Vector_util.hpp"
+#include "Grid/staggered_dist_grid.hpp"
 
 /*! \brief Finite Differences
  *

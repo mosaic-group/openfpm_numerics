@@ -8,11 +8,20 @@
 #ifndef OPENFPM_NUMERICS_SRC_SOLVERS_UMFPACK_SOLVER_HPP_
 #define OPENFPM_NUMERICS_SRC_SOLVERS_UMFPACK_SOLVER_HPP_
 
+#define UMFPACK_NONE 0
+
+#define SOLVER_NOOPTION 0
+#define SOLVER_PRINT_RESIDUAL_NORM_INFINITY 1
+#define SOLVER_PRINT_DETERMINANT 2
+
+#ifdef HAVE_EIGEN
+
+/////// Compiled with EIGEN support
+
 #include "Vector/Vector.hpp"
 #include "Eigen/UmfPackSupport"
 #include <Eigen/SparseLU>
 
-#define UMFPACK_NONE 0
 
 template<typename T>
 class umfpack_solver
@@ -25,9 +34,6 @@ public:
 	}
 };
 
-#define SOLVER_NOOPTION 0
-#define SOLVER_PRINT_RESIDUAL_NORM_INFINITY 1
-#define SOLVER_PRINT_DETERMINANT 2
 
 template<>
 class umfpack_solver<double>
@@ -100,6 +106,41 @@ public:
 	}
 };
 
+#else
+
+/////// Compiled without EIGEN support
+
+#include "Vector/Vector.hpp"
+
+template<typename T>
+class umfpack_solver
+{
+public:
+
+	template<typename impl> static Vector<T> solve(const SparseMatrix<T,impl> & A, const Vector<T> & b)
+	{
+		std::cerr << __FILE__ << ":" << __LINE__ << " Error Umfpack only support double precision" << "/n";
+	}
+};
+
+
+template<>
+class umfpack_solver<double>
+{
+
+public:
+
+	template<typename impl> static Vector<double> solve(SparseMatrix<double,int,impl> & A, const Vector<double> & b, size_t opt = UMFPACK_NONE)
+	{
+		std::cerr << __FILE__ << ":" << __LINE__ << " Error in order to use umfpack you must compile OpenFPM with linear algebra support" << "/n";
+
+		Vector<double> x;
+
+		return x;
+	}
+};
+
+#endif
 
 
 #endif /* OPENFPM_NUMERICS_SRC_SOLVERS_UMFPACK_SOLVER_HPP_ */

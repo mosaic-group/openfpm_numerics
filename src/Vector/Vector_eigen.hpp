@@ -11,12 +11,12 @@
 #include <type_traits>
 #include "util/mul_array_extents.hpp"
 #include <fstream>
-#include "Vector_eigen_util.hpp"
 #include "Grid/staggered_dist_grid.hpp"
 #include "Space/Ghost.hpp"
 #include "FiniteDifference/util/common.hpp"
 #include <boost/mpl/vector_c.hpp>
 #include <unordered_map>
+#include "Vector_util.hpp"
 
 #define EIGEN_RVAL 1
 

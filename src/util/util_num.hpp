@@ -10,6 +10,7 @@
 
 #include "util/common.hpp"
 #include "grid_dist_testing.hpp"
+#include "Grid/grid_dist_id.hpp"
 
 template<typename T, typename Sfinae = void>
 struct is_const_field: std::false_type {};

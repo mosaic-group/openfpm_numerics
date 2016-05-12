@@ -139,7 +139,7 @@ BOOST_AUTO_TEST_CASE(vector_petsc_parallel)
 
 	// 3 Processors 9x9 Matrix to invert
 
-	Vector<double,Vec> v(9);
+	Vector<double,OFPM_PETSC_VEC> v(9);
 
 	if (vcl.getProcessUnitID() == 0)
 	{
@@ -161,7 +161,7 @@ BOOST_AUTO_TEST_CASE(vector_petsc_parallel)
 		v.insert(8,8);
 	}
 
-	Vector<double,Vec> v3;
+	Vector<double,OFPM_PETSC_VEC> v3;
 	v3 = v;
 
 	if (vcl.getProcessUnitID() == 0)
@@ -217,7 +217,7 @@ BOOST_AUTO_TEST_CASE(vector_petsc_parallel)
 		BOOST_REQUIRE_EQUAL(v3(2),9);
 	}
 
-	Vec & v2 = v.getVec();
+	auto & v2 = v.getVec();
 }
 
 BOOST_AUTO_TEST_SUITE_END()

@@ -8,8 +8,6 @@
 #ifndef OPENFPM_NUMERICS_SRC_VECTOR_VECTOR_HPP_
 #define OPENFPM_NUMERICS_SRC_VECTOR_VECTOR_HPP_
 
-#include <Eigen/Sparse>
-
 /*! \brief It store one row value of a vector
  *
  * Given a row, store a value
@@ -22,18 +20,50 @@ class rval
 };
 
 
-/* ! \brief Sparse Matrix implementation
- *
- * \tparam T Type of the sparse Matrix
- * \tparam impl implementation
+#ifdef HAVE_EIGEN
+#include <Eigen/Sparse>
+#define DEFAULT_VECTOR  = Eigen::Matrix<T, Eigen::Dynamic, 1>
+#else
+#define DEFAULT_VECTOR = void
+#endif
+
+/* ! \brief Sparse Matrix implementation stub object when OpenFPM is compiled with no linear algebra support
  *
  */
-template<typename T,typename impl = Eigen::Matrix<T, Eigen::Dynamic, 1> >
+template<typename T,typename impl DEFAULT_VECTOR >
 class Vector
 {
+	T stub;
+	int stub_i;
+
+public:
+
+	Vector(const Vector<T> & v) {std::cerr << __FILE__ << ":" << __LINE__ << " Error in order to use this class you must compile OpenFPM with linear algebra support" << std::endl;}
+	Vector(const Vector<T> && v) {std::cerr << __FILE__ << ":" << __LINE__ << " Error in order to use this class you must compile OpenFPM with linear algebra support" << std::endl;}
+	Vector(size_t n) {std::cerr << __FILE__ << ":" << __LINE__ << " Error in order to use this class you must compile OpenFPM with linear algebra support" << std::endl;}
+	Vector() {std::cerr << __FILE__ << ":" << __LINE__ << " Error in order to use this class you must compile OpenFPM with linear algebra support" << std::endl;}
+	void resize(size_t row) {std::cerr << __FILE__ << ":" << __LINE__ << " Error in order to use this class you must compile OpenFPM with linear algebra support" << std::endl;}
+	void insert(size_t i, T val) {std::cerr << __FILE__ << ":" << __LINE__ << " Error in order to use this class you must compile OpenFPM with linear algebra support" << std::endl;}
+	inline T & insert(size_t i) {std::cerr << __FILE__ << ":" << __LINE__ << " Error in order to use this class you must compile OpenFPM with linear algebra support" << std::endl;return stub;}
+	inline const T & insert(size_t i) const {std::cerr << __FILE__ << ":" << __LINE__ << " Error in order to use this class you must compile OpenFPM with linear algebra support" << std::endl; return stub;}
+	const T & operator()(size_t i) const {std::cerr << __FILE__ << ":" << __LINE__ << " Error in order to use this class you must compile OpenFPM with linear algebra support" << std::endl;return stub;}
+	T & operator()(size_t i) {std::cerr << __FILE__ << ":" << __LINE__ << " Error in order to use this class you must compile OpenFPM with linear algebra support" << std::endl;return stub;}
+	void scatter() {std::cerr << __FILE__ << ":" << __LINE__ << " Error in order to use this class you must compile OpenFPM with linear algebra support" << std::endl;}
+	void fromFile(std::string file) {std::cerr << __FILE__ << ":" << __LINE__ << " Error in order to use this class you must compile OpenFPM with linear algebra support" << std::endl;}
+	Vector<T> & operator=(const Vector<T> & v) {std::cerr << __FILE__ << ":" << __LINE__ << " Error in order to use this class you must compile OpenFPM with linear algebra support" << std::endl; return *this;}
+	Vector<T> & operator=(const Vector<T> && v) {std::cerr << __FILE__ << ":" << __LINE__ << " Error in order to use this class you must compile OpenFPM with linear algebra support" << std::endl; return *this;}
+	int & getVec() {std::cerr << __FILE__ << ":" << __LINE__ << " Error in order to use this class you must compile OpenFPM with linear algebra support" << std::endl; return stub_i;}
 };
 
+#ifdef HAVE_EIGEN
 #include "Vector_eigen.hpp"
+#endif
+
+#ifdef HAVE_PETSC
+#define OFPM_PETSC_VEC Vec
 #include "Vector_petsc.hpp"
+#else
+#define OFPM_PETSC_VEC void
+#endif
 
 #endif /* OPENFPM_NUMERICS_SRC_VECTOR_VECTOR_HPP_ */
