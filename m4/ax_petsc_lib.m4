@@ -97,12 +97,13 @@ AC_DEFUN([AX_LIB_PETSC], [
         #
         # locate PETSC library
         #
+
                 if test -n "$with_petsc" ; then
                         old_CC=$CC
                         old_CFLAGS=$CFLAGS
                         old_LDFLAGS=$LDFLAGS
                         CFLAGS="-I$with_petsc/include"
-                        LDFLAGS="-L$with_petsc/lib"
+                        LDFLAGS="-L$with_petsc/lib "
 			CC=$CXX
 
                         AC_LANG_SAVE
@@ -132,7 +133,7 @@ AC_MSG_WARN([could not find header file petsc.h]))
                 #
                 #
                 if test x = x"$PETSC_LIB" ; then
-                        ifelse([$2],,[AC_MSG_ERROR(Failed to find valid PETSC library)],[$2])
+                        ifelse([$2],,[],[$2])
                         :
                 else
                         ifelse([$1],,[],[$1])
