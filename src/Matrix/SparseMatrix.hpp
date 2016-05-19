@@ -29,7 +29,7 @@ template<typename T> struct cval
  *
  *
  */
-template<typename T, unsigned int impl> struct triplet
+template<typename T, int impl> struct triplet
 {
 	long int i;
 	long int j;
