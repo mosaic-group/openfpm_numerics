@@ -50,7 +50,7 @@ public:
 	 *	\tparam impl Implementation of the SparseMatrix
 	 *
 	 */
-	template<typename impl> static Vector<double> solve(SparseMatrix<double,int,impl> & A, const Vector<double> & b, size_t opt = UMFPACK_NONE)
+	static Vector<double,EIGEN_BASE> solve(SparseMatrix<double,int,EIGEN_BASE> & A, const Vector<double,EIGEN_BASE> & b, size_t opt = UMFPACK_NONE)
 	{
 		Vcluster & vcl = create_vcluster();
 

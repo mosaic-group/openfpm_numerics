@@ -74,15 +74,15 @@ public:
  *
  */
 template<typename T, typename id_t>
-class SparseMatrix<T,id_t,Eigen::SparseMatrix<T,0,id_t>>
+class SparseMatrix<T,id_t,EIGEN_BASE>
 {
 public:
 
 	//! Triplet implementation id
-	typedef boost::mpl::int_<EIGEN_TRIPLET> triplet_impl;
+	typedef boost::mpl::int_<EIGEN_BASE> triplet_impl;
 
 	//! Triplet type
-	typedef triplet<T,EIGEN_TRIPLET> triplet_type;
+	typedef triplet<T,EIGEN_BASE> triplet_type;
 
 private:
 
@@ -188,7 +188,7 @@ public:
 	 * \param col number of colums
 	 *
 	 */
-	void resize(size_t row, size_t col)
+	void resize(size_t row, size_t col,size_t l_row, size_t l_col)
 	{
 		mat.resize(row,col);
 	}

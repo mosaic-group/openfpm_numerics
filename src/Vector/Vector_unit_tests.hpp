@@ -139,7 +139,7 @@ BOOST_AUTO_TEST_CASE(vector_petsc_parallel)
 
 	// 3 Processors 9x9 Matrix to invert
 
-	Vector<double,OFPM_PETSC_VEC> v(9);
+	Vector<double,PETSC_BASE> v(9,3);
 
 	if (vcl.getProcessUnitID() == 0)
 	{
@@ -161,7 +161,7 @@ BOOST_AUTO_TEST_CASE(vector_petsc_parallel)
 		v.insert(8,8);
 	}
 
-	Vector<double,OFPM_PETSC_VEC> v3;
+	Vector<double,PETSC_BASE> v3;
 	v3 = v;
 
 	if (vcl.getProcessUnitID() == 0)
@@ -202,9 +202,9 @@ BOOST_AUTO_TEST_CASE(vector_petsc_parallel)
 		BOOST_REQUIRE_EQUAL(v(4),4);
 		BOOST_REQUIRE_EQUAL(v(5),3);
 
-		BOOST_REQUIRE_EQUAL(v3(0),3);
-		BOOST_REQUIRE_EQUAL(v3(1),4);
-		BOOST_REQUIRE_EQUAL(v3(2),5);
+		BOOST_REQUIRE_EQUAL(v3(3),3);
+		BOOST_REQUIRE_EQUAL(v3(4),4);
+		BOOST_REQUIRE_EQUAL(v3(5),5);
 	}
 	else if (vcl.getProcessUnitID() == 2)
 	{
@@ -212,12 +212,50 @@ BOOST_AUTO_TEST_CASE(vector_petsc_parallel)
 		BOOST_REQUIRE_EQUAL(v(7),1);
 		BOOST_REQUIRE_EQUAL(v(8),0);
 
-		BOOST_REQUIRE_EQUAL(v3(0),6);
-		BOOST_REQUIRE_EQUAL(v3(1),7);
-		BOOST_REQUIRE_EQUAL(v3(2),9);
+		BOOST_REQUIRE_EQUAL(v3(6),6);
+		BOOST_REQUIRE_EQUAL(v3(7),7);
+		BOOST_REQUIRE_EQUAL(v3(8),8);
 	}
 
-	auto & v2 = v.getVec();
+	// Here we get the petsc vector
+	auto & vp = v.getVec();
+
+	// We check the correctness of the PETSC vector
+
+	if (vcl.getProcessUnitID() == 0)
+	{
+		PetscInt ix[] = {0,1,2};
+		PetscScalar y[3];
+
+		VecGetValues(vp,3,ix,y);
+
+		BOOST_REQUIRE_EQUAL(y[0],8);
+		BOOST_REQUIRE_EQUAL(y[1],7);
+		BOOST_REQUIRE_EQUAL(y[2],6);
+	}
+	else if (vcl.getProcessUnitID() == 1)
+	{
+		PetscInt ix[] = {3,4,5};
+		PetscScalar y[3];
+
+		VecGetValues(vp,3,ix,y);
+
+		BOOST_REQUIRE_EQUAL(y[0],5);
+		BOOST_REQUIRE_EQUAL(y[1],4);
+		BOOST_REQUIRE_EQUAL(y[2],3);
+	}
+	else if (vcl.getProcessUnitID() == 2)
+	{
+		PetscInt ix[] = {6,7,8};
+		PetscScalar y[3];
+
+		VecGetValues(vp,3,ix,y);
+
+		BOOST_REQUIRE_EQUAL(y[0],2);
+		BOOST_REQUIRE_EQUAL(y[1],1);
+		BOOST_REQUIRE_EQUAL(y[2],0);
+	}
+
 }
 
 BOOST_AUTO_TEST_SUITE_END()

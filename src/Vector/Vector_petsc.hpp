@@ -71,19 +71,19 @@ constexpr unsigned int row_id = 0;
 constexpr unsigned int val_id = 1;
 
 template<typename T>
-class Vector<T,Vec>
+class Vector<T,PETSC_BASE>
 {
 	// n_row
 	size_t n_row;
 
-	// n_row_local
+	// Number of local rows
 	size_t n_row_local;
 
 	// Mutable vector
 	mutable Vec v;
 
 	// Mutable row value vector
-	openfpm::vector<rval<T,PETSC_RVAL>,HeapMemory,typename memory_traits_inte<rval<T,PETSC_RVAL>>::type > row_val;
+	mutable openfpm::vector<rval<T,PETSC_RVAL>,HeapMemory,typename memory_traits_inte<rval<T,PETSC_RVAL>>::type > row_val;
 
 	// Global to local map
 	mutable std::unordered_map<size_t,size_t> map;
@@ -100,13 +100,15 @@ class Vector<T,Vec>
 		// Create the vector
 		PETSC_SAFE_CALL(VecCreate(PETSC_COMM_WORLD,&v));
 		PETSC_SAFE_CALL(VecSetSizes(v,n_row_local,n_row));
+		PETSC_SAFE_CALL(VecSetFromOptions(v));
 
 		// set the vector
 
-		PETSC_SAFE_CALL(VecSetValues(v,n_row_local,&row_val.template get<row_id>(0),&row_val.template get<val_id>(0),INSERT_VALUES))
+		if (row_val.size() != 0)
+			PETSC_SAFE_CALL(VecSetValues(v,row_val.size(),&row_val.template get<row_id>(0),&row_val.template get<val_id>(0),INSERT_VALUES))
 
-//		for (size_t i = 0 ; i < row_val.size() ; i++)
-//			v[row_val.get(i).row()] = row_val.get(i).value();
+		VecAssemblyBegin(v);
+		VecAssemblyEnd(v);
 	}
 
 public:
@@ -116,7 +118,7 @@ public:
 	 * \param v vector to copy
 	 *
 	 */
-	Vector(const Vector<T> & v)
+	Vector(const Vector<T,PETSC_BASE> & v)
 	{
 		this->operator=(v);
 	}
@@ -126,7 +128,7 @@ public:
 	 * \param v vector to copy
 	 *
 	 */
-	Vector(const Vector<T> && v)
+	Vector(const Vector<T,PETSC_BASE> && v)
 	{
 		this->operator=(v);
 	}
@@ -134,28 +136,33 @@ public:
 	/*! \brief Create a vector with n elements
 	 *
 	 * \param n number of elements in the vector
+	 * \param n_row_loc number
 	 *
 	 */
-	Vector(size_t n)
+	Vector(size_t n, size_t n_row_local)
+	:n_row_local(n_row_local)
 	{
-		resize(n);
+		resize(n,n_row_local);
 	}
 
 	/*! \brief Create a vector with 0 elements
 	 *
 	 */
 	Vector()
+	:n_row(0),n_row_local(0)
 	{
 	}
 
 	/*! \brief Resize the Vector
 	 *
 	 * \param row numbers of row
+	 * \param l_row number of local row
 	 *
 	 */
-	void resize(size_t row)
+	void resize(size_t row, size_t l_row)
 	{
 		n_row = row;
+		n_row_local = l_row;
 	}
 
 	/*! \brief Return a reference to the vector element
@@ -207,8 +214,8 @@ public:
 		// Map
 		map[i] = row_val.size()-1;
 
-		row_val.last().row() = i;
-		return row_val.last().value();
+		row_val.last().template get<row_id>() = i;
+		return row_val.last().template get<val_id>();
 	}
 
 	/*! \brief Return a reference to the vector element
@@ -253,9 +260,9 @@ public:
 		return insert(i);
 	}
 
-	/*! \brief Get the Eigen Vector object
+	/*! \brief Get the PETSC Vector object
 	 *
-	 * \return the Eigen Vector
+	 * \return the PETSC Vector
 	 *
 	 */
 	const Vec & getVec() const
@@ -265,9 +272,9 @@ public:
 		return v;
 	}
 
-	/*! \brief Get the Eigen Vector object
+	/*! \brief Get the PETSC Vector object
 	 *
-	 * \return the Eigen Vector
+	 * \return the PETSC Vector
 	 *
 	 */
 	Vec & getVec()
@@ -277,13 +284,49 @@ public:
 		return v;
 	}
 
+	/*! \brief Update the Vector with the PETSC object
+	 *
+	 */
+	void update()
+	{
+		PetscInt n_row;
+		PetscInt n_row_local;
+
+		// Get the size of the vector from PETSC
+		VecGetSize(v,&n_row);
+		VecGetLocalSize(v,&n_row_local);
+
+		this->n_row = n_row;
+		this->n_row_local = n_row_local;
+
+		row_val.resize(n_row_local);
+
+		//
+
+		PetscInt low;
+		PetscInt high;
+
+		VecGetOwnershipRange(v,&low,&high);
+
+		// Fill the index and construct the map
+
+		size_t k = 0;
+		for (size_t i = low ; i < high ; i++)
+		{
+			row_val.template get<row_id>(k) = i;
+			map[i] = k;
+			k++;
+		}
+
+		PETSC_SAFE_CALL(VecGetValues(v,row_val.size(),&row_val.template get<row_id>(0),&row_val.template get<val_id>(0)))
+	}
 
 	/*! \brief Copy the vector
 	 *
 	 * \param v vector to copy
 	 *
 	 */
-	Vector<T,Vec> & operator=(const Vector<T,Vec> & v)
+	Vector<T,PETSC_BASE> & operator=(const Vector<T,PETSC_BASE> & v)
 	{
 		map = v.map;
 		row_val = v.row_val;
@@ -296,25 +339,10 @@ public:
 	 * \param v vector to copy
 	 *
 	 */
-	Vector<T,Vec> & operator=(const Vector<T,Vec> && v)
+	Vector<T,PETSC_BASE> & operator=(const Vector<T,PETSC_BASE> && v)
 	{
-		map = v.map;
-		row_val = v.row_val;
-
-		return *this;
-	}
-
-	/*! \brief Copy the vector (it is used for special purpose)
-	 *
-	 * \warning v MUST contain at least all the elements of the vector
-	 *
-	 * \param v base eigen vector to copy
-	 *
-	 */
-	Vector<T> & operator=(Eigen::Matrix<T, Eigen::Dynamic, 1> & v)
-	{
-		for (size_t i = 0 ; i < row_val.size() ; i++)
-			row_val.get(i).value() = v(row_val.get(i).row());
+		map.swap(v.map);
+		row_val.swap(v.row_val);
 
 		return *this;
 	}

@@ -400,6 +400,9 @@ public:
 		for (size_t i = 0 ; i < v_cl.getProcessUnitID() ; i++)
 			s_pnt += pnt.get(i);
 
+		// resize b if needed
+		b.resize(Sys_eqs::nvar * g_map.size(),Sys_eqs::nvar * sz);
+
 		// Calculate the starting point
 
 		// Counter
@@ -486,9 +489,6 @@ public:
 
 		std::unordered_map<long int,float> cols;
 
-		// resize b if needed
-		b.resize(Sys_eqs::nvar * g_map.size());
-
 		bool is_first = skip_first;
 
 		// iterate all the grid points
@@ -509,8 +509,10 @@ public:
 			// Calculate the non-zero colums
 			T::value(g_map,key,gs,spacing,cols,1.0);
 
-			// create the triplet
+			// indicate if the diagonal has been set
+			bool is_diag = false;
 
+			// create the triplet
 			for ( auto it = cols.begin(); it != cols.end(); ++it )
 			{
 				trpl.add();
@@ -518,7 +520,19 @@ public:
 				trpl.last().col() = it->first;
 				trpl.last().value() = it->second;
 
+				if (trpl.last().row() == trpl.last().col())
+					is_diag = true;
+
 //				std::cout << "(" << trpl.last().row() << "," << trpl.last().col() << "," << trpl.last().value() << ")" << "\n";
+			}
+
+			// If does not have a diagonal entry put it to zero
+			if (is_diag == false)
+			{
+				trpl.add();
+				trpl.last().row() = g_map.template get<0>(key)*Sys_eqs::nvar + id;
+				trpl.last().col() = g_map.template get<0>(key)*Sys_eqs::nvar + id;
+				trpl.last().value() = 0.0;
 			}
 
 			b(g_map.template get<0>(key)*Sys_eqs::nvar + id) = num;
@@ -549,7 +563,7 @@ public:
 #ifdef SE_CLASS1
 		consistency();
 #endif
-		A.resize(g_map.size()*Sys_eqs::nvar,g_map.size()*Sys_eqs::nvar);
+		A.resize(g_map.size()*Sys_eqs::nvar,g_map.size()*Sys_eqs::nvar,g_map.getLocalDomainSize()*Sys_eqs::nvar,g_map.getLocalDomainSize()*Sys_eqs::nvar);
 
 		return A;
 

@@ -8,6 +8,8 @@
 #ifndef OPENFPM_NUMERICS_SRC_VECTOR_VECTOR_HPP_
 #define OPENFPM_NUMERICS_SRC_VECTOR_VECTOR_HPP_
 
+#include "util/linalgebra_lib.hpp"
+
 /*! \brief It store one row value of a vector
  *
  * Given a row, store a value
@@ -20,17 +22,19 @@ class rval
 };
 
 
+// Eigen::Matrix<T, Eigen::Dynamic, 1>
+
 #ifdef HAVE_EIGEN
 #include <Eigen/Sparse>
-#define DEFAULT_VECTOR  = Eigen::Matrix<T, Eigen::Dynamic, 1>
+#define DEFAULT_VECTOR  = EIGEN_BASE
 #else
-#define DEFAULT_VECTOR = void
+#define DEFAULT_VECTOR = 0
 #endif
 
 /* ! \brief Sparse Matrix implementation stub object when OpenFPM is compiled with no linear algebra support
  *
  */
-template<typename T,typename impl DEFAULT_VECTOR >
+template<typename T,unsigned int impl DEFAULT_VECTOR >
 class Vector
 {
 	T stub;
@@ -60,10 +64,7 @@ public:
 #endif
 
 #ifdef HAVE_PETSC
-#define OFPM_PETSC_VEC Vec
 #include "Vector_petsc.hpp"
-#else
-#define OFPM_PETSC_VEC void
 #endif
 
 #endif /* OPENFPM_NUMERICS_SRC_VECTOR_VECTOR_HPP_ */

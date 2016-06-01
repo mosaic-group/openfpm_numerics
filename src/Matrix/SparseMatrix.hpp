@@ -10,9 +10,9 @@
 
 #ifdef HAVE_EIGEN
 #include <Eigen/Sparse>
-#define DEFAULT_MATRIX  = Eigen::SparseMatrix<T,0,id_t>
+#define DEFAULT_MATRIX  = EIGEN_BASE
 #else
-#define DEFAULT_MATRIX = void
+#define DEFAULT_MATRIX = 0
 #endif
 
 /*! \brief It store the non zero elements of the matrix
@@ -69,7 +69,7 @@ template<typename T, int impl> struct triplet
  * \tparam Mi implementation
  *
  */
-template<typename T,typename id_t ,typename Mi DEFAULT_MATRIX>
+template<typename T,typename id_t ,unsigned int Mi DEFAULT_MATRIX>
 class SparseMatrix
 {
 public:
@@ -101,6 +101,10 @@ public:
 
 #ifdef HAVE_EIGEN
 #include "SparseMatrix_Eigen.hpp"
+#endif
+
+#ifdef HAVE_PETSC
+#include "SparseMatrix_petsc.hpp"
 #endif
 
 #endif /* OPENFPM_NUMERICS_SRC_MATRIX_SPARSEMATRIX_HPP_ */
