@@ -102,8 +102,8 @@ AC_DEFUN([AX_LIB_PETSC], [
                         old_CC=$CC
                         old_CFLAGS=$CFLAGS
                         old_LDFLAGS=$LDFLAGS
-                        CFLAGS="-I$with_petsc/include"
-                        LDFLAGS="-L$with_petsc/lib "
+                        CFLAGS="-I$with_petsc/include $HDF5_INCLUDE $METIS_INCLUDE "
+                        LDFLAGS="-L$with_petsc/lib $HDF5_LDFLAGS  $HDF5_LIBS $METIS_LIB -lmetis "
 			CC=$CXX
 
                         AC_LANG_SAVE
