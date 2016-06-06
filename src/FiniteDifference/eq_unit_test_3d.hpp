@@ -98,8 +98,8 @@ template<typename solver_type,typename lid_nn_3d> void lid_driven_cavity_3d()
 
 	Vcluster & v_cl = create_vcluster();
 
-//	if (v_cl.getProcessingUnits() > 3)
-//		return;
+	if (v_cl.getProcessingUnits() > 3)
+		return;
 
 	// Domain
 	Box<3,float> domain({0.0,0.0,0.0},{3.0,1.0,1.0});
@@ -107,7 +107,7 @@ template<typename solver_type,typename lid_nn_3d> void lid_driven_cavity_3d()
 	// Ghost
 	Ghost<3,float> g(0.01);
 
-	long int sz[] = {96,64,64};
+	long int sz[] = {36,12,12};
 	size_t szu[3];
 	szu[0] = (size_t)sz[0];
 	szu[1] = (size_t)sz[1];
@@ -194,46 +194,22 @@ template<typename solver_type,typename lid_nn_3d> void lid_driven_cavity_3d()
 	fd.impose(v_y(), 0.0, EQ_2, {-1,-1,-1},{sz[0]-1,-1,sz[2]-1});
 	fd.impose(v_z(), 0.0, EQ_3, {-1,-1,-1},{sz[0]-1,sz[1]-1,-1});
 
-	std::cout << "Solving " << "\n";
-
 	solver_type solver;
 	solver.best_solve();
 	auto x = solver.solve(fd.getA(),fd.getB());
 
-	std::cout << "Solved" << "\n";
-
 	// Bring the solution to grid
 	fd.template copy<velocity,pressure>(x,{0,0},{sz[0]-1,sz[1]-1,sz[2]-1},g_dist);
 
-	g_dist.write("lid_driven_cavity_3d_p" + std::to_string(v_cl.getProcessingUnits()));
+	std::string s = std::string(demangle(typeid(solver_type).name()));
+	s += "_";
 
-/*	if (v_cl.getProcessUnitID() == 0)
-	{
-		if (v_cl.getProcessingUnits() == 1)
-		{
-			// Check that match
-			bool test = compare("lid_driven_cavity_3d_p1_grid_0_test.vtk","lid_driven_cavity_3d_p1_grid_0.vtk");
-			BOOST_REQUIRE_EQUAL(test,true);
-		}
-		else if (v_cl.getProcessingUnits() == 2)
-		{
-			// Check that match
-			bool test = compare("lid_driven_cavity_p2_grid_0_test.vtk","lid_driven_cavity_p2_grid_0.vtk");
-			BOOST_REQUIRE_EQUAL(test,true);
-			test = compare("lid_driven_cavity_p2_grid_1_test.vtk","lid_driven_cavity_p2_grid_1.vtk");
-			BOOST_REQUIRE_EQUAL(test,true);
-		}
-		else if (v_cl.getProcessingUnits() == 3)
-		{
-			// Check that match
-			bool test = compare("lid_driven_cavity_p3_grid_0_test.vtk","lid_driven_cavity_p3_grid_0.vtk");
-			BOOST_REQUIRE_EQUAL(test,true);
-			test = compare("lid_driven_cavity_p3_grid_1_test.vtk","lid_driven_cavity_p3_grid_1.vtk");
-			BOOST_REQUIRE_EQUAL(test,true);
-			test = compare("lid_driven_cavity_p3_grid_2_test.vtk","lid_driven_cavity_p3_grid_2.vtk");
-			BOOST_REQUIRE_EQUAL(test,true);
-		}
-	}*/
+	g_dist.write(s + "lid_driven_cavity_3d_p" + std::to_string(v_cl.getProcessingUnits()));
+
+	// Check that match
+	bool test = compare(std::string(std::string("test/") + s + "lid_driven_cavity_3d_p3_grid_" + std::to_string(v_cl.getProcessUnitID()) + "_test.vtk"),std::string(s + "lid_driven_cavity_3d_p3_grid_" + std::to_string(v_cl.getProcessUnitID()) + ".vtk"));
+	BOOST_REQUIRE_EQUAL(test,true);
+
 }
 
 // Lid driven cavity, uncompressible fluid
