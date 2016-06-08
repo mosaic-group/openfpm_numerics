@@ -8,6 +8,8 @@
 #ifndef OPENFPM_NUMERICS_SRC_SOLVERS_PETSC_SOLVER_HPP_
 #define OPENFPM_NUMERICS_SRC_SOLVERS_PETSC_SOLVER_HPP_
 
+#ifdef HAVE_PETSC
+
 #include "Vector/Vector.hpp"
 #include "Eigen/UmfPackSupport"
 #include <Eigen/SparseLU>
@@ -891,5 +893,6 @@ public:
 	}
 };
 
+#endif
 
 #endif /* OPENFPM_NUMERICS_SRC_SOLVERS_PETSC_SOLVER_HPP_ */

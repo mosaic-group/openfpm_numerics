@@ -168,6 +168,8 @@ BOOST_AUTO_TEST_CASE(sparse_matrix_eigen_parallel)
 	}
 }
 
+#ifdef HAVE_PETSC
+
 BOOST_AUTO_TEST_CASE(sparse_matrix_eigen_petsc)
 {
 	Vcluster & vcl = create_vcluster();
@@ -411,6 +413,8 @@ BOOST_AUTO_TEST_CASE(sparse_matrix_eigen_petsc_solve)
 	petsc_solver<double> solver;
 	solver.solve(sm,v);
 }
+
+#endif
 
 BOOST_AUTO_TEST_SUITE_END()
 

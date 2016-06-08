@@ -129,6 +129,7 @@ BOOST_AUTO_TEST_CASE(vector_eigen_parallel)
 	}
 }
 
+#ifdef HAVE_PETSC
 
 BOOST_AUTO_TEST_CASE(vector_petsc_parallel)
 {
@@ -257,6 +258,8 @@ BOOST_AUTO_TEST_CASE(vector_petsc_parallel)
 	}
 
 }
+
+#endif
 
 BOOST_AUTO_TEST_SUITE_END()
 
