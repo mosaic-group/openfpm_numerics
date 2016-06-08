@@ -94,6 +94,9 @@ private:
 	// starting row for this processor
 	size_t start_row;
 
+	// indicate if the matrix has been created
+	bool m_created = false;
+
 	// PETSC Matrix
 	Mat mat;
 	openfpm::vector<triplet_type> trpl;
@@ -205,6 +208,12 @@ public:
 	{
 		PETSC_SAFE_CALL(MatCreate(PETSC_COMM_WORLD,&mat));
 		PETSC_SAFE_CALL(MatSetType(mat,MATMPIAIJ));
+	}
+
+	~SparseMatrix()
+	{
+		// Destroy the matrix
+		PETSC_SAFE_CALL(MatDestroy(&mat));
 	}
 
 	/*! \brief Get the Matrix triplets bugger

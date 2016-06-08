@@ -206,17 +206,19 @@ template<typename solver_type,typename lid_nn_3d> void lid_driven_cavity_3d()
 
 	g_dist.write(s + "lid_driven_cavity_3d_p" + std::to_string(v_cl.getProcessingUnits()));
 
-	// Check that match
-	bool test = compare(std::string(std::string("test/") + s + "lid_driven_cavity_3d_p3_grid_" + std::to_string(v_cl.getProcessUnitID()) + "_test.vtk"),std::string(s + "lid_driven_cavity_3d_p3_grid_" + std::to_string(v_cl.getProcessUnitID()) + ".vtk"));
-	BOOST_REQUIRE_EQUAL(test,true);
+	std::string file1 = std::string("test/") + s + "lid_driven_cavity_3d_p" + std::to_string(v_cl.getProcessingUnits()) + "_grid_" + std::to_string(v_cl.getProcessUnitID()) + "_test.vtk";
+	std::string file2 = s + "lid_driven_cavity_3d_p" + std::to_string(v_cl.getProcessingUnits()) + "_grid_" + std::to_string(v_cl.getProcessUnitID()) + ".vtk";
 
+	// Check that match
+	bool test = compare(file1,file2);
+	BOOST_REQUIRE_EQUAL(test,true);
 }
 
 // Lid driven cavity, uncompressible fluid
 
 BOOST_AUTO_TEST_CASE(lid_driven_cavity)
 {
-//	lid_driven_cavity_3d<umfpack_solver<double>,lid_nn_3d_eigen>();
+	lid_driven_cavity_3d<umfpack_solver<double>,lid_nn_3d_eigen>();
 	lid_driven_cavity_3d<petsc_solver<double>,lid_nn_3d_petsc>();
 }
 

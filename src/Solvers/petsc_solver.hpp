@@ -70,6 +70,9 @@ class petsc_solver<double>
 			err_inf = e.err_inf;
 			err_norm = e.err_norm;
 		}
+
+		// Default constructor
+		itError()	{}
 	};
 
 	// It contain the benchmark
@@ -92,13 +95,13 @@ class petsc_solver<double>
 	};
 
 	// KSP Relative tolerance
-	PetscReal rtol;
+//	PetscReal rtol;
 
 	// KSP Absolute tolerance
-	PetscReal abstol;
+//	PetscReal abstol;
 
 	// KSP dtol tolerance to determine that the method diverge
-	PetscReal dtol;
+//	PetscReal dtol;
 
 	// KSP Maximum number of iterations
 	PetscInt maxits;
@@ -110,7 +113,7 @@ class petsc_solver<double>
 	size_t tmp;
 
 	// Solver used
-	char s_type[32];
+//	char s_type[32];
 
 	// Tollerance set by the solver
 	PetscScalar tol;
@@ -298,6 +301,16 @@ class petsc_solver<double>
 		itError erri(err);
 		erri.it = it;
 
+		//
+		size_t old_size = pts->bench.last().res.size();
+		pts->bench.last().res.resize(it+1);
+
+		if (old_size > 0)
+		{
+			for (size_t i = old_size ; i < it-1 ; i++)
+				pts->bench.last().res.get(i) = pts->bench.last().res.get(i-1);
+		}
+
 		// Add the error per iteration
 		pts->bench.last().res.add(erri);
 
@@ -337,9 +350,13 @@ class petsc_solver<double>
 
 		if (std::floor(it * 100.0 / n_max_it) > tmp)
 		{
+			size_t diff = it * 100.0 / n_max_it - tmp;
 			tmp = it * 100.0 / n_max_it;
 			if (v_cl.getProcessUnitID() == 0)
-				std::cout << "*" << std::flush;
+			{
+				for (size_t k = 0 ; k <  diff ; k++)	{std::cout << "*";}
+				std::cout << std::flush;
+			}
 		}
 	}
 
@@ -354,7 +371,10 @@ class petsc_solver<double>
 
 		if (v_cl.getProcessUnitID() == 0)
 		{
-			std::cout << "Method: " << s_type << " " << " pre-conditoner: " << PCJACOBI << "  iterations: " << err.its << std::endl;
+			KSPType typ;
+			KSPGetType(ksp,&typ);
+
+			std::cout << "Method: " << typ << " " << " pre-conditoner: " << PCJACOBI << "  iterations: " << err.its << std::endl;
 			std::cout << "Norm of error: " << err.err_norm << "   Norm infinity: " << err.err_inf << std::endl;
 		}
 	}
@@ -521,6 +541,7 @@ class petsc_solver<double>
 
 		// Copy the best solution to x
 		PETSC_SAFE_CALL(VecCopy(best_sol,x_));
+		PETSC_SAFE_CALL(VecDestroy(&best_sol));
 	}
 
 	/*! \brief Benchmark solve simple solving x=inv(A)*b
@@ -573,7 +594,7 @@ class petsc_solver<double>
 	 */
 	void solve_simple(Mat & A_, const Vec & b_, Vec & x_)
 	{
-		PETSC_SAFE_CALL(KSPSetType(ksp,s_type));
+//		PETSC_SAFE_CALL(KSPSetType(ksp,s_type));
 
 		// We set the size of x according to the Matrix A
 		PetscInt row;
@@ -660,7 +681,7 @@ class petsc_solver<double>
 	void initKSP()
 	{
 		PETSC_SAFE_CALL(KSPCreate(PETSC_COMM_WORLD,&ksp));
-		PETSC_SAFE_CALL(KSPGetTolerances(ksp,&rtol,&abstol,&dtol,&maxits));
+//		PETSC_SAFE_CALL(KSPGetTolerances(ksp,&rtol,&abstol,&dtol,&maxits));
 	}
 
 	/*! \brief initialize the KSP object for solver testing
@@ -670,8 +691,10 @@ class petsc_solver<double>
 	void initKSPForTest()
 	{
 		PETSC_SAFE_CALL(KSPCreate(PETSC_COMM_WORLD,&ksp));
-		PETSC_SAFE_CALL(KSPGetTolerances(ksp,&rtol,&abstol,&dtol,&maxits));
-		PETSC_SAFE_CALL(KSPSetTolerances(ksp,rtol,abstol,dtol,300));
+//		PETSC_SAFE_CALL(KSPGetTolerances(ksp,&rtol,&abstol,&dtol,&maxits));
+//		PETSC_SAFE_CALL(KSPSetTolerances(ksp,rtol,abstol,dtol,300));
+
+		setMaxIter(300);
 
 		// Disable convergence check
 		PETSC_SAFE_CALL(KSPSetConvergenceTest(ksp,KSPConvergedSkip,NULL,NULL));
@@ -687,6 +710,10 @@ class petsc_solver<double>
 	}
 
 public:
+
+	~petsc_solver()
+	{
+	}
 
 	petsc_solver()
 	{
@@ -704,6 +731,8 @@ public:
 		solvs.add(std::string(KSPLGMRES));
 //		solvs.add(std::string(KSPPGMRES)); <--- Take forever
 //		solvs.add(std::string(KSPGCR));
+
+		setSolver(KSPGMRES);
 	}
 
 	/*! \brief Add a test solver
@@ -754,7 +783,7 @@ public:
 	 */
 	void setSolver(KSPType type)
 	{
-		strcpy(s_type,type);
+		PetscOptionsSetValue("-ksp_type",type);
 	}
 
 	/*! \brief Set the relative tolerance as stop criteria
@@ -766,8 +795,7 @@ public:
 	 */
 	void setRelTol(PetscReal rtol_)
 	{
-		rtol = rtol_;
-		KSPSetTolerances(ksp,rtol,abstol,dtol,maxits);
+		PetscOptionsSetValue("-ksp_rtol",std::to_string(rtol_).c_str());
 	}
 
 	/*! \brief Set the absolute tolerance as stop criteria
@@ -779,8 +807,7 @@ public:
 	 */
 	void setAbsTol(PetscReal abstol_)
 	{
-		abstol = abstol_;
-		KSPSetTolerances(ksp,rtol,abstol,dtol,maxits);
+		PetscOptionsSetValue("-ksp_atol",std::to_string(abstol_).c_str());
 	}
 
 	/*! \brief Set the divergence tolerance
@@ -792,8 +819,16 @@ public:
 	 */
 	void setDivTol(PetscReal dtol_)
 	{
-		dtol = dtol_;
-		KSPSetTolerances(ksp,rtol,abstol,dtol,maxits);
+		PetscOptionsSetValue("-ksp_dtol",std::to_string(dtol_).c_str());
+	}
+
+	/*! \brief Set the maximum number of iteration for Krylov solvers
+	 *
+	 *
+	 */
+	void setMaxIter(PetscInt n)
+	{
+		PetscOptionsSetValue("-ksp_max_it",std::to_string(n).c_str());
 	}
 
 	/*! For the BiCGStab(L) it define the number of search directions

@@ -162,9 +162,9 @@ BOOST_AUTO_TEST_CASE(sparse_matrix_eigen_parallel)
 	}
 	else if (vcl.getProcessUnitID() == 2)
 	{
-		BOOST_REQUIRE_CLOSE(x(6), -4.5, 0.001);
+		BOOST_REQUIRE_CLOSE(x(6), -10.5, 0.001);
 		BOOST_REQUIRE_CLOSE(x(7), -8, 0.001);
-		BOOST_REQUIRE_CLOSE(x(8), -10.5, 0.001);
+		BOOST_REQUIRE_CLOSE(x(8), -4.5, 0.001);
 	}
 }
 
@@ -343,7 +343,10 @@ BOOST_AUTO_TEST_CASE(sparse_matrix_eigen_petsc_solve)
 {
 	Vcluster & vcl = create_vcluster();
 
-	const int loc = 2000000;
+	if (vcl.getProcessingUnits() != 3)
+		return;
+
+	const int loc = 200;
 
 	// 3 Processors 9x9 Matrix to invert
 

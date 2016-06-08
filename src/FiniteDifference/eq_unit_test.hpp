@@ -136,9 +136,7 @@ typedef Avg<y,v_x,lid_nn,FORWARD> avg_vx_f;
 
 //! [Definition of the equation of the system in the bulk and at the boundary]
 
-// Lid driven cavity, incompressible fluid
-
-BOOST_AUTO_TEST_CASE(lid_driven_cavity)
+template<typename solver_type,typename lid_nn> void lid_driven_cavity_2d()
 {
 	Vcluster & v_cl = create_vcluster();
 
@@ -221,45 +219,35 @@ BOOST_AUTO_TEST_CASE(lid_driven_cavity)
 	fd.impose(v_x(), 0.0, EQ_1, {-1,-1},{-1,sz[1]-1});
 	fd.impose(v_y(), 0.0, EQ_2, {-1,-1},{sz[0]-1,-1});
 
-	auto x = umfpack_solver<double>::solve(fd.getA(),fd.getB());
+	solver_type solver;
+	auto x = solver.solve(fd.getA(),fd.getB());
 
 	//! [lid-driven cavity 2D]
 
 	//! [Copy the solution to grid]
 
-	fd.copy<velocity,pressure>(x,{0,0},{sz[0]-1,sz[1]-1},g_dist);
+	fd.template copy<velocity,pressure>(x,{0,0},{sz[0]-1,sz[1]-1},g_dist);
+
+	std::string s = std::string(demangle(typeid(solver_type).name()));
+	s += "_";
 
 	//! [Copy the solution to grid]
 
-	g_dist.write("lid_driven_cavity_p" + std::to_string(v_cl.getProcessingUnits()));
+	g_dist.write(s + "lid_driven_cavity_p" + std::to_string(v_cl.getProcessingUnits()));
 
-	if (v_cl.getProcessUnitID() == 0)
-	{
-		if (v_cl.getProcessingUnits() == 1)
-		{
-			// Check that match
-			bool test = compare("lid_driven_cavity_p1_grid_0_test.vtk","lid_driven_cavity_grid_0.vtk");
-			BOOST_REQUIRE_EQUAL(test,true);
-		}
-		else if (v_cl.getProcessingUnits() == 2)
-		{
-			// Check that match
-			bool test = compare("lid_driven_cavity_p2_grid_0_test.vtk","lid_driven_cavity_p2_grid_0.vtk");
-			BOOST_REQUIRE_EQUAL(test,true);
-			test = compare("lid_driven_cavity_p2_grid_1_test.vtk","lid_driven_cavity_p2_grid_1.vtk");
-			BOOST_REQUIRE_EQUAL(test,true);
-		}
-		else if (v_cl.getProcessingUnits() == 3)
-		{
-			// Check that match
-			bool test = compare("lid_driven_cavity_p3_grid_0_test.vtk","lid_driven_cavity_p3_grid_0.vtk");
-			BOOST_REQUIRE_EQUAL(test,true);
-			test = compare("lid_driven_cavity_p3_grid_1_test.vtk","lid_driven_cavity_p3_grid_1.vtk");
-			BOOST_REQUIRE_EQUAL(test,true);
-			test = compare("lid_driven_cavity_p3_grid_2_test.vtk","lid_driven_cavity_p3_grid_2.vtk");
-			BOOST_REQUIRE_EQUAL(test,true);
-		}
-	}
+	std::string file1 = std::string("test/") + s + "lid_driven_cavity_p" + std::to_string(v_cl.getProcessingUnits()) + "_grid_" + std::to_string(v_cl.getProcessUnitID()) + "_test.vtk";
+	std::string file2 = s + "lid_driven_cavity_p" + std::to_string(v_cl.getProcessingUnits()) + "_grid_" + std::to_string(v_cl.getProcessUnitID()) + ".vtk";
+
+	// Check that match
+	bool test = compare(file1,file2);
+	BOOST_REQUIRE_EQUAL(test,true);
+}
+
+// Lid driven cavity, incompressible fluid
+
+BOOST_AUTO_TEST_CASE(lid_driven_cavity)
+{
+	lid_driven_cavity_2d<umfpack_solver<double>,lid_nn>();
 }
 
 BOOST_AUTO_TEST_SUITE_END()

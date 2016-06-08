@@ -79,6 +79,9 @@ class Vector<T,PETSC_BASE>
 	// Number of local rows
 	size_t n_row_local;
 
+	// Indicate if v has been allocated
+	bool v_created = false;
+
 	// Mutable vector
 	mutable Vec v;
 
@@ -97,18 +100,18 @@ class Vector<T,PETSC_BASE>
 	 */
 	void setPetsc() const
 	{
-		// Create the vector
-		PETSC_SAFE_CALL(VecCreate(PETSC_COMM_WORLD,&v));
-		PETSC_SAFE_CALL(VecSetSizes(v,n_row_local,n_row));
 		PETSC_SAFE_CALL(VecSetFromOptions(v));
+
 
 		// set the vector
 
 		if (row_val.size() != 0)
 			PETSC_SAFE_CALL(VecSetValues(v,row_val.size(),&row_val.template get<row_id>(0),&row_val.template get<val_id>(0),INSERT_VALUES))
 
-		VecAssemblyBegin(v);
-		VecAssemblyEnd(v);
+		PETSC_SAFE_CALL(VecAssemblyBegin(v));
+		PETSC_SAFE_CALL(VecAssemblyEnd(v));
+
+
 	}
 
 public:
@@ -133,6 +136,15 @@ public:
 		this->operator=(v);
 	}
 
+	/*! \brief Destoroy the vector
+	 *
+	 *
+	 */
+	~Vector()
+	{
+		PETSC_SAFE_CALL(VecDestroy(&v));
+	}
+
 	/*! \brief Create a vector with n elements
 	 *
 	 * \param n number of elements in the vector
@@ -142,6 +154,9 @@ public:
 	Vector(size_t n, size_t n_row_local)
 	:n_row_local(n_row_local)
 	{
+		// Create the vector
+		PETSC_SAFE_CALL(VecCreate(PETSC_COMM_WORLD,&v));
+
 		resize(n,n_row_local);
 	}
 
@@ -151,6 +166,8 @@ public:
 	Vector()
 	:n_row(0),n_row_local(0)
 	{
+		// Create the vector
+		PETSC_SAFE_CALL(VecCreate(PETSC_COMM_WORLD,&v));
 	}
 
 	/*! \brief Resize the Vector
@@ -163,6 +180,8 @@ public:
 	{
 		n_row = row;
 		n_row_local = l_row;
+
+		PETSC_SAFE_CALL(VecSetSizes(v,n_row_local,n_row));
 	}
 
 	/*! \brief Return a reference to the vector element

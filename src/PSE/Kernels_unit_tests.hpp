@@ -27,7 +27,7 @@ BOOST_AUTO_TEST_CASE( pse_ker )
 	openfpm::vector<openfpm::vector<double>> y_res;
 
 	// Load the result of the test
-	y_res.load("test_data/PSE_convergence");
+	y_res.load("test/PSE_convergence");
 
 	// Every time increase the number of particles by 2
 	for (size_t i = 250 ; i <= 2097152000 ; i*=2)
@@ -92,7 +92,10 @@ BOOST_AUTO_TEST_CASE( pse_ker )
 	{
 		for (size_t j = 0 ; j < y.get(i).size(); j++)
 		{
-			BOOST_REQUIRE_CLOSE(y.get(i).get(j),y_res.get(i).get(j),0.01);
+			double c1 = y.get(i).get(j);
+			double c2 = y_res.get(i).get(j);
+
+			BOOST_REQUIRE_CLOSE(c1,c2,1.0);
 		}
 	}
 }

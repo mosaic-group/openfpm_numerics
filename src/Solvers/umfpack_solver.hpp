@@ -41,6 +41,12 @@ class umfpack_solver<double>
 
 public:
 
+	/*! \brief No nothing
+	 *
+	 *
+	 */
+	void best_solve() {};
+
 	/*! \brief Here we invert the matrix and solve the system
 	 *
 	 *  \warning umfpack is not a parallel solver, this function work only with one processor
