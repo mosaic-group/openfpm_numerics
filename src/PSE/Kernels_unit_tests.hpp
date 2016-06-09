@@ -27,7 +27,12 @@ BOOST_AUTO_TEST_CASE( pse_ker )
 	openfpm::vector<openfpm::vector<double>> y_res;
 
 	// Load the result of the test
+
+#ifdef HAVE_LIBQUAD_MATH
 	y_res.load("test/PSE_convergence");
+#else
+	y_res.load("test/PSE_convergence_osx");
+#endif
 
 	// Every time increase the number of particles by 2
 	for (size_t i = 250 ; i <= 2097152000 ; i*=2)
@@ -39,6 +44,7 @@ BOOST_AUTO_TEST_CASE( pse_ker )
 		/////// Order 2 //////////////
 
 #ifdef HAVE_LIBQUADMATH
+
 		PSE_test<boost::multiprecision::float128,Lap_PSE<1,boost::multiprecision::float128,2>>(i,2,err);
 		y.last().add(err.linf_error);
 

@@ -219,6 +219,7 @@ template<typename solver_type,typename lid_nn_3d> void lid_driven_cavity_3d()
 
 #endif
 
+
 	// Check that match
 	bool test = compare(file1,file2);
 	BOOST_REQUIRE_EQUAL(test,true);

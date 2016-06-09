@@ -250,6 +250,7 @@ template<typename solver_type,typename lid_nn> void lid_driven_cavity_2d()
 	// Check that match
 	bool test = compare(file1,file2);
 	BOOST_REQUIRE_EQUAL(test,true);
+
 }
 
 // Lid driven cavity, incompressible fluid
