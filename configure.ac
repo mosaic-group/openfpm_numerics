@@ -27,7 +27,12 @@ m4_ifdef([AX_EIGEN],,[m4_include([m4/ax_eigen.m4])])
 m4_ifdef([AX_LIB_HDF5],,[m4_include([m4/ax_lib_hdf5.m4])])
 m4_ifdef([AX_LIB_PETSC],,[m4/ax_petsc_lib.m4])
 
+
 case $host_os in
+   *darwin*|*macosx*)
+        CXXFLAGS+=" --std=c++11 "
+        AC_DEFINE([HAVE_OSX],[],[We have OSX])
+        ;;
    *cygwin*)
         # Do something specific for cygwin
         CXXFLAGS+=" --std=gnu++11 "
@@ -141,7 +146,7 @@ AC_CHECK_LIB(rt, clock_gettime, [AC_DEFINE([HAVE_CLOCK_GETTIME],[],[Have clock t
 
 ####### include OpenFPM_numerics include path"
 
-INCLUDES_PATH+=" -I/usr/local/include -I. -Iconfig -I../../openfpm_devices/src -I../../openfpm_data/src -I../../openfpm_io/src -I../../openfpm_vcluster/src -I../../src"
+INCLUDES_PATH+=" -I/usr/local/include -I. -I../../openfpm_devices/src -I../../openfpm_data/src -I../../openfpm_io/src -I../../openfpm_vcluster/src -I../../src"
 
 ###### Check for se-class1
 
