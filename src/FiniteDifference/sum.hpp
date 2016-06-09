@@ -1,54 +1,51 @@
-/*
- * sum.hpp
- *
- *  Created on: Oct 13, 2015
- *      Author: i-bird
- */
-
-#ifndef OPENFPM_NUMERICS_SRC_FINITEDIFFERENCE_SUM_HPP_
-#define OPENFPM_NUMERICS_SRC_FINITEDIFFERENCE_SUM_HPP_
-
-#include <boost/mpl/vector.hpp>
-#include "config.h"
-#include <unordered_map>
-#include "util/for_each_ref.hpp"
-
-template<typename v_expr>
-struct sum_functor_value
-{
-	//! Number of elements in the vector v_expr
-	typedef boost::mpl::size<v_expr> size;
-
-	//! Last element of sum
-	typedef typename boost::mpl::at<v_expr,boost::mpl::int_<size::value-1> >::type last;
-
-	//! sum functor
-	std::unordered_map<long int,typename last::stype> & cols;
-
-	//! Grid info
-	const grid_sm<last::dims,void> & gs;
-
-	// grid mapping
-	const typename stub_or_real<last,last::dims,typename last::stype,typename last::b_grid::decomposition::extended_type>::type & g_map;
-
-	// grid position
-	grid_dist_key_dx<last::dims> & kmap;
-
-	//! position
-	grid_key_dx<last::dims> & key;
-
-	//! coefficent
-	typename last::stype coeff;
-
-	//! spacing
-	typename last::stype (& spacing)[last::dims];
-
-
-	/*! \brief constructor
+	/*
+	 * sum.hpp
 	 *
+	 *  Created on: Oct 13, 2015
+	 *      Author: i-bird
 	 */
-	sum_functor_value(const typename stub_or_real<last,last::dims,typename last::stype,typename last::b_grid::decomposition::extended_type>::type & g_map, grid_dist_key_dx<last::dims> & kmap, const grid_sm<last::dims,void> & gs, typename last::stype (& spacing)[last::dims], std::unordered_map<long int,typename last::stype> & cols, typename last::stype coeff)
-	:cols(cols),gs(gs),g_map(g_map),kmap(kmap),key(key),coeff(coeff),spacing(spacing)
+
+	#ifndef OPENFPM_NUMERICS_SRC_FINITEDIFFERENCE_SUM_HPP_
+	#define OPENFPM_NUMERICS_SRC_FINITEDIFFERENCE_SUM_HPP_
+
+	#include <boost/mpl/vector.hpp>
+	#include "config.h"
+	#include <unordered_map>
+	#include "util/for_each_ref.hpp"
+
+	template<typename v_expr>
+	struct sum_functor_value
+	{
+		//! Number of elements in the vector v_expr
+		typedef boost::mpl::size<v_expr> size;
+
+		//! Last element of sum
+		typedef typename boost::mpl::at<v_expr,boost::mpl::int_<size::value-1> >::type last;
+
+		//! sum functor
+		std::unordered_map<long int,typename last::stype> & cols;
+
+		//! Grid info
+		const grid_sm<last::dims,void> & gs;
+
+		// grid mapping
+		const typename stub_or_real<last,last::dims,typename last::stype,typename last::b_grid::decomposition::extended_type>::type & g_map;
+
+		// grid position
+		grid_dist_key_dx<last::dims> & kmap;
+
+		//! coefficent
+		typename last::stype coeff;
+
+		//! spacing
+		typename last::stype (& spacing)[last::dims];
+
+
+		/*! \brief constructor
+		 *
+		 */
+		sum_functor_value(const typename stub_or_real<last,last::dims,typename last::stype,typename last::b_grid::decomposition::extended_type>::type & g_map, grid_dist_key_dx<last::dims> & kmap, const grid_sm<last::dims,void> & gs, typename last::stype (& spacing)[last::dims], std::unordered_map<long int,typename last::stype> & cols, typename last::stype coeff)
+		:cols(cols),gs(gs),g_map(g_map),kmap(kmap),coeff(coeff),spacing(spacing)
 	{};
 
 	//! It call this function for every expression in the sum

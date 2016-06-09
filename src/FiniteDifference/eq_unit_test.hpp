@@ -237,9 +237,8 @@ template<typename solver_type,typename lid_nn> void lid_driven_cavity_2d()
 
 #ifdef HAVE_OSX
 
-	std::string file1 = std::string("test/") + s + "lid_driven_cavity_p" + std::to_string(v_cl.getProcessingUnits()) + "_grid_" + std::to_string(v_cl.getProcessUnitID()) + "_test_osx.vtk";
-	std::string file2 = s + "lid_driven_cavity_p" + std::to_string(v_cl.getProcessingUnits()) + "_grid_" + std::to_string(v_cl.getProcessUnitID()) + ".vtk";
-
+    std::string file1 = std::string("test/") + s + "lid_driven_cavity_p" + std::to_string(v_cl.getProcessingUnits()) + "_grid_" + std::to_string(v_cl.getProcessUnitID()) + "_test_osx.vtk";
+    std::string file2 = s + "lid_driven_cavity_p" + std::to_string(v_cl.getProcessingUnits()) + "_grid_" + std::to_string(v_cl.getProcessUnitID()) + ".vtk";
 
 #else
 

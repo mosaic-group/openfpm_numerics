@@ -8,7 +8,7 @@
 #ifndef OPENFPM_NUMERICS_SRC_FINITEDIFFERENCE_EQ_UNIT_TEST_3D_HPP_
 #define OPENFPM_NUMERICS_SRC_FINITEDIFFERENCE_EQ_UNIT_TEST_3D_HPP_
 
-
+#include "config.h"
 #include "Laplacian.hpp"
 #include "FiniteDifference/eq.hpp"
 #include "FiniteDifference/sum.hpp"
@@ -206,8 +206,18 @@ template<typename solver_type,typename lid_nn_3d> void lid_driven_cavity_3d()
 
 	g_dist.write(s + "lid_driven_cavity_3d_p" + std::to_string(v_cl.getProcessingUnits()));
 
+#ifdef HAVE_OSX
+
+        std::string file1 = std::string("test/") + s + "lid_driven_cavity_3d_p" + std::to_string(v_cl.getProcessingUnits()) + "_grid_" + std::to_string(v_cl.getProcessUnitID()) + "_test_osx.vtk";
+        std::string file2 = s + "lid_driven_cavity_3d_p" + std::to_string(v_cl.getProcessingUnits()) + "_grid_" + std::to_string(v_cl.getProcessUnitID()) + ".vtk";
+
+#else
+
 	std::string file1 = std::string("test/") + s + "lid_driven_cavity_3d_p" + std::to_string(v_cl.getProcessingUnits()) + "_grid_" + std::to_string(v_cl.getProcessUnitID()) + "_test.vtk";
 	std::string file2 = s + "lid_driven_cavity_3d_p" + std::to_string(v_cl.getProcessingUnits()) + "_grid_" + std::to_string(v_cl.getProcessUnitID()) + ".vtk";
+
+
+#endif
 
 	// Check that match
 	bool test = compare(file1,file2);
