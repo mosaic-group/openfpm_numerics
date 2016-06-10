@@ -28,7 +28,7 @@ BOOST_AUTO_TEST_CASE( pse_ker )
 
 	// Load the result of the test
 
-#ifdef HAVE_LIBQUAD_MATH
+#ifdef HAVE_LIBQUADMATH
 	y_res.load("test/PSE_convergence");
 #else
 	y_res.load("test/PSE_convergence_osx");
