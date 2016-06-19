@@ -10,3 +10,7 @@ nobase_include_HEADERS = PSE/Kernels.hpp PSE/Kernels_test_util.hpp
 
 .cu.o :
 	$(NVCC) $(NVCCFLAGS) -o $@ -c $<
+
+test: numerics
+	source $(HOME)/openfpm_vars && cd .. && mpirun -np 2 ./src/numerics && mpirun -np 3 ./src/numerics && mpirun -np 4 ./src/numerics
+

@@ -12,3 +12,4 @@
 #include "FiniteDifference/eq_unit_test_3d.hpp"
 #include "util/util_num_unit_tests.hpp"
 #include "PSE/Kernels_unit_tests.hpp"
+#include "Operators/Vector/vector_dist_operators_unit_tests.hpp"
