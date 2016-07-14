@@ -905,7 +905,7 @@ template<typename exp1, typename exp2, unsigned int op1>
 inline vector_dist_expression_op<vector_dist_expression<0,double>,void,VECT_NORM>
 norm(double d)
 {
-	vector_dist_expression_op<vector_dist_expression<0,double>,void,VECT_NORM> exp_sum(vector_dist_expression<0,double>(d));
+	vector_dist_expression_op<vector_dist_expression<0,double>,void,VECT_NORM> exp_sum( (vector_dist_expression<0,double>(d)) );
 
 	return exp_sum;
 }
