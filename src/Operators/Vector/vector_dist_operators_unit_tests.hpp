@@ -22,7 +22,7 @@ constexpr int TA = 6;
 
 //////////////////// Here we define all the function to checl the operators
 
-template <unsigned int prp, typename vector> bool check_values(const vector & v,float a)
+template <unsigned int prp, typename vector> bool check_values(vector & v,float a)
 {
 	bool ret = true;
 	auto it = v.getDomainIterator();
@@ -39,7 +39,7 @@ template <unsigned int prp, typename vector> bool check_values(const vector & v,
 	return ret;
 }
 
-template <typename vector> bool check_values_complex_expr(const vector & vd)
+template <typename vector> bool check_values_complex_expr(vector & vd)
 {
 	bool ret = true;
 	auto it = vd.getDomainIterator();
@@ -61,7 +61,7 @@ template <typename vector> bool check_values_complex_expr(const vector & vd)
 	return ret;
 }
 
-template <typename rtype, typename vector, unsigned int A, unsigned int B, unsigned int C> bool check_values_sum(const vector & vd, double d)
+template <typename rtype, typename vector, unsigned int A, unsigned int B, unsigned int C> bool check_values_sum(vector & vd, double d)
 {
 	bool ret = true;
 	auto it = vd.getDomainIterator();
@@ -83,7 +83,7 @@ template <typename rtype, typename vector, unsigned int A, unsigned int B, unsig
 	return ret;
 }
 
-template <typename rtype, typename vector, unsigned int A, unsigned int B, unsigned int C> bool check_values_sum(const vector & vd1, const vector & vd2)
+template <typename rtype, typename vector, unsigned int A, unsigned int B, unsigned int C> bool check_values_sum(vector & vd1, vector & vd2)
 {
 	bool ret = true;
 	auto it = vd1.getDomainIterator();
@@ -127,7 +127,7 @@ template <typename rtype, typename vector, unsigned int A, unsigned int B, unsig
 	return ret;
 }
 
-template <typename rtype, typename vector, unsigned int A, unsigned int B, unsigned int C> bool check_values_sum_4(const vector & vd1)
+template <typename rtype, typename vector, unsigned int A, unsigned int B, unsigned int C> bool check_values_sum_4(vector & vd1)
 {
 	bool ret = true;
 	auto it = vd1.getDomainIterator();
@@ -139,11 +139,6 @@ template <typename rtype, typename vector, unsigned int A, unsigned int B, unsig
 		rtype base1 = (vd1.template getProp<B>(key) + vd1.template getProp<C>(key)) + (vd1.template getProp<B>(key) + vd1.template getProp<C>(key));
 		rtype base2 = vd1.template getProp<A>(key);
 
-		if (base1 != base2)
-		{
-			int debug = 0;
-			debug++;
-		}
 
 		ret &=  base1 == base2;
 
@@ -155,7 +150,7 @@ template <typename rtype, typename vector, unsigned int A, unsigned int B, unsig
 	return ret;
 }
 
-template <typename rtype, typename vector, unsigned int A, unsigned int B, unsigned int C> bool check_values_sub(const vector & vd, double d)
+template <typename rtype, typename vector, unsigned int A, unsigned int B, unsigned int C> bool check_values_sub(vector & vd, double d)
 {
 	bool ret = true;
 	auto it = vd.getDomainIterator();
@@ -177,7 +172,7 @@ template <typename rtype, typename vector, unsigned int A, unsigned int B, unsig
 	return ret;
 }
 
-template <typename rtype, typename vector, unsigned int A, unsigned int B, unsigned int C> bool check_values_sub(double d, const vector & vd)
+template <typename rtype, typename vector, unsigned int A, unsigned int B, unsigned int C> bool check_values_sub(double d, vector & vd)
 {
 	bool ret = true;
 	auto it = vd.getDomainIterator();
@@ -199,7 +194,7 @@ template <typename rtype, typename vector, unsigned int A, unsigned int B, unsig
 	return ret;
 }
 
-template <typename rtype, typename vector, unsigned int A, unsigned int B, unsigned int C> bool check_values_sub(const vector & vd1, const vector & vd2)
+template <typename rtype, typename vector, unsigned int A, unsigned int B, unsigned int C> bool check_values_sub(vector & vd1, vector & vd2)
 {
 	bool ret = true;
 	auto it = vd1.getDomainIterator();
@@ -221,7 +216,7 @@ template <typename rtype, typename vector, unsigned int A, unsigned int B, unsig
 	return ret;
 }
 
-template <typename rtype, typename vector, unsigned int A, unsigned int B, unsigned int C> bool check_values_sub_31(const vector & vd1)
+template <typename rtype, typename vector, unsigned int A, unsigned int B, unsigned int C> bool check_values_sub_31(vector & vd1)
 {
 	bool ret = true;
 	auto it = vd1.getDomainIterator();
@@ -244,7 +239,7 @@ template <typename rtype, typename vector, unsigned int A, unsigned int B, unsig
 }
 
 
-template <typename rtype, typename vector, unsigned int A, unsigned int B, unsigned int C> bool check_values_sub_32(const vector & vd1)
+template <typename rtype, typename vector, unsigned int A, unsigned int B, unsigned int C> bool check_values_sub_32(vector & vd1)
 {
 	bool ret = true;
 	auto it = vd1.getDomainIterator();
@@ -266,7 +261,7 @@ template <typename rtype, typename vector, unsigned int A, unsigned int B, unsig
 	return ret;
 }
 
-template <typename rtype, typename vector, unsigned int A, unsigned int B, unsigned int C> bool check_values_sub_4(const vector & vd1)
+template <typename rtype, typename vector, unsigned int A, unsigned int B, unsigned int C> bool check_values_sub_4(vector & vd1)
 {
 	bool ret = true;
 	auto it = vd1.getDomainIterator();
@@ -289,7 +284,7 @@ template <typename rtype, typename vector, unsigned int A, unsigned int B, unsig
 }
 
 
-template <typename rtype, typename vector, unsigned int A, unsigned int B, unsigned int C> bool check_values_mul(const vector & vd, double d)
+template <typename rtype, typename vector, unsigned int A, unsigned int B, unsigned int C> bool check_values_mul(vector & vd, double d)
 {
 	bool ret = true;
 	auto it = vd.getDomainIterator();
@@ -312,7 +307,7 @@ template <typename rtype, typename vector, unsigned int A, unsigned int B, unsig
 }
 
 
-template <typename rtype, typename vector, unsigned int A, unsigned int B, unsigned int C> bool check_values_mul(const vector & vd1, const vector & vd2)
+template <typename rtype, typename vector, unsigned int A, unsigned int B, unsigned int C> bool check_values_mul(vector & vd1, vector & vd2)
 {
 	bool ret = true;
 	auto it = vd1.getDomainIterator();
@@ -334,7 +329,7 @@ template <typename rtype, typename vector, unsigned int A, unsigned int B, unsig
 	return ret;
 }
 
-template <typename rtype, typename vector, unsigned int A, unsigned int B, unsigned int C> bool check_values_mul_3(const vector & vd1)
+template <typename rtype, typename vector, unsigned int A, unsigned int B, unsigned int C> bool check_values_mul_3(vector & vd1)
 {
 	bool ret = true;
 	auto it = vd1.getDomainIterator();
@@ -357,7 +352,7 @@ template <typename rtype, typename vector, unsigned int A, unsigned int B, unsig
 }
 
 
-template <typename rtype, typename vector, unsigned int A, unsigned int B, unsigned int C> bool check_values_mul_4(const vector & vd1)
+template <typename rtype, typename vector, unsigned int A, unsigned int B, unsigned int C> bool check_values_mul_4(vector & vd1)
 {
 	bool ret = true;
 	auto it = vd1.getDomainIterator();
@@ -381,7 +376,7 @@ template <typename rtype, typename vector, unsigned int A, unsigned int B, unsig
 
 
 
-template <typename rtype, typename vector, unsigned int A, unsigned int B, unsigned int C> bool check_values_div(const vector & vd, double d)
+template <typename rtype, typename vector, unsigned int A, unsigned int B, unsigned int C> bool check_values_div(vector & vd, double d)
 {
 	bool ret = true;
 	auto it = vd.getDomainIterator();
@@ -403,7 +398,7 @@ template <typename rtype, typename vector, unsigned int A, unsigned int B, unsig
 	return ret;
 }
 
-template <typename rtype, typename vector, unsigned int A, unsigned int B, unsigned int C> bool check_values_div(double d, const vector & vd)
+template <typename rtype, typename vector, unsigned int A, unsigned int B, unsigned int C> bool check_values_div(double d, vector & vd)
 {
 	bool ret = true;
 	auto it = vd.getDomainIterator();
@@ -425,7 +420,7 @@ template <typename rtype, typename vector, unsigned int A, unsigned int B, unsig
 	return ret;
 }
 
-template <typename rtype, typename vector, unsigned int A, unsigned int B, unsigned int C> bool check_values_div(const vector & vd1, const vector & vd2)
+template <typename rtype, typename vector, unsigned int A, unsigned int B, unsigned int C> bool check_values_div(vector & vd1, vector & vd2)
 {
 	bool ret = true;
 	auto it = vd1.getDomainIterator();
@@ -447,7 +442,7 @@ template <typename rtype, typename vector, unsigned int A, unsigned int B, unsig
 	return ret;
 }
 
-template <typename rtype, typename vector, unsigned int A, unsigned int B, unsigned int C> bool check_values_div_31(const vector & vd1)
+template <typename rtype, typename vector, unsigned int A, unsigned int B, unsigned int C> bool check_values_div_31(vector & vd1)
 {
 	bool ret = true;
 	auto it = vd1.getDomainIterator();
@@ -469,7 +464,7 @@ template <typename rtype, typename vector, unsigned int A, unsigned int B, unsig
 	return ret;
 }
 
-template <typename rtype, typename vector, unsigned int A, unsigned int B, unsigned int C> bool check_values_div_32(const vector & vd1)
+template <typename rtype, typename vector, unsigned int A, unsigned int B, unsigned int C> bool check_values_div_32(vector & vd1)
 {
 	bool ret = true;
 	auto it = vd1.getDomainIterator();
@@ -492,7 +487,7 @@ template <typename rtype, typename vector, unsigned int A, unsigned int B, unsig
 }
 
 
-template <typename rtype, typename vector, unsigned int A, unsigned int B, unsigned int C> bool check_values_div_4(const vector & vd1)
+template <typename rtype, typename vector, unsigned int A, unsigned int B, unsigned int C> bool check_values_div_4(vector & vd1)
 {
 	bool ret = true;
 	auto it = vd1.getDomainIterator();
@@ -536,7 +531,7 @@ template <typename vector> bool check_values_scal_norm_dist(vector & vd)
 	return ret;
 }
 
-template <typename vector> void fill_values(const vector & v)
+template <typename vector> void fill_values(vector & v)
 {
 	auto it = v.getDomainIterator();
 
