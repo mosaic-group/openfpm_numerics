@@ -101,6 +101,8 @@ BOOST_AUTO_TEST_CASE( pse_ker )
 			double c1 = y.get(i).get(j);
 			double c2 = y_res.get(i).get(j);
 
+			// In divergent mode the system is too sensitive
+			// to compiler/hardware differences disable them
 			if (j != 4 && j != 5)
 			{BOOST_REQUIRE_CLOSE(c1,c2,3.0);}
 		}
