@@ -101,7 +101,7 @@ BOOST_AUTO_TEST_CASE( pse_ker )
 			double c1 = y.get(i).get(j);
 			double c2 = y_res.get(i).get(j);
 
-			BOOST_REQUIRE_CLOSE(c1,c2,1.0);
+			BOOST_REQUIRE_CLOSE(c1,c2,3.0);
 		}
 	}
 }
