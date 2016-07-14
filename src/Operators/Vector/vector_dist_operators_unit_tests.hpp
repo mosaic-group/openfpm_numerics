@@ -105,7 +105,7 @@ template <typename rtype, typename vector, unsigned int A, unsigned int B, unsig
 	return ret;
 }
 
-template <typename rtype, typename vector, unsigned int A, unsigned int B, unsigned int C> bool check_values_sum_3(const vector & vd1)
+template <typename rtype, typename vector, unsigned int A, unsigned int B, unsigned int C> bool check_values_sum_3(vector & vd1)
 {
 	bool ret = true;
 	auto it = vd1.getDomainIterator();
