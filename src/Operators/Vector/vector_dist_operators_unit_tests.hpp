@@ -61,6 +61,94 @@ template <typename vector> bool check_values_complex_expr(vector & vd)
 	return ret;
 }
 
+template <typename rtype, typename vector, unsigned int A, unsigned int B, unsigned int C> bool check_values_pos_sum(vector & vd, const rtype & p)
+{
+	bool ret = true;
+	auto it = vd.getDomainIterator();
+
+	while (it.isNext())
+	{
+		auto key = it.get();
+
+		rtype base1 = vd.template getPos(key) + p;
+		rtype base2 = vd.template getProp<A>(key);
+
+		ret &=  base1 == base2;
+
+		++it;
+	}
+
+	BOOST_REQUIRE_EQUAL(ret,true);
+
+	return ret;
+}
+
+template <typename rtype, typename vector, unsigned int A, unsigned int B, unsigned int C> bool check_values_pos_sub(vector & vd, const rtype & p)
+{
+	bool ret = true;
+	auto it = vd.getDomainIterator();
+
+	while (it.isNext())
+	{
+		auto key = it.get();
+
+		rtype base1 = vd.template getPos(key) - p;
+		rtype base2 = vd.template getProp<A>(key);
+
+		ret &=  base1 == base2;
+
+		++it;
+	}
+
+	BOOST_REQUIRE_EQUAL(ret,true);
+
+	return ret;
+}
+
+template <typename rtype, typename vector, unsigned int A, unsigned int B, unsigned int C> bool check_values_pos_sub_minus(vector & vd, const rtype & p)
+{
+	bool ret = true;
+	auto it = vd.getDomainIterator();
+
+	while (it.isNext())
+	{
+		auto key = it.get();
+
+		rtype base1 = -(vd.template getPos(key) - p);
+		rtype base2 = vd.template getProp<A>(key);
+
+		ret &=  base1 == base2;
+
+		++it;
+	}
+
+	BOOST_REQUIRE_EQUAL(ret,true);
+
+	return ret;
+}
+
+template <typename rtype, typename vector, unsigned int A, unsigned int B, unsigned int C> bool check_values_point_sub(vector & vd, const rtype & p)
+{
+	bool ret = true;
+	auto it = vd.getDomainIterator();
+
+	while (it.isNext())
+	{
+		auto key = it.get();
+
+		rtype base1 = -vd.template getProp<B>(key);
+		rtype base2 = vd.template getProp<A>(key);
+
+		ret &=  base1 == base2;
+
+		++it;
+	}
+
+	BOOST_REQUIRE_EQUAL(ret,true);
+
+	return ret;
+}
+
 template <typename rtype, typename vector, unsigned int A, unsigned int B, unsigned int C> bool check_values_sum(vector & vd, double d)
 {
 	bool ret = true;
@@ -622,6 +710,8 @@ BOOST_AUTO_TEST_CASE( vector_dist_operators_test )
 	auto vVB = getV<VB>(vd);
 	auto vVC = getV<VC>(vd);
 
+	auto vPOS = getV<PROP_POS>(vd);
+
 	vA = 1.0;
 	vB = 2.0f;
 	vC = 3.0;
@@ -629,6 +719,9 @@ BOOST_AUTO_TEST_CASE( vector_dist_operators_test )
 	check_values<A>(vd,1.0);
 	check_values<B>(vd,2.0);
 	check_values<C>(vd,3.0);
+
+	vA = vB;
+	check_values<A>(vd,2.0);
 
 	fill_values(vd);
 
@@ -699,30 +792,30 @@ BOOST_AUTO_TEST_CASE( vector_dist_operators_test )
 
 	// Various combination of 2 operator
 
-	vVA = vVB + 2.0f;
+	vVA = vVB + 2.0;
 	check_values_sum<VectorS<3,float>,vtype,VA,VB,VC>(vd,2.0f);
-	vVA = 2.0f + vVB;
+	vVA = 2.0 + vVB;
 	check_values_sum<VectorS<3,float>,vtype,VA,VB,VC>(vd,2.0f);
 	vVA = vVC + vVB;
 	check_values_sum<VectorS<3,float>,vtype,VA,VB,VC>(vd,vd);
 
-	vVA = vVB - 2.0f;
+	vVA = vVB - 2.0;
 	check_values_sub<VectorS<3,float>,vtype,VA,VB,VC>(vd,2.0f);
-	vVA = 2.0f - vVB;
+	vVA = 2.0 - vVB;
 	check_values_sub<VectorS<3,float>,vtype,VA,VB,VC>(2.0f,vd);
 	vVA = vVC - vVB;
 	check_values_sub<VectorS<3,float>,vtype,VA,VB,VC>(vd,vd);
 
-	vVA = vVB * 2.0f;
+	vVA = vVB * 2.0;
 	check_values_mul<VectorS<3,float>,vtype,VA,VB,VC>(vd,2.0f);
-	vVA = 2.0f * vVB;
+	vVA = 2.0 * vVB;
 	check_values_mul<VectorS<3,float>,vtype,VA,VB,VC>(vd,2.0f);
 	vVA = vVC * vVB;
 	check_values_mul<VectorS<3,float>,vtype,VA,VB,VC>(vd,vd);
 
-	vVA = vVB / 2.0f;
+	vVA = vVB / 2.0;
 	check_values_div<VectorS<3,float>,vtype,VA,VB,VC>(vd,2.0f);
-	vVA = 2.0f / vVB;
+	vVA = 2.0 / vVB;
 	check_values_div<VectorS<3,float>,vtype,VA,VB,VC>(2.0f,vd);
 	vVA = vVC / vVB;
 	check_values_div<VectorS<3,float>,vtype,VA,VB,VC>(vd,vd);
@@ -767,6 +860,61 @@ BOOST_AUTO_TEST_CASE( vector_dist_operators_test )
 
 	vA = vVB * vVC + norm(vVC + vVB) + distance(vVC,vVB);
 	check_values_scal_norm_dist(vd);
+
+	Point<3,float> p0({2.0,2.0,2.0});
+	auto p0_e = getVExpr(p0);
+
+	vVA = vPOS + p0_e;
+	check_values_pos_sum<VectorS<3,float>,vtype,VA,VB,VC>(vd,p0);
+
+	vVA = vPOS - p0_e;
+	check_values_pos_sub<Point<3,float>,vtype,VA,VB,VC>(vd,p0);
+
+	vVA = -(vPOS - p0_e);
+	check_values_pos_sub_minus<Point<3,float>,vtype,VA,VB,VC>(vd,p0);
+
+	vVA = -vVB;
+	check_values_point_sub<Point<3,float>,vtype,VA,VB,VC>(vd,p0);
+
+	// Just check it compile testing it will test the same code
+	// as the previuous one
+	vVC = exp(vVB);
+	vA = norm(vPOS);
+	vVA = vPOS + 2.0;
+	vVA = 2.0 + vPOS;
+//	vVA = vPOS + vPOS;
+	vVA = vPOS - 2.0f;
+	vVA = 2.0 - vPOS;
+//	vVA = vPOS - vPOS;
+
+/*	vVA = vPOS * 2.0;
+	vVA = 2.0 * vPOS;
+	vVA = vPOS * vPOS;
+
+	vVA = vPOS / 2.0f;
+	vVA = 2.0f / vPOS;
+	vVA = vPOS / vPOS;
+
+	// Variuos combination 3 operator
+
+	vVA = vPOS + (vPOS + vPOS);
+	vVA = (vPOS + vPOS) + vPOS;
+	vVA = (vPOS + vPOS) + (vPOS + vPOS);
+
+	vVA = vPOS - (vPOS + vPOS);
+	vVA = (vPOS + vPOS) - vPOS;
+	vVA = (vVC + vPOS) - (vPOS + vPOS);
+
+	vVA = vPOS * (vPOS + vPOS);
+	vVA = (vPOS + vPOS) * vPOS;
+	vVA = (vPOS + vPOS) * (vPOS + vPOS);
+	vA = vPOS * (vPOS + vPOS);
+	vA = (vPOS + vPOS) * vPOS;
+	vA = (vPOS + vPOS) * (vPOS + vPOS);
+
+	vVA = vPOS / (vPOS + vPOS);
+	vVA = (vPOS + vPOS) / vPOS;
+	vVA = (vPOS + vPOS) / (vPOS + vPOS);*/
 }
 
 #include "vector_dist_operators_apply_kernel_unit_tests.hpp"

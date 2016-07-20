@@ -10,12 +10,13 @@
 
 #include "Vector/vector_dist.hpp"
 
+#define PROP_POS (unsigned int)-1
+
 #define VECT_SUM 1
 #define VECT_SUB 2
 #define VECT_MUL 3
 #define VECT_DIV 4
-#define VECT_NORM 5
-#define VECT_NORM2 6
+
 #define VECT_APPLYKER_IN 7
 #define VECT_APPLYKER_OUT 8
 #define VECT_APPLYKER_REDUCE 9
@@ -28,6 +29,43 @@
 #define VECT_APPLYKER_MULTI_IN_GEN 16
 #define VECT_APPLYKER_MULTI_OUT_GEN 17
 #define VECT_APPLYKER_MULTI_REDUCE_GEN 18
+
+#define VECT_NORM 56
+#define VECT_NORM2 57
+#define VECT_ABS 58
+#define VECT_EXP 59
+#define VECT_EXP2 60
+#define VECT_EXPM1 61
+#define VECT_LOG 62
+#define VECT_LOG10 63
+#define VECT_LOG2 64
+#define VECT_LOG1P 65
+#define VECT_SQRT 67
+#define VECT_CBRT 68
+#define VECT_SIN 69
+#define VECT_COS 70
+#define VECT_TAN 71
+#define VECT_ASIN 72
+#define VECT_ACOS 73
+#define VECT_ATAN 74
+#define VECT_SINH 75
+#define VECT_COSH 76
+#define VECT_TANH 77
+#define VECT_ASINH 78
+#define VECT_ACOSH 79
+#define VECT_ATANH 80
+#define VECT_ERF 81
+#define VECT_ERFC 82
+#define VECT_TGAMMA 83
+#define VECT_LGAMMA 84
+#define VECT_CEIL 85
+#define VECT_FLOOR 86
+#define VECT_TRUNC 87
+#define VECT_ROUND 88
+#define VECT_NEARBYINT 89
+#define VECT_RINT 90
+#define VECT_PMUL 91
+#define VECT_SUB_UNI 92
 
 
 /*! \brief has_init check if a type has defined a
@@ -243,14 +281,30 @@ public:
 	}
 };
 
-/*! \brief norm operation
+/*! \brief selector for position or properties
  *
- * \tparam exp1 expression1
- * \tparam exp2 expression2
  *
  */
+template <typename vector, unsigned int prp>
+struct pos_or_prop
+{
+	static inline auto value(vector & v, const vect_dist_key_dx & k) -> decltype(v.template getProp<prp>(k))
+	{
+		return v.template getProp<prp>(k);
+	}
+};
+
+template <typename vector>
+struct pos_or_prop<vector,PROP_POS>
+{
+	static inline auto value(vector & v, const vect_dist_key_dx & k) -> decltype(getExpr(v.template getPos(k)))
+	{
+		return getExpr(v.template getPos(k));
+	}
+};
+
 template <typename exp1>
-class vector_dist_expression_op<exp1,void,VECT_NORM>
+class vector_dist_expression_op<exp1,void,VECT_SUB_UNI>
 {
 	const exp1 o1;
 
@@ -260,27 +314,16 @@ public:
 	:o1(o1)
 	{}
 
-	/*! \brief This function must be called before value
-	 *
-	 * it initialize the expression if needed
-	 *
-	 */
 	inline void init() const
 	{
 		o1.init();
 	}
 
-	/*! \brief Evaluate the expression
-	 *
-	 * \param key where to evaluate the expression
-	 *
-	 */
-	template<typename r_type=typename std::remove_reference<decltype(norm(o1.value(vect_dist_key_dx(0))))>::type > inline r_type value(const vect_dist_key_dx & key) const
+	template<typename r_type=typename std::remove_reference<decltype(-(o1.value(vect_dist_key_dx(0))))>::type > inline r_type value(const vect_dist_key_dx & key) const
 	{
-		return norm(o1.value(key));
+		return -(o1.value(key));
 	}
 };
-
 
 /*! \brief Main class that encapsulate a vector properties
  *
@@ -312,9 +355,32 @@ public:
 	 * \param key where to evaluate the expression
 	 *
 	 */
-	inline auto value(const vect_dist_key_dx & k) const -> decltype(v.template getProp<prp>(k))
+	inline auto value(const vect_dist_key_dx & k) const -> decltype(pos_or_prop<vector,prp>::value(v,k))
 	{
-		return v.template getProp<prp>(k);
+		return pos_or_prop<vector,prp>::value(v,k);
+	}
+
+	/*! \brief Fill the vector property with the evaluated expression
+	 *
+	 * \param v_exp expression to evaluate
+	 *
+	 */
+	template<unsigned int prp2> vector & operator=(const vector_dist_expression<prp2,vector> & v_exp)
+	{
+		v_exp.init();
+
+		auto it = v.getDomainIterator();
+
+		while (it.isNext())
+		{
+			auto key = it.get();
+
+			v.template getProp<prp>(key) = v_exp.value(key);
+
+			++it;
+		}
+
+		return v;
 	}
 
 
@@ -363,7 +429,7 @@ public:
 	}
 };
 
-/*! \Create an expression from a vector
+/*! \Create an expression from a vector property
  *
  * \tpatam prp property
  * \param v
@@ -567,6 +633,39 @@ operator-(const vector_dist_expression_op<exp1,exp2,op1> & va, const vector_dist
 	return exp_sum;
 }
 
+/* \brief minus of a distributed vector expression operator
+ *
+ * \param va vector expression one
+ *
+ * \return an object that encapsulate the expression
+ *
+ */
+template<typename exp1, typename exp2_, unsigned int op1>
+inline vector_dist_expression_op<vector_dist_expression_op<exp1,exp2_,op1>,void,VECT_SUB_UNI>
+operator-(const vector_dist_expression_op<exp1,exp2_,op1> & va)
+{
+	vector_dist_expression_op<vector_dist_expression_op<exp1,exp2_,op1>,void,VECT_SUB_UNI> exp_sum(va);
+
+	return exp_sum;
+}
+
+/* \brief minus of a distributed vector expression
+ *
+ * \param va vector expression one
+ *
+ * \return an object that encapsulate the expression
+ *
+ */
+template<unsigned int p1, typename v1>
+inline vector_dist_expression_op<vector_dist_expression<p1,v1>,void,VECT_SUB_UNI>
+operator-(const vector_dist_expression<p1,v1> & va)
+{
+	vector_dist_expression_op<vector_dist_expression<p1,v1>,void,VECT_SUB_UNI> exp_sum(va);
+
+	return exp_sum;
+}
+
+
 /* \brief subtract two distributed vector expression
  *
  * \param va vector expression one
@@ -737,6 +836,40 @@ operator*(const vector_dist_expression_op<exp1,exp2,op1> & va, const vector_dist
 	return exp_sum;
 }
 
+/* \brief Multiply a distributed vector expression by a number
+ *
+ * \param va vector expression
+ * \param d number
+ *
+ * \return an object that encapsulate the expression
+ *
+ */
+template<typename exp1 , typename exp2, unsigned int op1>
+inline vector_dist_expression_op<vector_dist_expression_op<exp1,exp2,op1>,vector_dist_expression<0,double>,VECT_MUL>
+operator*(const vector_dist_expression_op<exp1,exp2,op1> & va, double d)
+{
+	vector_dist_expression_op<vector_dist_expression_op<exp1,exp2,op1>,vector_dist_expression<0,double>,VECT_MUL> exp_sum(va,vector_dist_expression<0,double>(d));
+
+	return exp_sum;
+}
+
+/* \brief Multiply a distributed vector expression by a number
+ *
+ * \param d number
+ * \param vb vector expression
+ *
+ * \return an object that encapsulate the expression
+ *
+ */
+template<typename exp1 , typename exp2, unsigned int op1>
+inline vector_dist_expression_op<vector_dist_expression<0,double>,vector_dist_expression_op<exp1,exp2,op1>,VECT_MUL>
+operator*(double d, const vector_dist_expression_op<exp1,exp2,op1> & vb)
+{
+	vector_dist_expression_op<vector_dist_expression<0,double>,vector_dist_expression_op<exp1,exp2,op1>,VECT_MUL> exp_sum(vector_dist_expression<0,double>(d),vb);
+
+	return exp_sum;
+}
+
 /* \brief Divide two distributed vector expression
  *
  * \param va vector expression one
@@ -873,60 +1006,9 @@ operator/(const vector_dist_expression_op<exp1,exp2,op1> & va, const vector_dist
 
 	return exp_sum;
 }
-/////////// NORM operator ///////////////////////
-
-/* \brief Divide two distributed vector expression
- *
- * \param va vector expression one
- * \param vb vector expression two
- *
- * \return an object that encapsulate the expression
- *
- */
-template<typename exp1, typename exp2, unsigned int op1>
-inline vector_dist_expression_op<vector_dist_expression_op<exp1,exp2,op1>,void,VECT_NORM>
-norm(const vector_dist_expression_op<exp1,exp2,op1> & va)
-{
-	vector_dist_expression_op<vector_dist_expression_op<exp1,exp2,op1>,void,VECT_NORM> exp_sum(va);
-
-	return exp_sum;
-}
-
-
-/* \brief Divide two distributed vector expression
- *
- * \param va vector expression one
- * \param vb vector expression two
- *
- * \return an object that encapsulate the expression
- *
- */
-template<typename exp1, typename exp2, unsigned int op1>
-inline vector_dist_expression_op<vector_dist_expression<0,double>,void,VECT_NORM>
-norm(double d)
-{
-	vector_dist_expression_op<vector_dist_expression<0,double>,void,VECT_NORM> exp_sum( (vector_dist_expression<0,double>(d)) );
-
-	return exp_sum;
-}
-
-/* \brief Divide two distributed vector expression
- *
- * \param va vector expression one
- * \param vb vector expression two
- *
- * \return an object that encapsulate the expression
- *
- */
-template<unsigned int prp1, typename v1>
-inline vector_dist_expression_op<vector_dist_expression<prp1,v1>,void,VECT_NORM>
-norm(const vector_dist_expression<prp1,v1> & va)
-{
-	vector_dist_expression_op<vector_dist_expression<prp1,v1>,void,VECT_NORM> exp_sum(va);
-
-	return exp_sum;
-}
 
 #include "vector_dist_operators_apply_kernel.hpp"
+#include "vector_dist_operators_functions.hpp"
+#include "vector_dist_operators_extensions.hpp"
 
 #endif /* OPENFPM_NUMERICS_SRC_OPERATORS_VECTOR_VECTOR_DIST_OPERATORS_HPP_ */
