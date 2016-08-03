@@ -11,6 +11,7 @@
 #include "Vector/vector_dist.hpp"
 
 #define PROP_POS (unsigned int)-1
+#define PROP_CUSTOM (unsigned int)-2
 
 #define VECT_SUM 1
 #define VECT_SUB 2
@@ -23,12 +24,9 @@
 #define VECT_APPLYKER_IN_GEN 10
 #define VECT_APPLYKER_OUT_GEN 11
 #define VECT_APPLYKER_REDUCE_GEN 12
-#define VECT_APPLYKER_MULTI_IN 13
-#define VECT_APPLYKER_MULTI_OUT 14
-#define VECT_APPLYKER_MULTI_REDUCE 15
-#define VECT_APPLYKER_MULTI_IN_GEN 16
-#define VECT_APPLYKER_MULTI_OUT_GEN 17
-#define VECT_APPLYKER_MULTI_REDUCE_GEN 18
+#define VECT_APPLYKER_IN_SIM 13
+#define VECT_APPLYKER_OUT_SIM 14
+#define VECT_APPLYKER_REDUCE_SIM 15
 
 #define VECT_NORM 56
 #define VECT_NORM2 57
@@ -66,6 +64,8 @@
 #define VECT_RINT 90
 #define VECT_PMUL 91
 #define VECT_SUB_UNI 92
+
+#define VECT_SUM_REDUCE 93
 
 
 /*! \brief has_init check if a type has defined a
@@ -338,9 +338,24 @@ class vector_dist_expression
 
 public:
 
+	typedef vector vtype;
+
+	//! Property id of the point
+	static const unsigned int prop = prp;
+
 	vector_dist_expression(vector & v)
 	:v(v)
 	{}
+
+	/*! \brief Return the vector on which is acting
+	 *
+	 * It return the vector used in getVExpr, to get this object
+	 *
+	 */
+	vector & getVector()
+	{
+		return v;
+	}
 
 	/*! \brief This function must be called before value
 	 *
@@ -375,14 +390,13 @@ public:
 		{
 			auto key = it.get();
 
-			v.template getProp<prp>(key) = v_exp.value(key);
+			pos_or_prop<vector,prp>::value(v,key) = v_exp.value(key);
 
 			++it;
 		}
 
 		return v;
 	}
-
 
 	/*! \brief Fill the vector property with the evaluated expression
 	 *
@@ -399,7 +413,7 @@ public:
 		{
 			auto key = it.get();
 
-			v.template getProp<prp>(key) = v_exp.value(key);
+			pos_or_prop<vector,prp>::value(v,key) = v_exp.value(key);
 
 			++it;
 		}
@@ -420,7 +434,7 @@ public:
 		{
 			auto key = it.get();
 
-			v.template getProp<prp>(key) = d;
+			pos_or_prop<vector,prp>::value(v,key) = d;
 
 			++it;
 		}
@@ -454,7 +468,7 @@ class vector_dist_expression<prp,double>
 
 public:
 
-	inline vector_dist_expression(double & d)
+	inline vector_dist_expression(const double & d)
 	:d(d)
 	{}
 
@@ -477,6 +491,79 @@ public:
 	}
 };
 
+/*! \brief Main class that encapsulate a float constant
+ *
+ * \param prp no meaning
+ *
+ */
+template<unsigned int prp>
+class vector_dist_expression<prp,float>
+{
+	float d;
+
+public:
+
+	typedef float vtype;
+
+	inline vector_dist_expression(const float & d)
+	:d(d)
+	{}
+
+	/*! \brief This function must be called before value
+	 *
+	 * it initialize the expression if needed
+	 *
+	 */
+	inline void init() const
+	{}
+
+	/*! \brief Evaluate the expression
+	 *
+	 * It just return the velue set in the constructor
+	 *
+	 */
+	inline float value(const vect_dist_key_dx & k) const
+	{
+		return d;
+	}
+};
+
+
+
+/*! \brief Main class that encapsulate a float constant
+ *
+ * \param prp no meaning
+ *
+ */
+template<typename T>
+class vector_dist_expression<PROP_CUSTOM,T>
+{
+
+public:
+
+	typedef float vtype;
+
+	inline vector_dist_expression()
+	{}
+
+	/*! \brief This function must be called before value
+	 *
+	 * it initialize the expression if needed
+	 *
+	 */
+	inline void init() const
+	{}
+
+	/*! \brief Evaluate the expression
+	 *
+	 * It just return the velue set in the constructor
+	 *
+	 */
+	inline T value(const vect_dist_key_dx & k) const
+	{
+		return T(0.0);
+	}
+};
 
 /* \brief sum two distributed vector expression
  *
@@ -1010,5 +1097,6 @@ operator/(const vector_dist_expression_op<exp1,exp2,op1> & va, const vector_dist
 #include "vector_dist_operators_apply_kernel.hpp"
 #include "vector_dist_operators_functions.hpp"
 #include "vector_dist_operators_extensions.hpp"
+#include "Operators/Vector/vector_dist_operator_assign.hpp"
 
 #endif /* OPENFPM_NUMERICS_SRC_OPERATORS_VECTOR_VECTOR_DIST_OPERATORS_HPP_ */

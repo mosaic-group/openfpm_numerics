@@ -131,18 +131,19 @@ public:
 	 * \param v vector to copy
 	 *
 	 */
-	Vector(const Vector<T,PETSC_BASE> && v)
+	Vector(Vector<T,PETSC_BASE> && v)
 	{
 		this->operator=(v);
 	}
 
-	/*! \brief Destoroy the vector
+	/*! \brief Destroy the vector
 	 *
 	 *
 	 */
 	~Vector()
 	{
-		PETSC_SAFE_CALL(VecDestroy(&v));
+		if (is_openfpm_init() == true)
+		{PETSC_SAFE_CALL(VecDestroy(&v));}
 	}
 
 	/*! \brief Create a vector with n elements
@@ -330,7 +331,7 @@ public:
 		// Fill the index and construct the map
 
 		size_t k = 0;
-		for (size_t i = low ; i < high ; i++)
+		for (size_t i = low ; i < (size_t)high ; i++)
 		{
 			row_val.template get<row_id>(k) = i;
 			map[i] = k;
@@ -358,7 +359,7 @@ public:
 	 * \param v vector to copy
 	 *
 	 */
-	Vector<T,PETSC_BASE> & operator=(const Vector<T,PETSC_BASE> && v)
+	Vector<T,PETSC_BASE> & operator=(Vector<T,PETSC_BASE> && v)
 	{
 		map.swap(v.map);
 		row_val.swap(v.row_val);

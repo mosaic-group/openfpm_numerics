@@ -646,7 +646,8 @@ template <typename vector> void fill_values(vector & v)
 	}
 }
 
-typedef vector_dist<3,float,aggregate<float,float,float,VectorS<3,float>,VectorS<3,float>,VectorS<3,float>>> vector_type;
+
+typedef vector_dist<3,float,aggregate<float,float,float,VectorS<3,float>,VectorS<3,float>,VectorS<3,float>,float>> vector_type;
 
 //! Exponential kernel
 struct exp_kernel
@@ -671,17 +672,37 @@ struct exp_kernel
 		return (pA + pB) * exp(dist * dist / var);
 	}
 
-	inline Point<3,float> value(vector_type & vd1, vector_type & vd2, size_t p, size_t q, float pA, float pB)
+	inline float value(size_t p, size_t q, float pA, float pB, const vector_type & vd1)
+	{
+		Point<3,float> pp = vd1.getPos(p);
+		Point<3,float> pq = vd1.getPos(q);
+
+		float dist = norm(pp-pq);
+
+		return (pA + pB) * exp(dist * dist / var);
+	}
+
+	inline Point<3,float> value(size_t p, size_t q, const Point<3,float> & pA, const Point<3,float> & pB , const vector_type & vd1)
+	{
+		Point<3,float> pp = vd1.getPos(p);
+		Point<3,float> pq = vd1.getPos(q);
+
+		float dist = norm(pp-pq);
+
+		return (pA + pB) * exp(dist * dist / var);
+	}
+
+	inline Point<2,float> value(const Point<3,float> & p, const Point<3,float> & q)
 	{
 		float dist = norm(p-q);
 
-		return (pA + pB) * exp(dist * dist / var);
+		return exp(dist * dist / var);
 	}
 };
 
 ////////////////////////////////////////////////////////////////////////////
 
-BOOST_AUTO_TEST_SUITE( vector_dist_test )
+BOOST_AUTO_TEST_SUITE( vector_dist_operators_test )
 
 
 BOOST_AUTO_TEST_CASE( vector_dist_operators_test )
@@ -882,12 +903,12 @@ BOOST_AUTO_TEST_CASE( vector_dist_operators_test )
 	vA = norm(vPOS);
 	vVA = vPOS + 2.0;
 	vVA = 2.0 + vPOS;
-//	vVA = vPOS + vPOS;
+	vVA = vPOS + vPOS;
 	vVA = vPOS - 2.0f;
 	vVA = 2.0 - vPOS;
-//	vVA = vPOS - vPOS;
+	vVA = vPOS - vPOS;
 
-/*	vVA = vPOS * 2.0;
+	vVA = vPOS * 2.0;
 	vVA = 2.0 * vPOS;
 	vVA = vPOS * vPOS;
 
@@ -914,10 +935,183 @@ BOOST_AUTO_TEST_CASE( vector_dist_operators_test )
 
 	vVA = vPOS / (vPOS + vPOS);
 	vVA = (vPOS + vPOS) / vPOS;
-	vVA = (vPOS + vPOS) / (vPOS + vPOS);*/
+	vVA = (vPOS + vPOS) / (vPOS + vPOS);
 }
 
 #include "vector_dist_operators_apply_kernel_unit_tests.hpp"
+
+void reset(vector_dist<3,float,aggregate<float,float,float,float,float,float,float,float>> & v1)
+{
+	auto it = v1.getDomainIterator();
+
+	while (it.isNext())
+	{
+		auto p = it.get();
+
+		v1.template getProp<0>(p) = -1.0;
+		v1.template getProp<1>(p) = -1.0;
+		v1.template getProp<2>(p) = -1.0;
+		v1.template getProp<3>(p) = -1.0;
+		v1.template getProp<4>(p) = -1.0;
+		v1.template getProp<5>(p) = -1.0;
+		v1.template getProp<6>(p) = -1.0;
+		v1.template getProp<7>(p) = -1.0;
+
+		++it;
+	}
+}
+
+template<unsigned int i> void loop_check(vector_dist<3,float,aggregate<float,float,float,float,float,float,float,float>> & v1, float check)
+{
+	auto it = v1.getDomainIterator();
+	bool ret = true;
+
+	while (it.isNext())
+	{
+		auto p = it.get();
+
+		ret &= v1.template getProp<i>(p) == check;
+
+		++it;
+	}
+
+	BOOST_REQUIRE_EQUAL(ret,true);
+}
+
+void check(vector_dist<3,float,aggregate<float,float,float,float,float,float,float,float>> & v1, size_t i)
+{
+	float check = -1.0;
+
+	if (0 < i) check = 0.0;
+	else check = -1.0;
+	loop_check<0>(v1,check);
+
+	if (1 < i) check = 1.0;
+	else check = -1.0;
+	loop_check<1>(v1,check);
+
+	if (2 < i) check = 2.0;
+	else check = -1.0;
+	loop_check<2>(v1,check);
+
+	if (3 < i) check = 3.0;
+	else check = -1.0;
+	loop_check<3>(v1,check);
+
+	if (4 < i) check = 4.0;
+	else check = -1.0;
+	loop_check<4>(v1,check);
+
+	if (5 < i) check = 5.0;
+	else check = -1.0;
+	loop_check<5>(v1,check);
+
+	if (6 < i) check = 6.0;
+	else check = -1.0;
+	loop_check<6>(v1,check);
+
+	if (7 < i) check = 7.0;
+	else check = -1.0;
+	loop_check<7>(v1,check);
+}
+
+BOOST_AUTO_TEST_CASE( vector_dist_operators_assign_test )
+{
+	if (create_vcluster().getProcessingUnits() > 3)
+		return;
+
+	Box<3,float> box({0.0,0.0,0.0},{1.0,1.0,1.0});
+
+	// Boundary conditions
+	size_t bc[3]={PERIODIC,PERIODIC,PERIODIC};
+
+	// ghost
+	Ghost<3,float> ghost(0.05);
+
+	// vector type
+	typedef vector_dist<3,float,aggregate<float,float,float,float,float,float,float,float>> vtype;
+
+	vector_dist<3,float,aggregate<float,float,float,float,float,float,float,float>> vd(100,box,bc,ghost);
+
+	auto v1 = getV<0>(vd);
+	auto v2 = getV<1>(vd);
+	auto v3 = getV<2>(vd);
+	auto v4 = getV<3>(vd);
+	auto v5 = getV<4>(vd);
+	auto v6 = getV<5>(vd);
+	auto v7 = getV<6>(vd);
+	auto v8 = getV<7>(vd);
+
+	reset(vd);
+
+	assign(v1,0.0,
+		   v2,1.0);
+
+	check(vd,2);
+
+	reset(vd);
+
+	assign(v1,0.0,
+		   v2,1.0,
+		   v3,2.0);
+
+	check(vd,3);
+
+	reset(vd);
+
+	assign(v1,0.0,
+		   v2,1.0,
+		   v3,2.0,
+		   v4,3.0);
+
+	check(vd,4);
+
+	reset(vd);
+
+	assign(v1,0.0,
+		   v2,1.0,
+		   v3,2.0,
+		   v4,3.0,
+		   v5,4.0);
+
+	check(vd,5);
+
+	reset(vd);
+
+	assign(v1,0.0,
+		   v2,1.0,
+		   v3,2.0,
+		   v4,3.0,
+		   v5,4.0,
+		   v6,5.0);
+
+	check(vd,6);
+
+	reset(vd);
+
+	assign(v1,0.0,
+		   v2,1.0,
+		   v3,2.0,
+		   v4,3.0,
+		   v5,4.0,
+		   v6,5.0,
+		   v7,6.0);
+
+	check(vd,7);
+
+	reset(vd);
+
+	assign(v1,0.0,
+		   v2,1.0,
+		   v3,2.0,
+		   v4,3.0,
+		   v5,4.0,
+		   v6,5.0,
+		   v7,6.0,
+		   v8,7.0);
+
+	check(vd,8);
+}
 
 BOOST_AUTO_TEST_SUITE_END()
 

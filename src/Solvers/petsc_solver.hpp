@@ -96,15 +96,6 @@ class petsc_solver<double>
 		openfpm::vector<itError> res;
 	};
 
-	// KSP Relative tolerance
-//	PetscReal rtol;
-
-	// KSP Absolute tolerance
-//	PetscReal abstol;
-
-	// KSP dtol tolerance to determine that the method diverge
-//	PetscReal dtol;
-
 	// KSP Maximum number of iterations
 	PetscInt maxits;
 
@@ -227,7 +218,7 @@ class petsc_solver<double>
 			yn.add(bench.get(i).smethod);
 		}
 
-		size_t n_int = 300;
+		size_t n_int = maxits;
 
 		// calculate dt
 
@@ -303,18 +294,22 @@ class petsc_solver<double>
 		itError erri(err);
 		erri.it = it;
 
-		//
-		size_t old_size = pts->bench.last().res.size();
-		pts->bench.last().res.resize(it+1);
+        itError err_fill;
 
-		if (old_size > 0)
-		{
-			for (size_t i = old_size ; i < it-1 ; i++)
-				pts->bench.last().res.get(i) = pts->bench.last().res.get(i-1);
-		}
+        size_t old_size = pts->bench.last().res.size();
+        pts->bench.last().res.resize(it+1);
 
-		// Add the error per iteration
-		pts->bench.last().res.add(erri);
+        if (old_size > 0)
+                err_fill = pts->bench.last().res.get(old_size-1);
+        else
+                err_fill = erri;
+
+        for (long int i = old_size ; i < (long int)it ; i++)
+                pts->bench.last().res.get(i) = err_fill;
+
+        // Add the error per iteration
+        pts->bench.last().res.get(it) = erri;
+
 
 		pts->progress(it);
 
@@ -683,7 +678,6 @@ class petsc_solver<double>
 	void initKSP()
 	{
 		PETSC_SAFE_CALL(KSPCreate(PETSC_COMM_WORLD,&ksp));
-//		PETSC_SAFE_CALL(KSPGetTolerances(ksp,&rtol,&abstol,&dtol,&maxits));
 	}
 
 	/*! \brief initialize the KSP object for solver testing
@@ -693,10 +687,8 @@ class petsc_solver<double>
 	void initKSPForTest()
 	{
 		PETSC_SAFE_CALL(KSPCreate(PETSC_COMM_WORLD,&ksp));
-//		PETSC_SAFE_CALL(KSPGetTolerances(ksp,&rtol,&abstol,&dtol,&maxits));
-//		PETSC_SAFE_CALL(KSPSetTolerances(ksp,rtol,abstol,dtol,300));
 
-		setMaxIter(300);
+		setMaxIter(maxits);
 
 		// Disable convergence check
 		PETSC_SAFE_CALL(KSPSetConvergenceTest(ksp,KSPConvergedSkip,NULL,NULL));
@@ -718,6 +710,7 @@ public:
 	}
 
 	petsc_solver()
+	:maxits(300)
 	{
 		initKSP();
 
@@ -725,7 +718,7 @@ public:
 
 		solvs.add(std::string(KSPBCGS));
 //		solvs.add(std::string(KSPIBCGS)); <--- Produce invalid argument
-		solvs.add(std::string(KSPFBCGS));
+//		solvs.add(std::string(KSPFBCGS));
 //		solvs.add(std::string(KSPFBCGSR)); <--- Nan production problems
 		solvs.add(std::string(KSPBCGSL));
 		solvs.add(std::string(KSPGMRES));
@@ -831,6 +824,7 @@ public:
 	void setMaxIter(PetscInt n)
 	{
 		PetscOptionsSetValue("-ksp_max_it",std::to_string(n).c_str());
+		maxits = n;
 	}
 
 	/*! For the BiCGStab(L) it define the number of search directions

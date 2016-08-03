@@ -143,6 +143,12 @@ AC_CHECK_LIB(rt, clock_gettime, [AC_DEFINE([HAVE_CLOCK_GETTIME],[],[Have clock t
                                  OPT_LIBS="$OPT_LIBS -lrt"
                                 ])
 
+##########
+
+## Check for LIBHILBERT
+
+AX_LIB_HILBERT([],[echo "Cannot detect libhilbert, use the --with-libhilbert option if it is not installed in the default location"
+                    exit 210])
 
 ####### include OpenFPM_numerics include path"
 

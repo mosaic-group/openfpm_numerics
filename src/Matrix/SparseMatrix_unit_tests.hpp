@@ -407,7 +407,7 @@ BOOST_AUTO_TEST_CASE(sparse_matrix_eigen_petsc_solve)
 	}
 
 	// Get the petsc Matrix
-	Mat & matp = sm.getMat();
+	sm.getMat();
 
 
 	petsc_solver<double> solver;

@@ -114,4 +114,10 @@ inline size_t mat_factor(size_t nvar, size_t sz, const size_t ord)
 	return nvar;
 }
 
+#include "mul.hpp"
+#include "Average.hpp"
+#include "Derivative.hpp"
+#include "sum.hpp"
+#include "Laplacian.hpp"
+
 #endif /* OPENFPM_NUMERICS_SRC_FINITEDIFFERENCE_EQ_HPP_ */

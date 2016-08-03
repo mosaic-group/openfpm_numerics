@@ -8,6 +8,9 @@
 #ifndef OPENFPM_NUMERICS_SRC_MATRIX_SPARSEMATRIX_HPP_
 #define OPENFPM_NUMERICS_SRC_MATRIX_SPARSEMATRIX_HPP_
 
+#include "config/config.h"
+#include "util/linalgebra_lib.hpp"
+
 #ifdef HAVE_EIGEN
 #include <Eigen/Sparse>
 #define DEFAULT_MATRIX  = EIGEN_BASE
@@ -93,7 +96,7 @@ public:
 	openfpm::vector<triplet_type> & getMatrixTriplets() {std::cerr << __FILE__ << ":" << __LINE__ << " Error in order to use this class you must compile OpenFPM with linear algebra support" << std::endl; return stub_vt;}
 	const int & getMat() const {std::cerr << __FILE__ << ":" << __LINE__ << " Error in order to use this class you must compile OpenFPM with linear algebra support" << std::endl; return stub_i;}
 	int & getMat() {std::cerr << __FILE__ << ":" << __LINE__ << " Error in order to use this class you must compile OpenFPM with linear algebra support" << std::endl; return stub_i;}
-	void resize(size_t row, size_t col) {std::cerr << __FILE__ << ":" << __LINE__ << " Error in order to use this class you must compile OpenFPM with linear algebra support" << std::endl;}
+	void resize(size_t row, size_t col, size_t row_n, size_t col_n) {std::cerr << __FILE__ << ":" << __LINE__ << " Error in order to use this class you must compile OpenFPM with linear algebra support" << std::endl;}
 	T operator()(id_t i, id_t j) {std::cerr << __FILE__ << ":" << __LINE__ << " Error in order to use this class you must compile OpenFPM with linear algebra support" << std::endl; return stub_t;}
 	bool save(const std::string & file) const {std::cerr << __FILE__ << ":" << __LINE__ << " Error in order to use this class you must compile OpenFPM with linear algebra support" << std::endl;return true;}
 	bool load(const std::string & file) {std::cerr << __FILE__ << ":" << __LINE__ << " Error in order to use this class you must compile OpenFPM with linear algebra support" << std::endl; return false;}

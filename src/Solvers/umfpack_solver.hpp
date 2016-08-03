@@ -28,9 +28,9 @@ class umfpack_solver
 {
 public:
 
-	template<typename impl> static Vector<T> solve(const SparseMatrix<T,impl> & A, const Vector<T> & b)
+	template<unsigned int impl, typename id_type> static Vector<T> solve(const SparseMatrix<T,id_type,impl> & A, const Vector<T> & b)
 	{
-		std::cerr << "Error Umfpack only suppor double precision" << "/n";
+		std::cerr << "Error Umfpack only support double precision, and int ad id type" << "/n";
 	}
 };
 
@@ -84,6 +84,9 @@ public:
 			{
 				// decomposition failed
 				std::cout << __FILE__ << ":" << __LINE__ << " solver failed" << "\n";
+
+				x.scatter();
+
 				return x;
 			}
 
@@ -136,7 +139,7 @@ class umfpack_solver<double>
 
 public:
 
-	template<typename impl> static Vector<double> solve(SparseMatrix<double,int,impl> & A, const Vector<double> & b, size_t opt = UMFPACK_NONE)
+	template<unsigned int impl, typename id_type> static Vector<double> solve(SparseMatrix<double,id_type,impl> & A, const Vector<double> & b, size_t opt = UMFPACK_NONE)
 	{
 		std::cerr << __FILE__ << ":" << __LINE__ << " Error in order to use umfpack you must compile OpenFPM with linear algebra support" << "/n";
 

@@ -1,12 +1,17 @@
 
-LINKLIBS =  $(PETSC_LIB) $(SUITESPARSE_LIBS) $(LAPACK_LIBS) $(BLAS_LIBS)  $(METIS_LIB) $(PARMETIS_LIB) $(DEFAULT_LIB) $(PTHREAD_LIBS) $(OPT_LIBS) $(BOOST_LDFLAGS) $(BOOST_PROGRAM_OPTIONS_LIB) $(BOOST_IOSTREAMS_LIB) $(HDF5_LDFLAGS)  $(HDF5_LIBS) $(LIBQUADMATH)
+LINKLIBS = $(LIBHILBERT_LIB) $(PETSC_LIB) $(SUITESPARSE_LIBS) $(LAPACK_LIBS) $(BLAS_LIBS)  $(METIS_LIB) $(PARMETIS_LIB) $(DEFAULT_LIB) $(PTHREAD_LIBS) $(OPT_LIBS) $(BOOST_LDFLAGS) $(BOOST_PROGRAM_OPTIONS_LIB) $(BOOST_IOSTREAMS_LIB) $(HDF5_LDFLAGS)  $(HDF5_LIBS) $(LIBQUADMATH)
 
 noinst_PROGRAMS = numerics
 numerics_SOURCES = main.cpp ../../openfpm_vcluster/src/VCluster.cpp ../../openfpm_devices/src/memory/HeapMemory.cpp ../../openfpm_devices/src/memory/PtrMemory.cpp ../../openfpm_devices/src/Memleak_check.cpp
-numerics_CXXFLAGS = $(AM_CXXFLAGS) $(HDF5_CPPFLAGS) $(INCLUDES_PATH) $(BOOST_CPPFLAGS) $(SUITESPARSE_INCLUDE) $(METIS_INCLUDE) $(PARMETIS_INCLUDE) $(EIGEN_INCLUDE) $(PETSC_INCLUDE) -Wno-deprecated-declarations -Wno-unused-local-typedefs
+numerics_CXXFLAGS = $(LIBHILBERT_INCLUDE) $(AM_CXXFLAGS) $(HDF5_CPPFLAGS) $(INCLUDES_PATH) $(BOOST_CPPFLAGS) $(SUITESPARSE_INCLUDE) $(METIS_INCLUDE) $(PARMETIS_INCLUDE) $(EIGEN_INCLUDE) $(PETSC_INCLUDE) -Wno-deprecated-declarations -Wno-unused-local-typedefs
 numerics_CFLAGS = $(CUDA_CFLAGS)
 numerics_LDADD = $(LINKLIBS) -lparmetis -lmetis
-nobase_include_HEADERS = PSE/Kernels.hpp PSE/Kernels_test_util.hpp Operators/Vector/vector_dist_operators_extensions.hpp Operators/Vector/vector_dist_operators.hpp Operators/Vector/vector_dist_operators_apply_kernel.hpp Operators/Vector/vector_dist_operators_functions.hpp
+nobase_include_HEADERS = Matrix/SparseMatrix.hpp Matrix/SparseMatrix_Eigen.hpp Matrix/SparseMatrix_petsc.hpp \
+Vector/Vector_eigen.hpp Vector/Vector_petsc.hpp Vector/Vector_util.hpp Vector/Vector.hpp \
+Solvers/umfpack_solver.hpp Solvers/petsc_solver.hpp \
+util/petsc_util.hpp util/linalgebra_lib.hpp util/util_num.hpp util/grid_dist_testing.hpp  \
+FiniteDifference/Average.hpp FiniteDifference/Derivative.hpp FiniteDifference/eq.hpp FiniteDifference/FDScheme.hpp FiniteDifference/Laplacian.hpp FiniteDifference/mul.hpp FiniteDifference/sum.hpp FiniteDifference/util/common.hpp \
+PSE/Kernels.hpp PSE/Kernels_test_util.hpp Operators/Vector/vector_dist_operators_extensions.hpp Operators/Vector/vector_dist_operators.hpp Operators/Vector/vector_dist_operators_apply_kernel.hpp Operators/Vector/vector_dist_operators_functions.hpp Operators/Vector/vector_dist_operator_assign.hpp
 
 .cu.o :
 	$(NVCC) $(NVCCFLAGS) -o $@ -c $<

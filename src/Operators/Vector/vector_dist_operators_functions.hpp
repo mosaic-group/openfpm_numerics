@@ -212,4 +212,76 @@ fun_name(double d, const vector_dist_expression_op<exp1,exp2,op1> & va)\
 
 CREATE_VDIST_ARG2_FUNC(pmul,pmul,VECT_PMUL)
 
+
+////////// Special function reduce /////////////////////////
+
+
+template <typename exp1, typename vector_type>
+class vector_dist_expression_op<exp1,vector_type,VECT_SUM_REDUCE>
+{
+	const exp1 o1;
+
+	typedef typename apply_kernel_rtype<decltype(o1.value(vect_dist_key_dx(0)))>::rtype rtype;
+
+	// calculated value
+	mutable typename std::remove_reference<rtype>::type val;
+
+	const vector_type & vd;
+
+public:
+
+	vector_dist_expression_op(const exp1 & o1, const vector_type & vd)
+	:o1(o1), vd(vd)
+	{}
+
+	inline void init() const
+	{
+		o1.init();
+
+		val = 0.0;
+
+		auto it = vd.getDomainIterator();
+
+		while (it.isNext())
+		{
+			auto key = it.get();
+
+			val += o1.value(key);
+
+			++it;
+		}
+	}
+
+	inline typename std::remove_reference<rtype>::type get()
+	{
+		init();
+		return value(vect_dist_key_dx(0));
+	}
+
+	template<typename r_type= typename std::remove_reference<rtype>::type > inline r_type value(const vect_dist_key_dx & key) const
+	{
+		return val;
+	}
+};
+
+
+template<typename exp1, typename exp2_, unsigned int op1, typename vector_type>
+inline vector_dist_expression_op<vector_dist_expression_op<exp1,exp2_,op1>,vector_type,VECT_SUM_REDUCE>
+rsum(const vector_dist_expression_op<exp1,exp2_,op1> & va, const vector_type & vd)
+{
+	vector_dist_expression_op<vector_dist_expression_op<exp1,exp2_,op1>,vector_type,VECT_SUM_REDUCE> exp_sum(va,vd);
+
+	return exp_sum;
+}
+
+template<unsigned int prp1, typename v1, typename vector_type>
+inline vector_dist_expression_op<vector_dist_expression<prp1,v1>,vector_type,VECT_SUM_REDUCE>
+rsum(const vector_dist_expression<prp1,v1> & va, const vector_type & vd)
+{
+	vector_dist_expression_op<vector_dist_expression<prp1,v1>,vector_type,VECT_SUM_REDUCE> exp_sum(va,vd);
+
+	return exp_sum;
+}
+
+
 #endif /* OPENFPM_NUMERICS_SRC_OPERATORS_VECTOR_VECTOR_DIST_OPERATORS_FUNCTIONS_HPP_ */

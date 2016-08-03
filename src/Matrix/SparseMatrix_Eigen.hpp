@@ -212,16 +212,13 @@ public:
 	 */
 	bool save(const std::string & file) const
 	{
-		std::vector<size_t> pap_prp;
+		size_t pap_prp;
 
 		Packer<decltype(trpl),HeapMemory>::packRequest(trpl,pap_prp);
 
-		// Calculate how much preallocated memory we need to pack all the objects
-		size_t req = ExtPreAlloc<HeapMemory>::calculateMem(pap_prp);
-
 		// allocate the memory
 		HeapMemory pmem;
-		pmem.allocate(req);
+		pmem.allocate(pap_prp);
 		ExtPreAlloc<HeapMemory> mem(pap_prp,pmem);
 
 		//Packing

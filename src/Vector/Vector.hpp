@@ -8,6 +8,7 @@
 #ifndef OPENFPM_NUMERICS_SRC_VECTOR_VECTOR_HPP_
 #define OPENFPM_NUMERICS_SRC_VECTOR_VECTOR_HPP_
 
+#include "config/config.h"
 #include "util/linalgebra_lib.hpp"
 
 /*! \brief It store one row value of a vector
@@ -43,11 +44,11 @@ class Vector
 public:
 
 	Vector(const Vector<T> & v) {std::cerr << __FILE__ << ":" << __LINE__ << " Error in order to use this class you must compile OpenFPM with linear algebra support" << std::endl;}
-	Vector(const Vector<T> && v) {std::cerr << __FILE__ << ":" << __LINE__ << " Error in order to use this class you must compile OpenFPM with linear algebra support" << std::endl;}
+	Vector(Vector<T> && v) {std::cerr << __FILE__ << ":" << __LINE__ << " Error in order to use this class you must compile OpenFPM with linear algebra support" << std::endl;}
 	Vector(size_t n) {std::cerr << __FILE__ << ":" << __LINE__ << " Error in order to use this class you must compile OpenFPM with linear algebra support" << std::endl;}
 	Vector() {std::cerr << __FILE__ << ":" << __LINE__ << " Error in order to use this class you must compile OpenFPM with linear algebra support" << std::endl;}
 	Vector(size_t n, size_t n_row_local) {std::cerr << __FILE__ << ":" << __LINE__ << " Error in order to use this class you must compile OpenFPM with linear algebra support" << std::endl;}
-	void resize(size_t row) {std::cerr << __FILE__ << ":" << __LINE__ << " Error in order to use this class you must compile OpenFPM with linear algebra support" << std::endl;}
+	void resize(size_t row, size_t row_n) {std::cerr << __FILE__ << ":" << __LINE__ << " Error in order to use this class you must compile OpenFPM with linear algebra support" << std::endl;}
 	void insert(size_t i, T val) {std::cerr << __FILE__ << ":" << __LINE__ << " Error in order to use this class you must compile OpenFPM with linear algebra support" << std::endl;}
 	inline T & insert(size_t i) {std::cerr << __FILE__ << ":" << __LINE__ << " Error in order to use this class you must compile OpenFPM with linear algebra support" << std::endl;return stub;}
 	inline const T & insert(size_t i) const {std::cerr << __FILE__ << ":" << __LINE__ << " Error in order to use this class you must compile OpenFPM with linear algebra support" << std::endl; return stub;}
@@ -56,7 +57,7 @@ public:
 	void scatter() {std::cerr << __FILE__ << ":" << __LINE__ << " Error in order to use this class you must compile OpenFPM with linear algebra support" << std::endl;}
 	void fromFile(std::string file) {std::cerr << __FILE__ << ":" << __LINE__ << " Error in order to use this class you must compile OpenFPM with linear algebra support" << std::endl;}
 	Vector<T> & operator=(const Vector<T> & v) {std::cerr << __FILE__ << ":" << __LINE__ << " Error in order to use this class you must compile OpenFPM with linear algebra support" << std::endl; return *this;}
-	Vector<T> & operator=(const Vector<T> && v) {std::cerr << __FILE__ << ":" << __LINE__ << " Error in order to use this class you must compile OpenFPM with linear algebra support" << std::endl; return *this;}
+	Vector<T> & operator=(Vector<T> && v) {std::cerr << __FILE__ << ":" << __LINE__ << " Error in order to use this class you must compile OpenFPM with linear algebra support" << std::endl; return *this;}
 	int & getVec() {std::cerr << __FILE__ << ":" << __LINE__ << " Error in order to use this class you must compile OpenFPM with linear algebra support" << std::endl; return stub_i;}
 };
 

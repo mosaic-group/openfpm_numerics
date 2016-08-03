@@ -12,7 +12,6 @@
 
 constexpr unsigned int v[] = {0,1,2};
 constexpr unsigned int P = 3;
-constexpr unsigned int ic = 3;
 
 typedef Field<v[x],lid_nn_3d> v_x;
 typedef Field<v[y],lid_nn_3d> v_y;

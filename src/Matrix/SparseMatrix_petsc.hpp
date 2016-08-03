@@ -8,7 +8,7 @@
 #ifndef OPENFPM_NUMERICS_SRC_MATRIX_SPARSEMATRIX_PETSC_HPP_
 #define OPENFPM_NUMERICS_SRC_MATRIX_SPARSEMATRIX_PETSC_HPP_
 
-
+#include "util/petsc_util.hpp"
 #include "Vector/map_vector.hpp"
 #include <boost/mpl/int.hpp>
 #include <petscmat.h>
@@ -213,7 +213,8 @@ public:
 	~SparseMatrix()
 	{
 		// Destroy the matrix
-		PETSC_SAFE_CALL(MatDestroy(&mat));
+		if (is_openfpm_init() == true)
+		{PETSC_SAFE_CALL(MatDestroy(&mat));}
 	}
 
 	/*! \brief Get the Matrix triplets bugger
