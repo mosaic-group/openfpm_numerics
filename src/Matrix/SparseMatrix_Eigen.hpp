@@ -259,10 +259,8 @@ public:
 	    	return false;
 
 	    // Create the HeapMemory and the ExtPreAlloc memory
-	    std::vector<size_t> pap_prp;
-	    pap_prp.push_back(sz);
 	    HeapMemory pmem;
-		ExtPreAlloc<HeapMemory> mem(pap_prp,pmem);
+		ExtPreAlloc<HeapMemory> mem(sz,pmem);
 
 		// read
 	    input.read((char *)pmem.getPointer(), sz);
