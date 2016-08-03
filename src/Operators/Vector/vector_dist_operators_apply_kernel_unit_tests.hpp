@@ -351,9 +351,6 @@ BOOST_AUTO_TEST_CASE( vector_dist_operators_apply_kernel_test )
 	// ghost
 	Ghost<3,float> ghost(0.05);
 
-	// vector type
-	typedef vector_dist<3,float,aggregate<float,float,float,VectorS<3,float>,VectorS<3,float>,VectorS<3,float>,float>> vtype;
-
 	vector_dist<3,float,aggregate<float,float,float,VectorS<3,float>,VectorS<3,float>,VectorS<3,float>,float>> vd(512,box,bc,ghost);
 
 	auto vA = getV<A>(vd);

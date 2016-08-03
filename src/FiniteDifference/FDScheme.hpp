@@ -466,7 +466,7 @@ public:
                 auto it = g_map.getSubDomainIterator(start_k,stop_k);
 
                 if (it.isNext() == true)
-                        increment++;
+                        increment = true;
         }
 
         // add padding to start and stop

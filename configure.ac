@@ -26,7 +26,7 @@ m4_ifdef([AX_SUITESPARSE],,[m4_include([m4/ax_suitesparse.m4])])
 m4_ifdef([AX_EIGEN],,[m4_include([m4/ax_eigen.m4])])
 m4_ifdef([AX_LIB_HDF5],,[m4_include([m4/ax_lib_hdf5.m4])])
 m4_ifdef([AX_LIB_PETSC],,[m4/ax_petsc_lib.m4])
-
+m4_ifdef([AX_LIB_HILBERT],,[m4/ax_lib_hilbert.m4])
 
 case $host_os in
    *darwin*|*macosx*)
@@ -133,9 +133,14 @@ AX_LIB_PETSC()
 
 ## Check for quadmath
 
-AC_CHECK_LIB(quadmath, sinq, [AC_DEFINE(HAVE_LIBQUADMATH,[],[Have quad math lib])
-				LIBQUADMATH=" -lquadmath "
+AC_LANG_PUSH([C++])
+
+AC_CHECK_HEADER(quadmath.h, , [])
+AC_CHECK_LIB(quadmath, sinq, [ AC_CHECK_HEADER( quadmath.h ,[AC_DEFINE(HAVE_LIBQUADMATH,[],[Have quad math lib])
+				LIBQUADMATH=" -lquadmath "],[])
 				], [])
+
+AC_LANG_POP([C++])
 
 ###### RT runtime lib
 
@@ -211,8 +216,6 @@ if test x"$se_class3" = x"yes"; then
         AC_DEFINE([SE_CLASS3],[],[Security enhancement class 3])
 fi
 
-###### Check for action on error
-
 action_on_e=continue
 AC_ARG_WITH([action-on-error],
              AS_HELP_STRING([--with-action-on-error=stop,throw,continue],
@@ -282,16 +285,21 @@ AX_EIGEN([],[])
 
 ###### Checking for compiler flags -fext-numeric-literals
 
-my_save_cflags="$CFLAGS"
-CFLAGS=-fext-numeric-literals
+AC_LANG_PUSH([C++])
+
+my_save_cflags="$CXXFLAGS"
+CXXFLAGS=-fext-numeric-literals
 AC_MSG_CHECKING([whether CXX supports -fext-numeric-literals])
 AC_COMPILE_IFELSE([AC_LANG_PROGRAM([])],
     [AC_MSG_RESULT([yes])]
     [AM_CXXFLAGS=-fext-numeric-literals],
     [AC_MSG_RESULT([no])]
 )
-CFLAGS="$my_save_cflags"
+AC_LANG_POP([C++])
+CXXFLAGS="$my_save_cflags"
 AC_SUBST([AM_CXXFLAGS])
+
+
 
 ####### Checking for GPU support
 

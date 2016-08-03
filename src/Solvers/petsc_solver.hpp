@@ -105,19 +105,8 @@ class petsc_solver<double>
 	// Temporal variable used for calculation of static members
 	size_t tmp;
 
-	// Solver used
-//	char s_type[32];
-
-	// Tollerance set by the solver
-	PetscScalar tol;
-
 	// The full set of solvers
 	openfpm::vector<std::string> solvs;
-
-	// The full set of preconditionses for simple parallel solvers
-
-	// PCType pre-conditioner type
-	PCType pc;
 
 	bool try_solve = false;
 
