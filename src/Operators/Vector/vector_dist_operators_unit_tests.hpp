@@ -631,15 +631,15 @@ template <typename vector> void fill_values(vector & v)
 		v.getPos(p)[1] = (float)rand() / RAND_MAX;
 		v.getPos(p)[2] = (float)rand() / RAND_MAX;
 
-		v.template getProp<A>(p) = fabs(sin(p.getKey()+1));
-		v.template getProp<B>(p) = fabs(sin(2.0*p.getKey()+3));
-		v.template getProp<C>(p) = fabs(sin(3.0*p.getKey()+18));
+		v.template getProp<A>(p) = fabs(sin(p.getKey()+1.0));
+		v.template getProp<B>(p) = fabs(sin(2.0*p.getKey()+3.0));
+		v.template getProp<C>(p) = fabs(sin(3.0*p.getKey()+18.0));
 
 		for (size_t k = 0 ; k < 3 ; k++)
 		{
-			v.template getProp<VA>(p)[k] = fabs(sin(p.getKey()+1+k));
-			v.template getProp<VB>(p)[k] = fabs(sin(2.0*p.getKey()+1+3));
-			v.template getProp<VC>(p)[k] = fabs(sin(3.0*p.getKey()+1+k));
+			v.template getProp<VA>(p)[k] = fabs(sin(p.getKey()+1.0+k));
+			v.template getProp<VB>(p)[k] = fabs(sin(2.0*p.getKey()+1.0+3.0));
+			v.template getProp<VC>(p)[k] = fabs(sin(3.0*p.getKey()+1.0+k));
 		}
 
 		++it;
