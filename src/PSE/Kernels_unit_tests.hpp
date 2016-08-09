@@ -52,6 +52,8 @@ BOOST_AUTO_TEST_CASE( pse_ker )
 		y.last().add(err.linf_error);
 #endif
 
+#endif
+
 		PSE_test<double,Lap_PSE<1,double,2>>(i,2,err);
 		y.last().add(err.linf_error);
 
@@ -67,14 +69,15 @@ BOOST_AUTO_TEST_CASE( pse_ker )
 		//////// Order 4 /////////////
 
 #ifdef HAVE_LIBQUADMATH
+
 		PSE_test<boost::multiprecision::float128,Lap_PSE<1,boost::multiprecision::float128,4>>(i,2,err);
 		y.last().add(err.linf_error);
 
 		PSE_test<boost::multiprecision::float128,Lap_PSE<1,boost::multiprecision::float128,4>>(i,4,err);
 		y.last().add(err.linf_error);
 
-
 		//////// Order 6 /////////////
+
 
 		PSE_test<boost::multiprecision::float128,Lap_PSE<1,boost::multiprecision::float128,6>>(i,2,err);
 		y.last().add(err.linf_error);
@@ -82,7 +85,9 @@ BOOST_AUTO_TEST_CASE( pse_ker )
 		PSE_test<boost::multiprecision::float128,Lap_PSE<1,boost::multiprecision::float128,6>>(i,4,err);
 		y.last().add(err.linf_error);
 
+
 		//////// Order 8 /////////////
+
 
 		PSE_test<boost::multiprecision::float128,Lap_PSE<1,boost::multiprecision::float128,8>>(i,8,err);
 		y.last().add(err.linf_error);

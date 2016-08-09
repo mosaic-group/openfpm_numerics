@@ -283,6 +283,11 @@ AX_SUITESPARSE([],[])
 
 AX_EIGEN([],[])
 
+###### Checking for libquadmath
+
+AC_CHECK_LIB(quadmath, sinq, [ LIBQUADMATH=-lquadmath  ], [ LIBQUADMATH= ])
+AC_SUBST(LIBQUADMATH)
+
 ###### Checking for compiler flags -fext-numeric-literals
 
 AC_LANG_PUSH([C++])
