@@ -204,7 +204,7 @@ template<typename solver_type,typename lid_nn_3d> void lid_driven_cavity_3d()
 	std::string s = std::string(demangle(typeid(solver_type).name()));
 	s += "_";
 
-	g_dist.write(s + "lid_driven_cavity_3d_p" + std::to_string(v_cl.getProcessingUnits()));
+	g_dist.write(s + "lid_driven_cavity_3d_p" + std::to_string(v_cl.getProcessingUnits()) + "_grid");
 
 #ifdef HAVE_OSX
 
@@ -226,6 +226,9 @@ template<typename solver_type,typename lid_nn_3d> void lid_driven_cavity_3d()
 	#endif
 
 #endif
+
+    std::cout << "File1: " << file1 << std::endl;
+    std::cout << "File2: " << file2 << std::endl;
 
 
 	// Check that match

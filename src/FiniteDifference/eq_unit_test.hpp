@@ -233,7 +233,7 @@ template<typename solver_type,typename lid_nn> void lid_driven_cavity_2d()
 
 	//! [Copy the solution to grid]
 
-	g_dist.write(s + "lid_driven_cavity_p" + std::to_string(v_cl.getProcessingUnits()));
+	g_dist.write(s + "lid_driven_cavity_p" + std::to_string(v_cl.getProcessingUnits()) + "_grid");
 
 #ifdef HAVE_OSX
 
@@ -246,6 +246,9 @@ template<typename solver_type,typename lid_nn> void lid_driven_cavity_2d()
 	std::string file2 = s + "lid_driven_cavity_p" + std::to_string(v_cl.getProcessingUnits()) + "_grid_" + std::to_string(v_cl.getProcessUnitID()) + ".vtk";
 
 #endif
+
+    std::cout << "File1: " << file1 << std::endl;
+    std::cout << "File2: " << file2 << std::endl;
 
 	// Check that match
 	bool test = compare(file1,file2);
