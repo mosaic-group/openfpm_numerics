@@ -52,8 +52,6 @@ BOOST_AUTO_TEST_CASE( pse_ker )
 		y.last().add(err.linf_error);
 #endif
 
-#endif
-
 		PSE_test<double,Lap_PSE<1,double,2>>(i,2,err);
 		y.last().add(err.linf_error);
 
