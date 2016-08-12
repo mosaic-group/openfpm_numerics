@@ -32,6 +32,11 @@ public:
 	{
 		std::cerr << "Error Umfpack only support double precision, and int ad id type" << "/n";
 	}
+
+	void best_solve()
+	{
+		std::cerr << "Error Umfpack only support double precision, and int ad id type" << "/n";
+	}
 };
 
 
@@ -130,6 +135,11 @@ public:
 	{
 		std::cerr << __FILE__ << ":" << __LINE__ << " Error Umfpack only support double precision" << "/n";
 	}
+
+	void best_solve()
+	{
+		std::cerr << __FILE__ << ":" << __LINE__ << " Error Umfpack only support double precision" << "/n";
+	}
 };
 
 
@@ -146,6 +156,11 @@ public:
 		Vector<double> x;
 
 		return x;
+	}
+
+	void best_solve()
+	{
+		std::cerr << __FILE__ << ":" << __LINE__ << " Error in order to use umfpack you must compile OpenFPM with linear algebra support" << "/n";
 	}
 };
 
