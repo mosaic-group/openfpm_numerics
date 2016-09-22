@@ -49,14 +49,6 @@ fun_name(const vector_dist_expression_op<exp1,exp2_,op1> & va)\
 	return exp_sum;\
 }\
 \
-template<typename exp1, typename exp2_, unsigned int op1>\
-inline vector_dist_expression_op<vector_dist_expression<0,double>,void,OP_ID>\
-fun_name(double d)\
-{\
-	vector_dist_expression_op<vector_dist_expression<0,double>,void,OP_ID> exp_sum( (vector_dist_expression<0,double>(d)) );\
-\
-	return exp_sum;\
-}\
 \
 template<unsigned int prp1, typename v1>\
 inline vector_dist_expression_op<vector_dist_expression<prp1,v1>,void,OP_ID>\
