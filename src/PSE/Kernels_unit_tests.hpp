@@ -9,7 +9,7 @@
 #define OPENFPM_NUMERICS_SRC_PSE_KERNELS_UNIT_TESTS_HPP_
 
 #include "PSE/Kernels_test_util.hpp"
-#if defined(__GNUG__) && !defined(__clang__)
+#ifdef HAVE_LIBQUADMATH
 #include <boost/multiprecision/float128.hpp>
 #endif
 
@@ -27,7 +27,12 @@ BOOST_AUTO_TEST_CASE( pse_ker )
 	openfpm::vector<openfpm::vector<double>> y_res;
 
 	// Load the result of the test
-	y_res.load("test_data/PSE_convergence");
+
+#ifdef HAVE_LIBQUADMATH
+	y_res.load("test/PSE_convergence");
+#else
+	y_res.load("test/PSE_convergence_osx");
+#endif
 
 	// Every time increase the number of particles by 2
 	for (size_t i = 250 ; i <= 2097152000 ; i*=2)
@@ -38,8 +43,7 @@ BOOST_AUTO_TEST_CASE( pse_ker )
 
 		/////// Order 2 //////////////
 
-
-#if defined(__GNUG__) && !defined(__clang__)
+#ifdef HAVE_LIBQUADMATH
 
 		PSE_test<boost::multiprecision::float128,Lap_PSE<1,boost::multiprecision::float128,2>>(i,2,err);
 		y.last().add(err.linf_error);
@@ -63,8 +67,7 @@ BOOST_AUTO_TEST_CASE( pse_ker )
 
 		//////// Order 4 /////////////
 
-
-#if defined(__GNUG__) && !defined(__clang__)
+#ifdef HAVE_LIBQUADMATH
 
 		PSE_test<boost::multiprecision::float128,Lap_PSE<1,boost::multiprecision::float128,4>>(i,2,err);
 		y.last().add(err.linf_error);
@@ -100,7 +103,24 @@ BOOST_AUTO_TEST_CASE( pse_ker )
 	{
 		for (size_t j = 0 ; j < y.get(i).size(); j++)
 		{
-			BOOST_REQUIRE_CLOSE(y.get(i).get(j),y_res.get(i).get(j),0.01);
+			double c1 = y.get(i).get(j);
+			double c2 = y_res.get(i).get(j);
+
+#ifdef HAVE_LIBQUADMATH
+
+			// In divergent mode the system is too sensitive
+			// to compiler/hardware differences disable them
+			if (j != 4 && j != 5)
+			{BOOST_REQUIRE_CLOSE(c1,c2,3.0);}
+
+#else
+
+			// In divergent mode the system is too sensitive
+			// to compiler/hardware differences disable them
+			if (j != 2 && j != 3)
+			{BOOST_REQUIRE_CLOSE(c1,c2,3.0);}
+
+#endif
 		}
 	}
 }

@@ -11,12 +11,12 @@
 #include <type_traits>
 #include "util/mul_array_extents.hpp"
 #include <fstream>
-#include "Vector_eigen_util.hpp"
 #include "Grid/staggered_dist_grid.hpp"
 #include "Space/Ghost.hpp"
 #include "FiniteDifference/util/common.hpp"
 #include <boost/mpl/vector_c.hpp>
 #include <unordered_map>
+#include "Vector_util.hpp"
 
 #define EIGEN_RVAL 1
 
@@ -68,7 +68,7 @@ public:
 };
 
 template<typename T>
-class Vector<T,Eigen::Matrix<T, Eigen::Dynamic, 1>>
+class Vector<T, EIGEN_BASE>
 {
 	mutable Eigen::Matrix<T, Eigen::Dynamic, 1> v;
 
@@ -89,7 +89,7 @@ class Vector<T,Eigen::Matrix<T, Eigen::Dynamic, 1>>
 	mutable openfpm::vector<size_t> sz;
 
 
-	/*! \brief Here we collect the full matrix on master
+	/*! \brief Here we collect the full vector on master
 	 *
 	 */
 	void collect() const
@@ -162,7 +162,7 @@ public:
 	 */
 	Vector(size_t n)
 	{
-		resize(n);
+		resize(n,0);
 	}
 
 	/*! \brief Create a vector with 0 elements
@@ -175,9 +175,10 @@ public:
 	/*! \brief Resize the Vector
 	 *
 	 * \param row numbers of row
+	 * \param l_row unused
 	 *
 	 */
-	void resize(size_t row)
+	void resize(size_t row, size_t l_row)
 	{
 		v.resize(row);
 	}

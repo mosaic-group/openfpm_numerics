@@ -8,7 +8,7 @@
 #ifndef OPENFPM_NUMERICS_SRC_FINITEDIFFERENCE_EQ_UNIT_TEST_3D_HPP_
 #define OPENFPM_NUMERICS_SRC_FINITEDIFFERENCE_EQ_UNIT_TEST_3D_HPP_
 
-
+#include "config.h"
 #include "Laplacian.hpp"
 #include "FiniteDifference/eq.hpp"
 #include "FiniteDifference/sum.hpp"
@@ -24,7 +24,7 @@ BOOST_AUTO_TEST_SUITE( eq_test_suite_3d )
 
 //!
 
-struct lid_nn_3d
+struct lid_nn_3d_eigen
 {
 	// dimensionaly of the equation ( 3D problem ...)
 	static const unsigned int dims = 3;
@@ -50,7 +50,36 @@ struct lid_nn_3d
 	static const int grid_type = STAGGERED_GRID;
 };
 
-const bool lid_nn_3d::boundary[] = {NON_PERIODIC,NON_PERIODIC,NON_PERIODIC};
+struct lid_nn_3d_petsc
+{
+	// dimensionaly of the equation ( 3D problem ...)
+	static const unsigned int dims = 3;
+	// number of fields in the system
+	static const unsigned int nvar = 4;
+
+	// boundary at X and Y
+	static const bool boundary[];
+
+	// type of space float, double, ...
+	typedef float stype;
+
+	// type of base grid
+	typedef grid_dist_id<3,float,aggregate<float[3],float>,CartDecomposition<3,float>> b_grid;
+
+	// type of SparseMatrix for the linear solver
+	typedef SparseMatrix<double,int,PETSC_BASE> SparseMatrix_type;
+
+	// type of Vector for the linear solver
+	typedef Vector<double,PETSC_BASE> Vector_type;
+
+	// Define the underline grid is staggered
+	static const int grid_type = STAGGERED_GRID;
+};
+
+//typedef lid_nn_3d_eigen lid_nn_3d;
+
+const bool lid_nn_3d_eigen::boundary[] = {NON_PERIODIC,NON_PERIODIC,NON_PERIODIC};
+const bool lid_nn_3d_petsc::boundary[] = {NON_PERIODIC,NON_PERIODIC,NON_PERIODIC};
 
 // Constant Field
 struct eta
@@ -60,76 +89,13 @@ struct eta
 	static float val()	{return 1.0;}
 };
 
-// Model the equations
+//#define SYSEQ_TYPE lid_nn_3d_eigen;
+//#include "Equations/stoke_flow_eq_3d.hpp"
 
-constexpr unsigned int v[] = {0,1,2};
-constexpr unsigned int P = 3;
-constexpr unsigned int ic = 3;
-
-typedef Field<v[x],lid_nn_3d> v_x;
-typedef Field<v[y],lid_nn_3d> v_y;
-typedef Field<v[z],lid_nn_3d> v_z;
-typedef Field<P,lid_nn_3d> Prs;
-
-// Eq1 V_x
-
-typedef mul<eta,Lap<v_x,lid_nn_3d>,lid_nn_3d> eta_lap_vx;
-typedef D<x,Prs,lid_nn_3d> p_x;
-typedef minus<p_x,lid_nn_3d> m_p_x;
-typedef sum<eta_lap_vx,m_p_x,lid_nn_3d> vx_eq;
-
-// Eq2 V_y
-
-typedef mul<eta,Lap<v_y,lid_nn_3d>,lid_nn_3d> eta_lap_vy;
-typedef D<y,Prs,lid_nn_3d> p_y;
-typedef minus<p_y,lid_nn_3d> m_p_y;
-typedef sum<eta_lap_vy,m_p_y,lid_nn_3d> vy_eq;
-
-// Eq3 V_z
-
-typedef mul<eta,Lap<v_z,lid_nn_3d>,lid_nn_3d> eta_lap_vz;
-typedef D<z,Prs,lid_nn_3d> p_z;
-typedef minus<p_z,lid_nn_3d> m_p_z;
-typedef sum<eta_lap_vz,m_p_z,lid_nn_3d> vz_eq;
-
-// Eq4 Incompressibility
-
-typedef D<x,v_x,lid_nn_3d,FORWARD> dx_vx;
-typedef D<y,v_y,lid_nn_3d,FORWARD> dy_vy;
-typedef D<z,v_z,lid_nn_3d,FORWARD> dz_vz;
-typedef sum<dx_vx,dy_vy,dz_vz,lid_nn_3d> ic_eq;
-
-
-// Directional Avg
-typedef Avg<x,v_y,lid_nn_3d> avg_x_vy;
-typedef Avg<z,v_y,lid_nn_3d> avg_z_vy;
-
-typedef Avg<y,v_x,lid_nn_3d> avg_y_vx;
-typedef Avg<z,v_x,lid_nn_3d> avg_z_vx;
-
-typedef Avg<y,v_z,lid_nn_3d> avg_y_vz;
-typedef Avg<x,v_z,lid_nn_3d> avg_x_vz;
-
-// Directional Avg
-
-typedef Avg<x,v_y,lid_nn_3d,FORWARD> avg_x_vy_f;
-typedef Avg<z,v_y,lid_nn_3d,FORWARD> avg_z_vy_f;
-
-typedef Avg<y,v_x,lid_nn_3d,FORWARD> avg_y_vx_f;
-typedef Avg<z,v_x,lid_nn_3d,FORWARD> avg_z_vx_f;
-
-typedef Avg<y,v_z,lid_nn_3d,FORWARD> avg_y_vz_f;
-typedef Avg<x,v_z,lid_nn_3d,FORWARD> avg_x_vz_f;
-
-#define EQ_1 0
-#define EQ_2 1
-#define EQ_3 2
-#define EQ_4 3
-
-// Lid driven cavity, uncompressible fluid
-
-BOOST_AUTO_TEST_CASE(lid_driven_cavity)
+template<typename solver_type,typename lid_nn_3d> void lid_driven_cavity_3d()
 {
+	#include "Equations/stoke_flow_eq_3d.hpp"
+
 	Vcluster & v_cl = create_vcluster();
 
 	if (v_cl.getProcessingUnits() > 3)
@@ -141,7 +107,7 @@ BOOST_AUTO_TEST_CASE(lid_driven_cavity)
 	// Ghost
 	Ghost<3,float> g(0.01);
 
-	long int sz[] = {32,16,16};
+	long int sz[] = {36,12,12};
 	size_t szu[3];
 	szu[0] = (size_t)sz[0];
 	szu[1] = (size_t)sz[1];
@@ -228,40 +194,56 @@ BOOST_AUTO_TEST_CASE(lid_driven_cavity)
 	fd.impose(v_y(), 0.0, EQ_2, {-1,-1,-1},{sz[0]-1,-1,sz[2]-1});
 	fd.impose(v_z(), 0.0, EQ_3, {-1,-1,-1},{sz[0]-1,sz[1]-1,-1});
 
-	auto x = umfpack_solver<double>::solve(fd.getA(),fd.getB());
+	solver_type solver;
+	solver.best_solve();
+	auto x = solver.solve(fd.getA(),fd.getB());
 
 	// Bring the solution to grid
-	fd.copy<velocity,pressure>(x,{0,0},{sz[0]-1,sz[1]-1,sz[2]-1},g_dist);
+	fd.template copy<velocity,pressure>(x,{0,0},{sz[0]-1,sz[1]-1,sz[2]-1},g_dist);
 
-	g_dist.write("lid_driven_cavity_3d_p" + std::to_string(v_cl.getProcessingUnits()));
+	std::string s = std::string(demangle(typeid(solver_type).name()));
+	s += "_";
 
-	if (v_cl.getProcessUnitID() == 0)
-	{
-		if (v_cl.getProcessingUnits() == 1)
-		{
-			// Check that match
-			bool test = compare("lid_driven_cavity_3d_p1_grid_0_test.vtk","lid_driven_cavity_3d_p1_grid_0.vtk");
-			BOOST_REQUIRE_EQUAL(test,true);
-		}
-		else if (v_cl.getProcessingUnits() == 2)
-		{
-			// Check that match
-			bool test = compare("lid_driven_cavity_p2_grid_0_test.vtk","lid_driven_cavity_p2_grid_0.vtk");
-			BOOST_REQUIRE_EQUAL(test,true);
-			test = compare("lid_driven_cavity_p2_grid_1_test.vtk","lid_driven_cavity_p2_grid_1.vtk");
-			BOOST_REQUIRE_EQUAL(test,true);
-		}
-		else if (v_cl.getProcessingUnits() == 3)
-		{
-			// Check that match
-			bool test = compare("lid_driven_cavity_p3_grid_0_test.vtk","lid_driven_cavity_p3_grid_0.vtk");
-			BOOST_REQUIRE_EQUAL(test,true);
-			test = compare("lid_driven_cavity_p3_grid_1_test.vtk","lid_driven_cavity_p3_grid_1.vtk");
-			BOOST_REQUIRE_EQUAL(test,true);
-			test = compare("lid_driven_cavity_p3_grid_2_test.vtk","lid_driven_cavity_p3_grid_2.vtk");
-			BOOST_REQUIRE_EQUAL(test,true);
-		}
-	}
+	g_dist.write(s + "lid_driven_cavity_3d_p" + std::to_string(v_cl.getProcessingUnits()) + "_grid");
+
+#ifdef HAVE_OSX
+
+        std::string file1 = std::string("test/") + s + "lid_driven_cavity_3d_p" + std::to_string(v_cl.getProcessingUnits()) + "_grid_" + std::to_string(v_cl.getProcessUnitID()) + "_test_osx.vtk";
+        std::string file2 = s + "lid_driven_cavity_3d_p" + std::to_string(v_cl.getProcessingUnits()) + "_grid_" + std::to_string(v_cl.getProcessUnitID()) + ".vtk";
+
+#else
+
+	#if __GNUC__ == 5
+
+        std::string file1 = std::string("test/") + s + "lid_driven_cavity_3d_p" + std::to_string(v_cl.getProcessingUnits()) + "_grid_" + std::to_string(v_cl.getProcessUnitID()) + "_test_GCC5.vtk";
+        std::string file2 = s + "lid_driven_cavity_3d_p" + std::to_string(v_cl.getProcessingUnits()) + "_grid_" + std::to_string(v_cl.getProcessUnitID()) + ".vtk";
+
+	#else
+
+        std::string file1 = std::string("test/") + s + "lid_driven_cavity_3d_p" + std::to_string(v_cl.getProcessingUnits()) + "_grid_" + std::to_string(v_cl.getProcessUnitID()) + "_test_GCC4.vtk";
+        std::string file2 = s + "lid_driven_cavity_3d_p" + std::to_string(v_cl.getProcessingUnits()) + "_grid_" + std::to_string(v_cl.getProcessUnitID()) + ".vtk";
+
+	#endif
+
+#endif
+
+    std::cout << "File1: " << file1 << std::endl;
+    std::cout << "File2: " << file2 << std::endl;
+
+
+	// Check that match
+	bool test = compare(file1,file2);
+	BOOST_REQUIRE_EQUAL(test,true);
+}
+
+// Lid driven cavity, uncompressible fluid
+
+BOOST_AUTO_TEST_CASE(lid_driven_cavity)
+{
+	lid_driven_cavity_3d<umfpack_solver<double>,lid_nn_3d_eigen>();
+#ifdef HAVE_PETSC
+	lid_driven_cavity_3d<petsc_solver<double>,lid_nn_3d_petsc>();
+#endif
 }
 
 BOOST_AUTO_TEST_SUITE_END()

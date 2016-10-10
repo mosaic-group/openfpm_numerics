@@ -74,15 +74,15 @@ public:
  *
  */
 template<typename T, typename id_t>
-class SparseMatrix<T,id_t,Eigen::SparseMatrix<T,0,id_t>>
+class SparseMatrix<T,id_t,EIGEN_BASE>
 {
 public:
 
 	//! Triplet implementation id
-	typedef boost::mpl::int_<EIGEN_TRIPLET> triplet_impl;
+	typedef boost::mpl::int_<EIGEN_BASE> triplet_impl;
 
 	//! Triplet type
-	typedef triplet<T,EIGEN_TRIPLET> triplet_type;
+	typedef triplet<T,EIGEN_BASE> triplet_type;
 
 private:
 
@@ -139,18 +139,6 @@ public:
 	{
 	}
 
-	/*! \brief Create a Matrix from a set of triplet
-	 *
-	 * \param N1 number of row
-	 * \param N2 number of colums
-	 * \param trpl triplet set
-	 *
-	 */
-	SparseMatrix(size_t N1, size_t N2, const openfpm::vector<Eigen::Triplet<T,id_t>> & trpl)
-	:mat(N1,N2)
-	{
-		this->trpl = trpl;
-	}
 
 	/*! \brief Create an empty Matrix
 	 *
@@ -200,7 +188,7 @@ public:
 	 * \param col number of colums
 	 *
 	 */
-	void resize(size_t row, size_t col)
+	void resize(size_t row, size_t col,size_t l_row, size_t l_col)
 	{
 		mat.resize(row,col);
 	}
@@ -224,16 +212,13 @@ public:
 	 */
 	bool save(const std::string & file) const
 	{
-		std::vector<size_t> pap_prp;
+		size_t pap_prp;
 
 		Packer<decltype(trpl),HeapMemory>::packRequest(trpl,pap_prp);
 
-		// Calculate how much preallocated memory we need to pack all the objects
-		size_t req = ExtPreAlloc<HeapMemory>::calculateMem(pap_prp);
-
 		// allocate the memory
 		HeapMemory pmem;
-		pmem.allocate(req);
+		pmem.allocate(pap_prp);
 		ExtPreAlloc<HeapMemory> mem(pap_prp,pmem);
 
 		//Packing
@@ -274,10 +259,8 @@ public:
 	    	return false;
 
 	    // Create the HeapMemory and the ExtPreAlloc memory
-	    std::vector<size_t> pap_prp;
-	    pap_prp.push_back(sz);
 	    HeapMemory pmem;
-		ExtPreAlloc<HeapMemory> mem(pap_prp,pmem);
+		ExtPreAlloc<HeapMemory> mem(sz,pmem);
 
 		// read
 	    input.read((char *)pmem.getPointer(), sz);

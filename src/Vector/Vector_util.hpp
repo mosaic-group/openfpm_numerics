@@ -5,11 +5,12 @@
  *      Author: i-bird
  */
 
-#ifndef OPENFPM_NUMERICS_SRC_VECTOR_VECTOR_EIGEN_UTIL_HPP_
-#define OPENFPM_NUMERICS_SRC_VECTOR_VECTOR_EIGEN_UTIL_HPP_
+#ifndef OPENFPM_NUMERICS_SRC_VECTOR_VECTOR_UTIL_HPP_
+#define OPENFPM_NUMERICS_SRC_VECTOR_VECTOR_UTIL_HPP_
 
 #include "Grid/grid_dist_key.hpp"
 #include "Space/Shape/HyperCube.hpp"
+#include "util/mul_array_extents.hpp"
 
 /*!	\brief Copy scalar elements
  *
@@ -71,16 +72,16 @@ struct copy_ele
 	//! destination grid
 	S & grid_dst;
 
-	//! source element inside the Eigen vector
+	//! source element inside the vector
 	size_t lin_id;
 
 	//! counter
 	size_t prp_id;
 
-	//! It is basically the number of grid points the Eigen vector has inside
+	//! It is basically the number of grid points the vector has inside
 	size_t gs_size;
 
-	//! source Eigen vector
+	//! source vector
 	const Ev & x;
 
 	/*! \brief constructor
@@ -89,7 +90,7 @@ struct copy_ele
 	 *
 	 * \param key destination position
 	 * \param grid_dst grid destination
-	 * \param v Source Eigen vector
+	 * \param v Source vector
 	 *
 	 */
 	inline copy_ele(const grid_dist_key_dx<Eqs_sys::dims> & key, S & grid_dst, const Ev & x, size_t lin_id, size_t gs_size)
@@ -121,4 +122,4 @@ struct copy_ele
 };
 
 
-#endif /* OPENFPM_NUMERICS_SRC_VECTOR_VECTOR_EIGEN_UTIL_HPP_ */
+#endif /* OPENFPM_NUMERICS_SRC_VECTOR_VECTOR_UTIL_HPP_ */

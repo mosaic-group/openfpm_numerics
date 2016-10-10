@@ -24,9 +24,15 @@ m4_ifdef([AX_BLAS],,[m4_include([m4/ax_blas.m4])])
 m4_ifdef([AX_LAPACK],,[m4_include([m4/ax_lapack.m4])])
 m4_ifdef([AX_SUITESPARSE],,[m4_include([m4/ax_suitesparse.m4])])
 m4_ifdef([AX_EIGEN],,[m4_include([m4/ax_eigen.m4])])
-m4_ifdef([AX_LIB_HDF5],,[m4_include([m4/ax_lib_hdf5.m4])]])
+m4_ifdef([AX_LIB_HDF5],,[m4_include([m4/ax_lib_hdf5.m4])])
+m4_ifdef([AX_LIB_PETSC],,[m4/ax_petsc_lib.m4])
+m4_ifdef([AX_LIB_HILBERT],,[m4/ax_lib_hilbert.m4])
 
 case $host_os in
+   *darwin*|*macosx*)
+        CXXFLAGS+=" --std=c++11 "
+        AC_DEFINE([HAVE_OSX],[],[We have OSX])
+        ;;
    *cygwin*)
         # Do something specific for cygwin
         CXXFLAGS+=" --std=gnu++11 "
@@ -107,12 +113,10 @@ IMMDX_LIB_METIS([],[echo "Cannot detect metis, use the --with-metis option if it
 IMMDX_LIB_PARMETIS([],[echo "Cannot detect parmetis, use the --with-parmetis option if it is not installed in the default location"
                     exit 203])
 
-#########
-
 ## Check for HDF5
 
 AX_LIB_HDF5([parallel])
-
+        
 if test x"$with_hdf5" = x"no"; then
     echo "Cannot detect hdf5, use the --with-hdf5 option if it is not installed in the default location"
     exit 207
@@ -121,11 +125,22 @@ fi
 
 ##########
 
+## Check for PETSC
+
+AX_LIB_PETSC()
+
+#########
+
 ## Check for quadmath
 
-AC_CHECK_LIB(quadmath, sinq, [AC_DEFINE(HAVE_LIBQUADMATH,[],[Have quad math lib])
-				LIBQUADMATH=" -lquadmath "
+AC_LANG_PUSH([C++])
+
+AC_CHECK_HEADER(quadmath.h, , [])
+AC_CHECK_LIB(quadmath, sinq, [ AC_CHECK_HEADER( quadmath.h ,[AC_DEFINE(HAVE_LIBQUADMATH,[],[Have quad math lib])
+				LIBQUADMATH=" -lquadmath "],[])
 				], [])
+
+AC_LANG_POP([C++])
 
 ###### RT runtime lib
 
@@ -133,10 +148,16 @@ AC_CHECK_LIB(rt, clock_gettime, [AC_DEFINE([HAVE_CLOCK_GETTIME],[],[Have clock t
                                  OPT_LIBS="$OPT_LIBS -lrt"
                                 ])
 
+##########
+
+## Check for LIBHILBERT
+
+AX_LIB_HILBERT([],[echo "Cannot detect libhilbert, use the --with-libhilbert option if it is not installed in the default location"
+                    exit 210])
 
 ####### include OpenFPM_numerics include path"
 
-INCLUDES_PATH+=" -I/usr/local/include -I. -Iconfig -I../../openfpm_devices/src -I../../openfpm_data/src -I../../openfpm_io/src -I../../openfpm_vcluster/src -I../../src"
+INCLUDES_PATH+=" -I/usr/local/include -I. -I../../openfpm_devices/src -I../../openfpm_data/src -I../../openfpm_io/src -I../../openfpm_vcluster/src -I../../src"
 
 ###### Check for se-class1
 
@@ -195,8 +216,6 @@ if test x"$se_class3" = x"yes"; then
         AC_DEFINE([SE_CLASS3],[],[Security enhancement class 3])
 fi
 
-###### Check for action on error
-
 action_on_e=continue
 AC_ARG_WITH([action-on-error],
              AS_HELP_STRING([--with-action-on-error=stop,throw,continue],
@@ -252,21 +271,17 @@ AC_SUBST(BOOST_CPPFLAGS)
 
 ###### Checking for OpenBLAS
 
-AX_BLAS([],[echo "blas not found"
-                    exit 204])
+AX_BLAS([],[])
 
-AX_LAPACK([],[echo "lapack not found"
-                    exit 204])
+AX_LAPACK([],[])
 
 ###### Checking for SUITESPARSE
 
-AX_SUITESPARSE([],[echo "suitesparse not found"
-                    exit 205])
+AX_SUITESPARSE([],[])
 
 ###### Checking for EIGEN
 
-AX_EIGEN([],[echo "eigen not found"
-                    exit 206])
+AX_EIGEN([],[])
 
 ###### Checking for libquadmath
 
@@ -275,16 +290,21 @@ AC_SUBST(LIBQUADMATH)
 
 ###### Checking for compiler flags -fext-numeric-literals
 
-my_save_cflags="$CFLAGS"
-CFLAGS=-fext-numeric-literals
+AC_LANG_PUSH([C++])
+
+my_save_cflags="$CXXFLAGS"
+CXXFLAGS=-fext-numeric-literals
 AC_MSG_CHECKING([whether CXX supports -fext-numeric-literals])
 AC_COMPILE_IFELSE([AC_LANG_PROGRAM([])],
     [AC_MSG_RESULT([yes])]
     [AM_CXXFLAGS=-fext-numeric-literals],
     [AC_MSG_RESULT([no])]
 )
-CFLAGS="$my_save_cflags"
+AC_LANG_POP([C++])
+CXXFLAGS="$my_save_cflags"
 AC_SUBST([AM_CXXFLAGS])
+
+
 
 ####### Checking for GPU support
 
