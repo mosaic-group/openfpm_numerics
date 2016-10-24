@@ -83,13 +83,12 @@ const bool lid_nn_3d_petsc::boundary[] = {NON_PERIODIC,NON_PERIODIC,NON_PERIODIC
 // Constant Field
 struct eta
 {
+	//! define that eta is a constant field
 	typedef void const_field;
 
+	//! therutn the value of the constant
 	static float val()	{return 1.0;}
 };
-
-//#define SYSEQ_TYPE lid_nn_3d_eigen;
-//#include "Equations/stoke_flow_eq_3d.hpp"
 
 template<typename solver_type,typename lid_nn_3d> void lid_driven_cavity_3d()
 {

@@ -45,7 +45,7 @@ class Avg
 	 * In case of non staggered case this function just return a null grid_key, in case of staggered,
 	 *  it calculate how the operator shift the calculation in the cell
 	 *
-	 * \param position where we are calculating the derivative
+	 * \param pos position where we are calculating the derivative
 	 * \param gs Grid info
 	 * \param s_pos staggered position of the properties
 	 *
@@ -77,7 +77,7 @@ class Avg<d,arg,Sys_eqs,CENTRAL>
 	 * conditions it is a distributed map
 	 *
 	 * \param g_map It is the map explained in FDScheme
-	 * \param k_map position where the average is calculated
+	 * \param kmap position where the average is calculated
 	 * \param gs Grid info
 	 * \param cols non-zero colums calculated by the function
 	 * \param coeff coefficent (constant in front of the derivative)
@@ -113,7 +113,7 @@ class Avg<d,arg,Sys_eqs,CENTRAL>
 	 *
 	 * It follow the same concept of central derivative
 	 *
-	 * \param position where we are calculating the derivative
+	 * \param pos position where we are calculating the derivative
 	 * \param gs Grid info
 	 * \param s_pos staggered position of the properties
 	 *
@@ -160,7 +160,7 @@ class Avg<d,arg,Sys_eqs,FORWARD>
 	 * conditions it is a distributed map
 	 *
 	 * \param g_map It is the map explained in FDScheme
-	 * \param k_map position where the average is calculated
+	 * \param kmap position where the average is calculated
 	 * \param gs Grid info
 	 * \param cols non-zero colums calculated by the function
 	 * \param coeff coefficent (constant in front of the derivative)
@@ -188,7 +188,7 @@ class Avg<d,arg,Sys_eqs,FORWARD>
 	 * In case of non staggered case this function just return a null grid_key, in case of staggered,
 	 * the FORWARD scheme return the position of the staggered property
 	 *
-	 * \param position where we are calculating the derivative
+	 * \param pos position where we are calculating the derivative
 	 * \param gs Grid info
 	 * \param s_pos staggered position of the properties
 	 *
@@ -220,7 +220,7 @@ class Avg<d,arg,Sys_eqs,BACKWARD>
 	 * conditions it is a distributed map
 	 *
 	 * \param g_map It is the map explained in FDScheme
-	 * \param k_map position where the average is calculated
+	 * \param kmap position where the average is calculated
 	 * \param gs Grid info
 	 * \param cols non-zero colums calculated by the function
 	 * \param coeff coefficent (constant in front of the derivative)
@@ -247,7 +247,7 @@ class Avg<d,arg,Sys_eqs,BACKWARD>
 	 * In case of non staggered case this function just return a null grid_key, in case of staggered,
 	 * the BACKWARD scheme return the position of the staggered property
 	 *
-	 * \param position where we are calculating the derivative
+	 * \param pos position where we are calculating the derivative
 	 * \param gs Grid info
 	 * \param s_pos staggered position of the properties
 	 *

@@ -159,6 +159,14 @@ AX_LIB_HILBERT([],[echo "Cannot detect libhilbert, use the --with-libhilbert opt
 
 INCLUDES_PATH+=" -I/usr/local/include -I. -I../../openfpm_devices/src -I../../openfpm_data/src -I../../openfpm_io/src -I../../openfpm_vcluster/src -I../../src"
 
+####### Detect OpenMP
+
+AX_OPENMP([CFLAGS="$OPENMP_CFLAGS"
+           LDFLAGS="$OPENMP_LDFLAGS"],[])
+
+AC_SUBST(OPENMP_CFLAGS)
+AC_SUBST(OPENMP_LDFLAGS)
+
 ###### Check for se-class1
 
 AC_MSG_CHECKING(whether to build with security enhancement class1)
