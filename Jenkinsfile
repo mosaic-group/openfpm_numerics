@@ -3,21 +3,23 @@
 parallel (
 
 
-"nyu" : {node ('nyu')
+"nyu" : {node ('gin')
                   {
                     deleteDir()
                     checkout scm
-                    stage ('build_nyu')
+                    stage ('build_gin')
                     {
                       sh "./build.sh $WORKSPACE $NODE_NAME"
                     }
 
-                    stage ('run_nyu')
+                    stage ('run_gin')
                     {
-                      sh "cd openfpm_vcluster && ./run.sh $WORKSPACE $NODE_NAME 2"
-                      sh "cd openfpm_vcluster && ./run.sh $WORKSPACE $NODE_NAME 3"
-                      sh "cd openfpm_vcluster && ./run.sh $WORKSPACE $NODE_NAME 4"
-                      sh "cd openfpm_vcluster && ./run.sh $WORKSPACE $NODE_NAME 5"
+		      parallel (
+                      "1" : {sh "cd openfpm_numerics && ./run.sh $WORKSPACE $NODE_NAME 1"},
+                      "2" : {sh "cd openfpm_numerics && ./run.sh $WORKSPACE $NODE_NAME 2"},
+                      "3" : {sh "cd openfpm_numerics && ./run.sh $WORKSPACE $NODE_NAME 3"},
+                      "4" : {sh "cd openfpm_numerics && ./run.sh $WORKSPACE $NODE_NAME 4"}
+                      )
                     }
                   }
                  },
@@ -37,12 +39,12 @@ parallel (
 
                     stage ('run_sb15')
                     {
-                      sh "cd openfpm_vcluster && ./run.sh $WORKSPACE $NODE_NAME 2"
-                      sh "cd openfpm_vcluster && ./run.sh $WORKSPACE $NODE_NAME 3"
-                      sh "cd openfpm_vcluster && ./run.sh $WORKSPACE $NODE_NAME 4"
-                      sh "cd openfpm_vcluster && ./run.sh $WORKSPACE $NODE_NAME 5"
-                      sh "cd openfpm_vcluster && ./run.sh $WORKSPACE $NODE_NAME 6"
-                      sh "cd openfpm_vcluster && ./run.sh $WORKSPACE $NODE_NAME 7"
+                      parallel (
+                      "1" : {sh "cd openfpm_vcluster && ./run.sh $WORKSPACE $NODE_NAME 1"},
+                      "2" : {sh "cd openfpm_vcluster && ./run.sh $WORKSPACE $NODE_NAME 2"},
+                      "3" : {sh "cd openfpm_vcluster && ./run.sh $WORKSPACE $NODE_NAME 3"},
+                      "4" : {sh "cd openfpm_vcluster && ./run.sh $WORKSPACE $NODE_NAME 4"}
+                      )
                     }
                   }
                  }
