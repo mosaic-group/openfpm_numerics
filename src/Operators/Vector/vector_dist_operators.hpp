@@ -499,12 +499,15 @@ public:
 template<unsigned int prp>
 class vector_dist_expression<prp,float>
 {
+	//! constant value
 	float d;
 
 public:
 
+	//! type of object the structure return then evaluated
 	typedef float vtype;
 
+	//! constrictir from constant value
 	inline vector_dist_expression(const float & d)
 	:d(d)
 	{}
@@ -519,7 +522,9 @@ public:
 
 	/*! \brief Evaluate the expression
 	 *
-	 * It just return the velue set in the constructor
+	 * It just return the value set in the constructor
+	 *
+	 * \return the constant value set in the constructor
 	 *
 	 */
 	inline float value(const vect_dist_key_dx & k) const

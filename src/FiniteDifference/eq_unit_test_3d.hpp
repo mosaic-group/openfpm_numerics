@@ -22,57 +22,56 @@
 
 BOOST_AUTO_TEST_SUITE( eq_test_suite_3d )
 
-//!
-
+//! Specify the general caratteristic of system to solve
 struct lid_nn_3d_eigen
 {
-	// dimensionaly of the equation ( 3D problem ...)
+	//! dimensionaly of the equation ( 3D problem ...)
 	static const unsigned int dims = 3;
-	// number of fields in the system
+	//! number of fields in the system
 	static const unsigned int nvar = 4;
 
-	// boundary at X and Y
+	//! boundary at X and Y
 	static const bool boundary[];
 
-	// type of space float, double, ...
+	//! type of space float, double, ...
 	typedef float stype;
 
-	// type of base grid
+	//! type of base grid
 	typedef grid_dist_id<3,float,aggregate<float[3],float>,CartDecomposition<3,float>> b_grid;
 
-	// type of SparseMatrix for the linear solver
+	//! type of SparseMatrix for the linear solver
 	typedef SparseMatrix<double,int> SparseMatrix_type;
 
-	// type of Vector for the linear solver
+	//! type of Vector for the linear solver
 	typedef Vector<double> Vector_type;
 
-	// Define the underline grid is staggered
+	//! Define the underline grid is staggered
 	static const int grid_type = STAGGERED_GRID;
 };
 
 struct lid_nn_3d_petsc
 {
-	// dimensionaly of the equation ( 3D problem ...)
+	//! dimensionaly of the equation ( 3D problem ...)
 	static const unsigned int dims = 3;
-	// number of fields in the system
+	//! number of fields in the system
 	static const unsigned int nvar = 4;
 
-	// boundary at X and Y
+	//! boundary at X and Y
 	static const bool boundary[];
 
-	// type of space float, double, ...
+	//! type of space float, double, ...
 	typedef float stype;
 
-	// type of base grid
+	//! type of base grid
 	typedef grid_dist_id<3,float,aggregate<float[3],float>,CartDecomposition<3,float>> b_grid;
 
-	// type of SparseMatrix for the linear solver
+	//! type of SparseMatrix for the linear solver
 	typedef SparseMatrix<double,int,PETSC_BASE> SparseMatrix_type;
 
-	// type of Vector for the linear solver
+	//! type of Vector for the linear solver
 	typedef Vector<double,PETSC_BASE> Vector_type;
 
-	// Define the underline grid is staggered
+	//! Define the underline grid is staggered
 	static const int grid_type = STAGGERED_GRID;
 };
 
@@ -84,13 +83,12 @@ const bool lid_nn_3d_petsc::boundary[] = {NON_PERIODIC,NON_PERIODIC,NON_PERIODIC
 // Constant Field
 struct eta
 {
+	//! define that eta is a constant field
 	typedef void const_field;
 
+	//! therutn the value of the constant
 	static float val()	{return 1.0;}
 };
-
-//#define SYSEQ_TYPE lid_nn_3d_eigen;
-//#include "Equations/stoke_flow_eq_3d.hpp"
 
 template<typename solver_type,typename lid_nn_3d> void lid_driven_cavity_3d()
 {

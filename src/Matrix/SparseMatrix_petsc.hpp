@@ -24,22 +24,42 @@
 template<typename T>
 class triplet<T,PETSC_BASE>
 {
+	//! Row of the sparse matrix
 	PetscInt row_;
+
+	//! Colum of the sparse matrix
 	PetscInt col_;
+
+	//! Value of the Matrix
 	PetscScalar val_;
 
 public:
 
+	/*! \brief Return the row of the triplet
+	 *
+	 * \return the row index
+	 *
+	 */
 	PetscInt & row()
 	{
 		return row_;
 	}
 
+	/*! \brief Return the colum of the triplet
+	 *
+	 * \return the colum index
+	 *
+	 */
 	PetscInt & col()
 	{
 		return col_;
 	}
 
+	/*! \brief Return the value of the triplet
+	 *
+	 * \return the value
+	 *
+	 */
 	PetscScalar & value()
 	{
 		return val_;

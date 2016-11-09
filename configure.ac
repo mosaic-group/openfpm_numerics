@@ -136,8 +136,8 @@ AX_LIB_PETSC()
 AC_LANG_PUSH([C++])
 
 AC_CHECK_HEADER(quadmath.h, , [])
-AC_CHECK_LIB(quadmath, sinq, [ AC_CHECK_HEADER( quadmath.h ,[AC_DEFINE(HAVE_LIBQUADMATH,[],[Have quad math lib])
-				LIBQUADMATH=" -lquadmath "],[])
+AC_CHECK_LIB(quadmath, sinq, [  AC_DEFINE(HAVE_LIBQUADMATH,[],[Have quad math lib])
+				LIBQUADMATH=" -lquadmath "
 				], [])
 
 AC_LANG_POP([C++])
@@ -158,6 +158,14 @@ AX_LIB_HILBERT([],[echo "Cannot detect libhilbert, use the --with-libhilbert opt
 ####### include OpenFPM_numerics include path"
 
 INCLUDES_PATH+=" -I/usr/local/include -I. -I../../openfpm_devices/src -I../../openfpm_data/src -I../../openfpm_io/src -I../../openfpm_vcluster/src -I../../src"
+
+####### Detect OpenMP
+
+AX_OPENMP([CFLAGS="$OPENMP_CFLAGS"
+           LDFLAGS="$OPENMP_LDFLAGS"],[])
+
+AC_SUBST(OPENMP_CFLAGS)
+AC_SUBST(OPENMP_LDFLAGS)
 
 ###### Check for se-class1
 
