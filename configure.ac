@@ -135,10 +135,16 @@ AX_LIB_PETSC()
 
 AC_LANG_PUSH([C++])
 
-AC_CHECK_HEADER(quadmath.h, , [])
-AC_CHECK_LIB(quadmath, sinq, [  AC_DEFINE(HAVE_LIBQUADMATH,[],[Have quad math lib])
-				LIBQUADMATH=" -lquadmath "
-				], [])
+have_quad_lib=no
+have_quad_head=no
+AC_CHECK_LIB(quadmath, sinq, [have_quad_lib=yes], [])
+AC_CHECK_HEADER(quadmath.h,[have_quad_head=yes],[])
+
+if [x"have_quad_math" == x"yes" $&& x"have_quad_math" == x"yes" ]; then
+    AC_DEFINE(HAVE_LIBQUADMATH,[],[Have quad math lib])
+    LIBQUADMATH=" -lquadmath "
+fi
+
 
 AC_LANG_POP([C++])
 
@@ -291,10 +297,12 @@ AX_SUITESPARSE([],[])
 
 AX_EIGEN([],[])
 
-###### Checking for libquadmath
+###### Checking for libquadmath and libifcore
 
+AC_CHECK_LIB(ifcore, for_cpystr, [ LIBIFCORE=-lifcore  ], [ LIBIFCORE= ])
 AC_CHECK_LIB(quadmath, sinq, [ LIBQUADMATH=-lquadmath  ], [ LIBQUADMATH= ])
 AC_SUBST(LIBQUADMATH)
+AC_SUBST(LIBIFCORE)
 
 ###### Checking for compiler flags -fext-numeric-literals
 

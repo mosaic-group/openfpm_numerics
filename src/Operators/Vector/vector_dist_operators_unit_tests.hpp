@@ -70,7 +70,7 @@ template <typename rtype, typename vector, unsigned int A, unsigned int B, unsig
 	{
 		auto key = it.get();
 
-		rtype base1 = rtype(vd.template getPos(key)) + p;
+		rtype base1 = rtype(vd.getPos(key)) + p;
 		rtype base2 = vd.template getProp<A>(key);
 
 		ret &=  base1 == base2;
@@ -92,7 +92,7 @@ template <typename rtype, typename vector, unsigned int A, unsigned int B, unsig
 	{
 		auto key = it.get();
 
-		rtype base1 = rtype(vd.template getPos(key)) - p;
+		rtype base1 = rtype(vd.getPos(key)) - p;
 		rtype base2 = vd.template getProp<A>(key);
 
 		ret &=  base1 == base2;
@@ -114,7 +114,7 @@ template <typename rtype, typename vector, unsigned int A, unsigned int B, unsig
 	{
 		auto key = it.get();
 
-		rtype base1 = -(rtype(vd.template getPos(key)) - p);
+		rtype base1 = -(rtype(vd.getPos(key)) - p);
 		rtype base2 = vd.template getProp<A>(key);
 
 		ret &=  base1 == base2;

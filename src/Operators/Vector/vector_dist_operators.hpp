@@ -297,9 +297,9 @@ struct pos_or_prop
 template <typename vector>
 struct pos_or_prop<vector,PROP_POS>
 {
-	static inline auto value(vector & v, const vect_dist_key_dx & k) -> decltype(getExpr(v.template getPos(k)))
+	static inline auto value(vector & v, const vect_dist_key_dx & k) -> decltype(getExpr(v.getPos(k)))
 	{
-		return getExpr(v.template getPos(k));
+		return getExpr(v.getPos(k));
 	}
 };
 
