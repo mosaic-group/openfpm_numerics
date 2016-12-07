@@ -652,12 +652,24 @@ typedef vector_dist<3,float,aggregate<float,float,float,VectorS<3,float>,VectorS
 //! Exponential kernel
 struct exp_kernel
 {
+	//! variance
 	float var;
 
+	//! Set the variance of the exponential kernel
 	exp_kernel(float var)
 	:var(var)
 	{}
 
+	/*! \brief Result of the exponential kernel
+	 *
+	 * \param p position of the particle p
+	 * \param q position of the particle q
+	 * \param pA property value at p
+	 * \param pB property value at q
+	 *
+	 * \return the result
+	 *
+	 */
 	inline float value(const Point<3,float> & p, const Point<3,float> & q,float pA,float pB)
 	{
 		float dist = norm(p-q);
@@ -665,6 +677,16 @@ struct exp_kernel
 		return (pA + pB) * exp(dist * dist / var);
 	}
 
+	/*! \brief Result of the exponential kernel
+	 *
+	 * \param p position of the particle p
+	 * \param q position of the particle q
+	 * \param pA property value at p
+	 * \param pB property value at q
+	 *
+	 * \return the result
+	 *
+	 */
 	inline Point<3,float> value(const Point<3,float> & p, const Point<3,float> & q,const Point<3,float> & pA, const Point<3,float> & pB)
 	{
 		float dist = norm(p-q);
@@ -672,6 +694,17 @@ struct exp_kernel
 		return (pA + pB) * exp(dist * dist / var);
 	}
 
+	/*! \brief Result of the exponential kernel
+	 *
+	 * \param p position of the particle p
+	 * \param q position of the particle q
+	 * \param pA property value at p
+	 * \param pB property value at q
+	 * \param vd1 original vector
+	 *
+	 * \return the result
+	 *
+	 */
 	inline float value(size_t p, size_t q, float pA, float pB, const vector_type & vd1)
 	{
 		Point<3,float> pp = vd1.getPos(p);
@@ -682,6 +715,17 @@ struct exp_kernel
 		return (pA + pB) * exp(dist * dist / var);
 	}
 
+	/*! \brief Result of the exponential kernel
+	 *
+	 * \param p position of the particle p
+	 * \param q position of the particle q
+	 * \param pA property value at p
+	 * \param pB property value at q
+	 * \param vd1 original vector
+	 *
+	 * \return the result
+	 *
+	 */
 	inline Point<3,float> value(size_t p, size_t q, const Point<3,float> & pA, const Point<3,float> & pB , const vector_type & vd1)
 	{
 		Point<3,float> pp = vd1.getPos(p);
@@ -692,6 +736,14 @@ struct exp_kernel
 		return (pA + pB) * exp(dist * dist / var);
 	}
 
+	/*! \brief Result of the exponential kernel
+	 *
+	 * \param p position of the particle p
+	 * \param q position of the particle q
+	 *
+	 * \return the result
+	 *
+	 */
 	inline Point<2,float> value(const Point<3,float> & p, const Point<3,float> & q)
 	{
 		float dist = norm(p-q);

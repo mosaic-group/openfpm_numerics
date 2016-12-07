@@ -22,15 +22,19 @@ template<typename ObjType>
 struct is_expression<ObjType, typename Void<typename ObjType::is_expression>::type> : std::true_type
 {};
 
+//! It give the return type of the expression if applicable
 template<typename exp, bool is_exp = is_expression<exp>::value>
 struct apply_kernel_rtype
 {
+	//! indicate the return type of the expression exp
 	typedef typename exp::return_type rtype;
 };
 
+//! It give the return type of the expression if applicable
 template<typename exp>
 struct apply_kernel_rtype<exp,false>
 {
+	//! indicate the return type of the expression exp
 	typedef exp rtype;
 };
 
@@ -42,6 +46,7 @@ struct apply_kernel_rtype<exp,false>
 template<typename rtype>
 struct set_zero
 {
+	//! return 0
 	static rtype create()
 	{
 		return 0.0;
@@ -51,6 +56,7 @@ struct set_zero
 template<unsigned int dim, typename T>
 struct set_zero<Point<dim,T>>
 {
+	//! return a point with all the coordinates set to zero
 	static Point<dim,T> create()
 	{
 		Point<dim,T> ret;
@@ -67,6 +73,17 @@ struct set_zero<Point<dim,T>>
 template<typename T, typename vector, typename exp,typename NN_type, typename Kernel, typename rtype, bool is_exp=is_expression<T>::value>
 struct apply_kernel_is_number_or_expression
 {
+	/*! \brief Apply the kernel expression to a particle
+	 *
+	 * \param vd vector with the particles positions
+	 * \param cl Cell-list
+	 * \param v_exp expression to execute for each particle
+	 * \param key to which particle to apply the expression
+	 * \param lker kernel function
+	 *
+	 * \return the result of apply the kernel on the particle key
+	 *
+	 */
 	inline static typename std::remove_reference<rtype>::type apply(const vector & vd, NN_type & cl, const exp & v_exp, const vect_dist_key_dx & key, Kernel & lker)
 	{
 	    // accumulator
@@ -113,6 +130,16 @@ struct apply_kernel_is_number_or_expression
 template<typename vector, typename exp,typename NN_type, typename Kernel, typename rtype>
 struct apply_kernel_is_number_or_expression_sim
 {
+	/*! \brief Apply the kernel expression to a particle
+	 *
+	 * \param vd vector with the particles positions
+	 * \param cl Cell-list (symmetric version)
+	 * \param key to which particle to apply the expression
+	 * \param lker kernel function
+	 *
+	 * \return the result of apply the kernel on the particle key
+	 *
+	 */
 	inline static typename std::remove_reference<rtype>::type apply(const vector & vd, NN_type & cl, const vect_dist_key_dx & key, Kernel & lker)
 	{
 	    // accumulator
@@ -154,6 +181,17 @@ struct apply_kernel_is_number_or_expression_sim
 template<typename T, typename vector, typename exp,typename NN_type, typename Kernel, typename rtype, bool is_exp=is_expression<T>::value>
 struct apply_kernel_is_number_or_expression_gen
 {
+	/*! \brief Apply the kernel expression to a particle
+	 *
+	 * \param vd vector with the particles positions
+	 * \param cl Cell-list
+	 * \param v_exp expression to execute for each particle
+	 * \param key to which particle to apply the expression
+	 * \param lker kernel function
+	 *
+	 * \return the result of apply the kernel on the particle key
+	 *
+	 */
 	inline static typename std::remove_reference<rtype>::type apply(const vector & vd, NN_type & cl, const exp & v_exp, const vect_dist_key_dx & key, Kernel & lker)
 	{
 	    // accumulator
@@ -199,15 +237,26 @@ struct apply_kernel_is_number_or_expression_gen
 template <typename exp1,typename vector_type>
 class vector_dist_expression_op<exp1,vector_type,VECT_APPLYKER_IN>
 {
+	//! Get the type of the Cell-list
 	typedef typename boost::mpl::at<vector_type,boost::mpl::int_<0>>::type NN;
+	//! Get the type of the kernel
 	typedef typename boost::mpl::at<vector_type,boost::mpl::int_<1>>::type Kernel;
+	//! Get the type that contain the particle positions
 	typedef typename boost::mpl::at<vector_type,boost::mpl::int_<2>>::type vector_orig;
 
+	//! expression
 	const exp1 o1;
+
+	//! Cell-list
 	NN & cl;
+
+	//! kernel
 	Kernel & ker;
+
+	//! The vector that contain the particles
 	const vector_orig & vd;
 
+	//! Get the return type of apply the kernel to a particle
 	typedef typename apply_kernel_rtype<decltype(o1.value(vect_dist_key_dx(0)))>::rtype rtype;
 
 public:
@@ -222,6 +271,14 @@ public:
 		o1.init();
 	}
 
+	/*! \brief Constructor
+	 *
+	 * \param o1 expression
+	 * \param cl Cell-list
+	 * \param ker kernel function
+	 * \param vector_orig vector containing the particle positions
+	 *
+	 */
 	vector_dist_expression_op(const exp1 & o1, NN & cl, Kernel & ker, const vector_orig & vd)
 	:o1(o1),cl(cl),ker(ker),vd(vd)
 	{}
@@ -229,6 +286,8 @@ public:
 	/*! \brief Evaluate the expression
 	 *
 	 * \param key where to evaluate the expression
+	 *
+	 * \return the result of the expression
 	 *
 	 */
 	inline typename std::remove_reference<rtype>::type value(const vect_dist_key_dx & key) const
@@ -246,14 +305,21 @@ public:
 template <typename exp1,typename vector_type>
 class vector_dist_expression_op<exp1,vector_type,VECT_APPLYKER_IN_SIM>
 {
+	//! Return the type of the Cell-list
 	typedef typename boost::mpl::at<vector_type,boost::mpl::int_<0>>::type NN;
+	//! Return the type of the kernel
 	typedef typename boost::mpl::at<vector_type,boost::mpl::int_<1>>::type Kernel;
+	//! Return the vector containing the position of the particles
 	typedef typename boost::mpl::at<vector_type,boost::mpl::int_<2>>::type vector_orig;
 
+	//! Cell-list
 	NN & cl;
+	//! kernel
 	Kernel & ker;
+	//! vector with the particle positions
 	const vector_orig & vd;
 
+	//! Get the return type of the expression
 	typedef typename apply_kernel_rtype<decltype(std::declval<Kernel>().value(Point<vector_orig::dims,typename vector_orig::stype>(0.0), Point<vector_orig::dims,typename vector_orig::stype>(0.0) ) )>::rtype rtype;
 
 
@@ -268,6 +334,13 @@ public:
 	{
 	}
 
+	/*! \brief Constructor
+	 *
+	 * \param cl cell-list
+	 * \param ker kernel
+	 * \param vd Vector containing the particle positions
+	 *
+	 */
 	vector_dist_expression_op(NN & cl, Kernel & ker, const vector_orig & vd)
 	:cl(cl),ker(ker),vd(vd)
 	{}
@@ -275,6 +348,8 @@ public:
 	/*! \brief Evaluate the expression
 	 *
 	 * \param key where to evaluate the expression
+	 *
+	 * \return the result produced by the expression
 	 *
 	 */
 	inline typename std::remove_reference<rtype>::type value(const vect_dist_key_dx & key) const
@@ -293,15 +368,27 @@ public:
 template <typename exp1,typename vector_type>
 class vector_dist_expression_op<exp1,vector_type,VECT_APPLYKER_IN_GEN>
 {
+	//! Get the type of the Cell-list
 	typedef typename boost::mpl::at<vector_type,boost::mpl::int_<0>>::type NN;
+	//! Get the type of the kernel
 	typedef typename boost::mpl::at<vector_type,boost::mpl::int_<1>>::type Kernel;
+
+	//! Get the type of the vector containing the set of particles
 	typedef typename boost::mpl::at<vector_type,boost::mpl::int_<2>>::type vector_orig;
 
+	//! Expression
 	const exp1 o1;
+
+	//! Cell list
 	NN & cl;
+
+	//! Kernel
 	Kernel & ker;
+
+	//! Vector containing the particles
 	const vector_orig & vd;
 
+	//! Return type of the expression
 	typedef typename apply_kernel_rtype<decltype(o1.value(vect_dist_key_dx(0)))>::rtype rtype;
 
 public:
@@ -316,6 +403,14 @@ public:
 		o1.init();
 	}
 
+	/*! \brief Constructor
+	 *
+	 * \param o1 expression
+	 * \param cl Cell-list
+	 * \param ker Kernel
+	 * \param vd vector containing the set of particles
+	 *
+	 */
 	vector_dist_expression_op(const exp1 & o1, NN & cl, Kernel & ker, const vector_orig & vd)
 	:o1(o1),cl(cl),ker(ker),vd(vd)
 	{}
@@ -323,6 +418,8 @@ public:
 	/*! \brief Evaluate the expression
 	 *
 	 * \param key where to evaluate the expression
+	 *
+	 * \return the result of the expression
 	 *
 	 */
 	inline typename std::remove_reference<rtype>::type value(const vect_dist_key_dx & key) const

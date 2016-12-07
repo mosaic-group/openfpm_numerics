@@ -84,23 +84,30 @@ template<typename ObjType>
 struct has_init<ObjType, typename Void<typename ObjType::has_init>::type> : std::true_type
 {};
 
-/*! \brief Call the init function if needed
+/*! \brief Call the init function if a type T has the function init
  *
- * \param r_exp expression
+ * \tparam type T
  *
  */
 template <typename T, bool has_init = has_init<T>::value >
 struct call_init_if_needed
 {
+	//! it call the function init for r_exp if T has the function init
 	static inline void call(T & r_exp)
 	{
 		r_exp.init();
 	}
 };
 
+/*! \brief Call the init function if a type T has the function init
+ *
+ * \tparam type T
+ *
+ */
 template <typename T>
 struct call_init_if_needed<T,false>
 {
+	//! it call the function init for r_exp if T has the function init
 	static inline void call(T & r_exp)
 	{
 	}
@@ -129,11 +136,15 @@ class vector_dist_expression_op
 template <typename exp1, typename exp2>
 class vector_dist_expression_op<exp1,exp2,VECT_SUM>
 {
+	//! expression 1
 	const exp1 o1;
+
+	//! expression 2
 	const exp2 o2;
 
 public:
 
+	//! constructor of the expression to sum two expression
 	inline vector_dist_expression_op(const exp1 & o1, const exp2 & o2)
 	:o1(o1),o2(o2)
 	{}
@@ -152,6 +163,8 @@ public:
 	/*! \brief Evaluate the expression
 	 *
 	 * \param key where to evaluate the expression
+	 *
+	 * \return return the result of the expression
 	 *
 	 */
 	template<typename r_type=typename std::remove_reference<decltype(o1.value(vect_dist_key_dx(0)) + o2.value(vect_dist_key_dx(0)))>::type > inline r_type value(const vect_dist_key_dx & key) const
@@ -170,11 +183,15 @@ public:
 template <typename exp1, typename exp2>
 class vector_dist_expression_op<exp1,exp2,VECT_SUB>
 {
+	//! expression 1
 	const exp1 o1;
+
+	//! expression 2
 	const exp2 o2;
 
 public:
 
+	//! Costruct a subtraction expression out of two expressions
 	inline vector_dist_expression_op(const exp1 & o1, const exp2 & o2)
 	:o1(o1),o2(o2)
 	{}
@@ -194,6 +211,8 @@ public:
 	 *
 	 * \param key where to evaluate the expression
 	 *
+	 * \return the result of the expression
+	 *
 	 */
 	template<typename r_type=typename std::remove_reference<decltype(o1.value(vect_dist_key_dx(0)) - o2.value(vect_dist_key_dx(0)))>::type > inline r_type value(const vect_dist_key_dx & key) const
 	{
@@ -210,11 +229,15 @@ public:
 template <typename exp1, typename exp2>
 class vector_dist_expression_op<exp1,exp2,VECT_MUL>
 {
+	//! expression 1
 	const exp1 o1;
+
+	//! expression 2
 	const exp2 o2;
 
 public:
 
+	//! constructor from two expressions
 	vector_dist_expression_op(const exp1 & o1, const exp2 & o2)
 	:o1(o1),o2(o2)
 	{}
@@ -233,6 +256,8 @@ public:
 	/*! \brief Evaluate the expression
 	 *
 	 * \param key where to evaluate the expression
+	 *
+	 * \return the result of the expression
 	 *
 	 */
 	template<typename r_type=typename std::remove_reference<decltype(o1.value(vect_dist_key_dx(0)) * o2.value(vect_dist_key_dx(0)))>::type > inline r_type value(const vect_dist_key_dx & key) const
@@ -250,11 +275,15 @@ public:
 template <typename exp1, typename exp2>
 class vector_dist_expression_op<exp1,exp2,VECT_DIV>
 {
+	//! expression 1
 	const exp1 o1;
+
+	//! expression 2
 	const exp2 o2;
 
 public:
 
+	//! constructor from two expressions
 	vector_dist_expression_op(const exp1 & o1, const exp2 & o2)
 	:o1(o1),o2(o2)
 	{}
@@ -274,6 +303,8 @@ public:
 	 *
 	 * \param key where to evaluate the expression
 	 *
+	 * \return the result of the expression
+	 *
 	 */
 	template<typename r_type=typename std::remove_reference<decltype(o1.value(vect_dist_key_dx(0)) / o2.value(vect_dist_key_dx(0)))>::type > inline r_type value(const vect_dist_key_dx & key) const
 	{
@@ -283,49 +314,69 @@ public:
 
 /*! \brief selector for position or properties
  *
+ * \tparam vector type of the original vector
+ *
+ * \tparam prp property id
  *
  */
 template <typename vector, unsigned int prp>
 struct pos_or_prop
 {
+	//! return the value (position or property) of the particle k in the vector v
 	static inline auto value(vector & v, const vect_dist_key_dx & k) -> decltype(v.template getProp<prp>(k))
 	{
 		return v.template getProp<prp>(k);
 	}
 };
 
+/*! \brief selector for position or properties
+ *
+ * \tparam vector type of the original vector
+ *
+ * \tparam prp property id
+ *
+ */
 template <typename vector>
 struct pos_or_prop<vector,PROP_POS>
 {
+	//! return the value (position or property) of the particle k in the vector v
 	static inline auto value(vector & v, const vect_dist_key_dx & k) -> decltype(getExpr(v.getPos(k)))
 	{
 		return getExpr(v.getPos(k));
 	}
 };
 
+/*! \brief it take an expression and create the negatove of this expression
+ *
+ *
+ */
 template <typename exp1>
 class vector_dist_expression_op<exp1,void,VECT_SUB_UNI>
 {
+	//! expression 1
 	const exp1 o1;
 
 public:
 
+	//! constructor from an expresssion
 	vector_dist_expression_op(const exp1 & o1)
 	:o1(o1)
 	{}
 
+	//! initialize the expression tree
 	inline void init() const
 	{
 		o1.init();
 	}
 
+	//! return the result of the expression
 	template<typename r_type=typename std::remove_reference<decltype(-(o1.value(vect_dist_key_dx(0))))>::type > inline r_type value(const vect_dist_key_dx & key) const
 	{
 		return -(o1.value(key));
 	}
 };
 
-/*! \brief Main class that encapsulate a vector properties
+/*! \brief Main class that encapsulate a vector properties operand to be used for expressions construction
  *
  * \tparam prp property involved
  * \tparam vector involved
@@ -334,15 +385,18 @@ public:
 template<unsigned int prp, typename vector>
 class vector_dist_expression
 {
+	//! The vector
 	vector & v;
 
 public:
 
+	//! The type of the internal vector
 	typedef vector vtype;
 
 	//! Property id of the point
 	static const unsigned int prop = prp;
 
+	//! constructor for an external vector
 	vector_dist_expression(vector & v)
 	:v(v)
 	{}
@@ -350,6 +404,8 @@ public:
 	/*! \brief Return the vector on which is acting
 	 *
 	 * It return the vector used in getVExpr, to get this object
+	 *
+	 * \return the vector
 	 *
 	 */
 	vector & getVector()
@@ -367,7 +423,9 @@ public:
 
 	/*! \brief Evaluate the expression
 	 *
-	 * \param key where to evaluate the expression
+	 * \param k where to evaluate the expression
+	 *
+	 * \return the result of the expression
 	 *
 	 */
 	inline auto value(const vect_dist_key_dx & k) const -> decltype(pos_or_prop<vector,prp>::value(v,k))
@@ -378,6 +436,8 @@ public:
 	/*! \brief Fill the vector property with the evaluated expression
 	 *
 	 * \param v_exp expression to evaluate
+	 *
+	 * \return itself
 	 *
 	 */
 	template<unsigned int prp2> vector & operator=(const vector_dist_expression<prp2,vector> & v_exp)
@@ -402,6 +462,8 @@ public:
 	 *
 	 * \param v_exp expression to evaluate
 	 *
+	 * \return itself
+	 *
 	 */
 	template<typename exp1, typename exp2, unsigned int op> vector & operator=(const vector_dist_expression_op<exp1,exp2,op> & v_exp)
 	{
@@ -424,6 +486,8 @@ public:
 	/*! \brief Fill the vector property with the double
 	 *
 	 * \param d value to fill
+	 *
+	 * \return the internal vector
 	 *
 	 */
 	vector & operator=(double d)
@@ -464,10 +528,12 @@ template <unsigned int prp,typename vector> inline vector_dist_expression<prp,ve
 template<unsigned int prp>
 class vector_dist_expression<prp,double>
 {
+	//! constant parameter
 	double d;
 
 public:
 
+	//! constructor from a constant expression
 	inline vector_dist_expression(const double & d)
 	:d(d)
 	{}
@@ -482,7 +548,11 @@ public:
 
 	/*! \brief Evaluate the expression
 	 *
-	 * It just return the velue set in the constructor
+	 * \param k ignored position in the vector
+	 *
+	 * It just return the value set in the constructor
+	 *
+	 * \return the constant value
 	 *
 	 */
 	inline double value(const vect_dist_key_dx & k) const
@@ -507,7 +577,7 @@ public:
 	//! type of object the structure return then evaluated
 	typedef float vtype;
 
-	//! constrictir from constant value
+	//! constrictor from constant value
 	inline vector_dist_expression(const float & d)
 	:d(d)
 	{}
@@ -522,6 +592,8 @@ public:
 
 	/*! \brief Evaluate the expression
 	 *
+	 * \param k ignored position in the vector
+	 *
 	 * It just return the value set in the constructor
 	 *
 	 * \return the constant value set in the constructor
@@ -530,43 +602,6 @@ public:
 	inline float value(const vect_dist_key_dx & k) const
 	{
 		return d;
-	}
-};
-
-
-
-/*! \brief Main class that encapsulate a float constant
- *
- * \param prp no meaning
- *
- */
-template<typename T>
-class vector_dist_expression<PROP_CUSTOM,T>
-{
-
-public:
-
-	typedef float vtype;
-
-	inline vector_dist_expression()
-	{}
-
-	/*! \brief This function must be called before value
-	 *
-	 * it initialize the expression if needed
-	 *
-	 */
-	inline void init() const
-	{}
-
-	/*! \brief Evaluate the expression
-	 *
-	 * It just return the velue set in the constructor
-	 *
-	 */
-	inline T value(const vect_dist_key_dx & k) const
-	{
-		return T(0.0);
 	}
 };
 

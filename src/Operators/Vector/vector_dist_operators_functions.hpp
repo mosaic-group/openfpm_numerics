@@ -207,25 +207,36 @@ CREATE_VDIST_ARG2_FUNC(pmul,pmul,VECT_PMUL)
 
 ////////// Special function reduce /////////////////////////
 
-
+/*! \brief Expression that create a reduction
+ *
+ * \tparam exp1 expression
+ * \tparam vector_type type of the vector
+ *
+ */
 template <typename exp1, typename vector_type>
 class vector_dist_expression_op<exp1,vector_type,VECT_SUM_REDUCE>
 {
+	//! expression on which apply the reduction
 	const exp1 o1;
 
+	//! return type of this expression
 	typedef typename apply_kernel_rtype<decltype(o1.value(vect_dist_key_dx(0)))>::rtype rtype;
 
-	// calculated value
+	//! return type of the calculated value (without reference)
 	mutable typename std::remove_reference<rtype>::type val;
 
+	//! vector on which we apply the reduction expression
 	const vector_type & vd;
 
 public:
 
+	//! Constructor from expression and the vector of particles
 	vector_dist_expression_op(const exp1 & o1, const vector_type & vd)
 	:o1(o1), vd(vd)
 	{}
 
+	//! sum reduction require initialization where we calculate the reduction
+	//! this produce a cache for the calculated value
 	inline void init() const
 	{
 		o1.init();
@@ -244,12 +255,14 @@ public:
 		}
 	}
 
+	//! it return the result of the expression
 	inline typename std::remove_reference<rtype>::type get()
 	{
 		init();
 		return value(vect_dist_key_dx(0));
 	}
 
+	//! it return the result of the expression (precalculated before)
 	template<typename r_type= typename std::remove_reference<rtype>::type > inline r_type value(const vect_dist_key_dx & key) const
 	{
 		return val;
