@@ -256,7 +256,7 @@ class vector_dist_expression_op<exp1,vector_type,VECT_APPLYKER_IN>
 	//! The vector that contain the particles
 	const vector_orig & vd;
 
-	//! Get the return type of apply the kernel to a particle
+	//! Get the return type of applying the kernel to a particle
 	typedef typename apply_kernel_rtype<decltype(o1.value(vect_dist_key_dx(0)))>::rtype rtype;
 
 public:

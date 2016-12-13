@@ -207,15 +207,17 @@ CREATE_VDIST_ARG2_FUNC(pmul,pmul,VECT_PMUL)
 
 ////////// Special function reduce /////////////////////////
 
-/*! \brief Expression that create a reduction
+
+/*! \brief expression that encapsulate a vector reduction expression
  *
- * \tparam exp1 expression
- * \tparam vector_type type of the vector
+ * \tparam exp1 expression 1
+ * \tparam vector_type type of vector on which the expression is acting
  *
  */
 template <typename exp1, typename vector_type>
 class vector_dist_expression_op<exp1,vector_type,VECT_SUM_REDUCE>
 {
+
 	//! expression on which apply the reduction
 	const exp1 o1;
 
@@ -230,13 +232,13 @@ class vector_dist_expression_op<exp1,vector_type,VECT_SUM_REDUCE>
 
 public:
 
-	//! Constructor from expression and the vector of particles
+	//! constructor from an epxression exp1 and a vector vd
 	vector_dist_expression_op(const exp1 & o1, const vector_type & vd)
 	:o1(o1), vd(vd)
 	{}
 
 	//! sum reduction require initialization where we calculate the reduction
-	//! this produce a cache for the calculated value
+	// this produce a cache for the calculated value
 	inline void init() const
 	{
 		o1.init();
@@ -269,7 +271,7 @@ public:
 	}
 };
 
-
+//! Reduce function (it generate an expression)
 template<typename exp1, typename exp2_, unsigned int op1, typename vector_type>
 inline vector_dist_expression_op<vector_dist_expression_op<exp1,exp2_,op1>,vector_type,VECT_SUM_REDUCE>
 rsum(const vector_dist_expression_op<exp1,exp2_,op1> & va, const vector_type & vd)
@@ -279,6 +281,7 @@ rsum(const vector_dist_expression_op<exp1,exp2_,op1> & va, const vector_type & v
 	return exp_sum;
 }
 
+//! Reduce function (It generate an expression)
 template<unsigned int prp1, typename v1, typename vector_type>
 inline vector_dist_expression_op<vector_dist_expression<prp1,v1>,vector_type,VECT_SUM_REDUCE>
 rsum(const vector_dist_expression<prp1,v1> & va, const vector_type & vd)

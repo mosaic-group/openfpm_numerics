@@ -10,7 +10,7 @@
 
 #include "Vector/map_vector.hpp"
 #include <boost/mpl/int.hpp>
-#include "VCluster.hpp"
+#include "VCluster/VCluster.hpp"
 
 #define EIGEN_TRIPLET 1
 

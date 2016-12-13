@@ -652,10 +652,10 @@ typedef vector_dist<3,float,aggregate<float,float,float,VectorS<3,float>,VectorS
 //! Exponential kernel
 struct exp_kernel
 {
-	//! variance
+	//! variance of the exponential kernel
 	float var;
 
-	//! Set the variance of the exponential kernel
+	//! Exponential kernel giving variance
 	exp_kernel(float var)
 	:var(var)
 	{}
