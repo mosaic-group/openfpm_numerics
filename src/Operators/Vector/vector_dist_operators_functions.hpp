@@ -208,24 +208,34 @@ CREATE_VDIST_ARG2_FUNC(pmul,pmul,VECT_PMUL)
 ////////// Special function reduce /////////////////////////
 
 
+/*! \brief expression that encapsulate a vector reduction expression
+ *
+ * \tparam exp1 expression 1
+ * \tparam vector_type type of vector on which the expression is acting
+ *
+ */
 template <typename exp1, typename vector_type>
 class vector_dist_expression_op<exp1,vector_type,VECT_SUM_REDUCE>
 {
+	//! expression 1
 	const exp1 o1;
 
+	//! return type comming from the expression
 	typedef typename apply_kernel_rtype<decltype(o1.value(vect_dist_key_dx(0)))>::rtype rtype;
 
-	// calculated value
+	//! r_type without reference
 	mutable typename std::remove_reference<rtype>::type val;
 
 	const vector_type & vd;
 
 public:
 
+	//! constructor from an epxression exp1 and a vector vd
 	vector_dist_expression_op(const exp1 & o1, const vector_type & vd)
 	:o1(o1), vd(vd)
 	{}
 
+	//! initialize the expression
 	inline void init() const
 	{
 		o1.init();
@@ -244,19 +254,21 @@ public:
 		}
 	}
 
+	//! Get the value of the expression
 	inline typename std::remove_reference<rtype>::type get()
 	{
 		init();
 		return value(vect_dist_key_dx(0));
 	}
 
+	//! Get the value  of the expression
 	template<typename r_type= typename std::remove_reference<rtype>::type > inline r_type value(const vect_dist_key_dx & key) const
 	{
 		return val;
 	}
 };
 
-
+//! Reduce function (it generate an expression)
 template<typename exp1, typename exp2_, unsigned int op1, typename vector_type>
 inline vector_dist_expression_op<vector_dist_expression_op<exp1,exp2_,op1>,vector_type,VECT_SUM_REDUCE>
 rsum(const vector_dist_expression_op<exp1,exp2_,op1> & va, const vector_type & vd)
@@ -266,6 +278,7 @@ rsum(const vector_dist_expression_op<exp1,exp2_,op1> & va, const vector_type & v
 	return exp_sum;
 }
 
+//! Reduce function (It generate an expression)
 template<unsigned int prp1, typename v1, typename vector_type>
 inline vector_dist_expression_op<vector_dist_expression<prp1,v1>,vector_type,VECT_SUM_REDUCE>
 rsum(const vector_dist_expression<prp1,v1> & va, const vector_type & vd)

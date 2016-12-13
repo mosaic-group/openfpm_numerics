@@ -652,12 +652,16 @@ typedef vector_dist<3,float,aggregate<float,float,float,VectorS<3,float>,VectorS
 //! Exponential kernel
 struct exp_kernel
 {
+	//! variance of the exponential kernel
 	float var;
 
+	//! Exponential kernel giving variance
 	exp_kernel(float var)
 	:var(var)
 	{}
 
+	//! Calculate the value of the exponential kernel given two points p and q
+	// pA is the property on p pB is the property on B
 	inline float value(const Point<3,float> & p, const Point<3,float> & q,float pA,float pB)
 	{
 		float dist = norm(p-q);
@@ -665,6 +669,8 @@ struct exp_kernel
 		return (pA + pB) * exp(dist * dist / var);
 	}
 
+	//! Calculate the value of the exponential kernel given two points p and q
+	// pA is the value of the property on pA and pB is the value of the property on pB
 	inline Point<3,float> value(const Point<3,float> & p, const Point<3,float> & q,const Point<3,float> & pA, const Point<3,float> & pB)
 	{
 		float dist = norm(p-q);
@@ -672,6 +678,9 @@ struct exp_kernel
 		return (pA + pB) * exp(dist * dist / var);
 	}
 
+	//! Calculate the value of the exponential kernel given two points p and q
+	// pA is the value of the property on pA and pB is the value of the property on pB
+	// vd1 is the set of particles
 	inline float value(size_t p, size_t q, float pA, float pB, const vector_type & vd1)
 	{
 		Point<3,float> pp = vd1.getPos(p);
@@ -682,6 +691,9 @@ struct exp_kernel
 		return (pA + pB) * exp(dist * dist / var);
 	}
 
+	//! Calculate the value of the exponential kernel given two points p and q
+	// pA is the value of the property on pA and pB is the value of the property on pB
+	// vd1 is the set of particles
 	inline Point<3,float> value(size_t p, size_t q, const Point<3,float> & pA, const Point<3,float> & pB , const vector_type & vd1)
 	{
 		Point<3,float> pp = vd1.getPos(p);
@@ -692,6 +704,7 @@ struct exp_kernel
 		return (pA + pB) * exp(dist * dist / var);
 	}
 
+	//! Calculate the value of the exponential kernel given two points p and q
 	inline Point<2,float> value(const Point<3,float> & p, const Point<3,float> & q)
 	{
 		float dist = norm(p-q);

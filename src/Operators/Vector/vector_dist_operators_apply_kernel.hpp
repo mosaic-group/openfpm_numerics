@@ -199,15 +199,27 @@ struct apply_kernel_is_number_or_expression_gen
 template <typename exp1,typename vector_type>
 class vector_dist_expression_op<exp1,vector_type,VECT_APPLYKER_IN>
 {
+	//! Type of neighborhood
 	typedef typename boost::mpl::at<vector_type,boost::mpl::int_<0>>::type NN;
+	//! Type of kernel
 	typedef typename boost::mpl::at<vector_type,boost::mpl::int_<1>>::type Kernel;
+
+	// Type of the vector containing the particles
 	typedef typename boost::mpl::at<vector_type,boost::mpl::int_<2>>::type vector_orig;
 
+	//! expression
 	const exp1 o1;
+
+	//! neighborhood list
 	NN & cl;
+
+	//! kernel
 	Kernel & ker;
+
+	//! Vector of particles
 	const vector_orig & vd;
 
+	//! Return type of the expression
 	typedef typename apply_kernel_rtype<decltype(o1.value(vect_dist_key_dx(0)))>::rtype rtype;
 
 public:
@@ -246,14 +258,25 @@ public:
 template <typename exp1,typename vector_type>
 class vector_dist_expression_op<exp1,vector_type,VECT_APPLYKER_IN_SIM>
 {
+	//! Type of neighborhood list
 	typedef typename boost::mpl::at<vector_type,boost::mpl::int_<0>>::type NN;
+
+	//! Type of the kernel
 	typedef typename boost::mpl::at<vector_type,boost::mpl::int_<1>>::type Kernel;
+
+	//! Type that store the particles
 	typedef typename boost::mpl::at<vector_type,boost::mpl::int_<2>>::type vector_orig;
 
+	//! Neighborhood list
 	NN & cl;
+
+	//! kernel
 	Kernel & ker;
+
+	//! vector of particles
 	const vector_orig & vd;
 
+	//! return type of the expression
 	typedef typename apply_kernel_rtype<decltype(std::declval<Kernel>().value(Point<vector_orig::dims,typename vector_orig::stype>(0.0), Point<vector_orig::dims,typename vector_orig::stype>(0.0) ) )>::rtype rtype;
 
 
@@ -268,6 +291,13 @@ public:
 	{
 	}
 
+	/*! \brief Constructor
+	 *
+	 * \param cl neighborhood-list
+	 * \param ker kernel to apply
+	 * \param vd particle set to which apply the kernel
+	 *
+	 */
 	vector_dist_expression_op(NN & cl, Kernel & ker, const vector_orig & vd)
 	:cl(cl),ker(ker),vd(vd)
 	{}
@@ -293,15 +323,28 @@ public:
 template <typename exp1,typename vector_type>
 class vector_dist_expression_op<exp1,vector_type,VECT_APPLYKER_IN_GEN>
 {
+	//! Type of nearest neighborhood
 	typedef typename boost::mpl::at<vector_type,boost::mpl::int_<0>>::type NN;
+
+	//! Type of kernel
 	typedef typename boost::mpl::at<vector_type,boost::mpl::int_<1>>::type Kernel;
+
+	//! Type of vector
 	typedef typename boost::mpl::at<vector_type,boost::mpl::int_<2>>::type vector_orig;
 
+	//! expression 1
 	const exp1 o1;
+
+	//! nearest neighborhood
 	NN & cl;
+
+	//! kernel
 	Kernel & ker;
+
+	//! Vector containing the particles
 	const vector_orig & vd;
 
+	//! Return type of the kernel
 	typedef typename apply_kernel_rtype<decltype(o1.value(vect_dist_key_dx(0)))>::rtype rtype;
 
 public:
@@ -316,6 +359,14 @@ public:
 		o1.init();
 	}
 
+	/*! \brief Constructor from expression
+	 *
+	 * \param o1 first expression
+	 * \param NN neighborhood
+	 * \param kernel
+	 * \param vd vector with particles
+	 *
+	 */
 	vector_dist_expression_op(const exp1 & o1, NN & cl, Kernel & ker, const vector_orig & vd)
 	:o1(o1),cl(cl),ker(ker),vd(vd)
 	{}
