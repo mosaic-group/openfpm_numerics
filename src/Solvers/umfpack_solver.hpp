@@ -126,29 +126,33 @@ public:
 
 #include "Vector/Vector.hpp"
 
+//! stub when library compiled without eigen
 template<typename T>
 class umfpack_solver
 {
 public:
 
+	//! stub solve
 	template<typename impl> static Vector<T> solve(const SparseMatrix<T,impl> & A, const Vector<T> & b)
 	{
 		std::cerr << __FILE__ << ":" << __LINE__ << " Error Umfpack only support double precision" << "/n";
 	}
 
+	//! stub solve
 	void best_solve()
 	{
 		std::cerr << __FILE__ << ":" << __LINE__ << " Error Umfpack only support double precision" << "/n";
 	}
 };
 
-
+//! stub when library compiled without eigen
 template<>
 class umfpack_solver<double>
 {
 
 public:
 
+	//! stub solve
 	template<unsigned int impl, typename id_type> static Vector<double> solve(SparseMatrix<double,id_type,impl> & A, const Vector<double> & b, size_t opt = UMFPACK_NONE)
 	{
 		std::cerr << __FILE__ << ":" << __LINE__ << " Error in order to use umfpack you must compile OpenFPM with linear algebra support" << "/n";
@@ -158,6 +162,7 @@ public:
 		return x;
 	}
 
+	//! stub solve
 	void best_solve()
 	{
 		std::cerr << __FILE__ << ":" << __LINE__ << " Error in order to use umfpack you must compile OpenFPM with linear algebra support" << "/n";

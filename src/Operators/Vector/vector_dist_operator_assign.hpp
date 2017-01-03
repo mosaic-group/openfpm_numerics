@@ -8,27 +8,34 @@
 #ifndef OPENFPM_NUMERICS_SRC_OPERATORS_VECTOR_VECTOR_DIST_OPERATOR_ASSIGN_HPP_
 #define OPENFPM_NUMERICS_SRC_OPERATORS_VECTOR_VECTOR_DIST_OPERATOR_ASSIGN_HPP_
 
+//! Construct a vector expression from a type T that is already an expression
+//! it does nothing
 template<typename T>
 struct construct_expression
 {
+	//! It return the expression itself
 	static inline const T & construct(const T & e)
 	{
 		return e;
 	}
 };
 
+//! construct a vector expression from a double
 template<>
 struct construct_expression<double>
 {
+	//! It return an expression from a double
 	static inline vector_dist_expression<0,double> construct(double e)
 	{
 		return vector_dist_expression<0,double>(e);
 	}
 };
 
+//! construct a vector expression from a float
 template<>
 struct construct_expression<float>
 {
+	//! It return an expression from a float
 	static inline vector_dist_expression<0,float> construct(const float e)
 	{
 		return vector_dist_expression<0,float>(e);

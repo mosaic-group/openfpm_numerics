@@ -53,6 +53,7 @@ struct set_zero
 	}
 };
 
+//! Create a point with all compunent set to zero
 template<unsigned int dim, typename T>
 struct set_zero<Point<dim,T>>
 {
@@ -276,7 +277,7 @@ public:
 	 * \param o1 expression
 	 * \param cl Cell-list
 	 * \param ker kernel function
-	 * \param vector_orig vector containing the particle positions
+	 * \param vd vector containing the particle positions
 	 *
 	 */
 	vector_dist_expression_op(const exp1 & o1, NN & cl, Kernel & ker, const vector_orig & vd)

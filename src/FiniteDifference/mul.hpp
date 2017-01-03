@@ -15,10 +15,11 @@
 #define HAS_VAL 1
 #define HAS_POS_VAL 2
 
-
+//! Evaluate the constant field function
 template <unsigned int, typename T>
 struct has_val
 {
+	//! evaluate
 	static float call_val()
 	{
 		std::cerr << "Error the type " << demangle(typeid(T).name()) << "interpreted as constant field, does not have a function val() or val_pos(), please see the numeric examples in Finite Differences for more information\n";
@@ -26,16 +27,18 @@ struct has_val
 	}
 };
 
+//! Evaluate the constant field function
 template <typename T>
 struct has_val<HAS_VAL,T>
 {
+	//! evaluate
 	static decltype(T::val()) call_val()
 	{
 		return T::val();
 	}
 };
 
-
+//! Multiplication expression
 template<typename v_expr>
 struct const_mul_functor_value
 {
@@ -48,12 +51,13 @@ struct const_mul_functor_value
 	//! sum functor
 	std::unordered_map<long int,typename last::stype> & cols;
 
+	//! grid size
 	const grid_sm<last::dims,void> & gs;
 
-	// grid mapping
+	//! grid mapping
 	const grid_dist_id<last::dims,typename last::stype,scalar<size_t>,typename last::b_grid::decomposition::extended_type> & g_map;
 
-	// grid position
+	//! grid position
 	grid_dist_key_dx<last::dims> & kmap;
 
 	//! coefficent
@@ -64,8 +68,20 @@ struct const_mul_functor_value
 
 	/*! \brief constructor
 	 *
+	 * \param g_map mapping grid
+	 * \param kmap grid point (row) where we evaluate the non-zero colums
+	 * \param gs grid size
+	 * \param spacing grid spacing
+	 * \param col non zero colums
+	 * \param coefficent
+	 *
 	 */
-	const_mul_functor_value(const grid_dist_id<last::dims,typename last::stype,scalar<size_t>,typename last::b_grid::decomposition::extended_type> & g_map, grid_dist_key_dx<last::dims> & kmap, const grid_sm<last::dims,void> & gs, typename last::stype (& spacing)[last::dims], std::unordered_map<long int,typename last::stype> & cols, typename last::stype coeff)
+	const_mul_functor_value(const grid_dist_id<last::dims,typename last::stype,scalar<size_t>,typename last::b_grid::decomposition::extended_type> & g_map,
+			                grid_dist_key_dx<last::dims> & kmap,
+							const grid_sm<last::dims,void> & gs,
+							typename last::stype (& spacing)[last::dims],
+							std::unordered_map<long int,typename last::stype> & cols,
+							typename last::stype coeff)
 	:cols(cols),gs(gs),g_map(g_map),kmap(kmap),coeff(coeff),spacing(spacing)
 	{};
 
@@ -80,6 +96,11 @@ struct const_mul_functor_value
 		coeff *= has_val<is_const_field<cfield>::value * 1,cfield>::call_val();
 	}
 
+	/*! \brief Get the coefficent
+	 *
+	 * \return the coefficent
+	 *
+	 */
 	typename last::stype getCoeff()
 	{
 		return coeff;

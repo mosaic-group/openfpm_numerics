@@ -51,9 +51,6 @@ template <typename vector,typename Kernel, typename NN_type> bool check_values_a
 
 		base2 += vd.template getProp<C>(p);
 
-		if (base1 != base2)
-			std::cout << "CAZZO " << base1 << "  " << base2 << std::endl;
-
 		ret &= base1 == base2;
 
 		++it2;

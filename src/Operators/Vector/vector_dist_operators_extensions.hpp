@@ -23,19 +23,20 @@ template <unsigned int dim, typename T> inline vector_dist_expression<16384,Poin
 }
 
 
-/*! \brief Main class that encapsulate a vector properties
+/*! \brief This class represent a constant parameter in a vector expression
  *
- * \tparam prp property involved
- * \tparam vector involved
+ * \tparam point type of point
  *
  */
 template<typename point>
 class vector_dist_expression<16384,point>
 {
+	//! constant point stored
 	point p;
 
 public:
 
+	//! vector expression from a constant point
 	vector_dist_expression(point p)
 	:p(p)
 	{}
@@ -50,7 +51,9 @@ public:
 
 	/*! \brief Evaluate the expression
 	 *
-	 * \param key where to evaluate the expression
+	 * \param k where to evaluate the expression (ignored)
+	 *
+	 * \return the point stored
 	 *
 	 */
 	inline point value(const vect_dist_key_dx & k) const
