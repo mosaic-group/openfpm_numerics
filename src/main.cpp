@@ -1,9 +1,9 @@
-#include "config.h"
 #define BOOST_TEST_MODULE "C++ test module for OpenFPM_numerics project"
 #include <boost/test/included/unit_test.hpp>
 
 #include "unit_test_init_cleanup.hpp"
 
+#include "config.h"
 #include "Vector/Vector_unit_tests.hpp"
 #include "Matrix/SparseMatrix_unit_tests.hpp"
 #include "FiniteDifference/FDScheme_unit_tests.hpp"
