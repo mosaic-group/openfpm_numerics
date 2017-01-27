@@ -5,6 +5,7 @@
 
 #include "unit_test_init_cleanup.hpp"
 
+#include "config.h"
 #include "Vector/Vector_unit_tests.hpp"
 #include "Matrix/SparseMatrix_unit_tests.hpp"
 #include "FiniteDifference/FDScheme_unit_tests.hpp"
