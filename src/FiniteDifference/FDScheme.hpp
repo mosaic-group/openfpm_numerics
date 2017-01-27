@@ -10,7 +10,7 @@
 
 #include "../Matrix/SparseMatrix.hpp"
 #include "Grid/grid_dist_id.hpp"
-#include "Grid/grid_dist_id_iterator_sub.hpp"
+#include "Grid/Iterators/grid_dist_id_iterator_sub.hpp"
 #include "eq.hpp"
 #include "data_type/scalar.hpp"
 #include "NN/CellList/CellDecomposer.hpp"
