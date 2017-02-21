@@ -72,8 +72,8 @@ struct const_mul_functor_value
 	 * \param kmap grid point (row) where we evaluate the non-zero colums
 	 * \param gs grid size
 	 * \param spacing grid spacing
-	 * \param col non zero colums
-	 * \param coefficent
+	 * \param cols non zero colums
+	 * \param coeff multiplication coefficent
 	 *
 	 */
 	const_mul_functor_value(const grid_dist_id<last::dims,typename last::stype,scalar<size_t>,typename last::b_grid::decomposition::extended_type> & g_map,
@@ -118,23 +118,31 @@ struct const_mul_functor_value
 template<typename ... expr >
 struct mul
 {
-	// Transform from variadic template to boost mpl vector
+	//! Transform from variadic template to boost mpl vector
 	typedef boost::mpl::vector<expr... > v_expr;
 
-	// size of v_expr
+	//! size of v_expr
 	typedef typename boost::mpl::size<v_expr>::type v_sz;
 
+	//! type on which this expression operate
 	typedef typename boost::mpl::at<v_expr, boost::mpl::int_<v_sz::type::value - 1> >::type Sys_eqs;
 
 	/*! \brief Calculate which colums of the Matrix are non zero
 	 *
-	 * \param pos position where the multiplication is calculated
+	 * \param g_map mapping grid
+	 * \param kmap position where the multiplication is calculated
 	 * \param gs Grid info
+	 * \param spacing of the grid
 	 * \param cols non-zero colums calculated by the function
 	 * \param coeff coefficent (constant in front of the derivative)
 	 *
 	 */
-	inline static void value(const grid_dist_id<Sys_eqs::dims,typename Sys_eqs::stype,scalar<size_t>,typename Sys_eqs::b_grid::decomposition::extended_type> & g_map, grid_dist_key_dx<Sys_eqs::dims> & kmap, const grid_sm<Sys_eqs::dims,void> & gs, typename Sys_eqs::stype (& spacing )[Sys_eqs::dims] , std::unordered_map<long int,typename Sys_eqs::stype > & cols, typename Sys_eqs::stype coeff)
+	inline static void value(const grid_dist_id<Sys_eqs::dims,typename Sys_eqs::stype,scalar<size_t>,typename Sys_eqs::b_grid::decomposition::extended_type> & g_map,
+			                 grid_dist_key_dx<Sys_eqs::dims> & kmap,
+							 const grid_sm<Sys_eqs::dims,void> & gs,
+							 typename Sys_eqs::stype (& spacing )[Sys_eqs::dims],
+							 std::unordered_map<long int,typename Sys_eqs::stype > & cols,
+							 typename Sys_eqs::stype coeff)
 	{
 		const_mul_functor_value<v_expr> mfv(g_map,kmap,gs,spacing,cols,coeff);
 
@@ -151,12 +159,14 @@ struct mul
 	 *
 	 * it just return the position of the staggered property in the last expression
 	 *
-	 * \param position where we are calculating the derivative
+	 * \param pos position where we are calculating the derivative
 	 * \param gs Grid info
 	 * \param s_pos staggered position of the properties
 	 *
 	 */
-	inline static grid_key_dx<Sys_eqs::dims> position(grid_key_dx<Sys_eqs::dims> & pos, const grid_sm<Sys_eqs::dims,void> & gs, const comb<Sys_eqs::dims> (& s_pos)[Sys_eqs::nvar])
+	inline static grid_key_dx<Sys_eqs::dims> position(grid_key_dx<Sys_eqs::dims> & pos,
+			                                          const grid_sm<Sys_eqs::dims,void> & gs,
+													  const comb<Sys_eqs::dims> (& s_pos)[Sys_eqs::nvar])
 	{
 		return boost::mpl::at<v_expr, boost::mpl::int_<v_sz::type::value - 2> >::type::position(pos,gs,s_pos);
 	}

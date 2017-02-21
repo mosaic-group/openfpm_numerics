@@ -97,7 +97,9 @@ template<typename T, typename Kernel> void PSE_test(size_t Npart, size_t overlap
 		// set the position of the particles
 		vd.getPos(key)[0] = 0.448000 - ((long int)key.getKey() - mp) * spacing;
 		//set the property of the particles
-		vd.template getProp<0>(key) = f_xex2(vd.getPos(key)[0]);
+		T d = vd.getPos(key)[0];
+
+		vd.template getProp<0>(key) = f_xex2(d);
 
 		++it2;
 	}
@@ -130,8 +132,10 @@ template<typename T, typename Kernel> void PSE_test(size_t Npart, size_t overlap
     	// given by the Near particle, exclude itself
     	if (nnp != key.getKey())
     	{
+    		Point<1,T> xp = vd.getPos(nnp);
+
     		// W(x-y)
-    		T ker = lker.value(p,vd.getPos(nnp));
+    		T ker = lker.value(p,xp);
 
     		// f(y)
     		T prp_y = vd.template getProp<0>(nnp);

@@ -16,6 +16,8 @@ BOOST_AUTO_TEST_SUITE( draw_particles )
 
 BOOST_AUTO_TEST_CASE(point_iterator)
 {
+	//! [DrawBox_example]
+
 	size_t sz[] = {23,27,20};
 
 	Box<3,double> domain({-1.2,0.5,-0.6},{1.0,3.1,1.3});
@@ -51,6 +53,8 @@ BOOST_AUTO_TEST_CASE(point_iterator)
 
 		++p;
 	}
+
+	//! [DrawBox_example]
 
 	Vcluster & v_cl = create_vcluster();
 

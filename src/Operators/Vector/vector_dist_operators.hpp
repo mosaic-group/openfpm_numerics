@@ -167,7 +167,8 @@ public:
 	 * \return return the result of the expression
 	 *
 	 */
-	template<typename r_type=typename std::remove_reference<decltype(o1.value(vect_dist_key_dx(0)) + o2.value(vect_dist_key_dx(0)))>::type > inline r_type value(const vect_dist_key_dx & key) const
+	template<typename r_type=typename std::remove_reference<decltype(o1.value(vect_dist_key_dx(0)) + o2.value(vect_dist_key_dx(0)))>::type >
+	inline r_type value(const vect_dist_key_dx & key) const
 	{
 		return o1.value(key) + o2.value(key);
 	}
@@ -312,7 +313,7 @@ public:
 	}
 };
 
-/*! \brief selector for position or properties
+/*! \brief selector for position or properties left side expression
  *
  * \tparam vector type of the original vector
  *
@@ -320,7 +321,7 @@ public:
  *
  */
 template <typename vector, unsigned int prp>
-struct pos_or_prop
+struct pos_or_propL
 {
 	//! return the value (position or property) of the particle k in the vector v
 	static inline auto value(vector & v, const vect_dist_key_dx & k) -> decltype(v.template getProp<prp>(k))
@@ -329,7 +330,24 @@ struct pos_or_prop
 	}
 };
 
-/*! \brief selector for position or properties
+/*! \brief selector for position or properties right side position
+ *
+ * \tparam vector type of the original vector
+ *
+ * \tparam prp property id
+ *
+ */
+template <typename vector, unsigned int prp>
+struct pos_or_propR
+{
+	//! return the value (position or property) of the particle k in the vector v
+	static inline auto value(vector & v, const vect_dist_key_dx & k) -> decltype(v.template getProp<prp>(k))
+	{
+		return v.template getProp<prp>(k);
+	}
+};
+
+/*! \brief selector for position or properties left side
  *
  * \tparam vector type of the original vector
  *
@@ -337,12 +355,41 @@ struct pos_or_prop
  *
  */
 template <typename vector>
-struct pos_or_prop<vector,PROP_POS>
+struct pos_or_propL<vector,PROP_POS>
 {
+#ifdef SE_CLASS3
+
+	//! return the value (position or property) of the particle k in the vector v
+	static inline auto value(vector & v, const vect_dist_key_dx & k) -> decltype(getExpr(v.getPos(k).getReference()))
+	{
+		return getExpr(v.getPos(k).getReference());
+	}
+
+#else
+
 	//! return the value (position or property) of the particle k in the vector v
 	static inline auto value(vector & v, const vect_dist_key_dx & k) -> decltype(getExpr(v.getPos(k)))
 	{
 		return getExpr(v.getPos(k));
+	}
+
+#endif
+};
+
+/*! \brief selector for position or properties right side
+ *
+ * \tparam vector type of the original vector
+ *
+ * \tparam prp property id
+ *
+ */
+template <typename vector>
+struct pos_or_propR<vector,PROP_POS>
+{
+	//! return the value (position or property) of the particle k in the vector v
+	static inline auto value(vector & v, const vect_dist_key_dx & k) -> decltype(getExprR(v.getPos(k)))
+	{
+		return getExprR(v.getPos(k));
 	}
 };
 
@@ -428,9 +475,9 @@ public:
 	 * \return the result of the expression
 	 *
 	 */
-	inline auto value(const vect_dist_key_dx & k) const -> decltype(pos_or_prop<vector,prp>::value(v,k))
+	inline auto value(const vect_dist_key_dx & k) const -> decltype(pos_or_propR<vector,prp>::value(v,k))
 	{
-		return pos_or_prop<vector,prp>::value(v,k);
+		return pos_or_propR<vector,prp>::value(v,k);
 	}
 
 	/*! \brief Fill the vector property with the evaluated expression
@@ -450,7 +497,7 @@ public:
 		{
 			auto key = it.get();
 
-			pos_or_prop<vector,prp>::value(v,key) = v_exp.value(key);
+			pos_or_propL<vector,prp>::value(v,key) = v_exp.value(key);
 
 			++it;
 		}
@@ -475,7 +522,7 @@ public:
 		{
 			auto key = it.get();
 
-			pos_or_prop<vector,prp>::value(v,key) = v_exp.value(key);
+			pos_or_propL<vector,prp>::value(v,key) = v_exp.value(key);
 
 			++it;
 		}
@@ -498,7 +545,7 @@ public:
 		{
 			auto key = it.get();
 
-			pos_or_prop<vector,prp>::value(v,key) = d;
+			pos_or_propL<vector,prp>::value(v,key) = d;
 
 			++it;
 		}

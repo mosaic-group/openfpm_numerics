@@ -56,8 +56,8 @@ template<typename prp1, typename expr1, typename prp2, typename expr2> void assi
 	{
 		auto key = it.get();
 
-		pos_or_prop<typename prp1::vtype,prp1::prop>::value(p1.getVector(),key) = v_exp1.value(key);
-		pos_or_prop<typename prp2::vtype,prp2::prop>::value(p2.getVector(),key) = v_exp2.value(key);
+		pos_or_propL<typename prp1::vtype,prp1::prop>::value(p1.getVector(),key) = v_exp1.value(key);
+		pos_or_propL<typename prp2::vtype,prp2::prop>::value(p2.getVector(),key) = v_exp2.value(key);
 
 		++it;
 	}
@@ -79,9 +79,9 @@ template<typename prp1, typename expr1, typename prp2, typename expr2, typename 
 	{
 		auto key = it.get();
 
-		pos_or_prop<typename prp1::vtype,prp1::prop>::value(p1.getVector(),key) = v_exp1.value(key);
-		pos_or_prop<typename prp2::vtype,prp2::prop>::value(p2.getVector(),key) = v_exp2.value(key);
-		pos_or_prop<typename prp3::vtype,prp3::prop>::value(p3.getVector(),key) = v_exp3.value(key);
+		pos_or_propL<typename prp1::vtype,prp1::prop>::value(p1.getVector(),key) = v_exp1.value(key);
+		pos_or_propL<typename prp2::vtype,prp2::prop>::value(p2.getVector(),key) = v_exp2.value(key);
+		pos_or_propL<typename prp3::vtype,prp3::prop>::value(p3.getVector(),key) = v_exp3.value(key);
 
 		++it;
 	}
@@ -112,10 +112,10 @@ void assign(prp1 & p1, const expr1 & v_e1,
 	{
 		auto key = it.get();
 
-		pos_or_prop<typename prp1::vtype,prp1::prop>::value(p1.getVector(),key) = v_exp1.value(key);
-		pos_or_prop<typename prp2::vtype,prp2::prop>::value(p2.getVector(),key) = v_exp2.value(key);
-		pos_or_prop<typename prp3::vtype,prp3::prop>::value(p3.getVector(),key) = v_exp3.value(key);
-		pos_or_prop<typename prp4::vtype,prp4::prop>::value(p4.getVector(),key) = v_exp4.value(key);
+		pos_or_propL<typename prp1::vtype,prp1::prop>::value(p1.getVector(),key) = v_exp1.value(key);
+		pos_or_propL<typename prp2::vtype,prp2::prop>::value(p2.getVector(),key) = v_exp2.value(key);
+		pos_or_propL<typename prp3::vtype,prp3::prop>::value(p3.getVector(),key) = v_exp3.value(key);
+		pos_or_propL<typename prp4::vtype,prp4::prop>::value(p4.getVector(),key) = v_exp4.value(key);
 
 		++it;
 	}
@@ -151,11 +151,11 @@ void assign(prp1 & p1, const expr1 & v_e1,
 	{
 		auto key = it.get();
 
-		pos_or_prop<typename prp1::vtype,prp1::prop>::value(p1.getVector(),key) = v_exp1.value(key);
-		pos_or_prop<typename prp2::vtype,prp2::prop>::value(p2.getVector(),key) = v_exp2.value(key);
-		pos_or_prop<typename prp3::vtype,prp3::prop>::value(p3.getVector(),key) = v_exp3.value(key);
-		pos_or_prop<typename prp4::vtype,prp4::prop>::value(p4.getVector(),key) = v_exp4.value(key);
-		pos_or_prop<typename prp5::vtype,prp5::prop>::value(p5.getVector(),key) = v_exp5.value(key);
+		pos_or_propL<typename prp1::vtype,prp1::prop>::value(p1.getVector(),key) = v_exp1.value(key);
+		pos_or_propL<typename prp2::vtype,prp2::prop>::value(p2.getVector(),key) = v_exp2.value(key);
+		pos_or_propL<typename prp3::vtype,prp3::prop>::value(p3.getVector(),key) = v_exp3.value(key);
+		pos_or_propL<typename prp4::vtype,prp4::prop>::value(p4.getVector(),key) = v_exp4.value(key);
+		pos_or_propL<typename prp5::vtype,prp5::prop>::value(p5.getVector(),key) = v_exp5.value(key);
 
 		++it;
 	}
@@ -194,12 +194,12 @@ void assign(prp1 & p1, const expr1 & v_e1,
 	{
 		auto key = it.get();
 
-		pos_or_prop<typename prp1::vtype,prp1::prop>::value(p1.getVector(),key) = v_exp1.value(key);
-		pos_or_prop<typename prp2::vtype,prp2::prop>::value(p2.getVector(),key) = v_exp2.value(key);
-		pos_or_prop<typename prp3::vtype,prp3::prop>::value(p3.getVector(),key) = v_exp3.value(key);
-		pos_or_prop<typename prp4::vtype,prp4::prop>::value(p4.getVector(),key) = v_exp4.value(key);
-		pos_or_prop<typename prp5::vtype,prp5::prop>::value(p5.getVector(),key) = v_exp5.value(key);
-		pos_or_prop<typename prp6::vtype,prp6::prop>::value(p6.getVector(),key) = v_exp6.value(key);
+		pos_or_propL<typename prp1::vtype,prp1::prop>::value(p1.getVector(),key) = v_exp1.value(key);
+		pos_or_propL<typename prp2::vtype,prp2::prop>::value(p2.getVector(),key) = v_exp2.value(key);
+		pos_or_propL<typename prp3::vtype,prp3::prop>::value(p3.getVector(),key) = v_exp3.value(key);
+		pos_or_propL<typename prp4::vtype,prp4::prop>::value(p4.getVector(),key) = v_exp4.value(key);
+		pos_or_propL<typename prp5::vtype,prp5::prop>::value(p5.getVector(),key) = v_exp5.value(key);
+		pos_or_propL<typename prp6::vtype,prp6::prop>::value(p6.getVector(),key) = v_exp6.value(key);
 
 		++it;
 	}
@@ -244,13 +244,13 @@ void assign(prp1 & p1, const expr1 & v_e1,
 	{
 		auto key = it.get();
 
-		pos_or_prop<typename prp1::vtype,prp1::prop>::value(p1.getVector(),key) = v_exp1.value(key);
-		pos_or_prop<typename prp2::vtype,prp2::prop>::value(p2.getVector(),key) = v_exp2.value(key);
-		pos_or_prop<typename prp3::vtype,prp3::prop>::value(p3.getVector(),key) = v_exp3.value(key);
-		pos_or_prop<typename prp4::vtype,prp4::prop>::value(p4.getVector(),key) = v_exp4.value(key);
-		pos_or_prop<typename prp5::vtype,prp5::prop>::value(p5.getVector(),key) = v_exp5.value(key);
-		pos_or_prop<typename prp6::vtype,prp6::prop>::value(p6.getVector(),key) = v_exp6.value(key);
-		pos_or_prop<typename prp7::vtype,prp7::prop>::value(p7.getVector(),key) = v_exp7.value(key);
+		pos_or_propL<typename prp1::vtype,prp1::prop>::value(p1.getVector(),key) = v_exp1.value(key);
+		pos_or_propL<typename prp2::vtype,prp2::prop>::value(p2.getVector(),key) = v_exp2.value(key);
+		pos_or_propL<typename prp3::vtype,prp3::prop>::value(p3.getVector(),key) = v_exp3.value(key);
+		pos_or_propL<typename prp4::vtype,prp4::prop>::value(p4.getVector(),key) = v_exp4.value(key);
+		pos_or_propL<typename prp5::vtype,prp5::prop>::value(p5.getVector(),key) = v_exp5.value(key);
+		pos_or_propL<typename prp6::vtype,prp6::prop>::value(p6.getVector(),key) = v_exp6.value(key);
+		pos_or_propL<typename prp7::vtype,prp7::prop>::value(p7.getVector(),key) = v_exp7.value(key);
 
 		++it;
 	}
@@ -298,14 +298,14 @@ void assign(prp1 & p1, const expr1 & v_e1,
 	{
 		auto key = it.get();
 
-		pos_or_prop<typename prp1::vtype,prp1::prop>::value(p1.getVector(),key) = v_exp1.value(key);
-		pos_or_prop<typename prp2::vtype,prp2::prop>::value(p2.getVector(),key) = v_exp2.value(key);
-		pos_or_prop<typename prp3::vtype,prp3::prop>::value(p3.getVector(),key) = v_exp3.value(key);
-		pos_or_prop<typename prp4::vtype,prp4::prop>::value(p4.getVector(),key) = v_exp4.value(key);
-		pos_or_prop<typename prp5::vtype,prp5::prop>::value(p5.getVector(),key) = v_exp5.value(key);
-		pos_or_prop<typename prp6::vtype,prp6::prop>::value(p6.getVector(),key) = v_exp6.value(key);
-		pos_or_prop<typename prp7::vtype,prp7::prop>::value(p7.getVector(),key) = v_exp7.value(key);
-		pos_or_prop<typename prp8::vtype,prp8::prop>::value(p8.getVector(),key) = v_exp8.value(key);
+		pos_or_propL<typename prp1::vtype,prp1::prop>::value(p1.getVector(),key) = v_exp1.value(key);
+		pos_or_propL<typename prp2::vtype,prp2::prop>::value(p2.getVector(),key) = v_exp2.value(key);
+		pos_or_propL<typename prp3::vtype,prp3::prop>::value(p3.getVector(),key) = v_exp3.value(key);
+		pos_or_propL<typename prp4::vtype,prp4::prop>::value(p4.getVector(),key) = v_exp4.value(key);
+		pos_or_propL<typename prp5::vtype,prp5::prop>::value(p5.getVector(),key) = v_exp5.value(key);
+		pos_or_propL<typename prp6::vtype,prp6::prop>::value(p6.getVector(),key) = v_exp6.value(key);
+		pos_or_propL<typename prp7::vtype,prp7::prop>::value(p7.getVector(),key) = v_exp7.value(key);
+		pos_or_propL<typename prp8::vtype,prp8::prop>::value(p8.getVector(),key) = v_exp8.value(key);
 
 		++it;
 	}

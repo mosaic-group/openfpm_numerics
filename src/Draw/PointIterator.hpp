@@ -69,7 +69,7 @@ class PointIterator: protected grid_dist_id_iterator_dec<Decomposition>
 	//! Spacing
 	T sp[dim];
 
-	static grid_key_dx<dim> getStart(size_t (& gs)[dim], Box<dim,T> & dom, Box<dim,T> & sub_dom, T (& sp)[dim])
+	static grid_key_dx<dim> getStart(size_t (& gs)[dim], const Box<dim,T> & dom, Box<dim,T> & sub_dom, T (& sp)[dim])
 	{
 		for (size_t i = 0 ; i < dim ; i++)
 			sp[i] = (dom.getHigh(i) - dom.getLow(i)) / (gs[i] -1);
@@ -82,7 +82,7 @@ class PointIterator: protected grid_dist_id_iterator_dec<Decomposition>
 		return pkey;
 	}
 
-	static grid_key_dx<dim> getStop(size_t (& gs)[dim], Box<dim,T> & dom, Box<dim,T> & sub_dom, T (& sp)[dim])
+	static grid_key_dx<dim> getStop(size_t (& gs)[dim], const Box<dim,T> & dom, Box<dim,T> & sub_dom, T (& sp)[dim])
 	{
 		for (size_t i = 0 ; i < dim ; i++)
 			sp[i] = (dom.getHigh(i) - dom.getLow(i)) / (gs[i] - 1);
@@ -97,6 +97,9 @@ class PointIterator: protected grid_dist_id_iterator_dec<Decomposition>
 
 	void calculateAp()
 	{
+		if (grid_dist_id_iterator_dec<Decomposition>::isNext() == false)
+			return;
+
 		grid_key_dx<dim> key = grid_dist_id_iterator_dec<Decomposition>::get();
 
 		for (size_t i = 0 ; i < dim ; i++)
@@ -110,7 +113,7 @@ public:
 	 * \param sp grid spacing
 	 *
 	 */
-	PointIterator( Decomposition & dec, size_t (& sz)[dim], Box<dim,T> & domain, Box<dim,T> & sub_domain)
+	PointIterator( Decomposition & dec, size_t (& sz)[dim], const Box<dim,T> & domain, Box<dim,T> & sub_domain)
 	:grid_dist_id_iterator_dec<Decomposition>(dec, sz, getStart(sz,domain,sub_domain,sp), getStop(sz,domain,sub_domain,sp)),sub_domain(sub_domain),domain(domain)
 	{
 		calculateAp();
@@ -133,6 +136,7 @@ public:
 	PointIterator & operator++()
 	{
 		grid_dist_id_iterator_dec<Decomposition>::operator++();
+
 		calculateAp();
 
 		return *this;

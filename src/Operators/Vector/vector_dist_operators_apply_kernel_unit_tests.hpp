@@ -30,7 +30,7 @@ template <typename vector,typename Kernel, typename NN_type> bool check_values_a
 		float prp_x = vd.template getProp<VC>(p) * vd.template getProp<VB>(p) + norm(vd.template getProp<VB>(p));
 
 		// For each neighborhood particle
-		auto Np = NN.template getNNIterator<NO_CHECK>(NN.getCell(vd.getPos(p)));
+		auto Np = NN.template getNNIterator<NO_CHECK>(NN.getCell(xp));
 
 		while (Np.isNext())
 		{
@@ -81,7 +81,7 @@ template <typename vector,typename Kernel, typename NN_type> bool check_values_a
 		float prp_x = vd.template getProp<VC>(p) * vd.template getProp<VB>(p) + norm(vd.template getProp<VB>(p));
 
 		// For each neighborhood particle
-		auto Np = NN.template getNNIterator<NO_CHECK>(NN.getCell(vd.getPos(p)));
+		auto Np = NN.template getNNIterator<NO_CHECK>(NN.getCell(xp));
 
 		while (Np.isNext())
 		{
@@ -145,7 +145,7 @@ template <typename vector,typename Kernel, typename NN_type> bool check_values_a
 		Point<3,float> prp_x = 2.0 * vd.template getProp<VC>(p) + vd.template getProp<VB>(p);
 
 		// For each neighborhood particle
-		auto Np = NN.template getNNIterator<NO_CHECK>(NN.getCell(vd.getPos(p)));
+		auto Np = NN.template getNNIterator<NO_CHECK>(NN.getCell(xp));
 
 		while (Np.isNext())
 		{
@@ -198,7 +198,7 @@ template <typename vector,typename Kernel, typename NN_type> bool check_values_a
 		Point<3,float> prp_x = vd.template getProp<VC>(p);
 
 		// For each neighborhood particle
-		auto Np = NN.template getNNIterator<NO_CHECK>(NN.getCell(vd.getPos(p)));
+		auto Np = NN.template getNNIterator<NO_CHECK>(NN.getCell(xp));
 
 		while (Np.isNext())
 		{
@@ -249,7 +249,7 @@ template <typename vector,typename Kernel, typename NN_type> bool check_values_a
 		Point<3,float> prp_x = 2.0f*vd.template getProp<VC>(p) + vd.template getProp<VB>(p);
 
 		// For each neighborhood particle
-		auto Np = NN.template getNNIterator<NO_CHECK>(NN.getCell(vd.getPos(p)));
+		auto Np = NN.template getNNIterator<NO_CHECK>(NN.getCell(xp));
 
 		while (Np.isNext())
 		{
@@ -307,7 +307,7 @@ template <typename vector,typename Kernel, typename NN_type> bool check_values_a
 		Point<2,float> ker_accu = 0.0;
 
 		// For each neighborhood particle
-		auto Np = NN.template getNNIterator<NO_CHECK>(NN.getCell(vd.getPos(p)));
+		auto Np = NN.template getNNIterator<NO_CHECK>(NN.getCell(xp));
 
 		while (Np.isNext())
 		{

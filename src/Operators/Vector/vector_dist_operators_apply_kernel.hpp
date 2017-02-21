@@ -202,7 +202,7 @@ struct apply_kernel_is_number_or_expression_gen
 	    rtype prp_p = v_exp.value(key);
 
 	    // position of particle p
-	    auto & p = vd.getPos(key);
+	    Point<vector::dims,typename vector::stype> p = vd.getPos(key);
 
 	    // Get the neighborhood of the particle
 	    auto NN = cl.template getNNIterator<NO_CHECK>(cl.getCell(p));

@@ -52,14 +52,20 @@ class D
 	 * In case of non staggered case this function just return a null grid_key, in case of staggered,
 	 *  it calculate how the operator shift the calculation in the cell
 	 *
-	 * \param position where we are calculating the derivative
+	 * \param pos position where we are calculating the derivative
 	 * \param gs Grid info
 	 * \param s_pos staggered position of the properties
 	 *
+	 * \return where (in which cell) the derivative is calculated
+	 *
 	 */
-	inline static grid_key_dx<Sys_eqs::dims> position(grid_key_dx<Sys_eqs::dims> & pos, const grid_sm<Sys_eqs::dims,void> & gs, const comb<Sys_eqs::dims> (& s_pos)[Sys_eqs::nvar])
+	inline static grid_key_dx<Sys_eqs::dims> position(grid_key_dx<Sys_eqs::dims> & pos,
+			                                          const grid_sm<Sys_eqs::dims,void> & gs,
+													  const comb<Sys_eqs::dims> (& s_pos)[Sys_eqs::nvar])
 	{
 		std::cerr << "Error " << __FILE__ << ":" << __LINE__ << " only CENTRAL, FORWARD, BACKWARD derivative are defined";
+
+		return pos;
 	}
 };
 
@@ -80,8 +86,10 @@ class D<d,arg,Sys_eqs,CENTRAL>
 
 	/*! \brief Calculate which colums of the Matrix are non zero
 	 *
-	 * \param pos position where the derivative is calculated
+	 * \param g_map mapping grid
+	 * \param kmap position where the derivative is calculated
 	 * \param gs Grid info
+	 * \param spacing grid spacing
 	 * \param cols non-zero colums calculated by the function
 	 * \param coeff coefficent (constant in front of the derivative)
 	 *
@@ -90,7 +98,12 @@ class D<d,arg,Sys_eqs,CENTRAL>
 	 * \snippet FDScheme_unit_tests.hpp Usage of stencil derivative
 	 *
 	 */
-	inline static void value(const typename stub_or_real<Sys_eqs,Sys_eqs::dims,typename Sys_eqs::stype,typename Sys_eqs::b_grid::decomposition::extended_type>::type & g_map, grid_dist_key_dx<Sys_eqs::dims> & kmap , const grid_sm<Sys_eqs::dims,void> & gs, typename Sys_eqs::stype (& spacing )[Sys_eqs::dims] , std::unordered_map<long int,typename Sys_eqs::stype > & cols, typename Sys_eqs::stype coeff)
+	inline static void value(const typename stub_or_real<Sys_eqs,Sys_eqs::dims,typename Sys_eqs::stype,typename Sys_eqs::b_grid::decomposition::extended_type>::type & g_map,
+			                 grid_dist_key_dx<Sys_eqs::dims> & kmap,
+							 const grid_sm<Sys_eqs::dims,void> & gs,
+							 typename Sys_eqs::stype (& spacing )[Sys_eqs::dims],
+							 std::unordered_map<long int,typename Sys_eqs::stype > & cols,
+							 typename Sys_eqs::stype coeff)
 	{
 		// if the system is staggered the CENTRAL derivative is equivalent to a forward derivative
 		if (is_grid_staggered<Sys_eqs>::value())
@@ -141,12 +154,16 @@ class D<d,arg,Sys_eqs,CENTRAL>
 	 *
 	 * \f$ \frac{\partial v_x}{\partial y} \f$ is calculated on position (*), so the function return the grid_key {0,0}
 	 *
-	 * \param position where we are calculating the derivative
+	 * \param pos position where we are calculating the derivative
 	 * \param gs Grid info
 	 * \param s_pos staggered position of the properties
 	 *
+	 * \return where (in which cell grid) the derivative is calculated
+	 *
 	 */
-	inline static grid_key_dx<Sys_eqs::dims> position(grid_key_dx<Sys_eqs::dims> & pos, const grid_sm<Sys_eqs::dims,void> & gs, const comb<Sys_eqs::dims> (& s_pos)[Sys_eqs::nvar])
+	inline static grid_key_dx<Sys_eqs::dims> position(grid_key_dx<Sys_eqs::dims> & pos,
+			                                          const grid_sm<Sys_eqs::dims,void> & gs,
+													  const comb<Sys_eqs::dims> (& s_pos)[Sys_eqs::nvar])
 	{
 		auto arg_pos = arg::position(pos,gs,s_pos);
 		if (is_grid_staggered<Sys_eqs>::value())
@@ -195,8 +212,10 @@ public:
 
 	/*! \brief Calculate which colums of the Matrix are non zero
 	 *
-	 * \param pos position where the derivative is calculated
+	 * \param g_map mapping grid points
+	 * \param kmap position where the derivative is calculated
 	 * \param gs Grid info
+	 * \param spacing of the grid
 	 * \param cols non-zero colums calculated by the function
 	 * \param coeff coefficent (constant in front of the derivative)
 	 *
@@ -205,7 +224,12 @@ public:
 	 * \snippet FDScheme_unit_tests.hpp Usage of stencil derivative
 	 *
 	 */
-	static void value(const typename stub_or_real<Sys_eqs,Sys_eqs::dims,typename Sys_eqs::stype,typename Sys_eqs::b_grid::decomposition::extended_type>::type & g_map, grid_dist_key_dx<Sys_eqs::dims> & kmap , const grid_sm<Sys_eqs::dims,void> & gs, typename Sys_eqs::stype (& spacing )[Sys_eqs::dims] , std::unordered_map<long int,typename Sys_eqs::stype > & cols, typename Sys_eqs::stype coeff)
+	static void value(const typename stub_or_real<Sys_eqs,Sys_eqs::dims,typename Sys_eqs::stype,typename Sys_eqs::b_grid::decomposition::extended_type>::type & g_map,
+			          grid_dist_key_dx<Sys_eqs::dims> & kmap,
+					  const grid_sm<Sys_eqs::dims,void> & gs,
+					  typename Sys_eqs::stype (& spacing )[Sys_eqs::dims],
+					  std::unordered_map<long int,typename Sys_eqs::stype > & cols,
+					  typename Sys_eqs::stype coeff)
 	{
 #ifdef SE_CLASS1
 		if (Sys_eqs::boundary[d] == PERIODIC)
@@ -279,9 +303,11 @@ public:
 	 * outside the boundary is simply the central scheme, at the boundary it is simply the
 	 * staggered position of the property
 	 *
-	 * \param position where we are calculating the derivative
+	 * \param pos position where we are calculating the derivative
 	 * \param gs Grid info
 	 * \param s_pos staggered position of the properties
+	 *
+	 * \return where (in which cell grid) the derivative is calculated
 	 *
 	 */
 	inline static grid_key_dx<Sys_eqs::dims> position(grid_key_dx<Sys_eqs::dims> & pos, const grid_sm<Sys_eqs::dims,void> & gs, const comb<Sys_eqs::dims> (& s_pos)[Sys_eqs::nvar])
@@ -308,8 +334,10 @@ class D<d,arg,Sys_eqs,FORWARD>
 
 	/*! \brief Calculate which colums of the Matrix are non zero
 	 *
-	 * \param pos position where the derivative is calculated
+	 * \param g_map mapping grid
+	 * \param kmap position where the derivative is calculated
 	 * \param gs Grid info
+	 * \param spacing grid spacing
 	 * \param cols non-zero colums calculated by the function
 	 * \param coeff coefficent (constant in front of the derivative)
 	 *
@@ -318,7 +346,12 @@ class D<d,arg,Sys_eqs,FORWARD>
 	 * \snippet FDScheme_unit_tests.hpp Usage of stencil derivative
 	 *
 	 */
-	inline static void value(const typename stub_or_real<Sys_eqs,Sys_eqs::dims,typename Sys_eqs::stype,typename Sys_eqs::b_grid::decomposition::extended_type>::type & g_map, grid_dist_key_dx<Sys_eqs::dims> & kmap , const grid_sm<Sys_eqs::dims,void> & gs, typename Sys_eqs::stype (& spacing )[Sys_eqs::dims] ,std::unordered_map<long int,typename Sys_eqs::stype > & cols, typename Sys_eqs::stype coeff)
+	inline static void value(const typename stub_or_real<Sys_eqs,Sys_eqs::dims,typename Sys_eqs::stype,typename Sys_eqs::b_grid::decomposition::extended_type>::type & g_map,
+			                 grid_dist_key_dx<Sys_eqs::dims> & kmap,
+							 const grid_sm<Sys_eqs::dims,void> & gs,
+							 typename Sys_eqs::stype (& spacing )[Sys_eqs::dims],
+							 std::unordered_map<long int,typename Sys_eqs::stype > & cols,
+							 typename Sys_eqs::stype coeff)
 	{
 
 		long int old_val = kmap.getKeyRef().get(d);
@@ -336,12 +369,16 @@ class D<d,arg,Sys_eqs,FORWARD>
 	 * In case of non staggered case this function just return a null grid_key, in case of staggered,
 	 * the FORWARD scheme return the position of the staggered property
 	 *
-	 * \param position where we are calculating the derivative
+	 * \param pos position where we are calculating the derivative
 	 * \param gs Grid info
 	 * \param s_pos staggered position of the properties
 	 *
+	 * \return where (in which cell grid) the derivative is calculated
+	 *
 	 */
-	inline static grid_key_dx<Sys_eqs::dims> position(grid_key_dx<Sys_eqs::dims> & pos, const grid_sm<Sys_eqs::dims,void> & gs, const comb<Sys_eqs::dims> (& s_pos)[Sys_eqs::nvar])
+	inline static grid_key_dx<Sys_eqs::dims> position(grid_key_dx<Sys_eqs::dims> & pos,
+			                                          const grid_sm<Sys_eqs::dims,void> & gs,
+													  const comb<Sys_eqs::dims> (& s_pos)[Sys_eqs::nvar])
 	{
 		return arg::position(pos,gs,s_pos);
 	}
@@ -364,8 +401,10 @@ class D<d,arg,Sys_eqs,BACKWARD>
 
 	/*! \brief Calculate which colums of the Matrix are non zero
 	 *
-	 * \param pos position where the derivative is calculated
+	 * \param g_map mapping grid
+	 * \param kmap position where the derivative is calculated
 	 * \param gs Grid info
+	 * \param spacing of the grid
 	 * \param cols non-zero colums calculated by the function
 	 * \param coeff coefficent (constant in front of the derivative)
 	 *
@@ -374,7 +413,12 @@ class D<d,arg,Sys_eqs,BACKWARD>
 	 * \snippet FDScheme_unit_tests.hpp Usage of stencil derivative
 	 *
 	 */
-	inline static void value(const typename stub_or_real<Sys_eqs,Sys_eqs::dims,typename Sys_eqs::stype,typename Sys_eqs::b_grid::decomposition::extended_type>::type & g_map, grid_dist_key_dx<Sys_eqs::dims> & kmap , const grid_sm<Sys_eqs::dims,void> & gs, typename Sys_eqs::stype (& spacing )[Sys_eqs::dims], std::unordered_map<long int,typename Sys_eqs::stype > & cols , typename Sys_eqs::stype coeff)
+	inline static void value(const typename stub_or_real<Sys_eqs,Sys_eqs::dims,typename Sys_eqs::stype,typename Sys_eqs::b_grid::decomposition::extended_type>::type & g_map,
+			                 grid_dist_key_dx<Sys_eqs::dims> & kmap,
+							 const grid_sm<Sys_eqs::dims,void> & gs,
+							 typename Sys_eqs::stype (& spacing )[Sys_eqs::dims],
+							 std::unordered_map<long int,typename Sys_eqs::stype > & cols,
+							 typename Sys_eqs::stype coeff)
 	{
 
 		long int old_val = kmap.getKeyRef().get(d);
@@ -392,9 +436,11 @@ class D<d,arg,Sys_eqs,BACKWARD>
 	 * In case of non staggered case this function just return a null grid_key, in case of staggered,
 	 * the BACKWARD scheme return the position of the staggered property
 	 *
-	 * \param position where we are calculating the derivative
+	 * \param pos position where we are calculating the derivative
 	 * \param gs Grid info
 	 * \param s_pos staggered position of the properties
+	 *
+	 * \return where (in which cell grid) the derivative is calculated
 	 *
 	 */
 	inline static grid_key_dx<Sys_eqs::dims> position(grid_key_dx<Sys_eqs::dims> & pos, const grid_sm<Sys_eqs::dims,void> & gs, const comb<Sys_eqs::dims> (& s_pos)[Sys_eqs::nvar])

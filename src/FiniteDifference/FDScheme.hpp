@@ -126,59 +126,67 @@ class FDScheme
 {
 public:
 
-	// Distributed grid map
+	//! Distributed grid map
 	typedef grid_dist_id<Sys_eqs::dims,typename Sys_eqs::stype,scalar<size_t>,typename Sys_eqs::b_grid::decomposition::extended_type> g_map_type;
 
+	//! Type that specify the properties of the system of equations
 	typedef Sys_eqs Sys_eqs_typ;
 
 private:
 
-	// Padding
+	//! Padding
 	Padding<Sys_eqs::dims> pd;
 
+	//! Sparse matrix triplet type
 	typedef typename Sys_eqs::SparseMatrix_type::triplet_type triplet;
 
-	// Vector b
+	//! Vector b
 	typename Sys_eqs::Vector_type b;
 
-	// Domain Grid informations
+	//! Domain Grid informations
 	const grid_sm<Sys_eqs::dims,void> & gs;
 
-	// Get the grid spacing
+	//! Get the grid spacing
 	typename Sys_eqs::stype spacing[Sys_eqs::dims];
 
-	// mapping grid
+	//! mapping grid
 	g_map_type g_map;
 
-	// row of the matrix
+	//! row of the matrix
 	size_t row;
 
-	// row on b
+	//! row on b
 	size_t row_b;
 
-	// Grid points that has each processor
+	//! Grid points that has each processor
 	openfpm::vector<size_t> pnt;
 
-	// Staggered position for each property
+	//! Staggered position for each property
 	comb<Sys_eqs::dims> s_pos[Sys_eqs::nvar];
 
-	// Each point in the grid has a global id, to decompose correctly the Matrix each processor contain a
-	// contiguos range of global id, example processor 0 can have from 0 to 234 and processor 1 from 235 to 512
-	// no processors can have holes in the sequence, this number indicate where the sequence start for this
-	// processor
+	//! Each point in the grid has a global id, to decompose correctly the Matrix each processor contain a
+	//! contiguos range of global id, example processor 0 can have from 0 to 234 and processor 1 from 235 to 512
+	//! no processors can have holes in the sequence, this number indicate where the sequence start for this
+	//! processor
 	size_t s_pnt;
 
+	/*! \brief Equation id + space position
+	 *
+	 */
 	struct key_and_eq
 	{
+		//! space position
 		grid_key_dx<Sys_eqs::dims> key;
+
+		//! equation id
 		size_t eq;
 	};
 
 	/*! \brief From the row Matrix position to the spatial position
 	 *
-	 * \param row Matrix
+	 * \param row Matrix row
 	 *
-	 * \return spatial position
+	 * \return spatial position + equation id
 	 *
 	 */
 	inline key_and_eq from_row_to_key(size_t row)
@@ -205,9 +213,10 @@ private:
 		return ke;
 	}
 
-	/* \brief calculate the mapping grid size with padding
+	/*! \brief calculate the mapping grid size with padding
 	 *
-	 * \param gs original grid size
+	 * \param sz original grid size
+	 * \param pd padding
 	 *
 	 * \return padded grid size
 	 *
@@ -323,7 +332,7 @@ public:
 
 	/*! \brief set the staggered position for each property
 	 *
-	 * \param vector containing the staggered position for each property
+	 * \param sp vector containing the staggered position for each property
 	 *
 	 */
 	void setStagPos(comb<Sys_eqs::dims> (& sp)[Sys_eqs::nvar])
@@ -335,10 +344,8 @@ public:
 	/*! \brief compute the staggered position for each property
 	 *
 	 * This is compute from the value_type stored by Sys_eqs::b_grid::value_type
+	 * the position of the staggered properties
 	 *
-	 * ### Example
-	 *
-	 * \snippet eq_unit_test.hpp Compute staggered properties
 	 *
 	 */
 	void computeStag()
@@ -377,13 +384,17 @@ public:
 	/*! \brief Constructor
 	 *
 	 * \param pd Padding, how many points out of boundary are present
-	 * \param domain extension of the domain
+	 * \param stencil how many ghost points are required for this calculation
+	 * \param domain the domain
 	 * \param gs grid infos where Finite differences work
-	 * \param stencil maximum extension of the stencil on each directions
-	 * \param dec Decomposition of the domain
+	 * \param b_g maximum extension of the stencil on each directions
 	 *
 	 */
-	FDScheme(Padding<Sys_eqs::dims> & pd, const Ghost<Sys_eqs::dims,long int> & stencil, const Box<Sys_eqs::dims,typename Sys_eqs::stype> & domain, const grid_sm<Sys_eqs::dims,void> & gs, const typename Sys_eqs::b_grid & b_g)
+	FDScheme(Padding<Sys_eqs::dims> & pd,
+			 const Ghost<Sys_eqs::dims,long int> & stencil,
+			 const Box<Sys_eqs::dims,typename Sys_eqs::stype> & domain,
+			 const grid_sm<Sys_eqs::dims,void> & gs,
+			 const typename Sys_eqs::b_grid & b_g)
 	:pd(pd),gs(gs),g_map(b_g,stencil,pd),row(0),row_b(0)
 	{
 		Vcluster & v_cl = b_g.getDecomposition().getVC();
@@ -450,9 +461,15 @@ public:
 	 * \param id Equation id in the system that we are imposing
 	 * \param start starting point of the box
 	 * \param stop stop point of the box
+	 * \param skip_first skip the first point
 	 *
 	 */
-	template<typename T> void impose(const T & op , typename Sys_eqs::stype num ,long int id ,const long int (& start)[Sys_eqs::dims], const long int (& stop)[Sys_eqs::dims], bool skip_first = false)
+	template<typename T> void impose(const T & op,
+			                         typename Sys_eqs::stype num,
+									 long int id,
+									 const long int (& start)[Sys_eqs::dims],
+									 const long int (& stop)[Sys_eqs::dims],
+									 bool skip_first = false)
 	{
 		grid_key_dx<Sys_eqs::dims> start_k;
 		grid_key_dx<Sys_eqs::dims> stop_k;
@@ -557,6 +574,7 @@ public:
 		}
 	}
 
+	//! type of the sparse matrix
 	typename Sys_eqs::SparseMatrix_type A;
 
 	/*! \brief produce the Matrix
@@ -598,7 +616,7 @@ public:
 	 * \tparam Grid_dst type of the target grid
 	 * \tparam pos target properties
 	 *
-	 * \param scheme Discretization scheme
+	 * \param v Vector that contain the solution of the system
 	 * \param start point
 	 * \param stop point
 	 * \param g_dst Destination grid

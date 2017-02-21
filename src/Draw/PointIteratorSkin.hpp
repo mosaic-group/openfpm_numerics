@@ -101,6 +101,9 @@ class PointIteratorSkin: protected grid_dist_id_iterator_dec_skin<Decomposition>
 
 	void calculateAp()
 	{
+		if (grid_dist_id_iterator_dec_skin<Decomposition>::isNext() == false)
+			return;
+
 		grid_key_dx<dim> key = grid_dist_id_iterator_dec_skin<Decomposition>::get();
 
 		for (size_t i = 0 ; i < dim ; i++)
@@ -133,7 +136,7 @@ public:
 	 * \param sp grid spacing
 	 *
 	 */
-	PointIteratorSkin( Decomposition & dec, size_t (& sz)[dim], Box<dim,T> & domain, const Box<dim,T> & sub_A, const Box<dim,T> & sub_B, size_t (& bc)[dim])
+	PointIteratorSkin( Decomposition & dec, size_t (& sz)[dim], const Box<dim,T> & domain, const Box<dim,T> & sub_A, const Box<dim,T> & sub_B, size_t (& bc)[dim])
 	:grid_dist_id_iterator_dec_skin<Decomposition>(dec, sz, getAB(sz,domain,sub_A,sub_B,sp,RETURN_A), getAB(sz,domain,sub_A,sub_B,sp,RETURN_B), bc),domain(domain)
 	{
 		sub_domainA.add(sub_A);
@@ -142,6 +145,7 @@ public:
 
 	/*! \Return the actual point
 	 *
+	 * \return the actual point
 	 *
 	 */
 	Point<dim,T> & get()
@@ -157,11 +161,13 @@ public:
 	PointIteratorSkin & operator++()
 	{
 		grid_dist_id_iterator_dec_skin<Decomposition>::operator++();
+
 		calculateAp();
 
 		while (grid_dist_id_iterator_dec_skin<Decomposition>::isNext() && isValidPoint() == false)
 		{
 			grid_dist_id_iterator_dec_skin<Decomposition>::operator++();
+
 			calculateAp();
 		}
 
