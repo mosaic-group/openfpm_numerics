@@ -360,17 +360,17 @@ struct pos_or_propL<vector,PROP_POS>
 #ifdef SE_CLASS3
 
 	//! return the value (position or property) of the particle k in the vector v
-	static inline auto value(vector & v, const vect_dist_key_dx & k) -> decltype(getExpr(v.getPos(k).getReference()))
+	static inline auto value(vector & v, const vect_dist_key_dx & k) -> decltype(getExprL(v.getPos(k).getReference()))
 	{
-		return getExpr(v.getPos(k).getReference());
+		return getExprL(v.getPos(k).getReference());
 	}
 
 #else
 
 	//! return the value (position or property) of the particle k in the vector v
-	static inline auto value(vector & v, const vect_dist_key_dx & k) -> decltype(getExpr(v.getPos(k)))
+	static inline auto value(vector & v, const vect_dist_key_dx & k) -> decltype(getExprL(v.getPos(k)))
 	{
-		return getExpr(v.getPos(k));
+		return getExprL(v.getPos(k));
 	}
 
 #endif
