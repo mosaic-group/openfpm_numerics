@@ -5,7 +5,7 @@
 
 AC_PREREQ(2.59)
 AC_INIT(OpenFPM_numerics, 0.8.0, BUG-REPORT-ADDRESS)
-AC_CANONICAL_SYSTEM
+AC_CANONICAL_TARGET
 AC_CONFIG_SRCDIR([src/main.cpp])
 
 AM_INIT_AUTOMAKE
@@ -36,6 +36,7 @@ case $host_os in
    *cygwin*)
         # Do something specific for cygwin
         CXXFLAGS+=" --std=gnu++11 "
+	AC_DEFINE([HAVE_CYGWIN],[],[We are on cygwin])
         ;;
     *)
         #Default Case
