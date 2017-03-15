@@ -167,7 +167,7 @@ public:
 	 * \return return the result of the expression
 	 *
 	 */
-	template<typename r_type=typename std::remove_reference<decltype(o1.value(vect_dist_key_dx(0)) + o2.value(vect_dist_key_dx(0)))>::type >
+	template<typename r_type=typename std::remove_reference<decltype(o1.value(vect_dist_key_dx()) + o2.value(vect_dist_key_dx()))>::type >
 	inline r_type value(const vect_dist_key_dx & key) const
 	{
 		return o1.value(key) + o2.value(key);
@@ -215,7 +215,7 @@ public:
 	 * \return the result of the expression
 	 *
 	 */
-	template<typename r_type=typename std::remove_reference<decltype(o1.value(vect_dist_key_dx(0)) - o2.value(vect_dist_key_dx(0)))>::type > inline r_type value(const vect_dist_key_dx & key) const
+	template<typename r_type=typename std::remove_reference<decltype(o1.value(vect_dist_key_dx()) - o2.value(vect_dist_key_dx()))>::type > inline r_type value(const vect_dist_key_dx & key) const
 	{
 		return o1.value(key) - o2.value(key);
 	}
@@ -261,7 +261,7 @@ public:
 	 * \return the result of the expression
 	 *
 	 */
-	template<typename r_type=typename std::remove_reference<decltype(o1.value(vect_dist_key_dx(0)) * o2.value(vect_dist_key_dx(0)))>::type > inline r_type value(const vect_dist_key_dx & key) const
+	template<typename r_type=typename std::remove_reference<decltype(o1.value(vect_dist_key_dx()) * o2.value(vect_dist_key_dx()))>::type > inline r_type value(const vect_dist_key_dx & key) const
 	{
 		return o1.value(key) * o2.value(key);
 	}
@@ -307,7 +307,7 @@ public:
 	 * \return the result of the expression
 	 *
 	 */
-	template<typename r_type=typename std::remove_reference<decltype(o1.value(vect_dist_key_dx(0)) / o2.value(vect_dist_key_dx(0)))>::type > inline r_type value(const vect_dist_key_dx & key) const
+	template<typename r_type=typename std::remove_reference<decltype(o1.value(vect_dist_key_dx()) / o2.value(vect_dist_key_dx()))>::type > inline r_type value(const vect_dist_key_dx & key) const
 	{
 		return o1.value(key) / o2.value(key);
 	}

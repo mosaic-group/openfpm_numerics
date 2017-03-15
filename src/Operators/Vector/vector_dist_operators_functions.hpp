@@ -222,7 +222,7 @@ class vector_dist_expression_op<exp1,vector_type,VECT_SUM_REDUCE>
 	const exp1 o1;
 
 	//! return type of this expression
-	typedef typename apply_kernel_rtype<decltype(o1.value(vect_dist_key_dx(0)))>::rtype rtype;
+	typedef typename apply_kernel_rtype<decltype(o1.value(vect_dist_key_dx()))>::rtype rtype;
 
 	//! return type of the calculated value (without reference)
 	mutable typename std::remove_reference<rtype>::type val;
@@ -261,7 +261,7 @@ public:
 	inline typename std::remove_reference<rtype>::type get()
 	{
 		init();
-		return value(vect_dist_key_dx(0));
+		return value(vect_dist_key_dx());
 	}
 
 	//! it return the result of the expression (precalculated before)

@@ -106,8 +106,11 @@ struct apply_kernel_is_number_or_expression
 	    	// given by the Near particle, exclude itself
 	    	if (nnp != key.getKey())
 	    	{
+	    		vect_dist_key_dx nnp_k;
+	    		nnp_k.setKey(nnp);
+
 	    	    // property of the particle x
-	    		rtype prp_q = v_exp.value(nnp);
+	    		rtype prp_q = v_exp.value(nnp_k);
 
 	    	    // position of the particle q
 	    		Point<vector::dims,typename vector::stype> q = vd.getPos(nnp);
@@ -214,8 +217,11 @@ struct apply_kernel_is_number_or_expression_gen
 	    	// given by the Near particle, exclude itself
 	    	if (nnp != key.getKey())
 	    	{
+	    		vect_dist_key_dx nnp_k;
+	    		nnp_k.setKey(nnp);
+
 	    	    // property of the particle x
-	    		rtype prp_q = v_exp.value(nnp);
+	    		rtype prp_q = v_exp.value(nnp_k);
 
 	    	    pse += lker.value(key.getKey(),nnp,prp_p,prp_q,vd);
 	    	}
@@ -258,7 +264,7 @@ class vector_dist_expression_op<exp1,vector_type,VECT_APPLYKER_IN>
 	const vector_orig & vd;
 
 	//! Get the return type of applying the kernel to a particle
-	typedef typename apply_kernel_rtype<decltype(o1.value(vect_dist_key_dx(0)))>::rtype rtype;
+	typedef typename apply_kernel_rtype<decltype(o1.value(vect_dist_key_dx()))>::rtype rtype;
 
 public:
 
@@ -390,7 +396,7 @@ class vector_dist_expression_op<exp1,vector_type,VECT_APPLYKER_IN_GEN>
 	const vector_orig & vd;
 
 	//! Return type of the expression
-	typedef typename apply_kernel_rtype<decltype(o1.value(vect_dist_key_dx(0)))>::rtype rtype;
+	typedef typename apply_kernel_rtype<decltype(o1.value(vect_dist_key_dx()))>::rtype rtype;
 
 public:
 
