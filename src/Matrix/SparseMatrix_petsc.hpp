@@ -103,31 +103,36 @@ public:
 
 private:
 
-	// Size of the matrix
+	//! Number of matrix row (global)
 	size_t g_row;
+	//! Number of matrix colums (global)
 	size_t g_col;
 
-	// Local size of the matrix
+	//! Number of matrix row (local)
 	size_t l_row;
+	//! Number of matrix colums (local)
 	size_t l_col;
 
-	// starting row for this processor
+	//! starting row for this processor
 	size_t start_row;
 
-	// indicate if the matrix has been created
+	//! indicate if the matrix has been created
 	bool m_created = false;
 
-	// PETSC Matrix
+	//! PETSC Matrix
 	Mat mat;
-	openfpm::vector<triplet_type> trpl;
-	openfpm::vector<triplet_type> trpl_recv;
 
-	// temporary list of values
+	//! Triplets of the matrix
+	openfpm::vector<triplet_type> trpl;
+
+
+	//! temporary list of values
 	mutable openfpm::vector<PetscScalar> vals;
-	// temporary list of colums
+	//! temporary list of colums
 	mutable openfpm::vector<PetscInt> cols;
-	// PETSC d_nnz and o_nnz
+	//! PETSC d_nnz
 	mutable openfpm::vector<PetscInt> d_nnz;
+	//! PETSC o_nnz
 	mutable openfpm::vector<PetscInt> o_nnz;
 
 	/*! \brief Fill the petsc Matrix
@@ -152,7 +157,7 @@ private:
 		{
 			PetscInt row = trpl.get(i).row();
 
-			while(row == trpl.get(i).row() && i < trpl.size())
+			while(i < trpl.size() && row == trpl.get(i).row())
 			{
 				if ((size_t)trpl.get(i).col() >= start_row && (size_t)trpl.get(i).col() < start_row + l_row)
 					d_nnz.get(row - start_row)++;
@@ -176,7 +181,7 @@ private:
 
 			PetscInt row = trpl.get(i).row();
 
-			while(row == trpl.get(i).row() && i < trpl.size())
+			while(i < trpl.size() && row == trpl.get(i).row())
 			{
 				vals.add(trpl.get(i).value());
 				cols.add(trpl.get(i).col());
@@ -237,7 +242,7 @@ public:
 		{PETSC_SAFE_CALL(MatDestroy(&mat));}
 	}
 
-	/*! \brief Get the Matrix triplets bugger
+	/*! \brief Get the Matrix triplets buffer
 	 *
 	 * It return a buffer that can be filled with triplets
 	 *

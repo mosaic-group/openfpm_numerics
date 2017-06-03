@@ -134,6 +134,38 @@ public:
 
 private:
 
+	// Encapsulation of the b term as constant
+	struct constant_b
+	{
+		typename Sys_eqs::stype scal;
+
+		constant_b(typename Sys_eqs::stype scal)
+		{
+			this->scal = scal;
+		}
+
+		typename Sys_eqs::stype get(grid_dist_key_dx<Sys_eqs::dims> & key)
+		{
+			return scal;
+		}
+	};
+
+	// Encapsulation of the b term as grid
+	template<typename grid, unsigned int prp>
+	struct grid_b
+	{
+		grid & gr;
+
+		grid_b(grid & gr)
+		:gr(gr)
+		{}
+
+		typename Sys_eqs::stype get(grid_dist_key_dx<Sys_eqs::dims> & key)
+		{
+			return gr.template get<prp>(key);
+		}
+	};
+
 	//! Padding
 	Padding<Sys_eqs::dims> pd;
 
@@ -247,34 +279,36 @@ private:
 		nz_rows.resize(row_b);
 
 		for (size_t i = 0 ; i < trpl.size() ; i++)
-		{
-			nz_rows.get(trpl.get(i).row()) = true;
-		}
+			nz_rows.get(trpl.get(i).row() - s_pnt*Sys_eqs::nvar) = true;
 
 		// Indicate all the non zero colums
-		openfpm::vector<unsigned> nz_cols;
-		nz_cols.resize(row_b);
+		// This check can be done only on single processor
 
-		for (size_t i = 0 ; i < trpl.size() ; i++)
+		Vcluster & v_cl = create_vcluster();
+		if (v_cl.getProcessingUnits() == 1)
 		{
-			nz_cols.get(trpl.get(i).col()) = true;
-		}
+			openfpm::vector<unsigned> nz_cols;
+			nz_cols.resize(row_b);
 
-		// all the rows must have a non zero element
-		for (size_t i = 0 ; i < nz_rows.size() ; i++)
-		{
-			if (nz_rows.get(i) == false)
+			for (size_t i = 0 ; i < trpl.size() ; i++)
+				nz_cols.get(trpl.get(i).col()) = true;
+
+			// all the rows must have a non zero element
+			for (size_t i = 0 ; i < nz_rows.size() ; i++)
 			{
-				key_and_eq ke = from_row_to_key(i);
-				std::cerr << "Error: " << __FILE__ << ":" << __LINE__ << " Ill posed matrix row " << i <<  " is not filled, position " << ke.key.to_string() << " equation: " << ke.eq << "\n";
+				if (nz_rows.get(i) == false)
+				{
+					key_and_eq ke = from_row_to_key(i);
+					std::cerr << "Error: " << __FILE__ << ":" << __LINE__ << " Ill posed matrix row " << i <<  " is not filled, position " << ke.key.to_string() << " equation: " << ke.eq << "\n";
+				}
 			}
-		}
 
-		// all the colums must have a non zero element
-		for (size_t i = 0 ; i < nz_cols.size() ; i++)
-		{
-			if (nz_cols.get(i) == false)
-				std::cerr << "Error: " << __FILE__ << ":" << __LINE__ << " Ill posed matrix colum " << i << " is not filled\n";
+			// all the colums must have a non zero element
+			for (size_t i = 0 ; i < nz_cols.size() ; i++)
+			{
+				if (nz_cols.get(i) == false)
+					std::cerr << "Error: " << __FILE__ << ":" << __LINE__ << " Ill posed matrix colum " << i << " is not filled\n";
+			}
 		}
 	}
 
@@ -326,6 +360,178 @@ private:
 			++g_map_it;
 			++g_dst_it;
 		}
+	}
+
+	/*! \brief Copy a given solution vector in a normal grid
+	 *
+	 * \tparam Vct Vector type
+	 * \tparam Grid_dst target grid
+	 * \tparam pos set of property
+	 *
+	 * \param v Vector
+	 * \param g_dst target normal grid
+	 *
+	 */
+	template<typename Vct, typename Grid_dst ,unsigned int ... pos> void copy_normal(Vct & v, Grid_dst & g_dst)
+	{
+		// check that g_dst is staggered
+		if (g_dst.is_staggered() == true)
+			std::cerr << __FILE__ << ":" << __LINE__ << " The destination grid must be normal " << std::endl;
+
+#ifdef SE_CLASS1
+
+		if (g_map.getLocalDomainSize() != g_dst.getLocalDomainSize())
+			std::cerr << __FILE__ << ":" << __LINE__ << " The destination grid in size does not match the mapping grid" << std::endl;
+#endif
+
+		// sub-grid iterator over the grid map
+		auto g_map_it = g_map.getDomainIterator();
+
+		// Iterator over the destination grid
+		auto g_dst_it = g_dst.getDomainIterator();
+
+		while (g_map_it.isNext() == true)
+		{
+			typedef typename to_boost_vmpl<pos...>::type vid;
+			typedef boost::mpl::size<vid> v_size;
+
+			auto key_src = g_map_it.get();
+			size_t lin_id = g_map.template get<0>(key_src);
+
+			// destination point
+			auto key_dst = g_dst_it.get();
+
+			// Transform this id into an id for the vector
+
+			copy_ele<Sys_eqs_typ, Grid_dst,Vct> cp(key_dst,g_dst,v,lin_id,g_map.size());
+
+			boost::mpl::for_each_ref<boost::mpl::range_c<int,0,v_size::value>>(cp);
+
+			++g_map_it;
+			++g_dst_it;
+		}
+	}
+
+	/*! \brief Impose an operator
+	 *
+	 * This function impose an operator on a particular grid region to produce the system
+	 *
+	 * Ax = b
+	 *
+	 * ## Stokes equation 2D, lid driven cavity with one splipping wall
+	 * \snippet eq_unit_test.hpp Copy the solution to grid
+	 *
+	 * \param op Operator to impose (A term)
+	 * \param num right hand side of the term (b term)
+	 * \param id Equation id in the system that we are imposing
+	 * \param it_d iterator that define where you want to impose
+	 *
+	 */
+	template<typename T, typename bop, typename iterator> void impose(const T & op ,
+			                         bop num,
+									 long int id ,
+									 const iterator & it_d)
+	{
+		openfpm::vector<triplet> & trpl = A.getMatrixTriplets();
+
+		auto it = it_d;
+		grid_sm<Sys_eqs::dims,void> gs = g_map.getGridInfoVoid();
+
+		std::unordered_map<long int,float> cols;
+
+		// iterate all the grid points
+		while (it.isNext())
+		{
+			// get the position
+			auto key = it.get();
+
+			// Calculate the non-zero colums
+			T::value(g_map,key,gs,spacing,cols,1.0);
+
+			// indicate if the diagonal has been set
+			bool is_diag = false;
+
+			// create the triplet
+			for ( auto it = cols.begin(); it != cols.end(); ++it )
+			{
+				trpl.add();
+				trpl.last().row() = g_map.template get<0>(key)*Sys_eqs::nvar + id;
+				trpl.last().col() = it->first;
+				trpl.last().value() = it->second;
+
+				if (trpl.last().row() == trpl.last().col())
+					is_diag = true;
+
+//				std::cout << "(" << trpl.last().row() << "," << trpl.last().col() << "," << trpl.last().value() << ")" << "\n";
+			}
+
+			// If does not have a diagonal entry put it to zero
+			if (is_diag == false)
+			{
+				trpl.add();
+				trpl.last().row() = g_map.template get<0>(key)*Sys_eqs::nvar + id;
+				trpl.last().col() = g_map.template get<0>(key)*Sys_eqs::nvar + id;
+				trpl.last().value() = 0.0;
+			}
+
+			b(g_map.template get<0>(key)*Sys_eqs::nvar + id) = num.get(key);
+
+			cols.clear();
+//			std::cout << "\n";
+
+			// if SE_CLASS1 is defined check the position
+#ifdef SE_CLASS1
+//			T::position(key,gs,s_pos);
+#endif
+
+			++row;
+			++row_b;
+			++it;
+		}
+	}
+
+	/*! \brief Construct the gmap structure
+	 *
+	 */
+	void construct_gmap()
+	{
+		Vcluster & v_cl = create_vcluster();
+
+		// Calculate the size of the local domain
+		size_t sz = g_map.getLocalDomainSize();
+
+		// Get the total size of the local grids on each processors
+		v_cl.allGather(sz,pnt);
+		v_cl.execute();
+		s_pnt = 0;
+
+		// calculate the starting point for this processor
+		for (size_t i = 0 ; i < v_cl.getProcessUnitID() ; i++)
+			s_pnt += pnt.get(i);
+
+		// resize b if needed
+		b.resize(Sys_eqs::nvar * g_map.size(),Sys_eqs::nvar * sz);
+
+		// Calculate the starting point
+
+		// Counter
+		size_t cnt = 0;
+
+		// Create the re-mapping grid
+		auto it = g_map.getDomainIterator();
+
+		while (it.isNext())
+		{
+			auto key = it.get();
+
+			g_map.template get<0>(key) = cnt + s_pnt;
+
+			++cnt;
+			++it;
+		}
+
+		// sync the ghost
+		g_map.template ghost_get<0>();
 	}
 
 public:
@@ -383,11 +589,13 @@ public:
 
 	/*! \brief Constructor
 	 *
+	 * The periodicity is given by the grid b_g
+	 *
 	 * \param pd Padding, how many points out of boundary are present
-	 * \param stencil how many ghost points are required for this calculation
+	 * \param stencil maximum extension of the stencil on each directions
 	 * \param domain the domain
 	 * \param gs grid infos where Finite differences work
-	 * \param b_g maximum extension of the stencil on each directions
+	 * \param b_g Finite difference grid (it is not important what it contain only its decomposition is used)
 	 *
 	 */
 	FDScheme(Padding<Sys_eqs::dims> & pd,
@@ -397,49 +605,18 @@ public:
 			 const typename Sys_eqs::b_grid & b_g)
 	:pd(pd),gs(gs),g_map(b_g,stencil,pd),row(0),row_b(0)
 	{
-		Vcluster & v_cl = b_g.getDecomposition().getVC();
-
-		// Calculate the size of the local domain
-		size_t sz = g_map.getLocalDomainSize();
-
-		// Get the total size of the local grids on each processors
-		v_cl.allGather(sz,pnt);
-		v_cl.execute();
-		s_pnt = 0;
-
-		// calculate the starting point for this processor
-		for (size_t i = 0 ; i < v_cl.getProcessUnitID() ; i++)
-			s_pnt += pnt.get(i);
-
-		// resize b if needed
-		b.resize(Sys_eqs::nvar * g_map.size(),Sys_eqs::nvar * sz);
-
-		// Calculate the starting point
-
-		// Counter
-		size_t cnt = 0;
-
-		// Create the re-mapping grid
-		auto it = g_map.getDomainIterator();
-
-		while (it.isNext())
-		{
-			auto key = it.get();
-
-			g_map.template get<0>(key) = cnt + s_pnt;
-
-			++cnt;
-			++it;
-		}
-
-		// sync the ghost
-		g_map.template ghost_get<0>();
+		construct_gmap();
 
 		// Create a CellDecomposer and calculate the spacing
 
 		size_t sz_g[Sys_eqs::dims];
 		for (size_t i = 0 ; i < Sys_eqs::dims ; i++)
-			sz_g[i] = gs.getSize()[i] - 1;
+		{
+			if (Sys_eqs::boundary[i] == NON_PERIODIC)
+				sz_g[i] = gs.getSize()[i] - 1;
+			else
+				sz_g[i] = gs.getSize()[i];
+		}
 
 		CellDecomposer_sm<Sys_eqs::dims,typename Sys_eqs::stype> cd(domain,sz_g,0);
 
@@ -495,7 +672,9 @@ public:
         if (increment == true)
                 ++it;
 
-        impose(op,num,id,it);
+        constant_b b(num);
+
+        impose(op,b,id,it);
 
 	}
 
@@ -514,64 +693,39 @@ public:
 	 * \param it_d iterator that define where you want to impose
 	 *
 	 */
-	template<typename T> void impose(const T & op , typename Sys_eqs::stype num ,long int id ,grid_dist_iterator_sub<Sys_eqs::dims,typename g_map_type::d_grid> it_d)
+	template<typename T> void impose(const T & op ,
+									 typename Sys_eqs::stype num,
+									 long int id ,
+									 grid_dist_iterator_sub<Sys_eqs::dims,typename g_map_type::d_grid> it_d)
 	{
-		openfpm::vector<triplet> & trpl = A.getMatrixTriplets();
+		constant_b b(num);
 
-		auto it = it_d;
-		grid_sm<Sys_eqs::dims,void> gs = g_map.getGridInfoVoid();
+		impose(op,b,id,it_d);
+	}
 
-		std::unordered_map<long int,float> cols;
+	/*! \brief Impose an operator
+	 *
+	 * This function impose an operator on a particular grid region to produce the system
+	 *
+	 * Ax = b
+	 *
+	 * ## Stokes equation 2D, lid driven cavity with one splipping wall
+	 * \snippet eq_unit_test.hpp Copy the solution to grid
+	 *
+	 * \param op Operator to impose (A term)
+	 * \param num right hand side of the term (b term)
+	 * \param id Equation id in the system that we are imposing
+	 * \param it_d iterator that define where you want to impose
+	 *
+	 */
+	template<unsigned int prp, typename T, typename b_term, typename iterator> void impose(const T & op ,
+									 b_term & b_t,
+									 long int id ,
+									 const iterator & it_d)
+	{
+		grid_b<b_term,prp> b(b_t);
 
-		// iterate all the grid points
-		while (it.isNext())
-		{
-			// get the position
-			auto key = it.get();
-
-			// Calculate the non-zero colums
-			T::value(g_map,key,gs,spacing,cols,1.0);
-
-			// indicate if the diagonal has been set
-			bool is_diag = false;
-
-			// create the triplet
-			for ( auto it = cols.begin(); it != cols.end(); ++it )
-			{
-				trpl.add();
-				trpl.last().row() = g_map.template get<0>(key)*Sys_eqs::nvar + id;
-				trpl.last().col() = it->first;
-				trpl.last().value() = it->second;
-
-				if (trpl.last().row() == trpl.last().col())
-					is_diag = true;
-
-//				std::cout << "(" << trpl.last().row() << "," << trpl.last().col() << "," << trpl.last().value() << ")" << "\n";
-			}
-
-			// If does not have a diagonal entry put it to zero
-			if (is_diag == false)
-			{
-				trpl.add();
-				trpl.last().row() = g_map.template get<0>(key)*Sys_eqs::nvar + id;
-				trpl.last().col() = g_map.template get<0>(key)*Sys_eqs::nvar + id;
-				trpl.last().value() = 0.0;
-			}
-
-			b(g_map.template get<0>(key)*Sys_eqs::nvar + id) = num;
-
-			cols.clear();
-//			std::cout << "\n";
-
-			// if SE_CLASS1 is defined check the position
-#ifdef SE_CLASS1
-//			T::position(key,gs,s_pos);
-#endif
-
-			++row;
-			++row_b;
-			++it;
-		}
+		impose(op,b,id,it_d);
 	}
 
 	//! type of the sparse matrix
@@ -587,7 +741,9 @@ public:
 #ifdef SE_CLASS1
 		consistency();
 #endif
-		A.resize(g_map.size()*Sys_eqs::nvar,g_map.size()*Sys_eqs::nvar,g_map.getLocalDomainSize()*Sys_eqs::nvar,g_map.getLocalDomainSize()*Sys_eqs::nvar);
+		A.resize(g_map.size()*Sys_eqs::nvar,g_map.size()*Sys_eqs::nvar,
+				 g_map.getLocalDomainSize()*Sys_eqs::nvar,
+				 g_map.getLocalDomainSize()*Sys_eqs::nvar);
 
 		return A;
 
@@ -632,7 +788,17 @@ public:
 			{
 				// Create a temporal staggered grid and copy the data there
 				auto & g_map = this->getMap();
-				staggered_grid_dist<Grid_dst::dims,typename Grid_dst::stype,typename Grid_dst::value_type,typename Grid_dst::decomposition::extended_type, typename Grid_dst::memory_type, typename Grid_dst::device_grid_type> stg(g_dst,g_map.getDecomposition().getGhost(),this->getPadding());
+
+				// Convert the ghost in grid units
+
+				Ghost<Grid_dst::dims,long int> g_int;
+				for (size_t i = 0 ; i < Grid_dst::dims ; i++)
+				{
+					g_int.setLow(i,g_map.getDecomposition().getGhost().getLow(i) / g_map.spacing(i));
+					g_int.setHigh(i,g_map.getDecomposition().getGhost().getHigh(i) / g_map.spacing(i));
+				}
+
+				staggered_grid_dist<Grid_dst::dims,typename Grid_dst::stype,typename Grid_dst::value_type,typename Grid_dst::decomposition::extended_type, typename Grid_dst::memory_type, typename Grid_dst::device_grid_type> stg(g_dst,g_int,this->getPadding());
 				stg.setDefaultStagPosition();
 				copy_staggered<Vct,decltype(stg),pos...>(v,stg);
 
@@ -640,6 +806,10 @@ public:
 				stg.template ghost_get<pos...>();
 				stg.template to_normal<Grid_dst,pos...>(g_dst,this->getPadding(),start,stop);
 			}
+		}
+		else
+		{
+			copy_normal<Vct,Grid_dst,pos...>(v,g_dst);
 		}
 	}
 };

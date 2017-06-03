@@ -12,7 +12,8 @@ Solvers/umfpack_solver.hpp Solvers/petsc_solver.hpp \
 util/petsc_util.hpp util/linalgebra_lib.hpp util/util_num.hpp util/grid_dist_testing.hpp  \
 FiniteDifference/Average.hpp FiniteDifference/Derivative.hpp FiniteDifference/eq.hpp FiniteDifference/FDScheme.hpp FiniteDifference/Laplacian.hpp FiniteDifference/mul.hpp FiniteDifference/sum.hpp FiniteDifference/util/common.hpp \
 PSE/Kernels.hpp PSE/Kernels_test_util.hpp Operators/Vector/vector_dist_operators_extensions.hpp Operators/Vector/vector_dist_operators.hpp Operators/Vector/vector_dist_operators_apply_kernel.hpp Operators/Vector/vector_dist_operators_functions.hpp Operators/Vector/vector_dist_operator_assign.hpp \
-Draw/DrawParticles.hpp Draw/PointIterator.hpp Draw/PointIteratorSkin.hpp
+Draw/DrawParticles.hpp Draw/PointIterator.hpp Draw/PointIteratorSkin.hpp \
+interpolation/interpolation.hpp interpolation/mp4_kernel.hpp interpolation/z_spline.hpp
 
 .cu.o :
 	$(NVCC) $(NVCCFLAGS) -o $@ -c $<

@@ -16,6 +16,8 @@
 #include <petscksp.h>
 #include <petsctime.h>
 #include "Plot/GoogleChart.hpp"
+#include "Matrix/SparseMatrix.hpp"
+#include "Vector/Vector.hpp"
 
 #define UMFPACK_NONE 0
 
