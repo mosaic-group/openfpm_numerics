@@ -696,8 +696,11 @@ class petsc_solver<double>
 
 public:
 
+	typedef Vector<double,PETSC_BASE> return_type;
+
 	~petsc_solver()
 	{
+		PETSC_SAFE_CALL(KSPDestroy(&ksp));
 	}
 
 	petsc_solver()
@@ -850,8 +853,14 @@ public:
 	 *
 	 *	\tparam impl Implementation of the SparseMatrix
 	 *
+	 * \param A sparse matrix
+	 * \param b vector
+	 * \param initial_guess true if x has the initial guess
+	 *
+	 * \return the solution
+	 *
 	 */
-	Vector<double,PETSC_BASE> solve(SparseMatrix<double,int,PETSC_BASE> & A, const Vector<double,PETSC_BASE> & b)
+	Vector<double,PETSC_BASE> solve(SparseMatrix<double,int,PETSC_BASE> & A, const Vector<double,PETSC_BASE> & b, bool initial_guess = false)
 	{
 		Mat & A_ = A.getMat();
 		const Vec & b_ = b.getVec();
@@ -864,6 +873,7 @@ public:
 
 		PETSC_SAFE_CALL(MatGetSize(A_,&row,&col));
 		PETSC_SAFE_CALL(MatGetLocalSize(A_,&row_loc,&col_loc));
+		PETSC_SAFE_CALL(KSPSetInitialGuessNonzero(ksp,PETSC_FALSE));
 
 		Vector<double,PETSC_BASE> x(row,row_loc);
 		Vec & x_ = x.getVec();
@@ -875,6 +885,49 @@ public:
 
 		x.update();
 		return x;
+	}
+
+	/*! \brief Here we invert the matrix and solve the system
+	 *
+	 *  \warning umfpack is not a parallel solver, this function work only with one processor
+	 *
+	 *  \note if you want to use umfpack in a NON parallel, but on a distributed data, use solve with triplet
+	 *
+	 *	\tparam impl Implementation of the SparseMatrix
+	 *
+	 * \param A sparse matrix
+	 * \param b vector
+	 * \param x solution and initial guess
+	 * \param initial_guess true if x has the initial guess
+	 *
+	 * \return true if succeed
+	 *
+	 */
+	bool solve(SparseMatrix<double,int,PETSC_BASE> & A, Vector<double,PETSC_BASE> & x, const Vector<double,PETSC_BASE> & b)
+	{
+		Mat & A_ = A.getMat();
+		const Vec & b_ = b.getVec();
+
+		// We set the size of x according to the Matrix A
+		PetscInt row;
+		PetscInt col;
+		PetscInt row_loc;
+		PetscInt col_loc;
+
+		PETSC_SAFE_CALL(MatGetSize(A_,&row,&col));
+		PETSC_SAFE_CALL(MatGetLocalSize(A_,&row_loc,&col_loc));
+		PETSC_SAFE_CALL(KSPSetInitialGuessNonzero(ksp,PETSC_TRUE));
+
+
+		Vec & x_ = x.getVec();
+
+		if (try_solve == true)
+			try_solve_simple(A_,b_,x_);
+		else
+			solve_simple(A_,b_,x_);
+
+		x.update();
+		return true;
 	}
 };
 

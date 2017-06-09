@@ -314,7 +314,7 @@ public:
 		}
 	}
 
-	template<unsigned int prp_v, unsigned int prp_g> void m2p(grid & gd, vector & vd)
+	template<unsigned int prp_g, unsigned int prp_v> void m2p(grid & gd, vector & vd)
 	{
 #ifdef SE_CLASS1
 

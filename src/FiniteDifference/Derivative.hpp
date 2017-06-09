@@ -12,6 +12,7 @@
 #define CENTRAL_B_ONE_SIDE 1
 #define FORWARD 2
 #define BACKWARD 3
+#define CENTRAL_SYM 4
 
 #include "util/mathutil.hpp"
 #include "Vector/map_vector.hpp"

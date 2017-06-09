@@ -154,6 +154,10 @@ BOOST_AUTO_TEST_CASE( interpolation_full_test )
 	BOOST_REQUIRE_CLOSE(mg[0],mv[0],0.001);
 	BOOST_REQUIRE_CLOSE(mg[1],mv[1],0.001);
 
+	// Do a ghost put
+
+	auto & v_cl = create_vcluster();
+
 	// We have to do a ghost get before interpolating m2p
 	// Before doing mesh to particle particle must be arranged
 	// into a grid like
@@ -191,14 +195,14 @@ BOOST_AUTO_TEST_CASE( interpolation_full_test )
 	gd.ghost_get<0>();
 
 	grid_key_dx<2> start({3,3});
-	grid_key_dx<2> stop({(long int)gd.size(0) - 3,(long int)gd.size(1) - 3});
+	grid_key_dx<2> stop({(long int)gd.size(0) - 4,(long int)gd.size(1) - 4});
 
 	auto it6 = gd.getSubDomainIterator(start,stop);
 	while(it6.isNext())
 	{
 		auto key = it6.get();
 
-		gd.get<0>(key) = (double)rand()/RAND_MAX;;
+		gd.get<0>(key) = 5.0/*(double)rand()/RAND_MAX;*/;
 
 		++it6;
 	}
@@ -211,17 +215,35 @@ BOOST_AUTO_TEST_CASE( interpolation_full_test )
 	momenta_grid_domain<decltype(gd),0>(gd,mg);
 	momenta_vector<decltype(vd),0>(vd,mv);
 
+	v_cl.sum(mg[0]);
+	v_cl.sum(mg[1]);
+	v_cl.sum(mv[0]);
+	v_cl.sum(mv[1]);
+	v_cl.execute();
+
 	BOOST_REQUIRE_CLOSE(mg[0],mv[0],0.001);
 	BOOST_REQUIRE_CLOSE(mg[1],mv[1],0.001);
 
 	momenta_grid_domain<decltype(gd),1>(gd,mg);
 	momenta_vector<decltype(vd),1>(vd,mv);
 
+	v_cl.sum(mg[0]);
+	v_cl.sum(mg[1]);
+	v_cl.sum(mv[0]);
+	v_cl.sum(mv[1]);
+	v_cl.execute();
+
 	BOOST_REQUIRE_CLOSE(mg[0],mv[0],0.001);
 	BOOST_REQUIRE_CLOSE(mg[1],mv[1],0.001);
 
 	momenta_grid_domain<decltype(gd),2>(gd,mg);
 	momenta_vector<decltype(vd),2>(vd,mv);
+
+	v_cl.sum(mg[0]);
+	v_cl.sum(mg[1]);
+	v_cl.sum(mv[0]);
+	v_cl.sum(mv[1]);
+	v_cl.execute();
 
 	BOOST_REQUIRE_CLOSE(mg[0],mv[0],0.001);
 	BOOST_REQUIRE_CLOSE(mg[1],mv[1],0.001);

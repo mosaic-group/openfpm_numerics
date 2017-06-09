@@ -100,7 +100,8 @@ class Vector<T,PETSC_BASE>
 	 */
 	void setPetsc() const
 	{
-		PETSC_SAFE_CALL(VecSetFromOptions(v));
+		if (v_created == false)
+		{PETSC_SAFE_CALL(VecSetType(v,VECMPI));}
 
 
 		// set the vector
@@ -365,6 +366,18 @@ public:
 		row_val.swap(v.row_val);
 
 		return *this;
+	}
+
+	/*! \brief Set to zero all the entries
+	 *
+	 *
+	 */
+	void setZero()
+	{
+		if (v_created == false)
+		{PETSC_SAFE_CALL(VecSetType(v,VECMPI));}
+
+		v_created = true;
 	}
 };
 
