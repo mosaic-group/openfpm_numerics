@@ -154,8 +154,6 @@ BOOST_AUTO_TEST_CASE( interpolation_full_test )
 	BOOST_REQUIRE_CLOSE(mg[0],mv[0],0.001);
 	BOOST_REQUIRE_CLOSE(mg[1],mv[1],0.001);
 
-	// Do a ghost put
-
 	auto & v_cl = create_vcluster();
 
 	// We have to do a ghost get before interpolating m2p
