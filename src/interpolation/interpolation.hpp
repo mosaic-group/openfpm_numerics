@@ -108,7 +108,7 @@ inline size_t getSub(Point<vector::dims,typename vector::stype> & p,
 
 template<unsigned int prp_g, unsigned int prp_v, unsigned int m2p_or_p2m, typename kernel, typename iterator, typename vector, typename grid, typename grid_inte>
 																 inline void inte_calc(iterator & it,
-		                     	 	 	 	 	 	 	 	 	 const vector & vd,
+		                     	 	 	 	 	 	 	 	 	 vector & vd,
 																 const Box<vector::dims,typename vector::stype> & domain,
 																 int (& ip)[vector::dims][kernel::np],
 																 grid & gd,
