@@ -37,6 +37,19 @@ public:
 #define SOLVER_PRINT_RESIDUAL_NORM_INFINITY 1
 #define SOLVER_PRINT_DETERMINANT 2
 
+// It contain statistic of the error of the calculated solution
+struct solError
+{
+	// infinity norm of the error
+	PetscReal err_inf;
+
+	// L1 norm of the error
+	PetscReal err_norm;
+
+	// Number of iterations
+	PetscInt its;
+};
+
 size_t cpu_rank;
 
 /*! \brief This class is able to do Matrix inversion in parallel with PETSC solvers
@@ -48,19 +61,6 @@ size_t cpu_rank;
 template<>
 class petsc_solver<double>
 {
-	// It contain statistic of the error of the calculated solution
-	struct solError
-	{
-		// infinity norm of the error
-		PetscReal err_inf;
-
-		// L1 norm of the error
-		PetscReal err_norm;
-
-		// Number of iterations
-		PetscInt its;
-	};
-
 	//It contain statistic of the error at each iteration
 	struct itError
 	{
@@ -625,42 +625,17 @@ class petsc_solver<double>
 	 */
 	static solError statSolutionError(Mat & A_, const Vec & b_, Vec & x_, KSP ksp)
 	{
-		PetscScalar neg_one = -1.0;
-
-		// We set the size of x according to the Matrix A
-		PetscInt row;
-		PetscInt col;
-		PetscInt row_loc;
-		PetscInt col_loc;
-		PetscInt its;
-
-		PETSC_SAFE_CALL(MatGetSize(A_,&row,&col));
-		PETSC_SAFE_CALL(MatGetLocalSize(A_,&row_loc,&col_loc));
-
-		/*
-		      Here we calculate the residual error
-	    */
-		PetscReal norm;
-		PetscReal norm_inf;
-
-		// Get a vector r for the residual
-		Vector<double,PETSC_BASE> r(row,row_loc);
-		Vec & r_ = r.getVec();
-
-		PETSC_SAFE_CALL(MatMult(A_,x_,r_));
-		PETSC_SAFE_CALL(VecAXPY(r_,neg_one,b_));
-
-		PETSC_SAFE_CALL(VecNorm(r_,NORM_1,&norm));
-		PETSC_SAFE_CALL(VecNorm(r_,NORM_INFINITY,&norm_inf));
-		PETSC_SAFE_CALL(KSPGetIterationNumber(ksp,&its));
-
 		solError err;
-		err.err_norm = norm / col;
-		err.err_inf = norm_inf;
+
+		err = getSolNormError(A_,b_,x_);
+
+		PetscInt its;
+		PETSC_SAFE_CALL(KSPGetIterationNumber(ksp,&its));
 		err.its = its;
 
 		return err;
 	}
+
 
 	/*! \brief initialize the KSP object
 	 *
@@ -692,6 +667,49 @@ class petsc_solver<double>
 	void destroyKSP()
 	{
 		KSPDestroy(&ksp);
+	}
+
+	/*! \brief Return the norm error of the solution
+	 *
+	 * \param A_ the matrix that identity the linear system
+	 * \param x_ the solution
+	 * \param b_ the right-hand-side
+	 *
+	 */
+	static solError getSolNormError(const Mat & A_, const Vec & x_, const Vec & b_)
+	{
+		PetscScalar neg_one = -1.0;
+
+		// We set the size of x according to the Matrix A
+		PetscInt row;
+		PetscInt col;
+		PetscInt row_loc;
+		PetscInt col_loc;
+
+		PETSC_SAFE_CALL(MatGetSize(A_,&row,&col));
+		PETSC_SAFE_CALL(MatGetLocalSize(A_,&row_loc,&col_loc));
+
+		/*
+		      Here we calculate the residual error
+	    */
+		PetscReal norm;
+		PetscReal norm_inf;
+
+		// Get a vector r for the residual
+		Vector<double,PETSC_BASE> r(row,row_loc);
+		Vec & r_ = r.getVec();
+
+		PETSC_SAFE_CALL(MatMult(A_,x_,r_));
+		PETSC_SAFE_CALL(VecAXPY(r_,neg_one,b_));
+
+		PETSC_SAFE_CALL(VecNorm(r_,NORM_1,&norm));
+		PETSC_SAFE_CALL(VecNorm(r_,NORM_INFINITY,&norm_inf));
+
+		solError err;
+		err.err_norm = norm / col;
+		err.err_inf = norm_inf;
+
+		return err;
 	}
 
 public:
@@ -885,6 +903,15 @@ public:
 
 		x.update();
 		return x;
+	}
+
+	/*! \brief It return the resiual error
+	 *
+	 *
+	 */
+	solError get_residual_error(SparseMatrix<double,int,PETSC_BASE> & A, const Vector<double,PETSC_BASE> & x, const Vector<double,PETSC_BASE> & b)
+	{
+		return getSolNormError(A.getMat(),x.getVec(),b.getVec());
 	}
 
 	/*! \brief Here we invert the matrix and solve the system
