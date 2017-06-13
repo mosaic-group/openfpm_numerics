@@ -124,7 +124,7 @@ template<typename solver_type,typename lid_nn_3d> void lid_driven_cavity_3d()
 	Ghost<3,long int> stencil_max(1);
 
 	// Distributed grid
-	FDScheme<lid_nn_3d> fd(pd,stencil_max,domain,g_dist.getGridInfo(),g_dist);
+	FDScheme<lid_nn_3d> fd(pd,stencil_max,domain,g_dist);
 
 	// start and end of the bulk
 

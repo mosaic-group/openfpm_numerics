@@ -88,7 +88,7 @@ BOOST_AUTO_TEST_CASE( interpolation_full_test )
 	Box<2,float> domain({0.0,0.0},{1.0,1.0});
 	size_t sz[2] = {64,64};
 
-	Ghost<2,long int> gg(3);
+	Ghost<2,long int> gg(2);
 	Ghost<2,float> gv(0.01);
 
 	size_t bc_v[2] = {PERIODIC,PERIODIC};

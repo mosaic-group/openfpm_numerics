@@ -174,7 +174,7 @@ template<typename solver_type,typename lid_nn> void lid_driven_cavity_2d()
 	Ghost<2,long int> stencil_max(1);
 
 	// Finite difference scheme
-	FDScheme<lid_nn> fd(pd, stencil_max, domain, g_dist.getGridInfo(), g_dist);
+	FDScheme<lid_nn> fd(pd, stencil_max, domain,g_dist);
 
 	// Here we impose the equation, we start from the incompressibility Eq imposed in the bulk with the
 	// exception of the first point {0,0} and than we set P = 0 in {0,0}, why we are doing this is again

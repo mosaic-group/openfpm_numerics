@@ -616,6 +616,32 @@ private:
 		g_map.template ghost_get<0>();
 	}
 
+	/*! \initialize the object FDScheme
+	 *
+	 * \param domain simulation domain
+	 *
+	 */
+	void Initialize(const Box<Sys_eqs::dims,typename Sys_eqs::stype> & domain)
+	{
+		construct_gmap();
+
+		// Create a CellDecomposer and calculate the spacing
+
+		size_t sz_g[Sys_eqs::dims];
+		for (size_t i = 0 ; i < Sys_eqs::dims ; i++)
+		{
+			if (Sys_eqs::boundary[i] == NON_PERIODIC)
+				sz_g[i] = gs.getSize()[i] - 1;
+			else
+				sz_g[i] = gs.getSize()[i];
+		}
+
+		CellDecomposer_sm<Sys_eqs::dims,typename Sys_eqs::stype> cd(domain,sz_g,0);
+
+		for (size_t i = 0 ; i < Sys_eqs::dims ; i++)
+			spacing[i] = cd.getCellBox().getHigh(i);
+	}
+
 public:
 
 	/*! \brief set the staggered position for each property
@@ -676,34 +702,34 @@ public:
 	 * \param pd Padding, how many points out of boundary are present
 	 * \param stencil maximum extension of the stencil on each directions
 	 * \param domain the domain
-	 * \param gs grid infos where Finite differences work
-	 * \param b_g Finite difference grid (it is not important what it contain only its decomposition is used)
+	 * \param b_g object grid that will store the solution
+	 *
+	 */
+	FDScheme(const Ghost<Sys_eqs::dims,long int> & stencil,
+			 const Box<Sys_eqs::dims,typename Sys_eqs::stype> & domain,
+			 const typename Sys_eqs::b_grid & b_g)
+	:pd({0,0,0},{0,0,0}),gs(b_g.getGridInfoVoid()),g_map(b_g,stencil,pd),row(0),row_b(0)
+	{
+		Initialize(domain);
+	}
+
+	/*! \brief Constructor
+	 *
+	 * The periodicity is given by the grid b_g
+	 *
+	 * \param pd Padding, how many points out of boundary are present
+	 * \param stencil maximum extension of the stencil on each directions
+	 * \param domain the domain
+	 * \param b_g object grid that will store the solution
 	 *
 	 */
 	FDScheme(Padding<Sys_eqs::dims> & pd,
 			 const Ghost<Sys_eqs::dims,long int> & stencil,
 			 const Box<Sys_eqs::dims,typename Sys_eqs::stype> & domain,
-			 const grid_sm<Sys_eqs::dims,void> & gs,
 			 const typename Sys_eqs::b_grid & b_g)
-	:pd(pd),gs(gs),g_map(b_g,stencil,pd),row(0),row_b(0)
+	:pd(pd),gs(b_g.getGridInfoVoid()),g_map(b_g,stencil,pd),row(0),row_b(0)
 	{
-		construct_gmap();
-
-		// Create a CellDecomposer and calculate the spacing
-
-		size_t sz_g[Sys_eqs::dims];
-		for (size_t i = 0 ; i < Sys_eqs::dims ; i++)
-		{
-			if (Sys_eqs::boundary[i] == NON_PERIODIC)
-				sz_g[i] = gs.getSize()[i] - 1;
-			else
-				sz_g[i] = gs.getSize()[i];
-		}
-
-		CellDecomposer_sm<Sys_eqs::dims,typename Sys_eqs::stype> cd(domain,sz_g,0);
-
-		for (size_t i = 0 ; i < Sys_eqs::dims ; i++)
-			spacing[i] = cd.getCellBox().getHigh(i);
+		Initialize(domain);
 	}
 
 	/*! \brief Impose an operator
@@ -802,8 +828,8 @@ public:
 	 */
 	template<unsigned int prp, typename T, typename b_term, typename iterator> void impose_dit(const T & op ,
 									 b_term & b_t,
-									 long int id ,
-									 const iterator & it_d)
+									 const iterator & it_d,
+									 long int id = 0)
 	{
 		grid_b<b_term,prp> b(b_t);
 
@@ -893,6 +919,33 @@ public:
 		{
 			copy_normal<Vct,Grid_dst,pos...>(v,g_dst);
 		}
+	}
+
+	/*! \brief Copy the vector into the grid
+	 *
+	 * ## Copy the solution into the grid
+	 * \snippet eq_unit_test.hpp Copy the solution to grid
+	 *
+	 * \tparam scheme Discretization scheme
+	 * \tparam Grid_dst type of the target grid
+	 * \tparam pos target properties
+	 *
+	 * \param v Vector that contain the solution of the system
+	 * \param g_dst Destination grid
+	 *
+	 */
+	template<unsigned int ... pos, typename Vct, typename Grid_dst> void copy(Vct & v, Grid_dst & g_dst)
+	{
+		long int start[Sys_eqs_typ::dims];
+		long int stop[Sys_eqs_typ::dims];
+
+		for (size_t i = 0 ; i < Sys_eqs_typ::dims ; i++)
+		{
+			start[i] = 0;
+			stop[i] = g_dst.size(i);
+		}
+
+		this->copy<pos...>(v,start,stop,g_dst);
 	}
 };
 
