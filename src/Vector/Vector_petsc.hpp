@@ -86,7 +86,7 @@ class Vector<T,PETSC_BASE>
 	mutable Vec v;
 
 	// Mutable row value vector
-	mutable openfpm::vector<rval<T,PETSC_RVAL>,HeapMemory,typename memory_traits_inte<rval<T,PETSC_RVAL>>::type > row_val;
+	mutable openfpm::vector<rval<PetscScalar,PETSC_RVAL>,HeapMemory,typename memory_traits_inte<rval<PetscScalar,PETSC_RVAL>>::type > row_val;
 
 	// Global to local map
 	mutable std::unordered_map<size_t,size_t> map;
@@ -210,7 +210,7 @@ public:
 	 * \return reference to the element vector
 	 *
 	 */
-	inline T & insert(size_t i)
+	inline PetscScalar & insert(size_t i)
 	{
 		row_val.add();
 
@@ -228,7 +228,7 @@ public:
 	 * \return reference to the element vector
 	 *
 	 */
-	inline const T & insert(size_t i) const
+	inline const PetscScalar & insert(size_t i) const
 	{
 		row_val.add();
 
@@ -248,7 +248,7 @@ public:
 	 * \return reference to the element vector
 	 *
 	 */
-	const T & operator()(size_t i) const
+	const PetscScalar & operator()(size_t i) const
 	{
 		// Search if exist
 
@@ -269,7 +269,7 @@ public:
 	 * \return reference to the element vector
 	 *
 	 */
-	T & operator()(size_t i)
+	PetscScalar & operator()(size_t i)
 	{
 		// Search if exist
 

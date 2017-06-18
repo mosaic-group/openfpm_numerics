@@ -21,7 +21,6 @@
 
 #define UMFPACK_NONE 0
 
-
 template<typename T>
 class petsc_solver
 {
@@ -600,7 +599,7 @@ class petsc_solver<double>
 
 		// We set the pre-conditioner
 		PETSC_SAFE_CALL(KSPGetPC(ksp,&pc));
-		PETSC_SAFE_CALL(PCSetType(pc,PCJACOBI));
+		PETSC_SAFE_CALL(PCSetType(pc,PCNONE));
 
 		// if we are on on best solve set-up a monitor function
 
@@ -781,6 +780,16 @@ public:
 	void best_solve()
 	{
 		try_solve = true;
+	}
+
+	/*! \brief Set the Petsc solver
+	 *
+	 * \see KSPType in PETSC manual for a list of all PETSC solvers
+	 *
+	 */
+	void log_monitor()
+	{
+		PetscOptionsSetValue("-ksp_monitor",0);
 	}
 
 	/*! \brief Set the Petsc solver
