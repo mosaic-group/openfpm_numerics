@@ -97,13 +97,16 @@ BOOST_AUTO_TEST_CASE( laplacian_3D_int_zero_mg )
 	#ifdef HAVE_OSX
 	bool check = compare("AMG_psi_" + std::to_string(v_cl.getProcessUnitID()) + ".vtk","test/AMG_psi_" + std::to_string(v_cl.getProcessUnitID()) + "_test_osx.vtk");
 	#else
-		#if __GNUC__ == 6
-		bool check = compare("AMG_psi_" + std::to_string(v_cl.getProcessUnitID()) + ".vtk","test/AMG_psi_" + std::to_string(v_cl.getProcessUnitID()) + "_test_GCC6.vtk");
-		#endif
-
+	#if __GNUC__ == 6
+	bool check = compare("AMG_psi_" + std::to_string(v_cl.getProcessUnitID()) + ".vtk","test/AMG_psi_" + std::to_string(v_cl.getProcessUnitID()) + "_test_GCC6.vtk");
+	#endif
+	#if __GNUC__ == 4
+	bool check = compare("AMG_psi_" + std::to_string(v_cl.getProcessUnitID()) + ".vtk","test/AMG_psi_" + std::to_string(v_cl.getProcessUnitID()) + "_test_GCC4.vtk");
+	#endif
 	#endif
 
 	BOOST_REQUIRE_EQUAL(check,true);
+
 
 	// Resolve
 	timer tm_solve2;
@@ -117,7 +120,12 @@ BOOST_AUTO_TEST_CASE( laplacian_3D_int_zero_mg )
 	#ifdef HAVE_OSX
 	check = compare("AMG_psi2_" + std::to_string(v_cl.getProcessUnitID()) + ".vtk","test/AMG_psi2_" + std::to_string(v_cl.getProcessUnitID()) + "_test_osx.vtk");
 	#else
-	check = compare("AMG_psi2_" + std::to_string(v_cl.getProcessUnitID()) + ".vtk","test/AMG_psi2_" + std::to_string(v_cl.getProcessUnitID()) + "_test_osx.vtk");
+	#if __GNUC__ == 6
+	check = compare("AMG_psi2_" + std::to_string(v_cl.getProcessUnitID()) + ".vtk","test/AMG_psi2_" + std::to_string(v_cl.getProcessUnitID()) + "_test_GCC6.vtk");
+	#endif
+    #if __GNUC__ == 4
+    check = compare("AMG_psi2_" + std::to_string(v_cl.getProcessUnitID()) + ".vtk","test/AMG_psi2_" + std::to_string(v_cl.getProcessUnitID()) + "_test_GCC4.vtk");
+    #endif
 	#endif
 	BOOST_REQUIRE_EQUAL(check,true);
 }
