@@ -8,6 +8,9 @@
 #ifndef OPENFPM_NUMERICS_SRC_FINITEDIFFERENCE_LAPLACIAN_HPP_
 #define OPENFPM_NUMERICS_SRC_FINITEDIFFERENCE_LAPLACIAN_HPP_
 
+#include "FD_util_include.hpp"
+#include "util/util_num.hpp"
+#include "FiniteDifference/eq.hpp"
 
 /*! \brief Laplacian second order on h (spacing)
  *

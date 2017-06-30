@@ -46,11 +46,19 @@ class umfpack_solver<double>
 
 public:
 
-	/*! \brief No nothing
+	/*! \brief Here we invert the matrix and solve the system
 	 *
+	 *  \warning umfpack is not a parallel solver, this function work only with one processor
+	 *
+	 *  \note if you want to use umfpack in a NON parallel, but on a distributed data, use solve with triplet
+	 *
+	 *	\tparam impl Implementation of the SparseMatrix
 	 *
 	 */
-	void best_solve() {};
+	static Vector<double,EIGEN_BASE> try_solve(SparseMatrix<double,int,EIGEN_BASE> & A, const Vector<double,EIGEN_BASE> & b, size_t opt = UMFPACK_NONE)
+	{
+		return solve(A,b,opt);
+	}
 
 	/*! \brief Here we invert the matrix and solve the system
 	 *

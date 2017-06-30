@@ -15,7 +15,8 @@
 	if (err != 0) {\
 		std::string msg("Petsc error: ");\
 		msg += std::string(__FILE__) + std::string(" ") + std::to_string(__LINE__);\
-		PetscError(MPI_COMM_WORLD,__LINE__,__FUNCT__,__FILE__,err,PETSC_ERROR_INITIAL,"Error petsc");\
+		PetscInt ln = __LINE__;\
+		PetscError(MPI_COMM_WORLD,ln,__FUNCT__,__FILE__,err,PETSC_ERROR_INITIAL,"Error petsc");\
 	}\
 }
 

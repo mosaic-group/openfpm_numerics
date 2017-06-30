@@ -193,8 +193,7 @@ template<typename solver_type,typename lid_nn_3d> void lid_driven_cavity_3d()
 	fd.impose(v_z(), 0.0, EQ_3, {-1,-1,-1},{sz[0]-1,sz[1]-1,-1});
 
 	solver_type solver;
-	solver.best_solve();
-	auto x = solver.solve(fd.getA(),fd.getB());
+	auto x = solver.try_solve(fd.getA(),fd.getB());
 
 	// Bring the solution to grid
 	fd.template copy<velocity,pressure>(x,{0,0},{sz[0]-1,sz[1]-1,sz[2]-1},g_dist);

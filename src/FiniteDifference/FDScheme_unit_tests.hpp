@@ -23,21 +23,23 @@ constexpr unsigned int V = 0;
 
 struct sys_nn
 {
-	// dimensionaly of the equation (2D problem 3D problem ...)
+	//! dimensionaly of the equation (2D problem 3D problem ...)
 	static const unsigned int dims = 2;
-	// number of fields in the system
+	//! number of degree of freedoms
 	static const unsigned int nvar = 1;
+
 	static const unsigned int ord = EQS_FIELD;
 
-	// boundary at X and Y
+	//! boundary at X and Y
 	static const bool boundary[];
 
-	// type of space float, double, ...
+	//! type of space float, double, ...
 	typedef float stype;
 
-	// Base grid
+	//! Base grid
 	typedef grid_dist_id<dims,stype,scalar<float>,CartDecomposition<2,stype> > b_grid;
 
+	//! specify that we are on testing
 	typedef void testing;
 };
 
@@ -45,21 +47,22 @@ const bool sys_nn::boundary[] = {NON_PERIODIC,NON_PERIODIC};
 
 struct sys_pp
 {
-	// dimensionaly of the equation (2D problem 3D problem ...)
+	//! dimensionaly of the equation (2D problem 3D problem ...)
 	static const unsigned int dims = 2;
-	// number of fields in the system
+	//! number of degree of freedom in the system
 	static const unsigned int nvar = 1;
 	static const unsigned int ord = EQS_FIELD;
 
-	// boundary at X and Y
+	//! boundary at X and Y
 	static const bool boundary[];
 
-	// type of space float, double, ...
+	//! type of space float, double, ...
 	typedef float stype;
 
-	// Base grid
+	//! Base grid
 	typedef grid_dist_id<dims,stype,scalar<float>,CartDecomposition<2,stype> > b_grid;
 
+	//! Indicate we are on testing
 	typedef void testing;
 };
 
@@ -69,23 +72,26 @@ const bool sys_pp::boundary[] = {PERIODIC,PERIODIC};
 
 struct syss_nn
 {
-	// dimensionaly of the equation (2D problem 3D problem ...)
+	//! dimensionaly of the equation (2D problem 3D problem ...)
 	static const unsigned int dims = 2;
-	// number of fields in the system
+	//! Degree of freedom in the system
 	static const unsigned int nvar = 1;
+
 	static const unsigned int ord = EQS_FIELD;
 
+	//! Indicate that the type of grid is staggered
 	static const unsigned int grid_type = STAGGERED_GRID;
 
-	// boundary at X and Y
+	//! boundary at X and Y
 	static const bool boundary[];
 
-	// type of space float, double, ...
+	//! type of space float, double, ...
 	typedef float stype;
 
-	// Base grid
+	//! Base grid
 	typedef grid_dist_id<dims,stype,scalar<float>,CartDecomposition<2,stype> > b_grid;
 
+	//! Indicate we are on testing
 	typedef void testing;
 };
 
@@ -93,23 +99,25 @@ const bool syss_nn::boundary[] = {NON_PERIODIC,NON_PERIODIC};
 
 struct syss_pp
 {
-	// dimensionaly of the equation (2D problem 3D problem ...)
+	//! dimensionaly of the equation (2D problem 3D problem ...)
 	static const unsigned int dims = 2;
-	// number of fields in the system
+	//! number of fields in the system
 	static const unsigned int nvar = 1;
 	static const unsigned int ord = EQS_FIELD;
 
+	//! Indicate the grid is staggered
 	static const unsigned int grid_type = STAGGERED_GRID;
 
-	// boundary at X and Y
+	//! boundary at X and Y
 	static const bool boundary[];
 
-	// type of space float, double, ...
+	//! type of space float, double, ...
 	typedef float stype;
 
-	// Base grid
+	//! Base grid
 	typedef grid_dist_id<dims,stype,scalar<float>,CartDecomposition<2,stype> > b_grid;
 
+	//! Indicate we are on testing
 	typedef void testing;
 };
 

@@ -8,11 +8,6 @@
 #ifndef OPENFPM_NUMERICS_SRC_FINITEDIFFERENCE_DERIVATIVE_HPP_
 #define OPENFPM_NUMERICS_SRC_FINITEDIFFERENCE_DERIVATIVE_HPP_
 
-#define CENTRAL 0
-#define CENTRAL_B_ONE_SIDE 1
-#define FORWARD 2
-#define BACKWARD 3
-#define CENTRAL_SYM 4
 
 #include "util/mathutil.hpp"
 #include "Vector/map_vector.hpp"
@@ -20,6 +15,7 @@
 #include "FiniteDifference/util/common.hpp"
 #include "util/util_num.hpp"
 #include <unordered_map>
+#include "FD_util_include.hpp"
 
 /*! \brief Derivative second order on h (spacing)
  *

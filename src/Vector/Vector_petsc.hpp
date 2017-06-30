@@ -9,6 +9,7 @@
 #define OPENFPM_NUMERICS_SRC_VECTOR_VECTOR_PETSC_HPP_
 
 #include "Vector/map_vector.hpp"
+#include "Vector/vector_def.hpp"
 #include <boost/mpl/int.hpp>
 #include <petscvec.h>
 #include "util/petsc_util.hpp"
@@ -32,18 +33,30 @@ public:
 	//! structure that store the data of the point
 	type data;
 
-	//! Property id of the point
+	//! Property id for the row
 	static const unsigned int row = 0;
+
+	//! Property id for the value
 	static const unsigned int value = 1;
+
+	//! This object has 2 properties
 	static const unsigned int max_prop = 2;
 
-	// Get the row
+	/*! \brief Get the row
+	 *
+	 * \return the row
+	 *
+	 */
 	long int & rw()
 	{
 		return boost::fusion::at_c<row>(data);
 	}
 
-	// Get the value
+	/*! \brief Get the value
+	 *
+	 * \return the value
+	 *
+	 */
 	T & val()
 	{
 		return boost::fusion::at_c<value>(data);
@@ -54,7 +67,7 @@ public:
 	 */
 	rval()	{}
 
-	/*! \brief Constructor from row, colum and value
+	/*! \brief Constructor from row, column and value
 	 *
 	 * \param i row
 	 * \param val value
@@ -70,28 +83,34 @@ public:
 constexpr unsigned int row_id = 0;
 constexpr unsigned int val_id = 1;
 
+
+/*! \brief PETSC vector for linear algebra
+ *
+ * This vector wrap the PETSC vector for solving linear systems
+ *
+ */
 template<typename T>
 class Vector<T,PETSC_BASE>
 {
-	// n_row
+	//! Number of row the petsc vector has
 	size_t n_row;
 
-	// Number of local rows
+	//! Number of local rows
 	size_t n_row_local;
 
-	// Indicate if v has been allocated
-	bool v_created = false;
+	//! Indicate if v has been allocated
+	mutable bool v_created = false;
 
-	// Mutable vector
+	//! Mutable vector
 	mutable Vec v;
 
-	// Mutable row value vector
+	//! Mutable row value vector
 	mutable openfpm::vector<rval<PetscScalar,PETSC_RVAL>,HeapMemory,typename memory_traits_inte<rval<PetscScalar,PETSC_RVAL>>::type > row_val;
 
-	// Global to local map
+	//! Global to local map
 	mutable std::unordered_map<size_t,size_t> map;
 
-	// invalid
+	//! invalid
 	T invalid;
 
 	/*! \brief Set the Eigen internal vector
@@ -112,7 +131,7 @@ class Vector<T,PETSC_BASE>
 		PETSC_SAFE_CALL(VecAssemblyBegin(v));
 		PETSC_SAFE_CALL(VecAssemblyEnd(v));
 
-
+		v_created = true;
 	}
 
 public:
