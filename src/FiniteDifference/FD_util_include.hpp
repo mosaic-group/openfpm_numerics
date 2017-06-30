@@ -1,0 +1,18 @@
+/*
+ * FD_util_unclude.hpp
+ *
+ *  Created on: Jun 20, 2017
+ *      Author: i-bird
+ */
+
+#ifndef OPENFPM_NUMERICS_SRC_FINITEDIFFERENCE_FD_UTIL_INCLUDE_HPP_
+#define OPENFPM_NUMERICS_SRC_FINITEDIFFERENCE_FD_UTIL_INCLUDE_HPP_
+
+#define CENTRAL 0
+#define CENTRAL_B_ONE_SIDE 1
+#define FORWARD 2
+#define BACKWARD 3
+#define CENTRAL_SYM 4
+
+
+#endif /* OPENFPM_NUMERICS_SRC_FINITEDIFFERENCE_FD_UTIL_INCLUDE_HPP_ */
