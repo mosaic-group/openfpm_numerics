@@ -23,6 +23,18 @@
 template<typename copy_type, typename T, typename Ev, typename Eqs_sys, int sa>
 struct copy_ele_sca_array
 {
+	/*! \brief Constructor
+	 *
+	 * It define the copy parameters.
+	 *
+	 * \param key destination position
+	 * \param grid_dst grid destination
+	 * \param x Source vector
+	 * \param lin_id source element inside the vector
+	 * \param gs_size grid size
+	 * \param base_id processor id start
+	 *
+	 */
 	template<typename Grid> inline static void copy(Grid & grid_dst, const grid_dist_key_dx<Eqs_sys::dims> & key, const Ev & x,size_t lin_id, size_t base_id, size_t gs_size)
 	{
 		grid_dst.template get<T::value>(key) = x(lin_id * Eqs_sys::nvar + base_id);
@@ -41,6 +53,18 @@ struct copy_ele_sca_array
 template<typename copy_type, typename T, typename Ev, typename Eqs_sys>
 struct copy_ele_sca_array<copy_type,T,Ev,Eqs_sys,1>
 {
+	/*! \brief Constructor
+	 *
+	 * It define the copy parameters.
+	 *
+	 * \param key destination position
+	 * \param grid_dst grid destination
+	 * \param x Source vector
+	 * \param lin_id source element inside the vector
+	 * \param gs_size grid size
+	 * \param base_id processor id start
+	 *
+	 */
 	template<typename Grid> inline static void copy(Grid & grid_dst, const grid_dist_key_dx<Eqs_sys::dims> & key, const Ev & x,size_t lin_id, size_t base_id, size_t gs_size)
 	{
 		for (size_t i = 0 ; i < std::extent<copy_type>::value ; i++)
@@ -84,13 +108,15 @@ struct copy_ele
 	//! source vector
 	const Ev & x;
 
-	/*! \brief constructor
+	/*! \brief Constructor
 	 *
 	 * It define the copy parameters.
 	 *
 	 * \param key destination position
 	 * \param grid_dst grid destination
-	 * \param v Source vector
+	 * \param x Source vector
+	 * \param lin_id source element inside the vector
+	 * \param gs_size grid size
 	 *
 	 */
 	inline copy_ele(const grid_dist_key_dx<Eqs_sys::dims> & key, S & grid_dst, const Ev & x, size_t lin_id, size_t gs_size)
@@ -109,7 +135,11 @@ struct copy_ele
 	{std::cerr << "Error: " <<__FILE__ << ":" << __LINE__ << " Passing a temporal object";};
 #endif
 
-	//! It call the copy function for each property
+	/*! \brief It call the copy function for each property
+	 *
+	 * \param t property id
+	 *
+	 */
 	template<typename T>
 	inline void operator()(T& t)
 	{

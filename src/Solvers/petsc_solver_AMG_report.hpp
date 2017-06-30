@@ -95,6 +95,7 @@ class petsc_AMG_report
 		Vcluster & v_cl = create_vcluster();
 		v_cl.max(time1);
 		v_cl.max(time2);
+		v_cl.execute();
 
 		// Save the result
 		AMG_time_err_coars tmp;
