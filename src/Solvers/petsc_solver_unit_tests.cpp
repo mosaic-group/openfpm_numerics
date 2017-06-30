@@ -94,7 +94,12 @@ BOOST_AUTO_TEST_CASE( laplacian_3D_int_zero_mg )
 	fd.template copy<phi>(x_,psi);
 	psi.write("AMG_psi");
 
+	#ifdef HAVE_OSX
+	bool check = compare("AMG_psi_" + std::to_string(v_cl.getProcessUnitID()) + ".vtk","test/AMG_psi_" + std::to_string(v_cl.getProcessUnitID()) + "_test_osx.vtk");
+	#else
 	bool check = compare("AMG_psi_" + std::to_string(v_cl.getProcessUnitID()) + ".vtk","test/AMG_psi_test_" + std::to_string(v_cl.getProcessUnitID()) + ".vtk");
+	#endif
+
 	BOOST_REQUIRE_EQUAL(check,true);
 
 	// Resolve
@@ -105,7 +110,12 @@ BOOST_AUTO_TEST_CASE( laplacian_3D_int_zero_mg )
 
 	fd.template copy<phi>(x_,psi2);
 	psi2.write("AMG_psi2");
-	check = compare("AMG_psi2_" + std::to_string(v_cl.getProcessUnitID()) + ".vtk","test/AMG_psi2_test_" + std::to_string(v_cl.getProcessUnitID()) + ".vtk");
+
+	#ifdef HAVE_OSX
+	check = compare("AMG_psi2_" + std::to_string(v_cl.getProcessUnitID()) + ".vtk","test/AMG_psi2_" + std::to_string(v_cl.getProcessUnitID()) + "_test_osx.vtk");
+	#else
+	check = compare("AMG_psi2_" + std::to_string(v_cl.getProcessUnitID()) + ".vtk","test/AMG_psi2_" + std::to_string(v_cl.getProcessUnitID()) + "_test_osx.vtk");
+	#endif
 	BOOST_REQUIRE_EQUAL(check,true);
 }
 
