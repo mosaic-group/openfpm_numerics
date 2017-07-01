@@ -1336,6 +1336,19 @@ public:
 		return true;
 	}
 
+	/*! \brief this function give you the possibility to set PETSC options
+	 *
+	 * this function call PetscOptionsSetValue
+	 *
+	 * \param name the name of the option
+	 * \param value the value of the option
+	 *
+	 */
+	void setPetscOption(const char * name, const char * value)
+	{
+		PetscOptionsSetValue(name,value);
+	}
+
 	/*! \brief Try to solve the system using all the solvers and generate a report
 	 *
 	 * In this mode the system will try different Solvers, Preconditioner and
