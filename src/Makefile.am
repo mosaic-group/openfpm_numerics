@@ -7,13 +7,13 @@ numerics_CXXFLAGS = $(HDF5_CPPFLAGS) $(OPENMP_CFLAGS) $(LIBHILBERT_INCLUDE) $(AM
 numerics_CFLAGS = $(CUDA_CFLAGS)
 numerics_LDADD = $(LINKLIBS) -lparmetis -lmetis
 nobase_include_HEADERS = Matrix/SparseMatrix.hpp Matrix/SparseMatrix_Eigen.hpp Matrix/SparseMatrix_petsc.hpp \
-Vector/Vector_eigen.hpp Vector/Vector_petsc.hpp Vector/Vector_util.hpp Vector/Vector.hpp \
+Vector/Vector_eigen.hpp  Vector/Vector_petsc.hpp Vector/Vector_util.hpp Vector/Vector.hpp \
 Solvers/umfpack_solver.hpp Solvers/petsc_solver.hpp \
 util/petsc_util.hpp util/linalgebra_lib.hpp util/util_num.hpp util/grid_dist_testing.hpp  \
-FiniteDifference/Average.hpp FiniteDifference/Derivative.hpp FiniteDifference/eq.hpp FiniteDifference/FDScheme.hpp FiniteDifference/Laplacian.hpp FiniteDifference/mul.hpp FiniteDifference/sum.hpp FiniteDifference/util/common.hpp \
+FiniteDifference/Average.hpp FiniteDifference/Derivative.hpp FiniteDifference/FD_util_include.hpp  FiniteDifference/eq.hpp FiniteDifference/FDScheme.hpp FiniteDifference/Laplacian.hpp FiniteDifference/mul.hpp FiniteDifference/sum.hpp FiniteDifference/util/common.hpp \
 PSE/Kernels.hpp PSE/Kernels_test_util.hpp Operators/Vector/vector_dist_operators_extensions.hpp Operators/Vector/vector_dist_operators.hpp Operators/Vector/vector_dist_operators_apply_kernel.hpp Operators/Vector/vector_dist_operators_functions.hpp Operators/Vector/vector_dist_operator_assign.hpp \
 Draw/DrawParticles.hpp Draw/PointIterator.hpp Draw/PointIteratorSkin.hpp \
-interpolation/interpolation.hpp interpolation/mp4_kernel.hpp interpolation/z_spline.hpp
+interpolation/interpolation.hpp interpolation/mp4_kernel.hpp interpolation/z_spline.hpp Solvers/petsc_solver_AMG_report.hpp
 
 .cu.o :
 	$(NVCC) $(NVCCFLAGS) -o $@ -c $<
