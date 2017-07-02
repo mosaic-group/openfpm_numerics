@@ -9,8 +9,8 @@
 #define OPENFPM_NUMERICS_SRC_INTERPOLATION_INTERPOLATION_UNIT_TESTS_HPP_
 
 #include "interpolation/mp4_kernel.hpp"
-#include "interpolation/interpolation.hpp"
 #include "interpolation/z_spline.hpp"
+#include "interpolation.hpp"
 
 BOOST_AUTO_TEST_SUITE( interpolation_test )
 

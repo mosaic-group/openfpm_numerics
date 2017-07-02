@@ -719,6 +719,23 @@ class petsc_solver<double>
 
 	/*! \brief Return the norm error of the solution
 	 *
+	 * \param x_ the solution
+	 * \param b_ the right-hand-side
+	 *
+	 * \return the solution error
+	 *
+	 */
+	static solError getSolNormError(const Vec & b_, const Vec & x_,KSP ksp)
+	{
+		Mat A_;
+		Mat P_;
+		KSPGetOperators(ksp,&A_,&P_);
+
+		return getSolNormError(A_,b_,x_);
+	}
+
+	/*! \brief Return the norm error of the solution
+	 *
 	 * \param A_ the matrix that identity the linear system
 	 * \param x_ the solution
 	 * \param b_ the right-hand-side
@@ -1257,6 +1274,20 @@ public:
 	solError get_residual_error(SparseMatrix<double,int,PETSC_BASE> & A, const Vector<double,PETSC_BASE> & x, const Vector<double,PETSC_BASE> & b)
 	{
 		return getSolNormError(A.getMat(),b.getVec(),x.getVec());
+	}
+
+	/*! \brief It return the resiual error
+	 *
+	 * \param A Sparse matrix
+	 * \param x solution
+	 * \param b right-hand-side
+	 *
+	 * \return the solution error norms
+	 *
+	 */
+	solError get_residual_error(const Vector<double,PETSC_BASE> & x, const Vector<double,PETSC_BASE> & b)
+	{
+		return getSolNormError(b.getVec(),x.getVec(),ksp);
 	}
 
 	/*! \brief Here we invert the matrix and solve the system
