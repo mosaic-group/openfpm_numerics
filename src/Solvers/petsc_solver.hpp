@@ -875,7 +875,15 @@ public:
 	 */
 	void setRelTol(PetscReal rtol_)
 	{
-		PetscOptionsSetValue("-ksp_rtol",std::to_string(rtol_).c_str());
+		PetscReal rtol;
+		PetscReal abstol;
+		PetscReal dtol;
+		PetscInt maxits;
+
+		PETSC_SAFE_CALL(KSPGetTolerances(ksp,&rtol,&abstol,&dtol,&maxits));
+		PETSC_SAFE_CALL(KSPSetTolerances(ksp,rtol_,abstol,dtol,maxits));
+
+//		PetscOptionsSetValue("-ksp_rtol",std::to_string(rtol_).c_str());
 	}
 
 	/*! \brief Set the absolute tolerance as stop criteria
@@ -887,7 +895,15 @@ public:
 	 */
 	void setAbsTol(PetscReal abstol_)
 	{
-		PetscOptionsSetValue("-ksp_atol",std::to_string(abstol_).c_str());
+		PetscReal rtol;
+		PetscReal abstol;
+		PetscReal dtol;
+		PetscInt maxits;
+
+		PETSC_SAFE_CALL(KSPGetTolerances(ksp,&rtol,&abstol,&dtol,&maxits));
+		PETSC_SAFE_CALL(KSPSetTolerances(ksp,rtol,abstol_,dtol,maxits));
+
+//		PetscOptionsSetValue("-ksp_atol",std::to_string(abstol_).c_str());
 	}
 
 	/*! \brief Set the divergence tolerance
@@ -899,7 +915,15 @@ public:
 	 */
 	void setDivTol(PetscReal dtol_)
 	{
-		PetscOptionsSetValue("-ksp_dtol",std::to_string(dtol_).c_str());
+		PetscReal rtol;
+		PetscReal abstol;
+		PetscReal dtol;
+		PetscInt maxits;
+
+		PETSC_SAFE_CALL(KSPGetTolerances(ksp,&rtol,&abstol,&dtol,&maxits));
+		PETSC_SAFE_CALL(KSPSetTolerances(ksp,rtol,abstol,dtol_,maxits));
+
+//		PetscOptionsSetValue("-ksp_dtol",std::to_string(dtol_).c_str());
 	}
 
 	/*! \brief Set the maximum number of iteration for Krylov solvers
@@ -909,8 +933,16 @@ public:
 	 */
 	void setMaxIter(PetscInt n)
 	{
-		PetscOptionsSetValue("-ksp_max_it",std::to_string(n).c_str());
-		maxits = n;
+		PetscReal rtol;
+		PetscReal abstol;
+		PetscReal dtol;
+		PetscInt maxits;
+
+		PETSC_SAFE_CALL(KSPGetTolerances(ksp,&rtol,&abstol,&dtol,&maxits));
+		PETSC_SAFE_CALL(KSPSetTolerances(ksp,rtol,abstol,dtol,n));
+
+//		PetscOptionsSetValue("-ksp_max_it",std::to_string(n).c_str());
+		this->maxits = n;
 	}
 
 	/*! For the BiCGStab(L) it define the number of search directions

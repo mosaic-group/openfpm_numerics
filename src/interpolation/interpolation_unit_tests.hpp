@@ -83,7 +83,7 @@ template<typename vector, unsigned int mom_p> void momenta_vector(vector & vd,ty
 }
 
 
-BOOST_AUTO_TEST_CASE( interpolation_full_test )
+BOOST_AUTO_TEST_CASE( interpolation_full_test_2D )
 {
 	Box<2,float> domain({0.0,0.0},{1.0,1.0});
 	size_t sz[2] = {64,64};
@@ -107,9 +107,8 @@ BOOST_AUTO_TEST_CASE( interpolation_full_test )
 
 		vd.getPos(p)[0] = (double)rand()/RAND_MAX;
 		vd.getPos(p)[1] = (double)rand()/RAND_MAX;
-		vd.getPos(p)[2] = (double)rand()/RAND_MAX;
 
-		vd.getProp<0>(p) = 5.0/*(double)rand()/RAND_MAX*/;
+		vd.getProp<0>(p) = 5.0;
 
 		++it;
 	}
@@ -245,6 +244,186 @@ BOOST_AUTO_TEST_CASE( interpolation_full_test )
 
 	BOOST_REQUIRE_CLOSE(mg[0],mv[0],0.001);
 	BOOST_REQUIRE_CLOSE(mg[1],mv[1],0.001);
+
+	}
+}
+
+
+BOOST_AUTO_TEST_CASE( interpolation_full_test_3D )
+{
+	Box<3,double> domain({0.0,0.0,0.0},{1.0,1.0,1.0});
+	size_t sz[3] = {64,64,64};
+
+	Ghost<3,long int> gg(2);
+	Ghost<3,double> gv(0.01);
+
+	size_t bc_v[3] = {PERIODIC,PERIODIC,PERIODIC};
+
+	{
+	vector_dist<3,double,aggregate<double>> vd(65536,domain,bc_v,gv);
+	grid_dist_id<3,double,aggregate<double>> gd(vd.getDecomposition(),sz,gg);
+
+	// set one particle on vd
+
+	auto it = vd.getDomainIterator();
+
+	while (it.isNext())
+	{
+		auto p = it.get();
+
+		vd.getPos(p)[0] = (double)rand()/RAND_MAX;
+		vd.getPos(p)[1] = (double)rand()/RAND_MAX;
+		vd.getPos(p)[2] = (double)rand()/RAND_MAX;
+
+		vd.getProp<0>(p) = 5.0;
+
+		++it;
+	}
+
+	vd.map();
+
+	// Reset the grid
+
+	auto it2 = gd.getDomainGhostIterator();
+
+	while (it2.isNext())
+	{
+		auto key = it2.get();
+
+		gd.template get<0>(key) = 0.0;
+
+		++it2;
+	}
+
+	interpolate<decltype(vd),decltype(gd),mp4_kernel<double>> inte(vd,gd);
+
+	inte.p2m<0,0>(vd,gd);
+
+	double mg[3];
+	double mv[3];
+
+	momenta_grid<decltype(gd),0>(gd,mg);
+	momenta_vector<decltype(vd),0>(vd,mv);
+
+	BOOST_REQUIRE_CLOSE(mg[0],mv[0],0.001);
+	BOOST_REQUIRE_CLOSE(mg[1],mv[1],0.001);
+	BOOST_REQUIRE_CLOSE(mg[2],mv[2],0.001);
+
+	momenta_grid<decltype(gd),1>(gd,mg);
+	momenta_vector<decltype(vd),1>(vd,mv);
+
+	BOOST_REQUIRE_CLOSE(mg[0],mv[0],0.001);
+	BOOST_REQUIRE_CLOSE(mg[1],mv[1],0.001);
+	BOOST_REQUIRE_CLOSE(mg[2],mv[2],0.001);
+
+	momenta_grid<decltype(gd),2>(gd,mg);
+	momenta_vector<decltype(vd),2>(vd,mv);
+
+	BOOST_REQUIRE_CLOSE(mg[0],mv[0],0.001);
+	BOOST_REQUIRE_CLOSE(mg[1],mv[1],0.001);
+	BOOST_REQUIRE_CLOSE(mg[2],mv[2],0.001);
+
+	auto & v_cl = create_vcluster();
+
+	// We have to do a ghost get before interpolating m2p
+	// Before doing mesh to particle particle must be arranged
+	// into a grid like
+
+	vd.clear();
+
+	auto it4 = vd.getGridIterator(sz);
+
+	while(it4.isNext())
+	{
+		auto key = it4.get();
+
+		vd.add();
+
+		vd.getLastPos()[0] = key.get(0) * it4.getSpacing(0) + domain.getLow(0) + 0.1*it4.getSpacing(0);
+		vd.getLastPos()[1] = key.get(1) * it4.getSpacing(1) + domain.getLow(1) + 0.1*it4.getSpacing(1);
+		vd.getLastPos()[2] = key.get(2) * it4.getSpacing(2) + domain.getLow(2) + 0.1*it4.getSpacing(2);
+
+		vd.getLastProp<0>() = 0.0;
+
+		++it4;
+	}
+
+	// Reset also the grid
+
+	auto it5 = gd.getDomainGhostIterator();
+
+	while(it5.isNext())
+	{
+		auto key = it5.get();
+
+		gd.get<0>(key) = 0.0;
+
+		++it5;
+	}
+	gd.ghost_get<0>();
+
+	grid_key_dx<3> start({3,3,3});
+	grid_key_dx<3> stop({(long int)gd.size(0) - 4,(long int)gd.size(1) - 4,(long int)gd.size(2) - 4});
+
+	auto it6 = gd.getSubDomainIterator(start,stop);
+	while(it6.isNext())
+	{
+		auto key = it6.get();
+
+		gd.get<0>(key) = 5.0;
+
+		++it6;
+	}
+	gd.ghost_get<0>();
+
+	vd.map();
+	gd.ghost_get<0>();
+	inte.m2p<0,0>(gd,vd);
+
+	momenta_grid_domain<decltype(gd),0>(gd,mg);
+	momenta_vector<decltype(vd),0>(vd,mv);
+
+	v_cl.sum(mg[0]);
+	v_cl.sum(mg[1]);
+	v_cl.sum(mg[2]);
+	v_cl.sum(mv[0]);
+	v_cl.sum(mv[1]);
+	v_cl.sum(mv[2]);
+	v_cl.execute();
+
+	BOOST_REQUIRE_CLOSE(mg[0],mv[0],0.001);
+	BOOST_REQUIRE_CLOSE(mg[1],mv[1],0.001);
+	BOOST_REQUIRE_CLOSE(mg[2],mv[2],0.001);
+
+	momenta_grid_domain<decltype(gd),1>(gd,mg);
+	momenta_vector<decltype(vd),1>(vd,mv);
+
+	v_cl.sum(mg[0]);
+	v_cl.sum(mg[1]);
+	v_cl.sum(mg[2]);
+	v_cl.sum(mv[0]);
+	v_cl.sum(mv[1]);
+	v_cl.sum(mv[2]);
+	v_cl.execute();
+
+	BOOST_REQUIRE_CLOSE(mg[0],mv[0],0.001);
+	BOOST_REQUIRE_CLOSE(mg[1],mv[1],0.001);
+	BOOST_REQUIRE_CLOSE(mg[2],mv[2],0.001);
+
+	momenta_grid_domain<decltype(gd),2>(gd,mg);
+	momenta_vector<decltype(vd),2>(vd,mv);
+
+	v_cl.sum(mg[0]);
+	v_cl.sum(mg[1]);
+	v_cl.sum(mg[2]);
+	v_cl.sum(mv[0]);
+	v_cl.sum(mv[1]);
+	v_cl.sum(mv[2]);
+	v_cl.execute();
+
+	BOOST_REQUIRE_CLOSE(mg[0],mv[0],0.001);
+	BOOST_REQUIRE_CLOSE(mg[1],mv[1],0.001);
+	BOOST_REQUIRE_CLOSE(mg[2],mv[2],0.001);
 
 	}
 }

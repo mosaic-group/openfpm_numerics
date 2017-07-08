@@ -13,6 +13,11 @@
 	#include <unordered_map>
 	#include "util/for_each_ref.hpp"
 
+	/*! \brief sum functor value
+	 *
+	 * \param v_expr vector expression
+	 *
+	 */
 	template<typename v_expr>
 	struct sum_functor_value
 	{
@@ -28,10 +33,10 @@
 		//! Grid info
 		const grid_sm<last::dims,void> & gs;
 
-		// grid mapping
+		//! grid mapping
 		const typename stub_or_real<last,last::dims,typename last::stype,typename last::b_grid::decomposition::extended_type>::type & g_map;
 
-		// grid position
+		//! grid position
 		grid_dist_key_dx<last::dims> & kmap;
 
 		//! coefficent
@@ -43,12 +48,28 @@
 
 		/*! \brief constructor
 		 *
+		 * \param g_map Grid mapping, it convert grid position into vector/Matrix row
+		 * \param kmap grid position
+		 * \param gs grid information
+		 * \param spacing grid spacing
+		 * \param cols unordered map contain the map colum -> value
+		 * \param coeff it contain an additional actual coefficients in front of the values
+		 *
 		 */
-		sum_functor_value(const typename stub_or_real<last,last::dims,typename last::stype,typename last::b_grid::decomposition::extended_type>::type & g_map, grid_dist_key_dx<last::dims> & kmap, const grid_sm<last::dims,void> & gs, typename last::stype (& spacing)[last::dims], std::unordered_map<long int,typename last::stype> & cols, typename last::stype coeff)
+		sum_functor_value(const typename stub_or_real<last,last::dims,typename last::stype,typename last::b_grid::decomposition::extended_type>::type & g_map,
+				          grid_dist_key_dx<last::dims> & kmap,
+						  const grid_sm<last::dims,void> & gs,
+						  typename last::stype (& spacing)[last::dims],
+						  std::unordered_map<long int,typename last::stype> & cols,
+						  typename last::stype coeff)
 		:cols(cols),gs(gs),g_map(g_map),kmap(kmap),coeff(coeff),spacing(spacing)
 	{};
 
-	//! It call this function for every expression in the sum
+	/*! \brief It call this function for every expression operand in the sum
+	 *
+	 * \param t expression operand id
+	 *
+	 */
 	template<typename T>
 	void operator()(T& t) const
 	{
@@ -70,27 +91,35 @@
 template<typename ... expr>
 struct sum
 {
-	// Transform from variadic template to boost mpl vector
+	//! Transform from variadic template to boost mpl vector
 	typedef boost::mpl::vector<expr... > v_expr;
 
-	// size of v_expr
+	//! size of v_expr
 	typedef typename boost::mpl::size<v_expr>::type v_sz;
 
+	//! struct that specify the syste, of equations
 	typedef typename boost::mpl::at<v_expr, boost::mpl::int_<v_sz::type::value - 1> >::type Sys_eqs;
 
 	/*! \brief Calculate which colums of the Matrix are non zero
 	 *
-	 * \param pos position where the derivative is calculated
-	 * \param gs Grid info
-	 * \param cols non-zero colums calculated by the function
-	 * \param coeff coefficent (constant in front of the derivative)
+	 * \param g_map Grid mapping, it convert grid position into vector/Matrix row
+	 * \param kmap grid position
+	 * \param gs grid information
+	 * \param spacing grid spacing
+	 * \param cols unordered map contain the map colum -> value
+	 * \param coeff it contain an additional actual coefficients in front of the values
 	 *
 	 * ### Example
 	 *
 	 * \snippet FDScheme_unit_tests.hpp sum example
 	 *
 	 */
-	inline static void value(const typename stub_or_real<Sys_eqs,Sys_eqs::dims,typename Sys_eqs::stype,typename Sys_eqs::b_grid::decomposition::extended_type>::type & g_map, grid_dist_key_dx<Sys_eqs::dims> & kmap, const grid_sm<Sys_eqs::dims,void> & gs, typename Sys_eqs::stype (& spacing )[Sys_eqs::dims] , std::unordered_map<long int,typename Sys_eqs::stype > & cols, typename Sys_eqs::stype coeff)
+	inline static void value(const typename stub_or_real<Sys_eqs,Sys_eqs::dims,typename Sys_eqs::stype,typename Sys_eqs::b_grid::decomposition::extended_type>::type & g_map,
+			                 grid_dist_key_dx<Sys_eqs::dims> & kmap,
+							 const grid_sm<Sys_eqs::dims,void> & gs,
+							 typename Sys_eqs::stype (& spacing )[Sys_eqs::dims],
+							 std::unordered_map<long int,typename Sys_eqs::stype > & cols,
+							 typename Sys_eqs::stype coeff)
 	{
 		// Sum functor
 		sum_functor_value<v_expr> sm(g_map,kmap,gs,spacing,cols,coeff);
@@ -99,23 +128,15 @@ struct sum
 		boost::mpl::for_each_ref< boost::mpl::range_c<int,0,v_sz::type::value - 1> >(sm);
 	}
 
-	/*! \brief Calculate the position in the cell where the sum operator is performed
-	 *
-	 * it is done for the first element, the others are supposed to be in the same position
-	 * it just return the position of the staggered property in the first expression
-	 *
-	 * \param position where we are calculating the derivative
-	 * \param gs Grid info
-	 * \param s_pos staggered position of the properties
-	 *
-	 */
-	inline static grid_key_dx<Sys_eqs::dims> position(grid_key_dx<Sys_eqs::dims> & pos, const grid_sm<Sys_eqs::dims,void> & gs, const comb<Sys_eqs::dims> (& s_pos)[Sys_eqs::nvar])
-	{
-		return boost::mpl::at<v_expr, boost::mpl::int_<0> >::type::position(pos,gs,s_pos);
-	}
+
 };
 
-
+/*! \brief It ancapsulate the minus operation
+ *
+ * \tparam arg
+ * \tparam Sys_eqs system of equation
+ *
+ */
 template<typename arg, typename Sys_eqs>
 struct minus
 {
@@ -123,23 +144,27 @@ struct minus
 	 *
 	 * \tparam ord
 	 *
-	 * \snipper FDScheme_unit_tests.hpp minus example
+	 * \snippet FDScheme_unit_tests.hpp minus example
+	 *
+	 * \param g_map Grid mapping, it convert grid position into vector/Matrix row
+	 * \param kmap grid position
+	 * \param gs grid information
+	 * \param spacing grid spacing
+	 * \param cols unordered map contain the map colum -> value
+	 * \param coeff it contain an additional actual coefficients in front of the values
 	 *
 	 */
-	inline static void value(const typename stub_or_real<Sys_eqs,Sys_eqs::dims,typename Sys_eqs::stype,typename Sys_eqs::b_grid::decomposition::extended_type>::type & g_map, grid_dist_key_dx<Sys_eqs::dims> & kmap, const grid_sm<Sys_eqs::dims,void> & gs, typename Sys_eqs::stype (& spacing )[Sys_eqs::dims] , std::unordered_map<long int,typename Sys_eqs::stype > & cols, typename Sys_eqs::stype coeff)
+	inline static void value(const typename stub_or_real<Sys_eqs,Sys_eqs::dims,typename Sys_eqs::stype,typename Sys_eqs::b_grid::decomposition::extended_type>::type & g_map,
+			                 grid_dist_key_dx<Sys_eqs::dims> & kmap,
+							 const grid_sm<Sys_eqs::dims,void> & gs,
+							 typename Sys_eqs::stype (& spacing )[Sys_eqs::dims],
+							 std::unordered_map<long int,typename Sys_eqs::stype > & cols,
+							 typename Sys_eqs::stype coeff)
 	{
 		arg::value(g_map,kmap,gs,spacing,cols,-coeff);
 	}
 
-	/*! \brief Calculate the position where the minus is calculated
-	 *
-	 * it just return the position of the staggered property at first expression
-	 *
-	 */
-	inline static grid_key_dx<Sys_eqs::dims> position(grid_key_dx<Sys_eqs::dims> & pos, const grid_sm<Sys_eqs::dims,void> & gs, const comb<Sys_eqs::dims> (& s_pos)[Sys_eqs::nvar])
-	{
-		std::cerr << "Error " << __FILE__ << ":" << __LINE__ << " only CENTRAL, FORWARD, BACKWARD derivative are defined";
-	}
+
 };
 
 #endif /* OPENFPM_NUMERICS_SRC_FINITEDIFFERENCE_SUM_HPP_ */
