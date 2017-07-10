@@ -10,6 +10,7 @@
 
 #include "NN/CellList/MemFast.hpp"
 #include "NN/CellList/CellList.hpp"
+#include "Grid/grid_dist_key.hpp"
 
 #define INTERPOLATION_ERROR_OBJECT std::runtime_error("Runtime interpolation error");
 

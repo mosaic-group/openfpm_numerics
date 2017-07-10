@@ -521,7 +521,7 @@ class petsc_solver<double>
 
 			// We set the pre-conditioner to none
 			PETSC_SAFE_CALL(KSPGetPC(ksp,&pc));
-			PETSC_SAFE_CALL(PetscOptionsSetValue("-pc_type",PCNONE));
+			PETSC_SAFE_CALL(PetscOptionsSetValue(NULL,"-pc_type",PCNONE));
 
 			setSolver(solvs.get(i).c_str());
 
@@ -721,6 +721,7 @@ class petsc_solver<double>
 	 *
 	 * \param x_ the solution
 	 * \param b_ the right-hand-side
+	 * \param ksp Krylov solver
 	 *
 	 * \return the solution error
 	 *
@@ -850,8 +851,8 @@ public:
 	 */
 	void log_monitor()
 	{
-		PETSC_SAFE_CALL(PetscOptionsSetValue("-ksp_monitor",0));
-		PETSC_SAFE_CALL(PetscOptionsSetValue("-pc_hypre_boomeramg_print_statistics","2"));
+		PETSC_SAFE_CALL(PetscOptionsSetValue(NULL,"-ksp_monitor",0));
+		PETSC_SAFE_CALL(PetscOptionsSetValue(NULL,"-pc_hypre_boomeramg_print_statistics","2"));
 	}
 
 	/*! \brief Set the Petsc solver
@@ -863,7 +864,7 @@ public:
 	 */
 	void setSolver(KSPType type)
 	{
-		PetscOptionsSetValue("-ksp_type",type);
+		PetscOptionsSetValue(NULL,"-ksp_type",type);
 	}
 
 	/*! \brief Set the relative tolerance as stop criteria
@@ -956,7 +957,7 @@ public:
 	 */
 	void searchDirections(PetscInt l)
 	{
-		PetscOptionsSetValue("-ksp_bcgsl_ell",std::to_string(l).c_str());
+		PetscOptionsSetValue(NULL,"-ksp_bcgsl_ell",std::to_string(l).c_str());
 	}
 
 	/*! \brief For GMRES based method,  the number of Krylov directions to orthogonalize against
@@ -966,7 +967,7 @@ public:
 	 */
 	void setRestart(PetscInt n)
 	{
-		PetscOptionsSetValue("-ksp_gmres_restart",std::to_string(n).c_str());
+		PetscOptionsSetValue(NULL,"-ksp_gmres_restart",std::to_string(n).c_str());
 	}
 
 	/*! \brief Set the preconditioner of the linear solver
@@ -1007,7 +1008,7 @@ public:
 			// We set the pre-conditioner
 			PETSC_SAFE_CALL(KSPGetPC(ksp,&pc));
 
-			PETSC_SAFE_CALL(PetscOptionsSetValue("-pc_type",PCHYPRE));
+			PETSC_SAFE_CALL(PetscOptionsSetValue(NULL,"-pc_type",PCHYPRE));
 
 		    PETSC_SAFE_CALL(PCFactorSetShiftType(pc, MAT_SHIFT_NONZERO));
 		    PETSC_SAFE_CALL(PCFactorSetShiftAmount(pc, PETSC_DECIDE));
@@ -1016,7 +1017,7 @@ public:
 		}
 		else
 		{
-			PETSC_SAFE_CALL(PetscOptionsSetValue("-pc_type",PCHYPRE));
+			PETSC_SAFE_CALL(PetscOptionsSetValue(NULL,"-pc_type",PCHYPRE));
 		}
 	}
 
@@ -1032,7 +1033,7 @@ public:
 	{
 		if (atype == HYPRE_AMG)
 		{
-			PETSC_SAFE_CALL(PetscOptionsSetValue("-pc_hypre_boomeramg_max_levels",std::to_string(nl).c_str()));
+			PETSC_SAFE_CALL(PetscOptionsSetValue(NULL,"-pc_hypre_boomeramg_max_levels",std::to_string(nl).c_str()));
 		}
 		else
 		{
@@ -1049,7 +1050,7 @@ public:
 	{
 		if (atype == HYPRE_AMG)
 		{
-			PETSC_SAFE_CALL(PetscOptionsSetValue("-pc_hypre_boomeramg_max_iter",std::to_string(nit).c_str()));
+			PETSC_SAFE_CALL(PetscOptionsSetValue(NULL,"-pc_hypre_boomeramg_max_iter",std::to_string(nit).c_str()));
 		}
 		else
 		{
@@ -1082,11 +1083,11 @@ public:
 		if (atype == HYPRE_AMG)
 		{
 			if (k == REL_ALL)
-			{PETSC_SAFE_CALL(PetscOptionsSetValue("-pc_hypre_boomeramg_relax_type_all",type.c_str()));}
+			{PETSC_SAFE_CALL(PetscOptionsSetValue(NULL,"-pc_hypre_boomeramg_relax_type_all",type.c_str()));}
 			else if (k == REL_UP)
-			{PETSC_SAFE_CALL(PetscOptionsSetValue("-pc_hypre_boomeramg_relax_type_up",type.c_str()));}
+			{PETSC_SAFE_CALL(PetscOptionsSetValue(NULL,"-pc_hypre_boomeramg_relax_type_up",type.c_str()));}
 			else if (k == REL_DOWN)
-			{PETSC_SAFE_CALL(PetscOptionsSetValue("-pc_hypre_boomeramg_relax_type_down",type.c_str()));}
+			{PETSC_SAFE_CALL(PetscOptionsSetValue(NULL,"-pc_hypre_boomeramg_relax_type_down",type.c_str()));}
 		}
 		else
 		{
@@ -1114,16 +1115,16 @@ public:
 	{
 		if (atype == HYPRE_AMG)
 		{
-			PETSC_SAFE_CALL(PetscOptionsSetValue("-pc_hypre_boomeramg_cycle_type",cycle_type.c_str()));
+			PETSC_SAFE_CALL(PetscOptionsSetValue(NULL,"-pc_hypre_boomeramg_cycle_type",cycle_type.c_str()));
 
 			if (sweep_dw != -1)
-			{PETSC_SAFE_CALL(PetscOptionsSetValue("-pc_hypre_boomeramg_grid_sweeps_down",std::to_string(sweep_up).c_str()));}
+			{PETSC_SAFE_CALL(PetscOptionsSetValue(NULL,"-pc_hypre_boomeramg_grid_sweeps_down",std::to_string(sweep_up).c_str()));}
 
 			if (sweep_up != -1)
-			{PETSC_SAFE_CALL(PetscOptionsSetValue("-pc_hypre_boomeramg_grid_sweeps_up",std::to_string(sweep_dw).c_str()));}
+			{PETSC_SAFE_CALL(PetscOptionsSetValue(NULL,"-pc_hypre_boomeramg_grid_sweeps_up",std::to_string(sweep_dw).c_str()));}
 
 			if (sweep_crs != -1)
-			{PETSC_SAFE_CALL(PetscOptionsSetValue("-pc_hypre_boomeramg_grid_sweeps_coarse",std::to_string(sweep_crs).c_str()));}
+			{PETSC_SAFE_CALL(PetscOptionsSetValue(NULL,"-pc_hypre_boomeramg_grid_sweeps_coarse",std::to_string(sweep_crs).c_str()));}
 		}
 		else
 		{
@@ -1145,7 +1146,7 @@ public:
 	{
 		if (atype == HYPRE_AMG)
 		{
-			PETSC_SAFE_CALL(PetscOptionsSetValue("-pc_hypre_boomeramg_coarsen_type",type.c_str()));
+			PETSC_SAFE_CALL(PetscOptionsSetValue(NULL,"-pc_hypre_boomeramg_coarsen_type",type.c_str()));
 		}
 		else
 		{
@@ -1167,7 +1168,7 @@ public:
 	{
 		if (atype == HYPRE_AMG)
 		{
-			PETSC_SAFE_CALL(PetscOptionsSetValue("-pc_hypre_boomeramg_interp_type",type.c_str()));
+			PETSC_SAFE_CALL(PetscOptionsSetValue(NULL,"-pc_hypre_boomeramg_interp_type",type.c_str()));
 		}
 		else
 		{
@@ -1196,7 +1197,7 @@ public:
 	{
 		if (atype == HYPRE_AMG)
 		{
-			PETSC_SAFE_CALL(PetscOptionsSetValue("-pc_hypre_boomeramg_nodal_coarsen",std::to_string(norm).c_str()));
+			PETSC_SAFE_CALL(PetscOptionsSetValue(NULL,"-pc_hypre_boomeramg_nodal_coarsen",std::to_string(norm).c_str()));
 		}
 		else
 		{
@@ -1213,7 +1214,7 @@ public:
 	{
 		if (atype == HYPRE_AMG)
 		{
-			PETSC_SAFE_CALL(PetscOptionsSetValue("-pc_hypre_boomeramg_eu_level",std::to_string(k).c_str()));
+			PETSC_SAFE_CALL(PetscOptionsSetValue(NULL,"-pc_hypre_boomeramg_eu_level",std::to_string(k).c_str()));
 		}
 		else
 		{
@@ -1310,7 +1311,6 @@ public:
 
 	/*! \brief It return the resiual error
 	 *
-	 * \param A Sparse matrix
 	 * \param x solution
 	 * \param b right-hand-side
 	 *
@@ -1409,7 +1409,7 @@ public:
 	 */
 	void setPetscOption(const char * name, const char * value)
 	{
-		PetscOptionsSetValue(name,value);
+		PetscOptionsSetValue(NULL,name,value);
 	}
 
 	/*! \brief Try to solve the system using all the solvers and generate a report

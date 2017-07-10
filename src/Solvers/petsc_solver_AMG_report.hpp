@@ -9,6 +9,7 @@
 #define OPENFPM_NUMERICS_SRC_SOLVERS_PETSC_SOLVER_AMG_REPORT_HPP_
 
 #include <fstream>
+#include "Solvers/petsc_solver.hpp"
 
 /*! \brief It contain information about the performance of the AMG
  *
