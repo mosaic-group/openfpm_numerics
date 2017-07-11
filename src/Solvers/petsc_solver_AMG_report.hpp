@@ -8,6 +8,10 @@
 #ifndef OPENFPM_NUMERICS_SRC_SOLVERS_PETSC_SOLVER_AMG_REPORT_HPP_
 #define OPENFPM_NUMERICS_SRC_SOLVERS_PETSC_SOLVER_AMG_REPORT_HPP_
 
+#include "config.h"
+
+#ifdef HAVE_PETSC
+
 #include <fstream>
 #include "Solvers/petsc_solver.hpp"
 
@@ -585,5 +589,6 @@ public:
 	}
 };
 
+#endif
 
 #endif /* OPENFPM_NUMERICS_SRC_SOLVERS_PETSC_SOLVER_AMG_REPORT_HPP_ */
