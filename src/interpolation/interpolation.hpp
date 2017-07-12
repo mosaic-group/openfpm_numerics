@@ -125,7 +125,7 @@ struct inte_template
 			                                                          vector & vd,
 																	  const grid_dist_lin_dx & k_dist,
 																	  iterator & key_p,
-																	  typename vector::stype (& a_int)[openfpm::math::pow(vector::dims,np)],
+																	  typename vector::stype (& a_int)[openfpm::math::pow(np,vector::dims)],
 																	  const size_t & key)
 	{
 		mul_inte<typename std::remove_reference<decltype(gd.template get<prp_g>(k_dist))>::type>::value(gd.template get<prp_g>(k_dist),a_int[key],vd.template getProp<prp_v>(key_p));
@@ -161,7 +161,7 @@ struct inte_template<np,prp_g,prp_v,inte_m2p>
 			                                                          vector & vd,
 																	  const grid_dist_lin_dx & k_dist,
 																	  iterator & key_p,
-																	  typename vector::stype (& a_int)[openfpm::math::pow(vector::dims,np)],
+																	  typename vector::stype (& a_int)[openfpm::math::pow(np,vector::dims)],
 																	  const size_t & key)
 	{
 		mul_inte<typename std::remove_reference<decltype(gd.template get<prp_g>(k_dist))>::type>::value(vd.template getProp<prp_v>(key_p),a_int[key],gd.template get<prp_g>(k_dist));
@@ -188,7 +188,7 @@ struct calculate_aint
 	 *
 	 */
 	static inline void value(size_t (& sz)[vector::dims],
-			                 typename vector::stype a_int[openfpm::math::pow(vector::dims,np)],
+			                 typename vector::stype a_int[openfpm::math::pow(np,vector::dims)],
 							 typename vector::stype (& a)[vector::dims][np])
 	{
 		grid_sm<vector::dims,void> gs(sz);
@@ -230,7 +230,7 @@ struct calculate_aint<2,vector,np>
 	 *
 	 */
 	static inline void value(size_t (& sz)[vector::dims],
-			                 typename vector::stype a_int[openfpm::math::pow(vector::dims,np)],
+			                 typename vector::stype a_int[openfpm::math::pow(np,vector::dims)],
 							 typename vector::stype (& a)[vector::dims][np])
 	{
 		size_t s = 0;
@@ -265,7 +265,7 @@ struct calculate_aint<3,vector,np>
 	 *
 	 */
 	static inline void value(size_t (& sz)[vector::dims],
-			                 typename vector::stype a_int[openfpm::math::pow(vector::dims,np)],
+			                 typename vector::stype a_int[openfpm::math::pow(np,vector::dims)],
 							 typename vector::stype (& a)[vector::dims][np])
 	{
 		size_t s = 0;
@@ -406,12 +406,12 @@ struct inte_calc_impl
 																	 grid & gd,
 																	 const typename vector::stype (& dx)[vector::dims],
 																	 typename vector::stype (& xp)[vector::dims],
-																	 typename vector::stype (& a_int)[openfpm::math::pow(vector::dims,kernel::np)],
+																	 typename vector::stype (& a_int)[openfpm::math::pow(kernel::np,vector::dims)],
 																	 typename vector::stype (& a)[vector::dims][kernel::np],
 																	 typename vector::stype (& x)[vector::dims][kernel::np],
 																	 size_t (& sz)[vector::dims],
 																	 const CellList<vector::dims,typename vector::stype,Mem_fast,shift<vector::dims,typename vector::stype>> & geo_cell,
-																	 openfpm::vector<agg_arr<openfpm::math::pow(vector::dims,kernel::np)>> & offsets)
+																	 openfpm::vector<agg_arr<openfpm::math::pow(kernel::np,vector::dims)>> & offsets)
 	{
 		auto key_p = it.get();
 
@@ -470,8 +470,7 @@ struct inte_calc_impl
 
 		size_t lin_base = gs_info.LinId(base);
 
-		#pragma omp simd
-		for (size_t i = 0 ; i < openfpm::math::pow(vector::dims,kernel::np) ; i++)
+		for (size_t i = 0 ; i < openfpm::math::pow(kernel::np,vector::dims) ; i++)
 		{
 			size_t lin = offsets.get(sub).ele[k] + lin_base;
 			k_dist_lin.getKeyRef() = lin;
@@ -539,7 +538,7 @@ class interpolate
 	 * \param sz kernel stencil points in each direction
 	 *
 	 */
-	void calculate_the_offsets(openfpm::vector<agg_arr<openfpm::math::pow(vector::dims,kernel::np)>> & offsets, size_t (& sz)[vector::dims])
+	void calculate_the_offsets(openfpm::vector<agg_arr<openfpm::math::pow(kernel::np,vector::dims)>> & offsets, size_t (& sz)[vector::dims])
 	{
 		offsets.resize(gd.getN_loc_grid());
 
@@ -656,7 +655,7 @@ public:
 			sz[i] = kernel::np;
 
 		// Precalculate the offset for each sub-sub-domain
-		openfpm::vector<agg_arr<openfpm::math::pow(vector::dims,kernel::np)>> offsets;
+		openfpm::vector<agg_arr<openfpm::math::pow(kernel::np,vector::dims)>> offsets;
 
 		calculate_the_offsets(offsets,sz);
 
@@ -667,7 +666,7 @@ public:
 		typename vector::stype x[vector::dims][kernel::np];
 		typename vector::stype a[vector::dims][kernel::np];
 
-		typename vector::stype a_int[openfpm::math::pow(vector::dims,kernel::np)];
+		typename vector::stype a_int[openfpm::math::pow(kernel::np,vector::dims)];
 
 		auto it = vd.getDomainIterator();
 
@@ -725,13 +724,13 @@ public:
 			sz[i] = kernel::np;
 
 		// Precalculate the offset for each sub-sub-domain
-		openfpm::vector<agg_arr<openfpm::math::pow(vector::dims,kernel::np)>> offsets;
+		openfpm::vector<agg_arr<openfpm::math::pow(kernel::np,vector::dims)>> offsets;
 
 		calculate_the_offsets(offsets,sz);
 
 		//		grid_cpu<vector::dims,aggregate<typename vector::stype>> a_int(sz);
 		//		a_int.setMemory();
-		typename vector::stype a_int[openfpm::math::pow(vector::dims,kernel::np)];
+		typename vector::stype a_int[openfpm::math::pow(kernel::np,vector::dims)];
 
 		auto it = vd.getDomainIterator();
 

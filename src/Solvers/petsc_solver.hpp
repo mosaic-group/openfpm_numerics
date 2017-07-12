@@ -28,6 +28,7 @@
 
 enum AMG_type
 {
+	NONE_AMG,
 	HYPRE_AMG,
 	PETSC_AMG,
 	TRILINOS_ML
@@ -141,7 +142,7 @@ class petsc_solver<double>
 	openfpm::vector<solv_bench_info> bench;
 
 	//! Type of the algebraic multi-grid preconditioner
-	AMG_type atype;
+	AMG_type atype = NONE_AMG;
 
 	//! Block size
 	int block_sz = 0;
