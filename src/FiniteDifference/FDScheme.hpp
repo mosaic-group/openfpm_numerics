@@ -134,32 +134,60 @@ public:
 
 private:
 
-	// Encapsulation of the b term as constant
+	//! Encapsulation of the b term as constant
 	struct constant_b
 	{
+		//! scalar
 		typename Sys_eqs::stype scal;
 
+		/*! \brief Constrictor from a scalar
+		 *
+		 * \param scal scalar
+		 *
+		 */
 		constant_b(typename Sys_eqs::stype scal)
 		{
 			this->scal = scal;
 		}
 
+		/*! \brief Get the b term on a grid point
+		 *
+		 * \note It does not matter the grid point it is a scalar
+		 *
+		 * \param  key grid position (unused because it is a constant)
+		 *
+		 * \return the scalar
+		 *
+		 */
 		typename Sys_eqs::stype get(grid_dist_key_dx<Sys_eqs::dims> & key)
 		{
 			return scal;
 		}
 	};
 
-	// Encapsulation of the b term as grid
+	//! Encapsulation of the b term as grid
 	template<typename grid, unsigned int prp>
 	struct grid_b
 	{
+		//! b term fo the grid
 		grid & gr;
 
+		/*! \brief gr grid that encapsulate
+		 *
+		 * \param gr grid
+		 *
+		 */
 		grid_b(grid & gr)
 		:gr(gr)
 		{}
 
+		/*! \brief Get the value of the b term on a grid point
+		 *
+		 * \param key grid point
+		 *
+		 * \return the value
+		 *
+		 */
 		typename Sys_eqs::stype get(grid_dist_key_dx<Sys_eqs::dims> & key)
 		{
 			return gr.template get<prp>(key);
@@ -439,7 +467,7 @@ private:
 		auto it = it_d;
 		grid_sm<Sys_eqs::dims,void> gs = g_map.getGridInfoVoid();
 
-		std::unordered_map<long int,float> cols;
+		std::unordered_map<long int,typename Sys_eqs::stype> cols;
 
 		// iterate all the grid points
 		while (it.isNext())
@@ -699,7 +727,6 @@ public:
 	 *
 	 * The periodicity is given by the grid b_g
 	 *
-	 * \param pd Padding, how many points out of boundary are present
 	 * \param stencil maximum extension of the stencil on each directions
 	 * \param domain the domain
 	 * \param b_g object grid that will store the solution

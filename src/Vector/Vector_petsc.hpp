@@ -168,8 +168,8 @@ public:
 
 	/*! \brief Create a vector with n elements
 	 *
-	 * \param n number of elements in the vector
-	 * \param n_row_loc number
+	 * \param n global number of elements in the vector
+	 * \param n_row_local number
 	 *
 	 */
 	Vector(size_t n, size_t n_row_local)

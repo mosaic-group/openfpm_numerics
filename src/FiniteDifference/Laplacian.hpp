@@ -26,7 +26,9 @@ class Lap
 	 * stub_or_real it is just for change the argument type when testing, in normal
 	 * conditions it is a distributed map
 	 *
-	 * \param pos position where the laplacian is calculated
+	 * \param g_map map grid
+	 * \param kmap position in the grid
+	 * \param spacing of the grid
 	 * \param gs Grid info
 	 * \param cols non-zero colums calculated by the function
 	 * \param coeff coefficent (constant in front of the derivative)
@@ -36,19 +38,11 @@ class Lap
 	 * \snippet FDScheme_unit_tests.hpp Laplacian usage
 	 *
 	 */
-	inline static void value(const typename stub_or_real<Sys_eqs,Sys_eqs::dims,typename Sys_eqs::stype,typename Sys_eqs::b_grid::decomposition::extended_type>::type & g_map, grid_dist_key_dx<Sys_eqs::dims> & kmap , const grid_sm<Sys_eqs::dims,void> & gs, std::unordered_map<long int,typename Sys_eqs::stype > & cols, typename Sys_eqs::stype coeff)
-	{
-		std::cerr << "Error " << __FILE__ << ":" << __LINE__ << " only CENTRAL, FORWARD, BACKWARD derivative are defined";
-	}
-
-	/*! \brief Calculate the position where the derivative is calculated
-	 *
-	 * \param position where we are calculating the derivative
-	 * \param gs Grid info
-	 * \param s_pos staggered position of the properties
-	 *
-	 */
-	inline static grid_key_dx<Sys_eqs::dims> position(grid_key_dx<Sys_eqs::dims> & pos, const grid_sm<Sys_eqs::dims,void> & gs)
+	inline static void value(const typename stub_or_real<Sys_eqs,Sys_eqs::dims,typename Sys_eqs::stype,typename Sys_eqs::b_grid::decomposition::extended_type>::type & g_map,
+			                 grid_dist_key_dx<Sys_eqs::dims> & kmap ,
+							 const grid_sm<Sys_eqs::dims,void> & gs,
+							 std::unordered_map<long int,typename Sys_eqs::stype > & cols,
+							 typename Sys_eqs::stype coeff)
 	{
 		std::cerr << "Error " << __FILE__ << ":" << __LINE__ << " only CENTRAL, FORWARD, BACKWARD derivative are defined";
 	}
@@ -81,7 +75,9 @@ public:
 	 * stub_or_real it is just for change the argument type when testing, in normal
 	 * conditions it is a distributed map
 	 *
-	 * \param pos position where the laplacian is calculated
+	 * \param g_map map grid
+	 * \param kmap position in the grid
+	 * \param spacing of the grid
 	 * \param gs Grid info
 	 * \param cols non-zero colums calculated by the function
 	 * \param coeff coefficent (constant in front of the derivative)
@@ -91,7 +87,12 @@ public:
 	 * \snippet FDScheme_unit_tests.hpp Laplacian usage
 	 *
 	 */
-	inline static void value(const typename stub_or_real<Sys_eqs,Sys_eqs::dims,typename Sys_eqs::stype,typename Sys_eqs::b_grid::decomposition::extended_type>::type & g_map, grid_dist_key_dx<Sys_eqs::dims> & kmap , const grid_sm<Sys_eqs::dims,void> & gs, typename Sys_eqs::stype (& spacing )[Sys_eqs::dims] , std::unordered_map<long int,typename Sys_eqs::stype > & cols, typename Sys_eqs::stype coeff)
+	inline static void value(const typename stub_or_real<Sys_eqs,Sys_eqs::dims,typename Sys_eqs::stype,typename Sys_eqs::b_grid::decomposition::extended_type>::type & g_map,
+			                 grid_dist_key_dx<Sys_eqs::dims> & kmap ,
+							 const grid_sm<Sys_eqs::dims,void> & gs,
+							 typename Sys_eqs::stype (& spacing )[Sys_eqs::dims] ,
+							 std::unordered_map<long int,typename Sys_eqs::stype > & cols,
+							 typename Sys_eqs::stype coeff)
 	{
 		// for each dimension
 		for (size_t i = 0 ; i < Sys_eqs::dims ; i++)
@@ -108,22 +109,6 @@ public:
 
 			arg::value(g_map,kmap,gs,spacing,cols, - 2.0 * coeff/spacing[i]/spacing[i]);
 		}
-	}
-
-
-	/*! \brief Calculate the position where the derivative is calculated
-	 *
-	 * In case of non staggered case this function just return a null grid_key, in case of staggered,
-	 * the CENTRAL Laplacian scheme return the position of the staggered property
-	 *
-	 * \param position where we are calculating the derivative
-	 * \param gs Grid info
-	 * \param s_pos staggered position of the properties
-	 *
-	 */
-	inline static grid_key_dx<Sys_eqs::dims> position(grid_key_dx<Sys_eqs::dims> & pos, const grid_sm<Sys_eqs::dims,void> & gs, const comb<Sys_eqs::dims> (& s_pos)[Sys_eqs::nvar])
-	{
-		return arg::position(pos,gs,s_pos);
 	}
 };
 
@@ -155,7 +140,9 @@ public:
 	 * stub_or_real it is just for change the argument type when testing, in normal
 	 * conditions it is a distributed map
 	 *
-	 * \param pos position where the laplacian is calculated
+	 * \param g_map map grid
+	 * \param kmap position in the grid
+	 * \param spacing of the grid
 	 * \param gs Grid info
 	 * \param cols non-zero colums calculated by the function
 	 * \param coeff coefficent (constant in front of the derivative)
@@ -182,22 +169,6 @@ public:
 
 			arg::value(g_map,kmap,gs,spacing,cols, - 2.0 * coeff/spacing[i]/spacing[i]/4.0);
 		}
-	}
-
-
-	/*! \brief Calculate the position where the derivative is calculated
-	 *
-	 * In case of non staggered case this function just return a null grid_key, in case of staggered,
-	 * the CENTRAL Laplacian scheme return the position of the staggered property
-	 *
-	 * \param position where we are calculating the derivative
-	 * \param gs Grid info
-	 * \param s_pos staggered position of the properties
-	 *
-	 */
-	inline static grid_key_dx<Sys_eqs::dims> position(grid_key_dx<Sys_eqs::dims> & pos, const grid_sm<Sys_eqs::dims,void> & gs, const comb<Sys_eqs::dims> (& s_pos)[Sys_eqs::nvar])
-	{
-		return arg::position(pos,gs,s_pos);
 	}
 };
 

@@ -2,7 +2,8 @@
 
 echo "RUN numerics test"
 
-source $HOME/openfpm_vars
+branch=$(git ls-remote --heads origin | grep $(git rev-parse HEAD) | cut -d / -f 3)
+source $HOME/openfpm_vars_$branch
 
 mpirun -np $3 ./src/numerics
 if [ $? -ne 0 ]; then
