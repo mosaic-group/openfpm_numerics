@@ -373,7 +373,7 @@ inline size_t getSub(Point<vector::dims,typename vector::stype> & p,
 /*! \brief calculate the interpolation for one point
  *
  * \tparam vector of particles
- * \kernel type
+ * \tparam kernel type
  *
  */
 template<typename vector,typename kernel>
@@ -390,12 +390,21 @@ struct inte_calc_impl
 	 *
 	 * \param it iterator used to retrieve the particle p for interpolation
 	 * \param vd vector of particles
-	 * \param domain
+	 * \param domain simulation domain
 	 * \param ip index of the grid on each direction (1D) used for interpolation
 	 * \param gd interpolation grid
 	 * \param dx spacing on each direction
 	 * \param xp Point that store the position of xp
-	 * \param a_int buffer that store the interpolation points
+	 * \param a_int coefficients on the stencil points
+	 * \param a coefficients of the kernel for each direction, consider
+	 *          that for 3 dimensions the kernel is the multiplication
+	 *          the 1D kernel on each direction. The "a" array store the
+	 *          calculated coefficient of the 1D kernel on each direction
+	 * \param x position of
+	 * \param sz grid size
+	 * \param geo_cell cell list to convert particle position into sub-domain id
+	 * \param offsets array where are stored the linearized offset of the
+	 *        kernel stencil for each local grid (sub-domain)
 	 *
 	 */
 	template<unsigned int prp_g, unsigned int prp_v, unsigned int m2p_or_p2m, typename iterator, typename grid>
@@ -534,7 +543,8 @@ class interpolate
 
 	/*! \brief It calculate the interpolation stencil offsets
 	 *
-	 * \param array where to store offsets
+	 * \param offsets array where to store the linearized offset of the
+	 *        kernel stencil for each local-grid (sub-domain)
 	 * \param sz kernel stencil points in each direction
 	 *
 	 */

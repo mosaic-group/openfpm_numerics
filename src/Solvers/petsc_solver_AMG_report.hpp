@@ -14,6 +14,7 @@
 
 #include <fstream>
 #include "Solvers/petsc_solver.hpp"
+#include "Vector/map_vector.hpp"
 
 /*! \brief It contain information about the performance of the AMG
  *
@@ -189,7 +190,7 @@ class petsc_AMG_report
 	/*! \brief Score the solver
 	 *
 	 * \param t_solve time to solve
-	 * \param t_m accuracy reache by the solver
+	 * \param t_m target accuracy the solver should reach
 	 *
 	 *
 	 */
@@ -506,9 +507,8 @@ class petsc_AMG_report
 	/*! \brief Return the best scoring solver
 	 *
 	 * \param perf where to search for the best score
+	 * \param optimal number of sweeps for each tested method
 	 * \param mn number of method tested
-	 * \param sw_accu best sweep for the best in accuracy
-	 * \param sw_fast best sweep for the best in performance
 	 *
 	 */
 	void best_score(openfpm::vector<AMG_time_err_coars> & perf,

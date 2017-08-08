@@ -4,7 +4,7 @@
 ## Take all the options with the exception of --enable-install-req
 
 AC_PREREQ(2.59)
-AC_INIT(OpenFPM_numerics, 0.8.0, BUG-REPORT-ADDRESS)
+AC_INIT(OpenFPM_numerics, 1.0.0, BUG-REPORT-ADDRESS)
 AC_CANONICAL_SYSTEM
 AC_CONFIG_SRCDIR([src/main.cpp])
 
@@ -130,6 +130,27 @@ fi
 AX_LIB_PETSC()
 
 #########
+
+###### Check for test coverage
+
+AC_MSG_CHECKING(whether to build with test coverage)
+test_cov=no
+AC_ARG_ENABLE(test-coverage,
+        AC_HELP_STRING(
+            [--enable-test-coverage],
+            [enable test coverage]
+        ),
+        test_cov="$enableval"
+)
+
+
+
+AC_MSG_RESULT($test_cov)
+if test x"$test_cov" = x"yes"; then
+        AC_DEFINE([TEST_COVERAGE_MODE],[],[Test coverage mode])
+        CXXFLAGS="$CXXFLAGS  -fprofile-arcs -ftest-coverage "
+fi
+
 
 ## Check for quadmath
 
