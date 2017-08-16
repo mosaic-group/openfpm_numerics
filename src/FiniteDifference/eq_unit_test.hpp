@@ -265,9 +265,13 @@ template<typename solver_type,typename lid_nn> void lid_driven_cavity_2d()
     std::cout << "File1: " << file1 << std::endl;
     std::cout << "File2: " << file2 << std::endl;
 
+#ifndef SE_CLASS3
+
 	// Check that match
 	bool test = compare(file1,file2);
 	BOOST_REQUIRE_EQUAL(test,true);
+
+#endif
 
 }
 
