@@ -80,7 +80,9 @@ public:
 	}
 
 	// Default constructor
-	triplet()	{};
+	triplet()
+	:row_(0),col_(0),val_(0)
+	{};
 };
 
 /*! \brief Sparse Matrix implementation, that map over Eigen

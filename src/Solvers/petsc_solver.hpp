@@ -777,6 +777,7 @@ class petsc_solver<double>
 		solError err;
 		err.err_norm = norm / col;
 		err.err_inf = norm_inf;
+		err.its = 0;
 
 		return err;
 	}
@@ -792,7 +793,7 @@ public:
 	}
 
 	petsc_solver()
-	:maxits(300)
+	:maxits(300),tmp(0)
 	{
 		initKSP();
 

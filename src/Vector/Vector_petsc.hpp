@@ -152,6 +152,7 @@ public:
 	 *
 	 */
 	Vector(Vector<T,PETSC_BASE> && v)
+	:n_row(0),n_row_local(0),invalid(0)
 	{
 		this->operator=(v);
 	}
@@ -173,7 +174,7 @@ public:
 	 *
 	 */
 	Vector(size_t n, size_t n_row_local)
-	:n_row_local(n_row_local)
+	:n_row_local(n_row_local),invalid(0),v(NULL)
 	{
 		// Create the vector
 		PETSC_SAFE_CALL(VecCreate(PETSC_COMM_WORLD,&v));
@@ -185,7 +186,7 @@ public:
 	 *
 	 */
 	Vector()
-	:n_row(0),n_row_local(0)
+	:n_row(0),n_row_local(0),invalid(0)
 	{
 		// Create the vector
 		PETSC_SAFE_CALL(VecCreate(PETSC_COMM_WORLD,&v));

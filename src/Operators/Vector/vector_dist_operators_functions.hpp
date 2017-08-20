@@ -234,7 +234,7 @@ public:
 
 	//! constructor from an epxression exp1 and a vector vd
 	vector_dist_expression_op(const exp1 & o1, const vector_type & vd)
-	:o1(o1), vd(vd)
+	:o1(o1),val(0),vd(vd)
 	{}
 
 	//! sum reduction require initialization where we calculate the reduction

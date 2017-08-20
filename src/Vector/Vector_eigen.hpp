@@ -29,21 +29,29 @@
 template<typename T>
 class rval<T,EIGEN_RVAL>
 {
-	// row
+	//! row
 	long int r;
 
-	// value
+	//! value
 	T val;
 
 public:
 
-	// Get the row
+	/*! \brief Return the row index
+	 *
+	 * \return a reference to the row index
+	 *
+	 */
 	long int & row()
 	{
 		return r;
 	}
 
-	// Get the value
+	/*! \brief Return the value
+	 *
+	 * \return a reference to the row value
+	 *
+	 */
 	T & value()
 	{
 		return val;
@@ -52,7 +60,9 @@ public:
 	/*! \brief Default constructor
 	 *
 	 */
-	rval()	{}
+	rval()
+	:r(0)
+	{}
 
 	/*! \brief Constructor from row, colum and value
 	 *
@@ -70,19 +80,22 @@ public:
 template<typename T>
 class Vector<T, EIGEN_BASE>
 {
+	//! Eigen vector
 	mutable Eigen::Matrix<T, Eigen::Dynamic, 1> v;
 
-	// row value vector
+	//! row val vector
 	mutable openfpm::vector<rval<T,EIGEN_RVAL>> row_val;
+
+	//! row val vector received
 	mutable openfpm::vector<rval<T,EIGEN_RVAL>> row_val_recv;
 
-	// global to local map
+	//! global to local map
 	mutable std::unordered_map<size_t,size_t> map;
 
-	// invalid
+	//! invalid
 	T invalid;
 
-	// Processors from where we gather
+	//! Processors from where we gather
 	mutable openfpm::vector<size_t> prc;
 
 	//size of each chunk
@@ -141,6 +154,7 @@ public:
 	 *
 	 */
 	Vector(const Vector<T> & v)
+	:invalid(0)
 	{
 		this->operator=(v);
 	}
@@ -151,6 +165,7 @@ public:
 	 *
 	 */
 	Vector(const Vector<T> && v)
+	:invalid(0)
 	{
 		this->operator=(v);
 	}
