@@ -174,7 +174,7 @@ public:
 	 *
 	 */
 	Vector(size_t n, size_t n_row_local)
-	:n_row_local(n_row_local),invalid(0),v(NULL)
+	:n_row_local(n_row_local),v(NULL),invalid(0)
 	{
 		// Create the vector
 		PETSC_SAFE_CALL(VecCreate(PETSC_COMM_WORLD,&v));
