@@ -18,6 +18,16 @@
 #include "Plot/GoogleChart.hpp"
 #include "Matrix/SparseMatrix.hpp"
 #include "Vector/Vector.hpp"
+#include <sstream>
+#include <iomanip>
+
+template <typename T>
+std::string to_string_with_precision(const T a_value, const int n = 6)
+{
+    std::ostringstream out;
+    out << std::setprecision(n) << a_value;
+    return out.str();
+}
 
 #define UMFPACK_NONE 0
 #define REL_DOWN 1
@@ -885,8 +895,6 @@ public:
 
 		PETSC_SAFE_CALL(KSPGetTolerances(ksp,&rtol,&abstol,&dtol,&maxits));
 		PETSC_SAFE_CALL(KSPSetTolerances(ksp,rtol_,abstol,dtol,maxits));
-
-//		PetscOptionsSetValue("-ksp_rtol",std::to_string(rtol_).c_str());
 	}
 
 	/*! \brief Set the absolute tolerance as stop criteria
@@ -905,8 +913,6 @@ public:
 
 		PETSC_SAFE_CALL(KSPGetTolerances(ksp,&rtol,&abstol,&dtol,&maxits));
 		PETSC_SAFE_CALL(KSPSetTolerances(ksp,rtol,abstol_,dtol,maxits));
-
-//		PetscOptionsSetValue("-ksp_atol",std::to_string(abstol_).c_str());
 	}
 
 	/*! \brief Set the divergence tolerance
@@ -925,8 +931,6 @@ public:
 
 		PETSC_SAFE_CALL(KSPGetTolerances(ksp,&rtol,&abstol,&dtol,&maxits));
 		PETSC_SAFE_CALL(KSPSetTolerances(ksp,rtol,abstol,dtol_,maxits));
-
-//		PetscOptionsSetValue("-ksp_dtol",std::to_string(dtol_).c_str());
 	}
 
 	/*! \brief Set the maximum number of iteration for Krylov solvers
@@ -944,7 +948,6 @@ public:
 		PETSC_SAFE_CALL(KSPGetTolerances(ksp,&rtol,&abstol,&dtol,&maxits));
 		PETSC_SAFE_CALL(KSPSetTolerances(ksp,rtol,abstol,dtol,n));
 
-//		PetscOptionsSetValue("-ksp_max_it",std::to_string(n).c_str());
 		this->maxits = n;
 	}
 
