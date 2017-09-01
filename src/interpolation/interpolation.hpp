@@ -121,11 +121,11 @@ struct inte_template
 	 * \param key indicate which pre-calculated coefficient we have to use
 	 *
 	 */
-	template<typename grid, typename vector, typename iterator> inline static void value(grid & gd,
+	template<unsigned int np_a_int, typename grid, typename vector, typename iterator> inline static void value(grid & gd,
 			                                                          vector & vd,
 																	  const grid_dist_lin_dx & k_dist,
 																	  iterator & key_p,
-																	  typename vector::stype (& a_int)[openfpm::math::pow(np,vector::dims)],
+																	  typename vector::stype (& a_int)[np_a_int],
 																	  const size_t & key)
 	{
 		mul_inte<typename std::remove_reference<decltype(gd.template get<prp_g>(k_dist))>::type>::value(gd.template get<prp_g>(k_dist),a_int[key],vd.template getProp<prp_v>(key_p));
@@ -157,11 +157,11 @@ struct inte_template<np,prp_g,prp_v,inte_m2p>
 	 * \param key indicate which pre-calculated coefficient we have to use
 	 *
 	 */
-	template<typename grid, typename vector, typename iterator> inline static void value(grid & gd,
+	template<unsigned int np_a_int, typename grid, typename vector, typename iterator> inline static void value(grid & gd,
 			                                                          vector & vd,
 																	  const grid_dist_lin_dx & k_dist,
 																	  iterator & key_p,
-																	  typename vector::stype (& a_int)[openfpm::math::pow(np,vector::dims)],
+																	  typename vector::stype (& a_int)[np_a_int],
 																	  const size_t & key)
 	{
 		mul_inte<typename std::remove_reference<decltype(gd.template get<prp_g>(k_dist))>::type>::value(vd.template getProp<prp_v>(key_p),a_int[key],gd.template get<prp_g>(k_dist));
