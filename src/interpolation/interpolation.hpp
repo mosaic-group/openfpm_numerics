@@ -407,7 +407,7 @@ struct inte_calc_impl
 	 *        kernel stencil for each local grid (sub-domain)
 	 *
 	 */
-	template<unsigned int prp_g, unsigned int prp_v, unsigned int m2p_or_p2m, typename iterator, typename grid>
+	template<unsigned int prp_g, unsigned int prp_v, unsigned int m2p_or_p2m, unsigned int np_a_int, typename iterator, typename grid>
 																	 static inline void inte_calc(iterator & it,
 																	 vector & vd,
 																	 const Box<vector::dims,typename vector::stype> & domain,
@@ -415,7 +415,7 @@ struct inte_calc_impl
 																	 grid & gd,
 																	 const typename vector::stype (& dx)[vector::dims],
 																	 typename vector::stype (& xp)[vector::dims],
-																	 typename vector::stype (& a_int)[openfpm::math::pow(kernel::np,vector::dims)],
+																	 typename vector::stype (& a_int)[np_a_int],
 																	 typename vector::stype (& a)[vector::dims][kernel::np],
 																	 typename vector::stype (& x)[vector::dims][kernel::np],
 																	 size_t (& sz)[vector::dims],
@@ -682,7 +682,7 @@ public:
 
 		while (it.isNext() == true)
 		{
-			inte_calc_impl<vector,kernel>::template inte_calc<prp_g,prp_v,inte_p2m>(it,vd,domain,ip,gd,dx,xp,a_int,a,x,sz,geo_cell,offsets);
+			inte_calc_impl<vector,kernel>::template inte_calc<prp_g,prp_v,inte_p2m,openfpm::math::pow(kernel::np,vector::dims)>(it,vd,domain,ip,gd,dx,xp,a_int,a,x,sz,geo_cell,offsets);
 
 			++it;
 		}
@@ -746,7 +746,7 @@ public:
 
 		while (it.isNext() == true)
 		{
-			inte_calc_impl<vector,kernel>::template inte_calc<prp_g,prp_v,inte_m2p>(it,vd,domain,ip,gd,dx,xp,a_int,a,x,sz,geo_cell,offsets);
+			inte_calc_impl<vector,kernel>::template inte_calc<prp_g,prp_v,inte_m2p,openfpm::math::pow(kernel::np,vector::dims)>(it,vd,domain,ip,gd,dx,xp,a_int,a,x,sz,geo_cell,offsets);
 
 			++it;
 		}
