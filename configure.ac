@@ -127,7 +127,6 @@ fi
 
 ## Check for PETSC
 
-AX_LIB_PETSC()
 
 #########
 
@@ -319,6 +318,10 @@ AX_SUITESPARSE([],[])
 AX_EIGEN([],[])
 
 ###### Checking for libquadmath and libifcore
+
+
+AX_LIB_PETSC()
+
 
 AC_CHECK_LIB(ifcore, for_cpystr, [ LIBIFCORE=-lifcore  ], [ LIBIFCORE= ])
 AC_CHECK_LIB(quadmath, sinq, [ LIBQUADMATH=-lquadmath  ], [ LIBQUADMATH= ])

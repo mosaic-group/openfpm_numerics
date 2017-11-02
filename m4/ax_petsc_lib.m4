@@ -101,11 +101,11 @@ AC_DEFUN([AX_LIB_PETSC], [
                 if test -n "$with_petsc" ; then
                         old_CC=$CC
                         old_CFLAGS=$CFLAGS
-                        old_LDFLAGS=$LDFLAGS
+                        old_LIBS=$LIBS
 			AX_OPENMP([CFLAGS="$OPENMP_CFLAGS"
 				   LDFLAGS="$OPENMP_LDFLAGS"],[])
                         CFLAGS="$CFLAGS -I$with_petsc/include $HDF5_INCLUDE $METIS_INCLUDE "
-                        LDFLAGS="$LDFLAGS -L$with_petsc/lib $HDF5_LDFLAGS  $HDF5_LIBS $METIS_LIB -lmetis "
+                        LIBS="$LDFLAGS -L$with_petsc/lib $HDF5_LDFLAGS $SUITESPARSE_LIBS  $HDF5_LIBS $METIS_LIB -lmetis "
 			CC=$CXX
 
                         AC_LANG_SAVE
@@ -118,7 +118,7 @@ AC_MSG_WARN([could not find header file petsc.h]))
                         AC_LANG_RESTORE
 
                         CFLAGS=$old_CFLAGS
-                        LDFLAGS=$old_LDFLAGS
+                        LIBS=$old_LIBS
                         CC=$old_CC
 
                         AC_MSG_CHECKING(PETSC in $with_petsc)
