@@ -86,7 +86,7 @@ template<typename T, typename Kernel> void PSE_test(size_t Npart, size_t overlap
     size_t bc[1]={NON_PERIODIC};
 	Ghost<1,T> g(20*eps);
 
-	vector_dist<1,T, aggregate<T>, CartDecomposition<1,T> > vd(Npart,box,bc,g);
+	vector_dist<1,T, aggregate<T> > vd(Npart,box,bc,g);
 
 	auto it2 = vd.getIterator();
 

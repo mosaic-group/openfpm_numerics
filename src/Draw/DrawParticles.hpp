@@ -43,8 +43,8 @@ public:
 	 * \return an iterator to the selected particles
 	 *
 	 */
-	template<unsigned int dim, typename T, typename aggr, typename Decomposition> static PointIteratorSkin<dim,T,Decomposition>
-	DrawSkin(vector_dist<dim,T,aggr,Decomposition> & vd,
+	template<unsigned int dim, typename T, typename aggr, typename layout, template<typename> class layout_base ,typename Decomposition> static PointIteratorSkin<dim,T,Decomposition>
+	DrawSkin(vector_dist<dim,T,aggr,layout,layout_base,Decomposition> & vd,
 			 size_t (& sz)[dim],
 			 Box<dim,T> & domain,
 			 Box<dim,T> & sub_A,
@@ -79,8 +79,8 @@ public:
 	 * \return an iterator to the selected particles
 	 *
 	 */
-	template<unsigned int dim, typename T, typename aggr, typename Decomposition> static PointIteratorSkin<dim,T,Decomposition>
-	DrawSkin(vector_dist<dim,T,aggr,Decomposition> & vd,
+	template<unsigned int dim, typename T, typename aggr, typename layout, template <typename> class layout_base, typename Decomposition> static PointIteratorSkin<dim,T,Decomposition>
+	DrawSkin(vector_dist<dim,T,aggr,layout,layout_base,Decomposition> & vd,
 			 size_t (& sz)[dim],
 			 Box<dim,T> & domain,
 			 openfpm::vector<Box<dim,T>> & sub_A,
@@ -117,8 +117,8 @@ public:
 	 * \return an iterator to the selected particles
 	 *
 	 */
-	template<unsigned int dim, typename T, typename aggr, typename Decomposition> static PointIterator<dim,T,Decomposition>
-	DrawBox(vector_dist<dim,T,aggr,Decomposition> & vd,
+	template<unsigned int dim, typename T, typename aggr, typename layout, template <typename> class layout_base,  typename Decomposition> static PointIterator<dim,T,Decomposition>
+	DrawBox(vector_dist<dim,T,aggr,layout,layout_base,Decomposition> & vd,
 			 size_t (& sz)[dim],
 			 Box<dim,T> & domain,
 			 Box<dim,T> & sub)
