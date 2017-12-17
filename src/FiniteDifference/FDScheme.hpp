@@ -12,7 +12,6 @@
 #include "Grid/grid_dist_id.hpp"
 #include "Grid/Iterators/grid_dist_id_iterator_sub.hpp"
 #include "eq.hpp"
-#include "data_type/scalar.hpp"
 #include "NN/CellList/CellDecomposer.hpp"
 #include "Grid/staggered_dist_grid_util.hpp"
 #include "Grid/grid_dist_id.hpp"
@@ -127,7 +126,7 @@ class FDScheme
 public:
 
 	//! Distributed grid map
-	typedef grid_dist_id<Sys_eqs::dims,typename Sys_eqs::stype,scalar<size_t>,typename Sys_eqs::b_grid::decomposition::extended_type> g_map_type;
+	typedef grid_dist_id<Sys_eqs::dims,typename Sys_eqs::stype,aggregate<size_t>,typename Sys_eqs::b_grid::decomposition::extended_type> g_map_type;
 
 	//! Type that specify the properties of the system of equations
 	typedef Sys_eqs Sys_eqs_typ;

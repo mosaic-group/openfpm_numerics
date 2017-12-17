@@ -55,7 +55,7 @@ struct const_mul_functor_value
 	const grid_sm<last::dims,void> & gs;
 
 	//! grid mapping
-	const grid_dist_id<last::dims,typename last::stype,scalar<size_t>,typename last::b_grid::decomposition::extended_type> & g_map;
+	const grid_dist_id<last::dims,typename last::stype,aggregate<size_t>,typename last::b_grid::decomposition::extended_type> & g_map;
 
 	//! grid position
 	grid_dist_key_dx<last::dims> & kmap;
@@ -76,7 +76,7 @@ struct const_mul_functor_value
 	 * \param coeff multiplication coefficent
 	 *
 	 */
-	const_mul_functor_value(const grid_dist_id<last::dims,typename last::stype,scalar<size_t>,typename last::b_grid::decomposition::extended_type> & g_map,
+	const_mul_functor_value(const grid_dist_id<last::dims,typename last::stype,aggregate<size_t>,typename last::b_grid::decomposition::extended_type> & g_map,
 			                grid_dist_key_dx<last::dims> & kmap,
 							const grid_sm<last::dims,void> & gs,
 							typename last::stype (& spacing)[last::dims],
@@ -137,7 +137,7 @@ struct mul
 	 * \param coeff coefficent (constant in front of the derivative)
 	 *
 	 */
-	inline static void value(const grid_dist_id<Sys_eqs::dims,typename Sys_eqs::stype,scalar<size_t>,typename Sys_eqs::b_grid::decomposition::extended_type> & g_map,
+	inline static void value(const grid_dist_id<Sys_eqs::dims,typename Sys_eqs::stype,aggregate<size_t>,typename Sys_eqs::b_grid::decomposition::extended_type> & g_map,
 			                 grid_dist_key_dx<Sys_eqs::dims> & kmap,
 							 const grid_sm<Sys_eqs::dims,void> & gs,
 							 typename Sys_eqs::stype (& spacing )[Sys_eqs::dims],

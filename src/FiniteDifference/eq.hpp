@@ -14,7 +14,6 @@
 //#define PERIODIC true
 //#define NON_PERIODIC false
 
-#include "data_type/scalar.hpp"
 #include "util/util_num.hpp"
 
 /*! \brief Equation

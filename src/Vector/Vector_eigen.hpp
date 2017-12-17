@@ -75,6 +75,16 @@ public:
 		row() = i;
 		value() = val;
 	}
+
+	/*! \brief Indicate that the structure has no pointer
+	 *
+	 * \return true
+	 *
+	 */
+	static inline bool noPointers()
+	{
+		return true;
+	}
 };
 
 template<typename T>
