@@ -115,7 +115,7 @@ class Vector<T,PETSC_BASE>
 	mutable Vec v;
 
 	//! Mutable row value vector
-	mutable openfpm::vector<rval<PetscScalar,PETSC_RVAL>,HeapMemory,typename memory_traits_inte<rval<PetscScalar,PETSC_RVAL>>::type > row_val;
+	mutable openfpm::vector<rval<PetscScalar,PETSC_RVAL>,HeapMemory,typename memory_traits_inte<rval<PetscScalar,PETSC_RVAL>>::type, memory_traits_inte > row_val;
 
 	//! Global to local map
 	mutable std::unordered_map<size_t,size_t> map;
