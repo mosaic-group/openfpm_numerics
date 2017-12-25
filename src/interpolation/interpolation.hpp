@@ -293,7 +293,7 @@ struct calculate_aint<3,vector,np>
  */
 template<typename vector, typename grid>
 inline size_t getSub(Point<vector::dims,typename vector::stype> & p,
-		             const CellList<vector::dims,typename vector::stype,Mem_fast,shift<vector::dims,typename vector::stype>> & geo_cell,
+		             const CellList<vector::dims,typename vector::stype,Mem_fast<>,shift<vector::dims,typename vector::stype>> & geo_cell,
 					 grid & gd)
 {
 	size_t cell = geo_cell.getCell(p);
@@ -419,7 +419,7 @@ struct inte_calc_impl
 																	 typename vector::stype (& a)[vector::dims][kernel::np],
 																	 typename vector::stype (& x)[vector::dims][kernel::np],
 																	 size_t (& sz)[vector::dims],
-																	 const CellList<vector::dims,typename vector::stype,Mem_fast,shift<vector::dims,typename vector::stype>> & geo_cell,
+																	 const CellList<vector::dims,typename vector::stype,Mem_fast<>,shift<vector::dims,typename vector::stype>> & geo_cell,
 																	 openfpm::vector<agg_arr<openfpm::math::pow(kernel::np,vector::dims)>> & offsets)
 	{
 		auto key_p = it.get();
@@ -504,7 +504,7 @@ template<typename vector,typename grid, typename kernel>
 class interpolate
 {
 	//! Cell list used to convert particles position to sub-domain
-	CellList<vector::dims,typename vector::stype,Mem_fast,shift<vector::dims,typename vector::stype>> geo_cell;
+	CellList<vector::dims,typename vector::stype,Mem_fast<>,shift<vector::dims,typename vector::stype>> geo_cell;
 
 	/*! Structure to order boxes by volume
 	 *
