@@ -8,7 +8,7 @@
 #ifndef OPENFPM_NUMERICS_SRC_INTERPOLATION_INTERPOLATION_HPP_
 #define OPENFPM_NUMERICS_SRC_INTERPOLATION_INTERPOLATION_HPP_
 
-#include "NN/CellList/MemFast.hpp"
+#include "NN/Mem_type/MemFast.hpp"
 #include "NN/CellList/CellList.hpp"
 #include "Grid/grid_dist_key.hpp"
 
