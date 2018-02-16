@@ -82,6 +82,96 @@ template<typename vector, unsigned int mom_p> void momenta_vector(vector & vd,ty
 	}
 }
 
+template<unsigned int dim, typename T, typename grid, typename vector>
+void interp_test(grid & gd, vector & vd, bool single_particle)
+{
+	// Reset the grid
+
+	auto it2 = gd.getDomainGhostIterator();
+
+	while (it2.isNext())
+	{
+		auto key = it2.get();
+
+		gd.template get<0>(key) = 0.0;
+
+		++it2;
+	}
+
+	interpolate<vector,grid,mp4_kernel<float>> inte(vd,gd);
+
+	if (single_particle == false)
+	{inte.template p2m<0,0>(vd,gd);}
+	else
+	{
+		auto it = vd.getDomainIterator();
+
+		while (it.isNext())
+		{
+			auto p = it.get();
+
+			inte.template p2m<0,0>(vd,gd,p);
+
+			++it;
+		}
+	}
+
+	T mg[dim];
+	T mv[dim];
+
+	momenta_grid<grid,0>(gd,mg);
+	momenta_vector<vector,0>(vd,mv);
+
+	for (size_t i = 0 ; i < dim ; i++)
+	{BOOST_REQUIRE_CLOSE(mg[i],mv[i],0.001);}
+
+	momenta_grid<grid,1>(gd,mg);
+	momenta_vector<vector,1>(vd,mv);
+
+	for (size_t i = 0 ; i < dim ; i++)
+	{BOOST_REQUIRE_CLOSE(mg[i],mv[i],0.001);}
+
+	momenta_grid<grid,2>(gd,mg);
+	momenta_vector<vector,2>(vd,mv);
+
+	for (size_t i = 0 ; i < dim ; i++)
+	{BOOST_REQUIRE_CLOSE(mg[i],mv[i],0.001);}
+}
+
+BOOST_AUTO_TEST_CASE( interpolation_full_single_test_2D )
+{
+	Box<2,float> domain({0.0,0.0},{1.0,1.0});
+	size_t sz[2] = {64,64};
+
+	Ghost<2,long int> gg(2);
+	Ghost<2,float> gv(0.01);
+
+	size_t bc_v[2] = {PERIODIC,PERIODIC};
+
+	vector_dist<2,float,aggregate<float>> vd(65536,domain,bc_v,gv);
+	grid_dist_id<2,float,aggregate<float>> gd(vd.getDecomposition(),sz,gg);
+
+	// set one particle on vd
+
+	auto it = vd.getDomainIterator();
+
+	while (it.isNext())
+	{
+		auto p = it.get();
+
+		vd.getPos(p)[0] = (double)rand()/RAND_MAX;
+		vd.getPos(p)[1] = (double)rand()/RAND_MAX;
+
+		vd.getProp<0>(p) = 5.0;
+
+		++it;
+	}
+
+	vd.map();
+
+	interp_test<2,float>(gd,vd,true);
+}
+
 
 BOOST_AUTO_TEST_CASE( interpolation_full_test_2D )
 {
@@ -116,44 +206,14 @@ BOOST_AUTO_TEST_CASE( interpolation_full_test_2D )
 	vd.map();
 
 	// Reset the grid
-
-	auto it2 = gd.getDomainGhostIterator();
-
-	while (it2.isNext())
-	{
-		auto key = it2.get();
-
-		gd.template get<0>(key) = 0.0;
-
-		++it2;
-	}
-
-	interpolate<decltype(vd),decltype(gd),mp4_kernel<float>> inte(vd,gd);
-
-	inte.p2m<0,0>(vd,gd);
+	interp_test<2,float>(gd,vd,false);
 
 	float mg[2];
 	float mv[2];
 
-	momenta_grid<decltype(gd),0>(gd,mg);
-	momenta_vector<decltype(vd),0>(vd,mv);
-
-	BOOST_REQUIRE_CLOSE(mg[0],mv[0],0.001);
-	BOOST_REQUIRE_CLOSE(mg[1],mv[1],0.001);
-
-	momenta_grid<decltype(gd),1>(gd,mg);
-	momenta_vector<decltype(vd),1>(vd,mv);
-
-	BOOST_REQUIRE_CLOSE(mg[0],mv[0],0.001);
-	BOOST_REQUIRE_CLOSE(mg[1],mv[1],0.001);
-
-	momenta_grid<decltype(gd),2>(gd,mg);
-	momenta_vector<decltype(vd),2>(vd,mv);
-
-	BOOST_REQUIRE_CLOSE(mg[0],mv[0],0.001);
-	BOOST_REQUIRE_CLOSE(mg[1],mv[1],0.001);
-
 	auto & v_cl = create_vcluster();
+
+	interpolate<decltype(vd),decltype(gd),mp4_kernel<float>> inte(vd,gd);
 
 	// We have to do a ghost get before interpolating m2p
 	// Before doing mesh to particle particle must be arranged
@@ -248,6 +308,41 @@ BOOST_AUTO_TEST_CASE( interpolation_full_test_2D )
 	}
 }
 
+BOOST_AUTO_TEST_CASE( interpolation_full_single_test_3D )
+{
+	Box<3,double> domain({0.0,0.0,0.0},{1.0,1.0,1.0});
+	size_t sz[3] = {64,64,64};
+
+	Ghost<3,long int> gg(2);
+	Ghost<3,double> gv(0.01);
+
+	size_t bc_v[3] = {PERIODIC,PERIODIC,PERIODIC};
+
+	vector_dist<3,double,aggregate<double>> vd(65536,domain,bc_v,gv);
+	grid_dist_id<3,double,aggregate<double>> gd(vd.getDecomposition(),sz,gg);
+
+	// set one particle on vd
+
+	auto it = vd.getDomainIterator();
+
+	while (it.isNext())
+	{
+		auto p = it.get();
+
+		vd.getPos(p)[0] = (double)rand()/RAND_MAX;
+		vd.getPos(p)[1] = (double)rand()/RAND_MAX;
+		vd.getPos(p)[2] = (double)rand()/RAND_MAX;
+
+		vd.getProp<0>(p) = 5.0;
+
+		++it;
+	}
+
+	vd.map();
+
+	// Reset the grid
+	interp_test<3,double>(gd,vd,true);
+}
 
 BOOST_AUTO_TEST_CASE( interpolation_full_test_3D )
 {
@@ -284,46 +379,13 @@ BOOST_AUTO_TEST_CASE( interpolation_full_test_3D )
 
 	// Reset the grid
 
-	auto it2 = gd.getDomainGhostIterator();
-
-	while (it2.isNext())
-	{
-		auto key = it2.get();
-
-		gd.template get<0>(key) = 0.0;
-
-		++it2;
-	}
-
-	interpolate<decltype(vd),decltype(gd),mp4_kernel<double>> inte(vd,gd);
-
-	inte.p2m<0,0>(vd,gd);
-
-	double mg[3];
-	double mv[3];
-
-	momenta_grid<decltype(gd),0>(gd,mg);
-	momenta_vector<decltype(vd),0>(vd,mv);
-
-	BOOST_REQUIRE_CLOSE(mg[0],mv[0],0.001);
-	BOOST_REQUIRE_CLOSE(mg[1],mv[1],0.001);
-	BOOST_REQUIRE_CLOSE(mg[2],mv[2],0.001);
-
-	momenta_grid<decltype(gd),1>(gd,mg);
-	momenta_vector<decltype(vd),1>(vd,mv);
-
-	BOOST_REQUIRE_CLOSE(mg[0],mv[0],0.001);
-	BOOST_REQUIRE_CLOSE(mg[1],mv[1],0.001);
-	BOOST_REQUIRE_CLOSE(mg[2],mv[2],0.001);
-
-	momenta_grid<decltype(gd),2>(gd,mg);
-	momenta_vector<decltype(vd),2>(vd,mv);
-
-	BOOST_REQUIRE_CLOSE(mg[0],mv[0],0.001);
-	BOOST_REQUIRE_CLOSE(mg[1],mv[1],0.001);
-	BOOST_REQUIRE_CLOSE(mg[2],mv[2],0.001);
+	// Reset the grid
+	interp_test<3,double>(gd,vd,false);
 
 	auto & v_cl = create_vcluster();
+	double mg[3];
+	double mv[3];
+	interpolate<decltype(vd),decltype(gd),mp4_kernel<double>> inte(vd,gd);
 
 	// We have to do a ghost get before interpolating m2p
 	// Before doing mesh to particle particle must be arranged

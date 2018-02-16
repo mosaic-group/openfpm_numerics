@@ -8,6 +8,16 @@
 #ifndef OPENFPM_NUMERICS_SRC_OPERATORS_VECTOR_VECTOR_DIST_OPERATORS_APPLY_KERNEL_HPP_
 #define OPENFPM_NUMERICS_SRC_OPERATORS_VECTOR_VECTOR_DIST_OPERATORS_APPLY_KERNEL_HPP_
 
+//////// SET of small macro to make to define integral easy
+
+#define DEFINE_INTERACTION_3D(name) struct name \
+{\
+\
+	Point<3,double> value(const Point<3,double> & xp, const Point<3,double> xq)\
+	{
+
+#define END_INTERACTION }\
+						};
 
 /*! \brief is_expression check if a type is simple a type or is just an encapsulation of an expression
  *
