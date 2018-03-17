@@ -443,6 +443,46 @@ private:
 
 	/*! \brief Impose an operator
 	 *
+	 * This function the RHS no matrix is imposed. This
+	 * function is usefull if the Matrix has been constructed and only
+	 * the right hand side b must be changed
+	 *
+	 * Ax = b
+	 *
+	 * \param num right hand side of the term (b term)
+	 * \param id Equation id in the system that we are imposing
+	 * \param it_d iterator that define where you want to impose
+	 *
+	 */
+	template<typename bop, typename iterator>
+	void impose_dit_b(bop num,
+					  long int id ,
+					  const iterator & it_d)
+	{
+
+		auto it = it_d;
+		grid_sm<Sys_eqs::dims,void> gs = g_map.getGridInfoVoid();
+
+		// iterate all the grid points
+		while (it.isNext())
+		{
+			// get the position
+			auto key = it.get();
+
+			b(g_map.template get<0>(key)*Sys_eqs::nvar + id) = num.get(key);
+
+			// if SE_CLASS1 is defined check the position
+#ifdef SE_CLASS1
+//			T::position(key,gs,s_pos);
+#endif
+
+			++row_b;
+			++it;
+		}
+	}
+
+	/*! \brief Impose an operator
+	 *
 	 * This function impose an operator on a particular grid region to produce the system
 	 *
 	 * Ax = b
@@ -456,7 +496,7 @@ private:
 	 * \param it_d iterator that define where you want to impose
 	 *
 	 */
-	template<typename T, typename bop, typename iterator> void impose_dit(const T & op ,
+	template<typename T, typename bop, typename iterator> void impose_dit(const T & op,
 			                         bop num,
 									 long int id ,
 									 const iterator & it_d)
@@ -493,9 +533,8 @@ private:
 				trpl.last().value() = it->second;
 
 				if (trpl.last().row() == trpl.last().col())
-					is_diag = true;
+				{is_diag = true;}
 
-//				std::cout << "(" << trpl.last().row() << "," << trpl.last().col() << "," << trpl.last().value() << ")" << "\n";
 			}
 
 			// If does not have a diagonal entry put it to zero
@@ -810,6 +849,44 @@ public:
 
         impose_git(op,b,id,it);
 
+	}
+
+	/*! \brief In case we want to impose a new b re-using FDScheme we have to call
+	 *         This function
+	 */
+	void new_b()
+	{row_b = 0;}
+
+	/*! \brief In case we want to impose a new A re-using FDScheme we have to call
+	 *         This function
+	 *
+	 */
+	void new_A()
+	{row = 0;}
+
+	/*! \brief Impose an operator
+	 *
+	 * This function impose an operator on a particular grid region to produce the system
+	 *
+	 * Ax = b
+	 *
+	 * ## Stokes equation 2D, lid driven cavity with one splipping wall
+	 * \snippet eq_unit_test.hpp Copy the solution to grid
+	 *
+	 * \param op Operator to impose (A term)
+	 * \param num right hand side of the term (b term)
+	 * \param id Equation id in the system that we are imposing
+	 * \param it_d iterator that define where you want to impose
+	 *
+	 */
+	template<unsigned int prp, typename b_term, typename iterator>
+	void impose_dit_b(b_term & b_t,
+					  const iterator & it_d,
+					  long int id = 0)
+	{
+		grid_b<b_term,prp> b(b_t);
+
+		impose_dit_b(b,id,it_d);
 	}
 
 	/*! \brief Impose an operator
