@@ -10,6 +10,8 @@
 #include "DMatrix/EMatrix.hpp"
 #include "memory/HeapMemory.hpp"
 
+#ifdef HAVE_EIGEN
+
 BOOST_AUTO_TEST_SUITE (EMatrix_test)
 
 BOOST_AUTO_TEST_CASE( EMatrix_test_use)
@@ -102,3 +104,5 @@ BOOST_AUTO_TEST_CASE( EMatrix_test_use)
 
 BOOST_AUTO_TEST_SUITE_END()
 
+
+#endif
