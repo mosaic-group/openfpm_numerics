@@ -14,7 +14,7 @@
 #define SOLVER_PRINT_RESIDUAL_NORM_INFINITY 1
 #define SOLVER_PRINT_DETERMINANT 2
 
-#ifdef HAVE_EIGEN
+#if defined(HAVE_EIGEN) && defined(HAVE_SUITESPARSE)
 
 /////// Compiled with EIGEN support
 

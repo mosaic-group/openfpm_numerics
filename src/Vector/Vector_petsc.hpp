@@ -13,6 +13,7 @@
 #include <boost/mpl/int.hpp>
 #include <petscvec.h>
 #include "util/petsc_util.hpp"
+#include <unordered_map>
 
 #define PETSC_RVAL 2
 
