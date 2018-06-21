@@ -433,24 +433,24 @@ struct inte_calc_impl
 		// calculate the position of the particle in the grid
 		// coordinated
 		for (size_t i = 0 ; i < vector::dims ; i++)
-			x0[i] = (p.get(i)-domain.getLow(i))*dx[i];
+		{x0[i] = (p.get(i)-domain.getLow(i))*dx[i];}
 
 		// convert into integer
 		for (size_t i = 0 ; i < vector::dims ; i++)
-			ip[i][0] = (int)x0[i];
+		{ip[i][0] = (int)x0[i];}
 
 		// convert the global grid position into local grid position
 		grid_key_dx<vector::dims> base;
 
 		for (size_t i = 0 ; i < vector::dims ; i++)
-			base.set_d(i,ip[i][0] - gd.getLocalGridsInfo().get(sub).origin.get(i) - (long int)kernel::np/2 + 1);
+		{base.set_d(i,ip[i][0] - gd.getLocalGridsInfo().get(sub).origin.get(i) - (long int)kernel::np/2 + 1);}
 
 		// convenient grid of points
 
 		for (size_t j = 0 ; j < kernel::np-1 ; j++)
 		{
 			for (size_t i = 0 ; i < vector::dims ; i++)
-				ip[i][j+1] = (int)ip[i][j]+1;
+			{ip[i][j+1] = (int)ip[i][j]+1;}
 		}
 
 		for (size_t i = 0 ; i < vector::dims ; i++)
@@ -459,13 +459,13 @@ struct inte_calc_impl
 		for (long int j = 0 ; j < kernel::np ; j++)
 		{
 			for (size_t i = 0 ; i < vector::dims ; i++)
-				x[i][j] = - xp[i] + typename vector::stype((long int)j - (long int)kernel::np/2 + 1);
+			{x[i][j] = - xp[i] + typename vector::stype((long int)j - (long int)kernel::np/2 + 1);}
 		}
 
 		for (size_t j = 0 ; j < kernel::np ; j++)
 		{
 			for (size_t i = 0 ; i < vector::dims ; i++)
-				a[i][j] = kernel::value(x[i][j],j);
+			{a[i][j] = kernel::value(x[i][j],j);}
 		}
 
 		calculate_aint<vector::dims,vector,kernel::np>::value(sz,a_int,a);
