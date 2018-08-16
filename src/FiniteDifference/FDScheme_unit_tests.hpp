@@ -37,7 +37,7 @@ struct sys_nn
 	typedef float stype;
 
 	//! Base grid
-	typedef grid_dist_id<dims,stype,scalar<float>,CartDecomposition<2,stype> > b_grid;
+	typedef grid_dist_id<dims,stype,aggregate<float>,CartDecomposition<2,stype> > b_grid;
 
 	//! specify that we are on testing
 	typedef void testing;
@@ -60,7 +60,7 @@ struct sys_pp
 	typedef float stype;
 
 	//! Base grid
-	typedef grid_dist_id<dims,stype,scalar<float>,CartDecomposition<2,stype> > b_grid;
+	typedef grid_dist_id<dims,stype,aggregate<float>,CartDecomposition<2,stype> > b_grid;
 
 	//! Indicate we are on testing
 	typedef void testing;
@@ -89,7 +89,7 @@ struct syss_nn
 	typedef float stype;
 
 	//! Base grid
-	typedef grid_dist_id<dims,stype,scalar<float>,CartDecomposition<2,stype> > b_grid;
+	typedef grid_dist_id<dims,stype,aggregate<float>,CartDecomposition<2,stype> > b_grid;
 
 	//! Indicate we are on testing
 	typedef void testing;
@@ -115,7 +115,7 @@ struct syss_pp
 	typedef float stype;
 
 	//! Base grid
-	typedef grid_dist_id<dims,stype,scalar<float>,CartDecomposition<2,stype> > b_grid;
+	typedef grid_dist_id<dims,stype,aggregate<float>,CartDecomposition<2,stype> > b_grid;
 
 	//! Indicate we are on testing
 	typedef void testing;

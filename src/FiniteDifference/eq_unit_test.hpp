@@ -13,7 +13,6 @@
 #include "FiniteDifference/sum.hpp"
 #include "FiniteDifference/mul.hpp"
 #include "Grid/grid_dist_id.hpp"
-#include "data_type/scalar.hpp"
 #include "Decomposition/CartDecomposition.hpp"
 #include "Vector/Vector.hpp"
 #include "Solvers/umfpack_solver.hpp"

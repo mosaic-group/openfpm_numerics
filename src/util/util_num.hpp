@@ -91,7 +91,7 @@ template<typename T, unsigned int dims, typename stype, typename decomposition>
 struct stub_or_real<T,dims,stype,decomposition,false>
 {
 	//! switch type if we are on testing or not
-	typedef grid_dist_id<dims,stype,scalar<size_t>,decomposition> type;
+	typedef grid_dist_id<dims,stype,aggregate<size_t>,decomposition> type;
 };
 
 #endif /* OPENFPM_NUMERICS_SRC_UTIL_UTIL_NUM_HPP_ */

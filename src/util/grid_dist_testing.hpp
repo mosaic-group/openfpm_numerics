@@ -8,13 +8,12 @@
 #ifndef OPENFPM_NUMERICS_SRC_UTIL_GRID_DIST_TESTING_HPP_
 #define OPENFPM_NUMERICS_SRC_UTIL_GRID_DIST_TESTING_HPP_
 
-#include "data_type/scalar.hpp"
 #include "Grid/grid_dist_key.hpp"
 
 template<unsigned int dim>
 class grid_dist_testing
 {
-	grid_cpu<dim,scalar<size_t>> grid_test;
+	grid_cpu<dim,aggregate<size_t>> grid_test;
 
 public:
 

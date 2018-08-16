@@ -97,7 +97,7 @@ BOOST_AUTO_TEST_CASE( util_num )
 	ret = std::is_same<stub_or_real<on_test,2,float,CartDecomposition<2,float>>::type, grid_dist_testing<2>>::value ;
 	BOOST_REQUIRE_EQUAL(ret,true);
 
-	ret = std::is_same<stub_or_real<not_on_test,2,float,CartDecomposition<2,float>>::type, grid_dist_id<2,float,scalar<size_t>,CartDecomposition<2,float>> >::value;
+	ret = std::is_same<stub_or_real<not_on_test,2,float,CartDecomposition<2,float>>::type, grid_dist_id<2,float,aggregate<size_t>,CartDecomposition<2,float>> >::value;
 	BOOST_REQUIRE_EQUAL(ret,true);
 
 	//! [Usage of stub_or_real]
