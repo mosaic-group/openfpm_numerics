@@ -8,13 +8,18 @@
 #ifndef OPENFPM_NUMERICS_SRC_VECTOR_VECTOR_UNIT_TESTS_HPP_
 #define OPENFPM_NUMERICS_SRC_VECTOR_VECTOR_UNIT_TESTS_HPP_
 
+#define BOOST_TEST_DYN_LINK
+#include <boost/test/unit_test.hpp>
+#include <VCluster/VCluster.hpp>
+
+#include <iostream>
 #include "Vector/Vector.hpp"
 
 BOOST_AUTO_TEST_SUITE( vector_test_suite )
 
 BOOST_AUTO_TEST_CASE(vector_eigen_parallel)
 {
-	Vcluster & vcl = create_vcluster();
+	Vcluster<> & vcl = create_vcluster();
 
 	if (vcl.getProcessingUnits() != 3)
 		return;
@@ -133,7 +138,7 @@ BOOST_AUTO_TEST_CASE(vector_eigen_parallel)
 
 BOOST_AUTO_TEST_CASE(vector_petsc_parallel)
 {
-	Vcluster & vcl = create_vcluster();
+	Vcluster<> & vcl = create_vcluster();
 
 	if (vcl.getProcessingUnits() != 3)
 		return;

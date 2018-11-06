@@ -310,7 +310,7 @@ private:
 		// Indicate all the non zero colums
 		// This check can be done only on single processor
 
-		Vcluster & v_cl = create_vcluster();
+		Vcluster<> & v_cl = create_vcluster();
 		if (v_cl.getProcessingUnits() == 1)
 		{
 			openfpm::vector<unsigned> nz_cols;
@@ -604,7 +604,7 @@ private:
 	 */
 	void construct_gmap()
 	{
-		Vcluster & v_cl = create_vcluster();
+		Vcluster<> & v_cl = create_vcluster();
 
 		// Calculate the size of the local domain
 		size_t sz = g_map.getLocalDomainSize();

@@ -15,6 +15,7 @@
 //#define NON_PERIODIC false
 
 #include "util/util_num.hpp"
+#include "Matrix/SparseMatrix.hpp"
 
 /*! \brief Equation
  *

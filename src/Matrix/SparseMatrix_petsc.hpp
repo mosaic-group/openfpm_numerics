@@ -217,7 +217,7 @@ public:
 		PETSC_SAFE_CALL(MatSetType(mat,MATMPIAIJ));
 		PETSC_SAFE_CALL(MatSetSizes(mat,n_row_local,n_row_local,N1,N2));
 
-		Vcluster & v_cl = create_vcluster();
+		Vcluster<> & v_cl = create_vcluster();
 
 		openfpm::vector<size_t> vn_row_local;
 		v_cl.allGather(l_row,vn_row_local);
@@ -305,7 +305,7 @@ public:
 
 		PETSC_SAFE_CALL(MatSetSizes(mat,l_row,l_col,g_row,g_col));
 
-		Vcluster & v_cl = create_vcluster();
+		Vcluster<> & v_cl = create_vcluster();
 
 		openfpm::vector<size_t> vn_row_local;
 		v_cl.allGather(l_row,vn_row_local);

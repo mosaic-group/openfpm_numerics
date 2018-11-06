@@ -2,7 +2,7 @@
 LINKLIBS = $(HDF5_LDFLAGS)  $(HDF5_LIBS) $(OPENMP_LDFLAGS) $(LIBHILBERT_LIB) $(PETSC_LIB) $(SUITESPARSE_LIBS) $(LAPACK_LIBS) $(BLAS_LIBS)  $(METIS_LIB) $(PARMETIS_LIB) $(DEFAULT_LIB) $(PTHREAD_LIBS) $(OPT_LIBS) $(BOOST_LDFLAGS) $(BOOST_PROGRAM_OPTIONS_LIB) $(BOOST_IOSTREAMS_LIB) $(LIBQUADMATH) $(OPENMP_LDFLAGS) $(LIBIFCORE)
 
 noinst_PROGRAMS = numerics
-numerics_SOURCES = main.cpp Solvers/petsc_solver_unit_tests.cpp  ../../openfpm_vcluster/src/VCluster/VCluster.cpp ../../openfpm_devices/src/memory/HeapMemory.cpp ../../openfpm_devices/src/memory/PtrMemory.cpp ../../openfpm_devices/src/Memleak_check.cpp
+numerics_SOURCES = main.cpp Matrix/SparseMatrix_unit_tests.cpp interpolation/interpolation_unit_tests.cpp  Vector/Vector_unit_tests.cpp  Solvers/petsc_solver_unit_tests.cpp FiniteDifference/FDScheme_unit_tests.cpp FiniteDifference/eq_unit_test_3d.cpp FiniteDifference/eq_unit_test.cpp  Operators/Vector/vector_dist_operators_unit_tests.cpp ../../openfpm_vcluster/src/VCluster/VCluster.cpp ../../openfpm_devices/src/memory/HeapMemory.cpp ../../openfpm_devices/src/memory/PtrMemory.cpp ../../openfpm_devices/src/Memleak_check.cpp
 numerics_CXXFLAGS = -Wno-unknown-pragmas -Wno-int-in-bool-context $(HDF5_CPPFLAGS) $(OPENMP_CFLAGS) $(LIBHILBERT_INCLUDE) $(AM_CXXFLAGS) $(INCLUDES_PATH) $(BOOST_CPPFLAGS) $(SUITESPARSE_INCLUDE) $(METIS_INCLUDE) $(PARMETIS_INCLUDE) $(EIGEN_INCLUDE) $(PETSC_INCLUDE) -Wno-deprecated-declarations -Wno-unused-local-typedefs
 numerics_CFLAGS = $(CUDA_CFLAGS)
 numerics_LDADD = $(LINKLIBS) -lparmetis -lmetis

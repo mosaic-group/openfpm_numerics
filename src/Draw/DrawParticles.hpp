@@ -43,8 +43,9 @@ public:
 	 * \return an iterator to the selected particles
 	 *
 	 */
-	template<unsigned int dim, typename T, typename aggr, typename Decomposition> static PointIteratorSkin<dim,T,Decomposition>
-	DrawSkin(vector_dist<dim,T,aggr,Decomposition> & vd,
+	template<unsigned int dim, typename T, typename vd_type>
+	static PointIteratorSkin<dim,T,typename vd_type::Decomposition_type>
+	DrawSkin(vd_type & vd,
 			 size_t (& sz)[dim],
 			 Box<dim,T> & domain,
 			 Box<dim,T> & sub_A,
@@ -55,7 +56,7 @@ public:
 		for (size_t i = 0 ; i < dim ; i++)
 			bc[i] = NON_PERIODIC;
 
-		return PointIteratorSkin<dim,T,Decomposition>(vd.getDecomposition(),sz,vd.getDecomposition().getDomain(),sub_A, sub_B, bc);
+		return PointIteratorSkin<dim,T,typename vd_type::Decomposition_type>(vd.getDecomposition(),sz,vd.getDecomposition().getDomain(),sub_A, sub_B, bc);
 	}
 
 
@@ -79,8 +80,9 @@ public:
 	 * \return an iterator to the selected particles
 	 *
 	 */
-	template<unsigned int dim, typename T, typename aggr, typename Decomposition> static PointIteratorSkin<dim,T,Decomposition>
-	DrawSkin(vector_dist<dim,T,aggr,Decomposition> & vd,
+	template<unsigned int dim, typename T, typename vd_type>
+	static PointIteratorSkin<dim,T,typename vd_type::Decomposition_type>
+	DrawSkin(vd_type & vd,
 			 size_t (& sz)[dim],
 			 Box<dim,T> & domain,
 			 openfpm::vector<Box<dim,T>> & sub_A,
@@ -91,7 +93,7 @@ public:
 		for (size_t i = 0 ; i < dim ; i++)
 			bc[i] = NON_PERIODIC;
 
-		PointIteratorSkin<dim,T,Decomposition> it(vd.getDecomposition(),sz,vd.getDecomposition().getDomain(),sub_A.get(0), sub_B, bc);
+		PointIteratorSkin<dim,T,typename vd_type::Decomposition_type> it(vd.getDecomposition(),sz,vd.getDecomposition().getDomain(),sub_A.get(0), sub_B, bc);
 
 		for (size_t i = 1 ; i < sub_A.size() ; i++)
 			it.addBoxA(Box<dim,T>(sub_A.get(i)));
@@ -117,13 +119,13 @@ public:
 	 * \return an iterator to the selected particles
 	 *
 	 */
-	template<unsigned int dim, typename T, typename aggr, typename Decomposition> static PointIterator<dim,T,Decomposition>
-	DrawBox(vector_dist<dim,T,aggr,Decomposition> & vd,
+	template<unsigned int dim, typename T, typename vd_type> static PointIterator<dim,T,typename vd_type::Decomposition_type>
+	DrawBox(vd_type & vd,
 			 size_t (& sz)[dim],
 			 Box<dim,T> & domain,
 			 Box<dim,T> & sub)
 	{
-		return PointIterator<dim,T,Decomposition>(vd.getDecomposition(),sz,vd.getDecomposition().getDomain(),sub);
+		return PointIterator<dim,T,typename vd_type::Decomposition_type>(vd.getDecomposition(),sz,vd.getDecomposition().getDomain(),sub);
 	}
 
 };

@@ -8,6 +8,10 @@
 #ifndef OPENFPM_NUMERICS_SRC_EQUATIONS_STOKE_FLOW_EQ_3D_HPP_
 #define OPENFPM_NUMERICS_SRC_EQUATIONS_STOKE_FLOW_EQ_3D_HPP_
 
+constexpr unsigned int x = 0;
+constexpr unsigned int y = 1;
+constexpr unsigned int z = 2;
+
 // Model the equations
 
 constexpr unsigned int v[] = {0,1,2};

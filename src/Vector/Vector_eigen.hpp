@@ -107,7 +107,7 @@ class Vector<T, EIGEN_BASE>
 	 */
 	void collect() const
 	{
-		Vcluster & vcl = create_vcluster();
+		Vcluster<> & vcl = create_vcluster();
 
 		row_val_recv.clear();
 
@@ -329,7 +329,7 @@ public:
 	void scatter()
 	{
 		row_val_recv.clear();
-		Vcluster & vcl = create_vcluster();
+		Vcluster<> & vcl = create_vcluster();
 
 		vcl.SScatter(row_val,row_val_recv,prc,sz,0);
 

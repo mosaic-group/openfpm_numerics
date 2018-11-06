@@ -56,7 +56,7 @@ BOOST_AUTO_TEST_CASE(point_iterator)
 
 	//! [DrawBox_example]
 
-	Vcluster & v_cl = create_vcluster();
+	Vcluster<> & v_cl = create_vcluster();
 
 	v_cl.sum(cnt);
 	v_cl.execute();
@@ -115,7 +115,7 @@ BOOST_AUTO_TEST_CASE(point_iterator_skin)
 		++p;
 	}
 
-	Vcluster & v_cl = create_vcluster();
+	Vcluster<> & v_cl = create_vcluster();
 
 	v_cl.sum(cnt);
 	v_cl.execute();

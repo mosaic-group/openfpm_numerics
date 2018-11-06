@@ -10,6 +10,8 @@
 
 #include "config/config.h"
 #include "util/linalgebra_lib.hpp"
+#include "Vector/map_vector.hpp"
+#include "VCluster/VCluster.hpp"
 
 #ifdef HAVE_EIGEN
 #include <Eigen/Sparse>

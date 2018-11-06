@@ -9,6 +9,8 @@
 #define OPENFPM_NUMERICS_SRC_UTIL_GRID_DIST_TESTING_HPP_
 
 #include "Grid/grid_dist_key.hpp"
+#include "Grid/grid_dist_key.hpp"
+#include "Grid/map_grid.hpp"
 
 template<unsigned int dim>
 class grid_dist_testing

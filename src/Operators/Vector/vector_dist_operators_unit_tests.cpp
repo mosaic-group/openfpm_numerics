@@ -8,6 +8,9 @@
 #ifndef OPENFPM_NUMERICS_SRC_OPERATORS_VECTOR_VECTOR_DIST_OPERATORS_UNIT_TESTS_HPP_
 #define OPENFPM_NUMERICS_SRC_OPERATORS_VECTOR_VECTOR_DIST_OPERATORS_UNIT_TESTS_HPP_
 
+#define BOOST_TEST_DYN_LINK
+#include <boost/test/unit_test.hpp>
+
 #include "Operators/Vector/vector_dist_operators.hpp"
 
 constexpr int A = 0;

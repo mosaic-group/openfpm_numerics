@@ -71,7 +71,7 @@ public:
 	 */
 	static Vector<double,EIGEN_BASE> solve(SparseMatrix<double,int,EIGEN_BASE> & A, const Vector<double,EIGEN_BASE> & b, size_t opt = UMFPACK_NONE)
 	{
-		Vcluster & vcl = create_vcluster();
+		Vcluster<> & vcl = create_vcluster();
 
 		Vector<double> x;
 

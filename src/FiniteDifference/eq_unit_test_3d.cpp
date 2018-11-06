@@ -8,6 +8,9 @@
 #ifndef OPENFPM_NUMERICS_SRC_FINITEDIFFERENCE_EQ_UNIT_TEST_3D_HPP_
 #define OPENFPM_NUMERICS_SRC_FINITEDIFFERENCE_EQ_UNIT_TEST_3D_HPP_
 
+#define BOOST_TEST_DYN_LINK
+#include <boost/test/unit_test.hpp>
+
 #include "config.h"
 #include "Laplacian.hpp"
 #include "FiniteDifference/eq.hpp"
@@ -18,6 +21,8 @@
 #include "Vector/Vector.hpp"
 #include "Solvers/umfpack_solver.hpp"
 #include "data_type/aggregate.hpp"
+#include "Solvers/petsc_solver.hpp"
+#include "FiniteDifference/FDScheme.hpp"
 
 BOOST_AUTO_TEST_SUITE( eq_test_suite_3d )
 
@@ -93,7 +98,7 @@ template<typename solver_type,typename lid_nn_3d> void lid_driven_cavity_3d()
 {
 	#include "Equations/stoke_flow_eq_3d.hpp"
 
-	Vcluster & v_cl = create_vcluster();
+	Vcluster<> & v_cl = create_vcluster();
 
 	if (v_cl.getProcessingUnits() > 3)
 		return;
@@ -192,10 +197,10 @@ template<typename solver_type,typename lid_nn_3d> void lid_driven_cavity_3d()
 	fd.impose(v_z(), 0.0, EQ_3, {-1,-1,-1},{sz[0]-1,sz[1]-1,-1});
 
 	solver_type solver;
-	auto x = solver.try_solve(fd.getA(),fd.getB());
+	auto x_ = solver.try_solve(fd.getA(),fd.getB());
 
 	// Bring the solution to grid
-	fd.template copy<velocity,pressure>(x,{0,0},{sz[0]-1,sz[1]-1,sz[2]-1},g_dist);
+	fd.template copy<velocity,pressure>(x_,{0,0},{sz[0]-1,sz[1]-1,sz[2]-1},g_dist);
 
 	std::string s = std::string(demangle(typeid(solver_type).name()));
 	s += "_";

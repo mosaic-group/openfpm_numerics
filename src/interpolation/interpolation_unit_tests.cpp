@@ -8,9 +8,15 @@
 #ifndef OPENFPM_NUMERICS_SRC_INTERPOLATION_INTERPOLATION_UNIT_TESTS_HPP_
 #define OPENFPM_NUMERICS_SRC_INTERPOLATION_INTERPOLATION_UNIT_TESTS_HPP_
 
+#define BOOST_TEST_DYN_LINK
+#include <boost/test/unit_test.hpp>
+
 #include "interpolation/mp4_kernel.hpp"
 #include "interpolation/z_spline.hpp"
 #include "interpolation.hpp"
+#include <boost/math/special_functions/pow.hpp>
+#include <Vector/vector_dist.hpp>
+#include <Grid/grid_dist_id.hpp>
 
 BOOST_AUTO_TEST_SUITE( interpolation_test )
 

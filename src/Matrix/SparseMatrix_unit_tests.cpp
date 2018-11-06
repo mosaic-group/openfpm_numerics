@@ -8,6 +8,9 @@
 #ifndef OPENFPM_NUMERICS_SRC_MATRIX_SPARSEMATRIX_UNIT_TESTS_HPP_
 #define OPENFPM_NUMERICS_SRC_MATRIX_SPARSEMATRIX_UNIT_TESTS_HPP_
 
+#define BOOST_TEST_DYN_LINK
+#include <boost/test/unit_test.hpp>
+
 #include "Matrix/SparseMatrix.hpp"
 #include "Vector/Vector.hpp"
 #include "Solvers/umfpack_solver.hpp"
@@ -23,7 +26,7 @@ BOOST_AUTO_TEST_SUITE( sparse_matrix_test_suite )
 
 BOOST_AUTO_TEST_CASE(sparse_matrix_eigen_parallel)
 {
-	Vcluster & vcl = create_vcluster();
+	Vcluster<> & vcl = create_vcluster();
 
 	if (vcl.getProcessingUnits() != 3)
 		return;
@@ -172,7 +175,7 @@ BOOST_AUTO_TEST_CASE(sparse_matrix_eigen_parallel)
 
 BOOST_AUTO_TEST_CASE(sparse_matrix_eigen_petsc)
 {
-	Vcluster & vcl = create_vcluster();
+	Vcluster<> & vcl = create_vcluster();
 
 	if (vcl.getProcessingUnits() != 3)
 		return;
@@ -343,7 +346,7 @@ BOOST_AUTO_TEST_CASE(sparse_matrix_eigen_petsc)
 
 BOOST_AUTO_TEST_CASE(sparse_matrix_eigen_petsc_solve)
 {
-	Vcluster & vcl = create_vcluster();
+	Vcluster<> & vcl = create_vcluster();
 
 	if (vcl.getProcessingUnits() != 3)
 		return;
