@@ -24,6 +24,7 @@ target_include_directories (numerics PUBLIC ${PARMETIS_ROOT}/include)
 target_include_directories (numerics PUBLIC ${METIS_ROOT}/include)
 target_include_directories (numerics PUBLIC ${HDF5_ROOT}/include)
 target_include_directories (numerics PUBLIC ${LIBHILBERT_INCLUDE_DIRS})
+target_include_directories (numerics PUBLIC ${Boost_INCLUDE_DIRS})
 
 target_link_libraries(numerics ${Boost_LIBRARIES})
 target_link_libraries(numerics -L${METIS_ROOT}/lib metis)
