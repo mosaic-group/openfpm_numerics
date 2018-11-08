@@ -25,12 +25,15 @@ set(PARMETIS_DIR ${PARMETIS_ROOT})
 set(ENV{PATH} "$ENV{PATH}:${HDF5_ROOT}/bin")
 set(HDF5_PREFER_PARALLEL TRUE)
 
+set (CMAKE_CXX_STANDARD 11)
+set (CMAKE_CUDA_STANDARD 11)
+
 if(ENABLE_GPU)
 	enable_language(CUDA)
 	find_package(CUDA)
 endif()
 
-find_package(Boost 1.52.0 REQUIRED unit_test_framework iostreams program_options)
+find_package(Boost 1.66.0 REQUIRED COMPONENTS unit_test_framework iostreams program_options)
 find_package(MPI REQUIRED)
 find_package(PETSc)
 find_package(HDF5 REQUIRED)
