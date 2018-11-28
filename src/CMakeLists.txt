@@ -25,6 +25,7 @@ target_include_directories (numerics PUBLIC ${METIS_ROOT}/include)
 target_include_directories (numerics PUBLIC ${HDF5_ROOT}/include)
 target_include_directories (numerics PUBLIC ${LIBHILBERT_INCLUDE_DIRS})
 target_include_directories (numerics PUBLIC ${Boost_INCLUDE_DIRS})
+target_include_directories (numerics PUBLIC ${EIGEN3_INCLUDE_DIR})
 
 target_link_libraries(numerics ${Boost_LIBRARIES})
 target_link_libraries(numerics -L${PARMETIS_ROOT}/lib parmetis)
@@ -32,7 +33,7 @@ target_link_libraries(numerics -L${METIS_ROOT}/lib metis)
 target_link_libraries(numerics -L${HDF5_ROOT}/lib hdf5 hdf5_hl)
 target_link_libraries(numerics -L${LIBHILBERT_LIBRARY_DIRS} ${LIBHILBERT_LIBRARIES})
 if(PETSC_FOUND)
-	target_link_libraries(numerics -L${PETSC_LIB_DIR} ${PETSC_LIBRARIES})
+	target_link_libraries(numerics ${PETSC_LIBRARIES})
 endif()
 
 
