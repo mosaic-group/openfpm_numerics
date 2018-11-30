@@ -151,6 +151,12 @@ public:
 	{
 		std::cerr << __FILE__ << ":" << __LINE__ << " Error Umfpack only support double precision" << "/n";
 	}
+
+	//! stub solve
+	static Vector<double,EIGEN_BASE> try_solve(SparseMatrix<double,int,EIGEN_BASE> & A, const Vector<double,EIGEN_BASE> & b, size_t opt = UMFPACK_NONE)
+	{
+		std::cerr << __FILE__ << ":" << __LINE__ << " Error Umfpack only support double precision" << "/n";
+	}
 };
 
 //! stub when library compiled without eigen
@@ -172,6 +178,12 @@ public:
 
 	//! stub solve
 	void best_solve()
+	{
+		std::cerr << __FILE__ << ":" << __LINE__ << " Error in order to use umfpack you must compile OpenFPM with linear algebra support" << "/n";
+	}
+
+	//! stub solve
+	static Vector<double,EIGEN_BASE> try_solve(SparseMatrix<double,int,EIGEN_BASE> & A, const Vector<double,EIGEN_BASE> & b, size_t opt = UMFPACK_NONE)
 	{
 		std::cerr << __FILE__ << ":" << __LINE__ << " Error in order to use umfpack you must compile OpenFPM with linear algebra support" << "/n";
 	}
