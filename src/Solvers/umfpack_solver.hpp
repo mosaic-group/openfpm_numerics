@@ -141,7 +141,7 @@ class umfpack_solver
 public:
 
 	//! stub solve
-	template<typename impl> static Vector<T> solve(const SparseMatrix<T,impl> & A, const Vector<T> & b)
+	template<typename impl, typename id_type> static Vector<T> solve(const SparseMatrix<T,id_type,impl> & A, const Vector<T,impl> & b)
 	{
 		std::cerr << __FILE__ << ":" << __LINE__ << " Error Umfpack only support double precision" << "/n";
 	}
@@ -153,7 +153,7 @@ public:
 	}
 
 	//! stub solve
-	static Vector<double,EIGEN_BASE> try_solve(SparseMatrix<double,int,EIGEN_BASE> & A, const Vector<double,EIGEN_BASE> & b, size_t opt = UMFPACK_NONE)
+	template<unsigned int impl, typename id_type> static Vector<T,impl> try_solve(SparseMatrix<T,id_type,impl> & A, const Vector<T,impl> & b, size_t opt = UMFPACK_NONE)
 	{
 		std::cerr << __FILE__ << ":" << __LINE__ << " Error Umfpack only support double precision" << "/n";
 	}

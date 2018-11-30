@@ -44,7 +44,7 @@ struct lid_nn_3d_eigen
 	typedef grid_dist_id<3,float,aggregate<float[3],float>,CartDecomposition<3,float>> b_grid;
 
 	//! type of SparseMatrix for the linear solver
-	typedef SparseMatrix<double,int> SparseMatrix_type;
+	typedef SparseMatrix<double,int,EIGEN_BASE> SparseMatrix_type;
 
 	//! type of Vector for the linear solver
 	typedef Vector<double> Vector_type;
