@@ -106,7 +106,7 @@ class Vector<T,PETSC_BASE>
 	mutable Vec v;
 
 	//! Mutable row value vector
-	mutable openfpm::vector<rval<PetscScalar,PETSC_RVAL>,HeapMemory,typename memory_traits_inte<rval<PetscScalar,PETSC_RVAL>>::type > row_val;
+	mutable openfpm::vector<rval<PetscScalar,PETSC_RVAL>,HeapMemory,typename memory_traits_inte<rval<PetscScalar,PETSC_RVAL>>::type, memory_traits_inte > row_val;
 
 	//! Global to local map
 	mutable std::unordered_map<size_t,size_t> map;
@@ -123,11 +123,10 @@ class Vector<T,PETSC_BASE>
 		if (v_created == false)
 		{PETSC_SAFE_CALL(VecSetType(v,VECMPI));}
 
-
 		// set the vector
 
 		if (row_val.size() != 0)
-			PETSC_SAFE_CALL(VecSetValues(v,row_val.size(),&row_val.template get<row_id>(0),&row_val.template get<val_id>(0),INSERT_VALUES))
+		{PETSC_SAFE_CALL(VecSetValues(v,row_val.size(),&row_val.template get<row_id>(0),&row_val.template get<val_id>(0),INSERT_VALUES))}
 
 		PETSC_SAFE_CALL(VecAssemblyBegin(v));
 		PETSC_SAFE_CALL(VecAssemblyEnd(v));
