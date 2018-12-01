@@ -1,5 +1,14 @@
 #! /bin/bash
 
+echo "$1"
+echo "$2"
+echo "$3"
+echo "$4"
+echo "$5"
+echo "$6"
+
+exit 1
+
 echo "RUN numerics test"
 
 branch=$(git ls-remote --heads origin | grep $(git rev-parse HEAD) | cut -d / -f 3)
