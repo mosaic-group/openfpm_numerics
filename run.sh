@@ -8,11 +8,14 @@ ntask_per_node=$5
 nodes=$4
 branch=$6
 
+# Get the branch of pdata
 
 echo "RUN numerics test"
 
+cd ..
 branch=$(git ls-remote --heads origin | grep $(git rev-parse HEAD) | cut -d / -f 3)
 source $HOME/openfpm_vars_$branch
+cd openfpm_numrtics
 
 mpirun -np $3 ./src/numerics
 if [ $? -ne 0 ]; then
