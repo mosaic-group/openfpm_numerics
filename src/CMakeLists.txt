@@ -36,11 +36,14 @@ if(PETSC_FOUND)
 	target_include_directories (numerics PUBLIC ${PETSC_INCLUDES})
 	target_link_libraries(numerics ${PETSC_LIBRARIES})
 endif()
-message("CCCCCCCCCCCCCCCCCCCCCCCCCCCCCC ${SUITESPARSE_LIBRARIES}")
-if(SUITESPARSE_FOUND)
-        target_include_directories (numerics PUBLIC ${SUITESPARSE_INCLUDE_DIRS})
-        target_link_libraries(numerics ${SUITESPARSE_LIBRARIES})
+
+if(SuiteSparse_FOUND)
+	target_include_directories (numerics PUBLIC ${SuiteSparse_INCLUDE_DIRS})
+        target_link_libraries(numerics ${SuiteSparse_LIBRARIES})
+	target_include_directories (numerics PUBLIC ${BLAS_INCLUDE_DIRS})
+	target_link_libraries(numerics ${BLAS_LIBRARIES})
 endif()
+
 target_link_libraries(numerics -L${METIS_ROOT}/lib metis)
 
 # Request that particles be built with -std=c++11
