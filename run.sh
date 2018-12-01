@@ -1,13 +1,13 @@
 #! /bin/bash
 
-echo "$1"
-echo "$2"
-echo "$3"
-echo "$4"
-echo "$5"
-echo "$6"
 
-exit 1
+workspace=$1
+hostname=$2
+nproc=$3
+ntask_per_node=$5
+nodes=$4
+branch=$6
+
 
 echo "RUN numerics test"
 
