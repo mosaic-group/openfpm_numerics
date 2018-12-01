@@ -15,9 +15,9 @@ echo "RUN numerics test"
 cd ..
 branch=$(git ls-remote --heads origin | grep $(git rev-parse HEAD) | cut -d / -f 3)
 source $HOME/openfpm_vars_$branch
-cd openfpm_numrtics
+cd openfpm_numerics
 
-mpirun -np $3 ./src/numerics
+mpirun -np $3 ../build/openfpm_numerics/src/numerics
 if [ $? -ne 0 ]; then
    curl -X POST --data "payload={\"icon_emoji\": \":jenkins:\", \"username\": \"jenkins\"  , \"attachments\":[{ \"title\":\"Error:\", \"color\": \"#FF0000\", \"text\":\"$2 failed to complete the openfpm_numerics test \" }] }" https://hooks.slack.com/services/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
    exit 1 ;
