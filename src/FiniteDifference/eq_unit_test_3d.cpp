@@ -254,8 +254,10 @@ template<typename solver_type,typename lid_nn_3d> void lid_driven_cavity_3d()
 
 BOOST_AUTO_TEST_CASE(lid_driven_cavity)
 {
-#ifdef HAVE_PETSC
+#ifdef HAVE_EIGEN
 	lid_driven_cavity_3d<umfpack_solver<double>,lid_nn_3d_eigen>();
+#endif
+#ifdef HAVE_PETSC
 	lid_driven_cavity_3d<petsc_solver<double>,lid_nn_3d_petsc>();
 #endif
 }
