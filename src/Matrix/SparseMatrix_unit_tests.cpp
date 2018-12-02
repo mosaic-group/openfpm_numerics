@@ -26,6 +26,8 @@ BOOST_AUTO_TEST_SUITE( sparse_matrix_test_suite )
 
 BOOST_AUTO_TEST_CASE(sparse_matrix_eigen_parallel)
 {
+#ifdef HAVE_EIGEN
+
 	Vcluster<> & vcl = create_vcluster();
 
 	if (vcl.getProcessingUnits() != 3)
@@ -169,6 +171,8 @@ BOOST_AUTO_TEST_CASE(sparse_matrix_eigen_parallel)
 		BOOST_REQUIRE_CLOSE(x(7), -8, 0.001);
 		BOOST_REQUIRE_CLOSE(x(8), -4.5, 0.001);
 	}
+
+#endif
 }
 
 #ifdef HAVE_PETSC
