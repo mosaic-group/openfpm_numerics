@@ -17,6 +17,8 @@
 
 BOOST_AUTO_TEST_SUITE( vector_test_suite )
 
+#ifdef HAVE_EIGEN
+
 BOOST_AUTO_TEST_CASE(vector_eigen_parallel)
 {
 	Vcluster<> & vcl = create_vcluster();
@@ -133,6 +135,8 @@ BOOST_AUTO_TEST_CASE(vector_eigen_parallel)
 		BOOST_REQUIRE_EQUAL(v3(8),8);
 	}
 }
+
+#endif
 
 #ifdef HAVE_PETSC
 
