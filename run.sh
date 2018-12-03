@@ -16,6 +16,7 @@ branch=$(git ls-remote --heads origin | grep $(git rev-parse HEAD) | cut -d / -f
 source $HOME/openfpm_vars_$branch
 cd openfpm_numerics
 
+git rev-parse HEAD
 ldd ../build/openfpm_numerics/src/numerics
 
 mpirun -np $3 ../build/openfpm_numerics/src/numerics
