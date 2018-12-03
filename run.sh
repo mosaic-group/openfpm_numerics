@@ -6,7 +6,6 @@ hostname=$2
 nproc=$3
 ntask_per_node=$5
 nodes=$4
-branch=$6
 
 # Get the branch of pdata
 
@@ -16,6 +15,8 @@ cd ..
 branch=$(git ls-remote --heads origin | grep $(git rev-parse HEAD) | cut -d / -f 3)
 source $HOME/openfpm_vars_$branch
 cd openfpm_numerics
+
+ldd ../build/openfpm_numerics/src/numerics
 
 mpirun -np $3 ../build/openfpm_numerics/src/numerics
 if [ $? -ne 0 ]; then
