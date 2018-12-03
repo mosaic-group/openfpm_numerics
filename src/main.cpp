@@ -1,6 +1,6 @@
 #include "config.h"
 #undef VERSION
-#define BOOST_TEST_MODULE "C++ test module for OpenFPM_numerics project"
+#define BOOST_TEST_DYN_LINK
 #include <boost/test/unit_test.hpp>
 
 #include "unit_test_init_cleanup.hpp"
@@ -10,7 +10,6 @@
 #include "util/util_num_unit_tests.hpp"
 #include "PSE/Kernels_unit_tests.hpp"
 #include "Draw/DrawParticles_unit_tests.hpp"
-
 
 // initialization function:
 bool init_unit_test()
