@@ -719,7 +719,7 @@ public:
 		typename vector::stype dx[vector::dims];
 
 		for (size_t i = 0 ; i < vector::dims ; i++)
-			dx[i] = 1.0/gd.spacing(i);
+		{dx[i] = 1.0/gd.spacing(i);}
 
 		// point position
 		typename vector::stype xp[vector::dims];
@@ -731,7 +731,7 @@ public:
 		size_t sz[vector::dims];
 
 		for (size_t i = 0 ; i < vector::dims ; i++)
-			sz[i] = kernel::np;
+		{sz[i] = kernel::np;}
 
 		// Precalculate the offset for each sub-sub-domain
 		openfpm::vector<agg_arr<openfpm::math::pow(kernel::np,vector::dims)>> offsets;
