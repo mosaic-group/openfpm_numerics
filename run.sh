@@ -16,6 +16,7 @@ branch=$(git ls-remote --heads origin | grep $(git rev-parse HEAD) | cut -d / -f
 source $HOME/openfpm_vars_$branch
 cd openfpm_numerics
 
+echo "DEBUG:  mpirun --oversubscribe -np $3 ../build/openfpm_numerics/src/numerics"
 
 mpirun --oversubscribe -np $3 ../build/openfpm_numerics/src/numerics
 if [ $? -ne 0 ]; then
