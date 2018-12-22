@@ -122,13 +122,6 @@ if test x"$with_hdf5" = x"no"; then
     exit 207
 fi
 
-
-##########
-
-## Check for PETSC
-
-AX_LIB_PETSC()
-
 #########
 
 ###### Check for test coverage
@@ -313,6 +306,12 @@ AX_LAPACK([],[])
 ###### Checking for SUITESPARSE
 
 AX_SUITESPARSE([],[])
+
+##########
+
+## Check for PETSC
+
+AX_LIB_PETSC()
 
 ###### Checking for EIGEN
 

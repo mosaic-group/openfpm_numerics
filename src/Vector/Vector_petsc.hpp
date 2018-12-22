@@ -79,6 +79,16 @@ public:
 		rw() = i;
 		val() = val;
 	}
+
+	/*! \brief Indicate that the structure has no pointer
+	 *
+	 * \return true
+	 *
+	 */
+	static inline bool noPointers()
+	{
+		return true;
+	}
 };
 
 constexpr unsigned int row_id = 0;

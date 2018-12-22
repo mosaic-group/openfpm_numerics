@@ -940,7 +940,7 @@ BOOST_AUTO_TEST_CASE( vector_dist_operators_test )
 
 	// normalization function
 
-	vA = vVB * vVC + norm(vVC + vVB) + distance(vVC,vVB);
+	vA = vVB * vVC + norm(vVC + vVB) + openfpm::distance(vVC,vVB);
 	check_values_scal_norm_dist(vd);
 
 	Point<3,float> p0({2.0,2.0,2.0});

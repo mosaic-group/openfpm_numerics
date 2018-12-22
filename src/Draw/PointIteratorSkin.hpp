@@ -136,8 +136,15 @@ public:
 	 * \param sp grid spacing
 	 *
 	 */
-	PointIteratorSkin( Decomposition & dec, size_t (& sz)[dim], const Box<dim,T> & domain, const Box<dim,T> & sub_A, const Box<dim,T> & sub_B, size_t (& bc)[dim])
-	:grid_dist_id_iterator_dec_skin<Decomposition>(dec, sz, getAB(sz,domain,sub_A,sub_B,sp,RETURN_A), getAB(sz,domain,sub_A,sub_B,sp,RETURN_B), bc),domain(domain)
+	PointIteratorSkin( Decomposition & dec,
+			           size_t (& sz)[dim],
+					   const Box<dim,T> & domain,
+					   const Box<dim,T> & sub_A,
+					   const Box<dim,T> & sub_B,
+					   size_t (& bc)[dim])
+	:grid_dist_id_iterator_dec_skin<Decomposition>(dec, sz, getAB(sz,domain,sub_A,sub_B,sp,RETURN_A),
+	 getAB(sz,domain,sub_A,sub_B,sp,RETURN_B), bc),
+	 domain(domain)
 	{
 		sub_domainA.add(sub_A);
 		calculateAp();

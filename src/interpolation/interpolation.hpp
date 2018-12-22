@@ -11,6 +11,7 @@
 #include "NN/Mem_type/MemFast.hpp"
 #include "NN/CellList/CellList.hpp"
 #include "Grid/grid_dist_key.hpp"
+#include "Vector/vector_dist_key.hpp"
 
 #define INTERPOLATION_ERROR_OBJECT std::runtime_error("Runtime interpolation error");
 
@@ -407,8 +408,8 @@ struct inte_calc_impl
 	 *        kernel stencil for each local grid (sub-domain)
 	 *
 	 */
-	template<unsigned int prp_g, unsigned int prp_v, unsigned int m2p_or_p2m, unsigned int np_a_int, typename iterator, typename grid>
-																	 static inline void inte_calc(iterator & it,
+	template<unsigned int prp_g, unsigned int prp_v, unsigned int m2p_or_p2m, unsigned int np_a_int, typename grid>
+																	 static inline void inte_calc(const vect_dist_key_dx & key_p,
 																	 vector & vd,
 																	 const Box<vector::dims,typename vector::stype> & domain,
 																	 int (& ip)[vector::dims][kernel::np],
@@ -422,8 +423,6 @@ struct inte_calc_impl
 																	 const CellList<vector::dims,typename vector::stype,Mem_fast<>,shift<vector::dims,typename vector::stype>> & geo_cell,
 																	 openfpm::vector<agg_arr<openfpm::math::pow(kernel::np,vector::dims)>> & offsets)
 	{
-		auto key_p = it.get();
-
 		Point<vector::dims,typename vector::stype> p = vd.getPos(key_p);
 
 		// On which sub-domain we interpolate the particle
@@ -434,24 +433,24 @@ struct inte_calc_impl
 		// calculate the position of the particle in the grid
 		// coordinated
 		for (size_t i = 0 ; i < vector::dims ; i++)
-			x0[i] = (p.get(i)-domain.getLow(i))*dx[i];
+		{x0[i] = (p.get(i)-domain.getLow(i))*dx[i];}
 
 		// convert into integer
 		for (size_t i = 0 ; i < vector::dims ; i++)
-			ip[i][0] = (int)x0[i];
+		{ip[i][0] = (int)x0[i];}
 
 		// convert the global grid position into local grid position
 		grid_key_dx<vector::dims> base;
 
 		for (size_t i = 0 ; i < vector::dims ; i++)
-			base.set_d(i,ip[i][0] - gd.getLocalGridsInfo().get(sub).origin.get(i) - (long int)kernel::np/2 + 1);
+		{base.set_d(i,ip[i][0] - gd.getLocalGridsInfo().get(sub).origin.get(i) - (long int)kernel::np/2 + 1);}
 
 		// convenient grid of points
 
 		for (size_t j = 0 ; j < kernel::np-1 ; j++)
 		{
 			for (size_t i = 0 ; i < vector::dims ; i++)
-				ip[i][j+1] = (int)ip[i][j]+1;
+			{ip[i][j+1] = (int)ip[i][j]+1;}
 		}
 
 		for (size_t i = 0 ; i < vector::dims ; i++)
@@ -460,13 +459,13 @@ struct inte_calc_impl
 		for (long int j = 0 ; j < kernel::np ; j++)
 		{
 			for (size_t i = 0 ; i < vector::dims ; i++)
-				x[i][j] = - xp[i] + typename vector::stype((long int)j - (long int)kernel::np/2 + 1);
+			{x[i][j] = - xp[i] + typename vector::stype((long int)j - (long int)kernel::np/2 + 1);}
 		}
 
 		for (size_t j = 0 ; j < kernel::np ; j++)
 		{
 			for (size_t i = 0 ; i < vector::dims ; i++)
-				a[i][j] = kernel::value(x[i][j],j);
+			{a[i][j] = kernel::value(x[i][j],j);}
 		}
 
 		calculate_aint<vector::dims,vector,kernel::np>::value(sz,a_int,a);
@@ -540,6 +539,18 @@ class interpolate
 
 	//! Type of the calculations
 	typedef typename vector::stype arr_type;
+
+	//! the offset for each sub-sub-domain
+	openfpm::vector<agg_arr<openfpm::math::pow(kernel::np,vector::dims)>> offsets;
+
+	//! kernel size
+	size_t sz[vector::dims];
+
+	//! grid spacing
+	typename vector::stype dx[vector::dims];
+
+	//! Simulation domain
+	Box<vector::dims,typename vector::stype> domain;
 
 	/*! \brief It calculate the interpolation stencil offsets
 	 *
@@ -624,6 +635,18 @@ public:
 				++g_sub;
 			}
 		}
+
+		for (size_t i = 0 ; i < vector::dims ; i++)
+		{sz[i] = kernel::np;}
+
+		calculate_the_offsets(offsets,sz);
+
+		// calculate spacing
+		for (size_t i = 0 ; i < vector::dims ; i++)
+		{dx[i] = 1.0/gd.spacing(i);}
+
+		// simulation domain
+		domain = vd.getDecomposition().getDomain();
 	};
 
 	/*! \brief Interpolate particles to mesh
@@ -651,24 +674,6 @@ public:
 
 #endif
 
-		Box<vector::dims,typename vector::stype> domain = vd.getDecomposition().getDomain();
-
-		// grid spacing
-		typename vector::stype dx[vector::dims];
-
-		for (size_t i = 0 ; i < vector::dims ; i++)
-			dx[i] = 1.0/gd.spacing(i);
-
-		size_t sz[vector::dims];
-
-		for (size_t i = 0 ; i < vector::dims ; i++)
-			sz[i] = kernel::np;
-
-		// Precalculate the offset for each sub-sub-domain
-		openfpm::vector<agg_arr<openfpm::math::pow(kernel::np,vector::dims)>> offsets;
-
-		calculate_the_offsets(offsets,sz);
-
 		// point position
 		typename vector::stype xp[vector::dims];
 
@@ -682,7 +687,9 @@ public:
 
 		while (it.isNext() == true)
 		{
-			inte_calc_impl<vector,kernel>::template inte_calc<prp_g,prp_v,inte_p2m,openfpm::math::pow(kernel::np,vector::dims)>(it,vd,domain,ip,gd,dx,xp,a_int,a,x,sz,geo_cell,offsets);
+			auto key_p = it.get();
+
+			inte_calc_impl<vector,kernel>::template inte_calc<prp_g,prp_v,inte_p2m,openfpm::math::pow(kernel::np,vector::dims)>(key_p,vd,domain,ip,gd,dx,xp,a_int,a,x,sz,geo_cell,offsets);
 
 			++it;
 		}
@@ -713,30 +720,12 @@ public:
 
 #endif
 
-		Box<vector::dims,typename vector::stype> domain = vd.getDecomposition().getDomain();
-
-		// grid spacing
-		typename vector::stype dx[vector::dims];
-
-		for (size_t i = 0 ; i < vector::dims ; i++)
-			dx[i] = 1.0/gd.spacing(i);
-
 		// point position
 		typename vector::stype xp[vector::dims];
 
 		int ip[vector::dims][kernel::np];
 		typename vector::stype x[vector::dims][kernel::np];
 		typename vector::stype a[vector::dims][kernel::np];
-
-		size_t sz[vector::dims];
-
-		for (size_t i = 0 ; i < vector::dims ; i++)
-			sz[i] = kernel::np;
-
-		// Precalculate the offset for each sub-sub-domain
-		openfpm::vector<agg_arr<openfpm::math::pow(kernel::np,vector::dims)>> offsets;
-
-		calculate_the_offsets(offsets,sz);
 
 		//		grid_cpu<vector::dims,aggregate<typename vector::stype>> a_int(sz);
 		//		a_int.setMemory();
@@ -746,10 +735,91 @@ public:
 
 		while (it.isNext() == true)
 		{
-			inte_calc_impl<vector,kernel>::template inte_calc<prp_g,prp_v,inte_m2p,openfpm::math::pow(kernel::np,vector::dims)>(it,vd,domain,ip,gd,dx,xp,a_int,a,x,sz,geo_cell,offsets);
+			auto key_p = it.get();
+
+			inte_calc_impl<vector,kernel>::template inte_calc<prp_g,prp_v,inte_m2p,openfpm::math::pow(kernel::np,vector::dims)>(key_p,vd,domain,ip,gd,dx,xp,a_int,a,x,sz,geo_cell,offsets);
 
 			++it;
 		}
+	}
+
+
+	/*! \brief Interpolate particles to mesh
+	 *
+	 * Most of the time the particle set and the mesh are the same
+	 * as the one used in the constructor. They also can be different
+	 * as soon as they have the same decomposition
+	 *
+	 * \param gd grid or mesh
+	 * \param vd particle set
+	 * \param p particle
+	 *
+	 */
+	template<unsigned int prp_v, unsigned int prp_g> inline void p2m(vector & vd, grid & gd,const vect_dist_key_dx & p)
+	{
+#ifdef SE_CLASS1
+
+		if (!vd.getDecomposition().is_equal_ng(gd.getDecomposition()) )
+		{
+			std::cerr << __FILE__ << ":" << __LINE__ << " Error: the distribution of the vector of particles" <<
+					" and the grid is different. In order to interpolate the two data structure must have the" <<
+					" same decomposition" << std::endl;
+
+			ACTION_ON_ERROR(INTERPOLATION_ERROR_OBJECT)
+		}
+
+#endif
+
+		// point position
+		typename vector::stype xp[vector::dims];
+
+		int ip[vector::dims][kernel::np];
+		typename vector::stype x[vector::dims][kernel::np];
+		typename vector::stype a[vector::dims][kernel::np];
+
+		typename vector::stype a_int[openfpm::math::pow(kernel::np,vector::dims)];
+
+		inte_calc_impl<vector,kernel>::template inte_calc<prp_g,prp_v,inte_p2m,openfpm::math::pow(kernel::np,vector::dims)>(p,vd,domain,ip,gd,dx,xp,a_int,a,x,sz,geo_cell,offsets);
+	}
+
+	/*! \brief Interpolate mesh to particle
+	 *
+	 * Most of the time the particle set and the mesh are the same
+	 * as the one used in the constructor. They also can be different
+	 * as soon as they have the same decomposition
+	 *
+	 * \param gd grid or mesh
+	 * \param vd particle set
+	 * \param p particle
+	 *
+	 */
+	template<unsigned int prp_g, unsigned int prp_v> inline void m2p(grid & gd, vector & vd, const vect_dist_key_dx & p)
+	{
+#ifdef SE_CLASS1
+
+		if (!vd.getDecomposition().is_equal_ng(gd.getDecomposition()) )
+		{
+			std::cerr << __FILE__ << ":" << __LINE__ << " Error: the distribution of the vector of particles" <<
+					" and the grid is different. In order to interpolate the two data structure must have the" <<
+					" same decomposition" << std::endl;
+
+			ACTION_ON_ERROR(INTERPOLATION_ERROR_OBJECT)
+		}
+
+#endif
+
+		// point position
+		typename vector::stype xp[vector::dims];
+
+		int ip[vector::dims][kernel::np];
+		typename vector::stype x[vector::dims][kernel::np];
+		typename vector::stype a[vector::dims][kernel::np];
+
+		//		grid_cpu<vector::dims,aggregate<typename vector::stype>> a_int(sz);
+		//		a_int.setMemory();
+		typename vector::stype a_int[openfpm::math::pow(kernel::np,vector::dims)];
+
+		inte_calc_impl<vector,kernel>::template inte_calc<prp_g,prp_v,inte_m2p,openfpm::math::pow(kernel::np,vector::dims)>(p,vd,domain,ip,gd,dx,xp,a_int,a,x,sz,geo_cell,offsets);
 	}
 
 };

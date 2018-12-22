@@ -204,7 +204,6 @@ fun_name(double d, const vector_dist_expression_op<exp1,exp2,op1> & va)\
 
 CREATE_VDIST_ARG2_FUNC(pmul,pmul,VECT_PMUL)
 
-
 ////////// Special function reduce /////////////////////////
 
 
@@ -289,6 +288,18 @@ rsum(const vector_dist_expression<prp1,v1> & va, const vector_type & vd)
 	vector_dist_expression_op<vector_dist_expression<prp1,v1>,vector_type,VECT_SUM_REDUCE> exp_sum(va,vd);
 
 	return exp_sum;
+}
+
+namespace openfpm
+{
+	/*! \brief General distance formula
+	 *
+	 *
+	 */
+	template <typename T, typename P> auto distance(T exp1, P exp2) -> decltype(norm(exp1 - exp2))
+	{
+		return norm(exp1 - exp2);
+	}
 }
 
 
