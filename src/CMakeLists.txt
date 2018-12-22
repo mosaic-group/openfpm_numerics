@@ -61,9 +61,11 @@ install(FILES Vector/Vector_eigen.hpp
 	      Vector/Vector_petsc.hpp 
 	      Vector/Vector_util.hpp 
 	      Vector/Vector.hpp
-	      DESTINATION openfpm_numerics/Vector )
+	      DESTINATION openfpm_numerics/include/Vector )
 
-install(FILES Solvers/umfpack_solver.hpp Solvers/petsc_solver.hpp
+install(FILES Solvers/umfpack_solver.hpp 
+	      Solvers/petsc_solver.hpp
+	      Solvers/petsc_solver_AMG_report.hpp
 	      DESTINATION openfpm_numerics/include/Solvers )
 
 install(FILES util/petsc_util.hpp 

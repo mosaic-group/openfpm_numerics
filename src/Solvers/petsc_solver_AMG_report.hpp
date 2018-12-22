@@ -98,7 +98,7 @@ class petsc_AMG_report
 		double time1 = tm_solve.getwct();
 		double time2 = tm_solve2.getwct();
 
-		Vcluster & v_cl = create_vcluster();
+		Vcluster<> & v_cl = create_vcluster();
 		v_cl.max(time1);
 		v_cl.max(time2);
 		v_cl.execute();
@@ -123,7 +123,7 @@ class petsc_AMG_report
 	 */
 	void test_coarsener(SparseMatrix<double,int,PETSC_BASE> & A, const Vector<double,PETSC_BASE> & b)
 	{
-		Vcluster & v_cl = create_vcluster();
+		Vcluster<> & v_cl = create_vcluster();
 
 		petsc_solver<double> pts;
 
@@ -351,7 +351,7 @@ class petsc_AMG_report
 			             const Vector<double,PETSC_BASE> & b,
 						 openfpm::vector<std::string> & coarsener_to_test)
 	{
-		Vcluster & v_cl = create_vcluster();
+		Vcluster<> & v_cl = create_vcluster();
 
 		petsc_solver<double> pts;
 
@@ -406,7 +406,7 @@ class petsc_AMG_report
 						 openfpm::vector<size_t> & ids_ts,
 						 openfpm::vector<std::string> & coarsener_to_test)
 	{
-		Vcluster & v_cl = create_vcluster();
+		Vcluster<> & v_cl = create_vcluster();
 
 		petsc_solver<double> pts;
 
