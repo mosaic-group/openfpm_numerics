@@ -107,6 +107,8 @@ install(FILES interpolation/interpolation.hpp
       	      interpolation/z_spline.hpp
       	      DESTINATION openfpm_numerics/include/interpolation )
 
+install(FILES DMatrix/EMatrix.hpp
+	DESTINATION openfpm_numerics/include/DMatrix )
 
 #if(BUILD_TESTING)
 
