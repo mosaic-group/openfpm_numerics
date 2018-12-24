@@ -26,7 +26,7 @@ BOOST_AUTO_TEST_SUITE( sparse_matrix_test_suite )
 
 BOOST_AUTO_TEST_CASE(sparse_matrix_eigen_parallel)
 {
-#ifdef HAVE_EIGEN
+#if defined(HAVE_EIGEN) && defined(HAVE_SUITESPARSE)
 
 	Vcluster<> & vcl = create_vcluster();
 

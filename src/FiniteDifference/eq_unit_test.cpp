@@ -291,7 +291,7 @@ template<typename solver_type,typename lid_nn> void lid_driven_cavity_2d()
 
 BOOST_AUTO_TEST_CASE(lid_driven_cavity)
 {
-#ifdef HAVE_EIGEN
+#if defined(HAVE_EIGEN) && defined(HAVE_SUITESPARSE)
 	lid_driven_cavity_2d<umfpack_solver<double>,lid_nn>();
 #endif
 }
