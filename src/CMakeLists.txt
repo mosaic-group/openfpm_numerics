@@ -51,6 +51,9 @@ target_link_libraries(numerics -L${METIS_ROOT}/lib metis)
 # will also build with -std=c++11
 target_compile_features(numerics PUBLIC cxx_std_11)
 target_link_libraries(numerics ${MPI_C_LIBRARIES})
+if (UNIX)
+    target_link_libraries(numerics rt)
+endif (UNIX)
 
 install(FILES Matrix/SparseMatrix.hpp 
 	      Matrix/SparseMatrix_Eigen.hpp 
