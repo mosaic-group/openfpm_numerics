@@ -246,7 +246,7 @@ template<typename solver_type,typename lid_nn_3d> void lid_driven_cavity_3d()
     std::cout << "File1: " << file1 << std::endl;
     std::cout << "File2: " << file2 << std::endl;
 
-#ifndef SE_CLASS3
+#if !(defined(SE_CLASS3) || defined(COVERTY_SCAN))
 
 	// Check that match
 	bool test = compare(file1,file2);
