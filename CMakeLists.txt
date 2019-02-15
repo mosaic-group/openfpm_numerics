@@ -169,6 +169,10 @@ if(TINYOBJLOADER_FOUND)
 	set(DEFINE_HAVE_TINYOBJLOADER "#define HAVE_TINYOBJLOADER 1")
 endif()
 
+if (TEST_COVERAGE)
+        set(DEFINE_TEST_COVERAGE_MODE "#define TEST_COVERAGE_MODE")
+endif()
+
 file(WRITE error_code "0")
 file(WRITE cuda_lib "${CUDA_cudart_static_LIBRARY} ${CUDA_cudadevrt_LIBRARY}")
 file(WRITE cuda_include "-I${CUDA_INCLUDE_DIRS}")
