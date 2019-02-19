@@ -65,7 +65,7 @@ endif()
 # will also build with -std=c++11
 target_compile_features(numerics PUBLIC cxx_std_11)
 target_link_libraries(numerics ${MPI_C_LIBRARIES})
-if (UNIX)
+if (NOT APPLE)
     target_link_libraries(numerics rt)
 endif (UNIX)
 
