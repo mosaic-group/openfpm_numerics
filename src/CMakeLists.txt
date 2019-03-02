@@ -67,7 +67,7 @@ target_compile_features(numerics PUBLIC cxx_std_11)
 target_link_libraries(numerics ${MPI_C_LIBRARIES})
 if (NOT APPLE)
     target_link_libraries(numerics rt)
-endif (UNIX)
+endif ()
 
 install(FILES Matrix/SparseMatrix.hpp 
 	      Matrix/SparseMatrix_Eigen.hpp 

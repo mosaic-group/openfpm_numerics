@@ -779,6 +779,7 @@ public:
 
 		typename vector::stype a_int[openfpm::math::pow(kernel::np,vector::dims)];
 
+		/* coverty[uninit_use_in_call] */
 		inte_calc_impl<vector,kernel>::template inte_calc<prp_g,prp_v,inte_p2m,openfpm::math::pow(kernel::np,vector::dims)>(p,vd,domain,ip,gd,dx,xp,a_int,a,x,sz,geo_cell,offsets);
 	}
 
