@@ -40,7 +40,7 @@ endif()
 
 target_link_libraries(numerics ${Boost_LIBRARIES})
 target_link_libraries(numerics -L${PARMETIS_ROOT}/lib parmetis)
-target_link_libraries(numerics -L${HDF5_ROOT}/lib hdf5 hdf5_hl)
+target_link_libraries(numerics ${HDF5_LIBRARIES})
 target_link_libraries(numerics -L${LIBHILBERT_LIBRARY_DIRS} ${LIBHILBERT_LIBRARIES})
 if(PETSC_FOUND)
 	target_include_directories (numerics PUBLIC ${PETSC_INCLUDES})
