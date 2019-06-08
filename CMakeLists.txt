@@ -64,7 +64,7 @@ endif()
 if(CUDA_FOUND)
 	set(OPENFPM_INIT_FILE "initialize/initialize_wrapper_cuda.cu")
 else()
-	set(OPENFPM_INIT_FILE "initialize/initialize_wrapper_cuda.cpp")
+	set(OPENFPM_INIT_FILE "initialize/initialize_wrapper_cpu.cpp")
 endif()
 
 ###### CONFIG.h FILE ######
