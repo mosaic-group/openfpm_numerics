@@ -8,6 +8,11 @@
 #ifndef OPENFPM_NUMERICS_SRC_OPERATORS_VECTOR_VECTOR_DIST_OPERATORS_FUNCTIONS_HPP_
 #define OPENFPM_NUMERICS_SRC_OPERATORS_VECTOR_VECTOR_DIST_OPERATORS_FUNCTIONS_HPP_
 
+#ifdef __NVCC__
+#include "util/cuda/moderngpu/kernel_reduce.hxx"
+#include "cuda/vector_dist_operators_cuda.cuh"
+#endif
+
 /*! A macro to define single value function specialization that apply the function component-wise
  *
  * \param fun function name
@@ -24,19 +29,34 @@ class vector_dist_expression_op<exp1,void,OP_ID>\
 \
 public:\
 \
+	typedef typename exp1::is_ker is_ker;\
+\
 	vector_dist_expression_op(const exp1 & o1)\
 	:o1(o1)\
 	{}\
 \
+	inline const exp1 & getExpr() const\
+	{\
+		return o1;\
+	}\
+	\
 	inline void init() const\
 	{\
 		o1.init();\
 	}\
 \
-	template<typename r_type=typename std::remove_reference<decltype(fun_base(o1.value(vect_dist_key_dx(0))))>::type > inline r_type value(const vect_dist_key_dx & key) const\
+	template<typename r_type=typename std::remove_reference<decltype(fun_base(o1.value(vect_dist_key_dx(0))))>::type > \
+	inline r_type value(const vect_dist_key_dx & key) const\
 	{\
 		return fun_base(o1.value(key));\
 	}\
+\
+	template<typename r_type=typename std::remove_reference<decltype(fun_base(o1.value(vect_dist_key_dx(0))))>::type > \
+	__device__ __host__ inline r_type value(const unsigned int & key) const\
+	{\
+		return fun_base(o1.value(key));\
+	}\
+\
 };\
 \
 \
@@ -112,6 +132,8 @@ class vector_dist_expression_op<exp1,exp2,OP_ID>\
 	const exp2 o2;\
 \
 public:\
+\
+	typedef std::integral_constant<bool,exp1::is_ker::value || exp1::is_ker::value> is_ker;\
 \
 	vector_dist_expression_op(const exp1 & o1, const exp2 & o2)\
 	:o1(o1),o2(o2)\
@@ -206,6 +228,75 @@ CREATE_VDIST_ARG2_FUNC(pmul,pmul,VECT_PMUL)
 
 ////////// Special function reduce /////////////////////////
 
+template<typename val_type, bool is_scalar = is_Point<val_type>::type::value>
+struct point_scalar_process
+{
+	typedef aggregate<val_type> type;
+
+	template<typename vector_type, typename expression>
+	static void process(val_type & val, vector_type & ve, expression & o1)
+	{
+#ifdef __NVCC__
+
+		auto ite = ve.getGPUIterator(256);
+
+		compute_expr_ker_v<0><<<ite.wthr,ite.thr>>>(ve.toKernel(),o1);
+
+		exp_tmp2.resize(sizeof(val_type));
+
+		auto & v_cl = create_vcluster<CudaMemory>();
+
+		mgpu::reduce((val_type *)ve.template getDeviceBuffer<0>(), ve.size(), (val_type *)exp_tmp2.getDevicePointer(), mgpu::plus_t<val_type>(), v_cl.getmgpuContext());
+
+		exp_tmp2.deviceToHost();
+
+		val = *(val_type *)exp_tmp2.getPointer();
+#else
+		std::cout << __FILE__ << ":" << __LINE__ << " error: to make expression work on GPU the file must be compiled on GPU" << std::endl;
+#endif
+	}
+};
+
+template<typename val_type>
+struct point_scalar_process<val_type,true>
+{
+	typedef val_type type;
+
+	template<typename vector_type, typename expression>
+	static void process(val_type & val, vector_type & ve, expression & o1)
+	{
+#ifdef __NVCC__
+
+		auto ite = ve.getGPUIterator(256);
+
+		compute_expr_ker_vv<0,val_type::dims><<<ite.wthr,ite.thr>>>(ve.toKernel(),o1);
+
+		exp_tmp2.resize(sizeof(val_type));
+
+		size_t offset = 0;
+
+		auto & v_cl = create_vcluster<CudaMemory>();
+
+		for (size_t i = 0 ; i < val_type::dims ; i++)
+		{
+			mgpu::reduce(&((typename val_type::coord_type *)ve.template getDeviceBuffer<0>())[offset],
+						 ve.size(),
+						 (typename val_type::coord_type *)exp_tmp2.getDevicePointer(),
+						 mgpu::plus_t<typename val_type::coord_type>(),
+						 v_cl.getmgpuContext());
+
+			exp_tmp2.deviceToHost();
+
+			val.get(i) = *(typename val_type::coord_type *)exp_tmp2.getPointer();
+
+			offset += ve.capacity();
+		}
+
+#else
+		std::cout << __FILE__ << ":" << __LINE__ << " error: to make expression work on GPU the file must be compiled on GPU" << std::endl;
+#endif
+	}
+};
 
 /*! \brief expression that encapsulate a vector reduction expression
  *
@@ -213,8 +304,8 @@ CREATE_VDIST_ARG2_FUNC(pmul,pmul,VECT_PMUL)
  * \tparam vector_type type of vector on which the expression is acting
  *
  */
-template <typename exp1, typename vector_type>
-class vector_dist_expression_op<exp1,vector_type,VECT_SUM_REDUCE>
+template <typename exp1>
+class vector_dist_expression_op<exp1,void,VECT_SUM_REDUCE>
 {
 
 	//! expression on which apply the reduction
@@ -226,33 +317,61 @@ class vector_dist_expression_op<exp1,vector_type,VECT_SUM_REDUCE>
 	//! return type of the calculated value (without reference)
 	mutable typename std::remove_reference<rtype>::type val;
 
-	//! vector on which we apply the reduction expression
-	const vector_type & vd;
-
 public:
 
+	//! Indicate if it is an in kernel expression
+	typedef typename exp1::is_ker is_ker;
+
 	//! constructor from an epxression exp1 and a vector vd
-	vector_dist_expression_op(const exp1 & o1, const vector_type & vd)
-	:o1(o1),val(0),vd(vd)
+	vector_dist_expression_op(const exp1 & o1)
+	:o1(o1),val(0)
 	{}
 
 	//! sum reduction require initialization where we calculate the reduction
 	// this produce a cache for the calculated value
 	inline void init() const
 	{
-		o1.init();
-
-		val = 0.0;
-
-		auto it = vd.getDomainIterator();
-
-		while (it.isNext())
+		if (exp1::is_ker::value == true)
 		{
-			auto key = it.get();
 
-			val += o1.value(key);
+#ifdef __NVCC__
+			typedef decltype(val) val_type;
 
-			++it;
+			// we have to do it on GPU
+
+			openfpm::vector<typename point_scalar_process<val_type>::type,CudaMemory,typename memory_traits_inte<typename point_scalar_process<val_type>::type>::type,memory_traits_inte,openfpm::grow_policy_identity> ve;
+
+			auto & orig_v = o1.getVector();
+
+			if (exp_tmp.ref() == 0)
+			{exp_tmp.incRef();}
+
+			ve.setMemory(exp_tmp);
+			ve.resize(orig_v.size_local());
+
+			point_scalar_process<val_type>::process(val,ve,o1);
+#else
+			std::cout << __FILE__ << ":" << __LINE__ << " error, to use expression on GPU you must compile with nvcc compiler " << std::endl;
+#endif
+		}
+		else
+		{
+			const auto & orig_v = o1.getVector();
+
+			o1.init();
+
+			val = 0.0;
+
+			auto it = orig_v.getDomainIterator();
+
+			while (it.isNext())
+			{
+				auto key = it.get();
+
+				val += o1.value(key);
+
+				++it;
+			}
 		}
 	}
 
@@ -271,21 +390,21 @@ public:
 };
 
 //! Reduce function (it generate an expression)
-template<typename exp1, typename exp2_, unsigned int op1, typename vector_type>
-inline vector_dist_expression_op<vector_dist_expression_op<exp1,exp2_,op1>,vector_type,VECT_SUM_REDUCE>
-rsum(const vector_dist_expression_op<exp1,exp2_,op1> & va, const vector_type & vd)
+template<typename exp1, typename exp2_, unsigned int op1>
+inline vector_dist_expression_op<vector_dist_expression_op<exp1,exp2_,op1>,void,VECT_SUM_REDUCE>
+rsum(const vector_dist_expression_op<exp1,exp2_,op1> & va)
 {
-	vector_dist_expression_op<vector_dist_expression_op<exp1,exp2_,op1>,vector_type,VECT_SUM_REDUCE> exp_sum(va,vd);
+	vector_dist_expression_op<vector_dist_expression_op<exp1,exp2_,op1>,void,VECT_SUM_REDUCE> exp_sum(va);
 
 	return exp_sum;
 }
 
 //! Reduce function (It generate an expression)
-template<unsigned int prp1, typename v1, typename vector_type>
-inline vector_dist_expression_op<vector_dist_expression<prp1,v1>,vector_type,VECT_SUM_REDUCE>
-rsum(const vector_dist_expression<prp1,v1> & va, const vector_type & vd)
+template<unsigned int prp1, typename v1>
+inline vector_dist_expression_op<vector_dist_expression<prp1,v1>,void,VECT_SUM_REDUCE>
+rsum(const vector_dist_expression<prp1,v1> & va)
 {
-	vector_dist_expression_op<vector_dist_expression<prp1,v1>,vector_type,VECT_SUM_REDUCE> exp_sum(va,vd);
+	vector_dist_expression_op<vector_dist_expression<prp1,v1>,void,VECT_SUM_REDUCE> exp_sum(va);
 
 	return exp_sum;
 }

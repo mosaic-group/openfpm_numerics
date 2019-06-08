@@ -2,13 +2,34 @@ cmake_minimum_required(VERSION 3.8 FATAL_ERROR)
 
 ########################### Executables
 
-add_executable(numerics main.cpp Matrix/SparseMatrix_unit_tests.cpp interpolation/interpolation_unit_tests.cpp  Vector/Vector_unit_tests.cpp  Solvers/petsc_solver_unit_tests.cpp FiniteDifference/FDScheme_unit_tests.cpp FiniteDifference/eq_unit_test_3d.cpp FiniteDifference/eq_unit_test.cpp  Operators/Vector/vector_dist_operators_unit_tests.cpp ../../openfpm_vcluster/src/VCluster/VCluster.cpp ../../openfpm_devices/src/memory/CudaMemory.cu  ../../openfpm_devices/src/memory/HeapMemory.cpp ../../openfpm_devices/src/memory/PtrMemory.cpp ../../openfpm_devices/src/Memleak_check.cpp)
 
+if (CUDA_FOUND)
+	set(CUDA_SOURCES Operators/Vector/vector_dist_operators_unit_tests.cu
+					 Operators/Vector/vector_dist_operators_apply_kernel_unit_tests.cu)
+endif()
+
+add_executable(numerics ${OPENFPM_INIT_FILE} ${CUDA_SOURCES}
+						main.cpp 
+						Matrix/SparseMatrix_unit_tests.cpp
+						interpolation/interpolation_unit_tests.cpp
+						Vector/Vector_unit_tests.cpp  
+						Solvers/petsc_solver_unit_tests.cpp 
+						FiniteDifference/FDScheme_unit_tests.cpp 
+						FiniteDifference/eq_unit_test_3d.cpp 
+						FiniteDifference/eq_unit_test.cpp  
+						Operators/Vector/vector_dist_operators_unit_tests.cpp 
+						Operators/Vector/vector_dist_operators_apply_kernel_unit_tests.cpp
+						../../openfpm_vcluster/src/VCluster/VCluster.cpp 
+						../../openfpm_devices/src/memory/CudaMemory.cu  
+						../../openfpm_devices/src/memory/HeapMemory.cpp 
+						../../openfpm_devices/src/memory/PtrMemory.cpp 
+						../../openfpm_devices/src/Memleak_check.cpp
+						../../src/lib/pdata.cpp)
 
 ###########################
 
 if(CUDA_FOUND)
-	target_compile_options(numerics PUBLIC $<$<COMPILE_LANGUAGE:CUDA>:-Xcudafe "--display_error_number --diag_suppress=2885 --diag_suppress=2887  --diag_suppress=2888 --diag_suppress=186 --diag_suppress=111" --expt-extended-lambda>)
+	target_compile_options(numerics PUBLIC $<$<COMPILE_LANGUAGE:CUDA>: ${WARNING_SUPPRESSION_AND_OPTION_NVCC} >)
 endif()
 
 target_include_directories (numerics PUBLIC ${CUDA_INCLUDE_DIRS})
@@ -28,8 +49,9 @@ if(EIGEN3_FOUND)
 	target_include_directories (numerics PUBLIC ${EIGEN3_INCLUDE_DIR})
 endif()
 
+link_directories(${PARMETIS_ROOT} ${METIS_ROOT})
 target_link_libraries(numerics ${Boost_LIBRARIES})
-target_link_libraries(numerics -L${PARMETIS_ROOT}/lib parmetis)
+target_link_libraries(numerics ${PARMETIS_LIBRARIES})
 target_link_libraries(numerics -L${HDF5_ROOT}/lib hdf5 hdf5_hl)
 target_link_libraries(numerics -L${LIBHILBERT_LIBRARY_DIRS} ${LIBHILBERT_LIBRARIES})
 if(PETSC_FOUND)
