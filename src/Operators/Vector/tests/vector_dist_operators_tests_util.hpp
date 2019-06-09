@@ -911,6 +911,13 @@ void check_all_expressions_imp(vector_type & vd,
 	vA = (vC + vB) / (vC + vB);
 	check_values_div_4<float,vtype,A,B,C,impl>(vd);
 
+	if (impl == comp_host)
+	{
+		auto test = vC + vB;
+		auto & v = test.getVector();
+		BOOST_REQUIRE_EQUAL((void *)&v,(void *)&vd);
+	}
+
 	// We try with vectors
 
 	// Various combination of 2 operator
@@ -943,6 +950,13 @@ void check_all_expressions_imp(vector_type & vd,
 	vVA = vVC / vVB;
 	check_values_div<VectorS<3,float>,vtype,VA,VB,VC,impl>(vd,vd);
 
+	if (impl == comp_host)
+	{
+		auto test = vVB / 2.0;
+		auto & v = test.getVector();
+		BOOST_REQUIRE_EQUAL((void *)&v,(void *)&vd);
+	}
+
 	// Variuos combination 3 operator
 
 	vVA = vVB + (vVC + vVB);
@@ -972,6 +986,13 @@ void check_all_expressions_imp(vector_type & vd,
 	vA = (vVC + vVB) * (vVC + vVB);
 	check_values_mul_4<float,vtype,A,VB,VC,impl>(vd);
 
+	if (impl == comp_host)
+	{
+		auto test = (vVC + vVB) * (vVC + vVB);
+		auto & v = test.getVector();
+		BOOST_REQUIRE_EQUAL((void *)&v,(void *)&vd);
+	}
+
 	vVA = vVB / (vVC + vVB);
 	check_values_div_31<VectorS<3,float>,vtype,VA,VB,VC,impl>(vd);
 	vVA = (vVC + vVB) / vVB;
@@ -999,6 +1020,13 @@ void check_all_expressions_imp(vector_type & vd,
 	vVA = -vVB;
 	check_values_point_sub<Point<3,float>,vtype,VA,VB,VC,impl>(vd,p0);
 
+	if (impl == comp_host)
+	{
+		auto test = vPOS + p0_e;
+		auto & v = test.getVector();
+		BOOST_REQUIRE_EQUAL((void *)&v,(void *)&vd);
+	}
+
 	// Just check it compile testing it will test the same code
 	// as the previuous one
 	vVC = exp(vVB);
@@ -1009,6 +1037,13 @@ void check_all_expressions_imp(vector_type & vd,
 	vVA = vPOS - 2.0f;
 	vVA = 2.0 - vPOS;
 	vVA = vPOS - vPOS;
+
+	if (impl == comp_host)
+	{
+		auto test = exp(vVB);
+		auto & v = test.getVector();
+		BOOST_REQUIRE_EQUAL((void *)&v,(void *)&vd);
+	}
 
 	vVA = vPOS * 2.0;
 	vVA = 2.0 * vPOS;

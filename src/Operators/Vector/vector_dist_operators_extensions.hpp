@@ -15,7 +15,8 @@
  * \param v
  *
  */
-template <unsigned int dim, typename T> inline vector_dist_expression<16384,Point<dim,T> > getVExpr(Point<dim,T> & v)
+template <unsigned int dim, typename T>
+inline vector_dist_expression<16384,Point<dim,T> > getVExpr(Point<dim,T> & v)
 {
 	vector_dist_expression<(unsigned int)16384,Point<dim,T>> exp_v(v);
 
@@ -35,6 +36,8 @@ class vector_dist_expression<16384,point>
 	point p;
 
 public:
+
+	typedef void vtype;
 
 	//! vector expression from a constant point
 	vector_dist_expression(point p)

@@ -31,9 +31,16 @@ public:\
 \
 	typedef typename exp1::is_ker is_ker;\
 \
+	typedef typename vector_result<typename exp1::vtype,void>::type vtype;\
+\
 	vector_dist_expression_op(const exp1 & o1)\
 	:o1(o1)\
 	{}\
+\
+	const vtype & getVector()\
+	{\
+		return vector_result<typename exp1::vtype,void>::getVector(o1);\
+	}\
 \
 	inline const exp1 & getExpr() const\
 	{\
@@ -134,6 +141,14 @@ class vector_dist_expression_op<exp1,exp2,OP_ID>\
 public:\
 \
 	typedef std::integral_constant<bool,exp1::is_ker::value || exp1::is_ker::value> is_ker;\
+\
+	typedef typename vector_result<typename exp1::vtype,typename exp2::vtype>::type vtype;\
+\
+	vtype & getVector()\
+	{\
+		return vector_result<typename exp1::vtype,typename exp2::vtype>::getVector(o1,o2);\
+	}\
+\
 \
 	vector_dist_expression_op(const exp1 & o1, const exp2 & o2)\
 	:o1(o1),o2(o2)\
@@ -321,6 +336,9 @@ public:
 
 	//! Indicate if it is an in kernel expression
 	typedef typename exp1::is_ker is_ker;
+
+	//! return the vector type on which this expression operate
+	typedef typename vector_result<typename exp1::vtype,void>::type vtype;
 
 	//! constructor from an epxression exp1 and a vector vd
 	vector_dist_expression_op(const exp1 & o1)

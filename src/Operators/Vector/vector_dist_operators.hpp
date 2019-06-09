@@ -128,6 +128,43 @@ class vector_dist_expression_op
 
 };
 
+template<typename v1_type, typename v2_type>
+struct vector_result
+{
+	typedef v1_type type;
+
+	template<typename exp1, typename exp2>
+	static const type & getVector(const exp1 & o1, const exp2 & o2)
+	{
+		return o1.getVector();
+	}
+
+	template<typename exp1>
+	static const type & getVector(const exp1 & o1)
+	{
+		return o1.getVector();
+	}
+};
+
+
+template<typename v2_type>
+struct vector_result<void,v2_type>
+{
+	typedef v2_type type;
+
+	template<typename exp1, typename exp2>
+	static const type & getVector(const exp1 & o1, const exp2 & o2)
+	{
+		return o2.getVector();
+	}
+
+	template<typename exp2>
+	static const type & getVector(exp2 & o2)
+	{
+		return o2.getVector();
+	}
+};
+
 /*! \brief Sum operation
  *
  * \tparam exp1 expression1
@@ -145,12 +182,26 @@ class vector_dist_expression_op<exp1,exp2,VECT_SUM>
 
 public:
 
+	//! indicate if this vector is kernel type
 	typedef typename exp1::is_ker is_ker;
+
+	//! return the vector type on which this expression operate
+	typedef typename vector_result<typename exp1::vtype,typename exp2::vtype>::type vtype;
 
 	//! constructor of the expression to sum two expression
 	inline vector_dist_expression_op(const exp1 & o1, const exp2 & o2)
 	:o1(o1),o2(o2)
 	{}
+
+	/*! \brief Return the underlying vector
+	 *
+	 * \return the vector
+	 *
+	 */
+	const vtype & getVector() const
+	{
+		return vector_result<typename exp1::vtype,typename exp2::vtype>::getVector(o1,o2);
+	}
 
 	/*! \brief This function must be called before value
 	 *
@@ -210,10 +261,23 @@ public:
 
 	typedef typename exp1::is_ker is_ker;
 
+	//! return the vector type on which this expression operate
+	typedef typename vector_result<typename exp1::vtype,typename exp2::vtype>::type vtype;
+
 	//! Costruct a subtraction expression out of two expressions
 	inline vector_dist_expression_op(const exp1 & o1, const exp2 & o2)
 	:o1(o1),o2(o2)
 	{}
+
+	/*! \brief Return the underlying vector
+	 *
+	 * \return the vector
+	 *
+	 */
+	const vtype & getVector()
+	{
+		return vector_result<typename exp1::vtype,typename exp2::vtype>::getVector(o1,o2);
+	}
 
 	/*! \brief This function must be called before value
 	 *
@@ -272,10 +336,23 @@ public:
 
 	typedef typename exp1::is_ker is_ker;
 
+	//! return the vector type on which this expression operate
+	typedef typename vector_result<typename exp1::vtype,typename exp2::vtype>::type vtype;
+
 	//! constructor from two expressions
 	vector_dist_expression_op(const exp1 & o1, const exp2 & o2)
 	:o1(o1),o2(o2)
 	{}
+
+	/*! \brief Return the underlying vector
+	 *
+	 * \return the vector
+	 *
+	 */
+	const vtype & getVector()
+	{
+		return vector_result<typename exp1::vtype,typename exp2::vtype>::getVector(o1,o2);
+	}
 
 	/*! \brief This function must be called before value
 	 *
@@ -333,10 +410,23 @@ public:
 
 	typedef typename exp1::is_ker is_ker;
 
+	//! return the vector type on which this expression operate
+	typedef typename vector_result<typename exp1::vtype,typename exp2::vtype>::type vtype;
+
 	//! constructor from two expressions
 	vector_dist_expression_op(const exp1 & o1, const exp2 & o2)
 	:o1(o1),o2(o2)
 	{}
+
+	/*! \brief Return the underlying vector
+	 *
+	 * \return the vector
+	 *
+	 */
+	const vtype & getVector()
+	{
+		return vector_result<typename exp1::vtype,typename exp2::vtype>::getVector(o1,o2);
+	}
 
 	/*! \brief This function must be called before value
 	 *
@@ -389,10 +479,23 @@ public:
 
 	typedef typename exp1::is_ker is_ker;
 
+	//! return the vector type on which this expression operate
+	typedef typename vector_result<typename exp1::vtype,void>::type vtype;
+
 	//! constructor from an expresssion
 	vector_dist_expression_op(const exp1 & o1)
 	:o1(o1)
 	{}
+
+	/*! \brief Return the underlying vector
+	 *
+	 * \return the vector
+	 *
+	 */
+	const vtype & getVector()
+	{
+		return vector_result<typename exp1::vtype,void>::getVector(o1);
+	}
 
 	//! initialize the expression tree
 	inline void init() const
@@ -482,6 +585,7 @@ public:
 	//! Property id of the point
 	static const unsigned int prop = prp;
 
+
 	//! constructor for an external vector
 	vector_dist_expression(vector & v)
 	:v(v),vdl(NULL)
@@ -492,6 +596,18 @@ public:
 	{
 		if (vdl != NULL)
 		{vdl->remove(v.v);}
+	}
+
+	/*! \brief Return the vector on which is acting
+	 *
+	 * It return the vector used in getVExpr, to get this object
+	 *
+	 * \return the vector
+	 *
+	 */
+	__device__ __host__ const vector & getVector() const
+	{
+		return v.v;
 	}
 
 	/*! \brief Return the vector on which is acting
@@ -674,6 +790,8 @@ public:
 
 	typedef std::false_type is_ker;
 
+	typedef void vtype;
+
 	//! constructor from a constant expression
 	inline vector_dist_expression(const double & d)
 	:d(d)
@@ -732,7 +850,7 @@ public:
 	typedef std::false_type is_ker;
 
 	//! type of object the structure return then evaluated
-	typedef float vtype;
+	typedef void vtype;
 
 	//! constrictor from constant value
 	inline vector_dist_expression(const float & d)
