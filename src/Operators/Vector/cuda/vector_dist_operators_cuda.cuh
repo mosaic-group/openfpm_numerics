@@ -150,7 +150,7 @@ struct pos_or_propR<vector,PROP_POS>
 	}
 };
 
-template<unsigned int prp ,int impl>
+template<unsigned int prp ,bool is_sort, int impl>
 struct vector_dist_op_compute_op
 {
 	template<typename vector, typename expr>
@@ -163,7 +163,7 @@ struct vector_dist_op_compute_op
 };
 
 template<unsigned int prp>
-struct vector_dist_op_compute_op<prp,comp_host>
+struct vector_dist_op_compute_op<prp,false,comp_host>
 {
 	template<typename vector, typename expr>
 	static void compute_expr(vector & v,expr & v_exp)
@@ -243,8 +243,46 @@ __global__ void compute_double_ker(vector vd, double d)
 	pos_or_propL_ker<vector,prp>::value(vd,p) = d;
 }
 
+/////////// SORTED VERSION //
+
+template<unsigned int prp, unsigned int dim ,typename vector, typename NN_type, typename expr>
+__global__ void compute_expr_ker_sort_vv(vector vd, NN_type NN, expr v_exp)
+{
+	int p;
+
+    GET_PARTICLE_SORT(p,NN);
+
+	for (unsigned int i = 0 ; i < dim ; i++)
+	{
+		vd.template get<prp>(p)[i] = v_exp.value(p).get(i);
+	}
+}
+
+template<unsigned int prp, typename vector, typename NN_type, typename expr>
+__global__ void compute_expr_ker_sort_v(vector vd, NN_type NN, expr v_exp)
+{
+	int p;
+
+    GET_PARTICLE_SORT(p,NN);
+
+	vd.template get<prp>(p) = v_exp.value(p);
+}
+
+template<unsigned int prp, typename vector, typename expr, typename NN_type>
+__global__ void compute_expr_ker_sort(vector vd, NN_type NN, expr v_exp)
+{
+	int p;
+
+    GET_PARTICLE_SORT(p,NN);
+
+	pos_or_propL_ker<vector,prp>::value(vd,p) = v_exp.value(p);
+}
+
+
+/////////////////////////////
+
 template<unsigned int prp>
-struct vector_dist_op_compute_op<prp,comp_dev>
+struct vector_dist_op_compute_op<prp,false,comp_dev>
 {
 	template<typename vector, typename expr>
 	static void compute_expr(vector & v,expr & v_exp)
@@ -256,12 +294,72 @@ struct vector_dist_op_compute_op<prp,comp_dev>
 		compute_expr_ker<prp><<<ite.wthr,ite.thr>>>(v,v_exp);
 	}
 
+	template<typename vector, typename expr>
+	static void compute_expr_v(vector & v,expr & v_exp)
+	{
+		v_exp.init();
+
+		auto ite  = v.getGPUIterator(256);
+
+		compute_expr_ker_v<prp><<<ite.wthr,ite.thr>>>(v,v_exp);
+	}
+
+	template<unsigned int dim, typename vector, typename expr>
+	static void compute_expr_vv(vector & v,expr & v_exp)
+	{
+		v_exp.init();
+
+		auto ite  = v.getGPUIterator(256);
+
+		compute_expr_ker_vv<prp,dim><<<ite.wthr,ite.thr>>>(v,v_exp);
+	}
+
 	template<typename vector>
 	static void compute_const(vector & v,double d)
 	{
 		auto ite  = v.getDomainIteratorGPU(256);
 
 		compute_double_ker<prp><<<ite.wthr,ite.thr>>>(v,d);
+	}
+};
+
+template<unsigned int prp>
+struct vector_dist_op_compute_op<prp,true,comp_dev>
+{
+	template<typename vector, typename expr>
+	static void compute_expr(vector & v,expr & v_exp)
+	{
+		v_exp.init();
+
+		auto ite  = v.getDomainIteratorGPU(256);
+
+		auto NN = v_exp.getNN();
+
+		compute_expr_ker_sort<prp><<<ite.wthr,ite.thr>>>(v,*NN,v_exp);
+	}
+
+	template<typename vector, typename expr>
+	static void compute_expr_v(vector & v,expr & v_exp)
+	{
+		v_exp.init();
+
+		auto ite  = v.getGPUIterator(256);
+
+		auto NN = v_exp.getNN();
+
+		compute_expr_ker_sort_v<prp><<<ite.wthr,ite.thr>>>(v,*NN,v_exp);
+	}
+
+	template<unsigned int dim, typename vector, typename expr>
+	static void compute_expr_vv(vector & v,expr & v_exp)
+	{
+		v_exp.init();
+
+		auto ite  = v.getGPUIterator(256);
+
+		auto NN = v_exp.getNN();
+
+		compute_expr_ker_sort_vv<prp,dim><<<ite.wthr,ite.thr>>>(v,*NN,v_exp);
 	}
 };
 

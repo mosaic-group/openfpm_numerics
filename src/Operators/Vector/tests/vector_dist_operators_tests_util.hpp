@@ -1138,7 +1138,6 @@ bool check_values_apply_kernel(vector & vd, Kernel & ker, NN_type & NN)
 		Point<3,float> xp = vd.getPos(p);
 
 		float base1 = vd.template getProp<A>(p);
-
 		float prp_x = vd.template getProp<VC>(p) * vd.template getProp<VB>(p) + norm(vd.template getProp<VB>(p));
 
 		// For each neighborhood particle
@@ -1760,6 +1759,71 @@ void vector_dist_op_ap_ker_impl(vector & vd, vA_type & vA,
 	check_values_apply_kernel3_reduce<impl>(vd,ker,cl_host,p);
 }
 
+template<typename vector,
+		 typename vA_type,
+		 typename vC_type,
+		 typename vVA_type,
+		 typename vVB_type,
+		 typename vVC_type>
+void vector_dist_op_ap_ker_impl_sort(vector & vd, vA_type & vA,
+											 vC_type & vC,
+											 vVA_type & vVA,
+											 vVB_type & vVB,
+											 vVC_type & vVC,
+											 unsigned int opt)
+{
+	// we apply an exponential kernel to calculate something
+
+	auto cl_gpu = vd.getCellListGPU(0.05);
+	auto cl = cl_gpu.toKernel();
+	auto cl_host = vd.template getCellListDev<comp_host>(0.05);
+	exp_kernel ker(0.2);
+
+	vA = applyKernel_in_sort(vVC * vVB + norm(vVB),vd,cl,ker) + vC;
+	vd.template merge_sort<A>(cl_gpu);
+	check_values_apply_kernel<comp_dev>(vd,ker,cl_host);
+
+	vVA = applyKernel_in_sort(2.0*vVC + vVB ,vd,cl,ker) + vVC;
+	vd.template merge_sort<VA>(cl_gpu);
+	check_values_apply_kernel2<comp_dev>(vd,ker,cl_host);
+
+/*	vA = rsum(applyKernel_in_sort(vVC * vVB + norm(vVB),vd,cl,ker)) + vC;
+	vd.template merge_sort<A>(cl_gpu);
+	check_values_apply_kernel_reduce<comp_dev>(vd,ker,cl_host);
+
+	vVA = rsum(applyKernel_in_sort(2.0*vVC + vVB ,vd,cl,ker)) + vVC;
+	vd.template merge_sort<VA>(cl_gpu);
+	check_values_apply_kernel2_reduce<comp_dev>(vd,ker,cl_host);*/
+
+	vA = applyKernel_in_gen_sort(vVC * vVB + norm(vVB),vd,cl,ker) + vC;
+	vd.template merge_sort<A>(cl_gpu);
+	check_values_apply_kernel<comp_dev>(vd,ker,cl_host);
+
+	vVA = applyKernel_in_gen_sort(2.0*vVC + vVB ,vd,cl,ker) + vVC;
+	vd.template merge_sort<VA>(cl_gpu);
+	check_values_apply_kernel2<comp_dev>(vd,ker,cl_host);
+
+/*	vA = rsum(applyKernel_in_gen_sort(vVC * vVB + norm(vVB),vd,cl,ker)) + vC;
+	vd.template merge_sort<A>(cl_gpu);
+	check_values_apply_kernel_reduce<comp_dev>(vd,ker,cl_host);
+
+	vVA = rsum(applyKernel_in_gen_sort(2.0*vVC + vVB ,vd,cl,ker)) + vVC;
+	vd.template merge_sort<VA>(cl_gpu);
+	check_values_apply_kernel2_reduce<comp_dev>(vd,ker,cl_host);*/
+
+	// Check it compile the code is the same
+	vVA = applyKernel_in_gen_sort(vVC,vd,cl,ker) + vVC;
+	vd.template merge_sort<VA>(cl_gpu);
+	check_values_apply_kernel3<comp_dev>(vd,ker,cl_host);
+
+	vVA = applyKernel_in_sort(vVC,vd,cl,ker) + vVC;
+	vd.template merge_sort<VA>(cl_gpu);
+	check_values_apply_kernel3<comp_dev>(vd,ker,cl_host);
+
+/*	Point<2,float> p = rsum(applyKernel_in_sim_sort(vd,cl,ker)).get();
+	check_values_apply_kernel3_reduce<comp_dev>(vd,ker,cl_host,p);*/
+}
+
 template<unsigned int impl>
 struct check_all_apply_ker
 {
@@ -1782,19 +1846,18 @@ struct check_all_apply_ker
 	}
 };
 
+
 template<>
 struct check_all_apply_ker<comp_dev>
 {
 	template<typename vector_type> static void check(vector_type & vd)
 	{
-		auto vdk = vd.toKernel();
+		auto vA = getV<A,comp_dev>(vd);
+		auto vC = getV<C,comp_dev>(vd);
 
-		auto vA = getV<A>(vd,vdk);
-		auto vC = getV<C>(vd,vdk);
-
-		auto vVA = getV<VA>(vd,vdk);
-		auto vVB = getV<VB>(vd,vdk);
-		auto vVC = getV<VC>(vd,vdk);
+		auto vVA = getV<VA,comp_dev>(vd);
+		auto vVB = getV<VB,comp_dev>(vd);
+		auto vVC = getV<VC,comp_dev>(vd);
 
 		// fill vd with some value
 		fill_values<comp_dev>(vd);
@@ -1805,6 +1868,30 @@ struct check_all_apply_ker<comp_dev>
 		vd.deviceToHostPos();
 
 		vector_dist_op_ap_ker_impl<comp_dev>(vd,vA,vC,vVA,vVB,vVC,RUN_ON_DEVICE);
+	}
+};
+
+
+struct check_all_apply_ker_sort
+{
+	template<typename vector_type> static void check(vector_type & vd)
+	{
+		auto vA = getV_sort<A>(vd);
+		auto vC = getV_sort<C>(vd);
+
+		auto vVA = getV_sort<VA>(vd);
+		auto vVB = getV_sort<VB>(vd);
+		auto vVC = getV_sort<VC>(vd);
+
+		// fill vd with some value
+		fill_values<comp_dev>(vd);
+
+		vd.map(RUN_ON_DEVICE);
+		vd.template ghost_get<0,1,2,3,4,5,6>(RUN_ON_DEVICE);
+		vd.template deviceToHostProp<0,1,2,3,4,5,6>();
+		vd.deviceToHostPos();
+
+		vector_dist_op_ap_ker_impl_sort(vd,vA,vC,vVA,vVB,vVC,RUN_ON_DEVICE);
 	}
 };
 

@@ -28,21 +28,20 @@ BOOST_AUTO_TEST_CASE(vector_dist_operators_list_ker_test)
 
 	vector_dist_ker_list<vector_dist_kernel> & vdkl = vd.private_get_vector_dist_ker_list();
 
-	auto vdk = vd.toKernel();
 	BOOST_REQUIRE_EQUAL(vdkl.n_entry(),0);
 
 	{
-		auto vA = getV<A>(vd,vdk);
+		auto vA = getV<A,comp_dev>(vd);
 
 		BOOST_REQUIRE_EQUAL(vdkl.n_entry(),1);
 
 		{
-			auto vB = getV<B>(vd,vdk);
-			auto vC = getV<C>(vd,vdk);
+			auto vB = getV<B,comp_dev>(vd);
+			auto vC = getV<C,comp_dev>(vd);
 
-			auto vVA = getV<VA>(vd,vdk);
-			auto vVB = getV<VB>(vd,vdk);
-			auto vVC = getV<VC>(vd,vdk);
+			auto vVA = getV<VA,comp_dev>(vd);
+			auto vVB = getV<VB,comp_dev>(vd);
+			auto vVC = getV<VC,comp_dev>(vd);
 
 			BOOST_REQUIRE_EQUAL(vdkl.n_entry(),6);
 

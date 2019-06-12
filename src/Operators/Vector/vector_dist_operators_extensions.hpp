@@ -39,6 +39,12 @@ public:
 
 	typedef void vtype;
 
+	//! result for is sort
+	typedef boost::mpl::bool_<false> is_sort;
+
+	//! NN_type
+	typedef void NN_type;
+
 	//! vector expression from a constant point
 	vector_dist_expression(point p)
 	:p(p)

@@ -13,6 +13,7 @@
 #include "Operators/Vector/vector_dist_operators.hpp"
 #include "Operators/Vector/tests/vector_dist_operators_tests_util.hpp"
 
+BOOST_AUTO_TEST_SUITE( vector_dist_operators_apply_kernel_test_cpu )
 
 BOOST_AUTO_TEST_CASE( vector_dist_operators_apply_kernel_test )
 {
@@ -31,5 +32,7 @@ BOOST_AUTO_TEST_CASE( vector_dist_operators_apply_kernel_test )
 
 	check_all_apply_ker<comp_host>::check(vd);
 }
+
+BOOST_AUTO_TEST_SUITE_END()
 
 

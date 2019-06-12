@@ -29,6 +29,10 @@
 #define VECT_APPLYKER_OUT_SIM 14
 #define VECT_APPLYKER_REDUCE_SIM 15
 
+#define VECT_APPLYKER_IN_GEN_SORT 16
+#define VECT_APPLYKER_IN_SORT 17
+#define VECT_APPLYKER_IN_SIM_SORT 18
+
 #define VECT_NORM 56
 #define VECT_NORM2 57
 #define VECT_ABS 58
@@ -165,6 +169,49 @@ struct vector_result<void,v2_type>
 	}
 };
 
+template<typename NN1_type, typename NN2_type>
+struct nn_type_result
+{
+	typedef NN1_type type;
+
+	template<typename exp1, typename exp2>
+	static type * getNN(exp1 & o1, exp2 & o2)
+	{
+		return o1.getNN();
+	}
+
+	template<typename exp1>
+	static type * getNN(exp1 & o1)
+	{
+		return o1.getNN();
+	}
+};
+
+
+template<typename NN2_type>
+struct nn_type_result<void,NN2_type>
+{
+	typedef NN2_type type;
+
+	template<typename exp1, typename exp2>
+	static type * getNN(exp1 & o1, exp2 & o2)
+	{
+		return o2.getNN();
+	}
+
+	template<typename exp2>
+	static type * getNN(exp2 & o2)
+	{
+		return o2.getNN();
+	}
+};
+
+template<bool s1, bool s2>
+struct vector_is_sort_result
+{
+	typedef boost::mpl::bool_<s1 | s2> type;
+};
+
 /*! \brief Sum operation
  *
  * \tparam exp1 expression1
@@ -188,10 +235,26 @@ public:
 	//! return the vector type on which this expression operate
 	typedef typename vector_result<typename exp1::vtype,typename exp2::vtype>::type vtype;
 
+	//! result for is sort
+	typedef typename vector_is_sort_result<exp1::is_sort::value,exp2::is_sort::value>::type is_sort;
+
+	//! NN_type
+	typedef typename nn_type_result<typename exp1::NN_type,typename exp2::NN_type>::type NN_type;
+
 	//! constructor of the expression to sum two expression
 	inline vector_dist_expression_op(const exp1 & o1, const exp2 & o2)
 	:o1(o1),o2(o2)
 	{}
+
+	/*! \brief get the NN object
+	 *
+	 * \return the NN object
+	 *
+	 */
+	inline NN_type * getNN() const
+	{
+		return nn_type_result<typename exp1::NN_type,typename exp2::NN_type>::getNN(o1,o2);
+	}
 
 	/*! \brief Return the underlying vector
 	 *
@@ -264,10 +327,26 @@ public:
 	//! return the vector type on which this expression operate
 	typedef typename vector_result<typename exp1::vtype,typename exp2::vtype>::type vtype;
 
+	//! result for is sort
+	typedef typename vector_is_sort_result<exp1::is_sort::value,exp2::is_sort::value>::type is_sort;
+
+	//! NN_type
+	typedef typename nn_type_result<typename exp1::NN_type,typename exp2::NN_type>::type NN_type;
+
 	//! Costruct a subtraction expression out of two expressions
 	inline vector_dist_expression_op(const exp1 & o1, const exp2 & o2)
 	:o1(o1),o2(o2)
 	{}
+
+	/*! \brief get the NN object
+	 *
+	 * \return the NN object
+	 *
+	 */
+	inline NN_type * getNN() const
+	{
+		return nn_type_result<typename exp1::NN_type,typename exp2::NN_type>::getNN(o1,o2);
+	}
 
 	/*! \brief Return the underlying vector
 	 *
@@ -338,6 +417,12 @@ public:
 
 	//! return the vector type on which this expression operate
 	typedef typename vector_result<typename exp1::vtype,typename exp2::vtype>::type vtype;
+
+	//! result for is sort
+	typedef typename vector_is_sort_result<exp1::is_sort::value,exp2::is_sort::value>::type is_sort;
+
+	//! NN_type
+	typedef typename nn_type_result<typename exp1::NN_type,typename exp2::NN_type>::type NN_type;
 
 	//! constructor from two expressions
 	vector_dist_expression_op(const exp1 & o1, const exp2 & o2)
@@ -413,10 +498,26 @@ public:
 	//! return the vector type on which this expression operate
 	typedef typename vector_result<typename exp1::vtype,typename exp2::vtype>::type vtype;
 
+	//! result for is sort
+	typedef typename vector_is_sort_result<exp1::is_sort::value,exp2::is_sort::value>::type is_sort;
+
+	//! NN_type
+	typedef typename nn_type_result<typename exp1::NN_type,typename exp2::NN_type>::type NN_type;
+
 	//! constructor from two expressions
 	vector_dist_expression_op(const exp1 & o1, const exp2 & o2)
 	:o1(o1),o2(o2)
 	{}
+
+	/*! \brief get the NN object
+	 *
+	 * \return the NN object
+	 *
+	 */
+	inline NN_type * getNN() const
+	{
+		return nn_type_result<typename exp1::NN_type,typename exp2::NN_type>::getNN(o1,o2);
+	}
 
 	/*! \brief Return the underlying vector
 	 *
@@ -482,10 +583,26 @@ public:
 	//! return the vector type on which this expression operate
 	typedef typename vector_result<typename exp1::vtype,void>::type vtype;
 
+	//! result for is sort
+	typedef typename vector_is_sort_result<exp1::is_sort::value,false>::type is_sort;
+
+	//! NN_type
+	typedef typename nn_type_result<typename exp1::NN_type,void>::type NN_type;
+
 	//! constructor from an expresssion
 	vector_dist_expression_op(const exp1 & o1)
 	:o1(o1)
 	{}
+
+	/*! \brief get the NN object
+	 *
+	 * \return the NN object
+	 *
+	 */
+	inline NN_type * getNN() const
+	{
+		return nn_type_result<typename exp1::NN_type,void>::getNN(o1);
+	}
 
 	/*! \brief Return the underlying vector
 	 *
@@ -582,6 +699,12 @@ public:
 	//! The type of the internal vector
 	typedef vector vtype;
 
+	//! result for is sort
+	typedef boost::mpl::bool_<false> is_sort;
+
+	//! NN_type
+	typedef void NN_type;
+
 	//! Property id of the point
 	static const unsigned int prop = prp;
 
@@ -596,6 +719,16 @@ public:
 	{
 		if (vdl != NULL)
 		{vdl->remove(v.v);}
+	}
+
+	/*! \brief get the NN object
+	 *
+	 * \return the NN object
+	 *
+	 */
+	inline void * getNN() const
+	{
+		return NULL;
 	}
 
 	/*! \brief Return the vector on which is acting
@@ -627,9 +760,9 @@ public:
 	 * \param vdkl vector_dist_ker_list
 	 *
 	 */
-	void set_vector_dist_ker_list(vector_dist_ker_list<vector> & vdkl)
+	void set_vector_dist_ker_list(vector_dist_ker_list<vector> & vdkl, bool is_sort)
 	{
-		vdkl.add(v.v);
+		vdkl.add(v.v,is_sort);
 		vdl = &vdkl;
 	}
 
@@ -676,13 +809,13 @@ public:
 	{
 		if (has_vector_kernel<vector>::type::value == false)
 		{
-			vector_dist_op_compute_op<prp,vector_dist_expression_comp_sel<comp_host,
+			vector_dist_op_compute_op<prp,false,vector_dist_expression_comp_sel<comp_host,
 																	   	  has_vector_kernel<vector>::type::value>::type::value>
 			::compute_expr(v.v,v_exp);
 		}
 		else
 		{
-			vector_dist_op_compute_op<prp,vector_dist_expression_comp_sel<comp_dev,
+			vector_dist_op_compute_op<prp,false,vector_dist_expression_comp_sel<comp_dev,
 		   	  	  	  	  	  	  	  	  	  	  	  	  	  	  	  	  has_vector_kernel<vector>::type::value>::type::value>
 			::compute_expr(v.v,v_exp);
 		}
@@ -702,14 +835,18 @@ public:
 	{
 		if (has_vector_kernel<vector>::type::value == false)
 		{
-			vector_dist_op_compute_op<prp,vector_dist_expression_comp_sel<comp_host,
-																	   	  has_vector_kernel<vector>::type::value>::type::value>
+			vector_dist_op_compute_op<prp,
+									  vector_dist_expression_op<exp1,exp2,op>::is_sort::value,
+									  vector_dist_expression_comp_sel<comp_host,
+																	  has_vector_kernel<vector>::type::value>::type::value>
 			::compute_expr(v.v,v_exp);
 		}
 		else
 		{
-			vector_dist_op_compute_op<prp,vector_dist_expression_comp_sel<comp_dev,
-		   	  	  	  	  	  	  	  	  	  	  	  	  	  	  	  	  has_vector_kernel<vector>::type::value>::type::value>
+			vector_dist_op_compute_op<prp,
+									  vector_dist_expression_op<exp1,exp2,op>::is_sort::value,
+									  vector_dist_expression_comp_sel<comp_dev,
+		   	  	  	  	  	  	  	  	  	  	  	  	  	  	  	  has_vector_kernel<vector>::type::value>::type::value>
 			::compute_expr(v.v,v_exp);
 		}
 
@@ -727,18 +864,49 @@ public:
 	{
 		if (has_vector_kernel<vector>::type::value == false)
 		{
-			vector_dist_op_compute_op<prp,vector_dist_expression_comp_sel<comp_host,
-																	   	  has_vector_kernel<vector>::type::value>::type::value>
+			vector_dist_op_compute_op<prp,
+									  false,
+									  vector_dist_expression_comp_sel<comp_host,
+																	  has_vector_kernel<vector>::type::value>::type::value>
 			::compute_const(v.v,d);
 		}
 		else
 		{
-			vector_dist_op_compute_op<prp,vector_dist_expression_comp_sel<comp_dev,
-		   	  	  	  	  	  	  	  	  	  	  	  	  	  	  	  	  has_vector_kernel<vector>::type::value>::type::value>
+			vector_dist_op_compute_op<prp,
+									  false,
+									  vector_dist_expression_comp_sel<comp_dev,
+		   	  	  	  	  	  	  	  	  	  	  	  	  	  	  	  has_vector_kernel<vector>::type::value>::type::value>
 			::compute_const(v.v,d);
 		}
 
 		return v.v;
+	}
+};
+
+template<typename vector, unsigned int impl>
+struct switcher_get_v
+{
+	typedef vector type;
+
+	static vector & get(vector & v)	{return v;};
+
+	template<typename exp_type, typename vector_klist>
+	static void register_vector(exp_type & exp_v, vector_klist & v,bool is_sort)
+	{
+	}
+};
+
+template<typename vector>
+struct switcher_get_v<vector,comp_dev>
+{
+	typedef decltype(std::declval<vector>().toKernel()) type;
+
+	static type get(vector & v)	{return v.toKernel();};
+
+	template<typename exp_type, typename vector_klist>
+	static void register_vector(exp_type & exp_v, vector_klist & v,bool is_sort)
+	{
+		exp_v.set_vector_dist_ker_list(v.private_get_vector_dist_ker_list(),is_sort);
 	}
 };
 
@@ -748,13 +916,17 @@ public:
  * \param v
  *
  */
-template <unsigned int prp,typename vector>
-inline vector_dist_expression<prp,vector > getV(vector & v)
+template <unsigned int prp,unsigned int impl = comp_host, typename vector>
+inline vector_dist_expression<prp,typename switcher_get_v<vector,impl>::type > getV(vector & v)
 {
-	vector_dist_expression<prp,vector > exp_v(v);
+	decltype(switcher_get_v<vector,impl>::get(v)) vk = switcher_get_v<vector,impl>::get(v);
+	vector_dist_expression<prp,typename switcher_get_v<vector,impl>::type > exp_v(vk);
+
+	switcher_get_v<vector,impl>::register_vector(exp_v,v,false);
 
 	return exp_v;
 }
+
 
 /*! \Create an expression from a vector property
  *
@@ -762,15 +934,13 @@ inline vector_dist_expression<prp,vector > getV(vector & v)
  * \param v
  *
  */
-template <unsigned int prp,typename vector, typename vector_ker>
-inline vector_dist_expression<prp,vector_ker > getV(vector & v, vector_ker & vk)
+template <unsigned int prp,typename vector>
+inline vector_dist_expression<prp, typename switcher_get_v<vector,comp_dev>::type > getV_sort(vector & v)
 {
-	vector_dist_expression<prp,vector_ker > exp_v(vk);
+	auto vk = v.toKernel_sorted();
+	vector_dist_expression<prp,typename switcher_get_v<vector, comp_dev>::type > exp_v(vk);
 
-	if (std::is_same<vector,vector_ker>::value == false && has_vector_kernel<vector_ker>::value == true)
-	{
-		exp_v.set_vector_dist_ker_list(v.private_get_vector_dist_ker_list());
-	}
+	exp_v.set_vector_dist_ker_list(v.private_get_vector_dist_ker_list(),true);
 
 	return exp_v;
 }
@@ -791,6 +961,11 @@ public:
 	typedef std::false_type is_ker;
 
 	typedef void vtype;
+
+	//! result for is sort
+	typedef boost::mpl::bool_<false> is_sort;
+
+	typedef void NN_type;
 
 	//! constructor from a constant expression
 	inline vector_dist_expression(const double & d)
@@ -851,6 +1026,11 @@ public:
 
 	//! type of object the structure return then evaluated
 	typedef void vtype;
+
+	//! result for is sort
+	typedef boost::mpl::bool_<false> is_sort;
+
+	typedef void NN_type;
 
 	//! constrictor from constant value
 	inline vector_dist_expression(const float & d)
