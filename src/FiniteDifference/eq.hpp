@@ -3,6 +3,8 @@
  *
  *  Created on: Oct 5, 2015
  *      Author: i-bird
+ *  Modified on: Dec 05, 2019
+ *      Author: amfoggia
  */
 
 #ifndef OPENFPM_NUMERICS_SRC_FINITEDIFFERENCE_EQ_HPP_
@@ -28,36 +30,36 @@
 template<typename expr1,typename expr2,typename Sys_eqs>
 class Eq
 {
-	/*! \brief Create the row of the Matrix
-	 *
-	 * \tparam ord
-	 *
-	 */
-	template<unsigned int ord=EQS_FIELD> static void value(const grid_key_dx<Sys_eqs::dims> & pos)
-	{
-		if (EQS_FIELD)
-			value_f(pos);
-		else
-			value_s(pos);
-	}
+  /*! \brief Create the row of the Matrix
+   *
+   * \tparam ord
+   *
+   */
+  template<unsigned int ord=EQS_FIELD> static void value(const grid_key_dx<Sys_eqs::dims> & pos)
+  {
+    if (EQS_FIELD)
+      value_f(pos);
+    else
+      value_s(pos);
+  }
 
-	/*! \brief fill the row
-	 *
-	 *
-	 */
-	static openfpm::vector<cval<typename Sys_eqs::stype>> value_s(grid_key_dx<Sys_eqs::dims> & it)
-	{
-		return expr1::value_s(it) - expr2::value_s(it);
-	}
+  /*! \brief fill the row
+   *
+   *
+   */
+  static openfpm::vector<cval<typename Sys_eqs::stype>> value_s(grid_key_dx<Sys_eqs::dims> & it)
+  {
+    return expr1::value_s(it) - expr2::value_s(it);
+  }
 
-	/*! \brief fill the row
-	 *
-	 *
-	 */
-	static void value_f(grid_key_dx<Sys_eqs::dims> & it)
-	{
-		return expr1::value_s(it) - expr2::value_s(it);
-	}
+  /*! \brief fill the row
+   *
+   *
+   */
+  static void value_f(grid_key_dx<Sys_eqs::dims> & it)
+  {
+    return expr1::value_s(it) - expr2::value_s(it);
+  }
 };
 
 
@@ -66,42 +68,51 @@ class Eq
 template<unsigned int dim,typename T>
 struct pos_val
 {
-	/*! \brief Initialize to zero the value
-	 *
-	 */
-	pos_val()
-	{
-		value = 0.0;
-	}
+  /*! \brief Initialize to zero the value
+   *
+   */
+  pos_val()
+  {
+    value = 0.0;
+  }
 
-	grid_key_dx<dim> pos;
-	T value;
+  grid_key_dx<dim> pos;
+  T value;
 };
 
 template<unsigned int f, typename Sys_eqs>
 class Field
 {
-	typedef typename stub_or_real<Sys_eqs,Sys_eqs::dims,typename Sys_eqs::stype,typename Sys_eqs::b_grid::decomposition::extended_type::extended_type>::type map_grid;
+  typedef typename stub_or_real<Sys_eqs,Sys_eqs::dims,typename Sys_eqs::stype,typename Sys_eqs::b_grid::decomposition::extended_type::extended_type>::type map_grid;
 
 public:
 
-	/*! \brief fill the row
-	 *
-	 *
-	 */
-	static void value(const map_grid & g_map, grid_dist_key_dx<Sys_eqs::dims> & kmap, const grid_sm<Sys_eqs::dims,void> & gs, typename Sys_eqs::stype (& spacing )[Sys_eqs::dims] , std::unordered_map<long int,typename Sys_eqs::stype > & cols, typename Sys_eqs::stype coeff)
-	{
-		cols[g_map.template get<0>(kmap)*Sys_eqs::nvar + f] += coeff;
-	}
+  typedef Sys_eqs sys_nn;
 
-	/*! \brief
-	 *
-	 *
-	 */
-	static grid_key_dx<Sys_eqs::dims> position(grid_key_dx<Sys_eqs::dims> & pos, const grid_sm<Sys_eqs::dims,void> & gs, const comb<Sys_eqs::dims> (& s_pos)[Sys_eqs::nvar])
-	{
-			return grid_key_dx<Sys_eqs::dims>(s_pos[f]);
-	}
+  Field();
+
+  /*! \brief fill the row
+   *
+   *
+   */
+  static void value(const map_grid & g_map,
+	     grid_dist_key_dx<Sys_eqs::dims> & kmap,
+	     const grid_sm<Sys_eqs::dims,void> & gs,
+	     typename Sys_eqs::stype (& spacing )[Sys_eqs::dims],
+	     std::unordered_map<long int,typename Sys_eqs::stype > & cols,
+	     typename Sys_eqs::stype coeff)
+  {
+    cols[g_map.template get<0>(kmap)*Sys_eqs::nvar + f] += coeff;
+  }
+
+  /*! \brief
+   *
+   *
+   */
+  static grid_key_dx<Sys_eqs::dims> position(grid_key_dx<Sys_eqs::dims> & pos, const grid_sm<Sys_eqs::dims,void> & gs, const comb<Sys_eqs::dims> (& s_pos)[Sys_eqs::nvar])
+  {
+    return grid_key_dx<Sys_eqs::dims>(s_pos[f]);
+  }
 };
 
 class ConstField
@@ -111,7 +122,7 @@ class ConstField
 
 inline size_t mat_factor(size_t nvar, size_t sz, const size_t ord)
 {
-	return nvar;
+  return nvar;
 }
 
 #include "mul.hpp"
