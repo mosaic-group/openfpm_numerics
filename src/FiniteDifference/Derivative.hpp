@@ -3,6 +3,8 @@
  *
  *  Created on: Oct 5, 2015
  *      Author: Pietro Incardona
+ *  Modified on: Dec 09, 2019
+ *      Author: amfoggia
  */
 
 #ifndef OPENFPM_NUMERICS_SRC_FINITEDIFFERENCE_DERIVATIVE_HPP_
@@ -24,11 +26,11 @@
  * \tparam impl which implementation
  *
  */
-template<unsigned int d, typename Field, unsigned int impl=CENTRAL>
+template<unsigned int d, typename expr_type, unsigned int impl=CENTRAL>
 class D
 {
 
-  typedef typename Field::sys_eqs_type Sys_eqs; /**< System of equations. */
+  typedef typename expr_type::sys_eqs_type Sys_eqs; /**< System of equations. */
   typedef Sys_eqs sys_eqs_type;
   
   /*! \brief Calculate which colums of the Matrix are non zero
@@ -43,7 +45,7 @@ class D
    * \snippet FDScheme_unit_tests.hpp Usage of stencil derivative
    *
    */
-  inline static void value(const grid_key_dx<Sys_eqs::dims> & pos, const grid_sm<Sys_eqs::dims,void> & gs, std::unordered_map<long int,typename Sys_eqs::stype > & cols, typename Sys_eqs::stype coeff)
+  inline void value(const grid_key_dx<Sys_eqs::dims> & pos, const grid_sm<Sys_eqs::dims,void> & gs, std::unordered_map<long int,typename Sys_eqs::stype > & cols, typename Sys_eqs::stype coeff) const
   {
     std::cerr << "Error " << __FILE__ << ":" << __LINE__ << " only CENTRAL, FORWARD, BACKWARD derivative are defined";
   }
@@ -80,13 +82,19 @@ class D
  * \endverbatim
  *
  */
-template<unsigned int d, typename expr>
-class D<d,expr,CENTRAL>
+template<unsigned int d, typename expr_type>
+class D<d,expr_type,CENTRAL>
 {
 public:
 
-  typedef typename expr::sys_eqs_type Sys_eqs; /**< System of equations. */
+  typedef typename expr_type::sys_eqs_type Sys_eqs; /**< System of equations. */
   typedef Sys_eqs sys_eqs_type;
+
+  expr_type expr;
+
+  D() {}
+
+  D(expr_type expr_) : expr{expr_} {}
 
   /*! \brief Calculate which colums of the Matrix are non zero
    *
@@ -102,29 +110,29 @@ public:
    * \snippet FDScheme_unit_tests.hpp Usage of stencil derivative
    *
    */
-  inline static void value(const typename stub_or_real<Sys_eqs,Sys_eqs::dims,typename Sys_eqs::stype,typename Sys_eqs::b_grid::decomposition::extended_type>::type & g_map,
-			   grid_dist_key_dx<Sys_eqs::dims> & kmap,
-			   const grid_sm<Sys_eqs::dims,void> & gs,
-			   typename Sys_eqs::stype (& spacing )[Sys_eqs::dims],
-			   std::unordered_map<long int,typename Sys_eqs::stype > & cols,
-			   typename Sys_eqs::stype coeff)
+  inline void value(const typename stub_or_real<Sys_eqs,Sys_eqs::dims,typename Sys_eqs::stype,typename Sys_eqs::b_grid::decomposition::extended_type>::type & g_map,
+		    grid_dist_key_dx<Sys_eqs::dims> & kmap,
+		    const grid_sm<Sys_eqs::dims,void> & gs,
+		    typename Sys_eqs::stype (& spacing )[Sys_eqs::dims],
+		    std::unordered_map<long int,typename Sys_eqs::stype > & cols,
+		    typename Sys_eqs::stype coeff) const
   {
     // if the system is staggered the CENTRAL derivative is equivalent to a forward derivative
     if (is_grid_staggered<Sys_eqs>::value())
       {
-	D<d,expr,BACKWARD>::value(g_map,kmap,gs,spacing,cols,coeff);
+	D<d,expr_type,BACKWARD>{}.value(g_map,kmap,gs,spacing,cols,coeff);
 	return;
       }
 
     long int old_val = kmap.getKeyRef().get(d);
     kmap.getKeyRef().set_d(d, kmap.getKeyRef().get(d) + 1);
-    expr::value(g_map,kmap,gs,spacing,cols,coeff/spacing[d]/2.0 );
+    expr.value(g_map,kmap,gs,spacing,cols,coeff/spacing[d]/2.0 );
     kmap.getKeyRef().set_d(d,old_val);
 
 
     old_val = kmap.getKeyRef().get(d);
     kmap.getKeyRef().set_d(d, kmap.getKeyRef().get(d) - 1);
-    expr::value(g_map,kmap,gs,spacing,cols,-coeff/spacing[d]/2.0 );
+    expr.value(g_map,kmap,gs,spacing,cols,-coeff/spacing[d]/2.0 );
     kmap.getKeyRef().set_d(d,old_val);
   }
 
@@ -169,7 +177,7 @@ public:
 						    const grid_sm<Sys_eqs::dims,void> & gs,
 						    const comb<Sys_eqs::dims> (& s_pos)[Sys_eqs::nvar])
   {
-    auto arg_pos = expr::position(pos,gs,s_pos);
+    auto arg_pos = expr_type::position(pos,gs,s_pos);
     if (is_grid_staggered<Sys_eqs>::value())
       {
 	if (arg_pos.get(d) == -1)
@@ -209,13 +217,19 @@ public:
  * \endverbatim
  *
  */
-template<unsigned int d, typename expr>
-class D<d,expr,CENTRAL_B_ONE_SIDE>
+template<unsigned int d, typename expr_type>
+class D<d,expr_type,CENTRAL_B_ONE_SIDE>
 {
 public:
 
-  typedef typename expr::sys_eqs_type Sys_eqs; /**< System of equations. */
+  typedef typename expr_type::sys_eqs_type Sys_eqs; /**< System of equations. */
   typedef Sys_eqs sys_eqs_type;
+
+  expr_type expr;
+  
+  D() {}
+
+  D(expr_type expr_) : expr{expr_} {}
   
   /*! \brief Calculate which colums of the Matrix are non zero
    *
@@ -231,12 +245,12 @@ public:
    * \snippet FDScheme_unit_tests.hpp Usage of stencil derivative
    *
    */
-  static void value(const typename stub_or_real<Sys_eqs,Sys_eqs::dims,typename Sys_eqs::stype,typename Sys_eqs::b_grid::decomposition::extended_type>::type & g_map,
+  inline void value(const typename stub_or_real<Sys_eqs,Sys_eqs::dims,typename Sys_eqs::stype,typename Sys_eqs::b_grid::decomposition::extended_type>::type & g_map,
 		    grid_dist_key_dx<Sys_eqs::dims> & kmap,
 		    const grid_sm<Sys_eqs::dims,void> & gs,
 		    typename Sys_eqs::stype (& spacing )[Sys_eqs::dims],
 		    std::unordered_map<long int,typename Sys_eqs::stype > & cols,
-		    typename Sys_eqs::stype coeff)
+		    typename Sys_eqs::stype coeff) const
   {
 #ifdef SE_CLASS1
     if (Sys_eqs::boundary[d] == PERIODIC)
@@ -247,42 +261,42 @@ public:
 
     if (pos.get(d) == (long int)gs.size(d)-1 )
       {
-	expr::value(g_map,kmap,gs,spacing,cols,1.5*coeff/spacing[d]);
+	expr.value(g_map,kmap,gs,spacing,cols,1.5*coeff/spacing[d]);
 
 	long int old_val = kmap.getKeyRef().get(d);
 	kmap.getKeyRef().set_d(d, kmap.getKeyRef().get(d) - 1);
-	expr::value(g_map,kmap,gs,spacing,cols,-2.0*coeff/spacing[d]);
+	expr.value(g_map,kmap,gs,spacing,cols,-2.0*coeff/spacing[d]);
 	kmap.getKeyRef().set_d(d,old_val);
 
 	old_val = kmap.getKeyRef().get(d);
 	kmap.getKeyRef().set_d(d, kmap.getKeyRef().get(d) - 2);
-	expr::value(g_map,kmap,gs,spacing,cols,0.5*coeff/spacing[d]);
+	expr.value(g_map,kmap,gs,spacing,cols,0.5*coeff/spacing[d]);
 	kmap.getKeyRef().set_d(d,old_val);
       }
     else if (pos.get(d) == 0)
       {
-	expr::value(g_map,kmap,gs,spacing,cols,-1.5*coeff/spacing[d]);
+	expr.value(g_map,kmap,gs,spacing,cols,-1.5*coeff/spacing[d]);
 
 	long int old_val = kmap.getKeyRef().get(d);
 	kmap.getKeyRef().set_d(d, kmap.getKeyRef().get(d) + 1);
-	expr::value(g_map,kmap,gs,spacing,cols,2.0*coeff/spacing[d]);
+	expr.value(g_map,kmap,gs,spacing,cols,2.0*coeff/spacing[d]);
 	kmap.getKeyRef().set_d(d,old_val);
 
 	old_val = kmap.getKeyRef().get(d);
 	kmap.getKeyRef().set_d(d, kmap.getKeyRef().get(d) + 2);
-	expr::value(g_map,kmap,gs,spacing,cols,-0.5*coeff/spacing[d]);
+	expr.value(g_map,kmap,gs,spacing,cols,-0.5*coeff/spacing[d]);
 	kmap.getKeyRef().set_d(d,old_val);
       }
     else
       {
 	long int old_val = kmap.getKeyRef().get(d);
 	kmap.getKeyRef().set_d(d, kmap.getKeyRef().get(d) + 1);
-	expr::value(g_map,kmap,gs,spacing,cols,coeff/spacing[d]);
+	expr.value(g_map,kmap,gs,spacing,cols,coeff/spacing[d]);
 	kmap.getKeyRef().set_d(d,old_val);
 
 	old_val = kmap.getKeyRef().get(d);
 	kmap.getKeyRef().set_d(d, kmap.getKeyRef().get(d) - 1);
-	expr::value(g_map,kmap,gs,spacing,cols,-coeff/spacing[d]);
+	expr.value(g_map,kmap,gs,spacing,cols,-coeff/spacing[d]);
 	kmap.getKeyRef().set_d(d,old_val);
       }
   }
@@ -319,7 +333,7 @@ public:
    */
   inline static grid_key_dx<Sys_eqs::dims> position(grid_key_dx<Sys_eqs::dims> & pos, const grid_sm<Sys_eqs::dims,void> & gs, const comb<Sys_eqs::dims> (& s_pos)[Sys_eqs::nvar])
   {
-    return expr::position(pos,gs,s_pos);
+    return expr_type::position(pos,gs,s_pos);
   }
 };
 
@@ -334,13 +348,19 @@ public:
  * \endverbatim
  *
  */
-template<unsigned int d, typename expr>
-class D<d,expr,FORWARD>
+template<unsigned int d, typename expr_type>
+class D<d,expr_type,FORWARD>
 {
 public:
 
-  typedef typename expr::sys_eqs_type Sys_eqs; /**< System of equations. */
+  typedef typename expr_type::sys_eqs_type Sys_eqs; /**< System of equations. */
   typedef Sys_eqs sys_eqs_type;
+
+  expr_type expr;
+
+  D() {}
+
+  D(expr_type expr_) : expr{expr_} {}
 
   /*! \brief Calculate which colums of the Matrix are non zero
    *
@@ -356,21 +376,21 @@ public:
    * \snippet FDScheme_unit_tests.hpp Usage of stencil derivative
    *
    */
-  inline static void value(const typename stub_or_real<Sys_eqs,Sys_eqs::dims,typename Sys_eqs::stype,typename Sys_eqs::b_grid::decomposition::extended_type>::type & g_map,
-			   grid_dist_key_dx<Sys_eqs::dims> & kmap,
-			   const grid_sm<Sys_eqs::dims,void> & gs,
-			   typename Sys_eqs::stype (& spacing )[Sys_eqs::dims],
-			   std::unordered_map<long int,typename Sys_eqs::stype > & cols,
-			   typename Sys_eqs::stype coeff)
+  inline void value(const typename stub_or_real<Sys_eqs,Sys_eqs::dims,typename Sys_eqs::stype,typename Sys_eqs::b_grid::decomposition::extended_type>::type & g_map,
+		    grid_dist_key_dx<Sys_eqs::dims> & kmap,
+		    const grid_sm<Sys_eqs::dims,void> & gs,
+		    typename Sys_eqs::stype (& spacing )[Sys_eqs::dims],
+		    std::unordered_map<long int,typename Sys_eqs::stype > & cols,
+		    typename Sys_eqs::stype coeff) const
   {
 
     long int old_val = kmap.getKeyRef().get(d);
     kmap.getKeyRef().set_d(d, kmap.getKeyRef().get(d) + 1);
-    expr::value(g_map,kmap,gs,spacing,cols,coeff/spacing[d]);
+    expr.value(g_map,kmap,gs,spacing,cols,coeff/spacing[d]);
     kmap.getKeyRef().set_d(d,old_val);
 
     // backward
-    expr::value(g_map,kmap,gs,spacing,cols,-coeff/spacing[d]);
+    expr.value(g_map,kmap,gs,spacing,cols,-coeff/spacing[d]);
   }
 
 
@@ -390,7 +410,7 @@ public:
 						    const grid_sm<Sys_eqs::dims,void> & gs,
 						    const comb<Sys_eqs::dims> (& s_pos)[Sys_eqs::nvar])
   {
-    return expr::position(pos,gs,s_pos);
+    return expr_type::position(pos,gs,s_pos);
   }
 };
 
@@ -404,13 +424,19 @@ public:
  * \endverbatim
  *
  */
-template<unsigned int d, typename expr>
-class D<d,expr,BACKWARD>
+template<unsigned int d, typename expr_type>
+class D<d,expr_type,BACKWARD>
 {
 public:
 
-  typedef typename expr::sys_eqs_type Sys_eqs; /**< System of equations. */
+  typedef typename expr_type::sys_eqs_type Sys_eqs; /**< System of equations. */
   typedef Sys_eqs sys_eqs_type;
+
+  expr_type expr;
+
+  D() {}
+
+  D(expr_type expr_) : expr{expr_} {}
 
   /*! \brief Calculate which colums of the Matrix are non zero
    *
@@ -426,21 +452,21 @@ public:
    * \snippet FDScheme_unit_tests.hpp Usage of stencil derivative
    *
    */
-  inline static void value(const typename stub_or_real<Sys_eqs,Sys_eqs::dims,typename Sys_eqs::stype,typename Sys_eqs::b_grid::decomposition::extended_type>::type & g_map,
-			   grid_dist_key_dx<Sys_eqs::dims> & kmap,
-			   const grid_sm<Sys_eqs::dims,void> & gs,
-			   typename Sys_eqs::stype (& spacing )[Sys_eqs::dims],
-			   std::unordered_map<long int,typename Sys_eqs::stype > & cols,
-			   typename Sys_eqs::stype coeff)
+  inline void value(const typename stub_or_real<Sys_eqs,Sys_eqs::dims,typename Sys_eqs::stype,typename Sys_eqs::b_grid::decomposition::extended_type>::type & g_map,
+		    grid_dist_key_dx<Sys_eqs::dims> & kmap,
+		    const grid_sm<Sys_eqs::dims,void> & gs,
+		    typename Sys_eqs::stype (& spacing )[Sys_eqs::dims],
+		    std::unordered_map<long int,typename Sys_eqs::stype > & cols,
+		    typename Sys_eqs::stype coeff) const
   {
 
     long int old_val = kmap.getKeyRef().get(d);
     kmap.getKeyRef().set_d(d, kmap.getKeyRef().get(d) - 1);
-    expr::value(g_map,kmap,gs,spacing,cols,-coeff/spacing[d]);
+    expr.value(g_map,kmap,gs,spacing,cols,-coeff/spacing[d]);
     kmap.getKeyRef().set_d(d,old_val);
 
     // forward
-    expr::value(g_map,kmap,gs,spacing,cols,coeff/spacing[d]);
+    expr.value(g_map,kmap,gs,spacing,cols,coeff/spacing[d]);
   }
 
 
@@ -458,7 +484,7 @@ public:
    */
   inline static grid_key_dx<Sys_eqs::dims> position(grid_key_dx<Sys_eqs::dims> & pos, const grid_sm<Sys_eqs::dims,void> & gs, const comb<Sys_eqs::dims> (& s_pos)[Sys_eqs::nvar])
   {
-    return expr::position(pos,gs,s_pos);
+    return expr_type::position(pos,gs,s_pos);
   }
 };
 

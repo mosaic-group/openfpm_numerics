@@ -3,6 +3,8 @@
  *
  *  Created on: Jan 4, 2016
  *      Author: i-bird
+ *  Modified on: Dec 09, 2019
+ *      Author: amfoggia
  */
 
 #ifndef OPENFPM_NUMERICS_SRC_FINITEDIFFERENCE_EQ_UNIT_TEST_3D_HPP_

@@ -3,6 +3,8 @@
  *
  *  Created on: Oct 5, 2015
  *      Author: i-bird
+ *  Modified on: Dec 09, 2019
+ *      Author: amfoggia
  */
 
 #ifndef OPENFPM_NUMERICS_SRC_FINITEDIFFERENCE_FDSCHEME_UNIT_TESTS_HPP_
@@ -157,8 +159,8 @@ BOOST_AUTO_TEST_CASE( der_central_non_periodic)
 	std::unordered_map<long int,float> cols_x;
 	std::unordered_map<long int,float> cols_y;
 
-	D<x,Field<V,sys_nn>>::value(g_map,key11,ginfo,spacing,cols_x,1);
-	D<y,Field<V,sys_nn>>::value(g_map,key11,ginfo,spacing,cols_y,1);
+	D<x,Field<V,sys_nn>>{}.value(g_map,key11,ginfo,spacing,cols_x,1);
+	D<y,Field<V,sys_nn>>{}.value(g_map,key11,ginfo,spacing,cols_y,1);
 
 	BOOST_REQUIRE_EQUAL(cols_x.size(),2ul);
 	BOOST_REQUIRE_EQUAL(cols_y.size(),2ul);
@@ -180,10 +182,10 @@ BOOST_AUTO_TEST_CASE( der_central_non_periodic)
 
 	// Composed derivative
 
-	D<x,D<x,Field<V,sys_nn>>>::value(g_map,key22,ginfo,spacing,cols_xx,1);
-	D<x,D<y,Field<V,sys_nn>>>::value(g_map,key22,ginfo,spacing,cols_xy,1);
-	D<y,D<x,Field<V,sys_nn>>>::value(g_map,key22,ginfo,spacing,cols_yx,1);
-	D<y,D<y,Field<V,sys_nn>>>::value(g_map,key22,ginfo,spacing,cols_yy,1);
+	D<x,D<x,Field<V,sys_nn>>>{}.value(g_map,key22,ginfo,spacing,cols_xx,1);
+	D<x,D<y,Field<V,sys_nn>>>{}.value(g_map,key22,ginfo,spacing,cols_xy,1);
+	D<y,D<x,Field<V,sys_nn>>>{}.value(g_map,key22,ginfo,spacing,cols_yx,1);
+	D<y,D<y,Field<V,sys_nn>>>{}.value(g_map,key22,ginfo,spacing,cols_yy,1);
 
 	BOOST_REQUIRE_EQUAL(cols_xx.size(),3ul);
 	BOOST_REQUIRE_EQUAL(cols_xy.size(),4ul);
@@ -213,8 +215,8 @@ BOOST_AUTO_TEST_CASE( der_central_non_periodic)
 	cols_x.clear();
 	cols_y.clear();
 
-	D<x,Field<V,sys_nn>,CENTRAL_B_ONE_SIDE>::value(g_map,key11,ginfo,spacing,cols_x,1);
-	D<y,Field<V,sys_nn>,CENTRAL_B_ONE_SIDE>::value(g_map,key11,ginfo,spacing,cols_y,1);
+	D<x,Field<V,sys_nn>,CENTRAL_B_ONE_SIDE>{}.value(g_map,key11,ginfo,spacing,cols_x,1);
+	D<y,Field<V,sys_nn>,CENTRAL_B_ONE_SIDE>{}.value(g_map,key11,ginfo,spacing,cols_y,1);
 
 	BOOST_REQUIRE_EQUAL(cols_x.size(),2ul);
 	BOOST_REQUIRE_EQUAL(cols_y.size(),2ul);
@@ -230,8 +232,8 @@ BOOST_AUTO_TEST_CASE( der_central_non_periodic)
 	cols_x.clear();
 	cols_y.clear();
 
-	D<x,Field<V,sys_nn>,CENTRAL_B_ONE_SIDE>::value(g_map,key00,ginfo,spacing,cols_x,1);
-	D<y,Field<V,sys_nn>,CENTRAL_B_ONE_SIDE>::value(g_map,key00,ginfo,spacing,cols_y,1);
+	D<x,Field<V,sys_nn>,CENTRAL_B_ONE_SIDE>{}.value(g_map,key00,ginfo,spacing,cols_x,1);
+	D<y,Field<V,sys_nn>,CENTRAL_B_ONE_SIDE>{}.value(g_map,key00,ginfo,spacing,cols_y,1);
 
 	BOOST_REQUIRE_EQUAL(cols_x.size(),3ul);
 	BOOST_REQUIRE_EQUAL(cols_y.size(),3ul);
@@ -249,8 +251,8 @@ BOOST_AUTO_TEST_CASE( der_central_non_periodic)
 	cols_x.clear();
 	cols_y.clear();
 
-	D<x,Field<V,sys_nn>,CENTRAL_B_ONE_SIDE>::value(g_map,key1515,ginfo,spacing,cols_x,1);
-	D<y,Field<V,sys_nn>,CENTRAL_B_ONE_SIDE>::value(g_map,key1515,ginfo,spacing,cols_y,1);
+	D<x,Field<V,sys_nn>,CENTRAL_B_ONE_SIDE>{}.value(g_map,key1515,ginfo,spacing,cols_x,1);
+	D<y,Field<V,sys_nn>,CENTRAL_B_ONE_SIDE>{}.value(g_map,key1515,ginfo,spacing,cols_y,1);
 
 	BOOST_REQUIRE_EQUAL(cols_x.size(),3ul);
 	BOOST_REQUIRE_EQUAL(cols_y.size(),3ul);
@@ -290,8 +292,8 @@ BOOST_AUTO_TEST_CASE( der_forward_backward_non_periodic )
 	std::unordered_map<long int,float> cols_x;
 	std::unordered_map<long int,float> cols_y;
 
-	D<x,Field<V,sys_nn>,FORWARD>::value(g_map,key11,ginfo,spacing,cols_x,1);
-	D<y,Field<V,sys_nn>,FORWARD>::value(g_map,key11,ginfo,spacing,cols_y,1);
+	D<x,Field<V,sys_nn>,FORWARD>{}.value(g_map,key11,ginfo,spacing,cols_x,1);
+	D<y,Field<V,sys_nn>,FORWARD>{}.value(g_map,key11,ginfo,spacing,cols_y,1);
 
 	BOOST_REQUIRE_EQUAL(cols_x.size(),2ul);
 	BOOST_REQUIRE_EQUAL(cols_y.size(),2ul);
@@ -305,8 +307,8 @@ BOOST_AUTO_TEST_CASE( der_forward_backward_non_periodic )
 	cols_x.clear();
 	cols_y.clear();
 
-	D<x,Field<V,sys_nn>,BACKWARD>::value(g_map,key11,ginfo,spacing,cols_x,1);
-	D<y,Field<V,sys_nn>,BACKWARD>::value(g_map,key11,ginfo,spacing,cols_y,1);
+	D<x,Field<V,sys_nn>,BACKWARD>{}.value(g_map,key11,ginfo,spacing,cols_x,1);
+	D<y,Field<V,sys_nn>,BACKWARD>{}.value(g_map,key11,ginfo,spacing,cols_y,1);
 
 	BOOST_REQUIRE_EQUAL(cols_x.size(),2ul);
 	BOOST_REQUIRE_EQUAL(cols_y.size(),2ul);
@@ -344,12 +346,11 @@ BOOST_AUTO_TEST_CASE( avg_central_non_periodic)
 	std::unordered_map<long int,float> cols_x;
 	std::unordered_map<long int,float> cols_y;
 
-	Avg<x,Field<V,sys_nn>,sys_nn>::value(g_map,key11,ginfo,spacing,cols_x,1);
-	Avg<y,Field<V,sys_nn>,sys_nn>::value(g_map,key11,ginfo,spacing,cols_y,1);
+	Avg<x,Field<V,sys_nn>>{}.value(g_map,key11,ginfo,spacing,cols_x,1);
+	Avg<y,Field<V,sys_nn>>{}.value(g_map,key11,ginfo,spacing,cols_y,1);
 
 	BOOST_REQUIRE_EQUAL(cols_x.size(),2ul);
 	BOOST_REQUIRE_EQUAL(cols_y.size(),2ul);
-
 	BOOST_REQUIRE_EQUAL(cols_x[17+1],0.5);
 	BOOST_REQUIRE_EQUAL(cols_x[17-1],0.5);
 
@@ -365,10 +366,10 @@ BOOST_AUTO_TEST_CASE( avg_central_non_periodic)
 
 	// Composed derivative
 
-	Avg<x,Avg<x,Field<V,sys_nn>,sys_nn>,sys_nn>::value(g_map,key22,ginfo,spacing,cols_xx,1);
-	Avg<x,Avg<y,Field<V,sys_nn>,sys_nn>,sys_nn>::value(g_map,key22,ginfo,spacing,cols_xy,1);
-	Avg<y,Avg<x,Field<V,sys_nn>,sys_nn>,sys_nn>::value(g_map,key22,ginfo,spacing,cols_yx,1);
-	Avg<y,Avg<y,Field<V,sys_nn>,sys_nn>,sys_nn>::value(g_map,key22,ginfo,spacing,cols_yy,1);
+	Avg<x,Avg<x,Field<V,sys_nn>>>{}.value(g_map,key22,ginfo,spacing,cols_xx,1);
+	Avg<x,Avg<y,Field<V,sys_nn>>>{}.value(g_map,key22,ginfo,spacing,cols_xy,1);
+	Avg<y,Avg<x,Field<V,sys_nn>>>{}.value(g_map,key22,ginfo,spacing,cols_yx,1);
+	Avg<y,Avg<y,Field<V,sys_nn>>>{}.value(g_map,key22,ginfo,spacing,cols_yy,1);
 
 	BOOST_REQUIRE_EQUAL(cols_xx.size(),3ul);
 	BOOST_REQUIRE_EQUAL(cols_xy.size(),4ul);
@@ -419,8 +420,8 @@ BOOST_AUTO_TEST_CASE( der_central_staggered_non_periodic)
 	std::unordered_map<long int,float> cols_x;
 	std::unordered_map<long int,float> cols_y;
 
-	D<x,Field<V,syss_nn>>::value(g_map,key11,ginfo,spacing,cols_x,1);
-	D<y,Field<V,syss_nn>>::value(g_map,key11,ginfo,spacing,cols_y,1);
+	D<x,Field<V,syss_nn>>{}.value(g_map,key11,ginfo,spacing,cols_x,1);
+	D<y,Field<V,syss_nn>>{}.value(g_map,key11,ginfo,spacing,cols_y,1);
 
 	BOOST_REQUIRE_EQUAL(cols_x.size(),2ul);
 	BOOST_REQUIRE_EQUAL(cols_y.size(),2ul);
@@ -458,8 +459,8 @@ BOOST_AUTO_TEST_CASE( avg_central_staggered_non_periodic)
 	std::unordered_map<long int,float> cols_x;
 	std::unordered_map<long int,float> cols_y;
 
-	Avg<x,Field<V,syss_pp>,syss_pp>::value(g_map,key11,ginfo,spacing,cols_x,1);
-	Avg<y,Field<V,syss_pp>,syss_pp>::value(g_map,key11,ginfo,spacing,cols_y,1);
+	Avg<x,Field<V,syss_pp>>{}.value(g_map,key11,ginfo,spacing,cols_x,1);
+	Avg<y,Field<V,syss_pp>>{}.value(g_map,key11,ginfo,spacing,cols_y,1);
 
 	BOOST_REQUIRE_EQUAL(cols_x.size(),2ul);
 	BOOST_REQUIRE_EQUAL(cols_y.size(),2ul);
@@ -500,7 +501,7 @@ BOOST_AUTO_TEST_CASE( lap_periodic)
 	// filled colums
 	std::unordered_map<long int,float> cols;
 
-	Lap<Field<V,sys_pp>,sys_pp>::value(g_map,key11,ginfo,spacing,cols,1);
+	Lap<Field<V,sys_pp>>{}.value(g_map,key11,ginfo,spacing,cols,1);
 
 	BOOST_REQUIRE_EQUAL(cols.size(),5ul);
 
@@ -515,7 +516,7 @@ BOOST_AUTO_TEST_CASE( lap_periodic)
 
 	cols.clear();
 
-	Lap<Field<V,sys_pp>,sys_pp>::value(g_map,key1414,ginfo,spacing,cols,1);
+	Lap<Field<V,sys_pp>>{}.value(g_map,key1414,ginfo,spacing,cols,1);
 
 	BOOST_REQUIRE_EQUAL(cols.size(),5ul);
 

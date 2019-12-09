@@ -3,6 +3,8 @@
  *
  *  Created on: Sep 17, 2015
  *      Author: i-bird
+ *  Modified on: Dec 09, 2019
+ *      Author: amfoggia
  */
 
 #ifndef OPENFPM_NUMERICS_SRC_FINITEDIFFERENCE_FDSCHEME_HPP_

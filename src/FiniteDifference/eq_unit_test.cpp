@@ -3,6 +3,8 @@
  *
  *  Created on: Oct 13, 2015
  *      Author: i-bird
+ *  Modified on: Dec 09, 2019
+ *      Author: amfoggia
  */
 
 #ifndef OPENFPM_NUMERICS_SRC_FINITEDIFFERENCE_EQ_UNIT_TEST_HPP_
@@ -90,14 +92,14 @@ typedef Field<P,lid_nn> Prs;
 
 // Eq1 V_x
 
-typedef mul<eta<lid_nn>,Lap<v_x,lid_nn>> eta_lap_vx;
+typedef mul<eta<lid_nn>,Lap<v_x>> eta_lap_vx;
 typedef D<x,Prs> p_x;
 typedef minus<p_x> m_p_x;
 typedef sum<eta_lap_vx,m_p_x> vx_eq;
 
 // Eq2 V_y
 
-typedef mul<eta<lid_nn>,Lap<v_y,lid_nn>> eta_lap_vy;
+typedef mul<eta<lid_nn>,Lap<v_y>> eta_lap_vy;
 typedef D<y,Prs> p_y;
 typedef minus<p_y> m_p_y;
 typedef sum<eta_lap_vy,m_p_y> vy_eq;
@@ -134,11 +136,11 @@ typedef sum<dx_vx,dy_vy> ic_eq;
  */
 
 // Directional Avg
-typedef Avg<x,v_y,lid_nn> avg_vy;
-typedef Avg<y,v_x,lid_nn> avg_vx;
+typedef Avg<x,v_y> avg_vy;
+typedef Avg<y,v_x> avg_vx;
 
-typedef Avg<x,v_y,lid_nn,FORWARD> avg_vy_f;
-typedef Avg<y,v_x,lid_nn,FORWARD> avg_vx_f;
+typedef Avg<x,v_y,FORWARD> avg_vy_f;
+typedef Avg<y,v_x,FORWARD> avg_vx_f;
 
 #define EQ_1 0
 #define EQ_2 1
