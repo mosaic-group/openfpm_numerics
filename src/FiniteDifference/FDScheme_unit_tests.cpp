@@ -1,5 +1,5 @@
 /*
- * FDScheme_unit_tests.hpp
+ * FDScheme_unit_tests.cpp
  *
  *  Created on: Oct 5, 2015
  *      Author: i-bird

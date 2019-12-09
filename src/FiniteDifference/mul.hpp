@@ -143,7 +143,7 @@ public:
    * @param[in] _expr1 First expression to add.
    * @param[in] _expr2 Second expression to add.
    */
-  mul(expr1_type & _expr1, expr2_type & _expr2) : expr1{_expr1}, expr2{_expr2} {}
+  mul(const expr1_type & _expr1, const expr2_type & _expr2) : expr1{_expr1}, expr2{_expr2} {}
   
   /*! \brief Calculate which colums of the Matrix are non zero
    *
