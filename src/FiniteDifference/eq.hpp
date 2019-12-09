@@ -87,20 +87,20 @@ class Field
 
 public:
 
-  typedef Sys_eqs sys_nn;
+  typedef Sys_eqs sys_eqs_type;
 
-  Field();
+  Field() {};
 
   /*! \brief fill the row
    *
    *
    */
   static void value(const map_grid & g_map,
-	     grid_dist_key_dx<Sys_eqs::dims> & kmap,
-	     const grid_sm<Sys_eqs::dims,void> & gs,
-	     typename Sys_eqs::stype (& spacing )[Sys_eqs::dims],
-	     std::unordered_map<long int,typename Sys_eqs::stype > & cols,
-	     typename Sys_eqs::stype coeff)
+		    grid_dist_key_dx<Sys_eqs::dims> & kmap,
+		    const grid_sm<Sys_eqs::dims,void> & gs,
+		    typename Sys_eqs::stype (& spacing )[Sys_eqs::dims],
+		    std::unordered_map<long int,typename Sys_eqs::stype > & cols,
+		    typename Sys_eqs::stype coeff)
   {
     cols[g_map.template get<0>(kmap)*Sys_eqs::nvar + f] += coeff;
   }

@@ -29,9 +29,9 @@ BOOST_AUTO_TEST_CASE( pse_ker )
 	// Load the result of the test
 
 #ifdef HAVE_LIBQUADMATH
-	y_res.load("test/PSE_convergence");
+	y_res.load("../../test/PSE_convergence");
 #else
-	y_res.load("test/PSE_convergence_osx");
+	y_res.load("../../test/PSE_convergence_osx");
 #endif
 
 	// Every time increase the number of particles by 2

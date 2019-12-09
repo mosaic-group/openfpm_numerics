@@ -80,21 +80,23 @@
 
 /*! \brief It model an expression expr1 + ... exprn
  *
- * \tparam expr.. two or more expression to be summed
- * \tparam Sys_eqs stystem specification
+ * \tparam expr1_type Type of first expression.
+ * \tparam expr2_type Type of second expression.
+ * \tparam expr1_type::sys_nn System of equations.
  *
  * ## Example
  *
  * \snippet FDScheme_unit_tests.hpp sum example
  *
  */
-template<typename expr1_type, typename expr2_type, typename expr1_type::sys_nn>
+template<typename expr1_type, typename expr2_type>
 class sum
 {
 
 public:
 
-  typedef typename expr1_type::sys_nn Sys_eqs;
+  typedef typename expr1_type::sys_eqs_type Sys_eqs; /**< System of equations. */
+  typedef Sys_eqs sys_eqs_type;
   
   expr1_type expr1; /**< First expression to sum. */
   expr2_type expr2; /**< Second expression to sum. */
@@ -135,7 +137,7 @@ public:
 		    const grid_sm<Sys_eqs::dims,void> & gs,
 		    typename Sys_eqs::stype (& spacing )[Sys_eqs::dims],
 		    std::unordered_map<long int,typename Sys_eqs::stype > & cols,
-		    typename Sys_eqs::stype coeff)
+		    typename Sys_eqs::stype coeff) const
   {
     expr1.value(g_map,kmap,gs,spacing,cols,coeff);
     expr2.value(g_map,kmap,gs,spacing,cols,coeff);
@@ -152,17 +154,18 @@ public:
 
 /*! \brief It ancapsulate the minus operation
  *
- * \tparam arg
- * \tparam Sys_eqs system of equation
+ * \tparam expr1_type Type of expression.
+ * \tparam Sys_eqs System of equations.
  *
  */
-template<typename expr1_type, typename Sys_eqs>
+template<typename expr1_type>
 class minus
 {
 
 public:
 
-  typedef void expr_type;
+  typedef typename expr1_type::sys_eqs_type Sys_eqs; /**< System of equations. */
+  typedef Sys_eqs sys_eqs_type;
   
   expr1_type expr; /**< Expression to substract. */
 
@@ -200,7 +203,7 @@ public:
 		    const grid_sm<Sys_eqs::dims,void> & gs,
 		    typename Sys_eqs::stype (& spacing )[Sys_eqs::dims],
 		    std::unordered_map<long int,typename Sys_eqs::stype > & cols,
-		    typename Sys_eqs::stype coeff)
+		    typename Sys_eqs::stype coeff) const
   {
     expr.value(g_map,kmap,gs,spacing,cols,-coeff);
   }

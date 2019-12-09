@@ -157,8 +157,8 @@ BOOST_AUTO_TEST_CASE( der_central_non_periodic)
 	std::unordered_map<long int,float> cols_x;
 	std::unordered_map<long int,float> cols_y;
 
-	D<x,Field<V,sys_nn>,sys_nn>::value(g_map,key11,ginfo,spacing,cols_x,1);
-	D<y,Field<V,sys_nn>,sys_nn>::value(g_map,key11,ginfo,spacing,cols_y,1);
+	D<x,Field<V,sys_nn>>::value(g_map,key11,ginfo,spacing,cols_x,1);
+	D<y,Field<V,sys_nn>>::value(g_map,key11,ginfo,spacing,cols_y,1);
 
 	BOOST_REQUIRE_EQUAL(cols_x.size(),2ul);
 	BOOST_REQUIRE_EQUAL(cols_y.size(),2ul);
@@ -180,10 +180,10 @@ BOOST_AUTO_TEST_CASE( der_central_non_periodic)
 
 	// Composed derivative
 
-	D<x,D<x,Field<V,sys_nn>,sys_nn>,sys_nn>::value(g_map,key22,ginfo,spacing,cols_xx,1);
-	D<x,D<y,Field<V,sys_nn>,sys_nn>,sys_nn>::value(g_map,key22,ginfo,spacing,cols_xy,1);
-	D<y,D<x,Field<V,sys_nn>,sys_nn>,sys_nn>::value(g_map,key22,ginfo,spacing,cols_yx,1);
-	D<y,D<y,Field<V,sys_nn>,sys_nn>,sys_nn>::value(g_map,key22,ginfo,spacing,cols_yy,1);
+	D<x,D<x,Field<V,sys_nn>>>::value(g_map,key22,ginfo,spacing,cols_xx,1);
+	D<x,D<y,Field<V,sys_nn>>>::value(g_map,key22,ginfo,spacing,cols_xy,1);
+	D<y,D<x,Field<V,sys_nn>>>::value(g_map,key22,ginfo,spacing,cols_yx,1);
+	D<y,D<y,Field<V,sys_nn>>>::value(g_map,key22,ginfo,spacing,cols_yy,1);
 
 	BOOST_REQUIRE_EQUAL(cols_xx.size(),3ul);
 	BOOST_REQUIRE_EQUAL(cols_xy.size(),4ul);
@@ -213,8 +213,8 @@ BOOST_AUTO_TEST_CASE( der_central_non_periodic)
 	cols_x.clear();
 	cols_y.clear();
 
-	D<x,Field<V,sys_nn>,sys_nn,CENTRAL_B_ONE_SIDE>::value(g_map,key11,ginfo,spacing,cols_x,1);
-	D<y,Field<V,sys_nn>,sys_nn,CENTRAL_B_ONE_SIDE>::value(g_map,key11,ginfo,spacing,cols_y,1);
+	D<x,Field<V,sys_nn>,CENTRAL_B_ONE_SIDE>::value(g_map,key11,ginfo,spacing,cols_x,1);
+	D<y,Field<V,sys_nn>,CENTRAL_B_ONE_SIDE>::value(g_map,key11,ginfo,spacing,cols_y,1);
 
 	BOOST_REQUIRE_EQUAL(cols_x.size(),2ul);
 	BOOST_REQUIRE_EQUAL(cols_y.size(),2ul);
@@ -230,8 +230,8 @@ BOOST_AUTO_TEST_CASE( der_central_non_periodic)
 	cols_x.clear();
 	cols_y.clear();
 
-	D<x,Field<V,sys_nn>,sys_nn,CENTRAL_B_ONE_SIDE>::value(g_map,key00,ginfo,spacing,cols_x,1);
-	D<y,Field<V,sys_nn>,sys_nn,CENTRAL_B_ONE_SIDE>::value(g_map,key00,ginfo,spacing,cols_y,1);
+	D<x,Field<V,sys_nn>,CENTRAL_B_ONE_SIDE>::value(g_map,key00,ginfo,spacing,cols_x,1);
+	D<y,Field<V,sys_nn>,CENTRAL_B_ONE_SIDE>::value(g_map,key00,ginfo,spacing,cols_y,1);
 
 	BOOST_REQUIRE_EQUAL(cols_x.size(),3ul);
 	BOOST_REQUIRE_EQUAL(cols_y.size(),3ul);
@@ -249,8 +249,8 @@ BOOST_AUTO_TEST_CASE( der_central_non_periodic)
 	cols_x.clear();
 	cols_y.clear();
 
-	D<x,Field<V,sys_nn>,sys_nn,CENTRAL_B_ONE_SIDE>::value(g_map,key1515,ginfo,spacing,cols_x,1);
-	D<y,Field<V,sys_nn>,sys_nn,CENTRAL_B_ONE_SIDE>::value(g_map,key1515,ginfo,spacing,cols_y,1);
+	D<x,Field<V,sys_nn>,CENTRAL_B_ONE_SIDE>::value(g_map,key1515,ginfo,spacing,cols_x,1);
+	D<y,Field<V,sys_nn>,CENTRAL_B_ONE_SIDE>::value(g_map,key1515,ginfo,spacing,cols_y,1);
 
 	BOOST_REQUIRE_EQUAL(cols_x.size(),3ul);
 	BOOST_REQUIRE_EQUAL(cols_y.size(),3ul);
@@ -290,8 +290,8 @@ BOOST_AUTO_TEST_CASE( der_forward_backward_non_periodic )
 	std::unordered_map<long int,float> cols_x;
 	std::unordered_map<long int,float> cols_y;
 
-	D<x,Field<V,sys_nn>,sys_nn,FORWARD>::value(g_map,key11,ginfo,spacing,cols_x,1);
-	D<y,Field<V,sys_nn>,sys_nn,FORWARD>::value(g_map,key11,ginfo,spacing,cols_y,1);
+	D<x,Field<V,sys_nn>,FORWARD>::value(g_map,key11,ginfo,spacing,cols_x,1);
+	D<y,Field<V,sys_nn>,FORWARD>::value(g_map,key11,ginfo,spacing,cols_y,1);
 
 	BOOST_REQUIRE_EQUAL(cols_x.size(),2ul);
 	BOOST_REQUIRE_EQUAL(cols_y.size(),2ul);
@@ -305,8 +305,8 @@ BOOST_AUTO_TEST_CASE( der_forward_backward_non_periodic )
 	cols_x.clear();
 	cols_y.clear();
 
-	D<x,Field<V,sys_nn>,sys_nn,BACKWARD>::value(g_map,key11,ginfo,spacing,cols_x,1);
-	D<y,Field<V,sys_nn>,sys_nn,BACKWARD>::value(g_map,key11,ginfo,spacing,cols_y,1);
+	D<x,Field<V,sys_nn>,BACKWARD>::value(g_map,key11,ginfo,spacing,cols_x,1);
+	D<y,Field<V,sys_nn>,BACKWARD>::value(g_map,key11,ginfo,spacing,cols_y,1);
 
 	BOOST_REQUIRE_EQUAL(cols_x.size(),2ul);
 	BOOST_REQUIRE_EQUAL(cols_y.size(),2ul);
@@ -419,8 +419,8 @@ BOOST_AUTO_TEST_CASE( der_central_staggered_non_periodic)
 	std::unordered_map<long int,float> cols_x;
 	std::unordered_map<long int,float> cols_y;
 
-	D<x,Field<V,syss_nn>,syss_pp>::value(g_map,key11,ginfo,spacing,cols_x,1);
-	D<y,Field<V,syss_nn>,syss_pp>::value(g_map,key11,ginfo,spacing,cols_y,1);
+	D<x,Field<V,syss_nn>>::value(g_map,key11,ginfo,spacing,cols_x,1);
+	D<y,Field<V,syss_nn>>::value(g_map,key11,ginfo,spacing,cols_y,1);
 
 	BOOST_REQUIRE_EQUAL(cols_x.size(),2ul);
 	BOOST_REQUIRE_EQUAL(cols_y.size(),2ul);
@@ -554,31 +554,31 @@ BOOST_AUTO_TEST_CASE( sum_periodic)
 	// filled colums
 	std::unordered_map<long int,float> cols;
 
-	sum<Field<V,sys_pp>,Field<V,sys_pp>,sys_pp>::value(g_map,key11,ginfo,spacing,cols,1);
+	sum<Field<V,sys_pp>,Field<V,sys_pp>>{}.value(g_map,key11,ginfo,spacing,cols,1);
 
-	// BOOST_REQUIRE_EQUAL(cols.size(),1ul);
+	BOOST_REQUIRE_EQUAL(cols.size(),1ul);
 
-	// BOOST_REQUIRE_EQUAL(cols[17],2);
+	BOOST_REQUIRE_EQUAL(cols[17],2);
 
-	// //! [sum example]
+	//! [sum example]
 
-	// cols.clear();
+	cols.clear();
 
-	// sum<Field<V,sys_pp>, Field<V,sys_pp> , Field<V,sys_pp> ,sys_pp>::value(g_map,key11,ginfo,spacing,cols,1);
+	sum<sum<Field<V,sys_pp>,Field<V,sys_pp>>,Field<V,sys_pp>>{}.value(g_map,key11,ginfo,spacing,cols,1);
 
-	// BOOST_REQUIRE_EQUAL(cols.size(),1ul);
+	BOOST_REQUIRE_EQUAL(cols.size(),1ul);
 
-	// BOOST_REQUIRE_EQUAL(cols[17],3);
+	BOOST_REQUIRE_EQUAL(cols[17],3);
 
-	// cols.clear();
+	cols.clear();
 
-	// //! [minus example]
+	//! [minus example]
 
-	// sum<Field<V,sys_pp>, Field<V,sys_pp> , minus<Field<V,sys_pp>,sys_pp> ,sys_pp>::value(g_map,key11,ginfo,spacing,cols,1);
+	sum<Field<V,sys_pp>,sum<Field<V,sys_pp>,minus<Field<V,sys_pp>>>>{}.value(g_map,key11,ginfo,spacing,cols,1);
 
-	// BOOST_REQUIRE_EQUAL(cols.size(),1ul);
+	BOOST_REQUIRE_EQUAL(cols.size(),1ul);
 
-	// BOOST_REQUIRE_EQUAL(cols[17],1ul);
+	BOOST_REQUIRE_EQUAL(cols[17],1ul);
 
 	//! [minus example]
 }
@@ -602,10 +602,10 @@ BOOST_AUTO_TEST_CASE( fd_test_use_staggered_position)
 	comb<2> vx_c[] = {{0,-1}};
 	comb<2> vy_c[] = {{-1,0}};
 
-	grid_key_dx<2> key_ret_vx_x = D<x,Field<V,syss_nn>,syss_nn>::position(key00,ginfo,vx_c);
-	grid_key_dx<2> key_ret_vx_y = D<y,Field<V,syss_nn>,syss_nn>::position(key00,ginfo,vx_c);
-	grid_key_dx<2> key_ret_vy_x = D<x,Field<V,syss_nn>,syss_nn>::position(key00,ginfo,vy_c);
-	grid_key_dx<2> key_ret_vy_y = D<y,Field<V,syss_nn>,syss_nn>::position(key00,ginfo,vy_c);
+	grid_key_dx<2> key_ret_vx_x = D<x,Field<V,syss_nn>>::position(key00,ginfo,vx_c);
+	grid_key_dx<2> key_ret_vx_y = D<y,Field<V,syss_nn>>::position(key00,ginfo,vx_c);
+	grid_key_dx<2> key_ret_vy_x = D<x,Field<V,syss_nn>>::position(key00,ginfo,vy_c);
+	grid_key_dx<2> key_ret_vy_y = D<y,Field<V,syss_nn>>::position(key00,ginfo,vy_c);
 
 	BOOST_REQUIRE_EQUAL(key_ret_vx_x.get(0),0);
 	BOOST_REQUIRE_EQUAL(key_ret_vx_x.get(1),0);
@@ -618,10 +618,10 @@ BOOST_AUTO_TEST_CASE( fd_test_use_staggered_position)
 
 	// Composed derivative
 
-	grid_key_dx<2> key_ret_xx = D<x,D<x,Field<V,syss_nn>,syss_nn>,syss_nn>::position(key00,ginfo,vx_c);
-	grid_key_dx<2> key_ret_xy = D<x,D<y,Field<V,syss_nn>,syss_nn>,syss_nn>::position(key00,ginfo,vx_c);
-	grid_key_dx<2> key_ret_yx = D<y,D<x,Field<V,syss_nn>,syss_nn>,syss_nn>::position(key00,ginfo,vx_c);
-	grid_key_dx<2> key_ret_yy = D<y,D<y,Field<V,syss_nn>,syss_nn>,syss_nn>::position(key00,ginfo,vx_c);
+	grid_key_dx<2> key_ret_xx = D<x,D<x,Field<V,syss_nn>>>::position(key00,ginfo,vx_c);
+	grid_key_dx<2> key_ret_xy = D<x,D<y,Field<V,syss_nn>>>::position(key00,ginfo,vx_c);
+	grid_key_dx<2> key_ret_yx = D<y,D<x,Field<V,syss_nn>>>::position(key00,ginfo,vx_c);
+	grid_key_dx<2> key_ret_yy = D<y,D<y,Field<V,syss_nn>>>::position(key00,ginfo,vx_c);
 
 	BOOST_REQUIRE_EQUAL(key_ret_xx.get(0),-1);
 	BOOST_REQUIRE_EQUAL(key_ret_xx.get(1),0);
@@ -637,10 +637,10 @@ BOOST_AUTO_TEST_CASE( fd_test_use_staggered_position)
 
 	////////////////// Non periodic one sided
 
-	key_ret_vx_x = D<x,Field<V,syss_nn>,syss_nn,CENTRAL_B_ONE_SIDE>::position(key00,ginfo,vx_c);
-	key_ret_vx_y = D<y,Field<V,syss_nn>,syss_nn,CENTRAL_B_ONE_SIDE>::position(key00,ginfo,vx_c);
-	key_ret_vy_x = D<x,Field<V,syss_nn>,syss_nn,CENTRAL_B_ONE_SIDE>::position(key00,ginfo,vy_c);
-	key_ret_vy_y = D<y,Field<V,syss_nn>,syss_nn,CENTRAL_B_ONE_SIDE>::position(key00,ginfo,vy_c);
+	key_ret_vx_x = D<x,Field<V,syss_nn>,CENTRAL_B_ONE_SIDE>::position(key00,ginfo,vx_c);
+	key_ret_vx_y = D<y,Field<V,syss_nn>,CENTRAL_B_ONE_SIDE>::position(key00,ginfo,vx_c);
+	key_ret_vy_x = D<x,Field<V,syss_nn>,CENTRAL_B_ONE_SIDE>::position(key00,ginfo,vy_c);
+	key_ret_vy_y = D<y,Field<V,syss_nn>,CENTRAL_B_ONE_SIDE>::position(key00,ginfo,vy_c);
 
 	BOOST_REQUIRE_EQUAL(key_ret_vx_x.get(0),-1);
 	BOOST_REQUIRE_EQUAL(key_ret_vx_x.get(1),0);

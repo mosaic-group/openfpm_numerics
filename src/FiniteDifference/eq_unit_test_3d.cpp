@@ -85,13 +85,16 @@ const bool lid_nn_3d_eigen::boundary[] = {NON_PERIODIC,NON_PERIODIC,NON_PERIODIC
 const bool lid_nn_3d_petsc::boundary[] = {NON_PERIODIC,NON_PERIODIC,NON_PERIODIC};
 
 // Constant Field
+template<typename Sys_eqs>
 struct eta
 {
 	//! define that eta is a constant field
 	typedef void const_field;
 
+  typedef Sys_eqs sys_eqs_type;
+
 	//! therutn the value of the constant
-	static float val()	{return 1.0;}
+	static float value()	{return 1.0;}
 };
 
 template<typename solver_type,typename lid_nn_3d> void lid_driven_cavity_3d()
@@ -209,39 +212,39 @@ template<typename solver_type,typename lid_nn_3d> void lid_driven_cavity_3d()
 
 #ifdef HAVE_OSX
 
-        std::string file1 = std::string("test/") + s + "lid_driven_cavity_3d_p" + std::to_string(v_cl.getProcessingUnits()) + "_grid_" + std::to_string(v_cl.getProcessUnitID()) + "_test_osx.vtk";
+        std::string file1 = std::string("../../test/") + s + "lid_driven_cavity_3d_p" + std::to_string(v_cl.getProcessingUnits()) + "_grid_" + std::to_string(v_cl.getProcessUnitID()) + "_test_osx.vtk";
         std::string file2 = s + "lid_driven_cavity_3d_p" + std::to_string(v_cl.getProcessingUnits()) + "_grid_" + std::to_string(v_cl.getProcessUnitID()) + ".vtk";
 
 #else
 
 	#if __GNUC__ == 7
 
-        std::string file1 = std::string("test/") + s + "lid_driven_cavity_3d_p" + std::to_string(v_cl.getProcessingUnits()) + "_grid_" + std::to_string(v_cl.getProcessUnitID()) + "_test_GCC7.vtk";
+        std::string file1 = std::string("../../test/") + s + "lid_driven_cavity_3d_p" + std::to_string(v_cl.getProcessingUnits()) + "_grid_" + std::to_string(v_cl.getProcessUnitID()) + "_test_GCC7.vtk";
         std::string file2 = s + "lid_driven_cavity_3d_p" + std::to_string(v_cl.getProcessingUnits()) + "_grid_" + std::to_string(v_cl.getProcessUnitID()) + ".vtk";
 
 	#elif __GNUC__ == 5
 
-        std::string file1 = std::string("test/") + s + "lid_driven_cavity_3d_p" + std::to_string(v_cl.getProcessingUnits()) + "_grid_" + std::to_string(v_cl.getProcessUnitID()) + "_test_GCC5.vtk";
+        std::string file1 = std::string("../../test/") + s + "lid_driven_cavity_3d_p" + std::to_string(v_cl.getProcessingUnits()) + "_grid_" + std::to_string(v_cl.getProcessUnitID()) + "_test_GCC5.vtk";
         std::string file2 = s + "lid_driven_cavity_3d_p" + std::to_string(v_cl.getProcessingUnits()) + "_grid_" + std::to_string(v_cl.getProcessUnitID()) + ".vtk";
 
     #elif __GNUC__ == 6
 
-        std::string file1 = std::string("test/") + s + "lid_driven_cavity_3d_p" + std::to_string(v_cl.getProcessingUnits()) + "_grid_" + std::to_string(v_cl.getProcessUnitID()) + "_test_GCC6.vtk";
+        std::string file1 = std::string("../../test/") + s + "lid_driven_cavity_3d_p" + std::to_string(v_cl.getProcessingUnits()) + "_grid_" + std::to_string(v_cl.getProcessUnitID()) + "_test_GCC6.vtk";
         std::string file2 = s + "lid_driven_cavity_3d_p" + std::to_string(v_cl.getProcessingUnits()) + "_grid_" + std::to_string(v_cl.getProcessUnitID()) + ".vtk";
 
     #elif __GNUC__ == 7
 
-        std::string file1 = std::string("test/") + s + "lid_driven_cavity_3d_p" + std::to_string(v_cl.getProcessingUnits()) + "_grid_" + std::to_string(v_cl.getProcessUnitID()) + "_test_GCC7.vtk";
+        std::string file1 = std::string("../../test/") + s + "lid_driven_cavity_3d_p" + std::to_string(v_cl.getProcessingUnits()) + "_grid_" + std::to_string(v_cl.getProcessUnitID()) + "_test_GCC7.vtk";
         std::string file2 = s + "lid_driven_cavity_3d_p" + std::to_string(v_cl.getProcessingUnits()) + "_grid_" + std::to_string(v_cl.getProcessUnitID()) + ".vtk";
 
      #elif __GNUC__ == 8
 
-        std::string file1 = std::string("test/") + s + "lid_driven_cavity_3d_p" + std::to_string(v_cl.getProcessingUnits()) + "_grid_" + std::to_string(v_cl.getProcessUnitID()) + "_test_GCC8.vtk";
+        std::string file1 = std::string("../../test/") + s + "lid_driven_cavity_3d_p" + std::to_string(v_cl.getProcessingUnits()) + "_grid_" + std::to_string(v_cl.getProcessUnitID()) + "_test_GCC8.vtk";
         std::string file2 = s + "lid_driven_cavity_3d_p" + std::to_string(v_cl.getProcessingUnits()) + "_grid_" + std::to_string(v_cl.getProcessUnitID()) + ".vtk";
 
 	#else
 
-        std::string file1 = std::string("test/") + s + "lid_driven_cavity_3d_p" + std::to_string(v_cl.getProcessingUnits()) + "_grid_" + std::to_string(v_cl.getProcessUnitID()) + "_test_GCC4.vtk";
+        std::string file1 = std::string("../../test/") + s + "lid_driven_cavity_3d_p" + std::to_string(v_cl.getProcessingUnits()) + "_grid_" + std::to_string(v_cl.getProcessUnitID()) + "_test_GCC4.vtk";
         std::string file2 = s + "lid_driven_cavity_3d_p" + std::to_string(v_cl.getProcessingUnits()) + "_grid_" + std::to_string(v_cl.getProcessUnitID()) + ".vtk";
 
 	#endif

@@ -595,7 +595,7 @@ private:
 			auto key = it.get();
 
 			// Calculate the non-zero colums
-			T::value(g_map,key,gs,spacing,cols,1.0);
+			op.value(g_map,key,gs,spacing,cols,1.0);
 
 			// indicate if the diagonal has been set
 			bool is_diag = false;

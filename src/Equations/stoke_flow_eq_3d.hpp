@@ -24,31 +24,31 @@ typedef Field<P,lid_nn_3d> Prs;
 
 // Eq1 V_x
 
-typedef mul<eta,Lap<v_x,lid_nn_3d>,lid_nn_3d> eta_lap_vx;
-typedef D<x,Prs,lid_nn_3d> p_x;
-typedef minus<p_x,lid_nn_3d> m_p_x;
-typedef sum<eta_lap_vx,m_p_x,lid_nn_3d> vx_eq;
+typedef mul<eta<lid_nn_3d>,Lap<v_x,lid_nn_3d>> eta_lap_vx;
+typedef D<x,Prs> p_x;
+typedef minus<p_x> m_p_x;
+typedef sum<eta_lap_vx,m_p_x> vx_eq;
 
 // Eq2 V_y
 
-typedef mul<eta,Lap<v_y,lid_nn_3d>,lid_nn_3d> eta_lap_vy;
-typedef D<y,Prs,lid_nn_3d> p_y;
-typedef minus<p_y,lid_nn_3d> m_p_y;
-typedef sum<eta_lap_vy,m_p_y,lid_nn_3d> vy_eq;
+typedef mul<eta<lid_nn_3d>,Lap<v_y,lid_nn_3d>> eta_lap_vy;
+typedef D<y,Prs> p_y;
+typedef minus<p_y> m_p_y;
+typedef sum<eta_lap_vy,m_p_y> vy_eq;
 
 // Eq3 V_z
 
-typedef mul<eta,Lap<v_z,lid_nn_3d>,lid_nn_3d> eta_lap_vz;
-typedef D<z,Prs,lid_nn_3d> p_z;
-typedef minus<p_z,lid_nn_3d> m_p_z;
-typedef sum<eta_lap_vz,m_p_z,lid_nn_3d> vz_eq;
+typedef mul<eta<lid_nn_3d>,Lap<v_z,lid_nn_3d>> eta_lap_vz;
+typedef D<z,Prs> p_z;
+typedef minus<p_z> m_p_z;
+typedef sum<eta_lap_vz,m_p_z> vz_eq;
 
 // Eq4 Incompressibility
 
-typedef D<x,v_x,lid_nn_3d,FORWARD> dx_vx;
-typedef D<y,v_y,lid_nn_3d,FORWARD> dy_vy;
-typedef D<z,v_z,lid_nn_3d,FORWARD> dz_vz;
-typedef sum<dx_vx,dy_vy,dz_vz,lid_nn_3d> ic_eq;
+typedef D<x,v_x,FORWARD> dx_vx;
+typedef D<y,v_y,FORWARD> dy_vy;
+typedef D<z,v_z,FORWARD> dz_vz;
+typedef sum<sum<dx_vx,dy_vy>,dz_vz> ic_eq;
 
 
 // Directional Avg

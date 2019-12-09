@@ -68,11 +68,14 @@ const bool lid_nn::boundary[] = {NON_PERIODIC,NON_PERIODIC};
 //! [Definition of the equation of the system in the bulk and at the boundary]
 
 // Constant Field
+template<typename Sys_eqs>
 struct eta
 {
 	typedef void const_field;
 
-	static float val()	{return 1.0;}
+  typedef Sys_eqs sys_eqs_type;
+
+	static float value()	{return 1.0;}
 };
 
 // Convenient constants
@@ -87,23 +90,23 @@ typedef Field<P,lid_nn> Prs;
 
 // Eq1 V_x
 
-typedef mul<eta,Lap<v_x,lid_nn>,lid_nn> eta_lap_vx;
-typedef D<x,Prs,lid_nn> p_x;
-typedef minus<p_x,lid_nn> m_p_x;
-typedef sum<eta_lap_vx,m_p_x,lid_nn> vx_eq;
+typedef mul<eta<lid_nn>,Lap<v_x,lid_nn>> eta_lap_vx;
+typedef D<x,Prs> p_x;
+typedef minus<p_x> m_p_x;
+typedef sum<eta_lap_vx,m_p_x> vx_eq;
 
 // Eq2 V_y
 
-typedef mul<eta,Lap<v_y,lid_nn>,lid_nn> eta_lap_vy;
-typedef D<y,Prs,lid_nn> p_y;
-typedef minus<p_y,lid_nn> m_p_y;
-typedef sum<eta_lap_vy,m_p_y,lid_nn> vy_eq;
+typedef mul<eta<lid_nn>,Lap<v_y,lid_nn>> eta_lap_vy;
+typedef D<y,Prs> p_y;
+typedef minus<p_y> m_p_y;
+typedef sum<eta_lap_vy,m_p_y> vy_eq;
 
 // Eq3 Incompressibility
 
-typedef D<x,v_x,lid_nn,FORWARD> dx_vx;
-typedef D<y,v_y,lid_nn,FORWARD> dy_vy;
-typedef sum<dx_vx,dy_vy,lid_nn> ic_eq;
+typedef D<x,v_x,FORWARD> dx_vx;
+typedef D<y,v_y,FORWARD> dy_vy;
+typedef sum<dx_vx,dy_vy> ic_eq;
 
 
 // Equation for boundary conditions
@@ -244,34 +247,34 @@ template<typename solver_type,typename lid_nn> void lid_driven_cavity_2d()
 
 #ifdef HAVE_OSX
 
-    std::string file1 = std::string("test/") + s + "lid_driven_cavity_p" + std::to_string(v_cl.getProcessingUnits()) + "_grid_" + std::to_string(v_cl.getProcessUnitID()) + "_test_osx.vtk";
+    std::string file1 = std::string("../../test/") + s + "lid_driven_cavity_p" + std::to_string(v_cl.getProcessingUnits()) + "_grid_" + std::to_string(v_cl.getProcessUnitID()) + "_test_osx.vtk";
     std::string file2 = s + "lid_driven_cavity_p" + std::to_string(v_cl.getProcessingUnits()) + "_grid_" + std::to_string(v_cl.getProcessUnitID()) + ".vtk";
 
 #else
 
 	#if __GNUC__ == 8
 
-    std::string file1 = std::string("test/") + s + "lid_driven_cavity_p" + std::to_string(v_cl.getProcessingUnits()) + "_grid_" + std::to_string(v_cl.getProcessUnitID()) + "_test_GCC8.vtk";
+    std::string file1 = std::string("../../test/") + s + "lid_driven_cavity_p" + std::to_string(v_cl.getProcessingUnits()) + "_grid_" + std::to_string(v_cl.getProcessUnitID()) + "_test_GCC8.vtk";
     std::string file2 = s + "lid_driven_cavity_p" + std::to_string(v_cl.getProcessingUnits()) + "_grid_" + std::to_string(v_cl.getProcessUnitID()) + ".vtk";
 
 	#elif __GNUC__ == 7
 
-    std::string file1 = std::string("test/") + s + "lid_driven_cavity_p" + std::to_string(v_cl.getProcessingUnits()) + "_grid_" + std::to_string(v_cl.getProcessUnitID()) + "_test_GCC7.vtk";
+    std::string file1 = std::string("../../test/") + s + "lid_driven_cavity_p" + std::to_string(v_cl.getProcessingUnits()) + "_grid_" + std::to_string(v_cl.getProcessUnitID()) + "_test_GCC7.vtk";
     std::string file2 = s + "lid_driven_cavity_p" + std::to_string(v_cl.getProcessingUnits()) + "_grid_" + std::to_string(v_cl.getProcessUnitID()) + ".vtk";
 
 	#elif __GNUC__ == 6
 
-	std::string file1 = std::string("test/") + s + "lid_driven_cavity_p" + std::to_string(v_cl.getProcessingUnits()) + "_grid_" + std::to_string(v_cl.getProcessUnitID()) + "_test_GCC6.vtk";
+	std::string file1 = std::string("../../test/") + s + "lid_driven_cavity_p" + std::to_string(v_cl.getProcessingUnits()) + "_grid_" + std::to_string(v_cl.getProcessUnitID()) + "_test_GCC6.vtk";
 	std::string file2 = s + "lid_driven_cavity_p" + std::to_string(v_cl.getProcessingUnits()) + "_grid_" + std::to_string(v_cl.getProcessUnitID()) + ".vtk";
 
 	#elif __GNUC__ == 5
 
-	std::string file1 = std::string("test/") + s + "lid_driven_cavity_p" + std::to_string(v_cl.getProcessingUnits()) + "_grid_" + std::to_string(v_cl.getProcessUnitID()) + "_test_GCC5.vtk";
+	std::string file1 = std::string("../../test/") + s + "lid_driven_cavity_p" + std::to_string(v_cl.getProcessingUnits()) + "_grid_" + std::to_string(v_cl.getProcessUnitID()) + "_test_GCC5.vtk";
 	std::string file2 = s + "lid_driven_cavity_p" + std::to_string(v_cl.getProcessingUnits()) + "_grid_" + std::to_string(v_cl.getProcessUnitID()) + ".vtk";
 
 	#else
 
-	std::string file1 = std::string("test/") + s + "lid_driven_cavity_p" + std::to_string(v_cl.getProcessingUnits()) + "_grid_" + std::to_string(v_cl.getProcessUnitID()) + "_test_GCC4.vtk";
+	std::string file1 = std::string("../../test/") + s + "lid_driven_cavity_p" + std::to_string(v_cl.getProcessingUnits()) + "_grid_" + std::to_string(v_cl.getProcessUnitID()) + "_test_GCC4.vtk";
 	std::string file2 = s + "lid_driven_cavity_p" + std::to_string(v_cl.getProcessingUnits()) + "_grid_" + std::to_string(v_cl.getProcessUnitID()) + ".vtk";
 
 	#endif
