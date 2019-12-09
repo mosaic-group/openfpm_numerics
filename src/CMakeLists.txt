@@ -98,7 +98,8 @@ install(FILES FiniteDifference/Average.hpp
       	      FiniteDifference/FDScheme.hpp 
       	      FiniteDifference/Laplacian.hpp 
       	      FiniteDifference/mul.hpp 
-      	      FiniteDifference/sum.hpp 
+      	      FiniteDifference/sum.hpp
+	      FiniteDifference/operators.hpp
       	      DESTINATION openfpm_numerics/include/FiniteDifference )
 	      
 install(FILES FiniteDifference/util/common.hpp

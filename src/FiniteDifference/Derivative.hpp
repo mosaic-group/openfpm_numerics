@@ -92,7 +92,7 @@ public:
 
   expr_type expr;
 
-  D() {}
+  D() : expr{expr_type{}} {}
 
   D(expr_type expr_) : expr{expr_} {}
 
@@ -227,7 +227,7 @@ public:
 
   expr_type expr;
   
-  D() {}
+  D() : expr{expr_type{}} {}
 
   D(expr_type expr_) : expr{expr_} {}
   
@@ -358,7 +358,7 @@ public:
 
   expr_type expr;
 
-  D() {}
+  D() : expr{expr_type{}} {}
 
   D(expr_type expr_) : expr{expr_} {}
 
@@ -434,7 +434,7 @@ public:
 
   expr_type expr;
 
-  D() {}
+  D() : expr{expr_type{}} {}
 
   D(expr_type expr_) : expr{expr_} {}
 

@@ -82,7 +82,7 @@ public:
 
   expr_type expr;
 
-  Avg() {}
+  Avg() : expr{expr_type{}} {}
 
   Avg(expr_type expr_) : expr{expr_} {}
 
@@ -179,7 +179,7 @@ public:
 
   expr_type expr;
 
-  Avg() {}
+  Avg() : expr{expr_type{}}{}
 
   Avg(expr_type expr_) : expr{expr_} {}
 
@@ -253,7 +253,7 @@ public:
 
   expr_type expr;
 
-  Avg() {}
+  Avg() : expr{expr_type{}} {}
 
   Avg(expr_type expr_) : expr{expr_} {}
 

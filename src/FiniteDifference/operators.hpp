@@ -64,9 +64,9 @@ mul<expr1_type, expr2_type> operator*(const expr1_type & expr1, const expr2_type
 
 /**
  * @class Der
- * @brief Creates an derivative object to be used with any kind of expression.
+ * @brief Creates a derivative object to be used with any kind of expression.
  * tparam d Direction of the derivative.
- * tparam expr_type Type of the expression to derive.
+ * tparam Sys_eqs Struct with information regarding the system of equations.
  * tparam impl Type of derivative: CENTRAL, BACKWARD, FORWARD.
  */
 template<unsigned int d, typename Sys_eqs, unsigned int impl=CENTRAL>
@@ -85,12 +85,45 @@ public:
   /**
    * @fn operator() (const expr_type &)
    * @brief Constructs a D (derivative) object.
+   * tparam expr_type Type of the expression to derive.
    * param[in] expr_ Expression to derive.
    * return D<> (derivative) object.
    */
   template<typename expr_type>
   D<d,expr_type,impl> operator() (const expr_type expr_) {
     return D<d,expr_type,impl>(expr_);
+  }
+};
+
+/**
+ * @class Laplacian
+ * @brief Creates a Laplacian object to be used with any kind of expression.
+ * tparam expr_type Type of the expression to derive.
+ * tparam impl Type of derivative: CENTRAL, BACKWARD, FORWARD.
+ */
+template<typename Sys_eqs, unsigned int impl=CENTRAL>
+class Laplacian {
+
+public:
+  
+  typedef Sys_eqs sys_eqs_type; /**< Extra type. Used for recognition of "valid" expressions. */
+
+  /**
+   * @fn Laplacian()
+   * @brief Default constructor.
+   */
+  Laplacian() {}
+
+  /**
+   * @fn operator() (const expr_type &)
+   * @brief Constructs a Lap (Laplacian) object.
+   * tparam expr_type Type of the expression to which apply the Laplacian.
+   * param[in] expr_ Expression to which apply the Laplacian operator.
+   * return Lap<> (Laplacian) object.
+   */
+  template<typename expr_type>
+  Lap<expr_type,impl> operator() (const expr_type expr_) {
+    return Lap<expr_type,impl>(expr_);
   }
 };
 

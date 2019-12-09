@@ -184,7 +184,7 @@ public:
    * @param[in] env Environment object.
    * @param[in] total_mag Total magnetization of the system.
    */
-  minus(expr1_type & _expr) : expr{_expr} {}
+  minus(const expr1_type & _expr) : expr{_expr} {}
 
   /*! \brief Create the row of the Matrix
    *
