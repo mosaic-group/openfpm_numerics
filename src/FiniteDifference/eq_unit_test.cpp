@@ -73,11 +73,11 @@ const bool lid_nn::boundary[] = {NON_PERIODIC,NON_PERIODIC};
 template<typename Sys_eqs>
 struct eta
 {
-	typedef void const_field;
-
+  typedef void const_field;
+  
   typedef Sys_eqs sys_eqs_type;
-
-	static float value()	{return 1.0;}
+  
+  static float get(grid_dist_key_dx<Sys_eqs::dims> & key)	{return 1.0;}
 };
 
 // Convenient constants

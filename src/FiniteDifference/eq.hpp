@@ -19,6 +19,8 @@
 #include "util/util_num.hpp"
 #include "Matrix/SparseMatrix.hpp"
 
+// ---------------------------------------------------------------------------------------------------------------------------------------------
+
 /*! \brief Equation
  *
  * It model an equation like expr1 = expr2
@@ -62,6 +64,7 @@ class Eq
   }
 };
 
+// ---------------------------------------------------------------------------------------------------------------------------------------------
 
 // spatial position + value
 
@@ -79,6 +82,8 @@ struct pos_val
   grid_key_dx<dim> pos;
   T value;
 };
+
+// ---------------------------------------------------------------------------------------------------------------------------------------------
 
 template<unsigned int f, typename Sys_eqs>
 class Field
@@ -115,15 +120,70 @@ public:
   }
 };
 
-class ConstField
-{
-
-};
+// ---------------------------------------------------------------------------------------------------------------------------------------------
 
 inline size_t mat_factor(size_t nvar, size_t sz, const size_t ord)
 {
   return nvar;
 }
+
+// ---------------------------------------------------------------------------------------------------------------------------------------------
+
+/**
+ * \struct has_get
+ * \brief Helper struct to determine if a type has a function with the signature "get(const grid_dist_key_dx<dim>&)"
+ */
+template<typename T, unsigned int dim, typename sfinae = void>
+struct has_get : std::false_type {};
+
+template<typename T, unsigned int dim>
+struct has_get<T,dim,typename Void<decltype(std::declval<T>().get(std::declval<const grid_dist_key_dx<dim>&>()))>::type> : std::true_type {};
+
+// ---------------------------------------------------------------------------------------------------------------------------------------------
+
+/**
+ * \class coeff
+ * \brief Creates a coefficient object to be used in the equations.
+ * \tparam coeff_type Type of coefficient. It could be just a double or a grid_dist_id, for example.
+ * \tparam Sys_eqs Struct with information regarding the system of equations.
+ */
+template<typename coeff_type, typename Sys_eqs>
+class coeff {
+
+public:
+  const coeff_type & c; /**< Object that holds the coefficient. */
+
+  typedef Sys_eqs sys_eqs_type; /**< Extra helper type. */
+
+  /**
+   * \fn coeff(const coeff_type &)
+   * \brief Constructor.
+   */
+  coeff(const coeff_type & c_) : c{c_} {}
+
+  /**
+   * \fn get(grid_dist_key_dx<Sys_eqs::dims> &)
+   * \brief Compute the value of the coeff. This function is called when the coefficient changes from point to point in the grid.
+   * \return Value of the coefficient on a specific point in the grid (key).
+   */
+  template<typename U = coeff_type, typename std::enable_if<has_get<U,Sys_eqs::dims>::value,int>::type = 0>
+  typename Sys_eqs::stype get(grid_dist_key_dx<Sys_eqs::dims> & key) const {
+    std::cout << "has_get\n";
+    return c.template get(key);
+  }
+
+  /**
+   * \fn get(grid_dist_key_dx<Sys_eqs::dims> &)
+   * \brief Compute the value of the coeff. This function is called when the coefficient is just a number that does not change from point to point.
+   * \return Value of the coefficient.
+   */
+  template<typename U = coeff_type, typename std::enable_if<!has_get<U,Sys_eqs::dims>::value,int>::type = 0>
+  typename Sys_eqs::stype get(grid_dist_key_dx<Sys_eqs::dims> & key) const {
+    return c;
+  }
+};
+
+// ---------------------------------------------------------------------------------------------------------------------------------------------
 
 #include "mul.hpp"
 #include "Average.hpp"

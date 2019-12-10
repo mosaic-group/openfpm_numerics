@@ -71,6 +71,9 @@ BOOST_AUTO_TEST_CASE( operator_plus )
   auto der1 = dx(f1);
   auto der2 = dx(sum2);
 
+  coeff<double,op_sys_nn> c{3.0};
+  auto coeff_test = c*f1;
+
   // debug<decltype(f1*f1)> dbg;
 }
 

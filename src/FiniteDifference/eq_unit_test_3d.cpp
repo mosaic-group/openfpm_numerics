@@ -90,13 +90,13 @@ const bool lid_nn_3d_petsc::boundary[] = {NON_PERIODIC,NON_PERIODIC,NON_PERIODIC
 template<typename Sys_eqs>
 struct eta
 {
-	//! define that eta is a constant field
-	typedef void const_field;
-
+  //! define that eta is a constant field
+  typedef void const_field;
+  
   typedef Sys_eqs sys_eqs_type;
-
-	//! therutn the value of the constant
-	static float value()	{return 1.0;}
+  
+  //! therutn the value of the constant
+  static float get(grid_dist_key_dx<Sys_eqs::dims> & key)	{return 1.0;}
 };
 
 template<typename solver_type,typename lid_nn_3d> void lid_driven_cavity_3d()

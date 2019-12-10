@@ -40,75 +40,6 @@ struct has_val<HAS_VAL,T>
   }
 };
 
-//! Multiplication expression
-// template<typename v_expr>
-// struct const_mul_functor_value
-// {
-//   //! Number of elements in the vector v_expr
-//   typedef boost::mpl::size<v_expr> size;
-
-//   //! Last element of sum
-//   typedef typename boost::mpl::at<v_expr,boost::mpl::int_<size::value-1> >::type last;
-
-//   //! sum functor
-//   std::unordered_map<long int,typename last::stype> & cols;
-
-//   //! grid size
-//   const grid_sm<last::dims,void> & gs;
-
-//   //! grid mapping
-//   const grid_dist_id<last::dims,typename last::stype,aggregate<size_t>,typename last::b_grid::decomposition::extended_type> & g_map;
-
-//   //! grid position
-//   grid_dist_key_dx<last::dims> & kmap;
-
-//   //! coefficent
-//   typename last::stype coeff;
-
-//   //! spacing
-//   typename last::stype (& spacing)[last::dims];
-
-//   /*! \brief constructor
-//    *
-//    * \param g_map mapping grid
-//    * \param kmap grid point (row) where we evaluate the non-zero colums
-//    * \param gs grid size
-//    * \param spacing grid spacing
-//    * \param cols non zero colums
-//    * \param coeff multiplication coefficent
-//    *
-//    */
-//   const_mul_functor_value(const grid_dist_id<last::dims,typename last::stype,aggregate<size_t>,typename last::b_grid::decomposition::extended_type> & g_map,
-// 			  grid_dist_key_dx<last::dims> & kmap,
-// 			  const grid_sm<last::dims,void> & gs,
-// 			  typename last::stype (& spacing)[last::dims],
-// 			  std::unordered_map<long int,typename last::stype> & cols,
-// 			  typename last::stype coeff)
-//     :cols(cols),gs(gs),g_map(g_map),kmap(kmap),coeff(coeff),spacing(spacing)
-//   {};
-
-
-
-//   //! It call this function for every constant expression in the mul
-//   template<typename T>
-//   void operator()(T& t)
-//   {
-//     typedef typename boost::mpl::at<v_expr, boost::mpl::int_<T::value> >::type cfield;
-
-//     coeff *= has_val<is_const_field<cfield>::value * 1,cfield>::call_val();
-//   }
-
-//   /*! \brief Get the coefficent
-//    *
-//    * \return the coefficent
-//    *
-//    */
-//   typename last::stype getCoeff()
-//   {
-//     return coeff;
-//   }
-// };
-
 /*! \brief It model an expression expr1 * expr2
  *
  * \warning expr1 MUST be a constant expression only expr2 depend form variable, this requirement ensure linearity in the solving variable of the equations
@@ -162,35 +93,9 @@ public:
 		    std::unordered_map<long int,typename Sys_eqs::stype > & cols,
 		    typename Sys_eqs::stype coeff) const
   {
-    coeff *= expr1.value();
+    coeff *= expr1.get(kmap);
     expr2.value(g_map,kmap,gs,spacing,cols,coeff);
-
-    // const_mul_functor_value<v_expr> mfv(g_map,kmap,gs,spacing,cols,coeff);
-
-    // //
-    // boost::mpl::for_each_ref< boost::mpl::range_c<int,0,v_sz::type::value - 2> >(mfv);
-
-    // //! Last element of multiplication
-    // typedef typename boost::mpl::at< v_expr ,boost::mpl::int_<v_sz::value-2> >::type last_m;
-
-    // last_m::value(g_map,kmap,gs,spacing,cols,mfv.coeff);
   }
-
-  /*! \brief Calculate the position in the cell where the mul operator is performed
-   *
-   * it just return the position of the staggered property in the last expression
-   *
-   * \param pos position where we are calculating the derivative
-   * \param gs Grid info
-   * \param s_pos staggered position of the properties
-   *
-   */
-  // inline static grid_key_dx<Sys_eqs::dims> position(grid_key_dx<Sys_eqs::dims> & pos,
-  // 						    const grid_sm<Sys_eqs::dims,void> & gs,
-  // 						    const comb<Sys_eqs::dims> (& s_pos)[Sys_eqs::nvar])
-  // {
-  //   return boost::mpl::at<v_expr, boost::mpl::int_<v_sz::type::value - 2> >::type::position(pos,gs,s_pos);
-  // }
 };
 
 
