@@ -95,8 +95,17 @@ public:
 
   typedef Sys_eqs sys_eqs_type;
 
-  Field() {};
+  comb<Sys_eqs::dims> def_pos;
 
+  Field() : def_pos{std::initializer_list<char>{-1,-1}} {};
+
+  Field(std::initializer_list<char> def_pos_) : def_pos{def_pos_} {
+    if (def_pos.isValid() == false) {
+      std::cerr << "Error " << __FILE__ << ":" << __LINE__ << " position where the Field is defined is not valid.\n";
+      return;
+    }
+  };
+  
   /*! \brief fill the row
    *
    *
@@ -144,13 +153,21 @@ public:
 
   const typename std::conditional<has_get<coeff_type,Sys_eqs::dims>::value,coeff_type &,coeff_type>::type c;
 
+  comb<Sys_eqs::dims> def_pos; /**< Position in cell where this coefficient is defined. */
+
   typedef Sys_eqs sys_eqs_type; /**< Extra helper type. */
 
   /**
-   * \fn coeff(const coeff_type &)
+   * \fn coeff(const coeff_type &, std::initializer_list<char>)
    * \brief Constructor.
+   * \param[in] def_pos_ Position in the cell where the coefficient is defined (important in staggered grids).
    */
-  coeff(const coeff_type & c_) : c{c_} {}
+  coeff(const coeff_type & c_, std::initializer_list<char> def_pos_ = {-1,-1}) : c{c_}, def_pos{def_pos_} {
+    if (def_pos.isValid() == false) {
+      std::cerr << "Error " << __FILE__ << ":" << __LINE__ << " position where the Field is defined is not valid.\n";
+      return;
+    }
+  }
 
   /**
    * \fn get(grid_dist_key_dx<Sys_eqs::dims> &)

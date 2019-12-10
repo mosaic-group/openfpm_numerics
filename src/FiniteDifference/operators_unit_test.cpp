@@ -55,9 +55,11 @@ BOOST_AUTO_TEST_SUITE( operators_test )
 
 BOOST_AUTO_TEST_CASE( operator_plus )
 {
-  Field<x,op_sys_nn> f1;
+  Field<x,op_sys_nn> f1({-3,2});
   Field<y,op_sys_nn> f2;
   Field<z,op_sys_nn> f3;
+
+  std::cout << f2.def_pos.to_string() << std::endl;
 
   auto sum2 = f1+f2;
   auto sum3 = f1+f2+f3;
