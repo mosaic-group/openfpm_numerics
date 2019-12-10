@@ -3,6 +3,8 @@
  *
  *  Created on: Oct 23, 2015
  *      Author: i-bird
+ *  Modified on: Dec 10, 2019
+ *      Author: amfoggia
  */
 
 #ifndef OPENFPM_NUMERICS_SRC_UTIL_UTIL_NUM_HPP_
@@ -93,5 +95,18 @@ struct stub_or_real<T,dims,stype,decomposition,false>
 	//! switch type if we are on testing or not
 	typedef grid_dist_id<dims,stype,aggregate<size_t>,decomposition> type;
 };
+
+// ---------------------------------------------------------------------------------------------------------------------------------------------
+
+/**
+ * \struct has_get
+ * \brief Helper struct to determine if a type has a function with the signature "get(const grid_dist_key_dx<dim>&)"
+ */
+template<typename T, unsigned int dim, typename sfinae = void>
+struct has_get : std::false_type {};
+
+template<typename T, unsigned int dim>
+struct has_get<T,dim,typename Void<decltype(std::declval<T>().get(std::declval<const grid_dist_key_dx<dim>&>()))>::type> : std::true_type {};
+
 
 #endif /* OPENFPM_NUMERICS_SRC_UTIL_UTIL_NUM_HPP_ */

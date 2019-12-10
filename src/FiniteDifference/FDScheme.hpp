@@ -20,6 +20,12 @@
 #include "Vector/Vector_util.hpp"
 #include "Grid/staggered_dist_grid.hpp"
 
+template<unsigned int id_>
+struct EQ_ID
+{
+  static const int id = id_;
+};
+
 /*! \brief Finite Differences
  *
  * This class is able to discretize on a Matrix any system of equations producing a linear system of type \f$Ax=b\f$. In order to create a consistent
@@ -135,65 +141,109 @@ public:
 
 private:
 
-  //! Encapsulation of the b term as constant
-  struct constant_b
-  {
-    //! scalar
-    typename Sys_eqs::stype scal;
+// ---------------------------------------------------------------------------------------------------------------------------------------------
 
-    /*! \brief Constrictor from a scalar
-     *
-     * \param scal scalar
-     *
-     */
-    constant_b(typename Sys_eqs::stype scal)
-    {
-      this->scal = scal;
-    }
+/**
+ * \class rhs
+ * \brief Creates a rhs object to be used in the equations.
+ * \tparam rhs_type Type of rhs. It could be just a double or a grid_dist_id, for example.
+ * \tparam prp Property/equation to which it is associated.
+ */
+template<typename rhs_type, unsigned int prp  = 0>
+class rhs {
 
-    /*! \brief Get the b term on a grid point
-     *
-     * \note It does not matter the grid point it is a scalar
-     *
-     * \param  key grid position (unused because it is a constant)
-     *
-     * \return the scalar
-     *
-     */
-    typename Sys_eqs::stype get(grid_dist_key_dx<Sys_eqs::dims> & key)
-    {
-      return scal;
-    }
-  };
+public:
+  const rhs_type & b; /**< Object that holds the coefficient. */
 
-  //! Encapsulation of the b term as grid
-  template<typename grid, unsigned int prp>
-  struct grid_b
-  {
-    //! b term fo the grid
-    grid & gr;
+  /**
+   * \fn rhs(const rhs_type &)
+   * \brief Constructor.
+   */
+  rhs(const rhs_type & b_) : b{b_} {}
 
-    /*! \brief gr grid that encapsulate
-     *
-     * \param gr grid
-     *
-     */
-    grid_b(grid & gr)
-      :gr(gr)
-    {}
+  /**
+   * \fn get(grid_dist_key_dx<Sys_eqs::dims> &)
+   * \brief Compute the value of the rhs. This function is called when the rhs changes from point to point in the grid.
+   * \return Value of the rhs on a specific point in the grid (key).
+   */
+  template<typename U = rhs_type, typename std::enable_if<has_get<U,Sys_eqs::dims>::value,int>::type = 0>
+  typename Sys_eqs::stype get(grid_dist_key_dx<Sys_eqs::dims> & key) const {
+    return b.template get<prp>(key);
+  }
 
-    /*! \brief Get the value of the b term on a grid point
-     *
-     * \param key grid point
-     *
-     * \return the value
-     *
-     */
-    typename Sys_eqs::stype get(grid_dist_key_dx<Sys_eqs::dims> & key)
-    {
-      return gr.template get<prp>(key);
-    }
-  };
+  /**
+   * \fn get(grid_dist_key_dx<Sys_eqs::dims> &)
+   * \brief Compute the value of the rhs. This function is called when the rhs is just a number that does not change from point to point.
+   * \return Value of the rhs.
+   */
+  template<typename U = rhs_type, typename std::enable_if<!has_get<U,Sys_eqs::dims>::value,int>::type = 0>
+  typename Sys_eqs::stype get(grid_dist_key_dx<Sys_eqs::dims> & key) const {
+    return b;
+  }
+};
+
+// ---------------------------------------------------------------------------------------------------------------------------------------------
+
+  
+  // //! Encapsulation of the b term as constant
+  // struct constant_b
+  // {
+  //   //! scalar
+  //   typename Sys_eqs::stype scal;
+
+  //   /*! \brief Constrictor from a scalar
+  //    *
+  //    * \param scal scalar
+  //    *
+  //    */
+  //   constant_b(typename Sys_eqs::stype scal)
+  //   {
+  //     this->scal = scal;
+  //   }
+
+  //   /*! \brief Get the b term on a grid point
+  //    *
+  //    * \note It does not matter the grid point it is a scalar
+  //    *
+  //    * \param  key grid position (unused because it is a constant)
+  //    *
+  //    * \return the scalar
+  //    *
+  //    */
+  //   typename Sys_eqs::stype get(grid_dist_key_dx<Sys_eqs::dims> & key)
+  //   {
+  //     return scal;
+  //   }
+  // };
+
+  // //! Encapsulation of the b term as grid
+  // template<typename grid, unsigned int prp>
+  // struct grid_b
+  // {
+  //   //! b term fo the grid
+  //   grid & gr;
+
+  //   /*! \brief gr grid that encapsulate
+  //    *
+  //    * \param gr grid
+  //    *
+  //    */
+  //   grid_b(grid & gr)
+  //     :gr(gr)
+  //   {}
+
+  //   /*! \brief Get the value of the b term on a grid point
+  //    *
+  //    * \param key grid point
+  //    *
+  //    * \return the value
+  //    *
+  //    */
+  //   typename Sys_eqs::stype get(grid_dist_key_dx<Sys_eqs::dims> & key)
+  //   {
+  //     return gr.template get<prp>(key);
+  //   }
+  // };
 
   //! Padding
   Padding<Sys_eqs::dims> pd;
@@ -458,10 +508,11 @@ private:
    * \param it_d iterator that define where you want to impose
    *
    */
-  template<typename T, typename bop, typename iterator> void impose_git(const T & op,
-									bop num,
-									long int id,
-									const iterator & it_d)
+  template<typename T, typename rhs_type, typename iterator>
+  void impose_git(const T & op,
+		  rhs_type & rhs_b,
+		  long int id,
+		  const iterator & it_d)
   {
     openfpm::vector<triplet> & trpl = A.getMatrixTriplets();
 
@@ -505,7 +556,7 @@ private:
 	    trpl.last().value() = 0.0;
 	  }
 
-	b(g_map.template get<0>(key)*Sys_eqs::nvar + id) = num.get(key);
+	b(g_map.template get<0>(key)*Sys_eqs::nvar + id) = rhs_b.get(key);
 
 	cols.clear();
 
@@ -696,12 +747,13 @@ public:
    * \param skip_first skip the first point
    *
    */
-  template<typename T> void impose(const T & op,
-				   typename Sys_eqs::stype num,
-				   long int id,
-				   const long int (& start)[Sys_eqs::dims],
-				   const long int (& stop)[Sys_eqs::dims],
-				   bool skip_first = false)
+  template<unsigned int prp, typename T, typename rhs_type>
+  void impose(const T & op,
+	      const rhs_type & rhs_b_,
+	      //const unsigned int id,
+	      const long int (& start)[Sys_eqs::dims],
+	      const long int (& stop)[Sys_eqs::dims],
+	      bool skip_first = false)
   {
     grid_key_dx<Sys_eqs::dims> start_k;
     grid_key_dx<Sys_eqs::dims> stop_k;
@@ -727,9 +779,9 @@ public:
     if (increment == true)
       ++it;
 
-    constant_b b(num);
-
-    impose_git(op,b,id,it);
+    rhs<rhs_type,prp> rhs_b(rhs_b_);
+    
+    impose_git(op,rhs_b,prp,it);    
 
   }
 

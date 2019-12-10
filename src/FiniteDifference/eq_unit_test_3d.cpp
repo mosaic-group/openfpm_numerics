@@ -137,69 +137,69 @@ template<typename solver_type,typename lid_nn_3d> void lid_driven_cavity_3d()
 
 	// start and end of the bulk
 
-	fd.impose(ic_eq(),0.0, EQ_4, {0,0,0},{sz[0]-2,sz[1]-2,sz[2]-2},true);
-	fd.impose(Prs(),  0.0, EQ_4, {0,0,0},{0,0,0});
-	fd.impose(vx_eq(),0.0, EQ_1, {1,0},{sz[0]-2,sz[1]-2,sz[2]-2});
-	fd.impose(vy_eq(),0.0, EQ_2, {0,1},{sz[0]-2,sz[1]-2,sz[2]-2});
-	fd.impose(vz_eq(),0.0, EQ_3, {0,0,1},{sz[0]-2,sz[1]-2,sz[2]-2});
+	fd.template impose<EQ_4>(ic_eq(),0.0, {0,0,0},{sz[0]-2,sz[1]-2,sz[2]-2},true);
+	fd.template impose<EQ_4>(Prs(),  0.0, {0,0,0},{0,0,0});
+	fd.template impose<EQ_1>(vx_eq(),0.0, {1,0},{sz[0]-2,sz[1]-2,sz[2]-2});
+	fd.template impose<EQ_2>(vy_eq(),0.0, {0,1},{sz[0]-2,sz[1]-2,sz[2]-2});
+	fd.template impose<EQ_3>(vz_eq(),0.0, {0,0,1},{sz[0]-2,sz[1]-2,sz[2]-2});
 
 	// v_x
 	// R L
-	fd.impose(v_x(),0.0, EQ_1, {0,0,0},      {0,sz[1]-2,sz[2]-2});
-	fd.impose(v_x(),0.0, EQ_1, {sz[0]-1,0,0},{sz[0]-1,sz[1]-2,sz[2]-2});
+	fd.template impose<EQ_1>(v_x(),0.0, {0,0,0},      {0,sz[1]-2,sz[2]-2});
+	fd.template impose<EQ_1>(v_x(),0.0, {sz[0]-1,0,0},{sz[0]-1,sz[1]-2,sz[2]-2});
 
 	// T B
-	fd.impose(avg_y_vx_f(),0.0, EQ_1, {0,-1,0},     {sz[0]-1,-1,sz[2]-2});
-	fd.impose(avg_y_vx(),0.0, EQ_1,   {0,sz[1]-1,0},{sz[0]-1,sz[1]-1,sz[2]-2});
+	fd.template impose<EQ_1>(avg_y_vx_f(),0.0, {0,-1,0},     {sz[0]-1,-1,sz[2]-2});
+	fd.template impose<EQ_1>(avg_y_vx(),0.0,   {0,sz[1]-1,0},{sz[0]-1,sz[1]-1,sz[2]-2});
 
 	// A F
-	fd.impose(avg_z_vx_f(),0.0, EQ_1, {0,-1,-1},     {sz[0]-1,sz[1]-1,-1});
-	fd.impose(avg_z_vx(),0.0, EQ_1, {0,-1,sz[2]-1},{sz[0]-1,sz[1]-1,sz[2]-1});
+	fd.template impose<EQ_1>(avg_z_vx_f(),0.0, {0,-1,-1},     {sz[0]-1,sz[1]-1,-1});
+	fd.template impose<EQ_1>(avg_z_vx(),0.0, {0,-1,sz[2]-1},{sz[0]-1,sz[1]-1,sz[2]-1});
 
 	// v_y
 	// R L
-	fd.impose(avg_x_vy_f(),0.0, EQ_2,  {-1,0,0},     {-1,sz[1]-1,sz[2]-2});
-	fd.impose(avg_x_vy(),1.0, EQ_2,    {sz[0]-1,0,0},{sz[0]-1,sz[1]-1,sz[2]-2});
+	fd.template impose<EQ_2>(avg_x_vy_f(),0.0,  {-1,0,0},     {-1,sz[1]-1,sz[2]-2});
+	fd.template impose<EQ_2>(avg_x_vy(),1.0,    {sz[0]-1,0,0},{sz[0]-1,sz[1]-1,sz[2]-2});
 
 	// T B
-	fd.impose(v_y(), 0.0, EQ_2, {0,0,0},      {sz[0]-2,0,sz[2]-2});
-	fd.impose(v_y(), 0.0, EQ_2, {0,sz[1]-1,0},{sz[0]-2,sz[1]-1,sz[2]-2});
+	fd.template impose<EQ_2>(v_y(), 0.0, {0,0,0},      {sz[0]-2,0,sz[2]-2});
+	fd.template impose<EQ_2>(v_y(), 0.0, {0,sz[1]-1,0},{sz[0]-2,sz[1]-1,sz[2]-2});
 
 	// F A
-	fd.impose(avg_z_vy(),0.0, EQ_2,   {-1,0,sz[2]-1}, {sz[0]-1,sz[1]-1,sz[2]-1});
-	fd.impose(avg_z_vy_f(),0.0, EQ_2, {-1,0,-1},      {sz[0]-1,sz[1]-1,-1});
+	fd.template impose<EQ_2>(avg_z_vy(),0.0,   {-1,0,sz[2]-1}, {sz[0]-1,sz[1]-1,sz[2]-1});
+	fd.template impose<EQ_2>(avg_z_vy_f(),0.0, {-1,0,-1},      {sz[0]-1,sz[1]-1,-1});
 
 	// v_z
 	// R L
-	fd.impose(avg_x_vz_f(),0.0, EQ_3, {-1,0,0},     {-1,sz[1]-2,sz[2]-1});
-	fd.impose(avg_x_vz(),1.0, EQ_3,   {sz[0]-1,0,0},{sz[0]-1,sz[1]-2,sz[2]-1});
+	fd.template impose<EQ_3>(avg_x_vz_f(),0.0, {-1,0,0},     {-1,sz[1]-2,sz[2]-1});
+	fd.template impose<EQ_3>(avg_x_vz(),1.0,   {sz[0]-1,0,0},{sz[0]-1,sz[1]-2,sz[2]-1});
 
 	// T B
-	fd.impose(avg_y_vz(),0.0, EQ_3, {-1,sz[1]-1,0},{sz[0]-1,sz[1]-1,sz[2]-1});
-	fd.impose(avg_y_vz_f(),0.0, EQ_3, {-1,-1,0},   {sz[0]-1,-1,sz[2]-1});
+	fd.template impose<EQ_3>(avg_y_vz(),0.0, {-1,sz[1]-1,0},{sz[0]-1,sz[1]-1,sz[2]-1});
+	fd.template impose<EQ_3>(avg_y_vz_f(),0.0, {-1,-1,0},   {sz[0]-1,-1,sz[2]-1});
 
 	// F A
-	fd.impose(v_z(),0.0, EQ_3, {0,0,0},      {sz[0]-2,sz[1]-2,0});
-	fd.impose(v_z(),0.0, EQ_3, {0,0,sz[2]-1},{sz[0]-2,sz[1]-2,sz[2]-1});
+	fd.template impose<EQ_3>(v_z(),0.0, {0,0,0},      {sz[0]-2,sz[1]-2,0});
+	fd.template impose<EQ_3>(v_z(),0.0, {0,0,sz[2]-1},{sz[0]-2,sz[1]-2,sz[2]-1});
 
 	// Padding pressure
 
 	// L R
-	fd.impose(Prs(), 0.0, EQ_4, {-1,-1,-1},{-1,sz[1]-1,sz[2]-1});
-	fd.impose(Prs(), 0.0, EQ_4, {sz[0]-1,-1,-1},{sz[0]-1,sz[1]-1,sz[2]-1});
+	fd.template impose<EQ_4>(Prs(), 0.0, {-1,-1,-1},{-1,sz[1]-1,sz[2]-1});
+	fd.template impose<EQ_4>(Prs(), 0.0, {sz[0]-1,-1,-1},{sz[0]-1,sz[1]-1,sz[2]-1});
 
 	// T B
-	fd.impose(Prs(), 0.0, EQ_4, {0,sz[1]-1,-1}, {sz[0]-2,sz[1]-1,sz[2]-1});
-	fd.impose(Prs(), 0.0, EQ_4, {0,-1     ,-1}, {sz[0]-2,-1,     sz[2]-1});
+	fd.template impose<EQ_4>(Prs(), 0.0, {0,sz[1]-1,-1}, {sz[0]-2,sz[1]-1,sz[2]-1});
+	fd.template impose<EQ_4>(Prs(), 0.0, {0,-1     ,-1}, {sz[0]-2,-1,     sz[2]-1});
 
 	// F A
-	fd.impose(Prs(), 0.0, EQ_4, {0,0,sz[2]-1}, {sz[0]-2,sz[1]-2,sz[2]-1});
-	fd.impose(Prs(), 0.0, EQ_4, {0,0,-1},      {sz[0]-2,sz[1]-2,-1});
+	fd.template impose<EQ_4>(Prs(), 0.0, {0,0,sz[2]-1}, {sz[0]-2,sz[1]-2,sz[2]-1});
+	fd.template impose<EQ_4>(Prs(), 0.0, {0,0,-1},      {sz[0]-2,sz[1]-2,-1});
 
 	// Impose v_x  v_y v_z padding
-	fd.impose(v_x(), 0.0, EQ_1, {-1,-1,-1},{-1,sz[1]-1,sz[2]-1});
-	fd.impose(v_y(), 0.0, EQ_2, {-1,-1,-1},{sz[0]-1,-1,sz[2]-1});
-	fd.impose(v_z(), 0.0, EQ_3, {-1,-1,-1},{sz[0]-1,sz[1]-1,-1});
+	fd.template impose<EQ_1>(v_x(), 0.0, {-1,-1,-1},{-1,sz[1]-1,sz[2]-1});
+	fd.template impose<EQ_2>(v_y(), 0.0, {-1,-1,-1},{sz[0]-1,-1,sz[2]-1});
+	fd.template impose<EQ_3>(v_z(), 0.0, {-1,-1,-1},{sz[0]-1,sz[1]-1,-1});
 
 	solver_type solver;
 	auto x_ = solver.try_solve(fd.getA(),fd.getB());

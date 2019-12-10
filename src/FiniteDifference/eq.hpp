@@ -17,6 +17,7 @@
 //#define NON_PERIODIC false
 
 #include "util/util_num.hpp"
+#include "FiniteDifference/util/common.hpp"
 #include "Matrix/SparseMatrix.hpp"
 
 // ---------------------------------------------------------------------------------------------------------------------------------------------
@@ -129,17 +130,6 @@ inline size_t mat_factor(size_t nvar, size_t sz, const size_t ord)
 
 // ---------------------------------------------------------------------------------------------------------------------------------------------
 
-/**
- * \struct has_get
- * \brief Helper struct to determine if a type has a function with the signature "get(const grid_dist_key_dx<dim>&)"
- */
-template<typename T, unsigned int dim, typename sfinae = void>
-struct has_get : std::false_type {};
-
-template<typename T, unsigned int dim>
-struct has_get<T,dim,typename Void<decltype(std::declval<T>().get(std::declval<const grid_dist_key_dx<dim>&>()))>::type> : std::true_type {};
-
-// ---------------------------------------------------------------------------------------------------------------------------------------------
 
 /**
  * \class coeff
@@ -151,7 +141,8 @@ template<typename coeff_type, typename Sys_eqs>
 class coeff {
 
 public:
-  const coeff_type & c; /**< Object that holds the coefficient. */
+
+  const typename std::conditional<has_get<coeff_type,Sys_eqs::dims>::value,coeff_type &,coeff_type>::type c;
 
   typedef Sys_eqs sys_eqs_type; /**< Extra helper type. */
 
@@ -168,7 +159,6 @@ public:
    */
   template<typename U = coeff_type, typename std::enable_if<has_get<U,Sys_eqs::dims>::value,int>::type = 0>
   typename Sys_eqs::stype get(grid_dist_key_dx<Sys_eqs::dims> & key) const {
-    std::cout << "has_get\n";
     return c.template get(key);
   }
 
