@@ -29,7 +29,7 @@ class Lap
 
   expr_type expr;
 
-  Lap() {}
+  Lap() : expr{expr_type{}} {}
 
   Lap(expr_type expr_) : expr{expr_} {}
 
@@ -44,6 +44,7 @@ class Lap
    * \param gs Grid info
    * \param cols non-zero colums calculated by the function
    * \param coeff coefficent (constant in front of the derivative)
+   * \param imp_pos Position in the cell where to compute the value. (Important for staggered grids).
    *
    * ### Example
    *
@@ -54,7 +55,8 @@ class Lap
 		    grid_dist_key_dx<Sys_eqs::dims> & kmap ,
 		    const grid_sm<Sys_eqs::dims,void> & gs,
 		    std::unordered_map<long int,typename Sys_eqs::stype > & cols,
-		    typename Sys_eqs::stype coeff) const
+		    typename Sys_eqs::stype coeff,
+		    comb<Sys_eqs::dims> imp_pos) const
   {
     std::cerr << "Error " << __FILE__ << ":" << __LINE__ << " only CENTRAL, FORWARD, BACKWARD derivative are defined";
   }
@@ -86,7 +88,7 @@ public:
 
   expr_type expr;
 
-  Lap() {}
+  Lap() : expr{expr_type{}} {}
 
   Lap(expr_type expr_) : expr{expr_} {}
 
@@ -101,6 +103,7 @@ public:
    * \param gs Grid info
    * \param cols non-zero colums calculated by the function
    * \param coeff coefficent (constant in front of the derivative)
+   * \param imp_pos Position in the cell where to compute the value. (Important for staggered grids).
    *
    * ### Example
    *
@@ -112,22 +115,23 @@ public:
 		    const grid_sm<Sys_eqs::dims,void> & gs,
 		    typename Sys_eqs::stype (& spacing )[Sys_eqs::dims] ,
 		    std::unordered_map<long int,typename Sys_eqs::stype > & cols,
-		    typename Sys_eqs::stype coeff) const
+		    typename Sys_eqs::stype coeff,
+		    comb<Sys_eqs::dims> imp_pos) const
   {
     // for each dimension
     for (size_t i = 0 ; i < Sys_eqs::dims ; i++)
       {
 	long int old_val = kmap.getKeyRef().get(i);
 	kmap.getKeyRef().set_d(i, kmap.getKeyRef().get(i) + 1);
-	expr.value(g_map,kmap,gs,spacing,cols,coeff/spacing[i]/spacing[i]);
+	expr.value(g_map,kmap,gs,spacing,cols,coeff/spacing[i]/spacing[i],imp_pos);
 	kmap.getKeyRef().set_d(i,old_val);
 
 	old_val = kmap.getKeyRef().get(i);
 	kmap.getKeyRef().set_d(i, kmap.getKeyRef().get(i) - 1);
-	expr.value(g_map,kmap,gs,spacing,cols,coeff/spacing[i]/spacing[i]);
+	expr.value(g_map,kmap,gs,spacing,cols,coeff/spacing[i]/spacing[i],imp_pos);
 	kmap.getKeyRef().set_d(i,old_val);
 
-	expr.value(g_map,kmap,gs,spacing,cols, - 2.0 * coeff/spacing[i]/spacing[i]);
+	expr.value(g_map,kmap,gs,spacing,cols, - 2.0 * coeff/spacing[i]/spacing[i],imp_pos);
       }
   }
 };
@@ -159,7 +163,7 @@ public:
 
   expr_type expr;
 
-  Lap() {}
+  Lap() : expr{expr_type{}} {}
 
   Lap(expr_type expr_) : expr{expr_} {}
 
@@ -174,6 +178,7 @@ public:
    * \param gs Grid info
    * \param cols non-zero colums calculated by the function
    * \param coeff coefficent (constant in front of the derivative)
+   * \param imp_pos Position in the cell where to compute the value. (Important for staggered grids).
    *
    * ### Example
    *
@@ -185,22 +190,23 @@ public:
 		    const grid_sm<Sys_eqs::dims,void> & gs,
 		    typename Sys_eqs::stype (& spacing )[Sys_eqs::dims],
 		    std::unordered_map<long int,typename Sys_eqs::stype > & cols,
-		    typename Sys_eqs::stype coeff) const
+		    typename Sys_eqs::stype coeff,
+		    comb<Sys_eqs::dims> imp_pos) const
   {
     // for each dimension
     for (size_t i = 0 ; i < Sys_eqs::dims ; i++)
       {
 	long int old_val = kmap.getKeyRef().get(i);
 	kmap.getKeyRef().set_d(i, kmap.getKeyRef().get(i) + 2);
-	expr.value(g_map,kmap,gs,spacing,cols,coeff/spacing[i]/spacing[i]/4.0);
+	expr.value(g_map,kmap,gs,spacing,cols,coeff/spacing[i]/spacing[i]/4.0,imp_pos);
 	kmap.getKeyRef().set_d(i,old_val);
 
 	old_val = kmap.getKeyRef().get(i);
 	kmap.getKeyRef().set_d(i, kmap.getKeyRef().get(i) - 2);
-	expr.value(g_map,kmap,gs,spacing,cols,coeff/spacing[i]/spacing[i]/4.0);
+	expr.value(g_map,kmap,gs,spacing,cols,coeff/spacing[i]/spacing[i]/4.0,imp_pos);
 	kmap.getKeyRef().set_d(i,old_val);
 
-	expr.value(g_map,kmap,gs,spacing,cols, - 2.0 * coeff/spacing[i]/spacing[i]/4.0);
+	expr.value(g_map,kmap,gs,spacing,cols, - 2.0 * coeff/spacing[i]/spacing[i]/4.0,imp_pos);
       }
   }
 };

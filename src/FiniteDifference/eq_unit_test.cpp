@@ -77,7 +77,7 @@ struct eta
   
   typedef Sys_eqs sys_eqs_type;
   
-  static float get(grid_dist_key_dx<Sys_eqs::dims> & key)	{return 1.0;}
+  static float get(grid_dist_key_dx<Sys_eqs::dims> & key, comb<Sys_eqs::dims> imp_pos)	{return 1.0;}
 };
 
 // Convenient constants
@@ -193,27 +193,27 @@ template<typename solver_type,typename lid_nn> void lid_driven_cavity_2d()
 	// mathematical to have a well defined system, an intuitive explanation is that P and P + c are both
 	// solution for the incompressibility equation, this produce an ill-posed problem to make it well posed
 	// we set one point in this case {0,0} the pressure to a fixed constant for convenience P = 0
-	fd.template impose<EQ_3>(ic_eq(),0.0,{0,0},{sz[0]-2,sz[1]-2},true);
-	fd.template impose<EQ_3>(Prs(),0.0,{0,0},{0,0});
+	fd.template impose<EQ_3>(ic_eq(),0.0,{0,0},{sz[0]-2,sz[1]-2},{-1,-1},true);
+	fd.template impose<EQ_3>(Prs(),0.0,{0,0},{0,0},{-1,-1});
 
 	// Here we impose the Eq1 and Eq2
-	fd.template impose<EQ_1>(vx_eq(),0.0,{1,0},{sz[0]-2,sz[1]-2});
-	fd.template impose<EQ_2>(vy_eq(),0.0,{0,1},{sz[0]-2,sz[1]-2});
+	fd.template impose<EQ_1>(vx_eq(),0.0,{1,0},{sz[0]-2,sz[1]-2},{-1,-1});
+	fd.template impose<EQ_2>(vy_eq(),0.0,{0,1},{sz[0]-2,sz[1]-2},{-1,-1});
 
 	// v_x and v_y
 	// Imposing B1
-	fd.template impose<EQ_1>(v_x(),0.0,{0,0},{0,sz[1]-2});
-	fd.template impose<EQ_2>(avg_vy_f(),0.0,{-1,0},{-1,sz[1]-1});
+	fd.template impose<EQ_1>(v_x(),0.0,{0,0},{0,sz[1]-2},{-1,-1});
+	fd.template impose<EQ_2>(avg_vy_f(),0.0,{-1,0},{-1,sz[1]-1},{-1,-1});
 	// Imposing B2
-	fd.template impose<EQ_1>(v_x(),0.0,{sz[0]-1,0},{sz[0]-1,sz[1]-2});
-	fd.template impose<EQ_2>(avg_vy(),1.0,{sz[0]-1,0},{sz[0]-1,sz[1]-1});
+	fd.template impose<EQ_1>(v_x(),0.0,{sz[0]-1,0},{sz[0]-1,sz[1]-2},{-1,-1});
+	fd.template impose<EQ_2>(avg_vy(),1.0,{sz[0]-1,0},{sz[0]-1,sz[1]-1},{-1,-1});
 
 	// Imposing B3
-	fd.template impose<EQ_1>(avg_vx_f(),0.0,{0,-1},{sz[0]-1,-1});
-	fd.template impose<EQ_2>(v_y(), 0.0,{0,0},{sz[0]-2,0});
+	fd.template impose<EQ_1>(avg_vx_f(),0.0,{0,-1},{sz[0]-1,-1},{-1,-1});
+	fd.template impose<EQ_2>(v_y(), 0.0,{0,0},{sz[0]-2,0},{-1,-1});
 	// Imposing B4
-	fd.template impose<EQ_1>(avg_vx(),0.0,{0,sz[1]-1},{sz[0]-1,sz[1]-1});
-	fd.template impose<EQ_2>(v_y(), 0.0,{0,sz[1]-1},{sz[0]-2,sz[1]-1});
+	fd.template impose<EQ_1>(avg_vx(),0.0,{0,sz[1]-1},{sz[0]-1,sz[1]-1},{-1,-1});
+	fd.template impose<EQ_2>(v_y(), 0.0,{0,sz[1]-1},{sz[0]-2,sz[1]-1},{-1,-1});
 
 	// When we pad the grid, there are points of the grid that are not
 	// touched by the previous condition. Mathematically this lead
@@ -222,14 +222,14 @@ template<typename solver_type,typename lid_nn> void lid_driven_cavity_2d()
 	//
 
 	// Padding pressure
-	fd.template impose<EQ_3>(Prs(),0.0,{-1,-1},{sz[0]-1,-1});
-	fd.template impose<EQ_3>(Prs(),0.0,{-1,sz[1]-1},{sz[0]-1,sz[1]-1});
-	fd.template impose<EQ_3>(Prs(),0.0,{-1,0},{-1,sz[1]-2});
-	fd.template impose<EQ_3>(Prs(),0.0,{sz[0]-1,0},{sz[0]-1,sz[1]-2});
+	fd.template impose<EQ_3>(Prs(),0.0,{-1,-1},{sz[0]-1,-1},{-1,-1});
+	fd.template impose<EQ_3>(Prs(),0.0,{-1,sz[1]-1},{sz[0]-1,sz[1]-1},{-1,-1});
+	fd.template impose<EQ_3>(Prs(),0.0,{-1,0},{-1,sz[1]-2},{-1,-1});
+	fd.template impose<EQ_3>(Prs(),0.0,{sz[0]-1,0},{sz[0]-1,sz[1]-2},{-1,-1});
 
 	// Impose v_x Padding Impose v_y padding
-	fd.template impose<EQ_1>(v_x(),0.0,{-1,-1},{-1,sz[1]-1});
-	fd.template impose<EQ_2>(v_y(),0.0,{-1,-1},{sz[0]-1,-1});
+	fd.template impose<EQ_1>(v_x(),0.0,{-1,-1},{-1,sz[1]-1},{-1,-1});
+	fd.template impose<EQ_2>(v_y(),0.0,{-1,-1},{sz[0]-1,-1},{-1,-1});
 
 	solver_type solver;
 	auto x = solver.solve(fd.getA(),fd.getB());

@@ -159,8 +159,8 @@ BOOST_AUTO_TEST_CASE( der_central_non_periodic)
 	std::unordered_map<long int,float> cols_x;
 	std::unordered_map<long int,float> cols_y;
 
-	D<x,Field<V,sys_nn>>{}.value(g_map,key11,ginfo,spacing,cols_x,1);
-	D<y,Field<V,sys_nn>>{}.value(g_map,key11,ginfo,spacing,cols_y,1);
+	D<x,Field<V,sys_nn>>{}.value(g_map,key11,ginfo,spacing,cols_x,1,{-1,-1});
+	D<y,Field<V,sys_nn>>{}.value(g_map,key11,ginfo,spacing,cols_y,1,{-1,-1});
 
 	BOOST_REQUIRE_EQUAL(cols_x.size(),2ul);
 	BOOST_REQUIRE_EQUAL(cols_y.size(),2ul);
@@ -182,10 +182,10 @@ BOOST_AUTO_TEST_CASE( der_central_non_periodic)
 
 	// Composed derivative
 
-	D<x,D<x,Field<V,sys_nn>>>{}.value(g_map,key22,ginfo,spacing,cols_xx,1);
-	D<x,D<y,Field<V,sys_nn>>>{}.value(g_map,key22,ginfo,spacing,cols_xy,1);
-	D<y,D<x,Field<V,sys_nn>>>{}.value(g_map,key22,ginfo,spacing,cols_yx,1);
-	D<y,D<y,Field<V,sys_nn>>>{}.value(g_map,key22,ginfo,spacing,cols_yy,1);
+	D<x,D<x,Field<V,sys_nn>>>{}.value(g_map,key22,ginfo,spacing,cols_xx,1,{-1,-1});
+	D<x,D<y,Field<V,sys_nn>>>{}.value(g_map,key22,ginfo,spacing,cols_xy,1,{-1,-1});
+	D<y,D<x,Field<V,sys_nn>>>{}.value(g_map,key22,ginfo,spacing,cols_yx,1,{-1,-1});
+	D<y,D<y,Field<V,sys_nn>>>{}.value(g_map,key22,ginfo,spacing,cols_yy,1,{-1,-1});
 
 	BOOST_REQUIRE_EQUAL(cols_xx.size(),3ul);
 	BOOST_REQUIRE_EQUAL(cols_xy.size(),4ul);
@@ -215,8 +215,8 @@ BOOST_AUTO_TEST_CASE( der_central_non_periodic)
 	cols_x.clear();
 	cols_y.clear();
 
-	D<x,Field<V,sys_nn>,CENTRAL_B_ONE_SIDE>{}.value(g_map,key11,ginfo,spacing,cols_x,1);
-	D<y,Field<V,sys_nn>,CENTRAL_B_ONE_SIDE>{}.value(g_map,key11,ginfo,spacing,cols_y,1);
+	D<x,Field<V,sys_nn>,CENTRAL_B_ONE_SIDE>{}.value(g_map,key11,ginfo,spacing,cols_x,1,{-1,-1});
+	D<y,Field<V,sys_nn>,CENTRAL_B_ONE_SIDE>{}.value(g_map,key11,ginfo,spacing,cols_y,1,{-1,-1});
 
 	BOOST_REQUIRE_EQUAL(cols_x.size(),2ul);
 	BOOST_REQUIRE_EQUAL(cols_y.size(),2ul);
@@ -232,8 +232,8 @@ BOOST_AUTO_TEST_CASE( der_central_non_periodic)
 	cols_x.clear();
 	cols_y.clear();
 
-	D<x,Field<V,sys_nn>,CENTRAL_B_ONE_SIDE>{}.value(g_map,key00,ginfo,spacing,cols_x,1);
-	D<y,Field<V,sys_nn>,CENTRAL_B_ONE_SIDE>{}.value(g_map,key00,ginfo,spacing,cols_y,1);
+	D<x,Field<V,sys_nn>,CENTRAL_B_ONE_SIDE>{}.value(g_map,key00,ginfo,spacing,cols_x,1,{-1,-1});
+	D<y,Field<V,sys_nn>,CENTRAL_B_ONE_SIDE>{}.value(g_map,key00,ginfo,spacing,cols_y,1,{-1,-1});
 
 	BOOST_REQUIRE_EQUAL(cols_x.size(),3ul);
 	BOOST_REQUIRE_EQUAL(cols_y.size(),3ul);
@@ -251,8 +251,8 @@ BOOST_AUTO_TEST_CASE( der_central_non_periodic)
 	cols_x.clear();
 	cols_y.clear();
 
-	D<x,Field<V,sys_nn>,CENTRAL_B_ONE_SIDE>{}.value(g_map,key1515,ginfo,spacing,cols_x,1);
-	D<y,Field<V,sys_nn>,CENTRAL_B_ONE_SIDE>{}.value(g_map,key1515,ginfo,spacing,cols_y,1);
+	D<x,Field<V,sys_nn>,CENTRAL_B_ONE_SIDE>{}.value(g_map,key1515,ginfo,spacing,cols_x,1,{-1,-1});
+	D<y,Field<V,sys_nn>,CENTRAL_B_ONE_SIDE>{}.value(g_map,key1515,ginfo,spacing,cols_y,1,{-1,-1});
 
 	BOOST_REQUIRE_EQUAL(cols_x.size(),3ul);
 	BOOST_REQUIRE_EQUAL(cols_y.size(),3ul);
@@ -292,8 +292,8 @@ BOOST_AUTO_TEST_CASE( der_forward_backward_non_periodic )
 	std::unordered_map<long int,float> cols_x;
 	std::unordered_map<long int,float> cols_y;
 
-	D<x,Field<V,sys_nn>,FORWARD>{}.value(g_map,key11,ginfo,spacing,cols_x,1);
-	D<y,Field<V,sys_nn>,FORWARD>{}.value(g_map,key11,ginfo,spacing,cols_y,1);
+	D<x,Field<V,sys_nn>,FORWARD>{}.value(g_map,key11,ginfo,spacing,cols_x,1,{-1,-1});
+	D<y,Field<V,sys_nn>,FORWARD>{}.value(g_map,key11,ginfo,spacing,cols_y,1,{-1,-1});
 
 	BOOST_REQUIRE_EQUAL(cols_x.size(),2ul);
 	BOOST_REQUIRE_EQUAL(cols_y.size(),2ul);
@@ -307,8 +307,8 @@ BOOST_AUTO_TEST_CASE( der_forward_backward_non_periodic )
 	cols_x.clear();
 	cols_y.clear();
 
-	D<x,Field<V,sys_nn>,BACKWARD>{}.value(g_map,key11,ginfo,spacing,cols_x,1);
-	D<y,Field<V,sys_nn>,BACKWARD>{}.value(g_map,key11,ginfo,spacing,cols_y,1);
+	D<x,Field<V,sys_nn>,BACKWARD>{}.value(g_map,key11,ginfo,spacing,cols_x,1,{-1,-1});
+	D<y,Field<V,sys_nn>,BACKWARD>{}.value(g_map,key11,ginfo,spacing,cols_y,1,{-1,-1});
 
 	BOOST_REQUIRE_EQUAL(cols_x.size(),2ul);
 	BOOST_REQUIRE_EQUAL(cols_y.size(),2ul);
@@ -346,8 +346,8 @@ BOOST_AUTO_TEST_CASE( avg_central_non_periodic)
 	std::unordered_map<long int,float> cols_x;
 	std::unordered_map<long int,float> cols_y;
 
-	Avg<x,Field<V,sys_nn>>{}.value(g_map,key11,ginfo,spacing,cols_x,1);
-	Avg<y,Field<V,sys_nn>>{}.value(g_map,key11,ginfo,spacing,cols_y,1);
+	Avg<x,Field<V,sys_nn>>{}.value(g_map,key11,ginfo,spacing,cols_x,1,{-1,-1});
+	Avg<y,Field<V,sys_nn>>{}.value(g_map,key11,ginfo,spacing,cols_y,1,{-1,-1});
 
 	BOOST_REQUIRE_EQUAL(cols_x.size(),2ul);
 	BOOST_REQUIRE_EQUAL(cols_y.size(),2ul);
@@ -366,10 +366,10 @@ BOOST_AUTO_TEST_CASE( avg_central_non_periodic)
 
 	// Composed derivative
 
-	Avg<x,Avg<x,Field<V,sys_nn>>>{}.value(g_map,key22,ginfo,spacing,cols_xx,1);
-	Avg<x,Avg<y,Field<V,sys_nn>>>{}.value(g_map,key22,ginfo,spacing,cols_xy,1);
-	Avg<y,Avg<x,Field<V,sys_nn>>>{}.value(g_map,key22,ginfo,spacing,cols_yx,1);
-	Avg<y,Avg<y,Field<V,sys_nn>>>{}.value(g_map,key22,ginfo,spacing,cols_yy,1);
+	Avg<x,Avg<x,Field<V,sys_nn>>>{}.value(g_map,key22,ginfo,spacing,cols_xx,1,{-1,-1});
+	Avg<x,Avg<y,Field<V,sys_nn>>>{}.value(g_map,key22,ginfo,spacing,cols_xy,1,{-1,-1});
+	Avg<y,Avg<x,Field<V,sys_nn>>>{}.value(g_map,key22,ginfo,spacing,cols_yx,1,{-1,-1});
+	Avg<y,Avg<y,Field<V,sys_nn>>>{}.value(g_map,key22,ginfo,spacing,cols_yy,1,{-1,-1});
 
 	BOOST_REQUIRE_EQUAL(cols_xx.size(),3ul);
 	BOOST_REQUIRE_EQUAL(cols_xy.size(),4ul);
@@ -420,8 +420,8 @@ BOOST_AUTO_TEST_CASE( der_central_staggered_non_periodic)
 	std::unordered_map<long int,float> cols_x;
 	std::unordered_map<long int,float> cols_y;
 
-	D<x,Field<V,syss_nn>>{}.value(g_map,key11,ginfo,spacing,cols_x,1);
-	D<y,Field<V,syss_nn>>{}.value(g_map,key11,ginfo,spacing,cols_y,1);
+	D<x,Field<V,syss_nn>>{}.value(g_map,key11,ginfo,spacing,cols_x,1,{-1,-1});
+	D<y,Field<V,syss_nn>>{}.value(g_map,key11,ginfo,spacing,cols_y,1,{-1,-1});
 
 	BOOST_REQUIRE_EQUAL(cols_x.size(),2ul);
 	BOOST_REQUIRE_EQUAL(cols_y.size(),2ul);
@@ -459,8 +459,8 @@ BOOST_AUTO_TEST_CASE( avg_central_staggered_non_periodic)
 	std::unordered_map<long int,float> cols_x;
 	std::unordered_map<long int,float> cols_y;
 
-	Avg<x,Field<V,syss_pp>>{}.value(g_map,key11,ginfo,spacing,cols_x,1);
-	Avg<y,Field<V,syss_pp>>{}.value(g_map,key11,ginfo,spacing,cols_y,1);
+	Avg<x,Field<V,syss_pp>>{}.value(g_map,key11,ginfo,spacing,cols_x,1,{-1,-1});
+	Avg<y,Field<V,syss_pp>>{}.value(g_map,key11,ginfo,spacing,cols_y,1,{-1,-1});
 
 	BOOST_REQUIRE_EQUAL(cols_x.size(),2ul);
 	BOOST_REQUIRE_EQUAL(cols_y.size(),2ul);
@@ -501,7 +501,7 @@ BOOST_AUTO_TEST_CASE( lap_periodic)
 	// filled colums
 	std::unordered_map<long int,float> cols;
 
-	Lap<Field<V,sys_pp>>{}.value(g_map,key11,ginfo,spacing,cols,1);
+	Lap<Field<V,sys_pp>>{}.value(g_map,key11,ginfo,spacing,cols,1,{-1,-1});
 
 	BOOST_REQUIRE_EQUAL(cols.size(),5ul);
 
@@ -516,7 +516,7 @@ BOOST_AUTO_TEST_CASE( lap_periodic)
 
 	cols.clear();
 
-	Lap<Field<V,sys_pp>>{}.value(g_map,key1414,ginfo,spacing,cols,1);
+	Lap<Field<V,sys_pp>>{}.value(g_map,key1414,ginfo,spacing,cols,1,{-1,-1});
 
 	BOOST_REQUIRE_EQUAL(cols.size(),5ul);
 
@@ -555,7 +555,7 @@ BOOST_AUTO_TEST_CASE( sum_periodic)
 	// filled colums
 	std::unordered_map<long int,float> cols;
 
-	sum<Field<V,sys_pp>,Field<V,sys_pp>>{}.value(g_map,key11,ginfo,spacing,cols,1);
+	sum<Field<V,sys_pp>,Field<V,sys_pp>>{}.value(g_map,key11,ginfo,spacing,cols,1,{-1,-1});
 
 	BOOST_REQUIRE_EQUAL(cols.size(),1ul);
 
@@ -565,7 +565,7 @@ BOOST_AUTO_TEST_CASE( sum_periodic)
 
 	cols.clear();
 
-	sum<sum<Field<V,sys_pp>,Field<V,sys_pp>>,Field<V,sys_pp>>{}.value(g_map,key11,ginfo,spacing,cols,1);
+	sum<sum<Field<V,sys_pp>,Field<V,sys_pp>>,Field<V,sys_pp>>{}.value(g_map,key11,ginfo,spacing,cols,1,{-1,-1});
 
 	BOOST_REQUIRE_EQUAL(cols.size(),1ul);
 
@@ -575,7 +575,7 @@ BOOST_AUTO_TEST_CASE( sum_periodic)
 
 	//! [minus example]
 
-	sum<Field<V,sys_pp>,sum<Field<V,sys_pp>,minus<Field<V,sys_pp>>>>{}.value(g_map,key11,ginfo,spacing,cols,1);
+	sum<Field<V,sys_pp>,sum<Field<V,sys_pp>,minus<Field<V,sys_pp>>>>{}.value(g_map,key11,ginfo,spacing,cols,1,{-1,-1});
 
 	BOOST_REQUIRE_EQUAL(cols.size(),1ul);
 

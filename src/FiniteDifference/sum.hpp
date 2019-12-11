@@ -63,6 +63,7 @@ public:
    * \param spacing grid spacing
    * \param cols unordered map contain the map colum -> value
    * \param coeff it contain an additional actual coefficients in front of the values
+   * \param imp_pos Position in the cell where to compute the value. (Important for staggered grids).
    *
    * ### Example
    *
@@ -74,10 +75,11 @@ public:
 		    const grid_sm<Sys_eqs::dims,void> & gs,
 		    typename Sys_eqs::stype (& spacing )[Sys_eqs::dims],
 		    std::unordered_map<long int,typename Sys_eqs::stype > & cols,
-		    typename Sys_eqs::stype coeff) const
+		    typename Sys_eqs::stype coeff,
+		    comb<Sys_eqs::dims> imp_pos) const
   {
-    expr1.value(g_map,kmap,gs,spacing,cols,coeff);
-    expr2.value(g_map,kmap,gs,spacing,cols,coeff);
+    expr1.value(g_map,kmap,gs,spacing,cols,coeff,imp_pos);
+    expr2.value(g_map,kmap,gs,spacing,cols,coeff,imp_pos);
   }
 
 
@@ -134,9 +136,10 @@ public:
 		    const grid_sm<Sys_eqs::dims,void> & gs,
 		    typename Sys_eqs::stype (& spacing )[Sys_eqs::dims],
 		    std::unordered_map<long int,typename Sys_eqs::stype > & cols,
-		    typename Sys_eqs::stype coeff) const
+		    typename Sys_eqs::stype coeff,
+		    comb<Sys_eqs::dims> imp_pos) const
   {
-    expr.value(g_map,kmap,gs,spacing,cols,-coeff);
+    expr.value(g_map,kmap,gs,spacing,cols,-coeff,imp_pos);
   }
 
 

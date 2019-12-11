@@ -84,6 +84,7 @@ public:
    * \param spacing of the grid
    * \param cols non-zero colums calculated by the function
    * \param coeff coefficent (constant in front of the derivative)
+   * \param imp_pos Position in the cell where to compute the value. (Important for staggered grids).
    *
    */
   inline void value(const grid_dist_id<Sys_eqs::dims,typename Sys_eqs::stype,aggregate<size_t>,typename Sys_eqs::b_grid::decomposition::extended_type> & g_map,
@@ -91,10 +92,11 @@ public:
 		    const grid_sm<Sys_eqs::dims,void> & gs,
 		    typename Sys_eqs::stype (& spacing )[Sys_eqs::dims],
 		    std::unordered_map<long int,typename Sys_eqs::stype > & cols,
-		    typename Sys_eqs::stype coeff) const
+		    typename Sys_eqs::stype coeff,
+		    comb<Sys_eqs::dims> imp_pos) const
   {
-    coeff *= expr1.get(kmap);
-    expr2.value(g_map,kmap,gs,spacing,cols,coeff);
+    coeff *= expr1.get(kmap,imp_pos);
+    expr2.value(g_map,kmap,gs,spacing,cols,coeff,imp_pos);
   }
 };
 

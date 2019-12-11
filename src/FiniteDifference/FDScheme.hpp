@@ -184,67 +184,6 @@ public:
 
 // ---------------------------------------------------------------------------------------------------------------------------------------------
 
-  
-  // //! Encapsulation of the b term as constant
-  // struct constant_b
-  // {
-  //   //! scalar
-  //   typename Sys_eqs::stype scal;
-
-  //   /*! \brief Constrictor from a scalar
-  //    *
-  //    * \param scal scalar
-  //    *
-  //    */
-  //   constant_b(typename Sys_eqs::stype scal)
-  //   {
-  //     this->scal = scal;
-  //   }
-
-  //   /*! \brief Get the b term on a grid point
-  //    *
-  //    * \note It does not matter the grid point it is a scalar
-  //    *
-  //    * \param  key grid position (unused because it is a constant)
-  //    *
-  //    * \return the scalar
-  //    *
-  //    */
-  //   typename Sys_eqs::stype get(grid_dist_key_dx<Sys_eqs::dims> & key)
-  //   {
-  //     return scal;
-  //   }
-  // };
-
-  // //! Encapsulation of the b term as grid
-  // template<typename grid, unsigned int prp>
-  // struct grid_b
-  // {
-  //   //! b term fo the grid
-  //   grid & gr;
-
-  //   /*! \brief gr grid that encapsulate
-  //    *
-  //    * \param gr grid
-  //    *
-  //    */
-  //   grid_b(grid & gr)
-  //     :gr(gr)
-  //   {}
-
-  //   /*! \brief Get the value of the b term on a grid point
-  //    *
-  //    * \param key grid point
-  //    *
-  //    * \return the value
-  //    *
-  //    */
-  //   typename Sys_eqs::stype get(grid_dist_key_dx<Sys_eqs::dims> & key)
-  //   {
-  //     return gr.template get<prp>(key);
-  //   }
-  // };
-
   //! Padding
   Padding<Sys_eqs::dims> pd;
 
@@ -512,7 +451,8 @@ public:
   void impose_git(const T & op,
 		  rhs_type & rhs_b,
 		  long int id,
-		  const iterator & it_d)
+		  const iterator & it_d,
+		  comb<Sys_eqs::dims> imp_pos)
   {
     openfpm::vector<triplet> & trpl = A.getMatrixTriplets();
 
@@ -528,7 +468,7 @@ public:
 	auto key = it.get();
 
 	// Calculate the non-zero colums
-	op.value(g_map,key,gs,spacing,cols,1.0);
+	op.value(g_map,key,gs,spacing,cols,1.0,imp_pos);
 
 	// indicate if the diagonal has been set
 	bool is_diag = false;
@@ -753,8 +693,15 @@ public:
 	      //const unsigned int id,
 	      const long int (& start)[Sys_eqs::dims],
 	      const long int (& stop)[Sys_eqs::dims],
+	      comb<Sys_eqs::dims> imp_pos,
 	      bool skip_first = false)
   {
+    // Check that comb<dims> is a valid point
+    if (imp_pos.isValid() == false) {
+      std::cerr << "Error " << __FILE__ << ":" << __LINE__ << " position where the equation is being imposed is not valid.\n";
+      return;
+    }
+    
     grid_key_dx<Sys_eqs::dims> start_k;
     grid_key_dx<Sys_eqs::dims> stop_k;
 
@@ -781,7 +728,7 @@ public:
 
     rhs<rhs_type,prp> rhs_b(rhs_b_);
     
-    impose_git(op,rhs_b,prp,it);    
+    impose_git(op,rhs_b,prp,it,imp_pos);    
 
   }
 

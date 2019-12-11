@@ -86,6 +86,12 @@ struct pos_val
 
 // ---------------------------------------------------------------------------------------------------------------------------------------------
 
+/**
+ * \class Field
+ * \brief Creates a field/variable object to be used in the equations.
+ * \tparam f Index of the field/variable.
+ * \tparam Sys_eqs Struct with information regarding the system of equations.
+ */
 template<unsigned int f, typename Sys_eqs>
 class Field
 {
@@ -93,12 +99,21 @@ class Field
 
 public:
 
-  typedef Sys_eqs sys_eqs_type;
+  typedef Sys_eqs sys_eqs_type; /**< Extra helper type. */
 
-  comb<Sys_eqs::dims> def_pos;
+  comb<Sys_eqs::dims> def_pos; /**< Position in cell where this coefficient is defined. */
 
-  Field() : def_pos{std::initializer_list<char>{-1,-1}} {};
+  /**
+   * \fn Field(std::initializer_list<char>)
+   * \brief Default constructor.
+   */
+  Field() {};
 
+  /**
+   * \fn Field(std::initializer_list<char>)
+   * \brief Constructor.
+   * \param[in] def_pos_ Position in the cell where the field is defined (important in staggered grids).
+   */  
   Field(std::initializer_list<char> def_pos_) : def_pos{def_pos_} {
     if (def_pos.isValid() == false) {
       std::cerr << "Error " << __FILE__ << ":" << __LINE__ << " position where the Field is defined is not valid.\n";
@@ -106,16 +121,24 @@ public:
     }
   };
   
-  /*! \brief fill the row
-   *
-   *
+  /**
+   * \fn value(const map_grid &, grid_dist_key_dx<Sys_eqs::dims> &, const grid_sm<Sys_eqs::dims,void> &, typename Sys_eqs::stype (&)[Sys_eqs::dims], std::unordered_map<long int,typename Sys_eqs::stype > &, typename Sys_eqs::stype, comb<Sys_eqs::dims>)
+   * \brief Computes the non zero elements of each row.
+   * \param[in] g_map Mapping grid.
+   * \param[in] kmap Key (point in the grid) where to compute the value.
+   * \param[in] gs Domain grid information.
+   * \param[in] spacing Grid spacing.
+   * \param[in,out] cols Columns that are not zero for a specific row.
+   * \param[in] coeff Matrix value for a specific matrix site.
+   * \param[in] imp_pos Position in the grid where to compute the value. Important for the staggered grid.
    */
   static void value(const map_grid & g_map,
 		    grid_dist_key_dx<Sys_eqs::dims> & kmap,
 		    const grid_sm<Sys_eqs::dims,void> & gs,
 		    typename Sys_eqs::stype (& spacing )[Sys_eqs::dims],
 		    std::unordered_map<long int,typename Sys_eqs::stype > & cols,
-		    typename Sys_eqs::stype coeff)
+		    typename Sys_eqs::stype coeff,
+		    comb<Sys_eqs::dims> imp_pos)
   {
     cols[g_map.template get<0>(kmap)*Sys_eqs::nvar + f] += coeff;
   }
@@ -153,9 +176,9 @@ public:
 
   const typename std::conditional<has_get<coeff_type,Sys_eqs::dims>::value,coeff_type &,coeff_type>::type c;
 
-  comb<Sys_eqs::dims> def_pos; /**< Position in cell where this coefficient is defined. */
-
   typedef Sys_eqs sys_eqs_type; /**< Extra helper type. */
+  
+  comb<Sys_eqs::dims> def_pos; /**< Position in cell where this coefficient is defined. */
 
   /**
    * \fn coeff(const coeff_type &, std::initializer_list<char>)
@@ -172,20 +195,24 @@ public:
   /**
    * \fn get(grid_dist_key_dx<Sys_eqs::dims> &)
    * \brief Compute the value of the coeff. This function is called when the coefficient changes from point to point in the grid.
+   * \param[in] key Key (position in the grid) where to evaluate the coefficient.
+   * \param[in] imp_pos Position in the grid where to compute the value. Important for the staggered grid.
    * \return Value of the coefficient on a specific point in the grid (key).
    */
   template<typename U = coeff_type, typename std::enable_if<has_get<U,Sys_eqs::dims>::value,int>::type = 0>
-  typename Sys_eqs::stype get(grid_dist_key_dx<Sys_eqs::dims> & key) const {
+  typename Sys_eqs::stype get(grid_dist_key_dx<Sys_eqs::dims> & key, comb<Sys_eqs::dims> imp_pos) const {
     return c.template get(key);
   }
 
   /**
    * \fn get(grid_dist_key_dx<Sys_eqs::dims> &)
    * \brief Compute the value of the coeff. This function is called when the coefficient is just a number that does not change from point to point.
+   * \param[in] key Key (position in the grid) where to evaluate the coefficient. (Not important for this specialization of the function, as the value is only one scalar).
+   * \param[in] imp_pos Position in the grid where to compute the value. Important for the staggered grid.
    * \return Value of the coefficient.
    */
   template<typename U = coeff_type, typename std::enable_if<!has_get<U,Sys_eqs::dims>::value,int>::type = 0>
-  typename Sys_eqs::stype get(grid_dist_key_dx<Sys_eqs::dims> & key) const {
+  typename Sys_eqs::stype get(grid_dist_key_dx<Sys_eqs::dims> & key, comb<Sys_eqs::dims> imp_pos) const {
     return c;
   }
 };
