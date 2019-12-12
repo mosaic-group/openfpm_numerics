@@ -132,17 +132,74 @@ public:
    * \param[in] coeff Matrix value for a specific matrix site.
    * \param[in] imp_pos Position in the grid where to compute the value. Important for the staggered grid.
    */
-  static void value(const map_grid & g_map,
-		    grid_dist_key_dx<Sys_eqs::dims> & kmap,
-		    const grid_sm<Sys_eqs::dims,void> & gs,
-		    typename Sys_eqs::stype (& spacing )[Sys_eqs::dims],
-		    std::unordered_map<long int,typename Sys_eqs::stype > & cols,
-		    typename Sys_eqs::stype coeff,
-		    comb<Sys_eqs::dims> imp_pos)
+  void value(const map_grid & g_map,
+	     grid_dist_key_dx<Sys_eqs::dims> & kmap,
+	     const grid_sm<Sys_eqs::dims,void> & gs,
+	     typename Sys_eqs::stype (& spacing )[Sys_eqs::dims],
+	     std::unordered_map<long int,typename Sys_eqs::stype > & cols,
+	     typename Sys_eqs::stype coeff,
+	     comb<Sys_eqs::dims> imp_pos) const
   {
-    cols[g_map.template get<0>(kmap)*Sys_eqs::nvar + f] += coeff;
+
+    // 1) Check if imp_pos matches def_pos:
+    // If they match, just compute the non-zero columns
+    if (imp_pos == def_pos) {
+      cols[g_map.template get<0>(kmap)*Sys_eqs::nvar + f] += coeff;
+      return;
+    }
+
+    // 1) Check if imp_pos matches def_pos:
+    // If they do NOT match
+
+    int nDiffCoor = 0;                          // Number of coordinates that do NOT match
+    std::vector<std::pair<int,int>> diffPairs;  // {directon, increment} information of not matching coordinates 
+
+    // 2) Compare each direction
+    for (int i = 0; i < Sys_eqs::dims; ++i) {
+      if (imp_pos[i] - def_pos[i] > 1e-14) {
+	++nDiffCoor;
+	diffPairs.push_back(std::pair<int,int>{i,imp_pos[i]-def_pos[i]});
+      }
+    }
+
+    unsigned int nAvg = (1 << nDiffCoor) + 1;             // Number of points (minus 1) to use for the average/interpolation.
+    std::vector<grid_dist_key_dx<Sys_eqs::dims>> keysAvg; // Vector with the keys of the points to use in interpolation/average
+    keysAvg.push_back(kmap);                              // The first element is in the current cell
+    
+    // 3) Compute the points to use for average/interpolation.
+    for (int k = 1; k <= nDiffCoor; ++k)
+      comp_NKcomb(nDiffCoor,k,kmap,diffPairs,keysAvg);
+    
   }
 
+  void comp_NKcomb(int n,
+		   int k,
+		   grid_dist_key_dx<Sys_eqs::dims> orig_kmap,
+		   std::vector<std::pair<int,int>> & diffPairs,
+		   std::vector<grid_dist_key_dx<Sys_eqs::dims>> & keysAvg) const
+  {  
+    std::vector<bool> v(n);
+    std::fill(v.begin(), v.begin() + k, true);
+
+    grid_dist_key_dx<Sys_eqs::dims> kmap = orig_kmap; // Key of the original cell
+    
+    do {
+      std::vector<grid_dist_key_dx<Sys_eqs::dims>> tmp;
+      for (int i = 0; i < n; ++i) {
+	if (v[i]) {
+
+	  // Compute the key corresponding to the interpolation/average point
+	  int d = diffPairs[i].first;     // Direction in which to move
+	  int incr = diffPairs[i].second; // Increment to do
+	  kmap.getKeyRef().set_d(d, kmap.getKeyRef().get(d) + incr);
+	}
+      }
+      keysAvg.push_back(kmap);
+      kmap.getKeyRef() = orig_kmap.getKeyRef();
+    } while (std::prev_permutation(v.begin(), v.end()));
+    
+  }
+  
   /*! \brief
    *
    *
