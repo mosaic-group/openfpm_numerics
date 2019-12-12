@@ -166,12 +166,23 @@ public:
     std::vector<grid_dist_key_dx<Sys_eqs::dims>> keysAvg; // Vector with the keys of the points to use in interpolation/average
     keysAvg.push_back(kmap);                              // The first element is in the current cell
     
-    // 3) Compute the points to use for average/interpolation.
+    // 3) Compute the points to use for average/interpolation
     for (int k = 1; k <= nDiffCoor; ++k)
       comp_NKcomb(nDiffCoor,k,kmap,diffPairs,keysAvg);
+
+    // 4) Do the interpolation/average
     
   }
 
+  /**
+   * \fn comp_NKcomb(int, int, grid_dist_key_dx<Sys_eqs::dims>, std::vector<std::pair<int,int>> &, std::vector<grid_dist_key_dx<Sys_eqs::dims>> &)
+   * \brief Computes all the combinations of K elements out of N elements. The elements are the pairs {direction,increment} of the non matching coordinates.
+   * \param[in] n Total number of pairs.
+   * \param[in] k Number or pairs in each combination.
+   * \param[in] orig_kmap Key of the original cell.
+   * \param[in] diffPairs All the pairs to combine.
+   * \param[inout] keysAvg Keys of the points to use in the interpolation/average.
+   */
   void comp_NKcomb(int n,
 		   int k,
 		   grid_dist_key_dx<Sys_eqs::dims> orig_kmap,
