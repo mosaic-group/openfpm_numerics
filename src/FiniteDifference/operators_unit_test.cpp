@@ -77,6 +77,34 @@ BOOST_AUTO_TEST_CASE( operator_plus )
   auto coeff_test = c*f1;
 
   // debug<decltype(f1*f1)> dbg;
+  
+  // --------------------------------------
+  Box<2,float> domain({0.0,0.0},{1.0,1.0});
+  Ghost<2,float> g(0.01);
+  size_t szu[] = {6,6};
+  grid_dist_id<2,float,aggregate<float[2],float>> g_dist(szu,domain,g);
+
+  auto it = g_dist.getDomainIterator();
+
+  while (it.isNext()) {
+    
+    auto kmap = it.get();
+    auto orig = kmap;
+    std::cout << kmap.getKey().to_string() << " ----- ";
+
+    long int old_val = kmap.getKeyRef().get(0);
+    kmap.getKeyRef().set_d(0, kmap.getKeyRef().get(0) + 1);
+    std::cout << kmap.getKey().to_string() << " ----- ";
+    
+    kmap.getKeyRef().set_d(1, kmap.getKeyRef().get(1) + 1);
+    std::cout << kmap.getKey().to_string() << " -----> ";
+    
+    kmap.getKeyRef() = orig.getKeyRef();
+    std::cout << kmap.getKey().to_string() << "\n";
+    
+    
+    ++it;
+  }
 }
 
 BOOST_AUTO_TEST_SUITE_END()
