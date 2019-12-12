@@ -104,7 +104,7 @@ public:
   comb<Sys_eqs::dims> def_pos; /**< Position in cell where this coefficient is defined. */
 
   /**
-   * \fn Field(std::initializer_list<char>)
+   * \fn Field()
    * \brief Default constructor.
    */
   Field() {};
@@ -113,7 +113,7 @@ public:
    * \fn Field(std::initializer_list<char>)
    * \brief Constructor.
    * \param[in] def_pos_ Position in the cell where the field is defined (important in staggered grids).
-   */  
+   */
   Field(std::initializer_list<char> def_pos_) : def_pos{def_pos_} {
     if (def_pos.isValid() == false) {
       std::cerr << "Error " << __FILE__ << ":" << __LINE__ << " position where the Field is defined is not valid.\n";
@@ -171,6 +171,9 @@ public:
       comp_NKcomb(nDiffCoor,k,kmap,diffPairs,keysAvg);
 
     // 4) Do the interpolation/average
+    for (int i = 0; i < nAvg; ++i) {
+      cols[g_map.template get<0>(keysAvg[i])*Sys_eqs::nvar + f] += coeff/typename Sys_eqs::stype(nAvg);
+    }
     
   }
 

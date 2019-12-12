@@ -16,30 +16,43 @@
 #include "FiniteDifference/Average.hpp"
 #include "FiniteDifference/sum.hpp"
 #include "FiniteDifference/mul.hpp"
+#include "FiniteDifference/FDScheme.hpp"
 #include "eq.hpp"
 #include "FiniteDifference/operators.hpp"
+#include "Vector/Vector.hpp"
+
 
 struct  op_sys_nn
 {
-	//! dimensionaly of the equation (2D problem 3D problem ...)
+	// dimensionaly of the equation (2D problem 3D problem ...)
 	static const unsigned int dims = 2;
-	//! number of degree of freedoms
-	static const unsigned int nvar = 1;
 
-	static const unsigned int ord = EQS_FIELD;
+	// number of fields in the system v_x, v_y, P so a total of 3
+	static const unsigned int nvar = 2;
 
-	//! boundary at X and Y
+	// boundary conditions PERIODIC OR NON_PERIODIC
 	static const bool boundary[];
 
-	//! type of space float, double, ...
+	// type of space float, double, ...
 	typedef float stype;
 
-	//! Base grid
-	typedef grid_dist_id<dims,stype,aggregate<float>,CartDecomposition<2,stype> > b_grid;
+	// type of base grid, it is the distributed grid that will store the result
+	// Note the first property is a 2D vector (velocity), the second is a scalar (Pressure)
+	typedef grid_dist_id<2,float,aggregate<float[2]>,CartDecomposition<2,float>> b_grid;
 
-	//! specify that we are on testing
-	typedef void testing;
+	// type of SparseMatrix, for the linear system, this parameter is bounded by the solver
+	// that you are using, in case of umfpack using <double,int> it is the only possible choice
+	// By default SparseMatrix is EIGEN based
+	typedef SparseMatrix<double,int> SparseMatrix_type;
+
+	// type of Vector for the linear system, this parameter is bounded by the solver
+	// that you are using, in case of umfpack using <double> it is the only possible choice
+	typedef Vector<double> Vector_type;
+
+	// Define that the underline grid where we discretize the system of equation is staggered
+	static const int grid_type = STAGGERED_GRID;
 };
+
 
 const bool op_sys_nn::boundary[] = {NON_PERIODIC,NON_PERIODIC};
 
@@ -78,13 +91,17 @@ BOOST_AUTO_TEST_CASE( operator_plus )
 
   // debug<decltype(f1*f1)> dbg;
   
-  // --------------------------------------
+  // ----------------------------------------------------------------------
+  
   Box<2,float> domain({0.0,0.0},{1.0,1.0});
-  Ghost<2,float> g(0.01);
+  Ghost<2,long int> g(1);
   size_t szu[] = {6,6};
-  grid_dist_id<2,float,aggregate<float[2],float>> g_dist(szu,domain,g);
-
-  auto it = g_dist.getDomainIterator();
+  grid_dist_id<2,float,aggregate<float[2]>> g_dist(szu,domain,g);
+  Padding<2> pd({1,1},{0,0});
+  Ghost<2,long int> stencil_max(1);
+  FDScheme<op_sys_nn> fd(pd,stencil_max,domain, g_dist);
+ 
+  auto it = g_dist.getDomainGhostIterator();
 
   while (it.isNext()) {
     
@@ -102,9 +119,26 @@ BOOST_AUTO_TEST_CASE( operator_plus )
     kmap.getKeyRef() = orig.getKeyRef();
     std::cout << kmap.getKey().to_string() << "\n";
     
-    
     ++it;
   }
+
+  // ----------------------------------------------------------------------
+
+  Field<x,op_sys_nn> vx{{-1,0}};
+  grid_sm<op_sys_nn::dims,void> gs = g_dist.getGridInfoVoid();
+  float spacing[2];
+  spacing[0] = 0.1;
+  spacing[1] = 0.1;
+  std::unordered_map<long int,float> cols;
+  float coeff = 0.0;
+  auto & test_grid = fd.getMap();
+
+  auto it2 = g_dist.getDomainIterator();
+  auto kmap = it2.get();
+  vx.value(test_grid,kmap,gs,spacing,cols,coeff,{-1,-1});
+  
+  
+  
 }
 
 BOOST_AUTO_TEST_SUITE_END()
