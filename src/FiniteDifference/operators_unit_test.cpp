@@ -5,6 +5,7 @@
  *      Author: amfoggia
  */
 
+//#define SE_CLASS1
 #ifndef OPENFPM_NUMERICS_SRC_FINITEDIFFERENCE_OPERATORS_UNIT_TEST_HPP_
 #define OPENFPM_NUMERICS_SRC_FINITEDIFFERENCE_OPERATORS_UNIT_TEST_HPP_
 
@@ -97,8 +98,10 @@ BOOST_AUTO_TEST_CASE( operator_plus )
   Box<2,float> domain({0.0,0.0},{1.0,1.0});
   Ghost<2,long int> g(1);
   size_t szu[] = {6,6};
-  grid_dist_id<2,float,aggregate<float[2]>> g_dist(szu,domain,g);
-  Padding<2> pd({0,0},{0,0});
+  periodicity<op_sys_nn::dims> periodicity = {NON_PERIODIC,NON_PERIODIC};
+  
+  grid_dist_id<2,float,aggregate<float[2]>> g_dist(szu,domain,g,periodicity);
+  Padding<2> pd({1,1},{0,0});
   Ghost<2,long int> stencil_max(1);
   FDScheme<op_sys_nn> fd(pd,stencil_max,domain, g_dist);
  
@@ -134,7 +137,7 @@ BOOST_AUTO_TEST_CASE( operator_plus )
   float coeff = 1.0;
   // auto & test_grid = fd.getMap();
 
-  fd.impose<0>(vx,0.0,{0,0},{0,6},{-1,-1});
+  fd.impose<0>(vx,0.0,{5,0},{5,5},{-1,-1});
   typedef typename op_sys_nn::SparseMatrix_type::triplet_type triplet;
   openfpm::vector<triplet> & trpl = fd.getA().getMatrixTriplets();
 
