@@ -107,7 +107,7 @@ public:
    * \fn Field()
    * \brief Default constructor.
    */
-  Field() {};
+  Field() { def_pos.mone(); };
 
   /**
    * \fn Field(std::initializer_list<char>)
@@ -119,6 +119,15 @@ public:
       std::cerr << "Error " << __FILE__ << ":" << __LINE__ << " position where the Field is defined is not valid.\n";
       return;
     }
+ 
+   if (Sys_eqs::grid_type != STAGGERED_GRID) {
+     comb<Sys_eqs::dims> tmp;
+     tmp.mone();
+     if (def_pos != tmp) {
+       std::cerr << "Error " << __FILE__ << ":" << __LINE__ << " you are using a NON_STAGGERED_GRID, but you are defining the position of the Field in a non-standard place.\nPlease, set all the coordinates to -1 or use the default constructor.\n";
+       return;
+     }
+   }
   };
   
   /**
@@ -148,6 +157,11 @@ public:
       return;
     }
 
+    if (Sys_eqs::grid_type != STAGGERED_GRID) {
+      cols[g_map.template get<0>(kmap)*Sys_eqs::nvar + f] += coeff;
+      return;
+    }
+
     // 1) Check if imp_pos matches def_pos:
     // If they do NOT match
 
@@ -156,22 +170,34 @@ public:
 
     // 2) Compare each direction
     for (int i = 0; i < Sys_eqs::dims; ++i) {
-      if (imp_pos[i] - def_pos[i] > 1e-14) {
+      if (std::fabs(imp_pos[i] - def_pos[i]) > 1e-14) {
 	++nDiffCoor;
 	diffPairs.push_back(std::pair<int,int>{i,imp_pos[i]-def_pos[i]});
       }
     }
 
-    unsigned int nAvg = (1 << nDiffCoor) + 1;             // Number of points (minus 1) to use for the average/interpolation.
+    for (int i = 0; i < diffPairs.size(); ++i)
+      std::cout << "dir: " << diffPairs[i].first << " inc: " << diffPairs[i].second << std::endl;
+    
+    unsigned int nAvg = (1 << nDiffCoor);                 // Number of points to use for the average/interpolation.
     std::vector<grid_dist_key_dx<Sys_eqs::dims>> keysAvg; // Vector with the keys of the points to use in interpolation/average
     keysAvg.push_back(kmap);                              // The first element is in the current cell
+
+    std::cout << "nAvg: " << nAvg << std::endl;
+    std::cout << "current cell key: " << keysAvg[0].to_string() << std::endl;
+    std::cout << "current cell key: " << keysAvg[0].getKey().to_string() << std::endl;
     
     // 3) Compute the points to use for average/interpolation
     for (int k = 1; k <= nDiffCoor; ++k)
       comp_NKcomb(nDiffCoor,k,kmap,diffPairs,keysAvg);
 
+    std::cout << "keysAvg.size: " << keysAvg.size() << std::endl;
+    for (int i = 0; i < keysAvg.size(); ++i)
+      std::cout << "keys: " << keysAvg[i].to_string() << std::endl;
+
     // 4) Do the interpolation/average
     for (int i = 0; i < nAvg; ++i) {
+      std::cout << "index: " << g_map.template get<0>(keysAvg[i])*Sys_eqs::nvar + f << std::endl;
       cols[g_map.template get<0>(keysAvg[i])*Sys_eqs::nvar + f] += coeff/typename Sys_eqs::stype(nAvg);
     }
     

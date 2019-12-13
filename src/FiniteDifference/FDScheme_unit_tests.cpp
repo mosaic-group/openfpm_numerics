@@ -28,47 +28,53 @@ constexpr unsigned int V = 0;
 
 struct sys_nn
 {
-	//! dimensionaly of the equation (2D problem 3D problem ...)
-	static const unsigned int dims = 2;
-	//! number of degree of freedoms
-	static const unsigned int nvar = 1;
+  //! dimensionaly of the equation (2D problem 3D problem ...)
+  static const unsigned int dims = 2;
+  //! number of degree of freedoms
+  static const unsigned int nvar = 1;
+  
+  static const unsigned int ord = EQS_FIELD;
+  
+  //! boundary at X and Y
+  static const bool boundary[];
+  
+  //! type of space float, double, ...
+  typedef float stype;
+  
+  //! Base grid
+  typedef grid_dist_id<dims,stype,aggregate<float>,CartDecomposition<2,stype> > b_grid;
+  
+  //! specify that we are on testing
+  typedef void testing;
 
-	static const unsigned int ord = EQS_FIELD;
-
-	//! boundary at X and Y
-	static const bool boundary[];
-
-	//! type of space float, double, ...
-	typedef float stype;
-
-	//! Base grid
-	typedef grid_dist_id<dims,stype,aggregate<float>,CartDecomposition<2,stype> > b_grid;
-
-	//! specify that we are on testing
-	typedef void testing;
+  // Define that the underline grid where we discretize the system of equation is not staggered
+  static const int grid_type = NORMAL_GRID;
 };
 
 const bool sys_nn::boundary[] = {NON_PERIODIC,NON_PERIODIC};
 
 struct sys_pp
 {
-	//! dimensionaly of the equation (2D problem 3D problem ...)
-	static const unsigned int dims = 2;
-	//! number of degree of freedom in the system
-	static const unsigned int nvar = 1;
-	static const unsigned int ord = EQS_FIELD;
-
-	//! boundary at X and Y
-	static const bool boundary[];
-
-	//! type of space float, double, ...
-	typedef float stype;
-
-	//! Base grid
-	typedef grid_dist_id<dims,stype,aggregate<float>,CartDecomposition<2,stype> > b_grid;
-
-	//! Indicate we are on testing
-	typedef void testing;
+  //! dimensionaly of the equation (2D problem 3D problem ...)
+  static const unsigned int dims = 2;
+  //! number of degree of freedom in the system
+  static const unsigned int nvar = 1;
+  static const unsigned int ord = EQS_FIELD;
+  
+  //! boundary at X and Y
+  static const bool boundary[];
+  
+  //! type of space float, double, ...
+  typedef float stype;
+  
+  //! Base grid
+  typedef grid_dist_id<dims,stype,aggregate<float>,CartDecomposition<2,stype> > b_grid;
+  
+  //! Indicate we are on testing
+  typedef void testing;
+  
+  // Define that the underline grid where we discretize the system of equation is not staggered
+  static const int grid_type = NORMAL_GRID;
 };
 
 const bool sys_pp::boundary[] = {PERIODIC,PERIODIC};
@@ -77,53 +83,53 @@ const bool sys_pp::boundary[] = {PERIODIC,PERIODIC};
 
 struct syss_nn
 {
-	//! dimensionaly of the equation (2D problem 3D problem ...)
-	static const unsigned int dims = 2;
-	//! Degree of freedom in the system
-	static const unsigned int nvar = 1;
-
-	static const unsigned int ord = EQS_FIELD;
-
-	//! Indicate that the type of grid is staggered
-	static const unsigned int grid_type = STAGGERED_GRID;
-
-	//! boundary at X and Y
-	static const bool boundary[];
-
-	//! type of space float, double, ...
-	typedef float stype;
-
-	//! Base grid
-	typedef grid_dist_id<dims,stype,aggregate<float>,CartDecomposition<2,stype> > b_grid;
-
-	//! Indicate we are on testing
-	typedef void testing;
+  //! dimensionaly of the equation (2D problem 3D problem ...)
+  static const unsigned int dims = 2;
+  //! Degree of freedom in the system
+  static const unsigned int nvar = 1;
+  
+  static const unsigned int ord = EQS_FIELD;
+  
+  //! Indicate that the type of grid is staggered
+  static const unsigned int grid_type = STAGGERED_GRID;
+  
+  //! boundary at X and Y
+  static const bool boundary[];
+  
+  //! type of space float, double, ...
+  typedef float stype;
+  
+  //! Base grid
+  typedef grid_dist_id<dims,stype,aggregate<float>,CartDecomposition<2,stype> > b_grid;
+  
+  //! Indicate we are on testing
+  typedef void testing;
 };
 
 const bool syss_nn::boundary[] = {NON_PERIODIC,NON_PERIODIC};
 
 struct syss_pp
 {
-	//! dimensionaly of the equation (2D problem 3D problem ...)
-	static const unsigned int dims = 2;
-	//! number of fields in the system
-	static const unsigned int nvar = 1;
-	static const unsigned int ord = EQS_FIELD;
-
-	//! Indicate the grid is staggered
-	static const unsigned int grid_type = STAGGERED_GRID;
-
-	//! boundary at X and Y
-	static const bool boundary[];
-
-	//! type of space float, double, ...
-	typedef float stype;
-
-	//! Base grid
-	typedef grid_dist_id<dims,stype,aggregate<float>,CartDecomposition<2,stype> > b_grid;
-
-	//! Indicate we are on testing
-	typedef void testing;
+  //! dimensionaly of the equation (2D problem 3D problem ...)
+  static const unsigned int dims = 2;
+  //! number of fields in the system
+  static const unsigned int nvar = 1;
+  static const unsigned int ord = EQS_FIELD;
+  
+  //! Indicate the grid is staggered
+  static const unsigned int grid_type = STAGGERED_GRID;
+  
+  //! boundary at X and Y
+  static const bool boundary[];
+  
+  //! type of space float, double, ...
+  typedef float stype;
+  
+  //! Base grid
+  typedef grid_dist_id<dims,stype,aggregate<float>,CartDecomposition<2,stype> > b_grid;
+  
+  //! Indicate we are on testing
+  typedef void testing;
 };
 
 const bool syss_pp::boundary[] = {PERIODIC,PERIODIC};
