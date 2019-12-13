@@ -95,10 +95,10 @@ BOOST_AUTO_TEST_CASE( operator_plus )
   // ----------------------------------------------------------------------
   
   Box<2,float> domain({0.0,0.0},{1.0,1.0});
-  Ghost<2,long int> g(0);
+  Ghost<2,long int> g(1);
   size_t szu[] = {6,6};
   grid_dist_id<2,float,aggregate<float[2]>> g_dist(szu,domain,g);
-  Padding<2> pd({1,1},{0,0});
+  Padding<2> pd({0,0},{0,0});
   Ghost<2,long int> stencil_max(1);
   FDScheme<op_sys_nn> fd(pd,stencil_max,domain, g_dist);
  
@@ -132,7 +132,17 @@ BOOST_AUTO_TEST_CASE( operator_plus )
   spacing[1] = 0.1;
   std::unordered_map<long int,float> cols;
   float coeff = 1.0;
-  auto & test_grid = fd.getMap();
+  // auto & test_grid = fd.getMap();
+
+  fd.impose<0>(vx,0.0,{0,0},{0,6},{-1,-1});
+  typedef typename op_sys_nn::SparseMatrix_type::triplet_type triplet;
+  openfpm::vector<triplet> & trpl = fd.getA().getMatrixTriplets();
+
+  for (int i = 0; i < trpl.size(); ++i)
+    std::cout << "row: " << trpl.get(i).row() << " "
+	      << "col: " << trpl.get(i).col() << " "
+	      << "val: " << trpl.get(i).value() << "\n-----------------------" << std::endl;
+  
 
   // auto it2 = g_dist.getDomainIterator();
 
@@ -143,27 +153,27 @@ BOOST_AUTO_TEST_CASE( operator_plus )
   // }
   
 
-  auto it2 = g_dist.getDomainIterator();
-  auto kmap = it2.get();
-  vx.value(test_grid,kmap,gs,spacing,cols,coeff,{-1,-1});
+  // auto it2 = test_grid.getDomainIterator();
+  // auto kmap = it2.get();
+  // vx.value(test_grid,kmap,gs,spacing,cols,coeff,{-1,-1});
 
-  std::cout << "----------\n";
-  for (auto cols_it = cols.cbegin(); cols_it != cols.cend(); ++cols_it)
-    std::cout << "Key:[" << cols_it->first << "] Value:[" << cols_it->second << "]\n";
-  std::cout << "----------\n";
+  // std::cout << "----------\n";
+  // for (auto cols_it = cols.cbegin(); cols_it != cols.cend(); ++cols_it)
+  //   std::cout << "Key:[" << cols_it->first << "] Value:[" << cols_it->second << "]\n";
+  // std::cout << "----------\n";
   
-  ++it2;
-  ++it2;
-  ++it2;
+  // ++it2;
+  // ++it2;
+  // ++it2;
 
-  kmap = it2.get();
-  vx.value(test_grid,kmap,gs,spacing,cols,coeff,{-1,-1});
-  std::cout << it2.get().getKey().to_string() << std::endl;
+  // kmap = it2.get();
+  // vx.value(test_grid,kmap,gs,spacing,cols,coeff,{-1,-1});
+  // std::cout << it2.get().getKey().to_string() << std::endl;
 
-  std::cout << "----------\n";  
-  for (auto cols_it = cols.cbegin(); cols_it != cols.cend(); ++cols_it)
-    std::cout << "Key:[" << cols_it->first << "] Value:[" << cols_it->second << "]\n";
-  std::cout << "----------\n";  
+  // std::cout << "----------\n";  
+  // for (auto cols_it = cols.cbegin(); cols_it != cols.cend(); ++cols_it)
+  //   std::cout << "Key:[" << cols_it->first << "] Value:[" << cols_it->second << "]\n";
+  // std::cout << "----------\n";  
   
   
 }

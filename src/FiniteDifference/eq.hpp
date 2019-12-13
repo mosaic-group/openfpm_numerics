@@ -184,7 +184,6 @@ public:
     keysAvg.push_back(kmap);                              // The first element is in the current cell
 
     std::cout << "nAvg: " << nAvg << std::endl;
-    std::cout << "current cell key: " << keysAvg[0].to_string() << std::endl;
     std::cout << "current cell key: " << keysAvg[0].getKey().to_string() << std::endl;
     
     // 3) Compute the points to use for average/interpolation
@@ -193,14 +192,14 @@ public:
 
     std::cout << "keysAvg.size: " << keysAvg.size() << std::endl;
     for (int i = 0; i < keysAvg.size(); ++i)
-      std::cout << "keys: " << keysAvg[i].to_string() << std::endl;
+      std::cout << "keys: " << keysAvg[i].getKey().to_string() << std::endl;
 
     // 4) Do the interpolation/average
     for (int i = 0; i < nAvg; ++i) {
       std::cout << "index: " << g_map.template get<0>(keysAvg[i])*Sys_eqs::nvar + f << std::endl;
       cols[g_map.template get<0>(keysAvg[i])*Sys_eqs::nvar + f] += coeff/typename Sys_eqs::stype(nAvg);
     }
-    
+    std::cout << "--------------------\n";
   }
 
   /**
