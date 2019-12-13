@@ -278,6 +278,12 @@ public:
   comb<Sys_eqs::dims> def_pos; /**< Position in cell where this coefficient is defined. */
 
   /**
+   * \fn coeff()
+   * \brief Default constructor.
+   */
+  coeff() { def_pos.mone(); }
+
+  /**
    * \fn coeff(const coeff_type &, std::initializer_list<char>)
    * \brief Constructor.
    * \param[in] def_pos_ Position in the cell where the coefficient is defined (important in staggered grids).
@@ -286,6 +292,15 @@ public:
     if (def_pos.isValid() == false) {
       std::cerr << "Error " << __FILE__ << ":" << __LINE__ << " position where the Field is defined is not valid.\n";
       return;
+    }
+
+    if (Sys_eqs::grid_type != STAGGERED_GRID) {
+      comb<Sys_eqs::dims> tmp;
+      tmp.mone();
+      if (def_pos != tmp) {
+	std::cerr << "Error " << __FILE__ << ":" << __LINE__ << " you are using a NON_STAGGERED_GRID, but you are defining the position of the coefficient in a non-standard place.\nPlease, set all the coordinates to -1 or use the default constructor.\n";
+	return;
+      }
     }
   }
 

@@ -50,11 +50,11 @@ struct  op_sys_nn
   typedef Vector<double> Vector_type;
   
   // Define that the underline grid where we discretize the system of equation is staggered
-  static const int grid_type = NORMAL_GRID;
+  static const int grid_type = STAGGERED_GRID;
 };
 
 
-const bool op_sys_nn::boundary[] = {NON_PERIODIC,NON_PERIODIC};
+const bool op_sys_nn::boundary[] = {PERIODIC,PERIODIC};
 
 constexpr unsigned int x = 0;
 constexpr unsigned int y = 1;
@@ -134,36 +134,36 @@ BOOST_AUTO_TEST_CASE( operator_plus )
   float coeff = 1.0;
   auto & test_grid = fd.getMap();
 
-  auto it2 = g_dist.getDomainIterator();
-
-  while(it2.isNext()) {
-    auto kmap = it2.get();
-    std::cout << "key: " << kmap.getKey().to_string() << " index: " << test_grid.template get<0>(kmap)*op_sys_nn::nvar + 0 << std::endl;
-    ++it2;
-  }
-  
-
   // auto it2 = g_dist.getDomainIterator();
-  // auto kmap = it2.get();
-  // vx.value(test_grid,kmap,gs,spacing,cols,coeff,{-1,-1});
 
-  // std::cout << "----------\n";
-  // for (auto cols_it = cols.cbegin(); cols_it != cols.cend(); ++cols_it)
-  //   std::cout << "Key:[" << cols_it->first << "] Value:[" << cols_it->second << "]\n";
-  // std::cout << "----------\n";
+  // while(it2.isNext()) {
+  //   auto kmap = it2.get();
+  //   std::cout << "key: " << kmap.getKey().to_string() << " index: " << test_grid.template get<0>(kmap)*op_sys_nn::nvar + 0 << std::endl;
+  //   ++it2;
+  // }
   
-  // ++it2;
-  // ++it2;
-  // ++it2;
 
-  // kmap = it2.get();
-  // vx.value(test_grid,kmap,gs,spacing,cols,coeff,{-1,-1});
-  // std::cout << it2.get().getKey().to_string() << std::endl;
+  auto it2 = g_dist.getDomainIterator();
+  auto kmap = it2.get();
+  vx.value(test_grid,kmap,gs,spacing,cols,coeff,{-1,-1});
 
-  // std::cout << "----------\n";  
-  // for (auto cols_it = cols.cbegin(); cols_it != cols.cend(); ++cols_it)
-  //   std::cout << "Key:[" << cols_it->first << "] Value:[" << cols_it->second << "]\n";
-  // std::cout << "----------\n";  
+  std::cout << "----------\n";
+  for (auto cols_it = cols.cbegin(); cols_it != cols.cend(); ++cols_it)
+    std::cout << "Key:[" << cols_it->first << "] Value:[" << cols_it->second << "]\n";
+  std::cout << "----------\n";
+  
+  ++it2;
+  ++it2;
+  ++it2;
+
+  kmap = it2.get();
+  vx.value(test_grid,kmap,gs,spacing,cols,coeff,{-1,-1});
+  std::cout << it2.get().getKey().to_string() << std::endl;
+
+  std::cout << "----------\n";  
+  for (auto cols_it = cols.cbegin(); cols_it != cols.cend(); ++cols_it)
+    std::cout << "Key:[" << cols_it->first << "] Value:[" << cols_it->second << "]\n";
+  std::cout << "----------\n";  
   
   
 }
