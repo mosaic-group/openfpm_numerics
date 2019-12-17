@@ -123,7 +123,7 @@ public:
     // if the system is staggered the CENTRAL derivative is equivalent to a forward derivative
     if (is_grid_staggered<Sys_eqs>::value())
       {
-	D<d,expr_type,BACKWARD>{}.value(g_map,kmap,gs,spacing,cols,coeff,imp_pos);
+	D<d,expr_type,BACKWARD>{expr}.value(g_map,kmap,gs,spacing,cols,coeff,imp_pos);
 	return;
       }
 

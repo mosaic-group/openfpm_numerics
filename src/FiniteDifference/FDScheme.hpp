@@ -690,16 +690,21 @@ public:
   template<unsigned int prp, typename T, typename rhs_type>
   void impose(const T & op,
 	      const rhs_type & rhs_b_,
-	      //const unsigned int id,
 	      const long int (& start)[Sys_eqs::dims],
 	      const long int (& stop)[Sys_eqs::dims],
 	      comb<Sys_eqs::dims> imp_pos,
 	      bool skip_first = false)
   {
+    std::cerr << "Warning " << __FILE__ << ":" << __LINE__ << " position where the equation is imposed should be passed backwards: for example, in a 3D case, {z,y,x}.\n";
+    
     // Check that comb<dims> is a valid point
     if (imp_pos.isValid() == false) {
       std::cerr << "Error " << __FILE__ << ":" << __LINE__ << " position where the equation is being imposed is not valid.\n";
       return;
+    }
+
+    if (Sys_eqs::grid_type != STAGGERED_GRID) {
+      std::cerr << "Error " << __FILE__ << ":" << __LINE__ << " you are using a NON_STAGGERED_GRID but you are imposing the equation in a non-standard place in the cell. Please set all the coordinates of 'imp_pos' to -1 or use the impose() function that does this for you.\n";
     }
     
     grid_key_dx<Sys_eqs::dims> start_k;
@@ -730,6 +735,21 @@ public:
     
     impose_git(op,rhs_b,prp,it,imp_pos);    
 
+  }
+
+  template<unsigned int prp, typename T, typename rhs_type>
+  void impose(const T & op,
+	      const rhs_type & rhs_b_,
+	      const long int (& start)[Sys_eqs::dims],
+	      const long int (& stop)[Sys_eqs::dims],
+	      bool skip_first = false)
+  {
+    if (Sys_eqs::grid_type == STAGGERED_GRID) {
+      std::cerr << "Warning " << __FILE__ << ":" << __LINE__ << " you are using a STAGGERED_GRID and not specifing the position in cell where to impose the equation. Default position (bottom left corner) will be used. If you want to impose it somewhere else, please use the correct impose() function.\n";
+    }
+    comb<Sys_eqs::dims> tmp;
+    tmp.mone();
+    impose<prp,T,rhs_type>(op,rhs_b_,start,stop,tmp,skip_first);
   }
 
   /*! \brief In case we want to impose a new b re-using FDScheme we have to call
