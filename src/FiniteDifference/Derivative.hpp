@@ -390,6 +390,9 @@ public:
 		    typename Sys_eqs::stype coeff,
 		    comb<Sys_eqs::dims> imp_pos) const
   {
+    
+    if (is_grid_staggered<Sys_eqs>::value())
+      imp_pos.getComb()[d] = -(imp_pos[d]+1);
 
     long int old_val = kmap.getKeyRef().get(d);
     kmap.getKeyRef().set_d(d, kmap.getKeyRef().get(d) + 1);
@@ -469,6 +472,9 @@ public:
 		    comb<Sys_eqs::dims> imp_pos) const
   {
 
+    if (is_grid_staggered<Sys_eqs>::value())
+      imp_pos.getComb()[d] = -(imp_pos[d]+1);
+      
     long int old_val = kmap.getKeyRef().get(d);
     kmap.getKeyRef().set_d(d, kmap.getKeyRef().get(d) - 1);
     expr.value(g_map,kmap,gs,spacing,cols,-coeff/spacing[d],imp_pos);

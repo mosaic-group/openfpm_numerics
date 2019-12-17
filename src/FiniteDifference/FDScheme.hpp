@@ -183,7 +183,7 @@ public:
 };
 
 // ---------------------------------------------------------------------------------------------------------------------------------------------
-
+  
   //! Padding
   Padding<Sys_eqs::dims> pd;
 
@@ -451,12 +451,12 @@ public:
   void impose_git(const T & op,
 		  rhs_type & rhs_b,
 		  long int id,
-		  const iterator & it_d,
+		  iterator & it_d,
 		  comb<Sys_eqs::dims> imp_pos)
   {
     openfpm::vector<triplet> & trpl = A.getMatrixTriplets();
 
-    auto it = it_d;
+    auto & it = it_d;
     grid_sm<Sys_eqs::dims,void> gs = g_map.getGridInfoVoid();
 
     std::unordered_map<long int,float> cols;
@@ -466,18 +466,19 @@ public:
       {
 	// get the position
 	auto key = it.get();
+	std::cout << "current cell key IMPOSE: " << key.getKey().to_string() << std::endl;
 
 	// Calculate the non-zero colums
 	op.value(g_map,key,gs,spacing,cols,1.0,imp_pos);
 
 	// indicate if the diagonal has been set
 	bool is_diag = false;
-
+	
 	// create the triplet
 	for ( auto it = cols.begin(); it != cols.end(); ++it )
 	  {
 	    trpl.add();
-	    trpl.last().row() = g_map.template get<0>(key)*Sys_eqs::nvar + id;
+	    trpl.last().row() = row;  //g_map.template get<0>(key)*Sys_eqs::nvar + id;
 	    trpl.last().col() = it->first;
 	    trpl.last().value() = it->second;
 
@@ -491,13 +492,15 @@ public:
 	if (is_diag == false)
 	  {
 	    trpl.add();
-	    trpl.last().row() = g_map.template get<0>(key)*Sys_eqs::nvar + id;
-	    trpl.last().col() = g_map.template get<0>(key)*Sys_eqs::nvar + id;
+	    trpl.last().row() = row; //g_map.template get<0>(key)*Sys_eqs::nvar + id;
+	    trpl.last().col() = row; //g_map.template get<0>(key)*Sys_eqs::nvar + id;
 	    trpl.last().value() = 0.0;
 	  }
 
-	b(g_map.template get<0>(key)*Sys_eqs::nvar + id) = rhs_b.get(key);
-
+	std::cout << "index IMPOSE: " << row << std::endl;
+	// b(g_map.template get<0>(key)*Sys_eqs::nvar + id) = rhs_b.get(key);
+	b(row) = rhs_b.get(key);
+	
 	cols.clear();
 
 	// if SE_CLASS1 is defined check the position
@@ -544,6 +547,7 @@ public:
     while (it.isNext())
       {
 	auto key = it.get();
+	std::cout << "CONSTRUCT GMAP KEY: " << key.getKey().to_string() << " cnt + s_pnt: " << cnt + s_pnt << std::endl;
 
 	g_map.template get<0>(key) = cnt + s_pnt;
 
@@ -681,9 +685,9 @@ public:
    *
    * \param op Operator to impose (A term)
    * \param num right hand side of the term (b term)
-   * \param id Equation id in the system that we are imposing
    * \param start starting point of the box
    * \param stop stop point of the box
+   * \param imp_pos Position in cell where to impose the equation. IMPORTANT: Coordinates should be passed in reverse order, like {z,y,x}, insted of {x,y,z}.
    * \param skip_first skip the first point
    *
    */
@@ -695,7 +699,7 @@ public:
 	      comb<Sys_eqs::dims> imp_pos,
 	      bool skip_first = false)
   {
-    std::cerr << "Warning " << __FILE__ << ":" << __LINE__ << " position where the equation is imposed should be passed backwards: for example, in a 3D case, {z,y,x}.\n";
+    std::cerr << "Warning " << __FILE__ << ":" << __LINE__ << " position where the equation is imposed should be passed in reverse order: for example, in a 3D case, {z,y,x}.\n";
     
     // Check that comb<dims> is a valid point
     if (imp_pos.isValid() == false) {
@@ -703,7 +707,7 @@ public:
       return;
     }
 
-    if (Sys_eqs::grid_type != STAGGERED_GRID) {
+    if (!is_grid_staggered<Sys_eqs>::value()) {
       std::cerr << "Error " << __FILE__ << ":" << __LINE__ << " you are using a NON_STAGGERED_GRID but you are imposing the equation in a non-standard place in the cell. Please set all the coordinates of 'imp_pos' to -1 or use the impose() function that does this for you.\n";
     }
     
@@ -744,7 +748,7 @@ public:
 	      const long int (& stop)[Sys_eqs::dims],
 	      bool skip_first = false)
   {
-    if (Sys_eqs::grid_type == STAGGERED_GRID) {
+    if (is_grid_staggered<Sys_eqs>::value()) {
       std::cerr << "Warning " << __FILE__ << ":" << __LINE__ << " you are using a STAGGERED_GRID and not specifing the position in cell where to impose the equation. Default position (bottom left corner) will be used. If you want to impose it somewhere else, please use the correct impose() function.\n";
     }
     comb<Sys_eqs::dims> tmp;

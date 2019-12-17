@@ -39,7 +39,7 @@ struct  op_sys_nn
   
   // type of base grid, it is the distributed grid that will store the result
   // Note the first property is a 2D vector (velocity), the second is a scalar (Pressure)
-  typedef grid_dist_id<2,float,aggregate<float[2]>,CartDecomposition<2,float>> b_grid;
+  typedef grid_dist_id<2,float,aggregate<float>,CartDecomposition<2,float>> b_grid;
   
   // type of SparseMatrix, for the linear system, this parameter is bounded by the solver
   // that you are using, in case of umfpack using <double,int> it is the only possible choice
@@ -55,7 +55,7 @@ struct  op_sys_nn
 };
 
 
-const bool op_sys_nn::boundary[] = {PERIODIC,PERIODIC};
+const bool op_sys_nn::boundary[] = {NON_PERIODIC,NON_PERIODIC};
 
 constexpr unsigned int x = 0;
 constexpr unsigned int y = 1;
@@ -96,11 +96,12 @@ BOOST_AUTO_TEST_CASE( operator_plus )
   // ----------------------------------------------------------------------
   
   Box<2,float> domain({0.0,0.0},{1.0,1.0});
-  Ghost<2,long int> g(1);
+  Ghost<2,float> g(0.01);
   size_t szu[] = {6,6};
+  long int sz[] = {6,6};
   periodicity<op_sys_nn::dims> periodicity = {NON_PERIODIC,NON_PERIODIC};
   
-  grid_dist_id<2,float,aggregate<float[2]>> g_dist(szu,domain,g,periodicity);
+  grid_dist_id<2,float,aggregate<float>> g_dist(szu,domain,g);
   Padding<2> pd({1,1},{0,0});
   Ghost<2,long int> stencil_max(1);
   FDScheme<op_sys_nn> fd(pd,stencil_max,domain, g_dist);
@@ -128,7 +129,12 @@ BOOST_AUTO_TEST_CASE( operator_plus )
 
   // ----------------------------------------------------------------------
 
-  Field<x,op_sys_nn> vx{{-1,0}};
+  std::initializer_list<char> cc = {0,0};
+  std::initializer_list<char> ll = {0,-1};
+  std::initializer_list<char> bl = {-1,-1};
+  std::initializer_list<char> bb = {-1,0};
+  
+  Field<y,op_sys_nn> vy{bb};
   grid_sm<op_sys_nn::dims,void> gs = g_dist.getGridInfoVoid();
   float spacing[2];
   spacing[0] = 0.1;
@@ -136,8 +142,13 @@ BOOST_AUTO_TEST_CASE( operator_plus )
   std::unordered_map<long int,float> cols;
   float coeff = 1.0;
   // auto & test_grid = fd.getMap();
+  Avg<x,decltype(vy),FORWARD> avg_vy{vy};
 
-  fd.impose<0>(vx,0.0,{5,0},{5,5},{-1,-1});
+  std::cout << "------------------------\n";
+
+  //fd.impose<y>(avg_vy,0.0,{-1,0},{-1,sz[1]-1},bb);
+
+  fd.impose<y>(vy,0.0,{0,0},{0,sz[1]-1},bl);
   typedef typename op_sys_nn::SparseMatrix_type::triplet_type triplet;
   openfpm::vector<triplet> & trpl = fd.getA().getMatrixTriplets();
 

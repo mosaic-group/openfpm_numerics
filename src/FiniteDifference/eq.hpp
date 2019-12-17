@@ -109,25 +109,25 @@ public:
    */
   Field() {
     def_pos.mone();
-    if (Sys_eqs::grid_type == STAGGERED_GRID)
+    if (is_grid_staggered<Sys_eqs>::value())
       std::cerr << "Warning " << __FILE__ << ":" << __LINE__ << " you are using a STAGGERED_GRID and not specifing the position in cell where the Field is defined. Default position (bottom left corner) will be used. If you want to define it somewhere else, please use the correct constructor.\n";
   };
 
   /**
    * \fn Field(std::initializer_list<char>)
    * \brief Constructor.
-   * \param[in] def_pos_ Position in the cell where the field is defined (important in staggered grids).
+   * \param[in] def_pos_ Position in the cell where the field is defined (important in staggered grids). IMPORTANT: Coordinates should be passed in reverse order, like {z,y,x}, insted of {x,y,z}.
    */
   Field(std::initializer_list<char> def_pos_) : def_pos{def_pos_} {
 
-    std::cerr << "Warning " << __FILE__ << ":" << __LINE__ << " position where the Field is defined should be passed backwards: for example, in a 3D case, {z,y,x}.\n";
+    std::cerr << "Warning " << __FILE__ << ":" << __LINE__ << " position where the Field is defined should be passed in reverse order: for example, in a 3D case, {z,y,x}.\n";
     
     if (def_pos.isValid() == false) {
       std::cerr << "Error " << __FILE__ << ":" << __LINE__ << " position where the Field is defined is not valid.\n";
       return;
     }
  
-   if (Sys_eqs::grid_type != STAGGERED_GRID) {
+   if (!is_grid_staggered<Sys_eqs>::value()) {
      comb<Sys_eqs::dims> tmp;
      tmp.mone();
      if (def_pos != tmp) {
@@ -185,30 +185,30 @@ public:
       }
     }
 
-    // for (int i = 0; i < diffPairs.size(); ++i)
-    //   std::cout << "dir: " << diffPairs[i].first << " inc: " << diffPairs[i].second << std::endl;
+    for (int i = 0; i < diffPairs.size(); ++i)
+      std::cout << "dir: " << diffPairs[i].first << " inc: " << diffPairs[i].second << std::endl;
     
     unsigned int nAvg = (1 << nDiffCoor);                 // Number of points to use for the average/interpolation.
     std::vector<grid_dist_key_dx<Sys_eqs::dims>> keysAvg; // Vector with the keys of the points to use in interpolation/average
     keysAvg.push_back(kmap);                              // The first element is in the current cell
 
-    // std::cout << "nAvg: " << nAvg << std::endl;
-    // std::cout << "current cell key: " << keysAvg[0].getKey().to_string() << std::endl;
+    std::cout << "nAvg: " << nAvg << std::endl;
+    std::cout << "current cell key: " << keysAvg[0].getKey().to_string() << std::endl;
     
     // 3) Compute the points to use for average/interpolation
     for (int k = 1; k <= nDiffCoor; ++k)
       comp_NKcomb(nDiffCoor,k,kmap,diffPairs,keysAvg);
 
-    // std::cout << "keysAvg.size: " << keysAvg.size() << std::endl;
-    // for (int i = 0; i < keysAvg.size(); ++i)
-    //   std::cout << "keys: " << keysAvg[i].getKey().to_string() << std::endl;
+    std::cout << "keysAvg.size: " << keysAvg.size() << std::endl;
+    for (int i = 0; i < keysAvg.size(); ++i)
+      std::cout << "keys: " << keysAvg[i].getKey().to_string() << std::endl;
 
     // 4) Do the interpolation/average
     for (int i = 0; i < nAvg; ++i) {
-      //      std::cout << "index: " << g_map.template get<0>(keysAvg[i])*Sys_eqs::nvar + f << std::endl;
+      std::cout << "index: " << g_map.template get<0>(keysAvg[i])*Sys_eqs::nvar + f << std::endl;
       cols[g_map.template get<0>(keysAvg[i])*Sys_eqs::nvar + f] += coeff/typename Sys_eqs::stype(nAvg);
     }
-    //std::cout << "--------------------\n";
+    std::cout << "--------------------\n";
   }
 
   /**
@@ -288,28 +288,30 @@ public:
   /**
    * \fn coeff()
    * \brief Default constructor.
+   * \param[in] c_ Grid or scalar coefficient.
    */
-  coeff() {
+  coeff(const coeff_type & c_) : c{c_} {
     def_pos.mone();
-    if (Sys_eqs::grid_type == STAGGERED_GRID)
+    if (is_grid_staggered<Sys_eqs>::value())
       std::cerr << "Warning " << __FILE__ << ":" << __LINE__ << " you are using a STAGGERED_GRID and not specifing the position in cell where the coeff is defined. Default position (bottom left corner) will be used. If you want to define it somewhere else, please use the correct constructor.\n";
   }
 
   /**
    * \fn coeff(const coeff_type &, std::initializer_list<char>)
    * \brief Constructor.
-   * \param[in] def_pos_ Position in the cell where the coefficient is defined (important in staggered grids).
+   * \param[in] c_ Grid or scalar coefficient.
+   * \param[in] def_pos_ Position in the cell where the coefficient is defined (important in staggered grids). IMPORTANT: Coordinates should be passed in reverse order, like {z,y,x}, insted of {x,y,z}.
    */
   coeff(const coeff_type & c_, std::initializer_list<char> def_pos_) : c{c_}, def_pos{def_pos_} {
 
-    std::cerr << "Warning " << __FILE__ << ":" << __LINE__ << " position where the coefficient is defined should be passed backwards: for example, in a 3D case, {z,y,x}.\n";
+    std::cerr << "Warning " << __FILE__ << ":" << __LINE__ << " position where the coefficient is defined should be passed in reverse order: for example, in a 3D case, {z,y,x}.\n";
     
     if (def_pos.isValid() == false) {
       std::cerr << "Error " << __FILE__ << ":" << __LINE__ << " position where the coefficient is defined is not valid.\n";
       return;
     }
 
-    if (Sys_eqs::grid_type != STAGGERED_GRID) {
+    if (!is_grid_staggered<Sys_eqs>::value()) {
       comb<Sys_eqs::dims> tmp;
       tmp.mone();
       if (def_pos != tmp) {
