@@ -466,7 +466,6 @@ public:
       {
 	// get the position
 	auto key = it.get();
-	std::cout << "current cell key IMPOSE: " << key.getKey().to_string() << std::endl;
 
 	// Calculate the non-zero colums
 	op.value(g_map,key,gs,spacing,cols,1.0,imp_pos);
@@ -478,28 +477,28 @@ public:
 	for ( auto it = cols.begin(); it != cols.end(); ++it )
 	  {
 	    trpl.add();
-	    trpl.last().row() = row;  //g_map.template get<0>(key)*Sys_eqs::nvar + id;
+	    // trpl.last().row() = row;  //g_map.template get<0>(key)*Sys_eqs::nvar + id;
+	    trpl.last().row() = g_map.template get<0>(key)*Sys_eqs::nvar + id;
 	    trpl.last().col() = it->first;
 	    trpl.last().value() = it->second;
 
 	    if (trpl.last().row() == trpl.last().col())
 	      is_diag = true;
-
-	    //				std::cout << "(" << trpl.last().row() << "," << trpl.last().col() << "," << trpl.last().value() << ")" << "\n";
 	  }
 
 	// If does not have a diagonal entry put it to zero
 	if (is_diag == false)
 	  {
 	    trpl.add();
-	    trpl.last().row() = row; //g_map.template get<0>(key)*Sys_eqs::nvar + id;
-	    trpl.last().col() = row; //g_map.template get<0>(key)*Sys_eqs::nvar + id;
+	    // trpl.last().row() = row; //g_map.template get<0>(key)*Sys_eqs::nvar + id;
+	    // trpl.last().col() = row; //g_map.template get<0>(key)*Sys_eqs::nvar + id;
+	    trpl.last().row() = g_map.template get<0>(key)*Sys_eqs::nvar + id;
+	    trpl.last().col() = g_map.template get<0>(key)*Sys_eqs::nvar + id;
 	    trpl.last().value() = 0.0;
 	  }
 
-	std::cout << "index IMPOSE: " << row << std::endl;
-	// b(g_map.template get<0>(key)*Sys_eqs::nvar + id) = rhs_b.get(key);
-	b(row) = rhs_b.get(key);
+	b(g_map.template get<0>(key)*Sys_eqs::nvar + id) = rhs_b.get(key);
+	// b(row) = rhs_b.get(key);
 	
 	cols.clear();
 
@@ -547,7 +546,6 @@ public:
     while (it.isNext())
       {
 	auto key = it.get();
-	std::cout << "CONSTRUCT GMAP KEY: " << key.getKey().to_string() << " cnt + s_pnt: " << cnt + s_pnt << std::endl;
 
 	g_map.template get<0>(key) = cnt + s_pnt;
 

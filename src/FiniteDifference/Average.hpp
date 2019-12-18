@@ -213,11 +213,9 @@ public:
     
     long int old_val = kmap.getKeyRef().get(d);
     kmap.getKeyRef().set_d(d, kmap.getKeyRef().get(d) + 1);
-    std::cout << "current cell key AVERAGE: " << kmap.getKey().to_string() << std::endl;
     expr.value(g_map,kmap,gs,spacing,cols,coeff/2,imp_pos);
     kmap.getKeyRef().set_d(d,old_val);
 
-    std::cout << "current cell key AVERAGE: " << kmap.getKey().to_string() << std::endl;
     // backward
     expr.value(g_map,kmap,gs,spacing,cols,coeff/2,imp_pos);
   }
