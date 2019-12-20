@@ -477,7 +477,7 @@ public:
 	for ( auto it = cols.begin(); it != cols.end(); ++it )
 	  {
 	    trpl.add();
-	    // trpl.last().row() = row;  //g_map.template get<0>(key)*Sys_eqs::nvar + id;
+	    // trpl.last().row() = row + s_pnt*Sys_eqs::nvar;
 	    trpl.last().row() = g_map.template get<0>(key)*Sys_eqs::nvar + id;
 	    trpl.last().col() = it->first;
 	    trpl.last().value() = it->second;
@@ -490,15 +490,15 @@ public:
 	if (is_diag == false)
 	  {
 	    trpl.add();
-	    // trpl.last().row() = row; //g_map.template get<0>(key)*Sys_eqs::nvar + id;
-	    // trpl.last().col() = row; //g_map.template get<0>(key)*Sys_eqs::nvar + id;
+	    // trpl.last().row() = row + s_pnt*Sys_eqs::nvar;
+	    // trpl.last().col() = row + s_pnt*Sys_eqs::nvar;
 	    trpl.last().row() = g_map.template get<0>(key)*Sys_eqs::nvar + id;
 	    trpl.last().col() = g_map.template get<0>(key)*Sys_eqs::nvar + id;
 	    trpl.last().value() = 0.0;
 	  }
 
 	b(g_map.template get<0>(key)*Sys_eqs::nvar + id) = rhs_b.get(key);
-	// b(row) = rhs_b.get(key);
+	// b(row + s_pnt*Sys_eqs::nvar) = rhs_b.get(key);
 	
 	cols.clear();
 
