@@ -271,22 +271,18 @@ struct point_scalar_process
 	{
 #ifdef __NVCC__
 
-//		auto ite = ve.getGPUIterator(256);
-
-//		compute_expr_ker_v<0><<<ite.wthr,ite.thr>>>(ve.toKernel(),o1);
-
 		auto vek = ve.toKernel();
 		vector_dist_op_compute_op<0,is_sort,comp_dev>::compute_expr_v(vek,o1);
 
-		exp_tmp2.resize(sizeof(val_type));
+		exp_tmp2[0].resize(sizeof(val_type));
 
 		auto & v_cl = create_vcluster<CudaMemory>();
 
-		mgpu::reduce((val_type *)ve.template getDeviceBuffer<0>(), ve.size(), (val_type *)exp_tmp2.getDevicePointer(), mgpu::plus_t<val_type>(), v_cl.getmgpuContext());
+		mgpu::reduce((val_type *)ve.template getDeviceBuffer<0>(), ve.size(), (val_type *)(exp_tmp2[0].getDevicePointer()), mgpu::plus_t<val_type>(), v_cl.getmgpuContext());
 
-		exp_tmp2.deviceToHost();
+		exp_tmp2[0].deviceToHost();
 
-		val = *(val_type *)exp_tmp2.getPointer();
+		val = *(val_type *)(exp_tmp2[0].getPointer());
 #else
 		std::cout << __FILE__ << ":" << __LINE__ << " error: to make expression work on GPU the file must be compiled on GPU" << std::endl;
 #endif
@@ -310,7 +306,7 @@ struct point_scalar_process<val_type,is_sort,true>
 		auto vek = ve.toKernel();
 		vector_dist_op_compute_op<0,is_sort,comp_dev>::template compute_expr_vv<val_type::dims>(vek,o1);
 
-		exp_tmp2.resize(sizeof(val_type));
+		exp_tmp2[0].resize(sizeof(val_type));
 
 		size_t offset = 0;
 
@@ -320,13 +316,13 @@ struct point_scalar_process<val_type,is_sort,true>
 		{
 			mgpu::reduce(&((typename val_type::coord_type *)ve.template getDeviceBuffer<0>())[offset],
 						 ve.size(),
-						 (typename val_type::coord_type *)exp_tmp2.getDevicePointer(),
+						 (typename val_type::coord_type *)(exp_tmp2[0].getDevicePointer()),
 						 mgpu::plus_t<typename val_type::coord_type>(),
 						 v_cl.getmgpuContext());
 
-			exp_tmp2.deviceToHost();
+			exp_tmp2[0].deviceToHost();
 
-			val.get(i) = *(typename val_type::coord_type *)exp_tmp2.getPointer();
+			val.get(i) = *(typename val_type::coord_type *)exp_tmp2[0].getPointer();
 
 			offset += ve.capacity();
 		}

@@ -8,6 +8,8 @@
 #ifndef VECTOR_DIST_OPERATORS_CUDA_CUH_
 #define VECTOR_DIST_OPERATORS_CUDA_CUH_
 
+#include "Vector/vector_dist.hpp"
+
 constexpr unsigned int PROP_POS =(unsigned int)-1;
 
 /*! \brief selector for position or properties left side expression

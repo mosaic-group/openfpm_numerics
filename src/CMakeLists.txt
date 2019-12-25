@@ -4,11 +4,43 @@ cmake_minimum_required(VERSION 3.8 FATAL_ERROR)
 
 
 if (CUDA_FOUND)
-	set(CUDA_SOURCES Operators/Vector/vector_dist_operators_unit_tests.cu
+	if ( HIP_ENABLE )
+
+                set(CUDA_SOURCES Operators/Vector/vector_dist_operators_unit_tests_hipified.cpp
+                                         Operators/Vector/vector_dist_operators_apply_kernel_unit_tests_hipified.cpp)
+
+	else()
+
+		set(CUDA_SOURCES Operators/Vector/vector_dist_operators_unit_tests.cu
 					 Operators/Vector/vector_dist_operators_apply_kernel_unit_tests.cu)
+	endif()
 endif()
 
-add_executable(numerics ${OPENFPM_INIT_FILE} ${CUDA_SOURCES}
+if ( HIP_ENABLE AND HIP_FOUND )
+
+        set(CMAKE_CXX_COMPILER ${HIP_HIPCC_EXECUTABLE})
+
+        add_executable(numerics ${OPENFPM_INIT_FILE} ${CUDA_SOURCES}
+                                                main.cpp
+                                                Matrix/SparseMatrix_unit_tests.cpp
+                                                interpolation/interpolation_unit_tests.cpp
+                                                Vector/Vector_unit_tests.cpp
+                                                Solvers/petsc_solver_unit_tests.cpp
+                                                FiniteDifference/FDScheme_unit_tests.cpp
+                                                FiniteDifference/eq_unit_test_3d.cpp
+                                                FiniteDifference/eq_unit_test.cpp
+                                                Operators/Vector/vector_dist_operators_unit_tests.cpp
+                                                Operators/Vector/vector_dist_operators_apply_kernel_unit_tests.cpp
+                                                ../../openfpm_vcluster/src/VCluster/VCluster.cpp
+                                                ../../openfpm_devices/src/memory/CudaMemory.cu
+                                                ../../openfpm_devices/src/memory/HeapMemory.cpp
+                                                ../../openfpm_devices/src/memory/PtrMemory.cpp
+                                                ../../openfpm_devices/src/Memleak_check.cpp
+                                                ../../src/lib/pdata.cpp)
+
+else()
+
+	add_executable(numerics ${OPENFPM_INIT_FILE} ${CUDA_SOURCES}
 						main.cpp 
 						Matrix/SparseMatrix_unit_tests.cpp
 						interpolation/interpolation_unit_tests.cpp
@@ -25,6 +57,8 @@ add_executable(numerics ${OPENFPM_INIT_FILE} ${CUDA_SOURCES}
 						../../openfpm_devices/src/memory/PtrMemory.cpp 
 						../../openfpm_devices/src/Memleak_check.cpp
 						../../src/lib/pdata.cpp)
+
+endif()
 
 ###########################
 
