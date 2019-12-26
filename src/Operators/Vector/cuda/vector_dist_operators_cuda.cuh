@@ -200,7 +200,7 @@ struct vector_dist_op_compute_op<prp,false,comp_host>
 	}
 };
 
-#ifdef __NVCC__
+#if defined(__NVCC__) || defined(__HIPCC__)
 
 template<unsigned int prp, unsigned int dim ,typename vector, typename expr>
 __global__ void compute_expr_ker_vv(vector vd, expr v_exp)

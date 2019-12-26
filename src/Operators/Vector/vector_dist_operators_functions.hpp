@@ -8,7 +8,7 @@
 #ifndef OPENFPM_NUMERICS_SRC_OPERATORS_VECTOR_VECTOR_DIST_OPERATORS_FUNCTIONS_HPP_
 #define OPENFPM_NUMERICS_SRC_OPERATORS_VECTOR_VECTOR_DIST_OPERATORS_FUNCTIONS_HPP_
 
-#ifdef __NVCC__
+#if defined(__NVCC__) || defined(__HIPCC__)
 #include "util/cuda/moderngpu/kernel_reduce.hxx"
 #include "cuda/vector_dist_operators_cuda.cuh"
 #endif
@@ -269,7 +269,7 @@ struct point_scalar_process
 	template<typename vector_type, typename expression>
 	static void process(val_type & val, vector_type & ve, expression & o1)
 	{
-#ifdef __NVCC__
+#if defined(__NVCC__) || defined(__HIPCC__)
 
 		auto vek = ve.toKernel();
 		vector_dist_op_compute_op<0,is_sort,comp_dev>::compute_expr_v(vek,o1);
@@ -297,7 +297,7 @@ struct point_scalar_process<val_type,is_sort,true>
 	template<typename vector_type, typename expression>
 	static void process(val_type & val, vector_type & ve, expression & o1)
 	{
-#ifdef __NVCC__
+#if defined(__NVCC__) || defined(__HIPCC__)
 
 //		auto ite = ve.getGPUIterator(256);
 
@@ -378,7 +378,7 @@ public:
 		if (exp1::is_ker::value == true)
 		{
 
-#ifdef __NVCC__
+#if defined(__NVCC__) || defined(__HIPCC__)
 			typedef decltype(val) val_type;
 
 			// we have to do it on GPU
