@@ -3,7 +3,7 @@
  *
  *  Created on: Jan 7, 2020
  *      Author: Abhinav Singh, Pietro Incardona
- *      //adding labfolder
+ *      //adding labfolder hook
  */
 
 #include "config.h"

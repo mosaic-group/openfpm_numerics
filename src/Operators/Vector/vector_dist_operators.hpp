@@ -62,6 +62,7 @@
 #define VECT_ROUND 88
 #define VECT_NEARBYINT 89
 #define VECT_RINT 90
+#define VECT_DCPSE 100
 #define VECT_PMUL 91
 #define VECT_SUB_UNI 92
 
@@ -459,6 +460,18 @@ public:
 	{
 		return v;
 	}
+
+    /*! \brief Return the vector on which is acting
+    *
+    * It return the vector used in getVExpr, to get this object
+    *
+    * \return the vector
+    *
+    */
+    const vector & getVector() const
+    {
+        return v;
+    }
 
 	/*! \brief This function must be called before value
 	 *
