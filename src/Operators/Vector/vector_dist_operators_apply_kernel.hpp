@@ -57,7 +57,7 @@ template<typename rtype>
 struct set_zero
 {
 	//! return 0
-	static rtype create()
+	__device__ __host__ static rtype create()
 	{
 		return 0.0;
 	}
@@ -68,7 +68,7 @@ template<unsigned int dim, typename T>
 struct set_zero<Point<dim,T>>
 {
 	//! return a point with all the coordinates set to zero
-	static Point<dim,T> create()
+	__device__ __host__ static Point<dim,T> create()
 	{
 		Point<dim,T> ret;
 
@@ -84,7 +84,7 @@ template<unsigned int impl>
 struct NN_index
 {
 	template<typename NN_type>
-	static auto get(NN_type & NN) -> decltype(NN.get())
+	__device__ __host__ static auto get(NN_type & NN) -> decltype(NN.get())
 	{
 		return NN.get();
 	}
@@ -94,7 +94,7 @@ template<>
 struct NN_index<NN_index_sort>
 {
 	template<typename NN_type>
-	static auto get(NN_type & NN) -> decltype(NN.get_sort())
+	__device__ __host__ static auto get(NN_type & NN) -> decltype(NN.get_sort())
 	{
 		return NN.get_sort();
 	}

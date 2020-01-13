@@ -289,39 +289,56 @@ struct vector_dist_op_compute_op<prp,false,comp_dev>
 	template<typename vector, typename expr>
 	static void compute_expr(vector & v,expr & v_exp)
 	{
+#ifndef __HIPCC__
 		v_exp.init();
 
 		auto ite  = v.getDomainIteratorGPU(256);
 
 		compute_expr_ker<prp><<<ite.wthr,ite.thr>>>(v,v_exp);
+#else
+                std::cout << __FILE__ << ":" << __LINE__ << " error to implement in HIPCC " << std::endl;
+#endif
 	}
 
 	template<typename vector, typename expr>
 	static void compute_expr_v(vector & v,expr & v_exp)
 	{
+#ifndef __HIPCC__
 		v_exp.init();
 
 		auto ite  = v.getGPUIterator(256);
 
 		compute_expr_ker_v<prp><<<ite.wthr,ite.thr>>>(v,v_exp);
+#else
+                std::cout << __FILE__ << ":" << __LINE__ << " error to implement in HIPCC " << std::endl;
+#endif
 	}
 
 	template<unsigned int dim, typename vector, typename expr>
 	static void compute_expr_vv(vector & v,expr & v_exp)
 	{
+#ifndef __HIPCC__
 		v_exp.init();
 
 		auto ite  = v.getGPUIterator(256);
 
 		compute_expr_ker_vv<prp,dim><<<ite.wthr,ite.thr>>>(v,v_exp);
+#else
+                std::cout << __FILE__ << ":" << __LINE__ << " error to implement in HIPCC " << std::endl;
+#endif
 	}
 
 	template<typename vector>
 	static void compute_const(vector & v,double d)
 	{
+#ifndef __HIPCC__
+
 		auto ite  = v.getDomainIteratorGPU(256);
 
 		compute_double_ker<prp><<<ite.wthr,ite.thr>>>(v,d);
+#else
+                std::cout << __FILE__ << ":" << __LINE__ << " error to implement in HIPCC " << std::endl;
+#endif
 	}
 };
 
@@ -331,6 +348,7 @@ struct vector_dist_op_compute_op<prp,true,comp_dev>
 	template<typename vector, typename expr>
 	static void compute_expr(vector & v,expr & v_exp)
 	{
+#ifndef __HIPCC__
 		v_exp.init();
 
 		auto ite  = v.getDomainIteratorGPU(256);
@@ -338,11 +356,15 @@ struct vector_dist_op_compute_op<prp,true,comp_dev>
 		auto NN = v_exp.getNN();
 
 		compute_expr_ker_sort<prp><<<ite.wthr,ite.thr>>>(v,*NN,v_exp);
+#else
+                std::cout << __FILE__ << ":" << __LINE__ << " error to implement in HIPCC " << std::endl;
+#endif
 	}
 
 	template<typename vector, typename expr>
 	static void compute_expr_v(vector & v,expr & v_exp)
 	{
+#ifndef __HIPCC__
 		v_exp.init();
 
 		auto ite  = v.getGPUIterator(256);
@@ -350,11 +372,15 @@ struct vector_dist_op_compute_op<prp,true,comp_dev>
 		auto NN = v_exp.getNN();
 
 		compute_expr_ker_sort_v<prp><<<ite.wthr,ite.thr>>>(v,*NN,v_exp);
+#else
+                std::cout << __FILE__ << ":" << __LINE__ << " error to implement in HIPCC " << std::endl;
+#endif
 	}
 
 	template<unsigned int dim, typename vector, typename expr>
 	static void compute_expr_vv(vector & v,expr & v_exp)
 	{
+#ifndef __HIPCC__
 		v_exp.init();
 
 		auto ite  = v.getGPUIterator(256);
@@ -362,6 +388,9 @@ struct vector_dist_op_compute_op<prp,true,comp_dev>
 		auto NN = v_exp.getNN();
 
 		compute_expr_ker_sort_vv<prp,dim><<<ite.wthr,ite.thr>>>(v,*NN,v_exp);
+#else
+                std::cout << __FILE__ << ":" << __LINE__ << " error to implement in HIPCC " << std::endl;
+#endif
 	}
 };
 

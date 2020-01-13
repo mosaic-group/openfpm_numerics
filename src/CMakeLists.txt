@@ -3,60 +3,42 @@ cmake_minimum_required(VERSION 3.8 FATAL_ERROR)
 ########################### Executables
 
 
-if (CUDA_FOUND)
-	if ( HIP_ENABLE )
-
-                set(CUDA_SOURCES Operators/Vector/vector_dist_operators_unit_tests_hipified.cpp
-                                         Operators/Vector/vector_dist_operators_apply_kernel_unit_tests_hipified.cpp)
-
-	else()
-
-		set(CUDA_SOURCES Operators/Vector/vector_dist_operators_unit_tests.cu
-					 Operators/Vector/vector_dist_operators_apply_kernel_unit_tests.cu)
-	endif()
+if (CUDA_FOUND OR HIP_ENABLE)
+	set(CUDA_SOURCES Operators/Vector/vector_dist_operators_unit_tests.cu
+			 Operators/Vector/vector_dist_operators_apply_kernel_unit_tests.cu)
 endif()
 
-if ( HIP_ENABLE AND HIP_FOUND )
+set(CPP_SOURCES main.cpp
+                Matrix/SparseMatrix_unit_tests.cpp
+                interpolation/interpolation_unit_tests.cpp
+                Vector/Vector_unit_tests.cpp
+      		Solvers/petsc_solver_unit_tests.cpp
+                FiniteDifference/FDScheme_unit_tests.cpp
+                FiniteDifference/eq_unit_test_3d.cpp
+                FiniteDifference/eq_unit_test.cpp
+                Operators/Vector/vector_dist_operators_unit_tests.cpp
+                Operators/Vector/vector_dist_operators_apply_kernel_unit_tests.cpp
+                ../../openfpm_vcluster/src/VCluster/VCluster.cpp
+                ../../openfpm_devices/src/memory/CudaMemory.cu
+                ../../openfpm_devices/src/memory/HeapMemory.cpp
+                ../../openfpm_devices/src/memory/PtrMemory.cpp
+                ../../openfpm_devices/src/Memleak_check.cpp
+                ../../src/lib/pdata.cpp)
+
+
+if ( HIP_ENABLE )
 
         set(CMAKE_CXX_COMPILER ${HIP_HIPCC_EXECUTABLE})
 
-        add_executable(numerics ${OPENFPM_INIT_FILE} ${CUDA_SOURCES}
-                                                main.cpp
-                                                Matrix/SparseMatrix_unit_tests.cpp
-                                                interpolation/interpolation_unit_tests.cpp
-                                                Vector/Vector_unit_tests.cpp
-                                                Solvers/petsc_solver_unit_tests.cpp
-                                                FiniteDifference/FDScheme_unit_tests.cpp
-                                                FiniteDifference/eq_unit_test_3d.cpp
-                                                FiniteDifference/eq_unit_test.cpp
-                                                Operators/Vector/vector_dist_operators_unit_tests.cpp
-                                                Operators/Vector/vector_dist_operators_apply_kernel_unit_tests.cpp
-                                                ../../openfpm_vcluster/src/VCluster/VCluster.cpp
-                                                ../../openfpm_devices/src/memory/CudaMemory.cu
-                                                ../../openfpm_devices/src/memory/HeapMemory.cpp
-                                                ../../openfpm_devices/src/memory/PtrMemory.cpp
-                                                ../../openfpm_devices/src/Memleak_check.cpp
-                                                ../../src/lib/pdata.cpp)
+        hip_add_executable(numerics ${OPENFPM_INIT_FILE} ${CUDA_SOURCES} ${CPP_SOURCES})
+
+	target_include_directories (numerics PUBLIC ${MPI_C_INCLUDE_DIRS})
+
+	set_property(TARGET numerics PROPERTY COMPILE_FLAGS "-I${MPI_C_INCLUDE_DIRS}")
 
 else()
 
-	add_executable(numerics ${OPENFPM_INIT_FILE} ${CUDA_SOURCES}
-						main.cpp 
-						Matrix/SparseMatrix_unit_tests.cpp
-						interpolation/interpolation_unit_tests.cpp
-						Vector/Vector_unit_tests.cpp  
-						Solvers/petsc_solver_unit_tests.cpp 
-						FiniteDifference/FDScheme_unit_tests.cpp 
-						FiniteDifference/eq_unit_test_3d.cpp 
-						FiniteDifference/eq_unit_test.cpp  
-						Operators/Vector/vector_dist_operators_unit_tests.cpp 
-						Operators/Vector/vector_dist_operators_apply_kernel_unit_tests.cpp
-						../../openfpm_vcluster/src/VCluster/VCluster.cpp 
-						../../openfpm_devices/src/memory/CudaMemory.cu  
-						../../openfpm_devices/src/memory/HeapMemory.cpp 
-						../../openfpm_devices/src/memory/PtrMemory.cpp 
-						../../openfpm_devices/src/Memleak_check.cpp
-						../../src/lib/pdata.cpp)
+	add_executable(numerics ${OPENFPM_INIT_FILE} ${CUDA_SOURCES} ${CPP_SOURCES})
 
 endif()
 
@@ -79,8 +61,15 @@ target_include_directories (numerics PUBLIC ${METIS_ROOT}/include)
 target_include_directories (numerics PUBLIC ${HDF5_ROOT}/include)
 target_include_directories (numerics PUBLIC ${LIBHILBERT_INCLUDE_DIRS})
 target_include_directories (numerics PUBLIC ${Boost_INCLUDE_DIRS})
+if (HIP_ENABLE)
+	target_include_directories (numerics PUBLIC ${HIP_ROOT_DIR}/include)
+endif()
 if(EIGEN3_FOUND)
 	target_include_directories (numerics PUBLIC ${EIGEN3_INCLUDE_DIR})
+endif()
+
+if (HIP_FOUND)
+        SET(CMAKE_EXE_LINKER_FLAGS  "--amdgpu-target=${AMD_ARCH_COMPILE}")
 endif()
 
 link_directories(${PARMETIS_ROOT} ${METIS_ROOT})

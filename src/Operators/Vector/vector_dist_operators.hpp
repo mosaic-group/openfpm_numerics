@@ -285,7 +285,7 @@ public:
 	 *
 	 */
 	template<typename r_type=typename std::remove_reference<decltype(o1.value(vect_dist_key_dx()) + o2.value(vect_dist_key_dx()))>::type >
-	inline r_type value(const vect_dist_key_dx & key) const
+	__device__ __host__ inline r_type value(const vect_dist_key_dx & key) const
 	{
 		return o1.value(key) + o2.value(key);
 	}
@@ -377,7 +377,7 @@ public:
 	 *
 	 */
 	template<typename r_type=typename std::remove_reference<decltype(o1.value(vect_dist_key_dx()) - o2.value(vect_dist_key_dx()))>::type >
-	inline r_type value(const vect_dist_key_dx & key) const
+	__device__ __host__ inline r_type value(const vect_dist_key_dx & key) const
 	{
 		return o1.value(key) - o2.value(key);
 	}
@@ -457,7 +457,8 @@ public:
 	 * \return the result of the expression
 	 *
 	 */
-	template<typename r_type=typename std::remove_reference<decltype(o1.value(vect_dist_key_dx()) * o2.value(vect_dist_key_dx()))>::type > inline r_type value(const vect_dist_key_dx & key) const
+	template<typename r_type=typename std::remove_reference<decltype(o1.value(vect_dist_key_dx()) * o2.value(vect_dist_key_dx()))>::type > 
+	__device__ __host__ inline r_type value(const vect_dist_key_dx & key) const
 	{
 		return o1.value(key) * o2.value(key);
 	}
@@ -547,7 +548,8 @@ public:
 	 * \return the result of the expression
 	 *
 	 */
-	template<typename r_type=typename std::remove_reference<decltype(o1.value(vect_dist_key_dx()) / o2.value(vect_dist_key_dx()))>::type > inline r_type value(const vect_dist_key_dx & key) const
+	template<typename r_type=typename std::remove_reference<decltype(o1.value(vect_dist_key_dx()) / o2.value(vect_dist_key_dx()))>::type > 
+	__device__ __host__ inline r_type value(const vect_dist_key_dx & key) const
 	{
 		return o1.value(key) / o2.value(key);
 	}
@@ -621,7 +623,8 @@ public:
 	}
 
 	//! return the result of the expression
-	template<typename r_type=typename std::remove_reference<decltype(-(o1.value(vect_dist_key_dx(0))))>::type > inline r_type value(const vect_dist_key_dx & key) const
+	template<typename r_type=typename std::remove_reference<decltype(-(o1.value(vect_dist_key_dx(0))))>::type > 
+	__device__ __host__ inline r_type value(const vect_dist_key_dx & key) const
 	{
 		return -(o1.value(key));
 	}
@@ -781,22 +784,11 @@ public:
 	 * \return the result of the expression
 	 *
 	 */
-	__host__ inline auto value(const vect_dist_key_dx & k) const -> decltype(pos_or_propR<vector,prp>::value(v.v,k))
+	__device__ __host__ inline auto value(const vect_dist_key_dx & k) const -> decltype(pos_or_propR<vector,prp>::value(v.v,k))
 	{
 		return pos_or_propR<vector,prp>::value(v.v,k);
 	}
 
-	/*! \brief Evaluate the expression
-	 *
-	 * \param k where to evaluate the expression
-	 *
-	 * \return the result of the expression
-	 *
-	 */
-	__device__ inline auto value(const unsigned int & k) const -> decltype(pos_or_propR<vector,prp>::value(v.v,k))
-	{
-		return pos_or_propR<vector,prp>::value(v.v,k);
-	}
 
 	/*! \brief Fill the vector property with the evaluated expression
 	 *

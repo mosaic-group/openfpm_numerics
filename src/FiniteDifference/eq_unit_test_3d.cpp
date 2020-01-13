@@ -8,6 +8,8 @@
 #ifndef OPENFPM_NUMERICS_SRC_FINITEDIFFERENCE_EQ_UNIT_TEST_3D_HPP_
 #define OPENFPM_NUMERICS_SRC_FINITEDIFFERENCE_EQ_UNIT_TEST_3D_HPP_
 
+#include "config.h"
+
 #define BOOST_TEST_DYN_LINK
 #include <boost/test/unit_test.hpp>
 

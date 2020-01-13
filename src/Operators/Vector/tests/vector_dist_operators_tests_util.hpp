@@ -790,9 +790,9 @@ void fill_values(vector & v)
 	{
 		auto p = it.get();
 
-		v.getPos(p)[0] = (float)rand() / RAND_MAX;
-		v.getPos(p)[1] = (float)rand() / RAND_MAX;
-		v.getPos(p)[2] = (float)rand() / RAND_MAX;
+		v.getPos(p)[0] = (double)rand() / RAND_MAX;
+		v.getPos(p)[1] = (double)rand() / RAND_MAX;
+		v.getPos(p)[2] = (double)rand() / RAND_MAX;
 
 		v.template getProp<A>(p) = fabs(sin(p.getKey()+1.0));
 		v.template getProp<B>(p) = fabs(sin(2.0*p.getKey()+3.0));
@@ -1030,6 +1030,7 @@ void check_all_expressions_imp(vector_type & vd,
 	// Just check it compile testing it will test the same code
 	// as the previuous one
 	vVC = exp(vVB);
+
 	vA = norm(vPOS);
 	vVA = vPOS + 2.0;
 	vVA = 2.0 + vPOS;
@@ -1586,7 +1587,7 @@ struct exp_kernel
 	 *
 	 */
 	template<typename vector_t>
-	__host__ inline float value(size_t p, size_t q, float pA, float pB, const vector_t & vd1)
+	__device__ __host__ inline float value(size_t p, size_t q, float pA, float pB, const vector_t & vd1)
 	{
 		Point<3,float> pp = vd1.getPos(p);
 		Point<3,float> pq = vd1.getPos(q);
@@ -1609,7 +1610,7 @@ struct exp_kernel
 	 * \return the result
 	 *
 	 */
-	__device__ inline float value(size_t p, size_t q, float pA, float pB, const vector_type_ker & vd1)
+	__device__ __host__ inline float value(size_t p, size_t q, float pA, float pB, const vector_type_ker & vd1)
 	{
 		Point<3,float> pp = vd1.getPos(p);
 		Point<3,float> pq = vd1.getPos(q);
@@ -1632,7 +1633,7 @@ struct exp_kernel
 	 * \return the result
 	 *
 	 */
-	__host__ inline Point<3,float> value(size_t p, size_t q, const Point<3,float> & pA, const Point<3,float> & pB , const vector_type & vd1)
+	__device__ __host__ inline Point<3,float> value(size_t p, size_t q, const Point<3,float> & pA, const Point<3,float> & pB , const vector_type & vd1)
 	{
 		Point<3,float> pp = vd1.getPos(p);
 		Point<3,float> pq = vd1.getPos(q);
@@ -1654,7 +1655,7 @@ struct exp_kernel
 	 *
 	 */
 	template<typename vector_t>
-	__host__ inline Point<3,float> value(size_t p, size_t q, const Point<3,float> & pA, const Point<3,float> & pB , const vector_t & vd1)
+	__device__ __host__ inline Point<3,float> value(size_t p, size_t q, const Point<3,float> & pA, const Point<3,float> & pB , const vector_t & vd1)
 	{
 		Point<3,float> pp = vd1.getPos(p);
 		Point<3,float> pq = vd1.getPos(q);
@@ -1677,7 +1678,7 @@ struct exp_kernel
 	 * \return the result
 	 *
 	 */
-	__device__ inline Point<3,float> value(size_t p, size_t q, const Point<3,float> & pA, const Point<3,float> & pB , const vector_type_ker & vd1)
+	__host__ __device__ inline Point<3,float> value(size_t p, size_t q, const Point<3,float> & pA, const Point<3,float> & pB , const vector_type_ker & vd1)
 	{
 		Point<3,float> pp = vd1.getPos(p);
 		Point<3,float> pq = vd1.getPos(q);

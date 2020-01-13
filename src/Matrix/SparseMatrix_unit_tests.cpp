@@ -8,6 +8,8 @@
 #ifndef OPENFPM_NUMERICS_SRC_MATRIX_SPARSEMATRIX_UNIT_TESTS_HPP_
 #define OPENFPM_NUMERICS_SRC_MATRIX_SPARSEMATRIX_UNIT_TESTS_HPP_
 
+#include "config.h"
+
 #define BOOST_TEST_DYN_LINK
 #include <boost/test/unit_test.hpp>
 

@@ -8,8 +8,10 @@
 #ifndef OPENFPM_NUMERICS_SRC_OPERATORS_VECTOR_VECTOR_DIST_OPERATORS_FUNCTIONS_HPP_
 #define OPENFPM_NUMERICS_SRC_OPERATORS_VECTOR_VECTOR_DIST_OPERATORS_FUNCTIONS_HPP_
 
-#if defined(__NVCC__) || defined(__HIPCC__)
+#if defined(__NVCC__)
 #include "util/cuda/moderngpu/kernel_reduce.hxx"
+#endif
+#if defined(__NVCC__) || defined(__HIPCC__)
 #include "cuda/vector_dist_operators_cuda.cuh"
 #endif
 
@@ -62,7 +64,7 @@ public:\
 	}\
 \
 	template<typename r_type=typename std::remove_reference<decltype(fun_base(o1.value(vect_dist_key_dx(0))))>::type > \
-	inline r_type value(const vect_dist_key_dx & key) const\
+	__device__ __host__ inline r_type value(const vect_dist_key_dx & key) const\
 	{\
 		return fun_base(o1.value(key));\
 	}\
@@ -130,7 +132,6 @@ CREATE_VDIST_ARG_FUNC(trunc,trunc,POINT_TRUNC)
 CREATE_VDIST_ARG_FUNC(round,round,POINT_ROUND)
 CREATE_VDIST_ARG_FUNC(nearbyint,nearbyint,POINT_NEARBYINT)
 CREATE_VDIST_ARG_FUNC(rint,rint,POINT_RINT)
-
 
 /*! A macro to define single value function specialization that apply the function component-wise
  *
@@ -278,7 +279,11 @@ struct point_scalar_process
 
 		auto & v_cl = create_vcluster<CudaMemory>();
 
+#ifdef __HIPCC__
+		std::cout << __FILE__ << ":" << __LINE__ << " error to implement" << std::endl;
+#else
 		mgpu::reduce((val_type *)ve.template getDeviceBuffer<0>(), ve.size(), (val_type *)(exp_tmp2[0].getDevicePointer()), mgpu::plus_t<val_type>(), v_cl.getmgpuContext());
+#endif
 
 		exp_tmp2[0].deviceToHost();
 
@@ -314,11 +319,15 @@ struct point_scalar_process<val_type,is_sort,true>
 
 		for (size_t i = 0 ; i < val_type::dims ; i++)
 		{
+#ifdef __HIPCC__
+			std::cout << __FILE__ << ":" << __LINE__ << " to implement" << std::endl;
+#else
 			mgpu::reduce(&((typename val_type::coord_type *)ve.template getDeviceBuffer<0>())[offset],
 						 ve.size(),
 						 (typename val_type::coord_type *)(exp_tmp2[0].getDevicePointer()),
 						 mgpu::plus_t<typename val_type::coord_type>(),
 						 v_cl.getmgpuContext());
+#endif
 
 			exp_tmp2[0].deviceToHost();
 
