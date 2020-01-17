@@ -10,6 +10,8 @@
 #include "DCPSE_op/DCPSE_copy/Dcpse.hpp"
 #include "Operators/Vector/vector_dist_operators.hpp"
 
+const double dcpse_scaling_factor = 2;
+
 /*! \brief Subtraction operation
  *
  * \tparam exp1 expression1
@@ -32,9 +34,9 @@ public:
     {}
 
     /*! \brief This function must be called before value
-     *
-     * it initialize the expression if needed
-     *
+    *
+    * it initialize the expression if needed
+    *
      */
     inline void init() const
     {
@@ -51,6 +53,137 @@ public:
     template<typename r_type=typename std::remove_reference<decltype(o1.value(vect_dist_key_dx()))>::type > inline r_type value(const vect_dist_key_dx & key) const
     {
         return dcp.computeDifferentialOperator(key,o1);
+    }
+};
+
+template <typename exp1,typename DCPSE_type>
+class vector_dist_expression_op<exp1,DCPSE_type,VECT_DCPSE_V>
+{
+    //! expression 1
+    const exp1 o1;
+
+    DCPSE_type (& dcp)[DCPSE_type::vtype::dims];
+
+    static const int dims = DCPSE_type::vtype::dims;
+    typedef typename DCPSE_type::vtype::stype stype;
+
+public:
+
+    //! Costruct a subtraction expression out of two expressions
+    inline vector_dist_expression_op(const exp1 & o1, DCPSE_type (& dcp)[DCPSE_type::vtype::dims])
+            :o1(o1),dcp(dcp)
+    {}
+
+    /*! \brief This function must be called before value
+     *
+     * it initialize the expression if needed
+     *
+     */
+    inline void init() const
+    {
+        o1.init();
+    }
+
+    /*! \brief Evaluate the expression
+     *
+     * \param key where to evaluate the expression
+     *
+     * \return the result of the expression
+     *
+     */
+    template<typename r_type=VectorS<dims,stype> > inline r_type value(const vect_dist_key_dx & key) const
+    {
+       VectorS<dims,stype> v_grad;
+
+       for (int i = 0 ; i < dims ; i++)
+       {
+           v_grad.get(i) = dcp[i].computeDifferentialOperator(key,o1);
+       }
+
+        return v_grad;
+    }
+};
+
+template <typename exp1,typename DCPSE_type>
+class vector_dist_expression_op<exp1,DCPSE_type,VECT_DCPSE_V_SUM>
+{
+    //! expression 1
+    const exp1 o1;
+
+    DCPSE_type (& dcp)[DCPSE_type::vtype::dims];
+
+    static const int dims = DCPSE_type::vtype::dims;
+    typedef typename DCPSE_type::vtype::stype stype;
+
+public:
+
+    inline vector_dist_expression_op(const exp1 & o1, DCPSE_type (& dcp)[DCPSE_type::vtype::dims])
+            :o1(o1),dcp(dcp)
+    {}
+
+    inline void init() const
+    {
+        o1.init();
+    }
+
+    template<typename r_type=VectorS<dims,stype> > inline r_type value(const vect_dist_key_dx & key) const
+    {
+        //typedef typename std::remove_reference<decltype(o1.value(key))>::type::blabla blabla;
+
+        typename std::remove_reference<decltype(o1.value(key))>::type v_lap;
+        v_lap=0.0;
+
+
+        for (int i = 0 ; i < dims ; i++)
+        {
+            v_lap += dcp[i].computeDifferentialOperator(key,o1);
+        }
+
+        return v_lap;
+    }
+};
+
+
+
+template <typename exp1,typename  exp2_pr>
+class vector_dist_expression_op<exp1,exp2_pr,VECT_DCPSE_V_DOT>
+{
+    typedef typename std::tuple_element<1,exp2_pr>::type DCPSE_type;
+    typedef typename std::tuple_element<0,exp2_pr>::type exp2;
+
+    //! expression 1
+    const exp1 o1;
+    const exp2 o2;
+
+    DCPSE_type (& dcp)[DCPSE_type::vtype::dims];
+
+    static const int dims = DCPSE_type::vtype::dims;
+    typedef typename DCPSE_type::vtype::stype stype;
+
+public:
+
+    inline vector_dist_expression_op(const exp1 & o1,const exp2 & o2, DCPSE_type (& dcp)[DCPSE_type::vtype::dims])
+            :o1(o1),o2(o2),dcp(dcp)
+    {}
+
+    inline void init() const
+    {
+        o1.init();
+        o2.init();
+    }
+
+    template<typename r_type=VectorS<dims,stype> > inline r_type value(const vect_dist_key_dx & key) const
+    {
+        //typedef typename std::remove_reference<decltype(o1.value(key))>::type::blabla blabla;
+        typename std::remove_reference<decltype(o1.value(key))>::type adv;
+        adv=0.0;
+        for (int i = 0 ; i < dims ; i++)
+        {
+            adv += o1.value(key)[i]*dcp[i].computeDifferentialOperator(key,o2);
+
+        }
+        return adv;
+
     }
 };
 /*
@@ -75,13 +208,13 @@ class Derivative_x
 public:
 
     template<typename particles_type>
-    Derivative_x(particles_type & parts, unsigned int ord ,typename particles_type::stype rCut)
+    Derivative_x(particles_type & parts, unsigned int ord ,typename particles_type::stype rCut,double scaling_factor=dcpse_scaling_factor)
     {
         Point<particles_type::dims,unsigned int> p;
         p.zero();
         p.get(0) = 1;
 
-        dcpse = new Dcpse<particles_type::dims,particles_type>(parts,p, ord, rCut,2.5);
+        dcpse = new Dcpse<particles_type::dims,particles_type>(parts,p, ord, rCut,scaling_factor);
     }
 
     template<typename operand_type>
@@ -95,6 +228,199 @@ public:
 };
 
 
+class Derivative_y
+{
+
+    void * dcpse;
+
+public:
+
+    template<typename particles_type>
+    Derivative_y(particles_type & parts, unsigned int ord ,typename particles_type::stype rCut,double scaling_factor=dcpse_scaling_factor)
+    {
+        Point<particles_type::dims,unsigned int> p;
+        p.zero();
+        p.get(1) = 1;
+
+        dcpse = new Dcpse<particles_type::dims,particles_type>(parts,p, ord, rCut,scaling_factor);
+    }
+
+    template<typename operand_type>
+
+    vector_dist_expression_op<operand_type,Dcpse<operand_type::vtype::dims,typename operand_type::vtype>,VECT_DCPSE> operator()(operand_type arg)
+    {
+        typedef Dcpse<operand_type::vtype::dims,typename operand_type::vtype> dcpse_type;
+
+        return vector_dist_expression_op<operand_type,dcpse_type,VECT_DCPSE>(arg,*(dcpse_type *)dcpse);
+    }
+};
+class Derivative_z
+{
+
+    void * dcpse;
+
+public:
+
+    template<typename particles_type>
+    Derivative_z(particles_type & parts, unsigned int ord ,typename particles_type::stype rCut,double scaling_factor=dcpse_scaling_factor)
+    {
+        Point<particles_type::dims,unsigned int> p;
+        p.zero();
+        p.get(2) = 1;
+
+        dcpse = new Dcpse<particles_type::dims,particles_type>(parts,p, ord, rCut,scaling_factor);
+    }
+
+    template<typename operand_type>
+
+    vector_dist_expression_op<operand_type,Dcpse<operand_type::vtype::dims,typename operand_type::vtype>,VECT_DCPSE> operator()(operand_type arg)
+    {
+        typedef Dcpse<operand_type::vtype::dims,typename operand_type::vtype> dcpse_type;
+
+        return vector_dist_expression_op<operand_type,dcpse_type,VECT_DCPSE>(arg,*(dcpse_type *)dcpse);
+    }
+};
+
+
+
+
+
+class Gradient
+{
+
+    void * dcpse;
+
+public:
+
+    template<typename particles_type>
+    Gradient(particles_type & parts, unsigned int ord ,typename particles_type::stype rCut,double scaling_factor=dcpse_scaling_factor)
+    {
+        typedef Dcpse<particles_type::dims,particles_type> DCPSE_type;
+
+        dcpse = new unsigned char [particles_type::dims*sizeof(DCPSE_type)];
+
+        Dcpse<particles_type::dims,particles_type> * dcpse_ptr = (Dcpse<particles_type::dims,particles_type> *)dcpse;
+
+        for (int i = 0 ; i < particles_type::dims ; i++)
+        {
+            Point<particles_type::dims,unsigned int> p;
+            p.zero();
+            p.get(i) = 1;
+            new (dcpse_ptr) Dcpse<particles_type::dims,particles_type>(parts,p, ord, rCut,scaling_factor);
+            dcpse_ptr++;
+        }
+    }
+
+    template<typename operand_type>
+    vector_dist_expression_op<operand_type,Dcpse<operand_type::vtype::dims,typename operand_type::vtype>,VECT_DCPSE_V> operator()(operand_type arg)
+    {
+        typedef Dcpse<operand_type::vtype::dims,typename operand_type::vtype> dcpse_type;
+
+        return vector_dist_expression_op<operand_type,dcpse_type,VECT_DCPSE_V>(arg,*(dcpse_type(*)[operand_type::vtype::dims])dcpse);
+    }
+};
+
+class Laplacian
+{
+
+    void * dcpse;
+
+public:
+
+    template<typename particles_type>
+    Laplacian(particles_type & parts, unsigned int ord ,typename particles_type::stype rCut,double scaling_factor=dcpse_scaling_factor)
+    {
+        typedef Dcpse<particles_type::dims,particles_type> DCPSE_type;
+
+        dcpse = new unsigned char [particles_type::dims*sizeof(DCPSE_type)];
+
+        Dcpse<particles_type::dims,particles_type> * dcpse_ptr = (Dcpse<particles_type::dims,particles_type> *)dcpse;
+
+        for (int i = 0 ; i < particles_type::dims ; i++)
+        {
+            Point<particles_type::dims,unsigned int> p;
+            p.zero();
+            p.get(i) = 2;
+            new (dcpse_ptr) Dcpse<particles_type::dims,particles_type>(parts,p, ord, rCut,scaling_factor);
+            dcpse_ptr++;
+        }
+    }
+
+    template<typename operand_type>
+    vector_dist_expression_op<operand_type,Dcpse<operand_type::vtype::dims,typename operand_type::vtype>,VECT_DCPSE_V_SUM> operator()(operand_type arg)
+    {
+        typedef Dcpse<operand_type::vtype::dims,typename operand_type::vtype> dcpse_type;
+
+        return vector_dist_expression_op<operand_type,dcpse_type,VECT_DCPSE_V_SUM>(arg,*(dcpse_type(*)[operand_type::vtype::dims])dcpse);
+    }
+};
+
+
+class Advection
+{
+
+    void * dcpse;
+
+public:
+
+    template<typename particles_type>
+    Advection(particles_type & parts, unsigned int ord ,typename particles_type::stype rCut,double scaling_factor=dcpse_scaling_factor)
+    {
+        typedef Dcpse<particles_type::dims,particles_type> DCPSE_type;
+
+        dcpse = new unsigned char [particles_type::dims*sizeof(DCPSE_type)];
+
+        Dcpse<particles_type::dims,particles_type> * dcpse_ptr = (Dcpse<particles_type::dims,particles_type> *)dcpse;
+
+        for (int i = 0 ; i < particles_type::dims ; i++)
+        {
+            Point<particles_type::dims,unsigned int> p;
+            p.zero();
+            p.get(i) = 1;
+            new (dcpse_ptr) Dcpse<particles_type::dims,particles_type>(parts,p, ord, rCut,scaling_factor);
+            dcpse_ptr++;
+        }
+
+
+    }
+
+    template<typename operand_type1,typename operand_type2>
+    vector_dist_expression_op<operand_type1,std::pair<operand_type2,Dcpse<operand_type2::vtype::dims,typename operand_type2::vtype>>,VECT_DCPSE_V_DOT> operator()(operand_type1 arg, operand_type2 & arg2)
+    {
+        typedef Dcpse<operand_type2::vtype::dims,typename operand_type2::vtype> dcpse_type;
+
+        return vector_dist_expression_op<operand_type1,std::pair<operand_type2,dcpse_type>,VECT_DCPSE_V_DOT>(arg,arg2,*(dcpse_type(*)[operand_type2::vtype::dims])dcpse);
+    }
+};
+
+
+class Derivative_xy
+{
+
+    void * dcpse;
+
+public:
+
+    template<typename particles_type>
+    Derivative_xy(particles_type & parts, unsigned int ord ,typename particles_type::stype rCut,double scaling_factor=dcpse_scaling_factor)
+    {
+        Point<particles_type::dims,unsigned int> p;
+        p.zero();
+        p.get(0) = 1;
+        p.get(1) = 1;
+
+        dcpse = new Dcpse<particles_type::dims,particles_type>(parts,p, ord, rCut,dcpse_scaling_factor);
+    }
+
+    template<typename operand_type>
+
+    vector_dist_expression_op<operand_type,Dcpse<operand_type::vtype::dims,typename operand_type::vtype>,VECT_DCPSE> operator()(operand_type arg)
+    {
+        typedef Dcpse<operand_type::vtype::dims,typename operand_type::vtype> dcpse_type;
+
+        return vector_dist_expression_op<operand_type,dcpse_type,VECT_DCPSE>(arg,*(dcpse_type *)dcpse);
+    }
+};
 
 template<typename operand_type1, typename operand_type2>
 class plus

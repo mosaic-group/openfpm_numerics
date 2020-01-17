@@ -63,6 +63,9 @@
 #define VECT_NEARBYINT 89
 #define VECT_RINT 90
 #define VECT_DCPSE 100
+#define VECT_DCPSE_V 101
+#define VECT_DCPSE_V_SUM 102
+#define VECT_DCPSE_V_DOT 103
 #define VECT_PMUL 91
 #define VECT_SUB_UNI 92
 

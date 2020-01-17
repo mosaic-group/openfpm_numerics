@@ -17,8 +17,11 @@
 
 template<unsigned int dim, typename vector_type>
 class Dcpse {
+public:
+
     typedef typename vector_type::stype T;
     typedef typename vector_type::value_type part_type;
+    typedef vector_type vtype;
 
     // This works in this way:
     // 1) User constructs this by giving a domain of points (where one of the properties is the value of our f),
@@ -35,6 +38,7 @@ private:
     std::vector<T> localEps; // Each MPI rank has just access to the local ones
 
 public:
+
     // Here we require the first element of the aggregate to be:
     // 1) the value of the function f on the point
     Dcpse(vector_type &particles,
@@ -100,6 +104,26 @@ public:
     }
 
 
+    template<bool cond>
+    struct is_scalar
+    {
+        template<typename op_type>
+        static auto analyze(const vect_dist_key_dx &key, op_type & o1) -> typename std::remove_reference<decltype(o1.value(key))>::type
+        {
+            return o1.value(key);
+        };
+    };
+
+    template<>
+    struct is_scalar<false>
+    {
+        template<typename op_type>
+        static auto analyze(const vect_dist_key_dx &key, op_type & o1) -> typename std::remove_reference<decltype(o1.value(key))>::type
+        {
+            return o1.value(key);
+        };
+    };
+
     /**
      * Computes the value of the differential operator on all the particles,
      * using the f values stored at the fValuePos position in the aggregate
@@ -109,8 +133,14 @@ public:
      * @param particles The set of particles to iterate over.
      */
     template<typename op_type>
-    T computeDifferentialOperator(const vect_dist_key_dx &key, op_type & o1) {
-        char sign = 1;
+    auto computeDifferentialOperator(const vect_dist_key_dx &key, op_type & o1) -> decltype(is_scalar<std::is_fundamental<decltype(o1.value(key))>::value>::analyze(key,o1))
+    {
+
+        typedef decltype(is_scalar<std::is_fundamental<decltype(o1.value(key))>::value>::analyze(key,o1)) expr_type;
+
+        //typedef typename decltype(o1.value(key))::blabla blabla;
+
+        T sign = 1.0;
         if (differentialOrder % 2 == 0) {
             sign = -1;
         }
@@ -119,19 +149,19 @@ public:
 
         auto & particles = o1.getVector();
 
-        T Dfxp = 0;
+        expr_type Dfxp = 0;
         Support<dim, T, part_type> support = localSupports[key.getKey()];
         size_t xpK = support.getReferencePointKey();
         Point<dim, T> xp = support.getReferencePoint();
-        T fxp = sign * o1.value(key);
+        expr_type fxp = sign * o1.value(key);
         for (auto &xqK : support.getKeys()) {
             Point<dim, T> xq = particles.getPos(xqK);
-            T fxq = o1.value(vect_dist_key_dx(xqK));
+            expr_type fxq = o1.value(vect_dist_key_dx(xqK));
             Point<dim, T> normalizedArg = (xp - xq) / eps;
             EMatrix<T, Eigen::Dynamic, 1> &a = localCoefficients[key.getKey()];
-            Dfxp += (fxq + fxp) * computeKernel(normalizedArg, a);
+            Dfxp = Dfxp + (fxq + fxp) * computeKernel(normalizedArg, a);
         }
-        Dfxp /= pow(eps, differentialOrder);
+        Dfxp = Dfxp / pow(eps, differentialOrder);
         //
         //T trueDfxp = particles.template getProp<2>(xpK);
         // Store Dfxp in the right position
@@ -211,13 +241,13 @@ private:
             // Get the points in the support of the DCPSE kernel and store the support for reuse
             Support<dim, T, part_type> support = supportBuilder.getSupport(it, requiredSupportSize);
             EMatrix<T, Eigen::Dynamic, Eigen::Dynamic> V(support.size(), monomialBasis.size());
-
+/* Some Debug code
             if (it.get().getKey() == 5564)
             {
                 int debug = 0;
                 debug++;
             }
-
+*/
             // Vandermonde matrix computation
             Vandermonde<dim, T, EMatrix<T, Eigen::Dynamic, Eigen::Dynamic>>
                     vandermonde(support, monomialBasis);
