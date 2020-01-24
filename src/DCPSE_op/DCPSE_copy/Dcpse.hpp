@@ -37,6 +37,8 @@ private:
     std::vector<Support<dim, T, typename vector_type::value_type>> localSupports; // Each MPI rank has just access to the local ones
     std::vector<T> localEps; // Each MPI rank has just access to the local ones
 
+    vector_type & particles;
+
 public:
 
     // Here we require the first element of the aggregate to be:
@@ -46,9 +48,11 @@ public:
           unsigned int convergenceOrder,
           T rCut,
           T supportSizeFactor = 1) :
+            particles(particles),
             differentialSignature(differentialSignature),
             differentialOrder(Monomial<dim>(differentialSignature).order()),
-            monomialBasis(differentialSignature.asArray(), convergenceOrder) {
+            monomialBasis(differentialSignature.asArray(), convergenceOrder)
+            {
         if (supportSizeFactor < 1) {
             initializeAdaptive(particles, convergenceOrder, rCut);
         } else {
@@ -105,24 +109,66 @@ public:
 
 
     template<bool cond>
-    struct is_scalar
-    {
+    struct is_scalar {
         template<typename op_type>
-        static auto analyze(const vect_dist_key_dx &key, op_type & o1) -> typename std::remove_reference<decltype(o1.value(key))>::type
-        {
+        static auto
+        analyze(const vect_dist_key_dx &key, op_type &o1) -> typename std::remove_reference<decltype(o1.value(
+                key))>::type {
             return o1.value(key);
         };
     };
 
     template<>
-    struct is_scalar<false>
-    {
+    struct is_scalar<false> {
         template<typename op_type>
-        static auto analyze(const vect_dist_key_dx &key, op_type & o1) -> typename std::remove_reference<decltype(o1.value(key))>::type
-        {
+        static auto
+        analyze(const vect_dist_key_dx &key, op_type &o1) -> typename std::remove_reference<decltype(o1.value(
+                key))>::type {
             return o1.value(key);
         };
     };
+
+    /*! \brief Get the number of neighbours
+     *
+     * \return the number of neighbours
+     *
+     */
+    int getNumNN(const vect_dist_key_dx &key)
+    {
+        return localSupports[key.getKey()].size();
+    }
+
+    /*! \brief Get the coefficent j (Neighbour) of the particle key
+     *
+     * \param key particle
+     * \param j neighbour
+     *
+     * \return the coefficent
+     *
+     */
+    T getCoeffNN(const vect_dist_key_dx &key, int j)
+    {
+        double eps = localEps[key.getKey()];
+
+        auto xqK = getIndexNN(key,j);
+
+        Point<dim, T> xp = particles.getPos(key);
+        Point<dim, T> xq = particles.getPos(xqK);
+        Point<dim, T> normalizedArg = (xp - xq) / eps;
+
+        EMatrix<T, Eigen::Dynamic, 1> &a = localCoefficients[key.getKey()];
+        return computeKernel(normalizedArg, a);
+    }
+
+    /*! \brief Get the number of neighbours
+ *
+ * \return the number of neighbours
+ *
+ */
+    size_t getIndexNN(const vect_dist_key_dx &key, int j)
+    {
+        return localSupports[key.getKey()].getKeys()[j];
+    }
 
     /**
      * Computes the value of the differential operator on all the particles,
@@ -133,10 +179,11 @@ public:
      * @param particles The set of particles to iterate over.
      */
     template<typename op_type>
-    auto computeDifferentialOperator(const vect_dist_key_dx &key, op_type & o1) -> decltype(is_scalar<std::is_fundamental<decltype(o1.value(key))>::value>::analyze(key,o1))
-    {
+    auto computeDifferentialOperator(const vect_dist_key_dx &key,
+                                     op_type &o1) -> decltype(is_scalar<std::is_fundamental<decltype(o1.value(
+            key))>::value>::analyze(key, o1)) {
 
-        typedef decltype(is_scalar<std::is_fundamental<decltype(o1.value(key))>::value>::analyze(key,o1)) expr_type;
+        typedef decltype(is_scalar<std::is_fundamental<decltype(o1.value(key))>::value>::analyze(key, o1)) expr_type;
 
         //typedef typename decltype(o1.value(key))::blabla blabla;
 
@@ -147,7 +194,7 @@ public:
 
         double eps = localEps[key.getKey()];
 
-        auto & particles = o1.getVector();
+        auto &particles = o1.getVector();
 
         expr_type Dfxp = 0;
         Support<dim, T, part_type> support = localSupports[key.getKey()];

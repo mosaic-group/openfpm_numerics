@@ -84,7 +84,7 @@ struct lid_nn_3d_petsc
 const bool lid_nn_3d_eigen::boundary[] = {NON_PERIODIC,NON_PERIODIC,NON_PERIODIC};
 const bool lid_nn_3d_petsc::boundary[] = {NON_PERIODIC,NON_PERIODIC,NON_PERIODIC};
 
-// Constant Field
+// Constant Field`
 struct eta
 {
 	//! define that eta is a constant field

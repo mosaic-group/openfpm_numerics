@@ -141,6 +141,22 @@ public:
 
         return v_lap;
     }
+
+    template<typename pmap_type, typename unordered_map_type, typename coeff_type>
+    inline void value_nz(pmap_type & p_map, const vect_dist_key_dx & key, unordered_map_type & cols, coeff_type & coeff) const
+    {
+        for (int i = 0 ; i < DCPSE_type::vtype::dims ; i++)
+        {
+            // for all NN of key
+            for (int j = 0 ; j < dcp[i].getNumNN(key) ; j++)
+            {
+                auto coeff_dc = dcp[i].getCoeffNN(key,j);
+                auto k = dcp[i].getIndexNN(key,j);
+
+                cols[p_map. template getProp<0>(k)] += coeff_dc * coeff;
+            }
+        }
+    }
 };
 
 
@@ -183,7 +199,6 @@ public:
 
         }
         return adv;
-
     }
 };
 /*

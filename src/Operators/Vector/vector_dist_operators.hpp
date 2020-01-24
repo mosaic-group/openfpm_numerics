@@ -177,6 +177,12 @@ public:
 		return o1.value(key) + o2.value(key);
 	}
 
+    template<typename pmap_type, typename unordered_map_type, typename coeff_type>
+    inline void value_nz(pmap_type & p_map, const vect_dist_key_dx & key, unordered_map_type & cols, coeff_type & coeff) const
+    {
+
+    }
+
 };
 
 /*! \brief Subtraction operation
@@ -568,6 +574,12 @@ public:
 
 		return v;
 	}
+
+    template<typename pmap_type, typename unordered_map_type, typename coeff_type>
+    inline void value_nz(pmap_type & p_map, const vect_dist_key_dx & key, unordered_map_type & cols, coeff_type & coeff) const
+    {
+	    cols[p_map. template getProp<0>(key)] += coeff;
+    }
 };
 
 /*! \Create an expression from a vector property
