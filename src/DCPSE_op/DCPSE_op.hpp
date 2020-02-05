@@ -126,7 +126,8 @@ public:
         o1.init();
     }
 
-    template<typename r_type=VectorS<dims,stype> > inline r_type value(const vect_dist_key_dx & key) const
+    template<typename r_type= typename std::remove_reference<decltype(o1.value(vect_dist_key_dx(0)))>::type>
+    inline r_type value(const vect_dist_key_dx & key) const
     {
         //typedef typename std::remove_reference<decltype(o1.value(key))>::type::blabla blabla;
 
@@ -153,7 +154,10 @@ public:
                 auto coeff_dc = dcp[i].getCoeffNN(key,j);
                 auto k = dcp[i].getIndexNN(key,j);
 
-                cols[p_map. template getProp<0>(k)] += coeff_dc * coeff;
+
+                cols[p_map. template getProp<0>(k)] += coeff_dc * coeff / dcp[i].getEpsilonPrefactor(key);
+
+                cols[p_map. template getProp<0>(key)] += dcp[i].getSign() * coeff_dc * coeff / dcp[i].getEpsilonPrefactor(key);
             }
         }
     }
@@ -406,7 +410,32 @@ public:
 
         return vector_dist_expression_op<operand_type1,std::pair<operand_type2,dcpse_type>,VECT_DCPSE_V_DOT>(arg,arg2,*(dcpse_type(*)[operand_type2::vtype::dims])dcpse);
     }
+
+    template<typename particles_type>
+    void checkMomenta(particles_type &particles)
+    {
+        Dcpse<particles_type::dims,particles_type> * dcpse_ptr = (Dcpse<particles_type::dims,particles_type> *)dcpse;
+
+        for (int i = 0 ; i < particles_type::dims ; i++)
+        {
+            dcpse_ptr[i].checkMomenta(particles);
+        }
+
+    }
+    template<unsigned int prp, typename particles_type>
+    void DrawKernel(particles_type &particles,int k)
+    {
+        Dcpse<particles_type::dims,particles_type> * dcpse_ptr = (Dcpse<particles_type::dims,particles_type> *)dcpse;
+
+        for (int i = 0 ; i < particles_type::dims ; i++)
+        {
+            dcpse_ptr[i].template DrawKernel<prp>(particles,i,k);
+        }
+
+    }
 };
+
+
 
 
 class Derivative_xy

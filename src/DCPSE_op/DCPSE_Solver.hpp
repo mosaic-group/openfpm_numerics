@@ -56,6 +56,10 @@ class DCPSE_scheme: public MatrixAssembler
     //! row on b
     size_t row_b;
 
+    //! Total number of points
+    size_t tot;
+
+
     /*! \brief Construct the gmap structure
  *
  */
@@ -75,7 +79,7 @@ class DCPSE_scheme: public MatrixAssembler
         for (size_t i = 0 ; i < v_cl.getProcessUnitID() ; i++)
             s_pnt += pnt.get(i);
 
-        size_t tot = sz;
+        tot = sz;
         v_cl.sum(tot);
         v_cl.execute();
 
@@ -134,7 +138,7 @@ class DCPSE_scheme: public MatrixAssembler
          * \return the scalar
          *
          */
-        typename Sys_eqs::stype get(size_t & key)
+        typename Sys_eqs::stype get(size_t key)
         {
             return scal;
         }
@@ -167,11 +171,59 @@ class DCPSE_scheme: public MatrixAssembler
          * \return the scalar
          *
          */
-        typename Sys_eqs::stype get(size_t & key)
+        inline typename Sys_eqs::stype get(size_t key)
         {
             return parts.template getProp<prp_id>(key);
         }
     };
+
+    /*! \brief Check if the Matrix is consistent
+ *
+ */
+    void consistency()
+    {
+        openfpm::vector<triplet> & trpl = A.getMatrixTriplets();
+
+        // A and B must have the same rows
+        if (row != row_b)
+            std::cerr << "Error " << __FILE__ << ":" << __LINE__ << "the term B and the Matrix A for Ax=B must contain the same number of rows\n";
+
+        // Indicate all the non zero rows
+        openfpm::vector<unsigned char> nz_rows;
+        nz_rows.resize(row_b);
+
+        for (size_t i = 0 ; i < trpl.size() ; i++)
+            nz_rows.get(trpl.get(i).row() - s_pnt*Sys_eqs::nvar) = true;
+
+        // Indicate all the non zero colums
+        // This check can be done only on single processor
+
+        Vcluster<> & v_cl = create_vcluster();
+        if (v_cl.getProcessingUnits() == 1)
+        {
+            openfpm::vector<unsigned> nz_cols;
+            nz_cols.resize(row_b);
+
+            for (size_t i = 0 ; i < trpl.size() ; i++)
+                nz_cols.get(trpl.get(i).col()) = true;
+
+            // all the rows must have a non zero element
+            for (size_t i = 0 ; i < nz_rows.size() ; i++)
+            {
+                if (nz_rows.get(i) == false)
+                {
+                    std::cerr << "Error: " << __FILE__ << ":" << __LINE__ << " Ill posed matrix row " << i <<  " is not filled " << " equation: " << "\n";
+                }
+            }
+
+            // all the colums must have a non zero element
+            for (size_t i = 0 ; i < nz_cols.size() ; i++)
+            {
+                if (nz_cols.get(i) == false)
+                    std::cerr << "Error: " << __FILE__ << ":" << __LINE__ << " Ill posed matrix colum " << i << " is not filled\n";
+            }
+        }
+    }
 
 public:
 
@@ -208,7 +260,7 @@ public:
     void solve(expr_type exp)
     {
         umfpack_solver<double> solver;
-        auto x = solver.solve(A,b);
+        auto x = solver.solve(getA(),getB());
 
         auto parts = exp.getVector();
 
@@ -235,7 +287,7 @@ public:
      *
      */
     DCPSE_scheme(const typename Sys_eqs::stype r_cut, particles_type & part)
-    :parts(part),p_map(0,part.getDecomposition().getDomain(),part.getDecomposition().periodicity(),Ghost<particles_type::dims,typename particles_type::stype>(r_cut))
+    :parts(part),p_map(0,part.getDecomposition().getDomain(),part.getDecomposition().periodicity(),Ghost<particles_type::dims,typename particles_type::stype>(r_cut)),row(0),row_b(0)
     {
         p_map.resize(part.size_local());
 
@@ -262,7 +314,7 @@ public:
                                                           const prop_id<prp_id> & num,
                                                           long int id = 0)
     {
-        auto itd = subset.getIterator();
+        auto itd = subset.template getIteratorElements<0>();
 
         variable_b<prp_id> vb(parts);
 
@@ -289,11 +341,43 @@ public:
                                                                           const typename Sys_eqs::stype num,
                                                                           long int id = 0)
     {
-        auto itd = subset.getIterator();
+        auto itd = subset.template getIteratorElements<0>();
 
         constant_b b(num);
 
         impose_git(op,b,id,itd);
+    }
+
+    /*! \brief produce the Matrix
+ *
+ *  \return the Sparse matrix produced
+ *
+ */
+    typename Sys_eqs::SparseMatrix_type & getA()
+    {
+#ifdef SE_CLASS1
+        consistency();
+#endif
+        A.resize(tot*Sys_eqs::nvar,tot*Sys_eqs::nvar,
+                 p_map.size_local()*Sys_eqs::nvar,
+                 p_map.size_local()*Sys_eqs::nvar);
+
+        return A;
+
+    }
+
+    /*! \brief produce the B vector
+     *
+     *  \return the vector produced
+     *
+     */
+    typename Sys_eqs::Vector_type & getB()
+    {
+#ifdef SE_CLASS1
+        consistency();
+#endif
+
+        return b;
     }
 
     /*! \brief Impose an operator
@@ -320,7 +404,7 @@ public:
 
         auto it = it_d;
 
-        std::unordered_map<long int,float> cols;
+        std::unordered_map<long int,typename particles_type::stype> cols;
 
         // iterate all particles points
         while (it.isNext())

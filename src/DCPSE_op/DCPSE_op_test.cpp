@@ -51,7 +51,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
     BOOST_AUTO_TEST_CASE(dcpse_op_solver) {
 //  int rank;
 //  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-        const size_t sz[2] = {100, 100};
+        const size_t sz[2] = {250, 250};
         Box<2, double> box({0, 0}, {1.0, 1.0});
         size_t bc[2] = {NON_PERIODIC, NON_PERIODIC};
         double spacing = box.getHigh(0) / (sz[0] - 1);
@@ -59,7 +59,8 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
         double rCut = 2.0 * spacing;
         BOOST_TEST_MESSAGE("Init vector_dist...");
 
-        vector_dist<2, double, aggregate<double,double,double>> domain(0, box, bc, ghost);
+        vector_dist<2, double, aggregate<double,double,double,double>> domain(0, box, bc, ghost);
+
 
         //Init_DCPSE(domain)
         BOOST_TEST_MESSAGE("Init domain...");
@@ -97,6 +98,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
 
         auto v = getV<0>(domain);
         auto sol = getV<2>(domain);
+        auto anasol = getV<3>(domain);
 
         // Here fill me
 
@@ -123,14 +125,13 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
         vtk_box.add(boxes);
         vtk_box.write("vtk_box.vtk");
 
-        domain.write("particles");
 
         auto it2 = domain.getDomainIterator();
 
         while (it2.isNext()) {
             auto p = it2.get();
             Point<2, double> xp = domain.getPos(p);
-
+            domain.getProp<3>(p)=1+xp[0]*xp[0]+2*xp[1]*xp[1];
             if (up.isInside(xp) == true) {
                 up_p.add();
                 up_p.last().get<0>() = p.getKey();
@@ -146,7 +147,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
             } else if (right.isInside(xp) == true) {
                 r_p.add();
                 r_p.last().get<0>() = p.getKey();
-                domain.getProp<1>(p) =  1 + xp.get(1)*xp.get(1);
+                domain.getProp<1>(p) =  2 + 2*xp.get(1)*xp.get(1);
             } else {
                 bulk.add();
                 bulk.last().get<0>() = p.getKey();
@@ -164,7 +165,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
 
 
 
-        Solver.impose(eq1, bulk, 0);
+        Solver.impose(eq1, bulk, 6);
         Solver.impose(v, up_p, prop_id<1>());
         Solver.impose(v, dw_p, prop_id<1>());
         Solver.impose(v, l_p, prop_id<1>());
@@ -172,53 +173,27 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
 
         Solver.solve(sol);
 
-
-/*        P = Solver.solve(b);
-
-        //auto v = petsc_solver(Matrix.getA(),Matrix.getB())
-
-
-
-        auto v = getV<1>(domain);
-        auto P = getV<0>(domain);
-        auto dv = getV<3>(domain);
-
-        vv=Sol_Lap(RHS_Vec);
-        v2=Sol_Dx(RHS_Vec);
-        //vv=Lap(P);
-        //dv=Lap(v);//+Dy(P);
-        dv=Adv(v,v);//+Dy(P);
-        auto it2 = domain.getDomainIterator();
-
         double worst1 = 0.0;
 
-        while (it2.isNext())
-        {
+        it2 = domain.getDomainIterator();
+
+        while (it2.isNext()) {
             auto p = it2.get();
-
-            std::cout << "VALS: " << domain.getProp<3>(p)[0] << " " << domain.getProp<4>(p)[0] << std::endl;
-            std::cout << "VALS: " << domain.getProp<3>(p)[1] << " " << domain.getProp<4>(p)[1] << std::endl;
-
-            if (fabs(domain.getProp<3>(p)[0] - domain.getProp<4>(p)[0]) > worst1)
-            {
-                worst1 = fabs(domain.getProp<3>(p)[0] - domain.getProp<4>(p)[0]);
+            if (fabs(domain.getProp<3>(p) - domain.getProp<2>(p)) >= worst1) {
+                worst1 = fabs(domain.getProp<3>(p) - domain.getProp<2>(p));
             }
+
+            domain.getProp<3>(p) = fabs(domain.getProp<3>(p) - domain.getProp<2>(p));
 
             ++it2;
         }
 
         std::cout << "Maximum Error: " << worst1 << std::endl;
 
-        domain.deleteGhost();
-        domain.write("v");
 
-        //std::cout << demangle(typeid(decltype(v)).name()) << "\n";
 
-        //Debug<decltype(expr)> a;
 
-        //typedef decltype(expr)::blabla blabla;
-
-        //auto err = Dx + Dx;*/
+        domain.write("particles");
     }
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -337,7 +312,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
         BOOST_TEST_MESSAGE("Init vector_dist...");
         double sigma2 = spacing[0] * spacing[1] / (2 * 4);
 
-        vector_dist<2, double, aggregate<double, VectorS<2, double>, VectorS<2, double>, VectorS<2, double>, VectorS<2, double>>> domain(
+        vector_dist<2, double, aggregate<double, VectorS<2, double>, VectorS<2, double>, VectorS<2, double>, VectorS<2, double>,double>> domain(
                 0, box, bc, ghost);
 
         //Init_DCPSE(domain)
@@ -388,11 +363,11 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
         domain.map();
         domain.ghost_get<0>();
 
-        Derivative_x Dx(domain, 2, rCut);
-        Derivative_y Dy(domain, 2, rCut);
-        Gradient Grad(domain, 2, rCut);
-        Laplacian Lap(domain, 2, rCut, 3);
-        Advection Adv(domain, 3, rCut, 3);
+        //Derivative_x Dx(domain, 2, rCut);
+        //Derivative_y Dy(domain, 2, rCut);
+        //Gradient Grad(domain, 2, rCut);
+        //Laplacian Lap(domain, 2, rCut, 3);
+        Advection Adv(domain, 3, rCut, 2);
         auto v = getV<1>(domain);
         auto P = getV<0>(domain);
         auto dv = getV<3>(domain);
@@ -411,17 +386,23 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
         while (it2.isNext()) {
             auto p = it2.get();
 
-            std::cout << "VALS: " << domain.getProp<3>(p)[0] << " " << domain.getProp<4>(p)[0] << std::endl;
-            std::cout << "VALS: " << domain.getProp<3>(p)[1] << " " << domain.getProp<4>(p)[1] << std::endl;
+            //std::cout << "VALS: " << domain.getProp<3>(p)[0] << " " << domain.getProp<4>(p)[0] << std::endl;
+            //std::cout << "VALS: " << domain.getProp<3>(p)[1] << " " << domain.getProp<4>(p)[1] << std::endl;
+
+            domain.getProp<0>(p)=std::sqrt((domain.getProp<3>(p)[0] - domain.getProp<4>(p)[0])*(domain.getProp<3>(p)[0] - domain.getProp<4>(p)[0])+(domain.getProp<3>(p)[1] - domain.getProp<4>(p)[1])*(domain.getProp<3>(p)[1] - domain.getProp<4>(p)[1]));
 
             if (fabs(domain.getProp<3>(p)[0] - domain.getProp<4>(p)[0]) > worst1) {
                 worst1 = fabs(domain.getProp<3>(p)[0] - domain.getProp<4>(p)[0]);
+
             }
 
             ++it2;
         }
 
         std::cout << "Maximum Error: " << worst1 << std::endl;
+
+        //Adv.checkMomenta(domain);
+        Adv.DrawKernel<2>(domain,0);
 
         domain.deleteGhost();
         domain.write("v");
@@ -532,6 +513,128 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
         //typedef decltype(expr)::blabla blabla;
 
         //auto err = Dx + Dx;
+    }
+
+    BOOST_AUTO_TEST_CASE(dcpse_test_diffusion) {
+        const size_t sz[2] = {100, 100};
+        Box<2, double> box({0, 0}, {1.0, 1.0});
+        size_t bc[2] = {NON_PERIODIC, NON_PERIODIC};
+        double spacing = box.getHigh(0) / (sz[0] - 1);
+        Ghost<2, double> ghost(spacing * 3);
+        double rCut = 2.0 * spacing;
+        BOOST_TEST_MESSAGE("Init vector_dist...");
+
+        vector_dist<2, double, aggregate<double,double,double[2]>> domain(0, box, bc, ghost);
+
+        //Init_DCPSE(domain)
+        BOOST_TEST_MESSAGE("Init domain...");
+
+        auto it = domain.getGridIterator(sz);
+        while (it.isNext()) {
+            domain.add();
+
+            auto key = it.get();
+            double x = key.get(0) * it.getSpacing(0);
+            domain.getLastPos()[0] = x;
+            double y = key.get(1) * it.getSpacing(1);
+            domain.getLastPos()[1] = y;
+
+            ++it;
+        }
+        BOOST_TEST_MESSAGE("Sync domain across processors...");
+
+        domain.map();
+        domain.ghost_get<0>();
+
+        //Derivative_x Dx(domain, 2, rCut);
+        //Derivative_y Dy(domain, 2, rCut);
+        //Gradient Grad(domain, 2, rCut);
+        Laplacian Lap(domain, 2, rCut, 3);
+        //Advection Adv(domain, 3, rCut, 3);
+        //Solver Sol_Lap(Lap),Sol_Dx(Dx);
+        DCPSE_scheme<equations,decltype(domain)> Solver(2 * rCut, domain);
+
+        openfpm::vector<aggregate<int>> bulk;
+        openfpm::vector<aggregate<int>> up_p;
+        openfpm::vector<aggregate<int>> dw_p;
+        openfpm::vector<aggregate<int>> l_p;
+        openfpm::vector<aggregate<int>> r_p;
+
+        auto v = getV<0>(domain);
+        auto dc = getV<1>(domain);
+        // Here fill me
+
+        Box<2, double> up({box.getLow(0) - spacing / 2.0, box.getHigh(1) - spacing / 2.0},
+                          {box.getHigh(0) + spacing / 2.0, box.getHigh(1) + spacing / 2.0});
+
+        Box<2, double> down({box.getLow(0) - spacing / 2.0, box.getLow(1) - spacing / 2.0},
+                            {box.getHigh(0) + spacing / 2.0, box.getLow(1) + spacing / 2.0});
+
+        Box<2, double> left({box.getLow(0) - spacing / 2.0, box.getLow(1) + spacing / 2.0},
+                            {box.getLow(0) + spacing / 2.0, box.getHigh(1) - spacing / 2.0});
+
+        Box<2, double> right({box.getHigh(0) - spacing / 2.0, box.getLow(1) + spacing / 2.0},
+                             {box.getHigh(0) + spacing / 2.0, box.getHigh(1) - spacing / 2.0});
+
+        openfpm::vector<Box<2, double>> boxes;
+        boxes.add(up);
+        boxes.add(down);
+        boxes.add(left);
+        boxes.add(right);
+
+        // Create a writer and write
+        //VTKWriter<openfpm::vector<Box<2, double>>, VECTOR_BOX> vtk_box;
+        //vtk_box.add(boxes);
+        //vtk_box.write("vtk_box.vtk");
+
+        domain.write("Diffusion");
+
+        auto it2 = domain.getDomainIterator();
+
+        while (it2.isNext()) {
+            auto p = it2.get();
+            Point<2, double> xp = domain.getPos(p);
+
+            if (up.isInside(xp) == true) {
+                up_p.add();
+                up_p.last().get<0>() = p.getKey();
+                domain.getProp<1>(p) =  0;
+            } else if (down.isInside(xp) == true) {
+                dw_p.add();
+                dw_p.last().get<0>() = p.getKey();
+                domain.getProp<1>(p) =  0;
+            } else if (left.isInside(xp) == true) {
+                l_p.add();
+                l_p.last().get<0>() = p.getKey();
+                domain.getProp<1>(p) = 0;
+            } else if (right.isInside(xp) == true) {
+                r_p.add();
+                r_p.last().get<0>() = p.getKey();
+                domain.getProp<1>(p) =  0;
+            } else {
+                bulk.add();
+                bulk.last().get<0>() = p.getKey();
+                if(xp[0]==0.5 && xp[1]==0.5)
+                    domain.getProp<1>(p) =  0;
+
+            }
+
+            ++it2;
+        }
+
+
+        double t=0;
+        while (t<2)
+        {
+            dc=Lap(v);
+            t=t+0.1;
+            v=dc;
+            domain.deleteGhost();
+            domain.write("Diffusion");
+        }
+
+        //auto flux = Dx(v) + v;
+
     }
 
 BOOST_AUTO_TEST_SUITE_END()

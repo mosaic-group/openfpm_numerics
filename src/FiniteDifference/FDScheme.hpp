@@ -793,7 +793,7 @@ public:
 			 const Box<Sys_eqs::dims,typename Sys_eqs::stype> & domain,
 			 const typename Sys_eqs::b_grid & b_g)
 	:pd(pd),gs(b_g.getGridInfoVoid()),g_map(b_g,stencil,pd),row(0),row_b(0)
-	{
+        {
 		Initialize(domain);
 	}
 

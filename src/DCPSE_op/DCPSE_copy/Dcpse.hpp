@@ -60,6 +60,117 @@ public:
         }
     }
 
+    template<unsigned int prp>
+    void DrawKernel(vector_type &particles, int k)
+    {
+        EMatrix<T, Eigen::Dynamic, 1> &a = localCoefficients[k];
+        Support<dim, T, part_type> support = localSupports[k];
+        auto eps = localEps[k];
+
+        size_t xpK = k;
+        Point<dim, T> xp = support.getReferencePoint();
+        for (auto &xqK : support.getKeys())
+        {
+            Point<dim, T> xq = particles.getPos(xqK);
+            Point<dim, T> normalizedArg = (xp - xq) / eps;
+
+            particles.template getProp<prp>(xqK) += computeKernel(normalizedArg, a);
+        }
+    }
+
+    template<unsigned int prp>
+    void DrawKernel(vector_type &particles, int k, int i)
+    {
+        EMatrix<T, Eigen::Dynamic, 1> &a = localCoefficients[k];
+        Support<dim, T, part_type> support = localSupports[k];
+        auto eps = localEps[k];
+
+        size_t xpK = k;
+        Point<dim, T> xp = support.getReferencePoint();
+        for (auto &xqK : support.getKeys())
+        {
+            Point<dim, T> xq = particles.getPos(xqK);
+            Point<dim, T> normalizedArg = (xp - xq) / eps;
+
+            particles.template getProp<prp>(xqK)[i] += computeKernel(normalizedArg, a);
+        }
+    }
+
+    void checkMomenta(vector_type &particles)
+    {
+        openfpm::vector<aggregate<double,double>> momenta;
+        openfpm::vector<aggregate<double,double>> momenta_accu;
+
+        momenta.resize(monomialBasis.size());
+        momenta_accu.resize(monomialBasis.size());
+
+        for (int i = 0 ; i < momenta.size() ; i++)
+        {
+            momenta.template get<0>(i) =  3000000000.0;
+            momenta.template get<1>(i) = -3000000000.0;
+        }
+
+        auto it = particles.getDomainIterator();
+        auto coefficientsIt = localCoefficients.begin();
+        auto supportsIt = localSupports.begin();
+        auto epsIt = localEps.begin();
+        while (it.isNext())
+        {
+            double eps = *epsIt;
+
+            for (int i = 0 ; i < momenta.size() ; i++)
+            {
+                momenta_accu.template get<0>(i) =  0.0;
+            }
+
+            Support<dim, T, part_type> support = *supportsIt;
+            size_t xpK = support.getReferencePointKey();
+            Point<dim, T> xp = support.getReferencePoint();
+            for (auto &xqK : support.getKeys())
+            {
+                Point<dim, T> xq = particles.getPos(xqK);
+                Point<dim, T> normalizedArg = (xp - xq) / eps;
+                EMatrix<T, Eigen::Dynamic, 1> &a = *coefficientsIt;
+
+                int counter = 0;
+                for (const Monomial<dim> &m : monomialBasis.getElements())
+                {
+                    T mbValue = m.evaluate(normalizedArg);
+
+
+                    momenta_accu.template get<0>(counter) += mbValue * computeKernel(normalizedArg, a);
+
+                    ++counter;
+                }
+
+            }
+
+            for (int i = 0 ; i < momenta.size() ; i++)
+            {
+                if (momenta_accu.template get<0>(i) < momenta.template get<0>(i))
+                {
+                    momenta.template get<0>(i) = momenta_accu.template get<0>(i);
+                }
+
+                if (momenta_accu.template get<1>(i) > momenta.template get<1>(i))
+                {
+                    momenta.template get<1>(i) = momenta_accu.template get<0>(i);
+                }
+            }
+
+            //
+            ++it;
+            ++coefficientsIt;
+            ++supportsIt;
+            ++epsIt;
+        }
+
+        for (int i = 0 ; i < momenta.size() ; i++)
+        {
+            std::cout << "MOMENTA: " << monomialBasis.getElements()[i] << "Min: " << momenta.template get<0>(i) << "  " << "Max: " << momenta.template get<1>(i) << std::endl;
+        }
+    }
+
     /**
      * Computes the value of the differential operator on all the particles,
      * using the f values stored at the fValuePos position in the aggregate
@@ -170,6 +281,24 @@ public:
         return localSupports[key.getKey()].getKeys()[j];
     }
 
+
+    T getSign()
+    {
+        T sign = 1.0;
+        if (differentialOrder % 2 == 0) {
+            sign = -1;
+        }
+
+        return sign;
+    }
+
+    T getEpsilonPrefactor(const vect_dist_key_dx &key)
+    {
+        double eps = localEps[key.getKey()];
+
+        return pow(eps, differentialOrder);
+    }
+
     /**
      * Computes the value of the differential operator on all the particles,
      * using the f values stored at the fValuePos position in the aggregate
@@ -178,6 +307,9 @@ public:
      * @tparam DfValuePos Position in the aggregate of the Df values to store.
      * @param particles The set of particles to iterate over.
      */
+
+
+
     template<typename op_type>
     auto computeDifferentialOperator(const vect_dist_key_dx &key,
                                      op_type &o1) -> decltype(is_scalar<std::is_fundamental<decltype(o1.value(
