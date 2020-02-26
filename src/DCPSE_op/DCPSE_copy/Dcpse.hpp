@@ -347,11 +347,49 @@ public:
         return Dfxp;
     }
 
+    template<typename op_type>
+    auto computeDifferentialOperator(const vect_dist_key_dx &key,
+                                     op_type &o1,
+                                     int i) -> typename decltype(is_scalar<std::is_fundamental<decltype(o1.value(
+            key))>::value>::analyze(key, o1))::coord_type {
+
+        typedef typename decltype(is_scalar<std::is_fundamental<decltype(o1.value(key))>::value>::analyze(key, o1))::coord_type expr_type;
+
+        //typedef typename decltype(o1.value(key))::blabla blabla;
+
+        T sign = 1.0;
+        if (differentialOrder % 2 == 0) {
+            sign = -1;
+        }
+
+        double eps = localEps[key.getKey()];
+
+        auto &particles = o1.getVector();
+
+        expr_type Dfxp = 0;
+        Support<dim, T, part_type> support = localSupports[key.getKey()];
+        size_t xpK = support.getReferencePointKey();
+        Point<dim, T> xp = support.getReferencePoint();
+        expr_type fxp = sign * o1.value(key)[i];
+        for (auto &xqK : support.getKeys()) {
+            Point<dim, T> xq = particles.getPos(xqK);
+            expr_type fxq = o1.value(vect_dist_key_dx(xqK))[i];
+            Point<dim, T> normalizedArg = (xp - xq) / eps;
+            EMatrix<T, Eigen::Dynamic, 1> &a = localCoefficients[key.getKey()];
+            Dfxp = Dfxp + (fxq + fxp) * computeKernel(normalizedArg, a);
+        }
+        Dfxp = Dfxp / pow(eps, differentialOrder);
+        //
+        //T trueDfxp = particles.template getProp<2>(xpK);
+        // Store Dfxp in the right position
+        return Dfxp;
+    }
+
 private:
     void initializeAdaptive(vector_type &particles,
                             unsigned int convergenceOrder,
                             T rCut) {
-        SupportBuilder<dim, T, part_type>
+        SupportBuilder<vector_type>
                 supportBuilder(particles, differentialSignature, rCut);
         unsigned int requiredSupportSize = monomialBasis.size();
 
@@ -411,7 +449,7 @@ private:
                               unsigned int convergenceOrder,
                               T rCut,
                               T supportSizeFactor) {
-        SupportBuilder<dim, T, part_type>
+        SupportBuilder<vector_type>
                 supportBuilder(particles, differentialSignature, rCut);
         unsigned int requiredSupportSize = monomialBasis.size() * supportSizeFactor;
 
@@ -470,6 +508,9 @@ private:
             res += coeff * mbValue * expFactor;
             ++counter;
         }
+//        if(fabs(res)<1e-8) {
+//res = 0;
+//        }
         return res;
     }
 

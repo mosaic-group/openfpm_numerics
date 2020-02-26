@@ -6,14 +6,13 @@
 #define OPENFPM_PDATA_DCPSE_SOLVER_HPP
 #include "DCPSE_op.hpp"
 #include "MatrixAssembler/MatrixAssembler.hpp"
-
 #include "Matrix/SparseMatrix.hpp"
 #include "Vector/Vector.hpp"
 #include "NN/CellList/CellDecomposer.hpp"
 #include "Vector/Vector_util.hpp"
 #include "Vector/vector_dist.hpp"
 #include "Solvers/umfpack_solver.hpp"
-
+#include "Solvers/petsc_solver.hpp"
 template<unsigned int prp_id>
 struct prop_id {};
 
@@ -261,7 +260,11 @@ public:
     {
         umfpack_solver<double> solver;
         auto x = solver.solve(getA(),getB());
-
+        //petsc_solver<double> solver;
+        //solver.setSolver(KSPBCGS);
+        //solver.setMaxIter(1000);
+        //solver.setRestart(200);
+        //auto x = solver.try_solve(getA(),getB());
         auto parts = exp.getVector();
 
         auto it = parts.getDomainIterator();
@@ -293,6 +296,7 @@ public:
 
         construct_pmap();
     }
+
 
     /*! \brief Impose an operator
 *
@@ -361,7 +365,7 @@ public:
         A.resize(tot*Sys_eqs::nvar,tot*Sys_eqs::nvar,
                  p_map.size_local()*Sys_eqs::nvar,
                  p_map.size_local()*Sys_eqs::nvar);
-
+//        std::cout << Eigen::MatrixXd(A) << std::endl;
         return A;
 
     }
@@ -376,7 +380,6 @@ public:
 #ifdef SE_CLASS1
         consistency();
 #endif
-
         return b;
     }
 
@@ -441,8 +444,8 @@ public:
                 trpl.last().col() = p_map.template getProp<0>(key)*Sys_eqs::nvar + id;
                 trpl.last().value() = 0.0;
             }
-
             b(p_map.template getProp<0>(key)*Sys_eqs::nvar + id) = num.get(key);
+//            std::cout << "b=(" << p_map.template getProp<0>(key)*Sys_eqs::nvar + id << "," << num.get(key)<<")" <<"\n";
 
             cols.clear();
 

@@ -13,6 +13,8 @@
 #define SOLVER_NOOPTION 0
 #define SOLVER_PRINT_RESIDUAL_NORM_INFINITY 1
 #define SOLVER_PRINT_DETERMINANT 2
+#define SOLVER_PRINT 3
+
 
 #if defined(HAVE_EIGEN) && defined(HAVE_SUITESPARSE)
 
@@ -117,6 +119,11 @@ public:
 			{
 				std::cout << " Determinant: " << solver.determinant() << "\n";
 			}
+            if (opt & SOLVER_PRINT)
+            {
+                std::cout << mat_ei << "\n";
+                std::cout << b_ei << "\n";
+            }
 
 			x = x_ei;
 		}

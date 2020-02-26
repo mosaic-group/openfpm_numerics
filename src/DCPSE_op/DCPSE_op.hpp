@@ -28,6 +28,8 @@ class vector_dist_expression_op<exp1,DCPSE_type,VECT_DCPSE>
 
 public:
 
+    typedef typename exp1::vtype vtype;
+
     //! Costruct a subtraction expression out of two expressions
     inline vector_dist_expression_op(const exp1 & o1, DCPSE_type & dcp)
             :o1(o1),dcp(dcp)
@@ -54,6 +56,44 @@ public:
     {
         return dcp.computeDifferentialOperator(key,o1);
     }
+
+    template<typename pmap_type, typename unordered_map_type, typename coeff_type>
+    inline void value_nz(pmap_type & p_map, const vect_dist_key_dx & key, unordered_map_type & cols, coeff_type & coeff) const
+    {
+            // for all NN of key
+            for (int j = 0 ; j < dcp.getNumNN(key) ; j++)
+            {
+                auto coeff_dc = dcp.getCoeffNN(key,j);
+                auto k = dcp.getIndexNN(key,j);
+                cols[p_map. template getProp<0>(k)] += coeff_dc * coeff / dcp.getEpsilonPrefactor(key);
+
+                cols[p_map. template getProp<0>(key)] += dcp.getSign() * coeff_dc * coeff / dcp.getEpsilonPrefactor(key);
+            }
+    }
+
+    /*! \brief Return the vector on which is acting
+     *
+     * It return the vector used in getVExpr, to get this object
+     *
+     * \return the vector
+     *
+     */
+    vtype & getVector()
+    {
+        return o1.getVector();
+    }
+
+    /*! \brief Return the vector on which is acting
+    *
+    * It return the vector used in getVExpr, to get this object
+    *
+    * \return the vector
+    *
+    */
+    const vtype & getVector() const
+    {
+        return o1.getVector();
+    }
 };
 
 template <typename exp1,typename DCPSE_type>
@@ -68,6 +108,8 @@ class vector_dist_expression_op<exp1,DCPSE_type,VECT_DCPSE_V>
     typedef typename DCPSE_type::vtype::stype stype;
 
 public:
+
+    typedef typename exp1::vtype vtype;
 
     //! Costruct a subtraction expression out of two expressions
     inline vector_dist_expression_op(const exp1 & o1, DCPSE_type (& dcp)[DCPSE_type::vtype::dims])
@@ -102,7 +144,147 @@ public:
 
         return v_grad;
     }
+
+    template<typename pmap_type, typename unordered_map_type, typename coeff_type>
+    inline void value_nz(pmap_type & p_map, const vect_dist_key_dx & key, unordered_map_type & cols, coeff_type & coeff) const
+    {
+        for (int i = 0 ; i < DCPSE_type::vtype::dims ; i++)
+        {
+            // for all NN of key
+            for (int j = 0 ; j < dcp[i].getNumNN(key) ; j++)
+            {
+                auto coeff_dc = dcp[i].getCoeffNN(key,j);
+                auto k = dcp[i].getIndexNN(key,j);
+
+
+                cols[p_map. template getProp<0>(k)] += coeff_dc * coeff / dcp[i].getEpsilonPrefactor(key);
+
+                cols[p_map. template getProp<0>(key)] += dcp[i].getSign() * coeff_dc * coeff / dcp[i].getEpsilonPrefactor(key);
+            }
+        }
+    }
+
+     /*! \brief Return the vector on which is acting
+      *
+      * It return the vector used in getVExpr, to get this object
+      *
+      * \return the vector
+      *
+      */
+    vtype & getVector()
+    {
+        return o1.getVector();
+    }
+
+    /*! \brief Return the vector on which is acting
+    *
+    * It return the vector used in getVExpr, to get this object
+    *
+    * \return the vector
+    *
+    */
+    const vtype & getVector() const
+    {
+        return o1.getVector();
+    }
+
 };
+
+
+
+template <typename exp1,typename DCPSE_type>
+class vector_dist_expression_op<exp1,DCPSE_type,VECT_DCPSE_V_CURL2D>
+{
+    //! expression 1
+    const exp1 o1;
+
+    DCPSE_type (& dcp)[DCPSE_type::vtype::dims];
+
+    static const int dims = DCPSE_type::vtype::dims;
+    typedef typename DCPSE_type::vtype::stype stype;
+
+public:
+
+    typedef typename exp1::vtype vtype;
+
+    //! Costruct a subtraction expression out of two expressions
+    inline vector_dist_expression_op(const exp1 & o1, DCPSE_type (& dcp)[DCPSE_type::vtype::dims])
+            :o1(o1),dcp(dcp)
+    {}
+
+    /*! \brief This function must be called before value
+     *
+     * it initialize the expression if needed
+     *
+     */
+    inline void init() const
+    {
+        o1.init();
+    }
+
+    /*! \brief Evaluate the expression
+     *
+     * \param key where to evaluate the expression
+     *
+     * \return the result of the expression
+     *
+     */
+    template<typename r_type=VectorS<dims,stype> > inline r_type value(const vect_dist_key_dx & key) const
+    {
+        VectorS<dims,stype> v_grad;
+        v_grad.get(0) = dcp[0].computeDifferentialOperator(key,o1);
+        v_grad.get(1) = -dcp[1].computeDifferentialOperator(key,o1);
+
+        return v_grad;
+    }
+
+    template<typename pmap_type, typename unordered_map_type, typename coeff_type>
+    inline void value_nz(pmap_type & p_map, const vect_dist_key_dx & key, unordered_map_type & cols, coeff_type & coeff) const
+    {
+        for (int i = 0 ; i < DCPSE_type::vtype::dims ; i++)
+        {
+            // for all NN of key
+            for (int j = 0 ; j < dcp[i].getNumNN(key) ; j++)
+            {
+                auto coeff_dc = dcp[i].getCoeffNN(key,j);
+                auto k = dcp[i].getIndexNN(key,j);
+
+
+                cols[p_map. template getProp<0>(k)] += coeff_dc * coeff / dcp[i].getEpsilonPrefactor(key);
+
+                cols[p_map. template getProp<0>(key)] += dcp[i].getSign() * coeff_dc * coeff / dcp[i].getEpsilonPrefactor(key);
+            }
+        }
+    }
+
+    /*! \brief Return the vector on which is acting
+     *
+     * It return the vector used in getVExpr, to get this object
+     *
+     * \return the vector
+     *
+     */
+    vtype & getVector()
+    {
+        return o1.getVector();
+    }
+
+    /*! \brief Return the vector on which is acting
+    *
+    * It return the vector used in getVExpr, to get this object
+    *
+    * \return the vector
+    *
+    */
+    const vtype & getVector() const
+    {
+        return o1.getVector();
+    }
+
+};
+
+
+
 
 template <typename exp1,typename DCPSE_type>
 class vector_dist_expression_op<exp1,DCPSE_type,VECT_DCPSE_V_SUM>
@@ -116,6 +298,8 @@ class vector_dist_expression_op<exp1,DCPSE_type,VECT_DCPSE_V_SUM>
     typedef typename DCPSE_type::vtype::stype stype;
 
 public:
+
+    typedef typename exp1::vtype vtype;
 
     inline vector_dist_expression_op(const exp1 & o1, DCPSE_type (& dcp)[DCPSE_type::vtype::dims])
             :o1(o1),dcp(dcp)
@@ -161,9 +345,116 @@ public:
             }
         }
     }
+
+    /*! \brief Return the vector on which is acting
+     *
+     * It return the vector used in getVExpr, to get this object
+     *
+     * \return the vector
+     *
+     */
+    vtype & getVector()
+    {
+        return o1.getVector();
+    }
+
+    /*! \brief Return the vector on which is acting
+    *
+    * It return the vector used in getVExpr, to get this object
+    *
+    * \return the vector
+    *
+    */
+    const vtype & getVector() const
+    {
+        return o1.getVector();
+    }
 };
 
 
+template <typename exp1,typename DCPSE_type>
+class vector_dist_expression_op<exp1,DCPSE_type,VECT_DCPSE_V_DIV>
+{
+    //! expression 1
+    const exp1 o1;
+
+    DCPSE_type (& dcp)[DCPSE_type::vtype::dims];
+
+    static const int dims = DCPSE_type::vtype::dims;
+    typedef typename DCPSE_type::vtype::stype stype;
+
+public:
+
+    typedef typename exp1::vtype vtype;
+
+    inline vector_dist_expression_op(const exp1 & o1, DCPSE_type (& dcp)[DCPSE_type::vtype::dims])
+            :o1(o1),dcp(dcp)
+    {}
+
+    inline void init() const
+    {
+        o1.init();
+    }
+
+    template<typename r_type= typename std::remove_reference<decltype(o1.value(vect_dist_key_dx(0)))>::type::coord_type>
+    inline r_type value(const vect_dist_key_dx & key) const
+    {
+        //typedef typename std::remove_reference<decltype(o1.value(key))>::type::blabla blabla;
+
+        typename std::remove_reference<decltype(o1.value(key))>::type::coord_type v_div;
+        v_div=0.0;
+
+        for (int i = 0 ; i < dims ; i++)
+        {
+            v_div += dcp[i].computeDifferentialOperator(key,o1,i);
+        }
+
+        return v_div;
+    }
+
+    template<typename pmap_type, typename unordered_map_type, typename coeff_type>
+    inline void value_nz(pmap_type & p_map, const vect_dist_key_dx & key, unordered_map_type & cols, coeff_type & coeff) const
+    {
+        for (int i = 0 ; i < DCPSE_type::vtype::dims ; i++)
+        {
+            // for all NN of key
+            for (int j = 0 ; j < dcp[i].getNumNN(key) ; j++)
+            {
+                auto coeff_dc = dcp[i].getCoeffNN(key,j);
+                auto k = dcp[i].getIndexNN(key,j);
+
+
+                cols[p_map. template getProp<0>(k)] += coeff_dc * coeff / dcp[i].getEpsilonPrefactor(key);
+
+                cols[p_map. template getProp<0>(key)] += dcp[i].getSign() * coeff_dc * coeff / dcp[i].getEpsilonPrefactor(key);
+            }
+        }
+    }
+
+    /*! \brief Return the vector on which is acting
+     *
+     * It return the vector used in getVExpr, to get this object
+     *
+     * \return the vector
+     *
+     */
+    vtype & getVector()
+    {
+        return o1.getVector();
+    }
+
+    /*! \brief Return the vector on which is acting
+    *
+    * It return the vector used in getVExpr, to get this object
+    *
+    * \return the vector
+    *
+    */
+    const vtype & getVector() const
+    {
+        return o1.getVector();
+    }
+};
 
 template <typename exp1,typename  exp2_pr>
 class vector_dist_expression_op<exp1,exp2_pr,VECT_DCPSE_V_DOT>
@@ -181,6 +472,10 @@ class vector_dist_expression_op<exp1,exp2_pr,VECT_DCPSE_V_DOT>
     typedef typename DCPSE_type::vtype::stype stype;
 
 public:
+
+    //! The type of the internal vector
+    typedef typename first_or_second<has_vtype<exp1>::value,exp1,exp2>::vtype vtype;
+    //typedef typename exp2::vtype vtype;
 
     inline vector_dist_expression_op(const exp1 & o1,const exp2 & o2, DCPSE_type (& dcp)[DCPSE_type::vtype::dims])
             :o1(o1),o2(o2),dcp(dcp)
@@ -204,6 +499,51 @@ public:
         }
         return adv;
     }
+
+
+    template<typename pmap_type, typename unordered_map_type, typename coeff_type>
+    inline void value_nz(pmap_type & p_map, const vect_dist_key_dx & key, unordered_map_type & cols, coeff_type & coeff) const
+    {
+        for (int i = 0 ; i < DCPSE_type::vtype::dims ; i++)
+        {
+            // for all NN of key
+            for (int j = 0 ; j < dcp[i].getNumNN(key) ; j++)
+            {
+                auto coeff_dc = dcp[i].getCoeffNN(key,j);
+                auto k = dcp[i].getIndexNN(key,j);
+
+
+                cols[p_map. template getProp<0>(k)] += coeff_dc * coeff / dcp[i].getEpsilonPrefactor(key);
+
+                cols[p_map. template getProp<0>(key)] += dcp[i].getSign() * coeff_dc * coeff / dcp[i].getEpsilonPrefactor(key);
+            }
+        }
+    }
+
+    /*! \brief Return the vector on which is acting
+ *
+ * It return the vector used in getVExpr, to get this object
+ *
+ * \return the vector
+ *
+ */
+    vtype & getVector()
+    {
+        return first_or_second<has_vtype<exp1>::value,exp1,exp2>::getVector(o1,o2);
+    }
+
+    /*! \brief Return the vector on which is acting
+    *
+    * It return the vector used in getVExpr, to get this object
+    *
+    * \return the vector
+    *
+    */
+    const vtype & getVector() const
+    {
+        return first_or_second<has_vtype<exp1>::value,exp1,exp2>::getVector(o1,o2);
+    }
+
 };
 /*
 template<typename operand_type>
@@ -339,6 +679,41 @@ public:
     }
 };
 
+class Curl2D
+{
+
+    void * dcpse;
+public:
+
+    template<typename particles_type>
+    Curl2D(particles_type & parts, unsigned int ord ,typename particles_type::stype rCut,double scaling_factor=dcpse_scaling_factor)
+    {
+        typedef Dcpse<particles_type::dims,particles_type> DCPSE_type;
+
+        dcpse = new unsigned char [particles_type::dims*sizeof(DCPSE_type)];
+
+        Dcpse<particles_type::dims,particles_type> * dcpse_ptr = (Dcpse<particles_type::dims,particles_type> *)dcpse;
+            Point<particles_type::dims,unsigned int> p;
+            p.zero();
+            p.get(1) = 1;
+            new (dcpse_ptr) Dcpse<particles_type::dims,particles_type>(parts,p, ord, rCut,scaling_factor);
+            dcpse_ptr++;
+            p.zero();
+            p.get(0) = 1;
+            new (dcpse_ptr) Dcpse<particles_type::dims,particles_type>(parts,p, ord, rCut,scaling_factor);
+            dcpse_ptr++;
+
+    }
+
+    template<typename operand_type>
+    vector_dist_expression_op<operand_type,Dcpse<operand_type::vtype::dims,typename operand_type::vtype>,VECT_DCPSE_V_CURL2D> operator()(operand_type arg)
+    {
+        typedef Dcpse<operand_type::vtype::dims,typename operand_type::vtype> dcpse_type;
+
+        return vector_dist_expression_op<operand_type,dcpse_type,VECT_DCPSE_V_CURL2D>(arg,*(dcpse_type(*)[operand_type::vtype::dims])dcpse);
+    }
+};
+
 class Laplacian
 {
 
@@ -375,6 +750,41 @@ public:
 };
 
 
+class Divergence
+{
+
+    void * dcpse;
+
+public:
+    template<typename particles_type>
+    Divergence(particles_type & parts, unsigned int ord ,typename particles_type::stype rCut,double scaling_factor=dcpse_scaling_factor)
+    {
+        typedef Dcpse<particles_type::dims,particles_type> DCPSE_type;
+
+        dcpse = new unsigned char [particles_type::dims*sizeof(DCPSE_type)];
+
+        Dcpse<particles_type::dims,particles_type> * dcpse_ptr = (Dcpse<particles_type::dims,particles_type> *)dcpse;
+
+        for (int i = 0 ; i < particles_type::dims ; i++)
+        {
+            Point<particles_type::dims,unsigned int> p;
+            p.zero();
+            p.get(i) = 1;
+            new (dcpse_ptr) Dcpse<particles_type::dims,particles_type>(parts,p, ord, rCut,scaling_factor);
+            dcpse_ptr++;
+        }
+    }
+
+    template<typename operand_type>
+    vector_dist_expression_op<operand_type,Dcpse<operand_type::vtype::dims,typename operand_type::vtype>,VECT_DCPSE_V_DIV> operator()(operand_type arg)
+    {
+        typedef Dcpse<operand_type::vtype::dims,typename operand_type::vtype> dcpse_type;
+
+        return vector_dist_expression_op<operand_type,dcpse_type,VECT_DCPSE_V_DIV>(arg,*(dcpse_type(*)[operand_type::vtype::dims])dcpse);
+    }
+};
+
+
 class Advection
 {
 
@@ -404,7 +814,7 @@ public:
     }
 
     template<typename operand_type1,typename operand_type2>
-    vector_dist_expression_op<operand_type1,std::pair<operand_type2,Dcpse<operand_type2::vtype::dims,typename operand_type2::vtype>>,VECT_DCPSE_V_DOT> operator()(operand_type1 arg, operand_type2 & arg2)
+    vector_dist_expression_op<operand_type1,std::pair<operand_type2,Dcpse<operand_type2::vtype::dims,typename operand_type2::vtype>>,VECT_DCPSE_V_DOT> operator()(operand_type1 arg, operand_type2 arg2)
     {
         typedef Dcpse<operand_type2::vtype::dims,typename operand_type2::vtype> dcpse_type;
 

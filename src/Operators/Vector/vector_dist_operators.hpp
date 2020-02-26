@@ -66,10 +66,52 @@
 #define VECT_DCPSE_V 101
 #define VECT_DCPSE_V_SUM 102
 #define VECT_DCPSE_V_DOT 103
+#define VECT_DCPSE_V_DIV 104
+#define VECT_DCPSE_V_CURL2D 105
 #define VECT_PMUL 91
 #define VECT_SUB_UNI 92
 
 #define VECT_SUM_REDUCE 93
+
+template<bool cond, typename exp1, typename exp2>
+struct first_or_second
+{
+    typedef typename exp2::vtype vtype;
+
+    static auto getVector(const exp1 & o1, const exp2 & o2) -> decltype(o2.getVector())
+    {
+        return o2.getVector();
+    }
+};
+
+template<typename exp1, typename exp2>
+struct first_or_second<true,exp1,exp2>
+{
+    typedef typename exp1::vtype vtype;
+
+    static auto getVector(const exp1 & o1, const exp2 & o2) -> decltype(o1.getVector())
+    {
+        return o1.getVector();
+    }
+};
+
+template<typename T, typename Sfinae = void>
+struct has_vtype: std::false_type {};
+
+/*! \brief has_data check if a type has defined a member data
+ *
+ * ### Example
+ *
+ * \snippet util_test.hpp Check has_data
+ *
+ * return true if T::type is a valid type
+ *
+ */
+template<typename T>
+struct has_vtype<T, typename Void<typename T::vtype>::type> : std::true_type
+{};
+
+
 
 
 /*! \brief has_init check if a type has defined a
@@ -148,6 +190,9 @@ class vector_dist_expression_op<exp1,exp2,VECT_SUM>
 
 public:
 
+    //! The type of the internal vector
+    typedef typename first_or_second<has_vtype<exp1>::value,exp1,exp2>::vtype vtype;
+
 	//! constructor of the expression to sum two expression
 	inline vector_dist_expression_op(const exp1 & o1, const exp2 & o2)
 	:o1(o1),o2(o2)
@@ -180,9 +225,32 @@ public:
     template<typename pmap_type, typename unordered_map_type, typename coeff_type>
     inline void value_nz(pmap_type & p_map, const vect_dist_key_dx & key, unordered_map_type & cols, coeff_type & coeff) const
     {
-
+        o1.value_nz(p_map,key,cols,coeff);
+        o2.value_nz(p_map,key,cols,coeff);
+    }
+    /*! \brief Return the vector on which is acting
+     *
+     * It return the vector used in getVExpr, to get this object
+     *
+     * \return the vector
+     *
+     */
+    vtype & getVector()
+    {
+        return first_or_second<has_vtype<exp1>::value,exp1,exp2>::getVector(o1,o2);
     }
 
+    /*! \brief Return the vector on which is acting
+    *
+    * It return the vector used in getVExpr, to get this object
+    *
+    * \return the vector
+    *
+    */
+    const vtype & getVector() const
+    {
+        return first_or_second<has_vtype<exp1>::value,exp1,exp2>::getVector(o1,o2);
+    }
 };
 
 /*! \brief Subtraction operation
@@ -201,6 +269,9 @@ class vector_dist_expression_op<exp1,exp2,VECT_SUB>
 	const exp2 o2;
 
 public:
+
+    //! The type of the internal vector
+    typedef typename first_or_second<has_vtype<exp1>::value,exp1,exp2>::vtype vtype;
 
 	//! Costruct a subtraction expression out of two expressions
 	inline vector_dist_expression_op(const exp1 & o1, const exp2 & o2)
@@ -229,6 +300,38 @@ public:
 	{
 		return o1.value(key) - o2.value(key);
 	}
+
+    /*! \brief Return the vector on which is acting
+    *
+    * It return the vector used in getVExpr, to get this object
+    *
+    * \return the vector
+    *
+    */
+    vtype & getVector()
+    {
+        return first_or_second<has_vtype<exp1>::value,exp1,exp2>::getVector(o1,o2);
+    }
+
+    /*! \brief Return the vector on which is acting
+    *
+    * It return the vector used in getVExpr, to get this object
+    *
+    * \return the vector
+    *
+    */
+    const vtype & getVector() const
+    {
+        return first_or_second<has_vtype<exp1>::value,exp1,exp2>::getVector(o1,o2);
+    }
+
+    template<typename pmap_type, typename unordered_map_type, typename coeff_type>
+    inline void value_nz(pmap_type & p_map, const vect_dist_key_dx & key, unordered_map_type & cols, coeff_type & coeff) const
+    {
+        o1.value_nz(p_map,key,cols,coeff);
+        coeff_type tmp = -coeff;
+        o2.value_nz(p_map,key,cols,tmp);
+    }
 };
 
 /*! \brief Multiplication operation
@@ -247,6 +350,9 @@ class vector_dist_expression_op<exp1,exp2,VECT_MUL>
 	const exp2 o2;
 
 public:
+
+    //! The type of the internal vector
+    typedef typename first_or_second<has_vtype<exp1>::value,exp1,exp2>::vtype vtype;
 
 	//! constructor from two expressions
 	vector_dist_expression_op(const exp1 & o1, const exp2 & o2)
@@ -275,6 +381,38 @@ public:
 	{
 		return o1.value(key) * o2.value(key);
 	}
+
+    template<typename pmap_type, typename unordered_map_type, typename coeff_type>
+    inline void value_nz(pmap_type & p_map, const vect_dist_key_dx & key, unordered_map_type & cols, coeff_type & coeff) const
+    {
+        o1.value_nz(p_map,key,cols,coeff);
+        o2.value_nz(p_map,key,cols,coeff);
+    }
+
+    /*! \brief Return the vector on which is acting
+ *
+ * It return the vector used in getVExpr, to get this object
+ *
+ * \return the vector
+ *
+ */
+    vtype & getVector()
+    {
+        return first_or_second<has_vtype<exp1>::value,exp1,exp2>::getVector(o1,o2);
+    }
+
+    /*! \brief Return the vector on which is acting
+    *
+    * It return the vector used in getVExpr, to get this object
+    *
+    * \return the vector
+    *
+    */
+    const vtype & getVector() const
+    {
+        return first_or_second<has_vtype<exp1>::value,exp1,exp2>::getVector(o1,o2);
+    }
+
 };
 
 /*! \brief Division operation
@@ -293,6 +431,9 @@ class vector_dist_expression_op<exp1,exp2,VECT_DIV>
 	const exp2 o2;
 
 public:
+
+    //! The type of the internal vector
+    typedef typename first_or_second<has_vtype<exp1>::value,exp1,exp2>::vtype vtype;
 
 	//! constructor from two expressions
 	vector_dist_expression_op(const exp1 & o1, const exp2 & o2)
@@ -321,6 +462,37 @@ public:
 	{
 		return o1.value(key) / o2.value(key);
 	}
+
+    template<typename pmap_type, typename unordered_map_type, typename coeff_type>
+    inline void value_nz(pmap_type & p_map, const vect_dist_key_dx & key, unordered_map_type & cols, coeff_type & coeff) const
+    {
+        o1.value_nz(p_map,key,cols,coeff);
+        o2.value_nz(p_map,key,cols,coeff);
+    }
+
+    /*! \brief Return the vector on which is acting
+ *
+ * It return the vector used in getVExpr, to get this object
+ *
+ * \return the vector
+ *
+ */
+    vtype & getVector()
+    {
+        return first_or_second<has_vtype<exp1>::value,exp1,exp2>::getVector(o1,o2);
+    }
+
+    /*! \brief Return the vector on which is acting
+    *
+    * It return the vector used in getVExpr, to get this object
+    *
+    * \return the vector
+    *
+    */
+    const vtype & getVector() const
+    {
+        return first_or_second<has_vtype<exp1>::value,exp1,exp2>::getVector(o1,o2);
+    }
 };
 
 /*! \brief selector for position or properties left side expression
@@ -431,6 +603,13 @@ public:
 	{
 		return -(o1.value(key));
 	}
+
+    template<typename pmap_type, typename unordered_map_type, typename coeff_type>
+    inline void value_nz(pmap_type & p_map, const vect_dist_key_dx & key, unordered_map_type & cols, coeff_type & coeff) const
+    {
+	    coeff_type coeff_tmp = -coeff;
+        o1.value_nz(p_map,key,cols,coeff_tmp);
+    }
 };
 
 /*! \brief Main class that encapsulate a vector properties operand to be used for expressions construction
@@ -634,7 +813,13 @@ public:
 	{
 		return d;
 	}
+    template<typename pmap_type, typename unordered_map_type, typename coeff_type>
+    inline void value_nz(pmap_type & p_map, const vect_dist_key_dx & key, unordered_map_type & cols, coeff_type & coeff) const
+    {
+        cols[p_map. template getProp<0>(key)] += coeff;
+    }
 };
+
 
 /*! \brief Main class that encapsulate a float constant
  *

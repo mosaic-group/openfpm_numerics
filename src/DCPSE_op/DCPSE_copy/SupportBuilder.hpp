@@ -12,54 +12,54 @@
 #include <Vector/vector_dist.hpp>
 #include "Support.hpp"
 
-template<unsigned int dim, typename T, typename Prop>
+template<typename vector_type>
 class SupportBuilder
 {
 private:
-    vector_dist<dim, T, Prop> &domain;
-    CellList<dim, T, Mem_fast<HeapMemory, local_index_>> cellList;
-    const Point<dim, unsigned int> differentialSignature;
+    vector_type &domain;
+    CellList<vector_type::dims, typename vector_type::stype, Mem_fast<HeapMemory, local_index_>> cellList;
+    const Point<vector_type::dims, unsigned int> differentialSignature;
 
 public:
-    SupportBuilder(vector_dist<dim, T, Prop> &domain, Point<dim, unsigned int> differentialSignature, T rCut);
+    SupportBuilder(vector_type &domain, Point<vector_type::dims, unsigned int> differentialSignature, typename vector_type::stype rCut);
 
-    SupportBuilder(vector_dist<dim, T, Prop> &domain, unsigned int differentialSignature[dim], T rCut);
+    SupportBuilder(vector_type &domain, unsigned int differentialSignature[vector_type::dims], typename vector_type::stype rCut);
 
-    Support<dim, T, Prop> getSupport(vector_dist_iterator itPoint, unsigned int requiredSize);
+    Support<vector_type::dims, typename vector_type::stype, typename vector_type::value_type> getSupport(vector_dist_iterator itPoint, unsigned int requiredSize);
 
 private:
-    size_t getCellLinId(const grid_key_dx<dim> &cellKey);
+    size_t getCellLinId(const grid_key_dx<vector_type::dims> &cellKey);
 
-    size_t getNumElementsInCell(const grid_key_dx<dim> &cellKey);
+    size_t getNumElementsInCell(const grid_key_dx<vector_type::dims> &cellKey);
 
-    size_t getNumElementsInSetOfCells(const std::set<grid_key_dx<dim>> &set);
+    size_t getNumElementsInSetOfCells(const std::set<grid_key_dx<vector_type::dims>> &set);
 
-    void enlargeSetOfCellsUntilSize(std::set<grid_key_dx<dim>> &set, unsigned int requiredSize);
+    void enlargeSetOfCellsUntilSize(std::set<grid_key_dx<vector_type::dims>> &set, unsigned int requiredSize);
 
-    std::vector<size_t> getPointsInSetOfCells(std::set<grid_key_dx<dim>> set, vect_dist_key_dx & p, size_t requiredSupportSize);
+    std::vector<size_t> getPointsInSetOfCells(std::set<grid_key_dx<vector_type::dims>> set, vect_dist_key_dx & p, size_t requiredSupportSize);
 
-    bool isCellKeyInBounds(grid_key_dx<dim> key);
+    bool isCellKeyInBounds(grid_key_dx<vector_type::dims> key);
 };
 
 // Method definitions below
 
-template<unsigned int dim, typename T, typename Prop>
-SupportBuilder<dim, T, Prop>::SupportBuilder(vector_dist<dim, T, Prop> &domain, const Point<dim, unsigned int> differentialSignature,
-                               T rCut) : domain(domain), differentialSignature(differentialSignature)
+template<typename vector_type>
+SupportBuilder<vector_type>::SupportBuilder(vector_type &domain, const Point<vector_type::dims, unsigned int> differentialSignature,
+                                            typename vector_type::stype rCut) : domain(domain), differentialSignature(differentialSignature)
 {
-    cellList = domain.template getCellList<CellList<dim, T, Mem_fast<HeapMemory, local_index_>>>(rCut);
+    cellList = domain.template getCellList<CellList<vector_type::dims, typename vector_type::stype, Mem_fast<HeapMemory, local_index_>>>(rCut);
 }
 
-template<unsigned int dim, typename T, typename Prop>
-Support<dim, T, Prop> SupportBuilder<dim, T, Prop>::getSupport(vector_dist_iterator itPoint, unsigned int requiredSize)
+template<typename vector_type>
+Support<vector_type::dims, typename vector_type::stype, typename vector_type::value_type> SupportBuilder<vector_type>::getSupport(vector_dist_iterator itPoint, unsigned int requiredSize)
 {
     // Get spatial position from point iterator
     vect_dist_key_dx p = itPoint.get();
-    Point<dim, T> pos = domain.getPos(p.getKey());
+    Point<vector_type::dims, typename vector_type::stype> pos = domain.getPos(p.getKey());
 
     // Get cell containing current point and add it to the set of cell keys
-    grid_key_dx<dim> curCellKey = cellList.getCellGrid(pos); // Here get the key of the cell where the current point is
-    std::set<grid_key_dx<dim>> supportCells;
+    grid_key_dx<vector_type::dims> curCellKey = cellList.getCellGrid(pos); // Here get the key of the cell where the current point is
+    std::set<grid_key_dx<vector_type::dims>> supportCells;
     supportCells.insert(curCellKey);
 
     // Make sure to consider a set of cells providing enough points for the support
@@ -68,19 +68,19 @@ Support<dim, T, Prop> SupportBuilder<dim, T, Prop>::getSupport(vector_dist_itera
     // Now return all the points from the support into a vector
     std::vector<size_t> supportKeys = getPointsInSetOfCells(supportCells,p,requiredSize);
     std::remove(supportKeys.begin(), supportKeys.end(), p.getKey());
-    return Support<dim, T, Prop>(domain, p.getKey(), supportKeys);
+    return Support<vector_type::dims, typename vector_type::stype, typename vector_type::value_type>(domain, p.getKey(), supportKeys);
 }
 
-template<unsigned int dim, typename T, typename Prop>
-size_t SupportBuilder<dim, T, Prop>::getNumElementsInCell(const grid_key_dx<dim> &cellKey)
+template<typename vector_type>
+size_t SupportBuilder<vector_type>::getNumElementsInCell(const grid_key_dx<vector_type::dims> &cellKey)
 {
     const size_t curCellId = getCellLinId(cellKey);
     size_t numElements = cellList.getNelements(curCellId);
     return numElements;
 }
 
-template<unsigned int dim, typename T, typename Prop>
-size_t SupportBuilder<dim, T, Prop>::getNumElementsInSetOfCells(const std::set<grid_key_dx<dim>> &set)
+template<typename vector_type>
+size_t SupportBuilder<vector_type>::getNumElementsInSetOfCells(const std::set<grid_key_dx<vector_type::dims>> &set)
 {
     size_t tot = 0;
     for (const auto cell : set)
@@ -90,15 +90,15 @@ size_t SupportBuilder<dim, T, Prop>::getNumElementsInSetOfCells(const std::set<g
     return tot;
 }
 
-template<unsigned int dim, typename T, typename Prop>
-void SupportBuilder<dim, T, Prop>::enlargeSetOfCellsUntilSize(std::set<grid_key_dx<dim>> &set, unsigned int requiredSize)
+template<typename vector_type>
+void SupportBuilder<vector_type>::enlargeSetOfCellsUntilSize(std::set<grid_key_dx<vector_type::dims>> &set, unsigned int requiredSize)
 {
     while (getNumElementsInSetOfCells(set) < requiredSize)
     {
         auto tmpSet = set;
         for (const auto el : tmpSet)
         {
-            for (unsigned int i = 0; i < dim; ++i)
+            for (unsigned int i = 0; i < vector_type::dims; ++i)
             {
                 const auto pOneEl = el.move(i, +1);
                 const auto mOneEl = el.move(i, -1);
@@ -115,19 +115,19 @@ void SupportBuilder<dim, T, Prop>::enlargeSetOfCellsUntilSize(std::set<grid_key_
     }
 }
 
-template<unsigned int dim, typename T, typename Prop>
-size_t SupportBuilder<dim, T, Prop>::getCellLinId(const grid_key_dx<dim> &cellKey)
+template<typename vector_type>
+size_t SupportBuilder<vector_type>::getCellLinId(const grid_key_dx<vector_type::dims> &cellKey)
 {
     mem_id id = cellList.getGrid().LinId(cellKey);
     return static_cast<size_t>(id);
 }
 
-template<unsigned int dim, typename T, typename Prop>
-std::vector<size_t> SupportBuilder<dim, T, Prop>::getPointsInSetOfCells(std::set<grid_key_dx<dim>> set, vect_dist_key_dx & p, size_t requiredSupportSize)
+template<typename vector_type>
+std::vector<size_t> SupportBuilder<vector_type>::getPointsInSetOfCells(std::set<grid_key_dx<vector_type::dims>> set, vect_dist_key_dx & p, size_t requiredSupportSize)
 {
     struct reord
     {
-        T dist;
+        typename vector_type::stype dist;
         size_t offset;
 
         bool operator<(const reord & p) const
@@ -136,7 +136,7 @@ std::vector<size_t> SupportBuilder<dim, T, Prop>::getPointsInSetOfCells(std::set
 
     openfpm::vector<reord> rp;
     std::vector<size_t> points;
-    Point<dim,T> xp = domain.getPos(p);
+    Point<vector_type::dims,typename vector_type::stype> xp = domain.getPos(p);
     for (const auto cellKey : set)
     {
         const size_t cellLinId = getCellLinId(cellKey);
@@ -147,7 +147,7 @@ std::vector<size_t> SupportBuilder<dim, T, Prop>::getPointsInSetOfCells(std::set
 
             if (p.getKey() == el)   {continue;}
 
-            Point<dim, T> xq = domain.getPos(el);
+            Point<vector_type::dims,typename vector_type::stype> xq = domain.getPos(el);
             //points.push_back(el);
 
             reord pr;
@@ -169,15 +169,15 @@ std::vector<size_t> SupportBuilder<dim, T, Prop>::getPointsInSetOfCells(std::set
     return points;
 }
 
-template<unsigned int dim, typename T, typename Prop>
-SupportBuilder<dim, T, Prop>::SupportBuilder(vector_dist<dim, T, Prop> &domain, unsigned int *differentialSignature, T rCut)
-        : SupportBuilder(domain, Point<dim, unsigned int>(differentialSignature), rCut) {}
+template<typename vector_type>
+SupportBuilder<vector_type>::SupportBuilder(vector_type &domain, unsigned int *differentialSignature, typename vector_type::stype rCut)
+        : SupportBuilder(domain, Point<vector_type::dims, unsigned int>(differentialSignature), rCut) {}
 
-template<unsigned int dim, typename T, typename Prop>
-bool SupportBuilder<dim, T, Prop>::isCellKeyInBounds(grid_key_dx<dim> key)
+template<typename vector_type>
+bool SupportBuilder<vector_type>::isCellKeyInBounds(grid_key_dx<vector_type::dims> key)
 {
     const size_t *cellGridSize = cellList.getGrid().getSize();
-    for (size_t i = 0; i < dim; ++i)
+    for (size_t i = 0; i < vector_type::dims; ++i)
     {
         if (key.value(i) < 0 || key.value(i) >= cellGridSize[i])
         {

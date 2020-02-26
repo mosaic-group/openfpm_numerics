@@ -24,6 +24,8 @@ class vector_dist_expression_op<exp1,void,OP_ID>\
 \
 public:\
 \
+    typedef typename exp1::vtype vtype;\
+\
 	vector_dist_expression_op(const exp1 & o1)\
 	:o1(o1)\
 	{}\
