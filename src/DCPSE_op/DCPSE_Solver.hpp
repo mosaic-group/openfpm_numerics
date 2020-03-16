@@ -16,6 +16,12 @@
 template<unsigned int prp_id>
 struct prop_id {};
 
+enum options_solver
+{
+    STANDARD,
+    LAGRANGE_MULTIPLIER
+};
+
 //template<unsigned int prp_id> using prop_id = boost::mpl::int_<prp_id>;
 
 template<typename Sys_eqs, typename particles_type>
@@ -58,11 +64,14 @@ class DCPSE_scheme: public MatrixAssembler
     //! Total number of points
     size_t tot;
 
+    //! solver options
+    options_solver opt;
+
 
     /*! \brief Construct the gmap structure
  *
  */
-    void construct_pmap()
+    void construct_pmap(options_solver opt = options_solver::STANDARD)
     {
         Vcluster<> & v_cl = create_vcluster();
 
@@ -83,7 +92,11 @@ class DCPSE_scheme: public MatrixAssembler
         v_cl.execute();
 
         // resize b if needed
-        b.resize(Sys_eqs::nvar * tot,Sys_eqs::nvar * sz);
+        if (opt == options_solver::STANDARD) {
+            b.resize(Sys_eqs::nvar * tot, Sys_eqs::nvar * sz);
+        } else{
+            b.resize(Sys_eqs::nvar * tot + 1, Sys_eqs::nvar * sz + 1);
+        }
 
         // Calculate the starting point
 
@@ -259,7 +272,7 @@ public:
     void solve(expr_type exp)
     {
         umfpack_solver<double> solver;
-        auto x = solver.solve(getA(),getB());
+        auto x = solver.solve(getA(opt),getB(opt));
         //petsc_solver<double> solver;
         //solver.setSolver(KSPBCGS);
         //solver.setMaxIter(1000);
@@ -272,9 +285,7 @@ public:
         while (it.isNext())
         {
             auto p = it.get();
-
             exp.value(p) = x(p.getKey());
-
             ++it;
         }
     }
@@ -289,12 +300,12 @@ public:
      * \param b_g object grid that will store the solution
      *
      */
-    DCPSE_scheme(const typename Sys_eqs::stype r_cut, particles_type & part)
-    :parts(part),p_map(0,part.getDecomposition().getDomain(),part.getDecomposition().periodicity(),Ghost<particles_type::dims,typename particles_type::stype>(r_cut)),row(0),row_b(0)
+    DCPSE_scheme(const typename Sys_eqs::stype r_cut, particles_type & part, options_solver opt = options_solver::STANDARD)
+    :parts(part),p_map(0,part.getDecomposition().getDomain(),part.getDecomposition().periodicity(),Ghost<particles_type::dims,typename particles_type::stype>(r_cut)),row(0),row_b(0),opt(opt)
     {
         p_map.resize(part.size_local());
 
-        construct_pmap();
+        construct_pmap(opt);
     }
 
 
@@ -357,15 +368,55 @@ public:
  *  \return the Sparse matrix produced
  *
  */
-    typename Sys_eqs::SparseMatrix_type & getA()
+    typename Sys_eqs::SparseMatrix_type & getA(options_solver opt = options_solver::STANDARD)
     {
 #ifdef SE_CLASS1
         consistency();
 #endif
-        A.resize(tot*Sys_eqs::nvar,tot*Sys_eqs::nvar,
-                 p_map.size_local()*Sys_eqs::nvar,
-                 p_map.size_local()*Sys_eqs::nvar);
+        if (opt == options_solver::STANDARD) {
+            A.resize(tot * Sys_eqs::nvar, tot * Sys_eqs::nvar,
+                     p_map.size_local() * Sys_eqs::nvar,
+                     p_map.size_local() * Sys_eqs::nvar);
 //        std::cout << Eigen::MatrixXd(A) << std::endl;
+        } else
+        {
+            auto & v_cl = create_vcluster();
+            openfpm::vector<triplet> & trpl = A.getMatrixTriplets();
+
+            if (v_cl.rank() == v_cl.size() - 1)
+            {
+                A.resize(tot * Sys_eqs::nvar + 1, tot * Sys_eqs::nvar + 1,
+                         p_map.size_local() * Sys_eqs::nvar + 1,
+                         p_map.size_local() * Sys_eqs::nvar + 1);
+
+                for (int i = 0 ; i < tot * Sys_eqs::nvar ; i++)
+                {
+                    triplet t1;
+                    triplet t2;
+
+                    t1.row() = tot * Sys_eqs::nvar;
+                    t1.col() = i;
+                    t1.value() = 1;
+
+                    t2.row() = i;
+                    t2.col() = tot * Sys_eqs::nvar;
+                    t2.value() = 1;
+
+                    trpl.add(t1);
+                    trpl.add(t2);
+                }
+
+                row_b++;
+                row++;
+            }
+            else {
+                A.resize(tot * Sys_eqs::nvar + 1, tot * Sys_eqs::nvar + 1,
+                         p_map.size_local() * Sys_eqs::nvar,
+                         p_map.size_local() * Sys_eqs::nvar);
+            }
+
+
+        }
         return A;
 
     }
@@ -375,11 +426,20 @@ public:
      *  \return the vector produced
      *
      */
-    typename Sys_eqs::Vector_type & getB()
+    typename Sys_eqs::Vector_type & getB(options_solver opt = options_solver::STANDARD)
     {
 #ifdef SE_CLASS1
         consistency();
 #endif
+        if (opt == options_solver::LAGRANGE_MULTIPLIER)
+        {
+            auto & v_cl = create_vcluster();
+            if (v_cl.rank() == v_cl.size() - 1) {
+
+                b(tot * Sys_eqs::nvar) = 0;
+            }
+        }
+
         return b;
     }
 

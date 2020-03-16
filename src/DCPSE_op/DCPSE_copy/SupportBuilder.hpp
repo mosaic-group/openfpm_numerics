@@ -93,7 +93,7 @@ size_t SupportBuilder<vector_type>::getNumElementsInSetOfCells(const std::set<gr
 template<typename vector_type>
 void SupportBuilder<vector_type>::enlargeSetOfCellsUntilSize(std::set<grid_key_dx<vector_type::dims>> &set, unsigned int requiredSize)
 {
-    while (getNumElementsInSetOfCells(set) < requiredSize)
+    while (getNumElementsInSetOfCells(set) < 5*requiredSize)
     {
         auto tmpSet = set;
         for (const auto el : tmpSet)

@@ -284,6 +284,69 @@ public:
 };
 
 
+template <>
+class vector_dist_expression_op<void,void,VECT_COPY_N_TO_N>
+{
+    mutable int i;
+
+    //! expression 1
+    openfpm::vector<aggregate<int>> & l1;
+    openfpm::vector<aggregate<int>> & l2;
+
+public:
+
+
+    inline vector_dist_expression_op(openfpm::vector<aggregate<int>> & l1,openfpm::vector<aggregate<int>> & l2)
+            :l1(l1),l2(l2)
+    {}
+
+    template<typename pmap_type, typename unordered_map_type, typename coeff_type>
+    inline void value_nz(pmap_type & p_map, const vect_dist_key_dx & key, unordered_map_type & cols, coeff_type & coeff) const
+    {
+        if (l1.template get<0>(i) != key.getKey())
+        {
+            std::cout << "ERROR" << std::endl;
+        }
+
+        cols[p_map. template getProp<0>(key)] += coeff;
+        std::cout << "L2: " << l2.template get<0>(i) << std::endl;
+        cols[p_map. template getProp<0>(l2.template get<0>(i))] -= coeff;
+
+        i++;
+    }
+};
+
+
+
+template <>
+class vector_dist_expression_op<void,void,VECT_COPY_1_TO_N>
+{
+    mutable int i = 0;
+
+    //! expression 1
+    openfpm::vector<aggregate<int>> & l1;
+    int l2_key;
+
+public:
+
+    inline vector_dist_expression_op(openfpm::vector<aggregate<int>> & l1, int l2_key)
+    :l1(l1),l2_key(l2_key)
+    {}
+
+    template<typename pmap_type, typename unordered_map_type, typename coeff_type>
+    inline void value_nz(pmap_type & p_map, const vect_dist_key_dx & key, unordered_map_type & cols, coeff_type & coeff)  const
+    {
+        if (l1.template get<0>(i) != key.getKey())
+        {
+            std::cout << "ERROR" << std::endl;
+        }
+
+        cols[p_map. template getProp<0>(key)] += coeff;
+        cols[p_map. template getProp<0>(l2_key)] -= coeff;
+        i++;
+    }
+};
+
 
 
 template <typename exp1,typename DCPSE_type>
@@ -747,6 +810,31 @@ public:
 
         return vector_dist_expression_op<operand_type,dcpse_type,VECT_DCPSE_V_SUM>(arg,*(dcpse_type(*)[operand_type::vtype::dims])dcpse);
     }
+
+
+    template<typename particles_type>
+    void checkMomenta(particles_type &particles)
+    {
+        Dcpse<particles_type::dims,particles_type> * dcpse_ptr = (Dcpse<particles_type::dims,particles_type> *)dcpse;
+
+        for (int i = 0 ; i < particles_type::dims ; i++)
+        {
+            dcpse_ptr[i].checkMomenta(particles);
+        }
+
+    }
+    template<unsigned int prp, typename particles_type>
+    void DrawKernel(particles_type &particles,int k)
+    {
+        Dcpse<particles_type::dims,particles_type> * dcpse_ptr = (Dcpse<particles_type::dims,particles_type> *)dcpse;
+
+        for (int i = 0 ; i < particles_type::dims ; i++)
+        {
+            dcpse_ptr[i].template DrawKernel<prp>(particles,k);
+        }
+
+    }
+
 };
 
 
