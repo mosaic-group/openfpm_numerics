@@ -53,7 +53,7 @@ MatrixType &DcpseRhs<dim>::getVector(MatrixType &b)
 
     if (b(0,0) == 0.0 && sign == 1)
     {
-        b(0,0) = 0.0;
+        b(0,0) = 100;
     }
 
     return b;

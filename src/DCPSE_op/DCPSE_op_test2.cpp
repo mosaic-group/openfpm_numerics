@@ -1943,7 +1943,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests2)
         Advection Adv(Particles, 2, rCut, 1.9);
         Divergence Div(Particles, 2, rCut, 1.9);
         double dt=3e-3;
-        int n=50;
+        int n=150;
         double nu=1e-2;
         dV=dt*(nu*Lap(V)-Adv(V,V));
         DCPSE_scheme<equations2,decltype(Particles)> Solver(2 * rCut, Particles,options_solver::LAGRANGE_MULTIPLIER);
@@ -1961,37 +1961,23 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests2)
         V = Vtemp;
         divV=Div(V);
         Particles.write_frame("Re1000-1e-4-Lid",0);
-        for(int i=25; i<=n ;i++)
-        {  dV=dt*(nu*Lap(V)-Adv(V,V));
-            //dV=Lap(V);
-            //dV=Adv(V,V);
-            // Vtemp=dV;
-            //dV=Vtemp - Adv(V,V);
-            //Vtemp=dV;
-            //dV=Vtemp;
-            //Lap.DrawKernel<5>(Particles,837);
-            //Lap.DrawKernel<5>(Particles,867);
-            if(i>0) {
-                RHS=1/dt*Div(dV);
-                std::cout<<"RHS Done"<<std::endl;
-                DCPSE_scheme<equations2,decltype(Particles)> Solver(2 * rCut, Particles,options_solver::LAGRANGE_MULTIPLIER);
-                auto Pressure_Poisson = Lap(P);
-                auto D_y=Dy(P);
-                auto D_x=Dx(P);
-                Solver.impose(Pressure_Poisson,bulk,prop_id<3>());
-                Solver.impose(D_y, up_p,0);
-                Solver.impose(D_x, r_p, 0);
-                Solver.impose(-D_y, dw_p,0);
-                Solver.impose(-D_x, l_p,0);
-                Solver.solve(P);
-                std::cout << "Poisson Solved" << std::endl;
-                Vtemp = V + (dV - dt*Grad(P));
-                V = Vtemp;
-                }
-            else {
-                Vtemp = V + (dV);
-                V = Vtemp;
-            }
+        for(int i=1; i<=n ;i++)
+        {   dV=dt*(nu*Lap(V)-Adv(V,V));
+            RHS=1/dt*Div(dV);
+            std::cout<<"RHS Done"<<std::endl;
+            DCPSE_scheme<equations2,decltype(Particles)> Solver(2 * rCut, Particles,options_solver::LAGRANGE_MULTIPLIER);
+            auto Pressure_Poisson = Lap(P);
+            auto D_y=Dy(P);
+            auto D_x=Dx(P);
+            Solver.impose(Pressure_Poisson,bulk,prop_id<3>());
+            Solver.impose(D_y, up_p,0);
+            Solver.impose(D_x, r_p, 0);
+            Solver.impose(-D_y, dw_p,0);
+            Solver.impose(-D_x, l_p,0);
+            Solver.solve(P);
+            std::cout << "Poisson Solved" << std::endl;
+            Vtemp = V + (dV - dt*Grad(P));
+            V = Vtemp;
             divV = Div(V);
             for(int j=0;j<up_p.size();j++)
             {   auto p=up_p.get<0>(j);
