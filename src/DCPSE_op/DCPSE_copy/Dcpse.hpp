@@ -86,7 +86,7 @@ public:
         EMatrix<T, Eigen::Dynamic, 1> &a = localCoefficients[k];
         Support<dim, T, part_type> support = localSupports[k];
         auto eps = localEps[k];
-
+        int DrawKernelKounter=0;
         size_t xpK = k;
         Point<dim, T> xp = support.getReferencePoint();
         for (auto &xqK : support.getKeys())
@@ -95,7 +95,9 @@ public:
             Point<dim, T> normalizedArg = (xp - xq) / eps;
 
             particles.template getProp<prp>(xqK) += computeKernel(normalizedArg, a);
+            DrawKernelKounter++;
         }
+        std::cout<<"Number of Neighbours: "<<DrawKernelKounter<<std::endl;
     }
 
     template<unsigned int prp>
@@ -512,9 +514,6 @@ private:
             res += coeff * mbValue * expFactor;
             ++counter;
         }
-//        if(fabs(res)<1e-8) {
-//res = 0;
-//        }
         return res;
     }
 

@@ -1,9 +1,9 @@
 /*
- * vector_dist_operators.hpp
- *
- *  Created on: Jun 11, 2016
- *      Author: i-bird
- */
+* vector_dist_operators.hpp
+*
+*  Created on: Jun 11, 2016
+*      Author: i-bird
+*/
 
 #ifndef OPENFPM_NUMERICS_SRC_OPERATORS_VECTOR_VECTOR_DIST_OPERATORS_HPP_
 #define OPENFPM_NUMERICS_SRC_OPERATORS_VECTOR_VECTOR_DIST_OPERATORS_HPP_
@@ -74,6 +74,11 @@
 #define VECT_DCPSE_V_DOT 103
 #define VECT_DCPSE_V_DIV 104
 #define VECT_DCPSE_V_CURL2D 105
+#define VECT_COPY_1_TO_N 300
+#define VECT_COPY_N_TO_N 301
+#define VECT_COPY_N_TO_1 302
+#define VECT_PMUL 91
+#define VECT_SUB_UNI 92
 
 
 
