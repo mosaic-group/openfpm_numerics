@@ -538,7 +538,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
     }
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     BOOST_AUTO_TEST_CASE(dcpse_Lid_sf) {
-        const size_t sz[2] = {8,8};
+        const size_t sz[2] = {31,31};
         Box<2, double> box({0, 0}, {1,1});
         size_t bc[2] = {NON_PERIODIC, NON_PERIODIC};
         double spacing = box.getHigh(0) / (sz[0] - 1);
@@ -742,7 +742,6 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
             }
         }*/
 
-        Particles.write_frame("Re1000-1e-3-Lid_sf",0);
         auto Sf = getV<0>(Particles);
         auto W = getV<1>(Particles);
         auto dW = getV<2>(Particles);
@@ -755,13 +754,12 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
             Particles.getProp<1>(p) =  -12.0/spacing;
         }
 
-        Particles.write_frame("Re1000-1e-3-Lid_sf",1);
+        Particles.write_frame("Re1000-1e-3-Lid_sf",0);
         Derivative_x Dx(Particles, 2, rCut,1);
         Derivative_y Dy(Particles, 2, rCut,1);
         Gradient Grad(Particles, 2, rCut,1);
         Laplacian Lap(Particles, 2, rCut, 1);
         Curl2D Curl(Particles, 2, rCut, 1);
-        return;
 
         /*DCPSE_scheme<equations,decltype(Particles)> Solver(2*rCut, Particles);
         auto Sf_Poisson = -Lap(Sf);
@@ -772,8 +770,6 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
         Solver.impose(Sf, r_p, 0);
         Solver.solve(Sf);
         RHS=-Lap(Sf);*/
-        Particles.write_frame("Re1000-1e-3-Lid_sf",2);
-        return;
         double dt=0.003;
         double nu=0.01;
         int n=150;
