@@ -62,16 +62,20 @@
 #define VECT_ROUND 88
 #define VECT_NEARBYINT 89
 #define VECT_RINT 90
+#define VECT_PMUL 91
+#define VECT_SUB_UNI 92
+#define VECT_SUM_REDUCE 93
+#define VECT_COMP 94
+
+
 #define VECT_DCPSE 100
 #define VECT_DCPSE_V 101
 #define VECT_DCPSE_V_SUM 102
 #define VECT_DCPSE_V_DOT 103
 #define VECT_DCPSE_V_DIV 104
 #define VECT_DCPSE_V_CURL2D 105
-#define VECT_PMUL 91
-#define VECT_SUB_UNI 92
 
-#define VECT_SUM_REDUCE 93
+
 
 template<bool cond, typename exp1, typename exp2>
 struct first_or_second
@@ -587,6 +591,8 @@ class vector_dist_expression_op<exp1,void,VECT_SUB_UNI>
 
 public:
 
+	typedef typename exp1::vtype vtype;
+
 	//! constructor from an expresssion
 	vector_dist_expression_op(const exp1 & o1)
 	:o1(o1)
@@ -597,6 +603,19 @@ public:
 	{
 		o1.init();
 	}
+
+    /*! \brief Return the vector on which is acting
+    *
+    * It return the vector used in getVExpr, to get this object
+    *
+    * \return the vector
+    *
+    */
+    const vtype & getVector() const
+    {
+        return o1.getVector();
+    }
+
 
 	//! return the result of the expression
 	template<typename r_type=typename std::remove_reference<decltype(-(o1.value(vect_dist_key_dx(0))))>::type > inline r_type value(const vect_dist_key_dx & key) const
@@ -609,6 +628,59 @@ public:
     {
 	    coeff_type coeff_tmp = -coeff;
         o1.value_nz(p_map,key,cols,coeff_tmp);
+    }
+};
+
+/*! \brief it take an expression and create the negatove of this expression
+ *
+ *
+ */
+template <typename exp1>
+class vector_dist_expression_op<exp1,void,VECT_COMP>
+{
+	//! expression 1
+	const exp1 o1;
+
+	//! component
+	int comp;
+
+public:
+
+	typedef typename exp1::vtype vtype;
+
+	//! constructor from an expresssion
+	vector_dist_expression_op(const exp1 & o1, int comp)
+	:o1(o1),comp(comp)
+	{}
+
+    /*! \brief Return the vector on which is acting
+    *
+    * It return the vector used in getVExpr, to get this object
+    *
+    * \return the vector
+    *
+    */
+    const vtype & getVector() const
+    {
+        return o1.getVector();
+    }
+
+	//! initialize the expression tree
+	inline void init() const
+	{
+		o1.init();
+	}
+
+	//! return the result of the expression
+	template<typename r_type=typename std::remove_reference<decltype(o1.value(vect_dist_key_dx(0))[comp])>::type > inline r_type value(const vect_dist_key_dx & key) const
+	{
+		return o1.value(key)[comp];
+	}
+
+    template<typename pmap_type, typename unordered_map_type, typename coeff_type>
+    inline void value_nz(pmap_type & p_map, const vect_dist_key_dx & key, unordered_map_type & cols, coeff_type & coeff) const
+    {
+        o1.value_nz(p_map,key,cols,coeff,comp);
     }
 };
 
@@ -758,6 +830,13 @@ public:
     inline void value_nz(pmap_type & p_map, const vect_dist_key_dx & key, unordered_map_type & cols, coeff_type & coeff) const
     {
 	    cols[p_map. template getProp<0>(key)] += coeff;
+    }
+
+    inline vector_dist_expression_op<vector_dist_expression<prp,vector>,void,VECT_COMP> operator[](int comp)
+    {
+    	vector_dist_expression_op<vector_dist_expression<prp,vector>,void,VECT_COMP> v_exp(*this,comp);
+
+    	return v_exp;
     }
 };
 

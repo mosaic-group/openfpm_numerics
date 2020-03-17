@@ -15,6 +15,26 @@
 #include "DcpseDiagonalScalingMatrix.hpp"
 #include "DcpseRhs.hpp"
 
+template<bool cond>
+struct is_scalar {
+	template<typename op_type>
+	static auto
+	analyze(const vect_dist_key_dx &key, op_type &o1) -> typename std::remove_reference<decltype(o1.value(
+			key))>::type {
+		return o1.value(key);
+	};
+};
+
+template<>
+struct is_scalar<false> {
+	template<typename op_type>
+	static auto
+	analyze(const vect_dist_key_dx &key, op_type &o1) -> typename std::remove_reference<decltype(o1.value(
+			key))>::type {
+		return o1.value(key);
+	};
+};
+
 template<unsigned int dim, typename vector_type>
 class Dcpse {
 public:
@@ -219,26 +239,6 @@ public:
     }
 
 
-    template<bool cond>
-    struct is_scalar {
-        template<typename op_type>
-        static auto
-        analyze(const vect_dist_key_dx &key, op_type &o1) -> typename std::remove_reference<decltype(o1.value(
-                key))>::type {
-            return o1.value(key);
-        };
-    };
-
-    template<>
-    struct is_scalar<false> {
-        template<typename op_type>
-        static auto
-        analyze(const vect_dist_key_dx &key, op_type &o1) -> typename std::remove_reference<decltype(o1.value(
-                key))>::type {
-            return o1.value(key);
-        };
-    };
-
     /*! \brief Get the number of neighbours
      *
      * \return the number of neighbours
@@ -300,24 +300,19 @@ public:
     }
 
     /**
-     * Computes the value of the differential operator on all the particles,
-     * using the f values stored at the fValuePos position in the aggregate
-     * and storing the resulting Df values at the DfValuePos position in the aggregate.
-     * @tparam fValuePos Position in the aggregate of the f values to use.
-     * @tparam DfValuePos Position in the aggregate of the Df values to store.
-     * @param particles The set of particles to iterate over.
+     * Computes the value of the differential operator for one particle for o1 representing a scalar
+     *
+     * \param key particle
+     * \param o1 source property
+     * \return the selected derivative
+     *
      */
-
-
-
     template<typename op_type>
     auto computeDifferentialOperator(const vect_dist_key_dx &key,
                                      op_type &o1) -> decltype(is_scalar<std::is_fundamental<decltype(o1.value(
             key))>::value>::analyze(key, o1)) {
 
         typedef decltype(is_scalar<std::is_fundamental<decltype(o1.value(key))>::value>::analyze(key, o1)) expr_type;
-
-        //typedef typename decltype(o1.value(key))::blabla blabla;
 
         T sign = 1.0;
         if (differentialOrder % 2 == 0) {
@@ -347,6 +342,15 @@ public:
         return Dfxp;
     }
 
+    /**
+     * Computes the value of the differential operator for one particle for o1 representing a vector
+     *
+     * \param key particle
+     * \param o1 source property
+     * \param i component
+     * \return the selected derivative
+     *
+     */
     template<typename op_type>
     auto computeDifferentialOperator(const vect_dist_key_dx &key,
                                      op_type &o1,

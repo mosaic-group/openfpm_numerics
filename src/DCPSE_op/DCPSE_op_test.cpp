@@ -605,7 +605,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
             if (up.isInside(xp) == true) {
                 up_p.add();
                 up_p.last().get<0>() = p.getKey();
-                Particles.getProp<1>(p) =  -2/sz[0];
+                Particles.getProp<1>(p) =  -2.0/sz[0];
             }
             else if (down.isInside(xp) == true) {
                     dw_p.add();
@@ -625,11 +625,11 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
         }
         Particles.write_frame("Re1000-1e-3-Lid_sf",0);
 
-        Derivative_x Dx(Particles, 2, rCut,3);
-        Derivative_y Dy(Particles, 2, rCut,3);
-        Gradient Grad(Particles, 2, rCut,3);
-        Laplacian Lap(Particles, 2, rCut, 3);
-        Curl2D Curl(Particles, 2, rCut, 3);
+        Derivative_x Dx(Particles, 1, rCut,3);
+        Derivative_y Dy(Particles, 1, rCut,3);
+        Gradient Grad(Particles, 1, rCut,3);
+        Laplacian Lap(Particles, 1, rCut, 3);
+        Curl2D Curl(Particles, 1, rCut, 3);
         DCPSE_scheme<equations,decltype(Particles)> Solver(2*rCut, Particles);
         auto Sf_Poisson = Lap(Sf);
         Solver.impose(Sf_Poisson, bulk, prop_id<1>());
@@ -639,9 +639,13 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
         Solver.impose(Sf, r_p, 0);
         Solver.solve(Sf);
         V=Curl(Sf);
+
+        Particles.write("Initialization");
+
+
         double dt=0.003;
         double nu=0.01;
-        int n=2;
+        int n=150;
         std::cout<<"Init Done"<<std::endl;
         for(int i =1; i<=n ;i++)
         {   dW=nu*Lap(W)+Dx(Sf)*Dy(W)-Dy(Sf)*Dx(W);
@@ -1419,6 +1423,71 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
 
         //auto flux = Dx(v) + v;
 
+    }
+
+
+    BOOST_AUTO_TEST_CASE(dcpse_slice) {
+        const size_t sz[2] = {31,31};
+        Box<2, double> box({0, 0}, {1,1});
+        size_t bc[2] = {NON_PERIODIC, NON_PERIODIC};
+        double spacing = box.getHigh(0) / (sz[0] - 1);
+        Ghost<2, double> ghost(spacing * 3);
+        double rCut = 2.0 * spacing;
+
+        vector_dist<2, double, aggregate<double,VectorS<2, double>,double>> Particles(0, box, bc, ghost);
+
+        auto it = Particles.getGridIterator(sz);
+        while (it.isNext()) {
+            Particles.add();
+            auto key = it.get();
+            double x = key.get(0) * it.getSpacing(0);
+            Particles.getLastPos()[0] = x;
+            double y = key.get(1) * it.getSpacing(1);
+            Particles.getLastPos()[1] = y;
+
+            Particles.getLastProp<1>()[0] = sin(x+y);
+            Particles.getLastProp<1>()[1] = cos(x+y);
+
+            ++it;
+        }
+
+        Particles.map();
+        Particles.ghost_get<0>();
+
+
+        auto P = getV<0>(Particles);
+        auto V = getV<1>(Particles);
+        auto S = getV<2>(Particles);
+
+        Derivative_x Dx(Particles, 2, rCut,2);
+
+        P = Dx(V[0]);
+        S = V[0]*V[0] + V[1]*V[1];
+
+        auto it2 = Particles.getDomainIterator();
+
+		double err = 0.0;
+
+		while (it2.isNext())
+		{
+			auto p = it2.get();
+
+			if (fabs(Particles.getProp<0>(p) - Particles.getProp<1>(p)[1]) >= err )
+			{
+				err = fabs(Particles.getProp<0>(p) - Particles.getProp<1>(p)[1]);
+			}
+
+			if (fabs(Particles.getProp<2>(p) - 1.0) >= err )
+			{
+				err = fabs(Particles.getProp<2>(p) - 1.0);
+			}
+
+			++it2;
+		}
+
+		std::cout << "ERR " << err << std::endl;
+
+        Particles.write("test_out");
     }
 
 BOOST_AUTO_TEST_SUITE_END()
