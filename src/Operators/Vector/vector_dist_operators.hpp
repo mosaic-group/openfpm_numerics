@@ -636,58 +636,7 @@ public:
     }
 };
 
-/*! \brief it take an expression and create the negatove of this expression
- *
- *
- */
-template <typename exp1>
-class vector_dist_expression_op<exp1,void,VECT_COMP>
-{
-	//! expression 1
-	const exp1 o1;
 
-	//! component
-	int comp;
-
-public:
-
-	typedef typename exp1::vtype vtype;
-
-	//! constructor from an expresssion
-	vector_dist_expression_op(const exp1 & o1, int comp)
-	:o1(o1),comp(comp)
-	{}
-
-    /*! \brief Return the vector on which is acting
-    *
-    * It return the vector used in getVExpr, to get this object
-    *
-    * \return the vector
-    *
-    */
-    const vtype & getVector() const
-    {
-        return o1.getVector();
-    }
-
-	//! initialize the expression tree
-	inline void init() const
-	{
-		o1.init();
-	}
-
-	//! return the result of the expression
-	template<typename r_type=typename std::remove_reference<decltype(o1.value(vect_dist_key_dx(0))[comp])>::type > inline r_type value(const vect_dist_key_dx & key) const
-	{
-		return o1.value(key)[comp];
-	}
-
-    template<typename pmap_type, typename unordered_map_type, typename coeff_type>
-    inline void value_nz(pmap_type & p_map, const vect_dist_key_dx & key, unordered_map_type & cols, coeff_type & coeff) const
-    {
-        o1.value_nz(p_map,key,cols,coeff,comp);
-    }
-};
 
 /*! \brief Main class that encapsulate a vector properties operand to be used for expressions construction
  *
@@ -837,12 +786,296 @@ public:
 	    cols[p_map. template getProp<0>(key)] += coeff;
     }
 
-    inline vector_dist_expression_op<vector_dist_expression<prp,vector>,void,VECT_COMP> operator[](int comp)
+    inline vector_dist_expression_op<vector_dist_expression<prp,vector>,boost::mpl::int_<1>,VECT_COMP> operator[](int comp)
     {
-    	vector_dist_expression_op<vector_dist_expression<prp,vector>,void,VECT_COMP> v_exp(*this,comp);
+    	int comp_n[1];
+
+    	comp_n[0] = comp;
+
+    	vector_dist_expression_op<vector_dist_expression<prp,vector>,boost::mpl::int_<1>,VECT_COMP> v_exp(*this,comp_n);
 
     	return v_exp;
     }
+};
+
+template<unsigned int, bool is_valid>
+struct get_vector_dist_expression_op
+{
+	template<typename exp_type>
+	inline static auto get(exp_type & o1, const vect_dist_key_dx & key) -> typename std::remove_reference<decltype(o1.value(vect_dist_key_dx(0)))>::type
+	{
+		return o1.value(key);
+	}
+
+	template<unsigned int prop, typename exp_type, typename vector_type>
+	inline static void assign(exp_type & o1, vector_type & v, const vect_dist_key_dx & key)
+	{
+		pos_or_propL<vector_type,exp_type::prop>::value(v,key) = o1.value(key);
+	}
+
+	template<unsigned int prop, typename vector_type>
+	inline static void assign_double(double d, vector_type & v, const vect_dist_key_dx & key)
+	{
+		pos_or_propL<vector_type,prop>::value(v,key) = d;
+	}
+};
+
+template<>
+struct get_vector_dist_expression_op<1,false>
+{
+	template<typename exp_type>
+	static int get(exp_type & o1, const vect_dist_key_dx & key, const int (& comp)[1])
+	{
+		return 0;
+	}
+
+	template<unsigned int prop, typename exp_type, typename vector_type>
+	inline static void assign(exp_type & o1, vector_type & v, const vect_dist_key_dx & key)
+	{
+	}
+
+	template<unsigned int prop, typename vector_type>
+	inline static void assign_double(double d, vector_type & v, const vect_dist_key_dx & key)
+	{
+	}
+};
+
+template<>
+struct get_vector_dist_expression_op<1,true>
+{
+	template<typename exp_type>
+	static auto get(exp_type & o1, const vect_dist_key_dx & key, const int (& comp)[1]) -> typename std::remove_reference<decltype(o1.value(vect_dist_key_dx(0))[0])>::type
+	{
+		return o1.value(key)[comp[0]];
+	}
+
+	template<unsigned int prop,typename exp_type, typename vector_type>
+	inline static void assign(exp_type & o1, vector_type & v, const vect_dist_key_dx & key, const int (& comp)[1])
+	{
+		pos_or_propL<vector_type,prop>::value(v,key)[comp[0]] = o1.value(key);
+	}
+
+	template<unsigned int prop, typename vector_type>
+	inline static void assign_double(double d, vector_type & v, const vect_dist_key_dx & key, const int (& comp)[1])
+	{
+		pos_or_propL<vector_type,prop>::value(v,key)[comp[0]] = d;
+	}
+};
+
+template<>
+struct get_vector_dist_expression_op<2,true>
+{
+	template<typename exp_type>
+	static auto get(exp_type & o1, const vect_dist_key_dx & key, const int (& comp)[2]) -> typename std::remove_reference<decltype(o1.value(vect_dist_key_dx(0))[0][0])>::type
+	{
+		return o1.value(key)[comp[0]][comp[1]];
+	}
+
+	template<unsigned int prop,typename exp_type, typename vector_type>
+	inline static void assign(exp_type & o1, vector_type & v, const vect_dist_key_dx & key, const int (& comp)[2])
+	{
+		pos_or_propL<vector_type,prop>::value(v,key)[comp[0]][comp[1]] = o1.value(key);
+	}
+
+	template<unsigned int prop, typename vector_type>
+	inline static void assign_double(double d, vector_type & v, const vect_dist_key_dx & key, const int (& comp)[2])
+	{
+		pos_or_propL<vector_type,prop>::value(v,key)[comp[0]][comp[1]] = d;
+	}
+};
+
+/*! \brief like std::rank but it also work for openfpm structures like Point where it return 1
+ *
+ * \tparam T structure to check
+ *
+ */
+template<typename T, bool is_point = is_Point<T>::value>
+struct rank_gen
+{
+	typedef boost::mpl::int_<std::rank<T>::value> type;
+};
+
+template<typename T>
+struct rank_gen<T,true>
+{
+	typedef boost::mpl::int_<1> type;
+};
+
+/*! \brief it take an expression and create the negatove of this expression
+ *
+ *
+ */
+template <typename exp1,int n>
+class vector_dist_expression_op<exp1,boost::mpl::int_<n>,VECT_COMP>
+{
+	//! expression 1
+	exp1 o1;
+
+	//! component
+	int comp[n];
+
+	typedef vector_dist_expression_op<exp1,boost::mpl::int_<n>,VECT_COMP> myself;
+
+public:
+
+	typedef typename exp1::vtype vtype;
+
+	//! constructor from an expresssion
+
+	vector_dist_expression_op(const exp1 & o1, int (& comp)[n])
+	:o1(o1)
+	{
+		for (int i = 0 ; i < n ; i++)
+		{this->comp[i] = comp[i];}
+	}
+
+    /*! \brief Return the vector on which is acting
+    *
+    * It return the vector used in getVExpr, to get this object
+    *
+    * \return the vector
+    *
+    */
+    const vtype & getVector() const
+    {
+        return o1.getVector();
+    }
+
+    /*! \brief Return the vector on which is acting
+    *
+    * It return the vector used in getVExpr, to get this object
+    *
+    * \return the vector
+    *
+    */
+    vtype & getVector()
+    {
+        return o1.getVector();
+    }
+
+	//! initialize the expression tree
+	inline void init() const
+	{
+		o1.init();
+	}
+
+	//! property on which this view is acting
+	typedef typename boost::mpl::at<typename vtype::value_type::type,boost::mpl::int_<exp1::prop>>::type property_act;
+
+	/*! \brief Return the result of the expression
+	 *
+	 * \note this function must be deactivated on transitional objects. Suppose we are slicing a tensor of rank 2
+	 *            an object of rank 1 is implicitly created for such object we have to deactivate this function
+	 *            because ill-formed
+	 *
+	 * \param key point where to evaluate
+	 *
+	 *
+	 */
+	inline auto value(const vect_dist_key_dx & key) const -> decltype(get_vector_dist_expression_op<n,n == rank_gen<property_act>::type::value>::get(o1,vect_dist_key_dx(0),comp))
+	{
+		return get_vector_dist_expression_op<n,n == rank_gen<property_act>::type::value>::get(o1,key,comp);
+	}
+
+    template<typename pmap_type, typename unordered_map_type, typename coeff_type>
+    inline void value_nz(pmap_type & p_map, const vect_dist_key_dx & key, unordered_map_type & cols, coeff_type & coeff) const
+    {
+        o1.value_nz(p_map,key,cols,coeff,comp);
+    }
+
+    inline vector_dist_expression_op<exp1,boost::mpl::int_<2>,VECT_COMP> operator[](int comp_)
+    {
+    	int comp_n[n+1];
+
+    	for (int i = 0 ; i < n ; i++)
+    	{comp_n[i] = comp[i];}
+    	comp_n[n] = comp_;
+
+    	vector_dist_expression_op<exp1,boost::mpl::int_<2>,VECT_COMP> v_exp(o1,comp_n);
+
+    	return v_exp;
+    }
+
+	/*! \brief Fill the vector property with the evaluated expression
+	 *
+	 * \param v_exp expression to evaluate
+	 *
+	 * \return itself
+	 *
+	 */
+	template<unsigned int prp2> vtype & operator=(const vector_dist_expression<prp2,vtype> & v_exp)
+	{
+		v_exp.init();
+
+		auto & v = getVector();
+
+		auto it = v.getDomainIterator();
+
+		while (it.isNext())
+		{
+			auto key = it.get();
+
+			get_vector_dist_expression_op<n,n == rank_gen<property_act>::type::value>::template assign<exp1::prop>(v_exp,v,key,comp);
+
+			++it;
+		}
+
+		return v;
+	}
+
+	/*! \brief Fill the vector property with the evaluated expression
+	 *
+	 * \param v_exp expression to evaluate
+	 *
+	 * \return itself
+	 *
+	 */
+	template<typename exp1_, typename exp2_, unsigned int op> vtype & operator=(const vector_dist_expression_op<exp1_,exp2_,op> & v_exp)
+	{
+		v_exp.init();
+
+		auto & v = getVector();
+
+		auto it = v.getDomainIterator();
+
+		while (it.isNext())
+		{
+			auto key = it.get();
+
+			get_vector_dist_expression_op<n,n == rank_gen<property_act>::type::value>::template assign<exp1::prop>(v_exp,v,key,comp);
+
+			++it;
+		}
+
+		return v;
+	}
+
+	/*! \brief Fill the vector property with the double
+	 *
+	 * \param d value to fill
+	 *
+	 * \return the internal vector
+	 *
+	 */
+	vtype & operator=(double d)
+	{
+		auto & v = getVector();
+
+		auto it = v.getDomainIterator();
+
+		while (it.isNext())
+		{
+			auto key = it.get();
+
+			//pos_or_propL<vtype,exp1::prp>::value(v,key) = d;
+			get_vector_dist_expression_op<n,n == rank_gen<property_act>::type::value>::template assign_double<exp1::prop>(d,v,key,comp);
+
+
+			++it;
+		}
+
+		return v;
+	}
 };
 
 /*! \Create an expression from a vector property
