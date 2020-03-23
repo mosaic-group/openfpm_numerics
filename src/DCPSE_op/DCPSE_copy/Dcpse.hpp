@@ -97,7 +97,7 @@ public:
             particles.template getProp<prp>(xqK) += computeKernel(normalizedArg, a);
             DrawKernelKounter++;
         }
-        std::cout<<"Number of Neighbours: "<<DrawKernelKounter<<std::endl;
+        //std::cout<<"Number of Neighbours: "<<DrawKernelKounter<<std::endl;
     }
 
     template<unsigned int prp>
@@ -401,7 +401,7 @@ private:
 
         auto it = particles.getDomainIterator();
         while (it.isNext()) {
-            const T condVTOL = 1e3;
+            const T condVTOL = 1e2;
 
             // Get the points in the support of the DCPSE kernel and store the support for reuse
             Support<dim, T, part_type> support = supportBuilder.getSupport(it, requiredSupportSize);

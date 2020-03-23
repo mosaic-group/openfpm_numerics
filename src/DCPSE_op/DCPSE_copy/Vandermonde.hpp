@@ -50,6 +50,7 @@ void Vandermonde<dim, T, MatrixType>::initialize()
         ACTION_ON_ERROR(std::length_error("Not enough neighbour points passed for Vandermonde matrix construction!"));
     }
     // Compute eps for this point
+    //factor here
     computeEps(2);
 }
 

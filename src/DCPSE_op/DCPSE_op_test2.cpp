@@ -1823,14 +1823,6 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests2)
             }
     }
 
-
-
-
-
-
-
-
-
     /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -1844,7 +1836,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests2)
         size_t bc[2] = {NON_PERIODIC, NON_PERIODIC};
         double spacing = box.getHigh(0) / (sz[0] - 1);
         Ghost<2, double> ghost(spacing * 3);
-        double rCut = 0.7 * spacing;
+        double rCut = 0.5 * spacing;
         //                                  P        V                 Dv              RHS    Vtemp                   Proj_lap
         vector_dist<2, double, aggregate<double,VectorS<2, double>,VectorS<2, double>,double,VectorS<2, double>,double,double>> Particles(0, box, bc, ghost);
         auto it = Particles.getGridIterator(sz);
@@ -1904,7 +1896,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests2)
         while (it2.isNext()) {
             auto p = it2.get();
             Point<2, double> xp = Particles.getPos(p);
-            Particles.getProp<3>(p) =2*M_PI*M_PI*sin(M_PI*xp.get(0))*sin(M_PI*xp.get(1));
+            Particles.getProp<3>(p) =0;
             if (up.isInside(xp) == true) {
                 up_p.add();
                 up_p.last().get<0>() = p.getKey();
@@ -1943,7 +1935,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests2)
         Advection Adv(Particles, 2, rCut, 1.9);
         Divergence Div(Particles, 2, rCut, 1.9);
         double dt=3e-3;
-        int n=150;
+        int n=50;
         double nu=1e-2;
         dV=dt*(nu*Lap(V)-Adv(V,V));
         DCPSE_scheme<equations2,decltype(Particles)> Solver(2 * rCut, Particles,options_solver::LAGRANGE_MULTIPLIER);
@@ -1960,11 +1952,10 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests2)
         Vtemp = V + (dV - dt*Grad(P));
         V = Vtemp;
         divV=Div(V);
-        Particles.write_frame("Re1000-1e-4-Lid",0);
+        Particles.write_frame("Re100-3e-3-Lid",0);
         for(int i=1; i<=n ;i++)
         {   dV=dt*(nu*Lap(V)-Adv(V,V));
             RHS=1/dt*Div(dV);
-            std::cout<<"RHS Done"<<std::endl;
             DCPSE_scheme<equations2,decltype(Particles)> Solver(2 * rCut, Particles,options_solver::LAGRANGE_MULTIPLIER);
             auto Pressure_Poisson = Lap(P);
             auto D_y=Dy(P);
@@ -1975,7 +1966,6 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests2)
             Solver.impose(-D_y, dw_p,0);
             Solver.impose(-D_x, l_p,0);
             Solver.solve(P);
-            std::cout << "Poisson Solved" << std::endl;
             Vtemp = V + (dV - dt*Grad(P));
             V = Vtemp;
             divV = Div(V);
@@ -1999,9 +1989,11 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests2)
                 Particles.getProp<1>(p)[0] =  0;
                 Particles.getProp<1>(p)[1] =  0;
             }
-            std::cout<<"Velocity updated"<<std::endl;
-            Particles.write_frame("Re1000-1e-4-Lid",i);
+            //if (i%10==0)
+            Particles.write_frame("Re100-3e-3-Lid",i);
             std::cout<<i<<std::endl;
+            if (i==100)
+                dt=5e-4;
         }
     }
 

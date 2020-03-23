@@ -180,81 +180,80 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
                 Particles.getProp<0>(p)[0] =  cos(2 * M_PI * (cos((2 * xp[0] - sz[0]) / sz[0]) - sin((2 * xp[1] - sz[1]) / sz[1])));
                 Particles.getProp<0>(p)[1] =  sin(2 * M_PI * (cos((2 * xp[0] - sz[0]) / sz[0]) - sin((2 * xp[1] - sz[1]) / sz[1])));
             }
-/*
-            Particles.getProp<7>(p)[0][0] =    -Ks * Dx(Pol[0]) * Dx(P[0])- Kb * Dx(P[1]) * Dx(P[1]) + (Kb - Ks) * Dy(P[0]) * Dx(P[1]);
-            Particles.getProp<7>(p)[0][1] =    -Ks * Dy(Pol[1]) * Dx(P[1])- Kb * Dy(P[1]) * Dx(P[0]) + (Kb - Ks) * Dx(P[0]) * Dx(P[1]);
-            Particles.getProp<7>(p)[1][0] =    -Ks * Dx(P[0]) * Dy(P[0])- Kb * Dx(P[1]) * Dy(P[1]) + (Kb - Ks) * Dy(P[0]) * Dy(P[1]);
-            Particles.getProp<7>(p)[1][1] =    -Ks * Dy(P[1]) * Dy(P[1])- Kb * Dy(P[0]) * Dy(P[0]) + (Kb - Ks) * Dy(P[0]) * Dx(P[1]);
-
-            Particles.getProp<9>(p)[1] = -gama * (lambda * delmu - nu * (Particles.getProp<Strain_rate>(p)[0][0] * Particles.getProp<Polarization>(p)[0] * Particles.getProp<Polarization>(p)[0]) / (Particles.getProp<Polarization>(p)[0] * Particles.getProp<Polarization>(p)[0] + Particles.getProp<Polarization>(p)[1] * Particles.getProp<Polarization>(p)[1]) - nu * (Particles.getProp<Strain_rate>(p)[1][1] * Particles.getProp<Polarization>(p)[1] * Particles.getProp<Polarization>(p)[1]) / (Particles.getProp<Polarization>(p)[0] * Particles.getProp<Polarization>(p)[0] + Particles.getProp<Polarization>(p)[1] * Particles.getProp<Polarization>(p)[1]) - 2 * nu * (Particles.getProp<Strain_rate>(p)[0][1] * Particles.getProp<Polarization>(p)[0] * Particles.getProp<Polarization>(p)[1]) / (Particles.getProp<Polarization>(p)[0] * Particles.getProp<Polarization>(p)[0] + Particles.getProp<Polarization>(p)[1] * Particles.getProp<Polarization>(p)[1]));
-
-            Particles.getProp<9>(p)[0] = Particles.getProp<Polarization>(p)[0] * (Ks * dyypy + Kb * dxxpy + (Ks - Kb) * dxypx) - Particles.getProp<Polarization>(p)[1] * (Ks * dxxpx + Kb * dyypx + (Ks - Kb) * dxypy);
-
 
 
             ++it2;
         }
+        /*      sigma[0][0] =    -Ks * Dx(Pol[0]) * Dx(Pol[0])- Kb * Dx(Pol[1]) * Dx(Pol[1]) + (Kb - Ks) * Dy(Pol[0]) * Dx(Pol[1]);
+              sigma[0][1] =    -Ks * Dy(Pol[1]) * Dx(Pol[1])- Kb * Dy(Pol[1]) * Dx(Pol[0]) + (Kb - Ks) * Dx(Pol[0]) * Dx(Pol[1]);
+              sigma[1][0] =    -Ks * Dx(Pol[0]) * Dy(Pol[0])- Kb * Dx(Pol[1]) * Dy(Pol[1]) + (Kb - Ks) * Dy(Pol[0]) * Dy(Pol[1]);
+              sigma[1][1] =    -Ks * Dy(Pol[1]) * Dy(Pol[1])- Kb * Dy(Pol[0]) * Dy(Pol[0]) + (Kb - Ks) * Dy(Pol[0]) * Dx(Pol[1]);
+
+              //dV[0] = Pol[0] * (Ks * dyypy + Kb * dxxpy + (Ks - Kb) * dxypx) - Particles.getProp<Polarization>(p)[1] * (Ks * dxxpx + Kb * dyypx + (Ks - Kb) * dxypy);
+              //dV[1] = -gama * (lambda * delmu - nu * (Particles.getProp<Strain_rate>(p)[0][0] * Particles.getProp<Polarization>(p)[0] * Particles.getProp<Polarization>(p)[0]) / (Particles.getProp<Polarization>(p)[0] * Particles.getProp<Polarization>(p)[0] + Particles.getProp<Polarization>(p)[1] * Particles.getProp<Polarization>(p)[1]) - nu * (Particles.getProp<Strain_rate>(p)[1][1] * Particles.getProp<Polarization>(p)[1] * Particles.getProp<Polarization>(p)[1]) / (Particles.getProp<Polarization>(p)[0] * Particles.getProp<Polarization>(p)[0] + Particles.getProp<Polarization>(p)[1] * Particles.getProp<Polarization>(p)[1]) - 2 * nu * (Particles.getProp<Strain_rate>(p)[0][1] * Particles.getProp<Polarization>(p)[0] * Particles.getProp<Polarization>(p)[1]) / (Particles.getProp<Polarization>(p)[0] * Particles.getProp<Polarization>(p)[0] + Particles.getProp<Polarization>(p)[1] * Particles.getProp<Polarization>(p)[1]));
 
 
 
 
-        Particles.write_frame("Polar",0);
 
 
-        double dt=5e-4;
-        int n=5;
-        double Re=1/3e-3;
-        std::cout<<"Init Done"<<std::endl;
-        for(int i =1; i<=n ;i++)
-        {
-            dV=(1/Re*Lap(V)-Adv(V,V));
-            std::cout<<"dV Done"<<std::endl;
-            RHS = Div(dV);
-            std::cout<<"RHS Done"<<std::endl;
-            DCPSE_scheme<equations,decltype(Particles)> Solver(2 * rCut, Particles);
-            auto Pressure_Poisson = Lap(H);
-            auto D_x = Dx(H);
-            auto D_y = Dy(H);
-            Solver.impose(Pressure_Poisson, bulk, prop_id<3>());
-            Solver.impose(D_y, up_p, 0);
-            Solver.impose(-D_y, dw_p,0);
-            Solver.impose(-D_x, l_p,0);
-            Solver.impose(D_x, r_p, 0);
-            Solver.impose(H, ref_p, 0);
-            Solver.solve(P);
-            std::cout<<"Poisson Solved"<<std::endl;
-            V=dt*(dV-Grad(P));
-            std::cout<<"Velocity updated"<<std::endl;
+              Particles.write_frame("Polar",0);
 
-            for(int j=0;j<up_p.size();j++)
-            {   auto p=up_p.get<0>(j);
-                Particles.getProp<1>(p)[0] =  1;
-                Particles.getProp<1>(p)[1] =  0;
-            }
-            for(int j=0;j<l_p.size();j++)
-            {   auto p=l_p.get<0>(j);
-                Particles.getProp<1>(p)[0] =  0;
-                Particles.getProp<1>(p)[1] =  0;
-            }
-            for(int j=0;j<r_p.size();j++)
-            {   auto p=r_p.get<0>(j);
-                Particles.getProp<1>(p)[0] =  0;
-                Particles.getProp<1>(p)[1] =  0;
-            }
-            for(int j=0;j<dw_p.size();j++)
-            {   auto p=dw_p.get<0>(j);
-                Particles.getProp<1>(p)[0] =  0;
-                Particles.getProp<1>(p)[1] =  0;
-            }
-            Particles.getProp<1>(0)[0] =  0;
-            Particles.getProp<1>(0)[1] =  0;
-            std::cout<<"Boundary done"<<std::endl;
-            //           if (i%10==0)
-            Particles.write_frame("Lid",i);
-            std::cout<<i<<std::endl;
-        */
+
+              double dt=5e-4;
+              int n=5;
+              double Re=1/3e-3;
+              std::cout<<"Init Done"<<std::endl;
+              for(int i =1; i<=n ;i++)
+              {
+                  dV=(1/Re*Lap(V)-Adv(V,V));
+                  std::cout<<"dV Done"<<std::endl;
+                  RHS = Div(dV);
+                  std::cout<<"RHS Done"<<std::endl;
+                  DCPSE_scheme<equations,decltype(Particles)> Solver(2 * rCut, Particles);
+                  auto Pressure_Poisson = Lap(H);
+                  auto D_x = Dx(H);
+                  auto D_y = Dy(H);
+                  Solver.impose(Pressure_Poisson, bulk, prop_id<3>());
+                  Solver.impose(D_y, up_p, 0);
+                  Solver.impose(-D_y, dw_p,0);
+                  Solver.impose(-D_x, l_p,0);
+                  Solver.impose(D_x, r_p, 0);
+                  Solver.impose(H, ref_p, 0);
+                  Solver.solve(P);
+                  std::cout<<"Poisson Solved"<<std::endl;
+                  V=dt*(dV-Grad(P));
+                  std::cout<<"Velocity updated"<<std::endl;
+
+                  for(int j=0;j<up_p.size();j++)
+                  {   auto p=up_p.get<0>(j);
+                      Particles.getProp<1>(p)[0] =  1;
+                      Particles.getProp<1>(p)[1] =  0;
+                  }
+                  for(int j=0;j<l_p.size();j++)
+                  {   auto p=l_p.get<0>(j);
+                      Particles.getProp<1>(p)[0] =  0;
+                      Particles.getProp<1>(p)[1] =  0;
+                  }
+                  for(int j=0;j<r_p.size();j++)
+                  {   auto p=r_p.get<0>(j);
+                      Particles.getProp<1>(p)[0] =  0;
+                      Particles.getProp<1>(p)[1] =  0;
+                  }
+                  for(int j=0;j<dw_p.size();j++)
+                  {   auto p=dw_p.get<0>(j);
+                      Particles.getProp<1>(p)[0] =  0;
+                      Particles.getProp<1>(p)[1] =  0;
+                  }
+                  Particles.getProp<1>(0)[0] =  0;
+                  Particles.getProp<1>(0)[1] =  0;
+                  std::cout<<"Boundary done"<<std::endl;
+                  //           if (i%10==0)
+                  Particles.write_frame("Lid",i);
+                  std::cout<<i<<std::endl;
+              */
         }
-    }
+
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -538,12 +537,12 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
     }
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     BOOST_AUTO_TEST_CASE(dcpse_Lid_sf) {
-        const size_t sz[2] = {31,31};
+        const size_t sz[2] = {16,16};
         Box<2, double> box({0, 0}, {1,1});
         size_t bc[2] = {NON_PERIODIC, NON_PERIODIC};
         double spacing = box.getHigh(0) / (sz[0] - 1);
         Ghost<2, double> ghost(spacing * 3);
-        double rCut = spacing*0.8 + spacing*1e-02;
+        double rCut = spacing*2.5 + spacing*1e-02;
         std::cout<<spacing<<std::endl;
         //                                  sf    W   DW        RHS    Wnew  V
         vector_dist<2, double, aggregate<double,double,double,double,double,VectorS<2, double>>> Particles(0, box, bc, ghost);
@@ -573,6 +572,9 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
         openfpm::vector<aggregate<int>> l_p1;
         openfpm::vector<aggregate<int>> r_p1;
 
+        openfpm::vector<aggregate<int>> BULK;
+
+
 
         // Here fill up the boxes for particle detection.
 
@@ -599,8 +601,8 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
 
         Box<2, double> right_l({box.getHigh(0) - 3 * spacing / 2.0, box.getLow(1) + 3 * spacing / 2.0},
                                {box.getHigh(0) - spacing / 2.0, box.getHigh(1) - 3 * spacing / 2.0});
-        Box<2, double> Bulk_box({box.getLow(0) + spacing / 2.0, box.getLow(1) + spacing / 2.0},
-                                {box.getHigh(0) - spacing / 2.0, box.getHigh(1)  -spacing / 2.0});
+        Box<2, double> Bulk_box({box.getLow(0) - spacing / 2.0, box.getLow(1) - spacing / 2.0},
+                                {box.getHigh(0) + spacing / 2.0, box.getHigh(1)  +spacing / 2.0});
 
 
         openfpm::vector<Box<2, double>> boxes;
@@ -624,12 +626,15 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
             auto p = it2.get();
             Point<2, double> xp = Particles.getPos(p);
             Particles.getProp<0>(p) =0;//-M_PI*M_PI*sin(M_PI*xp[0])*sin(M_PI*xp[1]);
-            //Particles.getProp<1>(p) =0;//sin(M_PI*xp[0])*sin(M_PI*xp[1]);
+            Particles.getProp<1>(p) =0;//sin(M_PI*xp[0])*sin(M_PI*xp[1]);
             Particles.getProp<2>(p) =0.0;
             Particles.getProp<3>(p) =0.0;
             Particles.getProp<4>(p) =0.0;
             Particles.getProp<5>(p)[0] =0.0;
             Particles.getProp<5>(p)[1] =0.0;
+
+            BULK.add();
+            BULK.last().get<0>() = p.getKey();
 
             if (up.isInside(xp) == true) {
                 up_p.add();
@@ -742,39 +747,46 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
             }
         }*/
 
+/*
         auto Sf = getV<0>(Particles);
         auto W = getV<1>(Particles);
         auto dW = getV<2>(Particles);
         auto RHS = getV<3>(Particles);
         auto Wnew = getV<4>(Particles);
         auto V = getV<5>(Particles);
+*/
 
         for(int j=0;j<up_p.size();j++) {
             auto p = up_p.get<0>(j);
             Particles.getProp<1>(p) =  -12.0/spacing;
         }
 
-        Particles.write_frame("Re1000-1e-3-Lid_sf",0);
-        Derivative_x Dx(Particles, 2, rCut,1);
-        Derivative_y Dy(Particles, 2, rCut,1);
-        Gradient Grad(Particles, 2, rCut,1);
-        Laplacian Lap(Particles, 2, rCut, 1);
-        Curl2D Curl(Particles, 2, rCut, 1);
+//        Particles.write_frame("Re1000-1e-3-Lid_sf",0);
+//        Derivative_x Dx(Particles, 2, rCut,1);
+//        Derivative_y Dy(Particles, 2, rCut,1);
+//        Gradient Grad(Particles, 2, rCut,1);
+        Laplacian Lap(Particles, 1, rCut, 4.1);
+//        Curl2D Curl(Particles, 2, rCut, 1);
 
-        /*DCPSE_scheme<equations,decltype(Particles)> Solver(2*rCut, Particles);
-        auto Sf_Poisson = -Lap(Sf);
-        Solver.impose(Sf_Poisson, bulk, prop_id<1>());
-        Solver.impose(Sf, up_p, 0);
-        Solver.impose(Sf, dw_p,0);
-        Solver.impose(Sf, l_p,0);
-        Solver.impose(Sf, r_p, 0);
-        Solver.solve(Sf);
-        RHS=-Lap(Sf);*/
-        double dt=0.003;
+        auto its = Particles.getDomainIterator();
+        int ctr=0;
+        while (its.isNext()) {
+            auto p = its.get();
+            Lap.DrawKernel<3>(Particles, p.getKey());
+            Particles.write_frame("LapKer",ctr);
+            for(int j=0;j<BULK.size();j++) {
+                auto p1 = BULK.get<0>(j);
+                Particles.getProp<3>(p1) =  0;
+            }
+            ++its;
+            ctr++;
+        }
+
+/*        double dt=0.003;
         double nu=0.01;
-        int n=150;
+        int n=5;
         std::cout<<"Init Done"<<std::endl;
-        for(int i =1; i<=n ;i++)
+        for(int i =0; i<=n ;i++)
         {   dW=Dx(Sf)*Dy(W)-Dy(Sf)*Dx(W)+nu*Lap(W);
             //Lap.DrawKernel<3>(Particles,837);
             Wnew=W+dt*dW;
@@ -841,7 +853,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
             Particles.write_frame("Re1000-1e-3-Lid_sf",i);
             //if (i%10==0)
             std::cout<<i<<std::endl;
-        }
+        }*/
     }
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     BOOST_AUTO_TEST_CASE(dcpse_poisson_Robin_anal) {
@@ -2040,7 +2052,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
         }
 
 
-        double t=0;
+/*        double t=0;
         while (t<2)
         {
             dc=Lap(v);
@@ -2048,7 +2060,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
             v=dc;
             domain.deleteGhost();
             domain.write("Diffusion");
-        }
+        }*/
 
         //auto flux = Dx(v) + v;
 
