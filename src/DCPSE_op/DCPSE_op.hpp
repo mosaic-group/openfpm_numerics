@@ -965,6 +965,64 @@ public:
 };
 
 
+class Derivative_xx
+{
+
+    void * dcpse;
+
+public:
+
+    template<typename particles_type>
+    Derivative_xx(particles_type & parts, unsigned int ord ,typename particles_type::stype rCut,double scaling_factor=dcpse_scaling_factor)
+    {
+        Point<particles_type::dims,unsigned int> p;
+        p.zero();
+        p.get(0) = 2;
+        p.get(1) = 0;
+
+        dcpse = new Dcpse<particles_type::dims,particles_type>(parts,p, ord, rCut,dcpse_scaling_factor);
+    }
+
+    template<typename operand_type>
+
+    vector_dist_expression_op<operand_type,Dcpse<operand_type::vtype::dims,typename operand_type::vtype>,VECT_DCPSE> operator()(operand_type arg)
+    {
+        typedef Dcpse<operand_type::vtype::dims,typename operand_type::vtype> dcpse_type;
+
+        return vector_dist_expression_op<operand_type,dcpse_type,VECT_DCPSE>(arg,*(dcpse_type *)dcpse);
+    }
+};
+
+
+class Derivative_yy
+{
+
+    void * dcpse;
+
+public:
+
+    template<typename particles_type>
+    Derivative_yy(particles_type & parts, unsigned int ord ,typename particles_type::stype rCut,double scaling_factor=dcpse_scaling_factor)
+    {
+        Point<particles_type::dims,unsigned int> p;
+        p.zero();
+        p.get(0) = 0;
+        p.get(1) = 2;
+
+        dcpse = new Dcpse<particles_type::dims,particles_type>(parts,p, ord, rCut,dcpse_scaling_factor);
+    }
+
+    template<typename operand_type>
+
+    vector_dist_expression_op<operand_type,Dcpse<operand_type::vtype::dims,typename operand_type::vtype>,VECT_DCPSE> operator()(operand_type arg)
+    {
+        typedef Dcpse<operand_type::vtype::dims,typename operand_type::vtype> dcpse_type;
+
+        return vector_dist_expression_op<operand_type,dcpse_type,VECT_DCPSE>(arg,*(dcpse_type *)dcpse);
+    }
+};
+
+
 //template<typename operand_type1, typename operand_type2/*, typename sfinae=typename std::enable_if<
 //																						std::is_same<typename operand_type1::it_is_a_node,int>::value
 //																						>::type*/ >

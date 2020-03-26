@@ -50,7 +50,326 @@ const bool equations2::boundary[] = {NON_PERIODIC, NON_PERIODIC};
 //struct Debug;
 
 BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests2)
-    BOOST_AUTO_TEST_CASE(dcpse_Lid_mirror) {
+
+    BOOST_AUTO_TEST_CASE(dcpse_Lid_Stokes) {
+        const size_t sz[2] = {31,31};
+        Box<2, double> box({0, 0}, {1,1});
+        size_t bc[2] = {NON_PERIODIC, NON_PERIODIC};
+        double spacing = box.getHigh(0) / (sz[0] - 1);
+        Ghost<2, double> ghost(spacing * 3);
+        double rCut = 0.5 * spacing;
+        //                                  P        V                 v_star           RHS            V_BC    Helmholtz
+        vector_dist<2, double, aggregate<double,VectorS<2, double>,VectorS<2, double>,double,VectorS<2, double>,double,    double>> Particles(0, box, bc, ghost);
+        auto it = Particles.getGridIterator(sz);
+        while (it.isNext()) {
+            Particles.add();
+            auto key = it.get();
+            double x = key.get(0) * it.getSpacing(0);
+            Particles.getLastPos()[0] = x;
+            double y = key.get(1) * it.getSpacing(1);
+            Particles.getLastPos()[1] = y;
+            ++it;
+        }
+
+        Particles.map();
+        Particles.ghost_get<0>();
+
+        openfpm::vector<aggregate<int>> bulk;
+        openfpm::vector<aggregate<int>> up_p;
+        openfpm::vector<aggregate<int>> dw_p;
+        openfpm::vector<aggregate<int>> l_p;
+        openfpm::vector<aggregate<int>> r_p;
+
+
+        auto P = getV<0>(Particles);
+        auto V = getV<1>(Particles);
+        auto V_star = getV<2>(Particles);
+        auto RHS = getV<3>(Particles);
+        auto V_BC = getV<4>(Particles);
+        auto H = getV<5>(Particles);
+        auto temp=getV<6>(Particles);
+
+
+        // Here fill up the boxes for particle detection.
+
+        Box<2, double> up({box.getLow(0) + spacing / 2.0, box.getHigh(1) - spacing / 2.0},
+                          {box.getHigh(0) - spacing / 2.0, box.getHigh(1) + spacing / 2.0});
+
+        Box<2, double> down({box.getLow(0) - spacing / 2.0, box.getLow(1) - spacing / 2.0},
+                            {box.getHigh(0) + spacing / 2.0, box.getLow(1) + spacing / 2.0});
+
+        Box<2, double> left({box.getLow(0) - spacing / 2.0, box.getLow(1) + spacing / 2.0},
+                            {box.getLow(0) + spacing / 2.0, box.getHigh(1) + spacing / 2.0});
+
+        Box<2, double> right({box.getHigh(0) - spacing / 2.0, box.getLow(1) + spacing / 2.0},
+                             {box.getHigh(0) + spacing / 2.0, box.getHigh(1) + spacing / 2.0});
+
+        openfpm::vector<Box<2, double>> boxes;
+        boxes.add(up);
+        boxes.add(down);
+        boxes.add(left);
+        boxes.add(right);
+        VTKWriter<openfpm::vector<Box<2, double>>, VECTOR_BOX> vtk_box;
+        vtk_box.add(boxes);
+        vtk_box.write("boxes.vtk");
+        auto it2 = Particles.getDomainIterator();
+
+        while (it2.isNext()) {
+            auto p = it2.get();
+            Point<2, double> xp = Particles.getPos(p);
+            Particles.getProp<3>(p) =0;
+            if (up.isInside(xp) == true) {
+                up_p.add();
+                up_p.last().get<0>() = p.getKey();
+                Particles.getProp<1>(p)[0] =  1;
+                Particles.getProp<1>(p)[1] =  0;
+            }
+            else if (down.isInside(xp) == true) {
+                dw_p.add();
+                dw_p.last().get<0>() = p.getKey();
+                Particles.getProp<1>(p)[0] =  0;
+                Particles.getProp<1>(p)[1] =  0;
+            }
+            else if (left.isInside(xp) == true) {
+                l_p.add();
+                l_p.last().get<0>() = p.getKey();
+                Particles.getProp<1>(p)[0] =  0;
+                Particles.getProp<1>(p)[1] =  0;
+            }
+            else if (right.isInside(xp) == true) {
+                r_p.add();
+                r_p.last().get<0>() = p.getKey();
+                Particles.getProp<1>(p)[0] =  0;
+                Particles.getProp<1>(p)[1] =  0;
+            }
+            else {
+                bulk.add();
+                bulk.last().get<0>() = p.getKey();
+            }
+            ++it2;
+        }
+        V_BC=V;
+
+        Derivative_x Dx(Particles, 2, rCut,1.9);
+        Derivative_y Dy(Particles, 2, rCut,1.9);
+        Gradient Grad(Particles, 2, rCut,1.9);
+        Laplacian Lap(Particles, 2, rCut, 1.9);
+        Advection Adv(Particles, 2, rCut, 1.9);
+        Divergence Div(Particles, 2, rCut, 1.9);
+        int n=10;
+        double nu=1e-2;
+        for(int i=0; i<=n ;i++)
+        {   RHS=-Grad(P);
+            DCPSE_scheme<equations2,decltype(Particles)> Solver(2 * rCut, Particles);
+            auto Stokes = Adv(V,V_star)-nu*Lap(V_star);
+            Solver.impose(Stokes,bulk,prop_id<3>());
+            Solver.impose(V_star, up_p,prop_id<4>());
+            Solver.impose(V_star, r_p, 0);
+            Solver.impose(V_star, dw_p,0);
+            Solver.impose(V_star, l_p, 0);
+            Solver.solve(V_star);
+            std::cout << "Stokes Solved" << std::endl;
+            RHS=Div(V_star);
+            DCPSE_scheme<equations2,decltype(Particles)> SolverH(2 * rCut, Particles,options_solver::LAGRANGE_MULTIPLIER);
+            auto Helmholtz = Lap(H);
+            auto D_y=Dy(H);
+            auto D_x=Dx(H);
+            SolverH.impose(Helmholtz,bulk,prop_id<3>());
+            SolverH.impose(D_y, up_p,0);
+            SolverH.impose(D_x, r_p, 0);
+            SolverH.impose(-D_y, dw_p,0);
+            SolverH.impose(-D_x, l_p,0);
+            SolverH.solve(H);
+            std::cout << "Helmholtz Solved" << std::endl;
+            V=V_star-Grad(H);
+            P=P+Lap(H);
+            std::cout << "V,P Corrected" << std::endl;
+            Particles.write_frame("Stokes",i);
+
+        }
+    }
+
+
+
+
+
+
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+    BOOST_AUTO_TEST_CASE(dcpse_Lid_normal) {
+        const size_t sz[2] = {31,31};
+        Box<2, double> box({0, 0}, {1,1});
+        size_t bc[2] = {NON_PERIODIC, NON_PERIODIC};
+        double spacing = box.getHigh(0) / (sz[0] - 1);
+        Ghost<2, double> ghost(spacing * 3);
+        double rCut = 0.5 * spacing;
+        //                                  P        V                 Dv              RHS    Vtemp                   Proj_lap
+        vector_dist<2, double, aggregate<double,VectorS<2, double>,VectorS<2, double>,double,VectorS<2, double>,double,double>> Particles(0, box, bc, ghost);
+        auto it = Particles.getGridIterator(sz);
+        while (it.isNext()) {
+            Particles.add();
+            auto key = it.get();
+            double x = key.get(0) * it.getSpacing(0);
+            Particles.getLastPos()[0] = x;
+            double y = key.get(1) * it.getSpacing(1);
+            Particles.getLastPos()[1] = y;
+            ++it;
+        }
+
+        Particles.map();
+        Particles.ghost_get<0>();
+
+        openfpm::vector<aggregate<int>> bulk;
+        openfpm::vector<aggregate<int>> up_p;
+        openfpm::vector<aggregate<int>> dw_p;
+        openfpm::vector<aggregate<int>> l_p;
+        openfpm::vector<aggregate<int>> r_p;
+
+
+        auto P = getV<0>(Particles);
+        auto V = getV<1>(Particles);
+        auto dV = getV<2>(Particles);
+        auto RHS = getV<3>(Particles);
+        auto Vtemp = getV<4>(Particles);
+        auto divV = getV<5>(Particles);
+        auto Proj_lap=getV<6>(Particles);
+
+
+        // Here fill up the boxes for particle detection.
+
+        Box<2, double> up({box.getLow(0) + spacing / 2.0, box.getHigh(1) - spacing / 2.0},
+                          {box.getHigh(0) - spacing / 2.0, box.getHigh(1) + spacing / 2.0});
+
+        Box<2, double> down({box.getLow(0) - spacing / 2.0, box.getLow(1) - spacing / 2.0},
+                            {box.getHigh(0) + spacing / 2.0, box.getLow(1) + spacing / 2.0});
+
+        Box<2, double> left({box.getLow(0) - spacing / 2.0, box.getLow(1) + spacing / 2.0},
+                            {box.getLow(0) + spacing / 2.0, box.getHigh(1) + spacing / 2.0});
+
+        Box<2, double> right({box.getHigh(0) - spacing / 2.0, box.getLow(1) + spacing / 2.0},
+                             {box.getHigh(0) + spacing / 2.0, box.getHigh(1) + spacing / 2.0});
+
+        openfpm::vector<Box<2, double>> boxes;
+        boxes.add(up);
+        boxes.add(down);
+        boxes.add(left);
+        boxes.add(right);
+        VTKWriter<openfpm::vector<Box<2, double>>, VECTOR_BOX> vtk_box;
+        vtk_box.add(boxes);
+        vtk_box.write("boxes.vtk");
+        auto it2 = Particles.getDomainIterator();
+
+        while (it2.isNext()) {
+            auto p = it2.get();
+            Point<2, double> xp = Particles.getPos(p);
+            Particles.getProp<3>(p) =0;
+            if (up.isInside(xp) == true) {
+                up_p.add();
+                up_p.last().get<0>() = p.getKey();
+                Particles.getProp<1>(p)[0] =  1;
+                Particles.getProp<1>(p)[1] =  0;
+            }
+            else if (down.isInside(xp) == true) {
+                dw_p.add();
+                dw_p.last().get<0>() = p.getKey();
+                Particles.getProp<1>(p)[0] =  0;
+                Particles.getProp<1>(p)[1] =  0;
+            }
+            else if (left.isInside(xp) == true) {
+                l_p.add();
+                l_p.last().get<0>() = p.getKey();
+                Particles.getProp<1>(p)[0] =  0;
+                Particles.getProp<1>(p)[1] =  0;
+            }
+            else if (right.isInside(xp) == true) {
+                r_p.add();
+                r_p.last().get<0>() = p.getKey();
+                Particles.getProp<1>(p)[0] =  0;
+                Particles.getProp<1>(p)[1] =  0;
+            }
+            else {
+                bulk.add();
+                bulk.last().get<0>() = p.getKey();
+            }
+            ++it2;
+        }
+
+        Derivative_x Dx(Particles, 2, rCut,1.9);
+        Derivative_y Dy(Particles, 2, rCut,1.9);
+        Gradient Grad(Particles, 2, rCut,1.9);
+        Laplacian Lap(Particles, 2, rCut, 1.9);
+        Advection Adv(Particles, 2, rCut, 1.9);
+        Divergence Div(Particles, 2, rCut, 1.9);
+        double dt=3e-3;
+        int n=50;
+        double nu=1e-2;
+        dV=dt*(nu*Lap(V)-Adv(V,V));
+        DCPSE_scheme<equations2,decltype(Particles)> Solver(2 * rCut, Particles,options_solver::LAGRANGE_MULTIPLIER);
+        auto Pressure_Poisson = Lap(P);
+        auto D_y=Dy(P);
+        auto D_x=Dx(P);
+        Solver.impose(Pressure_Poisson,bulk,prop_id<3>());
+        Solver.impose(D_y, up_p,0);
+        Solver.impose(D_x, r_p, 0);
+        Solver.impose(-D_y, dw_p,0);
+        Solver.impose(-D_x, l_p,0);
+        Solver.solve(P);
+        std::cout << "Poisson Solved" << std::endl;
+        Vtemp = V + (dV - dt*Grad(P));
+        V = Vtemp;
+        divV=Div(V);
+        Particles.write_frame("Re100-3e-3-Lid",0);
+        for(int i=1; i<=n ;i++)
+        {   dV=dt*(nu*Lap(V)-Adv(V,V));
+            RHS=1/dt*Div(dV);
+            DCPSE_scheme<equations2,decltype(Particles)> Solver(2 * rCut, Particles,options_solver::LAGRANGE_MULTIPLIER);
+            auto Pressure_Poisson = Lap(P);
+            auto D_y=Dy(P);
+            auto D_x=Dx(P);
+            Solver.impose(Pressure_Poisson,bulk,prop_id<3>());
+            Solver.impose(D_y, up_p,0);
+            Solver.impose(D_x, r_p, 0);
+            Solver.impose(-D_y, dw_p,0);
+            Solver.impose(-D_x, l_p,0);
+            Solver.solve(P);
+            Vtemp = V + (dV - dt*Grad(P));
+            V = Vtemp;
+            divV = Div(V);
+            for(int j=0;j<up_p.size();j++)
+            {   auto p=up_p.get<0>(j);
+                Particles.getProp<1>(p)[0] =  1;
+                Particles.getProp<1>(p)[1] =  0;
+            }
+            for(int j=0;j<l_p.size();j++)
+            {   auto p=l_p.get<0>(j);
+                Particles.getProp<1>(p)[0] =  0;
+                Particles.getProp<1>(p)[1] =  0;
+            }
+            for(int j=0;j<r_p.size();j++)
+            {   auto p=r_p.get<0>(j);
+                Particles.getProp<1>(p)[0] =  0;
+                Particles.getProp<1>(p)[1] =  0;
+            }
+            for(int j=0;j<dw_p.size();j++)
+            {   auto p=dw_p.get<0>(j);
+                Particles.getProp<1>(p)[0] =  0;
+                Particles.getProp<1>(p)[1] =  0;
+            }
+            //if (i%10==0)
+            Particles.write_frame("Re100-3e-3-Lid",i);
+            std::cout<<i<<std::endl;
+            if (i==100)
+                dt=5e-4;
+        }
+    }
+
+
+/*    BOOST_AUTO_TEST_CASE(dcpse_Lid_mirror) {
         const size_t sz[2] = {81,81};
         Box<2, double> box_mirror({-0.3, -0.3}, {1.3,1.3});
         Box<2, double> box_domain({0.0, 0.0}, {1.0,1.0});
@@ -90,7 +409,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests2)
         Box<2, double> right({box_domain.getHigh(0) - spacing / 2.0, box_domain.getLow(1) + spacing / 2.0},
                              {box_domain.getHigh(0) + spacing / 2.0, box_domain.getHigh(1) - spacing / 2.0});
 
-        /*Box<2, double> up_m({box_domain.getLow(0) + 7*spacing / 2.0, box_domain.getHigh(1) - 5*spacing / 2.0},
+        *//*Box<2, double> up_m({box_domain.getLow(0) + 7*spacing / 2.0, box_domain.getHigh(1) - 5*spacing / 2.0},
                             {box_domain.getHigh(0) - 7* spacing / 2.0, box_domain.getHigh(1) + spacing / 2.0});
 
         Box<2, double> down_m({box_domain.getLow(0)  + 7*spacing / 2.0, box_domain.getLow(1) - spacing / 2.0},
@@ -101,7 +420,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests2)
 
         Box<2, double> right_m({box_domain.getHigh(0) - 5*spacing / 2.0, box_domain.getLow(1) + 7*spacing / 2.0},
                                {box_domain.getHigh(0) + spacing / 2.0, box_domain.getHigh(1) - 7*spacing / 2.0});
-*/
+*//*
         Box<2, double> up_mI({box_domain.getLow(0) + spacing / 2.0, box_domain.getHigh(1) - 7*spacing / 2.0},
                              {box_domain.getHigh(0) - spacing / 2.0, box_domain.getHigh(1) - spacing / 2.0});
 
@@ -125,10 +444,10 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests2)
         boxes.add(down);
         boxes.add(left);
         boxes.add(right);
-        /*boxes.add(up_m);
+        *//*boxes.add(up_m);
         boxes.add(down_m);
         boxes.add(left_m);
-        boxes.add(right_m);*/
+        boxes.add(right_m);*//*
         boxes.add(up_mI);
         boxes.add(down_mI);
         boxes.add(left_mI);
@@ -201,7 +520,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests2)
                 r_p.add();
                 r_p.last().get<0>() = p.getKey();
             }
-/*            else if (up_m.isInside(xp) == true){
+*//*            else if (up_m.isInside(xp) == true){
                 up_pM.add();
                 up_pM.last().get<0>() = p.getKey();
             }
@@ -216,7 +535,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests2)
             else if (right_m.isInside(xp) == true) {
                 r_pM.add();
                 r_pM.last().get<0>() = p.getKey();
-            }*/
+            }*//*
 
 
             else if(Bulk_box.isInside(xp) == true) {
@@ -367,14 +686,14 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests2)
                 if (left_mI.isInside(xp) == true) {
                     if (down_mI.isInside(xp) == true)
                     {
-/*
+*//*
                         Particles.add();
                         Particles.getLastPos()[0] = box_domain.getLow(0) - Particles.getPos(p)[0];
                         Particles.getLastPos()[1] = Particles.getPos(p)[1];
 
                         Particles.getLastProp<1>()[0] = 0.0;
                         Particles.getLastProp<1>()[1] = 0.0;
-*/
+*//*
                     }
                     else if (up_mI.isInside(xp) == true)
                     {
@@ -421,12 +740,12 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests2)
                     }
                 }
                 if(bulk_box.isInside(xp)==true){
-/*                    if (bulk_ref == false)
+*//*                    if (bulk_ref == false)
                     {
                         bulk_ref = true;
                         ref_p.add();
                         ref_p.last().get<0>() = p.getKey();
-                    }*/
+                    }*//*
                     bulk.add();
                     bulk.last().get<0>() = p.getKey();
                 }
@@ -545,7 +864,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests2)
             std::cout<<i<<std::endl;
         }
 
-    }
+    }*/
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -561,7 +880,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests2)
 
 
 
-    BOOST_AUTO_TEST_CASE(dcpse_Lid_mirr) {
+   /* BOOST_AUTO_TEST_CASE(dcpse_Lid_mirr) {
         const size_t sz[2] = {31,31};
         Box<2, double> box({0, 0}, {1,1});
         size_t bc[2] = {NON_PERIODIC, NON_PERIODIC};
@@ -871,14 +1190,14 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests2)
             }
             Particles.write_frame("Re1000-1e-4-Lid",i);
             return;
-/*          k1=dt*(dV-Grad(P));
+*//*          k1=dt*(dV-Grad(P));
             Vtemp=V+k1*0.5;
             k2=dt*(nu*Lap(Vtemp)-Adv(Vtemp,Vtemp)-Grad(P));
             Vtemp=V+k2*0.5;
             k3=dt*(nu*Lap(Vtemp)-Adv(Vtemp,Vtemp)-Grad(P));
             Vtemp=V+k3;
             k4=dt*(nu*Lap(Vtemp)-Adv(Vtemp,Vtemp)-Grad(P));
-            Vtemp=V+0.16666666666*(k1+2*k2+2*k3+k4);*/
+            Vtemp=V+0.16666666666*(k1+2*k2+2*k3+k4);*//*
             Vtemp=dV-dt*Grad_P(P);
             V=Vtemp;
             for(int j=0;j<up_p.size();j++)
@@ -916,7 +1235,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests2)
             Particles.write_frame("Re1000-1e-4-Lid",i);
             std::cout<<i<<std::endl;
         }
-    }
+    }*/
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -929,7 +1248,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests2)
 
 
 
-    BOOST_AUTO_TEST_CASE(dcpse_Lid2) {
+/*    BOOST_AUTO_TEST_CASE(dcpse_Lid2) {
         const size_t sz[2] = {31, 31};
         Box<2, double> box({0, 0}, {1, 1});
         size_t bc[2] = {NON_PERIODIC, NON_PERIODIC};
@@ -984,7 +1303,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests2)
 
         // Here fill up the boxes for particle detection.
 
-/*
+*//*
         Box<2, double> up({box.getLow(0) - spacing / 2.0, box.getHigh(1) - spacing / 2.0},
                           {box.getHigh(0) + spacing / 2.0, box.getHigh(1) + spacing / 2.0});
 
@@ -1008,7 +1327,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests2)
 
         Box<2, double> right_l({box.getHigh(0) - 3*spacing / 2.0, box.getLow(1) + 3*spacing / 2.0},
                                {box.getHigh(0) - spacing / 2.0, box.getHigh(1) - 3*spacing / 2.0});
-*/
+*//*
         Box<2, double> up({box.getLow(0) + 3 * spacing / 2.0, box.getHigh(1) - spacing / 2.0},
                           {box.getHigh(0) - 3 * spacing / 2.0, box.getHigh(1) + spacing / 2.0});
 
@@ -1185,7 +1504,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests2)
         Particles.getProp<1>(959)[1] = 0;
         Particles.getProp<1>(931)[0] = 1;
 
-        /* for(int j=0;j<up_p1.size();j++)
+        *//* for(int j=0;j<up_p1.size();j++)
          {
              auto p1=up_p1.get<0>(j);
              Point<2, double> xp = Particles.getPos(p1);
@@ -1208,9 +1527,9 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests2)
              auto p1=dw_p1.get<0>(j);
              Point<2, double> xp = Particles.getPos(p1);
              Particles.getProp<3>(p1)=  xp[0];
-         }*/
+         }*//*
         Particles.write_frame("Re1000-1e-4-Lid", 0);
-/*
+*//*
         for(int j=0;j<up_p1.size();j++)
         { if(j==0)
             {   auto p=up_p.get<0>(j);
@@ -1259,7 +1578,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests2)
                 Particles.getProp<3>(p) =  Particles.getProp<3>(p1);
                 Particles.getProp<3>(p2)=  Particles.getProp<3>(p1);
             }
-        }*/
+        }*//*
         Particles.write_frame("Re1000-1e-4-Lid", 1);
         Derivative_x Dx(Particles, 2, rCut, 2);
         Derivative_y Dy(Particles, 2, rCut, 2);
@@ -1270,7 +1589,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests2)
         double dt = 5e-4;
         int n = 3;
         double nu = 1e-2;
-/*        divV=Div(V);
+*//*        divV=Div(V);
         DCPSE_scheme<equations2,decltype(Particles)> Solver(2*rCut, Particles);
         auto Pressure_Poisson = Lap(P);
         auto D_y=Dy(P);
@@ -1287,14 +1606,14 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests2)
         V=V-Grad(P);
         Particles.write_frame("Re1000-1e-4-Lid",0);
         std::cout<<"Init Done"<<std::endl;
-        return;*/
+        return;*//*
         for (int i = 2; i <= n; i++) {
             dV = dt * (nu * Lap(V) - Adv(V, V));
             RHS = 1 / dt * Div(dV);
             std::cout << "RHS Done" << std::endl;
 
             //Neumann Copy
-/*
+*//*
             for(int j=0;j<up_p1.size();j++)
             { if(j==0)
                 {   auto p=up_p.get<0>(j);
@@ -1343,7 +1662,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests2)
                     Particles.getProp<3>(p) =  Particles.getProp<3>(p1);
                     Particles.getProp<3>(p2)=  Particles.getProp<3>(p1);
                 }
-            }*/
+            }*//*
 
             vector_dist_expression_op<void, void, VECT_COPY_N_TO_N> vcp_up(up_p, up_p1);
             vector_dist_expression_op<void, void, VECT_COPY_N_TO_N> vcp_l(l_p, l_p1);
@@ -1366,10 +1685,10 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests2)
             Solver.impose(vcp_ur, UR_p, 0);
             Solver.impose(vcp_dl, LL_p, 0);
             Solver.impose(vcp_dr, LR_p, 0);
-/*            Solver.impose(P, up_p, up_p1);
+*//*            Solver.impose(P, up_p, up_p1);
             Solver.impose(P, dw_p,prop_id<3>());
             Solver.impose(P, l_p,prop_id<3>());
-            Solver.impose(P, r_p, prop_id<3>());*/
+            Solver.impose(P, r_p, prop_id<3>());*//*
             Solver.impose(P, ref_p, 0);
             Solver.solve(P);
             std::cout << "Poisson Solved" << std::endl;
@@ -1404,14 +1723,14 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests2)
             Particles.write_frame("Re1000-1e-4-Lid", i);
             std::cout << i << std::endl;
         }
-    }
+    }*/
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
 
 
 
-
+/*
         BOOST_AUTO_TEST_CASE(dcpse_Lid_copy_RHS) {
             const size_t sz[2] = {31,31};
             Box<2, double> box({0, 0}, {1,1});
@@ -1447,14 +1766,14 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests2)
             openfpm::vector<aggregate<int>> ref_p;
             openfpm::vector<aggregate<int>> ref_p2;
             openfpm::vector<aggregate<int>> FullBulk;
-            /*openfpm::vector<aggregate<int>> UL_p;
+            *//*openfpm::vector<aggregate<int>> UL_p;
             openfpm::vector<aggregate<int>> UL_p_ref;
             openfpm::vector<aggregate<int>> UR_p;
             openfpm::vector<aggregate<int>> UR_p_ref;
             openfpm::vector<aggregate<int>> LL_p;
             openfpm::vector<aggregate<int>> LL_p_ref;
             openfpm::vector<aggregate<int>> LR_p;
-            openfpm::vector<aggregate<int>> LR_p_ref;*/
+            openfpm::vector<aggregate<int>> LR_p_ref;*//*
 
             auto P = getV<0>(Particles);
             auto V = getV<1>(Particles);
@@ -1657,7 +1976,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests2)
             double dt=5e-4;
             int n=3;
             double nu=1e-2;
-/*        divV=Div(V);
+*//*        divV=Div(V);
         DCPSE_scheme<equations2,decltype(Particles)> Solver(2*rCut, Particles);
         auto Pressure_Poisson = Lap(P);
         auto D_y=Dy(P);
@@ -1674,13 +1993,13 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests2)
         V=V-Grad(P);
         Particles.write_frame("Re1000-1e-4-Lid",0);
         std::cout<<"Init Done"<<std::endl;
-        return;*/
+        return;*//*
             for(int i=2; i<=n ;i++)
             {   dV=V+dt*(nu*Lap(V)-Adv(V,V));
                 RHS=1/dt*Div(dV);
                 std::cout<<"RHS Done"<<std::endl;
 
-  /*              //Neumann Copy
+  *//*              //Neumann Copy
 
                 for(int j=0;j<up_p1.size();j++)
                 { if(j==0)
@@ -1779,16 +2098,16 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests2)
                         Particles.getProp<3>(p2)=  Particles.getProp<3>(p1);
                     }
                 }
-*/
+*//*
                 DCPSE_scheme<equations2,decltype(Particles)> Solver(2*rCut, Particles);
                 auto Pressure_Poisson = Lap(P);
                 auto D_y=Dy(P);
                 auto D_x=Dx(P);
                 Solver.impose(Pressure_Poisson,FullBulk,prop_id<3>());
-/*                Solver.impose(P, up_p,0);
+*//*                Solver.impose(P, up_p,0);
                 Solver.impose(P, dw_p,0);
                 Solver.impose(P, l_p,0);
-                Solver.impose(P, r_p, 0);*/
+                Solver.impose(P, r_p, 0);*//*
                 Solver.impose(P, ref_p, 0);
                 Solver.solve(P);
                 std::cout<<"Poisson Solved"<<std::endl;
@@ -1830,172 +2149,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests2)
 
 
 
-    BOOST_AUTO_TEST_CASE(dcpse_Lid_normal) {
-        const size_t sz[2] = {31,31};
-        Box<2, double> box({0, 0}, {1,1});
-        size_t bc[2] = {NON_PERIODIC, NON_PERIODIC};
-        double spacing = box.getHigh(0) / (sz[0] - 1);
-        Ghost<2, double> ghost(spacing * 3);
-        double rCut = 0.5 * spacing;
-        //                                  P        V                 Dv              RHS    Vtemp                   Proj_lap
-        vector_dist<2, double, aggregate<double,VectorS<2, double>,VectorS<2, double>,double,VectorS<2, double>,double,double>> Particles(0, box, bc, ghost);
-        auto it = Particles.getGridIterator(sz);
-        while (it.isNext()) {
-            Particles.add();
-            auto key = it.get();
-            double x = key.get(0) * it.getSpacing(0);
-            Particles.getLastPos()[0] = x;
-            double y = key.get(1) * it.getSpacing(1);
-            Particles.getLastPos()[1] = y;
-            ++it;
-        }
 
-        Particles.map();
-        Particles.ghost_get<0>();
-
-        openfpm::vector<aggregate<int>> bulk;
-        openfpm::vector<aggregate<int>> up_p;
-        openfpm::vector<aggregate<int>> dw_p;
-        openfpm::vector<aggregate<int>> l_p;
-        openfpm::vector<aggregate<int>> r_p;
-
-
-        auto P = getV<0>(Particles);
-        auto V = getV<1>(Particles);
-        auto dV = getV<2>(Particles);
-        auto RHS = getV<3>(Particles);
-        auto Vtemp = getV<4>(Particles);
-        auto divV = getV<5>(Particles);
-        auto Proj_lap=getV<6>(Particles);
-
-
-        // Here fill up the boxes for particle detection.
-
-        Box<2, double> up({box.getLow(0) + spacing / 2.0, box.getHigh(1) - spacing / 2.0},
-                          {box.getHigh(0) - spacing / 2.0, box.getHigh(1) + spacing / 2.0});
-
-        Box<2, double> down({box.getLow(0) - spacing / 2.0, box.getLow(1) - spacing / 2.0},
-                            {box.getHigh(0) + spacing / 2.0, box.getLow(1) + spacing / 2.0});
-
-        Box<2, double> left({box.getLow(0) - spacing / 2.0, box.getLow(1) + spacing / 2.0},
-                            {box.getLow(0) + spacing / 2.0, box.getHigh(1) + spacing / 2.0});
-
-        Box<2, double> right({box.getHigh(0) - spacing / 2.0, box.getLow(1) + spacing / 2.0},
-                             {box.getHigh(0) + spacing / 2.0, box.getHigh(1) + spacing / 2.0});
-
-        openfpm::vector<Box<2, double>> boxes;
-        boxes.add(up);
-        boxes.add(down);
-        boxes.add(left);
-        boxes.add(right);
-        VTKWriter<openfpm::vector<Box<2, double>>, VECTOR_BOX> vtk_box;
-        vtk_box.add(boxes);
-        vtk_box.write("boxes.vtk");
-        auto it2 = Particles.getDomainIterator();
-
-        while (it2.isNext()) {
-            auto p = it2.get();
-            Point<2, double> xp = Particles.getPos(p);
-            Particles.getProp<3>(p) =0;
-            if (up.isInside(xp) == true) {
-                up_p.add();
-                up_p.last().get<0>() = p.getKey();
-                Particles.getProp<1>(p)[0] =  1;
-                Particles.getProp<1>(p)[1] =  0;
-            }
-            else if (down.isInside(xp) == true) {
-                dw_p.add();
-                dw_p.last().get<0>() = p.getKey();
-                Particles.getProp<1>(p)[0] =  0;
-                Particles.getProp<1>(p)[1] =  0;
-            }
-            else if (left.isInside(xp) == true) {
-                l_p.add();
-                l_p.last().get<0>() = p.getKey();
-                Particles.getProp<1>(p)[0] =  0;
-                Particles.getProp<1>(p)[1] =  0;
-            }
-            else if (right.isInside(xp) == true) {
-                r_p.add();
-                r_p.last().get<0>() = p.getKey();
-                Particles.getProp<1>(p)[0] =  0;
-                Particles.getProp<1>(p)[1] =  0;
-            }
-            else {
-                bulk.add();
-                bulk.last().get<0>() = p.getKey();
-            }
-            ++it2;
-        }
-
-        Derivative_x Dx(Particles, 2, rCut,1.9);
-        Derivative_y Dy(Particles, 2, rCut,1.9);
-        Gradient Grad(Particles, 2, rCut,1.9);
-        Laplacian Lap(Particles, 2, rCut, 1.9);
-        Advection Adv(Particles, 2, rCut, 1.9);
-        Divergence Div(Particles, 2, rCut, 1.9);
-        double dt=3e-3;
-        int n=50;
-        double nu=1e-2;
-        dV=dt*(nu*Lap(V)-Adv(V,V));
-        DCPSE_scheme<equations2,decltype(Particles)> Solver(2 * rCut, Particles,options_solver::LAGRANGE_MULTIPLIER);
-        auto Pressure_Poisson = Lap(P);
-        auto D_y=Dy(P);
-        auto D_x=Dx(P);
-        Solver.impose(Pressure_Poisson,bulk,prop_id<3>());
-        Solver.impose(D_y, up_p,0);
-        Solver.impose(D_x, r_p, 0);
-        Solver.impose(-D_y, dw_p,0);
-        Solver.impose(-D_x, l_p,0);
-        Solver.solve(P);
-        std::cout << "Poisson Solved" << std::endl;
-        Vtemp = V + (dV - dt*Grad(P));
-        V = Vtemp;
-        divV=Div(V);
-        Particles.write_frame("Re100-3e-3-Lid",0);
-        for(int i=1; i<=n ;i++)
-        {   dV=dt*(nu*Lap(V)-Adv(V,V));
-            RHS=1/dt*Div(dV);
-            DCPSE_scheme<equations2,decltype(Particles)> Solver(2 * rCut, Particles,options_solver::LAGRANGE_MULTIPLIER);
-            auto Pressure_Poisson = Lap(P);
-            auto D_y=Dy(P);
-            auto D_x=Dx(P);
-            Solver.impose(Pressure_Poisson,bulk,prop_id<3>());
-            Solver.impose(D_y, up_p,0);
-            Solver.impose(D_x, r_p, 0);
-            Solver.impose(-D_y, dw_p,0);
-            Solver.impose(-D_x, l_p,0);
-            Solver.solve(P);
-            Vtemp = V + (dV - dt*Grad(P));
-            V = Vtemp;
-            divV = Div(V);
-            for(int j=0;j<up_p.size();j++)
-            {   auto p=up_p.get<0>(j);
-                Particles.getProp<1>(p)[0] =  1;
-                Particles.getProp<1>(p)[1] =  0;
-            }
-            for(int j=0;j<l_p.size();j++)
-            {   auto p=l_p.get<0>(j);
-                Particles.getProp<1>(p)[0] =  0;
-                Particles.getProp<1>(p)[1] =  0;
-            }
-            for(int j=0;j<r_p.size();j++)
-            {   auto p=r_p.get<0>(j);
-                Particles.getProp<1>(p)[0] =  0;
-                Particles.getProp<1>(p)[1] =  0;
-            }
-            for(int j=0;j<dw_p.size();j++)
-            {   auto p=dw_p.get<0>(j);
-                Particles.getProp<1>(p)[0] =  0;
-                Particles.getProp<1>(p)[1] =  0;
-            }
-            //if (i%10==0)
-            Particles.write_frame("Re100-3e-3-Lid",i);
-            std::cout<<i<<std::endl;
-            if (i==100)
-                dt=5e-4;
-        }
-    }
 
 
 
@@ -2007,7 +2161,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests2)
 
 
 
-/*
+*//*
 
     BOOST_AUTO_TEST_CASE(dcpse_Lid_RotProj) {
         const size_t sz[2] = {31,31};

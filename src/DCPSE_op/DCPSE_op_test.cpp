@@ -50,9 +50,11 @@ const bool equations::boundary[] = {NON_PERIODIC, NON_PERIODIC};
 BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
 
     BOOST_AUTO_TEST_CASE(dcpse_Active2D) {
-        const size_t sz[2] = {51, 51};
+        const size_t sz[2] = {31, 31};
         Box<2, double> box({0, 0}, {10,10});
-        size_t bc[2] = {NON_PERIODIC, PERIODIC};
+        double Lx=box.getHigh(0);
+        double Ly=box.getHigh(1);
+        size_t bc[2] = {NON_PERIODIC, NON_PERIODIC};
         double spacing = box.getHigh(0) / (sz[0] - 1);
         Ghost<2, double> ghost(spacing * 3);
         double rCut = 2.0 * spacing;
@@ -79,6 +81,9 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
         openfpm::vector<aggregate<int>> l_p;
         openfpm::vector<aggregate<int>> r_p;
         openfpm::vector<aggregate<int>> ref_p;
+
+        constexpr int x      =     0;
+        constexpr int y          =     1;
 
         constexpr int Polarization      =     0;
         constexpr int Velocity          =     1;
@@ -111,6 +116,9 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
 
         Derivative_x Dx(Particles, 2, rCut,2);
         Derivative_y Dy(Particles, 2, rCut,2);
+        Derivative_xy Dxy(Particles, 2, rCut,2);
+        Derivative_xx Dxx(Particles, 2, rCut,2);
+        Derivative_yy Dyy(Particles, 2, rCut,2);
         Gradient Grad(Particles, 2, rCut,2);
         Laplacian Lap(Particles, 2, rCut, 2);
         Advection Adv(Particles, 2, rCut, 2);
@@ -144,62 +152,69 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
         while (it2.isNext()) {
             auto p = it2.get();
             Point<2, double> xp = Particles.getPos(p);
+            Particles.getProp<0>(p)[x]=  cos(2 * M_PI * (cos((2 * xp[x]- Lx) / Lx) - sin((2 * xp[y] - Ly) / Ly)));
+            Particles.getProp<0>(p)[y] =  sin(2 * M_PI * (cos((2 * xp[x]- Lx) / Lx) - sin((2 * xp[y] - Ly) / Ly)));
             if (up.isInside(xp) == true) {
                 up_p.add();
                 up_p.last().get<0>() = p.getKey();
-                Particles.getProp<0>(p)[0] =  cos(2 * M_PI * (cos((2 * xp[0] - sz[0]) / sz[0]) - sin((2 * xp[1] - sz[1]) / sz[1])));
-                Particles.getProp<0>(p)[1] =  sin(2 * M_PI * (cos((2 * xp[0] - sz[0]) / sz[0]) - sin((2 * xp[1] - sz[1]) / sz[1])));
+                //Particles.getProp<0>(p)[x]=  cos(2 * M_PI * (cos((2 * xp[x]- sz[x]) / sz[x]) - sin((2 * xp[y] - sz[y]) / sz[y])));
+                //Particles.getProp<0>(p)[y] =  sin(2 * M_PI * (cos((2 * xp[x]- sz[x]) / sz[x]) - sin((2 * xp[y] - sz[y]) / sz[y])));
             }
             else if (down.isInside(xp) == true) {
                     dw_p.add();
                     dw_p.last().get<0>() = p.getKey();
-                    Particles.getProp<0>(p)[0] =  cos(2 * M_PI * (cos((2 * xp[0] - sz[0]) / sz[0]) - sin((2 * xp[1] - sz[1]) / sz[1])));
-                    Particles.getProp<0>(p)[1] =  sin(2 * M_PI * (cos((2 * xp[0] - sz[0]) / sz[0]) - sin((2 * xp[1] - sz[1]) / sz[1])));
+                  //  Particles.getProp<0>(p)[x]=  cos(2 * M_PI * (cos((2 * xp[x]- sz[x]) / sz[x]) - sin((2 * xp[y] - sz[y]) / sz[y])));
+                   // Particles.getProp<0>(p)[y] =  sin(2 * M_PI * (cos((2 * xp[x]- sz[x]) / sz[x]) - sin((2 * xp[y] - sz[y]) / sz[y])));
                 }
             else if (left.isInside(xp) == true) {
                 l_p.add();
                 l_p.last().get<0>() = p.getKey();
-                Particles.getProp<0>(p)[0] =  cos(2 * M_PI * (cos((2 * xp[0] - sz[0]) / sz[0]) - sin((2 * xp[1] - sz[1]) / sz[1])));
-                Particles.getProp<0>(p)[1] =  sin(2 * M_PI * (cos((2 * xp[0] - sz[0]) / sz[0]) - sin((2 * xp[1] - sz[1]) / sz[1])));
+               // Particles.getProp<0>(p)[x]=  cos(2 * M_PI * (cos((2 * xp[x]- sz[x]) / sz[x]) - sin((2 * xp[y] - sz[y]) / sz[y])));
+               // Particles.getProp<0>(p)[y] =  sin(2 * M_PI * (cos((2 * xp[x]- sz[x]) / sz[x]) - sin((2 * xp[y] - sz[y]) / sz[y])));
             } else if (right.isInside(xp) == true){
                 r_p.add();
                 r_p.last().get<0>() = p.getKey();
-                Particles.getProp<0>(p)[0] =  cos(2 * M_PI * (cos((2 * xp[0] - sz[0]) / sz[0]) - sin((2 * xp[1] - sz[1]) / sz[1])));
-                Particles.getProp<0>(p)[1] =  sin(2 * M_PI * (cos((2 * xp[0] - sz[0]) / sz[0]) - sin((2 * xp[1] - sz[1]) / sz[1])));
+               // Particles.getProp<0>(p)[x]=  cos(2 * M_PI * (cos((2 * xp[x]- sz[x]) / sz[x]) - sin((2 * xp[y] - sz[y]) / sz[y])));
+                //Particles.getProp<0>(p)[y] =  sin(2 * M_PI * (cos((2 * xp[x]- sz[x]) / sz[x]) - sin((2 * xp[y] - sz[y]) / sz[y])));
             }
             else {
-                if(xp[0]==5 && xp[1]==5) {
+                if(xp[x]==5 && xp[y]==5) {
                     ref_p.add();
                     ref_p.last().get<0>() = p.getKey();
-                    Particles.getProp<0>(p)[0] = cos(2 * M_PI * (cos((2 * xp[0] - sz[0]) / sz[0]) - sin((2 * xp[1] - sz[1]) / sz[1])));
-                    Particles.getProp<0>(p)[1] = sin(2 * M_PI * (cos((2 * xp[0] - sz[0]) / sz[0]) - sin((2 * xp[1] - sz[1]) / sz[1])));
+                   // Particles.getProp<0>(p)[x]= cos(2 * M_PI * (cos((2 * xp[x]- sz[x]) / sz[x]) - sin((2 * xp[y] - sz[y]) / sz[y])));
+                   // Particles.getProp<0>(p)[y] = sin(2 * M_PI * (cos((2 * xp[x]- sz[x]) / sz[x]) - sin((2 * xp[y] - sz[y]) / sz[y])));
                     Particles.getProp<4>(p) = 0;
                 }
                 bulk.add();
                 bulk.last().get<0>() = p.getKey();
-                Particles.getProp<0>(p)[0] =  cos(2 * M_PI * (cos((2 * xp[0] - sz[0]) / sz[0]) - sin((2 * xp[1] - sz[1]) / sz[1])));
-                Particles.getProp<0>(p)[1] =  sin(2 * M_PI * (cos((2 * xp[0] - sz[0]) / sz[0]) - sin((2 * xp[1] - sz[1]) / sz[1])));
+               // Particles.getProp<0>(p)[x]=  cos(2 * M_PI * (cos((2 * xp[x]- sz[x]) / sz[x]) - sin((2 * xp[y] - sz[y]) / sz[y])));
+               // Particles.getProp<0>(p)[y] =  sin(2 * M_PI * (cos((2 * xp[x]- sz[x]) / sz[x]) - sin((2 * xp[y] - sz[y]) / sz[y])));
             }
 
 
             ++it2;
         }
-        /*      sigma[0][0] =    -Ks * Dx(Pol[0]) * Dx(Pol[0])- Kb * Dx(Pol[1]) * Dx(Pol[1]) + (Kb - Ks) * Dy(Pol[0]) * Dx(Pol[1]);
-              sigma[0][1] =    -Ks * Dy(Pol[1]) * Dx(Pol[1])- Kb * Dy(Pol[1]) * Dx(Pol[0]) + (Kb - Ks) * Dx(Pol[0]) * Dx(Pol[1]);
-              sigma[1][0] =    -Ks * Dx(Pol[0]) * Dy(Pol[0])- Kb * Dx(Pol[1]) * Dy(Pol[1]) + (Kb - Ks) * Dy(Pol[0]) * Dy(Pol[1]);
-              sigma[1][1] =    -Ks * Dy(Pol[1]) * Dy(Pol[1])- Kb * Dy(Pol[0]) * Dy(Pol[0]) + (Kb - Ks) * Dy(Pol[0]) * Dx(Pol[1]);
-
-              //dV[0] = Pol[0] * (Ks * dyypy + Kb * dxxpy + (Ks - Kb) * dxypx) - Particles.getProp<Polarization>(p)[1] * (Ks * dxxpx + Kb * dyypx + (Ks - Kb) * dxypy);
-              //dV[1] = -gama * (lambda * delmu - nu * (Particles.getProp<Strain_rate>(p)[0][0] * Particles.getProp<Polarization>(p)[0] * Particles.getProp<Polarization>(p)[0]) / (Particles.getProp<Polarization>(p)[0] * Particles.getProp<Polarization>(p)[0] + Particles.getProp<Polarization>(p)[1] * Particles.getProp<Polarization>(p)[1]) - nu * (Particles.getProp<Strain_rate>(p)[1][1] * Particles.getProp<Polarization>(p)[1] * Particles.getProp<Polarization>(p)[1]) / (Particles.getProp<Polarization>(p)[0] * Particles.getProp<Polarization>(p)[0] + Particles.getProp<Polarization>(p)[1] * Particles.getProp<Polarization>(p)[1]) - 2 * nu * (Particles.getProp<Strain_rate>(p)[0][1] * Particles.getProp<Polarization>(p)[0] * Particles.getProp<Polarization>(p)[1]) / (Particles.getProp<Polarization>(p)[0] * Particles.getProp<Polarization>(p)[0] + Particles.getProp<Polarization>(p)[1] * Particles.getProp<Polarization>(p)[1]));
 
 
+            sigma[x][x] =    -Ks * Dx(Pol[x]) * Dx(Pol[x])- Kb * Dx(Pol[y]) * Dx(Pol[y]) + (Kb - Ks) * Dy(Pol[x]) * Dx(Pol[y]);
+            sigma[x][y] =    -Ks * Dy(Pol[y]) * Dx(Pol[y])- Kb * Dy(Pol[y]) * Dx(Pol[x]) + (Kb - Ks) * Dx(Pol[x]) * Dx(Pol[y]);
+            sigma[y][x] =    -Ks * Dx(Pol[x]) * Dy(Pol[x])- Kb * Dx(Pol[y]) * Dy(Pol[y]) + (Kb - Ks) * Dy(Pol[x]) * Dy(Pol[y]);
+            sigma[y][y] =    -Ks * Dy(Pol[y]) * Dy(Pol[y])- Kb * Dy(Pol[x]) * Dy(Pol[x]) + (Kb - Ks) * Dy(Pol[x]) * Dx(Pol[y]);
+
+            h[y] = Pol[x] * (Ks * Dyy(Pol[y]) + Kb * Dxx(Pol[y]) + (Ks - Kb) * Dxy(Pol[x])) - Pol[y] * (Ks * Dxx(Pol[x]) + Kb * Dyy(Pol[x]) + (Ks - Kb) * Dxy(Pol[y]));
 
 
+            //dV[x] = Pol[0] * (Ks * dyypy + Kb * dxxpy + (Ks - Kb) * dxypx) - Particles.getProp<Polarization>(p)[y] * (Ks * dxxpx + Kb * dyypx + (Ks - Kb) * dxypy);
+            //dV[y] = -gama * (lambda * delmu - nu * (Particles.getProp<Strain_rate>(p)[0][0] * Particles.getProp<Polarization>(p)[0] * Particles.getProp<Polarization>(p)[0]) / (Particles.getProp<Polarization>(p)[0] * Particles.getProp<Polarization>(p)[0] + Particles.getProp<Polarization>(p)[y] * Particles.getProp<Polarization>(p)[y]) - nu * (Particles.getProp<Strain_rate>(p)[y][y] * Particles.getProp<Polarization>(p)[y] * Particles.getProp<Polarization>(p)[y]) / (Particles.getProp<Polarization>(p)[0] * Particles.getProp<Polarization>(p)[0] + Particles.getProp<Polarization>(p)[y] * Particles.getProp<Polarization>(p)[y]) - 2 * nu * (Particles.getProp<Strain_rate>(p)[0][y] * Particles.getProp<Polarization>(p)[0] * Particles.getProp<Polarization>(p)[y]) / (Particles.getProp<Polarization>(p)[0] * Particles.getProp<Polarization>(p)[0] + Particles.getProp<Polarization>(p)[1] * Particles.getProp<Polarization>(p)[1]));
 
+            u[x][x] =   Dx(V[x]);
+            u[x][y] =   0.5*(Dx(V[y])+Dy(V[x]));
+            u[y][x] =   0.5*(Dy(V[x])+Dx(V[y]));
+            u[y][y] =   Dy(V[y]);
 
               Particles.write_frame("Polar",0);
 
-
+/*
               double dt=5e-4;
               int n=5;
               double Re=1/3e-3;
