@@ -26,7 +26,7 @@ struct equations2 {
     //! dimensionaly of the equation ( 3D problem ...)
     static const unsigned int dims = 2;
     //! number of fields in the system
-    static const unsigned int nvar = 1;
+    static const unsigned int nvar = 2;
 
     //! boundary at X and Y
     static const bool boundary[];
@@ -150,6 +150,12 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests2)
         }
         V_BC=V;
 
+
+        eq_id vx,vy;
+
+        vx.setId(0);
+        vy.setId(1);
+
         Derivative_x Dx(Particles, 2, rCut,1.9);
         Derivative_y Dy(Particles, 2, rCut,1.9);
         Gradient Grad(Particles, 2, rCut,1.9);
@@ -161,12 +167,17 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests2)
         for(int i=0; i<=n ;i++)
         {   RHS=-Grad(P);
             DCPSE_scheme<equations2,decltype(Particles)> Solver(2 * rCut, Particles);
-            auto Stokes = Adv(V,V_star)-nu*Lap(V_star);
-            Solver.impose(Stokes,bulk,prop_id<3>());
-            Solver.impose(V_star, up_p,prop_id<4>());
-            Solver.impose(V_star, r_p, 0);
-            Solver.impose(V_star, dw_p,0);
-            Solver.impose(V_star, l_p, 0);
+//            auto Stokes = Adv(V,V_star)-nu*Lap(V_star);
+            auto Stokes1 = Adv(V[0],V_star[0])-nu*Lap(V_star[0]);
+            auto Stokes2 = Adv(V[1],V_star[1])-nu*Lap(V_star[1]);
+            Solver.impose(Stokes1,bulk,RHS[0],vx);
+            Solver.impose(Stokes2,bulk,RHS[1],vy);
+            Solver.impose(V_star[0], up_p,1,vx);
+            Solver.impose(V_star[1], up_p,0,vy);
+            Solver.impose(V_star[0], r_p, 0,vx);
+            Solver.impose(V_star[1], r_p, 0,vy);
+            Solver.impose(V_star, dw_p,0,vx);
+            Solver.impose(V_star, l_p, 0,vy);
             Solver.solve(V_star);
             std::cout << "Stokes Solved" << std::endl;
             RHS=Div(V_star);

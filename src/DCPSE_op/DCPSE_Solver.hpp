@@ -16,6 +16,27 @@
 template<unsigned int prp_id>
 struct prop_id {};
 
+class eq_id
+{
+	int id;
+
+public:
+
+	eq_id()
+	:id(0)
+	{}
+
+	int getId()
+	{
+		return id;
+	}
+
+	void setId(int id)
+	{
+		this->id = id;
+	}
+};
+
 enum options_solver
 {
     STANDARD,
@@ -189,6 +210,7 @@ class DCPSE_scheme: public MatrixAssembler
         }
     };
 
+
     /*! \brief Check if the Matrix is consistent
  *
  */
@@ -327,13 +349,38 @@ public:
     template<typename T, typename index_type, unsigned int prp_id>
     void impose(const T & op , openfpm::vector<index_type> & subset,
                                                           const prop_id<prp_id> & num,
-                                                          long int id = 0)
+                                                          eq_id id = eq_id())
     {
         auto itd = subset.template getIteratorElements<0>();
 
         variable_b<prp_id> vb(parts);
 
-        impose_git(op,vb,id,itd);
+        impose_git(op,vb,id.getId(),itd);
+    }
+
+    /*! \brief Impose an operator
+*
+* This function impose an operator on a particular grid region to produce the system
+*
+* Ax = b
+*
+* ## Stokes equation 2D, lid driven cavity with one splipping wall
+* \snippet eq_unit_test.hpp Copy the solution to grid
+*
+* \param op Operator to impose (A term)
+* \param num right hand side of the term (b term)
+* \param id Equation id in the system that we are imposing
+* \param it_d iterator that define where you want to impose
+*
+*/
+    template<typename T, typename index_type, typename RHS_type, typename sfinae = typename std::enable_if< !std::is_fundamental<RHS_type>::type::value >::type >
+    void impose(const T & op , openfpm::vector<index_type> & subset,
+                                                          const RHS_type & rhs,
+                                                          eq_id id = eq_id())
+    {
+        auto itd = subset.template getIteratorElements<0>();
+
+        impose_git(op,rhs,id.getId(),itd);
     }
 
     /*! \brief Impose an operator
@@ -354,13 +401,13 @@ public:
     template<typename T, typename index_type> void impose(const T & op ,
                                                                           openfpm::vector<index_type> & subset,
                                                                           const typename Sys_eqs::stype num,
-                                                                          long int id = 0)
+                                                                          eq_id id = eq_id())
     {
         auto itd = subset.template getIteratorElements<0>();
 
         constant_b b(num);
 
-        impose_git(op,b,id,itd);
+        impose_git(op,b,id.getId(),itd);
     }
 
     /*! \brief produce the Matrix
@@ -477,7 +524,7 @@ public:
 
             // Calculate the non-zero colums
             typename Sys_eqs::stype coeff = 1.0;
-            op.value_nz(p_map,key,cols,coeff);
+            op.template value_nz<Sys_eqs>(p_map,key,cols,coeff,0);
 
             // indicate if the diagonal has been set
             bool is_diag = false;

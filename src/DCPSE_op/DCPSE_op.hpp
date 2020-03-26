@@ -57,17 +57,17 @@ public:
         return dcp.computeDifferentialOperator(key,o1);
     }
 
-    template<typename pmap_type, typename unordered_map_type, typename coeff_type>
-    inline void value_nz(pmap_type & p_map, const vect_dist_key_dx & key, unordered_map_type & cols, coeff_type & coeff) const
+    template<typename Sys_eqs, typename pmap_type, typename unordered_map_type, typename coeff_type>
+    inline void value_nz(pmap_type & p_map, const vect_dist_key_dx & key, unordered_map_type & cols, coeff_type & coeff, unsigned int comp) const
     {
             // for all NN of key
             for (int j = 0 ; j < dcp.getNumNN(key) ; j++)
             {
                 auto coeff_dc = dcp.getCoeffNN(key,j);
                 auto k = dcp.getIndexNN(key,j);
-                cols[p_map. template getProp<0>(k)] += coeff_dc * coeff / dcp.getEpsilonPrefactor(key);
+                cols[p_map. template getProp<0>(k)*Sys_eqs::nvar + comp] += coeff_dc * coeff / dcp.getEpsilonPrefactor(key);
 
-                cols[p_map. template getProp<0>(key)] += dcp.getSign() * coeff_dc * coeff / dcp.getEpsilonPrefactor(key);
+                cols[p_map. template getProp<0>(key)*Sys_eqs::nvar + comp] += dcp.getSign() * coeff_dc * coeff / dcp.getEpsilonPrefactor(key);
             }
     }
 
@@ -145,8 +145,8 @@ public:
         return v_grad;
     }
 
-    template<typename pmap_type, typename unordered_map_type, typename coeff_type>
-    inline void value_nz(pmap_type & p_map, const vect_dist_key_dx & key, unordered_map_type & cols, coeff_type & coeff) const
+    template<typename Sys_eqs, typename pmap_type, typename unordered_map_type, typename coeff_type>
+    inline void value_nz(pmap_type & p_map, const vect_dist_key_dx & key, unordered_map_type & cols, coeff_type & coeff, unsigned int comp) const
     {
         for (int i = 0 ; i < DCPSE_type::vtype::dims ; i++)
         {
@@ -157,9 +157,9 @@ public:
                 auto k = dcp[i].getIndexNN(key,j);
 
 
-                cols[p_map. template getProp<0>(k)] += coeff_dc * coeff / dcp[i].getEpsilonPrefactor(key);
+                cols[p_map. template getProp<0>(k)*Sys_eqs::nvar + comp] += coeff_dc * coeff / dcp[i].getEpsilonPrefactor(key);
 
-                cols[p_map. template getProp<0>(key)] += dcp[i].getSign() * coeff_dc * coeff / dcp[i].getEpsilonPrefactor(key);
+                cols[p_map. template getProp<0>(key)*Sys_eqs::nvar + comp] += dcp[i].getSign() * coeff_dc * coeff / dcp[i].getEpsilonPrefactor(key);
             }
         }
     }
@@ -238,8 +238,8 @@ public:
         return v_grad;
     }
 
-    template<typename pmap_type, typename unordered_map_type, typename coeff_type>
-    inline void value_nz(pmap_type & p_map, const vect_dist_key_dx & key, unordered_map_type & cols, coeff_type & coeff) const
+    template<typename Sys_eqs, typename pmap_type, typename unordered_map_type, typename coeff_type>
+    inline void value_nz(pmap_type & p_map, const vect_dist_key_dx & key, unordered_map_type & cols, coeff_type & coeff, unsigned int comp) const
     {
         for (int i = 0 ; i < DCPSE_type::vtype::dims ; i++)
         {
@@ -250,9 +250,9 @@ public:
                 auto k = dcp[i].getIndexNN(key,j);
 
 
-                cols[p_map. template getProp<0>(k)] += coeff_dc * coeff / dcp[i].getEpsilonPrefactor(key);
+                cols[p_map. template getProp<0>(k)*Sys_eqs::nvar + comp] += coeff_dc * coeff / dcp[i].getEpsilonPrefactor(key);
 
-                cols[p_map. template getProp<0>(key)] += dcp[i].getSign() * coeff_dc * coeff / dcp[i].getEpsilonPrefactor(key);
+                cols[p_map. template getProp<0>(key)*Sys_eqs::nvar + comp] += dcp[i].getSign() * coeff_dc * coeff / dcp[i].getEpsilonPrefactor(key);
             }
         }
     }
@@ -300,17 +300,17 @@ public:
             :l1(l1),l2(l2)
     {}
 
-    template<typename pmap_type, typename unordered_map_type, typename coeff_type>
-    inline void value_nz(pmap_type & p_map, const vect_dist_key_dx & key, unordered_map_type & cols, coeff_type & coeff) const
+    template<typename Sys_eqs, typename pmap_type, typename unordered_map_type, typename coeff_type>
+    inline void value_nz(pmap_type & p_map, const vect_dist_key_dx & key, unordered_map_type & cols, coeff_type & coeff, unsigned int comp) const
     {
         if (l1.template get<0>(i) != key.getKey())
         {
             std::cout << "ERROR" << std::endl;
         }
 
-        cols[p_map. template getProp<0>(key)] += coeff;
+        cols[p_map. template getProp<0>(key)*Sys_eqs::nvar + comp] += coeff;
         std::cout << "L2: " << l2.template get<0>(i) << std::endl;
-        cols[p_map. template getProp<0>(l2.template get<0>(i))] -= coeff;
+        cols[p_map. template getProp<0>(l2.template get<0>(i))*Sys_eqs::nvar + comp ] -= coeff;
 
         i++;
     }
@@ -333,16 +333,16 @@ public:
     :l1(l1),l2_key(l2_key)
     {}
 
-    template<typename pmap_type, typename unordered_map_type, typename coeff_type>
-    inline void value_nz(pmap_type & p_map, const vect_dist_key_dx & key, unordered_map_type & cols, coeff_type & coeff)  const
+    template<typename Sys_eqs, typename pmap_type, typename unordered_map_type, typename coeff_type>
+    inline void value_nz(pmap_type & p_map, const vect_dist_key_dx & key, unordered_map_type & cols, coeff_type & coeff, unsigned int comp)  const
     {
         if (l1.template get<0>(i) != key.getKey())
         {
             std::cout << "ERROR" << std::endl;
         }
 
-        cols[p_map. template getProp<0>(key)] += coeff;
-        cols[p_map. template getProp<0>(l2_key)] -= coeff;
+        cols[p_map. template getProp<0>(key)*Sys_eqs::nvar + comp] += coeff;
+        cols[p_map. template getProp<0>(l2_key)*Sys_eqs::nvar + comp] -= coeff;
         i++;
     }
 };
@@ -390,8 +390,8 @@ public:
         return v_lap;
     }
 
-    template<typename pmap_type, typename unordered_map_type, typename coeff_type>
-    inline void value_nz(pmap_type & p_map, const vect_dist_key_dx & key, unordered_map_type & cols, coeff_type & coeff) const
+    template<typename Sys_eqs, typename pmap_type, typename unordered_map_type, typename coeff_type>
+    inline void value_nz(pmap_type & p_map, const vect_dist_key_dx & key, unordered_map_type & cols, coeff_type & coeff, unsigned int comp) const
     {
         for (int i = 0 ; i < DCPSE_type::vtype::dims ; i++)
         {
@@ -402,9 +402,9 @@ public:
                 auto k = dcp[i].getIndexNN(key,j);
 
 
-                cols[p_map. template getProp<0>(k)] += coeff_dc * coeff / dcp[i].getEpsilonPrefactor(key);
+                cols[p_map. template getProp<0>(k)*Sys_eqs::nvar + comp] += coeff_dc * coeff / dcp[i].getEpsilonPrefactor(key);
 
-                cols[p_map. template getProp<0>(key)] += dcp[i].getSign() * coeff_dc * coeff / dcp[i].getEpsilonPrefactor(key);
+                cols[p_map. template getProp<0>(key)*Sys_eqs::nvar + comp] += dcp[i].getSign() * coeff_dc * coeff / dcp[i].getEpsilonPrefactor(key);
             }
         }
     }
@@ -475,8 +475,8 @@ public:
         return v_div;
     }
 
-    template<typename pmap_type, typename unordered_map_type, typename coeff_type>
-    inline void value_nz(pmap_type & p_map, const vect_dist_key_dx & key, unordered_map_type & cols, coeff_type & coeff) const
+    template<typename Sys_eqs, typename pmap_type, typename unordered_map_type, typename coeff_type>
+    inline void value_nz(pmap_type & p_map, const vect_dist_key_dx & key, unordered_map_type & cols, coeff_type & coeff, unsigned int comp) const
     {
         for (int i = 0 ; i < DCPSE_type::vtype::dims ; i++)
         {
@@ -487,9 +487,9 @@ public:
                 auto k = dcp[i].getIndexNN(key,j);
 
 
-                cols[p_map. template getProp<0>(k)] += coeff_dc * coeff / dcp[i].getEpsilonPrefactor(key);
+                cols[p_map. template getProp<0>(k)*Sys_eqs::nvar + comp] += coeff_dc * coeff / dcp[i].getEpsilonPrefactor(key);
 
-                cols[p_map. template getProp<0>(key)] += dcp[i].getSign() * coeff_dc * coeff / dcp[i].getEpsilonPrefactor(key);
+                cols[p_map. template getProp<0>(key)*Sys_eqs::nvar + comp] += dcp[i].getSign() * coeff_dc * coeff / dcp[i].getEpsilonPrefactor(key);
             }
         }
     }
@@ -564,8 +564,8 @@ public:
     }
 
 
-    template<typename pmap_type, typename unordered_map_type, typename coeff_type>
-    inline void value_nz(pmap_type & p_map, const vect_dist_key_dx & key, unordered_map_type & cols, coeff_type & coeff) const
+    template<typename Sys_eqs, typename pmap_type, typename unordered_map_type, typename coeff_type>
+    inline void value_nz(pmap_type & p_map, const vect_dist_key_dx & key, unordered_map_type & cols, coeff_type & coeff, unsigned int comp) const
     {
         for (int i = 0 ; i < DCPSE_type::vtype::dims ; i++)
         {
@@ -576,9 +576,9 @@ public:
                 auto k = dcp[i].getIndexNN(key,j);
 
 
-                cols[p_map. template getProp<0>(k)] += coeff_dc * coeff / dcp[i].getEpsilonPrefactor(key);
+                cols[p_map. template getProp<0>(k)*Sys_eqs::nvar + comp] += coeff_dc * coeff / dcp[i].getEpsilonPrefactor(key);
 
-                cols[p_map. template getProp<0>(key)] += dcp[i].getSign() * coeff_dc * coeff / dcp[i].getEpsilonPrefactor(key);
+                cols[p_map. template getProp<0>(key)*Sys_eqs::nvar + comp] += dcp[i].getSign() * coeff_dc * coeff / dcp[i].getEpsilonPrefactor(key);
             }
         }
     }

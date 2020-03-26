@@ -231,11 +231,11 @@ public:
 		return o1.value(key) + o2.value(key);
 	}
 
-    template<typename pmap_type, typename unordered_map_type, typename coeff_type>
-    inline void value_nz(pmap_type & p_map, const vect_dist_key_dx & key, unordered_map_type & cols, coeff_type & coeff) const
+    template<typename Sys_eqs, typename pmap_type, typename unordered_map_type, typename coeff_type>
+    inline void value_nz(pmap_type & p_map, const vect_dist_key_dx & key, unordered_map_type & cols, coeff_type & coeff, unsigned int comp) const
     {
-        o1.value_nz(p_map,key,cols,coeff);
-        o2.value_nz(p_map,key,cols,coeff);
+        o1.template value_nz<Sys_eqs>(p_map,key,cols,coeff, comp);
+        o2.template value_nz<Sys_eqs>(p_map,key,cols,coeff, comp);
     }
     /*! \brief Return the vector on which is acting
      *
@@ -334,12 +334,12 @@ public:
         return first_or_second<has_vtype<exp1>::value,exp1,exp2>::getVector(o1,o2);
     }
 
-    template<typename pmap_type, typename unordered_map_type, typename coeff_type>
-    inline void value_nz(pmap_type & p_map, const vect_dist_key_dx & key, unordered_map_type & cols, coeff_type & coeff) const
+    template<typename Sys_eqs,typename pmap_type, typename unordered_map_type, typename coeff_type>
+    inline void value_nz(pmap_type & p_map, const vect_dist_key_dx & key, unordered_map_type & cols, coeff_type & coeff, unsigned int comp) const
     {
-        o1.value_nz(p_map,key,cols,coeff);
+        o1.template value_nz<Sys_eqs>(p_map,key,cols,coeff,comp);
         coeff_type tmp = -coeff;
-        o2.value_nz(p_map,key,cols,tmp);
+        o2.template value_nz<Sys_eqs>(p_map,key,cols,tmp,comp);
     }
 };
 
@@ -391,11 +391,11 @@ public:
 		return o1.value(key) * o2.value(key);
 	}
 
-    template<typename pmap_type, typename unordered_map_type, typename coeff_type>
-    inline void value_nz(pmap_type & p_map, const vect_dist_key_dx & key, unordered_map_type & cols, coeff_type & coeff) const
+    template<typename Sys_eqs,typename pmap_type, typename unordered_map_type, typename coeff_type>
+    inline void value_nz(pmap_type & p_map, const vect_dist_key_dx & key, unordered_map_type & cols, coeff_type & coeff, unsigned int comp) const
     {
-        o1.value_nz(p_map,key,cols,coeff);
-        o2.value_nz(p_map,key,cols,coeff);
+        o1.template value_nz<Sys_eqs>(p_map,key,cols,coeff,comp);
+        o2.template value_nz<Sys_eqs>(p_map,key,cols,coeff,comp);
     }
 
     /*! \brief Return the vector on which is acting
@@ -472,11 +472,11 @@ public:
 		return o1.value(key) / o2.value(key);
 	}
 
-    template<typename pmap_type, typename unordered_map_type, typename coeff_type>
-    inline void value_nz(pmap_type & p_map, const vect_dist_key_dx & key, unordered_map_type & cols, coeff_type & coeff) const
+    template<typename Sys_eqs,typename pmap_type, typename unordered_map_type, typename coeff_type>
+    inline void value_nz(pmap_type & p_map, const vect_dist_key_dx & key, unordered_map_type & cols, coeff_type & coeff, unsigned int comp) const
     {
-        o1.value_nz(p_map,key,cols,coeff);
-        o2.value_nz(p_map,key,cols,coeff);
+        o1.template value_nz<Sys_eqs>(p_map,key,cols,coeff,comp);
+        o2.template value_nz<Sys_eqs>(p_map,key,cols,coeff,comp);
     }
 
     /*! \brief Return the vector on which is acting
@@ -628,11 +628,11 @@ public:
 		return -(o1.value(key));
 	}
 
-    template<typename pmap_type, typename unordered_map_type, typename coeff_type>
-    inline void value_nz(pmap_type & p_map, const vect_dist_key_dx & key, unordered_map_type & cols, coeff_type & coeff) const
+    template<typename Sys_eqs, typename pmap_type, typename unordered_map_type, typename coeff_type>
+    inline void value_nz(pmap_type & p_map, const vect_dist_key_dx & key, unordered_map_type & cols, coeff_type & coeff, unsigned int comp) const
     {
 	    coeff_type coeff_tmp = -coeff;
-        o1.value_nz(p_map,key,cols,coeff_tmp);
+        o1.template value_nz<Sys_eqs>(p_map,key,cols,coeff_tmp, comp);
     }
 };
 
@@ -780,10 +780,10 @@ public:
 		return v;
 	}
 
-    template<typename pmap_type, typename unordered_map_type, typename coeff_type>
-    inline void value_nz(pmap_type & p_map, const vect_dist_key_dx & key, unordered_map_type & cols, coeff_type & coeff) const
+    template<typename Sys_eqs, typename pmap_type, typename unordered_map_type, typename coeff_type>
+    inline void value_nz(pmap_type & p_map, const vect_dist_key_dx & key, unordered_map_type & cols, coeff_type & coeff, unsigned int comp) const
     {
-	    cols[p_map. template getProp<0>(key)] += coeff;
+	    cols[p_map. template getProp<0>(key)*Sys_eqs::nvar + comp] += coeff;
     }
 
     inline vector_dist_expression_op<vector_dist_expression<prp,vector>,boost::mpl::int_<1>,VECT_COMP> operator[](int comp)
@@ -977,10 +977,34 @@ public:
 		return get_vector_dist_expression_op<n,n == rank_gen<property_act>::type::value>::get(o1,key,comp);
 	}
 
-    template<typename pmap_type, typename unordered_map_type, typename coeff_type>
-    inline void value_nz(pmap_type & p_map, const vect_dist_key_dx & key, unordered_map_type & cols, coeff_type & coeff) const
+	/*! \brief Return the result of the expression
+	 *
+	 * \note this function must be deactivated on transitional objects. Suppose we are slicing a tensor of rank 2
+	 *            an object of rank 1 is implicitly created for such object we have to deactivate this function
+	 *            because ill-formed
+	 *
+	 * \param key point where to evaluate
+	 *
+	 *
+	 */
+	inline auto get(const vect_dist_key_dx & key) const -> decltype(value(key))
+	{
+		return this->value(key);
+	}
+
+    template<typename Sys_eqs, typename pmap_type, typename unordered_map_type, typename coeff_type>
+    inline void value_nz(pmap_type & p_map, const vect_dist_key_dx & key, unordered_map_type & cols, coeff_type & coeff, unsigned int comp_) const
     {
-        o1.value_nz(p_map,key,cols,coeff,comp);
+#ifdef SE_CLASS1
+
+    	if (n != 1)
+    	{
+    		std::cout << __FILE__ << ":" << __LINE__ << " Error it only work for tensore of rank 1 ... like vectors " << std::endl;
+    	}
+
+#endif
+
+        o1.template value_nz<Sys_eqs>(p_map,key,cols,coeff,comp_ + comp[0]);
     }
 
     inline vector_dist_expression_op<exp1,boost::mpl::int_<2>,VECT_COMP> operator[](int comp_)
@@ -1130,10 +1154,12 @@ public:
 	{
 		return d;
 	}
-    template<typename pmap_type, typename unordered_map_type, typename coeff_type>
-    inline void value_nz(pmap_type & p_map, const vect_dist_key_dx & key, unordered_map_type & cols, coeff_type & coeff) const
+
+
+    template<typename Sys_eqs, typename pmap_type, typename unordered_map_type, typename coeff_type>
+    inline void value_nz(pmap_type & p_map, const vect_dist_key_dx & key, unordered_map_type & cols, coeff_type & coeff, unsigned int comp) const
     {
-        cols[p_map. template getProp<0>(key)] += coeff;
+        cols[p_map. template getProp<0>(key)*Sys_eqs::nvar + comp] += coeff;
     }
 };
 
