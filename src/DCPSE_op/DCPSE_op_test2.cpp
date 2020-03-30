@@ -44,7 +44,31 @@ struct equations2 {
     typedef Vector<double> Vector_type;
 };
 
+struct equations1d {
+    //! dimensionaly of the equation ( 3D problem ...)
+    static const unsigned int dims = 2;
+    //! number of fields in the system
+    static const unsigned int nvar = 1;
+
+    //! boundary at X and Y
+    static const bool boundary[];
+
+    //! type of space float, double, ...
+    typedef double stype;
+
+    //! type of base particles
+    typedef vector_dist<dims, double, aggregate<double>> b_part;
+
+    //! type of SparseMatrix for the linear solver
+    typedef SparseMatrix<double, int, EIGEN_BASE> SparseMatrix_type;
+
+    //! type of Vector for the linear solver
+    typedef Vector<double> Vector_type;
+};
+
 const bool equations2::boundary[] = {NON_PERIODIC, NON_PERIODIC};
+const bool equations1d::boundary[] = {NON_PERIODIC, NON_PERIODIC};
+
 
 //template<typename T>
 //struct Debug;
@@ -183,7 +207,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests2)
             Solver.solve(V_star);
             std::cout << "Stokes Solved" << std::endl;
             RHS=Div(V_star);
-/*            DCPSE_scheme<equations2,decltype(Particles)> SolverH(2 * rCut, Particles,options_solver::LAGRANGE_MULTIPLIER);
+            DCPSE_scheme<equations1d,decltype(Particles)> SolverH(2 * rCut, Particles,options_solver::LAGRANGE_MULTIPLIER);
             auto Helmholtz = Lap(H);
             auto D_y=Dy(H);
             auto D_x=Dx(H);
@@ -196,7 +220,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests2)
             std::cout << "Helmholtz Solved" << std::endl;
             V=V_star-Grad(H);
             P=P+Lap(H);
-            std::cout << "V,P Corrected" << std::endl;*/
+            std::cout << "V,P Corrected" << std::endl;
             Particles.write_frame("Stokes",i);
 
         }
