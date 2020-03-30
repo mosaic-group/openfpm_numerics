@@ -241,7 +241,8 @@ class DCPSE_scheme: public MatrixAssembler
         	{
         		std::cerr << "Error " << __FILE__ << ":" << __LINE__ << " It seems that you are setting colums that does not exist \n";
         	}
-            nz_rows.get(trpl.get(i).row() - s_pnt*Sys_eqs::nvar) = true;
+        	if (trpl.get(i).value() != 0)
+            {nz_rows.get(trpl.get(i).row() - s_pnt*Sys_eqs::nvar) = true;}
         }
 
         // Indicate all the non zero colums
@@ -254,7 +255,10 @@ class DCPSE_scheme: public MatrixAssembler
             nz_cols.resize(row_b);
 
             for (size_t i = 0 ; i < trpl.size() ; i++)
-                nz_cols.get(trpl.get(i).col()) = true;
+            {
+            	if (trpl.get(i).value() != 0)
+                {nz_cols.get(trpl.get(i).col()) = true;}
+            }
 
             // all the rows must have a non zero element
             for (size_t i = 0 ; i < nz_rows.size() ; i++)
