@@ -176,12 +176,14 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests2)
             Solver.impose(V_star[1], up_p,0,vy);
             Solver.impose(V_star[0], r_p, 0,vx);
             Solver.impose(V_star[1], r_p, 0,vy);
-            Solver.impose(V_star, dw_p,0,vx);
-            Solver.impose(V_star, l_p, 0,vy);
+            Solver.impose(V_star[0], dw_p,0,vx);
+            Solver.impose(V_star[1], dw_p,0,vy);
+            Solver.impose(V_star[0], l_p, 0,vx);
+            Solver.impose(V_star[1], l_p, 0,vy);
             Solver.solve(V_star);
             std::cout << "Stokes Solved" << std::endl;
             RHS=Div(V_star);
-            DCPSE_scheme<equations2,decltype(Particles)> SolverH(2 * rCut, Particles,options_solver::LAGRANGE_MULTIPLIER);
+/*            DCPSE_scheme<equations2,decltype(Particles)> SolverH(2 * rCut, Particles,options_solver::LAGRANGE_MULTIPLIER);
             auto Helmholtz = Lap(H);
             auto D_y=Dy(H);
             auto D_x=Dx(H);
@@ -194,7 +196,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests2)
             std::cout << "Helmholtz Solved" << std::endl;
             V=V_star-Grad(H);
             P=P+Lap(H);
-            std::cout << "V,P Corrected" << std::endl;
+            std::cout << "V,P Corrected" << std::endl;*/
             Particles.write_frame("Stokes",i);
 
         }

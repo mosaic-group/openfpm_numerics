@@ -220,14 +220,29 @@ class DCPSE_scheme: public MatrixAssembler
 
         // A and B must have the same rows
         if (row != row_b)
-            std::cerr << "Error " << __FILE__ << ":" << __LINE__ << "the term B and the Matrix A for Ax=B must contain the same number of rows\n";
+        {
+        	std::cerr << "Error " << __FILE__ << ":" << __LINE__ << " the term B and the Matrix A for Ax=B must contain the same number of rows\n";
+        	return;
+        }
+
+        if (row_b != p_map.size_local() * Sys_eqs::nvar)
+        {
+        	std::cerr << "Error " << __FILE__ << ":" << __LINE__ << " your system is underdetermined you set " << row_b << " conditions " << " but i am expecting " << p_map.size_local() * Sys_eqs::nvar << std::endl;
+        	return;
+        }
 
         // Indicate all the non zero rows
         openfpm::vector<unsigned char> nz_rows;
         nz_rows.resize(row_b);
 
         for (size_t i = 0 ; i < trpl.size() ; i++)
+        {
+        	if (trpl.get(i).row() - s_pnt*Sys_eqs::nvar >= nz_rows.size())
+        	{
+        		std::cerr << "Error " << __FILE__ << ":" << __LINE__ << " It seems that you are setting colums that does not exist \n";
+        	}
             nz_rows.get(trpl.get(i).row() - s_pnt*Sys_eqs::nvar) = true;
+        }
 
         // Indicate all the non zero colums
         // This check can be done only on single processor
