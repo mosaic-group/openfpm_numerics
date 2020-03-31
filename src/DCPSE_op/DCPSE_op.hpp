@@ -576,9 +576,9 @@ public:
                 auto k = dcp[i].getIndexNN(key,j);
 
 
-                cols[p_map. template getProp<0>(k)*Sys_eqs::nvar + comp] += coeff_dc * coeff / dcp[i].getEpsilonPrefactor(key);
+                cols[p_map. template getProp<0>(k)*Sys_eqs::nvar + comp] += o1.value(k)[i]*coeff_dc * coeff / dcp[i].getEpsilonPrefactor(key);
 
-                cols[p_map. template getProp<0>(key)*Sys_eqs::nvar + comp] += dcp[i].getSign() * coeff_dc * coeff / dcp[i].getEpsilonPrefactor(key);
+                cols[p_map. template getProp<0>(key)*Sys_eqs::nvar + comp] += o1.value(key)[i]*dcp[i].getSign() * coeff_dc * coeff / dcp[i].getEpsilonPrefactor(key);
             }
         }
     }

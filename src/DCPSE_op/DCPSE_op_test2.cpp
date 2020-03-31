@@ -196,7 +196,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests2)
             auto Stokes2 = Adv(V[1],V_star[1])-nu*Lap(V_star[1]);
             Solver.impose(Stokes1,bulk,RHS[0],vx);
             Solver.impose(Stokes2,bulk,RHS[1],vy);
-            Solver.impose(V_star[0], up_p,1,vx);
+            Solver.impose(V_star[0], up_p,1.0,vx);
             Solver.impose(V_star[1], up_p,0,vy);
             Solver.impose(V_star[0], r_p, 0,vx);
             Solver.impose(V_star[1], r_p, 0,vy);
