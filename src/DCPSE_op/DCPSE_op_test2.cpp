@@ -188,10 +188,10 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests2)
         Divergence Div(Particles, 2, rCut, 1.9);
         int n=10;
         double nu=1e-2;
-        for(int i=0; i<=n ;i++)
+        Particles.write_frame("Stokes",0);
+        for(int i=1; i<=n ;i++)
         {   RHS=-Grad(P);
             DCPSE_scheme<equations2,decltype(Particles)> Solver(2 * rCut, Particles);
-//            auto Stokes = Adv(V,V_star)-nu*Lap(V_star);
             auto Stokes1 = Adv(V[0],V_star[0])-nu*Lap(V_star[0]);
             auto Stokes2 = Adv(V[1],V_star[1])-nu*Lap(V_star[1]);
             Solver.impose(Stokes1,bulk,RHS[0],vx);
