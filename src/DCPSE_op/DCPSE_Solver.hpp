@@ -224,12 +224,12 @@ class DCPSE_scheme: public MatrixAssembler
         	std::cerr << "Error " << __FILE__ << ":" << __LINE__ << " the term B and the Matrix A for Ax=B must contain the same number of rows\n";
         	return;
         }
-
-        if (row_b != p_map.size_local() * Sys_eqs::nvar)
-        {
-        	std::cerr << "Error " << __FILE__ << ":" << __LINE__ << " your system is underdetermined you set " << row_b << " conditions " << " but i am expecting " << p_map.size_local() * Sys_eqs::nvar << std::endl;
-        	return;
-        }
+            if (row_b != p_map.size_local() * Sys_eqs::nvar) {
+                std::cerr << "Error " << __FILE__ << ":" << __LINE__ << " your system is underdetermined you set "
+                          << row_b << " conditions " << " but i am expecting " << p_map.size_local() * Sys_eqs::nvar
+                          << std::endl;
+                return;
+            }
 
         // Indicate all the non zero rows
         openfpm::vector<unsigned char> nz_rows;
@@ -443,7 +443,6 @@ public:
             A.resize(tot * Sys_eqs::nvar, tot * Sys_eqs::nvar,
                      p_map.size_local() * Sys_eqs::nvar,
                      p_map.size_local() * Sys_eqs::nvar);
-//        std::cout << Eigen::MatrixXd(A) << std::endl;
         } else
         {
             auto & v_cl = create_vcluster();
@@ -483,6 +482,7 @@ public:
 
 
         }
+
         return A;
 
     }
@@ -505,6 +505,7 @@ public:
                 b(tot * Sys_eqs::nvar) = 0;
             }
         }
+
 
         return b;
     }
