@@ -495,7 +495,7 @@ public:
     typename Sys_eqs::Vector_type & getB(options_solver opt = options_solver::STANDARD)
     {
 #ifdef SE_CLASS1
-        consistency();
+        //consistency();
 #endif
         if (opt == options_solver::LAGRANGE_MULTIPLIER)
         {
