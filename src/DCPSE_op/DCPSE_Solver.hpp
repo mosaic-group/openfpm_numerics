@@ -494,9 +494,9 @@ public:
      */
     typename Sys_eqs::Vector_type & getB(options_solver opt = options_solver::STANDARD)
     {
-//#ifdef SE_CLASS1
-//       consistency();
-//#endif
+#ifdef SE_CLASS1
+        //consistency();
+#endif
         if (opt == options_solver::LAGRANGE_MULTIPLIER)
         {
             auto & v_cl = create_vcluster();

@@ -423,10 +423,10 @@ public:
                 o1.template value_nz<Sys_eqs>(p_map,k,cols,coeff_k,comp);
 
                 auto coeff_kk = dcp[i].getSign() * coeff_dc * coeff / dcp[i].getEpsilonPrefactor(key);
-                o1.template value_nz<Sys_eqs>(p_map,key,cols,coeff_k,comp);
+                o1.template value_nz<Sys_eqs>(p_map,key,cols,coeff_kk,comp);
 
-                //cols[p_map. template getProp<0>(k)*Sys_eqs::nvar + comp] += coeff_dc * coeff / dcp[i].getEpsilonPrefactor(key);
-                //cols[p_map. template getProp<0>(key)*Sys_eqs::nvar + comp] += dcp[i].getSign() * coeff_dc * coeff / dcp[i].getEpsilonPrefactor(key);
+/*                cols[p_map. template getProp<0>(k)*Sys_eqs::nvar + comp] += coeff_dc * coeff / dcp[i].getEpsilonPrefactor(key);
+                cols[p_map. template getProp<0>(key)*Sys_eqs::nvar + comp] += dcp[i].getSign() * coeff_dc * coeff / dcp[i].getEpsilonPrefactor(key);*/
             }
         }
     }
@@ -607,7 +607,7 @@ public:
                 o2.template value_nz<Sys_eqs>(p_map,k,cols,k_coeff,comp);
 
                 auto kk_coeff = o1.value(key) * dcp[i].getSign() * coeff_dc * coeff / dcp[i].getEpsilonPrefactor(key);
-                o2.template value_nz<Sys_eqs>(p_map,k,cols,k_coeff,comp);
+                o2.template value_nz<Sys_eqs>(p_map,k,cols,kk_coeff,comp);
 
                 //cols[p_map. template getProp<0>(k)*Sys_eqs::nvar + comp] += o1.value(key)[i] * coeff_dc * coeff / dcp[i].getEpsilonPrefactor(key);
                 //cols[p_map. template getProp<0>(key)*Sys_eqs::nvar + comp] += o1.value(key)[i] * dcp[i].getSign() * coeff_dc * coeff / dcp[i].getEpsilonPrefactor(key);
