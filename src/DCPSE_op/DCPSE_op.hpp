@@ -66,10 +66,10 @@ public:
                 auto coeff_dc = dcp.getCoeffNN(key,j);
                 auto k = dcp.getIndexNN(key,j);
 
-                auto k_coeff = coeff_dc * coeff / dcp[i].getEpsilonPrefactor(key);
+                auto k_coeff = coeff_dc * coeff / dcp.getEpsilonPrefactor(key);
                 o1.template value_nz<Sys_eqs>(p_map,k,cols,k_coeff,comp);
 
-                auto kk_coeff = dcp[i].getSign() * coeff_dc * coeff / dcp[i].getEpsilonPrefactor(key);
+                auto kk_coeff = dcp.getSign() * coeff_dc * coeff / dcp.getEpsilonPrefactor(key);
                 o1.template value_nz<Sys_eqs>(p_map,k,cols,k_coeff,comp);
                 //cols[p_map. template getProp<0>(k)*Sys_eqs::nvar + comp] += coeff_dc * coeff / dcp.getEpsilonPrefactor(key);
 

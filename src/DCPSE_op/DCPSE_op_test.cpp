@@ -874,12 +874,12 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
     BOOST_AUTO_TEST_CASE(dcpse_poisson_Robin_anal) {
 //  int rank;
 //  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-        const size_t sz[2] = {81,81};
+        const size_t sz[2] = {150,150};
         Box<2, double> box({0, 0}, {0.5, 0.5});
         size_t bc[2] = {NON_PERIODIC, NON_PERIODIC};
         double spacing = box.getHigh(0) / (sz[0] - 1);
         Ghost<2, double> ghost(spacing * 3);
-        double rCut = 2.0 * spacing;
+        double rCut = 0.5 * spacing;
         BOOST_TEST_MESSAGE("Init vector_dist...");
 
         vector_dist<2, double, aggregate<double,double,double,double,double,double>> domain(0, box, bc, ghost);
@@ -1172,7 +1172,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
         //http://e6.ijs.si/medusa/wiki/index.php/Poisson%27s_equation#Full_Neumann_boundary_conditions
 //  int rank;
 //  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-        const size_t sz[2] = {81,81};
+        const size_t sz[2] = {150,150};
         Box<2, double> box({0, 0}, {1.0, 1.0});
         size_t bc[2] = {NON_PERIODIC, NON_PERIODIC};
         double spacing = box.getHigh(0) / (sz[0] - 1);
@@ -1206,7 +1206,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
         //Derivative_x Dx(domain, 2, rCut,2);
         Derivative_y Dy(domain, 2, rCut,2);
         //Gradient Grad(domain, 2, rCut);
-        Laplacian Lap(domain, 3, rCut, 3);
+        Laplacian Lap(domain, 2, rCut, 3);
         //Advection Adv(domain, 3, rCut, 3);
         //Solver Sol_Lap(Lap),Sol_Dx(Dx);
         //DCPSE_scheme<equations,decltype(domain)> Solver(2 * rCut, domain);
@@ -1316,12 +1316,12 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
     //https://fenicsproject.org/docs/dolfin/1.4.0/python/demo/documented/neumann-poisson/python/documentation.html
 //  int rank;
 //  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-        const size_t sz[2] = {81,81};
+        const size_t sz[2] = {150,150};
         Box<2, double> box({0, 0}, {1.0, 1.0});
         size_t bc[2] = {NON_PERIODIC, NON_PERIODIC};
         double spacing = box.getHigh(0) / (sz[0] - 1);
         Ghost<2, double> ghost(spacing * 3);
-        double rCut = 2.0 * spacing;
+        double rCut = 0.5 * spacing;
         BOOST_TEST_MESSAGE("Init vector_dist...");
 
         vector_dist<2, double, aggregate<double,double,double,double,double>> domain(0, box, bc, ghost);
