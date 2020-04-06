@@ -76,7 +76,7 @@ const bool equations1d::boundary[] = {NON_PERIODIC, NON_PERIODIC};
 BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests2)
 
     BOOST_AUTO_TEST_CASE(dcpse_Lid_Stokes) {
-        const size_t sz[2] = {31,31};
+        const size_t sz[2] = {81,81};
         Box<2, double> box({0, 0}, {1,1});
         size_t bc[2] = {NON_PERIODIC, NON_PERIODIC};
         double spacing = box.getHigh(0) / (sz[0] - 1);
@@ -109,7 +109,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests2)
         auto V = getV<1>(Particles);
         auto V_star = getV<2>(Particles);
         auto RHS = getV<3>(Particles);
-        auto V_BC = getV<4>(Particles);
+        auto V_t = getV<4>(Particles);
         auto H = getV<5>(Particles);
         auto temp=getV<6>(Particles);
 
@@ -172,7 +172,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests2)
             }
             ++it2;
         }
-        V_BC=V;
+        V_t=V;
 
 
         eq_id vx,vy;
@@ -186,6 +186,26 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests2)
         Laplacian Lap(Particles, 2, rCut, 1.9);
         Advection Adv(Particles, 2, rCut, 1.9);
         Divergence Div(Particles, 2, rCut, 1.9);
+
+
+        //starting the simulation at a nice *continuous* place
+        V_t=1e-3*(1e-2*Lap(V)-Adv(V,V));
+        RHS=Div(V_t);
+        DCPSE_scheme<equations1d,decltype(Particles)> Solver(2 * rCut, Particles,options_solver::LAGRANGE_MULTIPLIER);
+        auto Pressure_Poisson = Lap(P);
+        auto D_y=Dy(P);
+        auto D_x=Dx(P);
+        Solver.impose(Pressure_Poisson,bulk,prop_id<3>());
+        Solver.impose(D_y, up_p,0);
+        Solver.impose(D_x, r_p, 0);
+        Solver.impose(-D_y, dw_p,0);
+        Solver.impose(-D_x, l_p,0);
+        Solver.solve(P);
+        std::cout << "Poisson Solved" << std::endl;
+        V_star = V + (V_t - 1e-3*Grad(P));
+        V = V_star;
+
+
         int n=10;
         double nu=1e-2;
         Particles.write_frame("Stokes",0);
@@ -239,7 +259,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests2)
 
 
     BOOST_AUTO_TEST_CASE(dcpse_Lid_normal) {
-        const size_t sz[2] = {31,31};
+        const size_t sz[2] = {81,81};
         Box<2, double> box({0, 0}, {1,1});
         size_t bc[2] = {NON_PERIODIC, NON_PERIODIC};
         double spacing = box.getHigh(0) / (sz[0] - 1);
@@ -342,11 +362,11 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests2)
         Laplacian Lap(Particles, 2, rCut, 1.9);
         Advection Adv(Particles, 2, rCut, 1.9);
         Divergence Div(Particles, 2, rCut, 1.9);
-        double dt=3e-3;
+        double dt=5e-4;
         int n=50;
         double nu=1e-2;
         dV=dt*(nu*Lap(V)-Adv(V,V));
-        DCPSE_scheme<equations2,decltype(Particles)> Solver(2 * rCut, Particles,options_solver::LAGRANGE_MULTIPLIER);
+        DCPSE_scheme<equations1d,decltype(Particles)> Solver(2 * rCut, Particles,options_solver::LAGRANGE_MULTIPLIER);
         auto Pressure_Poisson = Lap(P);
         auto D_y=Dy(P);
         auto D_x=Dx(P);
@@ -364,7 +384,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests2)
         for(int i=1; i<=n ;i++)
         {   dV=dt*(nu*Lap(V)-Adv(V,V));
             RHS=1/dt*Div(dV);
-            DCPSE_scheme<equations2,decltype(Particles)> Solver(2 * rCut, Particles,options_solver::LAGRANGE_MULTIPLIER);
+            DCPSE_scheme<equations1d,decltype(Particles)> Solver(2 * rCut, Particles,options_solver::LAGRANGE_MULTIPLIER);
             auto Pressure_Poisson = Lap(P);
             auto D_y=Dy(P);
             auto D_x=Dx(P);
@@ -401,7 +421,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests2)
             Particles.write_frame("Re100-3e-3-Lid",i);
             std::cout<<i<<std::endl;
             if (i==100)
-                dt=5e-4;
+                dt=1e-4;
         }
     }
 
