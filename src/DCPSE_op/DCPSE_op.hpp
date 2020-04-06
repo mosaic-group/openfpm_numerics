@@ -66,10 +66,10 @@ public:
                 auto coeff_dc = dcp.getCoeffNN(key,j);
                 auto k = dcp.getIndexNN(key,j);
 
-                auto k_coeff = coeff_dc * coeff / dcp[i].getEpsilonPrefactor(key);
+                auto k_coeff = coeff_dc * coeff / dcp.getEpsilonPrefactor(key);
                 o1.template value_nz<Sys_eqs>(p_map,k,cols,k_coeff,comp);
 
-                auto kk_coeff = dcp[i].getSign() * coeff_dc * coeff / dcp[i].getEpsilonPrefactor(key);
+                auto kk_coeff = dcp.getSign() * coeff_dc * coeff / dcp.getEpsilonPrefactor(key);
                 o1.template value_nz<Sys_eqs>(p_map,k,cols,k_coeff,comp);
                 //cols[p_map. template getProp<0>(k)*Sys_eqs::nvar + comp] += coeff_dc * coeff / dcp.getEpsilonPrefactor(key);
 
@@ -817,7 +817,7 @@ class Laplacian
 public:
 
     template<typename particles_type>
-    Laplacian(particles_type & parts, unsigned int ord ,typename particles_type::stype rCut,double scaling_factor=dcpse_scaling_factor)
+    Laplacian(particles_type & parts, unsigned int ord ,typename particles_type::stype rCut,double scaling_factor=dcpse_scaling_factor, double rcut_verlet = -1.0)
     {
         typedef Dcpse<particles_type::dims,particles_type> DCPSE_type;
 
@@ -830,7 +830,7 @@ public:
             Point<particles_type::dims,unsigned int> p;
             p.zero();
             p.get(i) = 2;
-            new (dcpse_ptr) Dcpse<particles_type::dims,particles_type>(parts,p, ord, rCut,scaling_factor);
+            new (dcpse_ptr) Dcpse<particles_type::dims,particles_type>(parts,p, ord, rCut,scaling_factor,rcut_verlet);
             dcpse_ptr++;
         }
     }

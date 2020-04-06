@@ -57,7 +57,6 @@ MatrixType &DcpseRhs<dim>::getVector(MatrixType &b)
     //}
 
 
-
     return b;
 }
 

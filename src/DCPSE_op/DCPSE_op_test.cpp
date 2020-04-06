@@ -557,7 +557,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
         size_t bc[2] = {NON_PERIODIC, NON_PERIODIC};
         double spacing = box.getHigh(0) / (sz[0] - 1);
         Ghost<2, double> ghost(spacing * 3);
-        double rCut = spacing*2.5 + spacing*1e-02;
+        double rCut = spacing + spacing*1e-02;
         std::cout<<spacing<<std::endl;
         //                                  sf    W   DW        RHS    Wnew  V
         vector_dist<2, double, aggregate<double,double,double,double,double,VectorS<2, double>>> Particles(0, box, bc, ghost);
@@ -780,7 +780,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
 //        Derivative_x Dx(Particles, 2, rCut,1);
 //        Derivative_y Dy(Particles, 2, rCut,1);
 //        Gradient Grad(Particles, 2, rCut,1);
-        Laplacian Lap(Particles, 1, rCut, 4.1);
+        Laplacian Lap(Particles, 1, rCut, 3.9,3.0*spacing + 1e-6);
 //        Curl2D Curl(Particles, 2, rCut, 1);
 
         auto its = Particles.getDomainIterator();

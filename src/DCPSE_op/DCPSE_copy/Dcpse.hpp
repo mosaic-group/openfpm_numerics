@@ -59,6 +59,8 @@ private:
 
     vector_type & particles;
 
+    typename vector_type::stype rcut_verlet = -1.0;
+
 public:
 
     // Here we require the first element of the aggregate to be:
@@ -67,11 +69,13 @@ public:
           Point<dim, unsigned int> differentialSignature,
           unsigned int convergenceOrder,
           T rCut,
-          T supportSizeFactor = 1) :
+          T supportSizeFactor = 1,
+          T rcut_verlet = -1.0) :
             particles(particles),
             differentialSignature(differentialSignature),
             differentialOrder(Monomial<dim>(differentialSignature).order()),
-            monomialBasis(differentialSignature.asArray(), convergenceOrder)
+            monomialBasis(differentialSignature.asArray(), convergenceOrder),
+            rcut_verlet(rcut_verlet)
             {
         if (supportSizeFactor < 1) {
             initializeAdaptive(particles, convergenceOrder, rCut);
@@ -79,6 +83,8 @@ public:
             initializeStaticSize(particles, convergenceOrder, rCut, supportSizeFactor);
         }
     }
+
+
 
     template<unsigned int prp>
     void DrawKernel(vector_type &particles, int k)
@@ -392,6 +398,7 @@ public:
     }
 
 private:
+
     void initializeAdaptive(vector_type &particles,
                             unsigned int convergenceOrder,
                             T rCut) {
@@ -404,7 +411,7 @@ private:
             const T condVTOL = 1e2;
 
             // Get the points in the support of the DCPSE kernel and store the support for reuse
-            Support<dim, T, part_type> support = supportBuilder.getSupport(it, requiredSupportSize);
+            Support<dim, T, part_type> support = supportBuilder.getSupport(it, requiredSupportSize,rcut_verlet);
             EMatrix<T, Eigen::Dynamic, Eigen::Dynamic> V(support.size(), monomialBasis.size());
 
             // Vandermonde matrix computation
@@ -462,7 +469,7 @@ private:
         auto it = particles.getDomainIterator();
         while (it.isNext()) {
             // Get the points in the support of the DCPSE kernel and store the support for reuse
-            Support<dim, T, part_type> support = supportBuilder.getSupport(it, requiredSupportSize);
+            Support<dim, T, part_type> support = supportBuilder.getSupport(it, requiredSupportSize,rcut_verlet);
             EMatrix<T, Eigen::Dynamic, Eigen::Dynamic> V(support.size(), monomialBasis.size());
 /* Some Debug code
             if (it.get().getKey() == 5564)
