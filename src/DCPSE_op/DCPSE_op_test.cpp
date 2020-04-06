@@ -874,7 +874,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
     BOOST_AUTO_TEST_CASE(dcpse_poisson_Robin_anal) {
 //  int rank;
 //  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-        const size_t sz[2] = {150,150};
+        const size_t sz[2] = {81,81};
         Box<2, double> box({0, 0}, {0.5, 0.5});
         size_t bc[2] = {NON_PERIODIC, NON_PERIODIC};
         double spacing = box.getHigh(0) / (sz[0] - 1);
@@ -1316,7 +1316,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
     //https://fenicsproject.org/docs/dolfin/1.4.0/python/demo/documented/neumann-poisson/python/documentation.html
 //  int rank;
 //  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-        const size_t sz[2] = {150,150};
+        const size_t sz[2] = {81,81};
         Box<2, double> box({0, 0}, {1.0, 1.0});
         size_t bc[2] = {NON_PERIODIC, NON_PERIODIC};
         double spacing = box.getHigh(0) / (sz[0] - 1);
@@ -2080,7 +2080,105 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
         //auto flux = Dx(v) + v;
 
     }
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    BOOST_AUTO_TEST_CASE(dcpse_op_test_lap) {
+//  int rank;
+//  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+        size_t edgeSemiSize = 160;
+        const size_t sz[2] = {2 * edgeSemiSize+1, 2 * edgeSemiSize+1};
+        Box<2, double> box({0, 0}, {2 * M_PI, 2 * M_PI});
+        size_t bc[2] = {NON_PERIODIC, NON_PERIODIC};
+        double spacing[2];
+        spacing[0] = 2 * M_PI / (sz[0] - 1);
+        spacing[1] = 2 * M_PI / (sz[1] - 1);
+        Ghost<2, double> ghost(spacing[0] * 3);
+        double rCut = 2.0 * spacing[0];
+        BOOST_TEST_MESSAGE("Init vector_dist...");
+        double sigma2 = spacing[0] * spacing[1] / (2 * 4);
 
+        vector_dist<2, double, aggregate<double, double, double, double, VectorS<2, double>>> domain(0, box,
+                                                                                                                 bc,
+                                                                                                                 ghost);
+
+        //Init_DCPSE(domain)
+        BOOST_TEST_MESSAGE("Init domain...");
+//            std::random_device rd{};
+//            std::mt19937 rng{rd()};
+        std::mt19937 rng{6666666};
+
+        std::normal_distribution<> gaussian{0, sigma2};
+
+        auto it = domain.getGridIterator(sz);
+        size_t pointId = 0;
+        size_t counter = 0;
+        double minNormOne = 999;
+        while (it.isNext()) {
+            domain.add();
+            auto key = it.get();
+            mem_id k0 = key.get(0);
+            double x = k0 * spacing[0];
+            domain.getLastPos()[0] = x;//+ gaussian(rng);
+            mem_id k1 = key.get(1);
+            double y = k1 * spacing[1];
+            domain.getLastPos()[1] = y;//+gaussian(rng);
+            // Here fill the function value
+            domain.template getLastProp<0>() = sin(domain.getLastPos()[0]) + sin(domain.getLastPos()[1]);
+            // Here fill the validation value for Lap
+            domain.template getLastProp<1>() = - sin(domain.getLastPos()[0]) - sin(domain.getLastPos()[1]);
+            domain.template getLastProp<4>()[0] = -sin(domain.getLastPos()[0]);
+            domain.template getLastProp<4>()[1] = -sin(domain.getLastPos()[1]);
+
+
+//            domain.template getLastProp<2>() = 2 * x;
+//            domain.template getLastProp<2>() = 1;
+
+            ++counter;
+            ++it;
+        }
+        BOOST_TEST_MESSAGE("Sync domain across processors...");
+
+        domain.map();
+        domain.ghost_get<0>();
+
+        //Derivative_x Dx(domain, 2, rCut);
+        //Derivative_y Dy(domain, 2, rCut);
+        //Gradient Grad(domain, 2, rCut);
+        Laplacian Lap(domain, 2, rCut,1.9);
+        auto v = getV<1>(domain);
+        auto P = getV<0>(domain);
+        auto vv = getV<2>(domain);
+        auto errv = getV<3>(domain);
+
+
+
+        vv = Lap(P);
+        auto it2 = domain.getDomainIterator();
+
+        double worst = 0.0;
+
+        while (it2.isNext()) {
+            auto p = it2.get();
+
+            if (fabs(domain.getProp<1>(p) - domain.getProp<2>(p)) > worst) {
+                worst = fabs(domain.getProp<1>(p) - domain.getProp<2>(p));
+            }
+
+            ++it2;
+        }
+
+        std::cout << "Maximum Error: " << worst << std::endl;
+        errv=v-vv;
+        domain.deleteGhost();
+        domain.write("v");
+
+        //std::cout << demangle(typeid(decltype(v)).name()) << "\n";
+
+        //Debug<decltype(expr)> a;
+
+        //typedef decltype(expr)::blabla blabla;
+
+        //auto err = Dx + Dx;
+    }
 
     BOOST_AUTO_TEST_CASE(dcpse_slice) {
         const size_t sz[2] = {31,31};
