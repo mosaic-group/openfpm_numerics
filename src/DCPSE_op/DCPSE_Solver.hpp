@@ -326,7 +326,7 @@ public:
      * \param exp where to store the result
      *
      */
-    template<typename expr_type>
+/*    template<typename expr_type>
     void solve(expr_type exp)
     {
         umfpack_solver<double> solver;
@@ -342,7 +342,7 @@ public:
             exp.value(p) = x(p.getKey());
             ++it;
         }
-    }
+    }*/
 
     /*! \brief Solve an equation
      *
@@ -352,10 +352,8 @@ public:
      *
      */
     template<typename ... expr_type>
-    void solve2(expr_type ... exps)
+    void solve(expr_type ... exps)
     {
-    	std::cout << sizeof...(exps) << " " << Sys_eqs::nvar << std::endl;
-
     	if (sizeof...(exps) != Sys_eqs::nvar)
     	{std::cerr << __FILE__ << ":" << __LINE__ << " Error the number of properties you gave does not match the solution in\
     													dimensionality, I am expecting " << Sys_eqs::nvar <<
