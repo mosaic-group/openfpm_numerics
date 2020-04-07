@@ -76,12 +76,12 @@ const bool equations1d::boundary[] = {NON_PERIODIC, NON_PERIODIC};
 BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests2)
 
     BOOST_AUTO_TEST_CASE(dcpse_Lid_Stokes) {
-        const size_t sz[2] = {81,81};
+        const size_t sz[2] = {31,31};
         Box<2, double> box({0, 0}, {1,1});
         size_t bc[2] = {NON_PERIODIC, NON_PERIODIC};
         double spacing = box.getHigh(0) / (sz[0] - 1);
         Ghost<2, double> ghost(spacing * 3);
-        double rCut = 0.5 * spacing;
+        double rCut = 2.5 * spacing;
         //                                  P        V                 v_star           RHS            V_BC    Helmholtz
         vector_dist<2, double, aggregate<double,VectorS<2, double>,VectorS<2, double>,double,VectorS<2, double>,double,    double>> Particles(0, box, bc, ghost);
         auto it = Particles.getGridIterator(sz);
@@ -103,7 +103,6 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests2)
         openfpm::vector<aggregate<int>> dw_p;
         openfpm::vector<aggregate<int>> l_p;
         openfpm::vector<aggregate<int>> r_p;
-
 
         auto P = getV<0>(Particles);
         auto V = getV<1>(Particles);
@@ -180,12 +179,12 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests2)
         vx.setId(0);
         vy.setId(1);
 
-        Derivative_x Dx(Particles, 2, rCut,1.9);
-        Derivative_y Dy(Particles, 2, rCut,1.9);
-        Gradient Grad(Particles, 2, rCut,1.9);
-        Laplacian Lap(Particles, 2, rCut, 1.9);
-        Advection Adv(Particles, 2, rCut, 1.9);
-        Divergence Div(Particles, 2, rCut, 1.9);
+        Derivative_x Dx(Particles, 2, rCut,1.9,3.1*spacing );
+        Derivative_y Dy(Particles, 2, rCut,1.9,3.1*spacing);
+        Gradient Grad(Particles, 2, rCut,1.9,3.1*spacing );
+        Laplacian Lap(Particles, 1, rCut, 4.1,3.1*spacing);
+        Advection Adv(Particles, 2, rCut, 1.9,3.1*spacing);
+        Divergence Div(Particles, 2, rCut, 1.9,3.1*spacing);
 
 
         //starting the simulation at a nice *continuous* place
@@ -204,7 +203,6 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests2)
         std::cout << "Poisson Solved" << std::endl;
         V_star = V + (V_t - 1e-3*Grad(P));
         V = V_star;
-
 
         int n=10;
         double nu=1e-2;
@@ -259,12 +257,12 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests2)
 
 
     BOOST_AUTO_TEST_CASE(dcpse_Lid_normal) {
-        const size_t sz[2] = {81,81};
+        const size_t sz[2] = {31,31};
         Box<2, double> box({0, 0}, {1,1});
         size_t bc[2] = {NON_PERIODIC, NON_PERIODIC};
         double spacing = box.getHigh(0) / (sz[0] - 1);
         Ghost<2, double> ghost(spacing * 3);
-        double rCut = 0.5 * spacing;
+        double rCut = 2.5 * spacing;
         //                                  P        V                 Dv              RHS    Vtemp                   Proj_lap
         vector_dist<2, double, aggregate<double,VectorS<2, double>,VectorS<2, double>,double,VectorS<2, double>,double,double>> Particles(0, box, bc, ghost);
         auto it = Particles.getGridIterator(sz);
@@ -356,13 +354,13 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests2)
             ++it2;
         }
 
-        Derivative_x Dx(Particles, 2, rCut,1.9);
-        Derivative_y Dy(Particles, 2, rCut,1.9);
-        Gradient Grad(Particles, 2, rCut,1.9);
-        Laplacian Lap(Particles, 2, rCut, 1.9);
-        Advection Adv(Particles, 2, rCut, 1.9);
-        Divergence Div(Particles, 2, rCut, 1.9);
-        double dt=5e-4;
+        Derivative_x Dx(Particles, 2, rCut,1.9,3.1*spacing);
+        Derivative_y Dy(Particles, 2, rCut,1.9,3.1*spacing);
+        Gradient Grad(Particles, 2, rCut,1.9,3.1*spacing);
+        Laplacian Lap(Particles, 2, rCut, 1.9,3.1*spacing);
+        Advection Adv(Particles, 2, rCut, 1.9,3.1*spacing);
+        Divergence Div(Particles, 2, rCut, 1.9,3.1*spacing);
+        double dt=1e-3;
         int n=50;
         double nu=1e-2;
         dV=dt*(nu*Lap(V)-Adv(V,V));

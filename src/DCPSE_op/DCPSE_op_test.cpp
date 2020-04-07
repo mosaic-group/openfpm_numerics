@@ -42,6 +42,29 @@ struct equations {
     typedef Vector<double> Vector_type;
 };
 
+struct equations2d1 {
+    //! dimensionaly of the equation ( 3D problem ...)
+    static const unsigned int dims = 2;
+    //! number of fields in the system
+    static const unsigned int nvar = 2;
+
+    //! boundary at X and Y
+    static const bool boundary[];
+
+    //! type of space float, double, ...
+    typedef double stype;
+
+    //! type of base particles
+    typedef vector_dist<dims, double, aggregate<double>> b_part;
+
+    //! type of SparseMatrix for the linear solver
+    typedef SparseMatrix<double, int, EIGEN_BASE> SparseMatrix_type;
+
+    //! type of Vector for the linear solver
+    typedef Vector<double> Vector_type;
+};
+const bool equations2d1::boundary[] = {NON_PERIODIC, NON_PERIODIC};
+
 const bool equations::boundary[] = {NON_PERIODIC, NON_PERIODIC};
 
 //template<typename T>
@@ -552,12 +575,12 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
     }
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     BOOST_AUTO_TEST_CASE(dcpse_Lid_sf) {
-        const size_t sz[2] = {16,16};
+        const size_t sz[2] = {31,31};
         Box<2, double> box({0, 0}, {1,1});
         size_t bc[2] = {NON_PERIODIC, NON_PERIODIC};
         double spacing = box.getHigh(0) / (sz[0] - 1);
         Ghost<2, double> ghost(spacing * 3);
-        double rCut = spacing + spacing*1e-02;
+        double rCut = 2.5*spacing + spacing*1e-02;
         std::cout<<spacing<<std::endl;
         //                                  sf    W   DW        RHS    Wnew  V
         vector_dist<2, double, aggregate<double,double,double,double,double,VectorS<2, double>>> Particles(0, box, bc, ghost);
@@ -780,7 +803,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
 //        Derivative_x Dx(Particles, 2, rCut,1);
 //        Derivative_y Dy(Particles, 2, rCut,1);
 //        Gradient Grad(Particles, 2, rCut,1);
-        Laplacian Lap(Particles, 1, rCut, 3.9,3.0*spacing + 1e-6);
+        Laplacian Lap(Particles, 2, rCut, 1.9,3.1*spacing);
 //        Curl2D Curl(Particles, 2, rCut, 1);
 
         auto its = Particles.getDomainIterator();
@@ -879,7 +902,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
         size_t bc[2] = {NON_PERIODIC, NON_PERIODIC};
         double spacing = box.getHigh(0) / (sz[0] - 1);
         Ghost<2, double> ghost(spacing * 3);
-        double rCut = 0.5 * spacing;
+        double rCut = 2 * spacing;
         BOOST_TEST_MESSAGE("Init vector_dist...");
 
         vector_dist<2, double, aggregate<double,double,double,double,double,double>> domain(0, box, bc, ghost);
@@ -905,10 +928,10 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
         domain.map();
         domain.ghost_get<0>();
 
-        Derivative_x Dx(domain, 2, rCut,2);
-        Derivative_y Dy(domain, 2, rCut,2);
+        Derivative_x Dx(domain, 2, rCut,1.9,3.1*spacing);
+        Derivative_y Dy(domain, 2, rCut,1.9,3.1*spacing);
         //Gradient Grad(domain, 2, rCut);
-        Laplacian Lap(domain, 2, rCut, 2);
+        Laplacian Lap(domain, 2, rCut, 1.9,3.1*spacing);
         //Advection Adv(domain, 3, rCut, 3);
         //Solver Sol_Lap(Lap),Sol_Dx(Dx);
 
@@ -2262,6 +2285,196 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
 
         Particles.write("test_out");
     }
+
+
+
+    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    BOOST_AUTO_TEST_CASE(dcpse_slice_solver) {
+//  int rank;
+//  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+        const size_t sz[2] = {31,31};
+        Box<2, double> box({0, 0}, {0.5, 0.5});
+        size_t bc[2] = {NON_PERIODIC, NON_PERIODIC};
+        double spacing = box.getHigh(0) / (sz[0] - 1);
+        Ghost<2, double> ghost(spacing * 3);
+        double rCut = 2 * spacing;
+        BOOST_TEST_MESSAGE("Init vector_dist...");
+
+        vector_dist<2, double, aggregate<VectorS<2, double>,VectorS<2, double>,VectorS<2, double>,VectorS<2, double>,VectorS<2, double>,VectorS<2, double>>> domain(0, box, bc, ghost);
+
+
+        //Init_DCPSE(domain)
+        BOOST_TEST_MESSAGE("Init domain...");
+
+        auto it = domain.getGridIterator(sz);
+        while (it.isNext()) {
+            domain.add();
+
+            auto key = it.get();
+            double x = key.get(0) * it.getSpacing(0);
+            domain.getLastPos()[0] = x;
+            double y = key.get(1) * it.getSpacing(1);
+            domain.getLastPos()[1] = y;
+
+            ++it;
+        }
+        BOOST_TEST_MESSAGE("Sync domain across processors...");
+
+        domain.map();
+        domain.ghost_get<0>();
+
+        Derivative_x Dx(domain, 2, rCut,1.9,3.1*spacing);
+        Derivative_y Dy(domain, 2, rCut,1.9,3.1*spacing);
+        //Gradient Grad(domain, 2, rCut);
+        Laplacian Lap(domain, 2, rCut, 1.9,3.1*spacing);
+        //Advection Adv(domain, 3, rCut, 3);
+        //Solver Sol_Lap(Lap),Sol_Dx(Dx);
+
+
+        openfpm::vector<aggregate<int>> bulk;
+        openfpm::vector<aggregate<int>> up_p;
+        openfpm::vector<aggregate<int>> dw_p;
+        openfpm::vector<aggregate<int>> l_p;
+        openfpm::vector<aggregate<int>> r_p;
+        openfpm::vector<aggregate<int>> ref_p;
+
+        auto v = getV<0>(domain);
+        auto RHS=getV<1>(domain);
+        auto sol = getV<2>(domain);
+        auto anasol = getV<3>(domain);
+        auto err = getV<4>(domain);
+        auto DCPSE_sol=getV<5>(domain);
+
+        // Here fill me
+
+        Box<2, double> up({box.getLow(0) - spacing / 2.0, box.getHigh(1) - spacing / 2.0},
+                          {box.getHigh(0) + spacing / 2.0, box.getHigh(1) + spacing / 2.0});
+
+        Box<2, double> down({box.getLow(0) - spacing / 2.0, box.getLow(1) - spacing / 2.0},
+                            {box.getHigh(0) + spacing / 2.0, box.getLow(1) + spacing / 2.0});
+
+        Box<2, double> left({box.getLow(0) - spacing / 2.0, box.getLow(1) + spacing / 2.0},
+                            {box.getLow(0) + spacing / 2.0, box.getHigh(1) - spacing / 2.0});
+
+        Box<2, double> right({box.getHigh(0) - spacing / 2.0, box.getLow(1) + spacing / 2.0},
+                             {box.getHigh(0) + spacing / 2.0, box.getHigh(1) - spacing / 2.0});
+
+        openfpm::vector<Box<2, double>> boxes;
+        boxes.add(up);
+        boxes.add(down);
+        boxes.add(left);
+        boxes.add(right);
+
+        // Create a writer and write
+        VTKWriter<openfpm::vector<Box<2, double>>, VECTOR_BOX> vtk_box;
+        vtk_box.add(boxes);
+        vtk_box.write("vtk_box.vtk");
+
+
+        auto it2 = domain.getDomainIterator();
+
+        while (it2.isNext()) {
+            auto p = it2.get();
+            Point<2, double> xp = domain.getPos(p);
+            if (up.isInside(xp) == true) {
+                up_p.add();
+                up_p.last().get<0>() = p.getKey();
+                domain.getProp<1>(p)[0] = -2*M_PI*M_PI*sin(M_PI*xp.get(0))*sin(M_PI*xp.get(1));
+                domain.getProp<3>(p)[0] = sin(M_PI*xp.get(0))*sin(M_PI*xp.get(1));
+
+                domain.getProp<1>(p)[1] = -2*M_PI*M_PI*sin(M_PI*xp.get(0))*sin(M_PI*xp.get(1));
+                domain.getProp<3>(p)[1] = sin(M_PI*xp.get(0))*sin(M_PI*xp.get(1));
+
+
+            } else if (down.isInside(xp) == true) {
+                dw_p.add();
+                dw_p.last().get<0>() = p.getKey();
+                domain.getProp<1>(p)[0] = -2*M_PI*M_PI*sin(M_PI*xp.get(0))*sin(M_PI*xp.get(1));
+                domain.getProp<3>(p)[0] = sin(M_PI*xp.get(0))*sin(M_PI*xp.get(1));
+
+                domain.getProp<1>(p)[1] = -2*M_PI*M_PI*sin(M_PI*xp.get(0))*sin(M_PI*xp.get(1));
+                domain.getProp<3>(p)[1] = sin(M_PI*xp.get(0))*sin(M_PI*xp.get(1));
+
+            } else if (left.isInside(xp) == true) {
+                l_p.add();
+                l_p.last().get<0>() = p.getKey();
+                domain.getProp<1>(p)[0] = -2*M_PI*M_PI*sin(M_PI*xp.get(0))*sin(M_PI*xp.get(1));
+                domain.getProp<3>(p)[0] = sin(M_PI*xp.get(0))*sin(M_PI*xp.get(1));
+
+                domain.getProp<1>(p)[1] = -2*M_PI*M_PI*sin(M_PI*xp.get(0))*sin(M_PI*xp.get(1));
+                domain.getProp<3>(p)[1] = sin(M_PI*xp.get(0))*sin(M_PI*xp.get(1));
+
+            } else if (right.isInside(xp) == true) {
+                r_p.add();
+                r_p.last().get<0>() = p.getKey();
+                domain.getProp<1>(p)[0] = -2*M_PI*M_PI*sin(M_PI*xp.get(0))*sin(M_PI*xp.get(1));
+                domain.getProp<3>(p)[0] = sin(M_PI*xp.get(0))*sin(M_PI*xp.get(1));
+
+                domain.getProp<1>(p)[1] = -2*M_PI*M_PI*sin(M_PI*xp.get(0))*sin(M_PI*xp.get(1));
+                domain.getProp<3>(p)[1] = sin(M_PI*xp.get(0))*sin(M_PI*xp.get(1));
+
+            } else {
+                bulk.add();
+                bulk.last().get<0>() = p.getKey();
+                domain.getProp<1>(p)[0] = -2*M_PI*M_PI*sin(M_PI*xp.get(0))*sin(M_PI*xp.get(1));
+                domain.getProp<3>(p)[0] = sin(M_PI*xp.get(0))*sin(M_PI*xp.get(1));
+
+                domain.getProp<1>(p)[1] = -2*M_PI*M_PI*sin(M_PI*xp.get(0))*sin(M_PI*xp.get(1));
+                domain.getProp<3>(p)[1] = sin(M_PI*xp.get(0))*sin(M_PI*xp.get(1));
+            }
+            ++it2;
+        }
+
+        eq_id vx,vy;
+
+        vx.setId(0);
+        vy.setId(1);
+
+        DCPSE_scheme<equations2d1,decltype(domain)> Solver(2 * rCut, domain);
+        auto Poisson0 = Lap(v[0]);
+        auto Poisson1 = Lap(v[1]);
+        //auto D_x = Dx(v[1]);
+        //auto D_y = Dy(v[1]);
+        Solver.impose(Poisson0, bulk, RHS[0],vx);
+        Solver.impose(Poisson1, bulk, RHS[1],vy);
+        Solver.impose(v[0], up_p, RHS[0],vx);
+        Solver.impose(v[1], up_p, RHS[1],vy);
+        Solver.impose(v[0], r_p,  RHS[0],vx);
+        Solver.impose(v[1], r_p,  RHS[1],vy);
+        Solver.impose(v[0], dw_p, RHS[0],vx);
+        Solver.impose(v[1], dw_p, RHS[1],vy);
+        Solver.impose(v[0], l_p,  RHS[0],vx);
+        Solver.impose(v[1], l_p,  RHS[1],vy);
+        Solver.solve(sol);
+        DCPSE_sol=Lap(sol);
+        double worst1 = 0.0;
+        double worst2 = 0.0;
+
+
+        v=sol-RHS;
+
+        for(int j=0;j<bulk.size();j++)
+        {   auto p=bulk.get<0>(j);
+            if (fabs(domain.getProp<3>(p)[0] - domain.getProp<2>(p)[0]) >= worst1) {
+                worst1 = fabs(domain.getProp<3>(p)[0] - domain.getProp<2>(p)[0]);
+            }
+            domain.getProp<4>(p)[0] = fabs(domain.getProp<3>(p)[0] - domain.getProp<2>(p)[0]);
+
+        }
+        for(int j=0;j<bulk.size();j++)
+        {   auto p=bulk.get<0>(j);
+            if (fabs(domain.getProp<3>(p)[1] - domain.getProp<2>(p)[1]) >= worst1) {
+                worst1 = fabs(domain.getProp<3>(p)[1] - domain.getProp<2>(p)[1]);
+            }
+            domain.getProp<4>(p)[1] = fabs(domain.getProp<3>(p)[1] - domain.getProp<2>(p)[1]);
+
+        }
+        std::cout << "Maximum Analytic Error in slice x: " << worst1 << std::endl;
+        std::cout << "Maximum Analytic Error in slice y: " << worst2 << std::endl;
+
+        domain.write("Slice_anasol");
+    }
+    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 BOOST_AUTO_TEST_SUITE_END()
 
