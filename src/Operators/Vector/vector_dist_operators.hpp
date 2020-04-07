@@ -802,7 +802,7 @@ template<unsigned int, bool is_valid>
 struct get_vector_dist_expression_op
 {
 	template<typename exp_type>
-	inline static auto get(exp_type & o1, const vect_dist_key_dx & key) -> typename std::remove_reference<decltype(o1.value(vect_dist_key_dx(0)))>::type
+	inline static auto get(exp_type & o1, const vect_dist_key_dx & key) -> decltype(o1.value(vect_dist_key_dx(0)))
 	{
 		return o1.value(key);
 	}
@@ -844,7 +844,7 @@ template<>
 struct get_vector_dist_expression_op<1,true>
 {
 	template<typename exp_type>
-	static auto get(exp_type & o1, const vect_dist_key_dx & key, const int (& comp)[1]) -> typename std::remove_reference<decltype(o1.value(vect_dist_key_dx(0))[0])>::type
+	static auto get(exp_type & o1, const vect_dist_key_dx & key, const int (& comp)[1]) -> decltype(o1.value(vect_dist_key_dx(0))[0])
 	{
 		return o1.value(key)[comp[0]];
 	}
@@ -866,7 +866,7 @@ template<>
 struct get_vector_dist_expression_op<2,true>
 {
 	template<typename exp_type>
-	static auto get(exp_type & o1, const vect_dist_key_dx & key, const int (& comp)[2]) -> typename std::remove_reference<decltype(o1.value(vect_dist_key_dx(0))[0][0])>::type
+	static auto get(exp_type & o1, const vect_dist_key_dx & key, const int (& comp)[2]) -> decltype(o1.value(vect_dist_key_dx(0))[0][0])
 	{
 		return o1.value(key)[comp[0]][comp[1]];
 	}

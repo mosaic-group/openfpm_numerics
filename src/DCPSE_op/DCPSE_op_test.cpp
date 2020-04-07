@@ -2445,7 +2445,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
         Solver.impose(v[1], dw_p, RHS[1],vy);
         Solver.impose(v[0], l_p,  RHS[0],vx);
         Solver.impose(v[1], l_p,  RHS[1],vy);
-        Solver.solve(sol);
+        Solver.solve2(sol[0],sol[1]);
         DCPSE_sol=Lap(sol);
         double worst1 = 0.0;
         double worst2 = 0.0;

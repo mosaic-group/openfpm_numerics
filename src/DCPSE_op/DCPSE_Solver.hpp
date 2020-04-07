@@ -278,47 +278,60 @@ class DCPSE_scheme: public MatrixAssembler
         }
     }
 
-public:
-
-/*    void * dcpse_solver;
-
-public:
-
-    template<typename particles_type>
-    Solver(expr type,particles_type & parts, unsigned int ord ,typename particles_type::stype rCut,double scaling_factor=dcpse_scaling_factor)
+    /*! \brief Solve an equation
+     *
+     *  \warning exp must be a scalar type
+     *
+     * \param exp where to store the result
+     *
+     */
+    template<typename solType, typename expr_type>
+    void copy_impl(solType & x, expr_type exp, unsigned int comp)
     {
-        typedef Dcpse<particles_type::dims,particles_type> DCPSE_type;
+        auto parts = exp.getVector();
 
-        dcpse_solver = new unsigned char [particles_type::dims*sizeof(DCPSE_type)];
+        auto it = parts.getDomainIterator();
 
-        SparseMatrix<double, int, PETSC_BASE> MAT(sz[0]*sz[1], sz[0]*sz[1], sz[0]*sz[1]);
-
-        Dcpse<particles_type::dims,particles_type> * dcpse_ptr = (Dcpse<particles_type::dims,particles_type> *)dcpse;
-
-        for (int i = 0 ; i < particles_type::dims ; i++)
+        while (it.isNext())
         {
-
+            auto p = it.get();
+            exp.value(p) = x(p.getKey()*Sys_eqs::nvar + comp);
+            ++it;
         }
     }
 
-    template<typename operand_type>
-    vector_dist_expression_op<operand_type,Dcpse<operand_type::vtype::dims,typename operand_type::vtype>,VECT_DCPSE_V> operator()(operand_type arg)
+    template<typename solType, typename exp1, typename ... othersExp>
+    void copy_nested(solType & x, unsigned int & comp, exp1 exp, othersExp ... exps)
     {
-        typedef Dcpse<operand_type::vtype::dims,typename operand_type::vtype> dcpse_type;
+    	copy_impl(x,exp,comp);
+    	comp++;
 
-        return vector_dist_expression_op<operand_type,dcpse_type,VECT_DCPSE_V>(arg,*(dcpse_type(*)[operand_type::vtype::dims])dcpse);
-    }*/
+    	copy_nested(x,comp,exps ...);
+    }
 
+
+    template<typename solType, typename exp1>
+    void copy_nested(solType & x, unsigned int & comp, exp1 exp)
+    {
+    	copy_impl(x,exp,comp);
+    	comp++;
+    }
+
+public:
+
+    /*! \brief Solve an equation
+     *
+     *  \warning exp must be a scalar type
+     *
+     * \param exp where to store the result
+     *
+     */
     template<typename expr_type>
     void solve(expr_type exp)
     {
         umfpack_solver<double> solver;
         auto x = solver.solve(getA(opt),getB(opt));
-        //petsc_solver<double> solver;
-        //solver.setSolver(KSPBCGS);
-        //solver.setMaxIter(1000);
-        //solver.setRestart(200);
-        //auto x = solver.try_solve(getA(),getB());
+
         auto parts = exp.getVector();
 
         auto it = parts.getDomainIterator();
@@ -329,6 +342,30 @@ public:
             exp.value(p) = x(p.getKey());
             ++it;
         }
+    }
+
+    /*! \brief Solve an equation
+     *
+     *  \warning exp must be a scalar type
+     *
+     * \param exp where to store the result
+     *
+     */
+    template<typename ... expr_type>
+    void solve2(expr_type ... exps)
+    {
+    	std::cout << sizeof...(exps) << " " << Sys_eqs::nvar << std::endl;
+
+    	if (sizeof...(exps) != Sys_eqs::nvar)
+    	{std::cerr << __FILE__ << ":" << __LINE__ << " Error the number of properties you gave does not match the solution in\
+    													dimensionality, I am expecting " << Sys_eqs::nvar <<
+    													" properties " << std::endl;};
+
+        umfpack_solver<double> solver;
+        auto x = solver.solve(getA(opt),getB(opt));
+
+        unsigned int comp = 0;
+        copy_nested(x,comp,exps ...);
     }
 
     /*! \brief Constructor
