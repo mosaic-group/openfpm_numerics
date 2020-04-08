@@ -75,6 +75,206 @@ const bool equations1d::boundary[] = {NON_PERIODIC, NON_PERIODIC};
 
 BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests2)
 
+    BOOST_AUTO_TEST_CASE(dcpse_Lid_periodic) {
+        const size_t sz[2] = {31,31};
+        Box<2, double> box({0, 0}, {1,1});
+        size_t bc[2] = {PERIODIC, NON_PERIODIC};
+        double spacing = box.getHigh(0) / (sz[0] - 1);
+        Ghost<2, double> ghost(spacing * 3);
+        double rCut = 2.5 * spacing;
+        //                                  P        V                 v_star           RHS            V_t   Helmholtz
+        vector_dist<2, double, aggregate<double,VectorS<2, double>,VectorS<2, double>,double,VectorS<2, double>,double,    double>> Particles(0, box, bc, ghost);
+        auto it = Particles.getGridIterator(sz);
+        while (it.isNext()) {
+            Particles.add();
+            auto key = it.get();
+            double x = key.get(0) * it.getSpacing(0);
+            Particles.getLastPos()[0] = x;
+            double y = key.get(1) * it.getSpacing(1);
+            Particles.getLastPos()[1] = y;
+            ++it;
+        }
+
+        Particles.map();
+        Particles.ghost_get<0>();
+
+        openfpm::vector<aggregate<int>> bulk;
+        openfpm::vector<aggregate<int>> up_p;
+        openfpm::vector<aggregate<int>> dw_p;
+        openfpm::vector<aggregate<int>> l_p;
+        openfpm::vector<aggregate<int>> r_p;
+
+        auto P = getV<0>(Particles);
+        auto V = getV<1>(Particles);
+        auto V_star = getV<2>(Particles);
+        auto RHS = getV<3>(Particles);
+        auto V_t = getV<4>(Particles);
+        auto H = getV<5>(Particles);
+        auto temp=getV<6>(Particles);
+
+
+        // Here fill up the boxes for particle detection.
+
+        Box<2, double> up({box.getLow(0) + spacing / 2.0, box.getHigh(1) - spacing / 2.0},
+                          {box.getHigh(0) - spacing / 2.0, box.getHigh(1) + spacing / 2.0});
+
+        Box<2, double> down({box.getLow(0) - spacing / 2.0, box.getLow(1) - spacing / 2.0},
+                            {box.getHigh(0) + spacing / 2.0, box.getLow(1) + spacing / 2.0});
+
+        Box<2, double> left({box.getLow(0) - spacing / 2.0, box.getLow(1) + spacing / 2.0},
+                            {box.getLow(0) + spacing / 2.0, box.getHigh(1) + spacing / 2.0});
+
+        Box<2, double> right({box.getHigh(0) - spacing / 2.0, box.getLow(1) + spacing / 2.0},
+                             {box.getHigh(0) + spacing / 2.0, box.getHigh(1) + spacing / 2.0});
+
+        openfpm::vector<Box<2, double>> boxes;
+        boxes.add(up);
+        boxes.add(down);
+        boxes.add(left);
+        boxes.add(right);
+        VTKWriter<openfpm::vector<Box<2, double>>, VECTOR_BOX> vtk_box;
+        vtk_box.add(boxes);
+        vtk_box.write("boxes.vtk");
+        auto it2 = Particles.getDomainIterator();
+
+        while (it2.isNext()) {
+            auto p = it2.get();
+            Point<2, double> xp = Particles.getPos(p);
+            Particles.getProp<3>(p) =0;
+            if (up.isInside(xp) == true) {
+                up_p.add();
+                up_p.last().get<0>() = p.getKey();
+                Particles.getProp<1>(p)[0] =  1;
+                Particles.getProp<1>(p)[1] =  0;
+            }
+            else if (down.isInside(xp) == true) {
+                dw_p.add();
+                dw_p.last().get<0>() = p.getKey();
+                Particles.getProp<1>(p)[0] =  0;
+                Particles.getProp<1>(p)[1] =  0;
+            }
+            else if (left.isInside(xp) == true) {
+                l_p.add();
+                l_p.last().get<0>() = p.getKey();
+                Particles.getProp<1>(p)[0] =  0;
+                Particles.getProp<1>(p)[1] =  0;
+            }
+            else if (right.isInside(xp) == true) {
+                r_p.add();
+                r_p.last().get<0>() = p.getKey();
+                Particles.getProp<1>(p)[0] =  0;
+                Particles.getProp<1>(p)[1] =  0;
+            }
+            else {
+                bulk.add();
+                bulk.last().get<0>() = p.getKey();
+            }
+            ++it2;
+        }
+        V_t=V;
+
+
+        eq_id vx,vy;
+
+        vx.setId(0);
+        vy.setId(1);
+
+        Derivative_x Dx(Particles, 2, rCut,1.9,3.1*spacing );
+        Derivative_y Dy(Particles, 2, rCut,1.9,3.1*spacing);
+        Gradient Grad(Particles, 2, rCut,1.9,3.1*spacing );
+        Laplacian Lap(Particles, 2, rCut, 1.9,3.1*spacing);
+        Advection Adv(Particles, 2, rCut, 1.9,3.1*spacing);
+        Divergence Div(Particles, 2, rCut, 1.9,3.1*spacing);
+
+
+/*      starting the simulation at a nice *continuous* place
+        V_t=1e-3*(1e-2*Lap(V)-Adv(V,V));
+        RHS=Div(V_t);
+        DCPSE_scheme<equations1d,decltype(Particles)> Solver(2 * rCut, Particles,options_solver::LAGRANGE_MULTIPLIER);
+        auto Pressure_Poisson = Lap(P);
+        auto D_y=Dy(P);
+        auto D_x=Dx(P);
+        Solver.impose(Pressure_Poisson,bulk,prop_id<3>());
+        Solver.impose(D_y, up_p,0);
+        Solver.impose(D_x, r_p, 0);
+        Solver.impose(-D_y, dw_p,0);
+        Solver.impose(-D_x, l_p,0);
+        Solver.solve(P);
+        std::cout << "Poisson Solved" << std::endl;
+        V_star = V + (V_t - 1e-3*Grad(P));
+        V = V_star;*/
+
+        double sum=0;
+        int n=10;
+        double nu=1e-2;
+        Particles.write_frame("Stokes",0);
+        for(int i=1; i<=n ;i++)
+        {   RHS=-Grad(P);
+            DCPSE_scheme<equations2,decltype(Particles)> Solver(2 * rCut, Particles);
+            auto Stokes1 = Adv(V[0],V_star[0])-nu*Lap(V_star[0]);
+            auto Stokes2 = Adv(V[1],V_star[1])-nu*Lap(V_star[1]);
+            Solver.impose(Stokes1,bulk,RHS[0],vx);
+            Solver.impose(Stokes2,bulk,RHS[1],vy);
+            Solver.impose(V_star[0], up_p,1.0,vx);
+            Solver.impose(V_star[1], up_p,0,vy);
+            Solver.impose(V_star[0], r_p, 0,vx);
+            Solver.impose(V_star[1], r_p, 0,vy);
+            Solver.impose(V_star[0], dw_p,0,vx);
+            Solver.impose(V_star[1], dw_p,0,vy);
+            Solver.impose(V_star[0], l_p, 0,vx);
+            Solver.impose(V_star[1], l_p, 0,vy);
+            Solver.solve(V_star[0],V_star[1]);
+            //std::cout << "Stokes Solved" << std::endl;
+            RHS=Div(V_star);
+            DCPSE_scheme<equations1d,decltype(Particles)> SolverH(2 * rCut, Particles,options_solver::LAGRANGE_MULTIPLIER);
+            auto Helmholtz = Lap(H);
+            auto D_y=Dy(H);
+            auto D_x=Dx(H);
+            SolverH.impose(Helmholtz,bulk,prop_id<3>());
+            SolverH.impose(D_y, up_p,0);
+            SolverH.impose(D_x, r_p, 0);
+            SolverH.impose(-D_y, dw_p,0);
+            SolverH.impose(-D_x, l_p,0);
+            SolverH.solve(H);
+            //std::cout << "Helmholtz Solved" << std::endl;
+            V=V_star-Grad(H);
+            for(int j=0;j<up_p.size();j++)
+            {   auto p=up_p.get<0>(j);
+                Particles.getProp<1>(p)[0] =  1;
+                Particles.getProp<1>(p)[1] =  0;
+            }
+            for(int j=0;j<l_p.size();j++)
+            {   auto p=l_p.get<0>(j);
+                Particles.getProp<1>(p)[0] =  0;
+                Particles.getProp<1>(p)[1] =  0;
+            }
+            for(int j=0;j<r_p.size();j++)
+            {   auto p=r_p.get<0>(j);
+                Particles.getProp<1>(p)[0] =  0;
+                Particles.getProp<1>(p)[1] =  0;
+            }
+            for(int j=0;j<dw_p.size();j++)
+            {   auto p=dw_p.get<0>(j);
+                Particles.getProp<1>(p)[0] =  0;
+                Particles.getProp<1>(p)[1] =  0;
+            }
+            P=P+Lap(H);
+            //std::cout << "V,P Corrected" << std::endl;
+            sum=0;
+            for(int j=0;j<bulk.size();j++)
+            {   auto p=bulk.get<0>(j);
+                sum+=(Particles.getProp<4>(p)[0]-Particles.getProp<1>(p)[0])*(Particles.getProp<4>(p)[0]- Particles.getProp<1>(p)[0])+(Particles.getProp<4>(p)[1]- Particles.getProp<1>(p)[1])*(Particles.getProp<4>(p)[1]- Particles.getProp<1>(p)[1]);
+            }
+            sum=sqrt(sum);
+            V_t=V;
+            std::cout << "eps RMS=" <<sum<< std::endl;
+            Particles.write_frame("Stokes",i);
+
+        }
+    }
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
     BOOST_AUTO_TEST_CASE(dcpse_Lid_Stokes) {
         const size_t sz[2] = {31,31};
         Box<2, double> box({0, 0}, {1,1});
@@ -187,7 +387,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests2)
         Divergence Div(Particles, 2, rCut, 1.9,3.1*spacing);
 
 
-/*        //starting the simulation at a nice *continuous* place
+/*      starting the simulation at a nice *continuous* place
         V_t=1e-3*(1e-2*Lap(V)-Adv(V,V));
         RHS=Div(V_t);
         DCPSE_scheme<equations1d,decltype(Particles)> Solver(2 * rCut, Particles,options_solver::LAGRANGE_MULTIPLIER);
@@ -203,6 +403,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests2)
         std::cout << "Poisson Solved" << std::endl;
         V_star = V + (V_t - 1e-3*Grad(P));
         V = V_star;*/
+
         double sum=0;
         int n=10;
         double nu=1e-2;

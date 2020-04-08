@@ -63,9 +63,11 @@ struct equations2d1 {
     //! type of Vector for the linear solver
     typedef Vector<double> Vector_type;
 };
-const bool equations2d1::boundary[] = {NON_PERIODIC, NON_PERIODIC};
 
-const bool equations::boundary[] = {NON_PERIODIC, NON_PERIODIC};
+//Change accordingly as per test
+const bool equations2d1::boundary[] = {NON_PERIODIC, NON_PERIODIC};
+//const bool equations::boundary[] = {NON_PERIODIC, NON_PERIODIC};
+const bool equations::boundary[] = {PERIODIC, NON_PERIODIC};
 
 //template<typename T>
 //struct Debug;
@@ -81,8 +83,8 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
         double spacing = box.getHigh(0) / (sz[0] - 1);
         Ghost<2, double> ghost(spacing * 3);
         double rCut = 2.0 * spacing;
-/*                                          pol          V         vort           Ext    Press     strain       stess        Mfield,   dP          dV   */
-        vector_dist<2, double, aggregate<double[2],double[2], double[2][2], double[2], double, double[2][2], double[2][2], double[2],double[2], double[2]>> Particles(0, box, bc, ghost);
+/*                                          pol          V         vort           Ext    Press     strain       stess        Mfield,   dP          dV         RHS       f1     f2     f3    f4     f5     f6              */
+        vector_dist<2, double, aggregate<double[2],double[2], double[2][2], double[2], double, double[2][2], double[2][2], double[2],double[2], double[2] , double[2], double,double,double,double,double,double>> Particles(0, box, bc, ghost);
 
         auto it = Particles.getGridIterator(sz);
         while (it.isNext()) {
@@ -127,6 +129,14 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
         auto h = getV<MolField>(Particles);
         auto dP = getV<8>(Particles);
         auto dV = getV<9>(Particles);
+        auto RHS = getV<10>(Particles);
+        auto f1 = getV<11>(Particles);
+        auto f2 = getV<12>(Particles);
+        auto f3 = getV<13>(Particles);
+        auto f4 = getV<14>(Particles);
+        auto f5 = getV<15>(Particles);
+        auto f6 = getV<16>(Particles);
+
 
         double eta       =     1.0;
         double nu        =     -0.5;
@@ -137,17 +147,17 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
         double lambda    =     0.1;
         double delmu     =     -1;
 
-        Derivative_x Dx(Particles, 2, rCut,2);
-        Derivative_y Dy(Particles, 2, rCut,2);
-        Derivative_xy Dxy(Particles, 2, rCut,2);
-        Derivative_xx Dxx(Particles, 2, rCut,2);
-        Derivative_yy Dyy(Particles, 2, rCut,2);
-        Gradient Grad(Particles, 2, rCut,2);
-        Laplacian Lap(Particles, 2, rCut, 2);
-        Advection Adv(Particles, 2, rCut, 2);
-        Divergence Div(Particles, 2, rCut, 2);
+        Derivative_x Dx(Particles, 2, rCut,1.9,3.1*spacing);
+        Derivative_y Dy(Particles, 2, rCut,1.9,3.1*spacing);
+        Derivative_xy Dxy(Particles, 2, rCut,1.9,3.1*spacing);
+        Derivative_xx Dxx(Particles, 2, rCut,1.9,3.1*spacing);
+        Derivative_yy Dyy(Particles, 2, rCut,1.9,3.1*spacing);
+        Gradient Grad(Particles, 2, rCut,1.9,3.1*spacing);
+        Laplacian Lap(Particles, 2, rCut,1.9,3.1*spacing);
+        Advection Adv(Particles, 2, rCut,1.9,3.1*spacing);
+        Divergence Div(Particles, 2, rCut,1.9,3.1*spacing);
 
-        // Here fill up the boxes for particle detection.
+        // Here fill up the boxes for particle boundary detection.
 
         Box<2, double> up({box.getLow(0) + spacing / 2.0, box.getHigh(1) - spacing / 2.0},
                           {box.getHigh(0) - spacing / 2.0, box.getHigh(1) + spacing / 2.0});
@@ -226,16 +236,105 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
 
             h[y] = Pol[x] * (Ks * Dyy(Pol[y]) + Kb * Dxx(Pol[y]) + (Ks - Kb) * Dxy(Pol[x])) - Pol[y] * (Ks * Dxx(Pol[x]) + Kb * Dyy(Pol[x]) + (Ks - Kb) * Dxy(Pol[y]));
 
+            f1 =     gama*nu*u[x][x]*Pol[x]*Pol[x]* (Pol[x]*Pol[x] - Pol[y]*Pol[y]) / (Pol[x]*Pol[x] + Pol[y]*Pol[y]);
+            f2 = 2.0*gama*nu*u[x][y]*Pol[x]*Pol[y]* (Pol[x]*Pol[x] - Pol[y]*Pol[y]) / (Pol[x]*Pol[x] + Pol[y]*Pol[y]);
+            f3 =     gama*nu*u[y][y]*Pol[y]*Pol[y]* (Pol[x]*Pol[x] - Pol[y]*Pol[y]) / (Pol[x]*Pol[x] + Pol[y]*Pol[y]);
+            f4 = 2.0*gama*nu*u[x][x]*Pol[x]*Pol[x]*Pol[x]*Pol[y] / (Pol[x]*Pol[x] + Pol[y]*Pol[y]);
+            f5 = 4.0*gama*nu*u[x][y]*Pol[x]*Pol[x]*Pol[y]*Pol[y] / (Pol[x]*Pol[x] + Pol[y]*Pol[y]);
+            f6 = 2.0*gama*nu*u[x][x]*Pol[x]*Pol[x]*Pol[x]*Pol[y] / (Pol[x]*Pol[x] + Pol[y]*Pol[y]);
 
-            //dV[x] = Pol[0] * (Ks * dyypy + Kb * dxxpy + (Ks - Kb) * dxypx) - Particles.getProp<Polarization>(p)[y] * (Ks * dxxpx + Kb * dyypx + (Ks - Kb) * dxypy);
-            //dV[y] = -gama * (lambda * delmu - nu * (Particles.getProp<Strain_rate>(p)[0][0] * Particles.getProp<Polarization>(p)[0] * Particles.getProp<Polarization>(p)[0]) / (Particles.getProp<Polarization>(p)[0] * Particles.getProp<Polarization>(p)[0] + Particles.getProp<Polarization>(p)[y] * Particles.getProp<Polarization>(p)[y]) - nu * (Particles.getProp<Strain_rate>(p)[y][y] * Particles.getProp<Polarization>(p)[y] * Particles.getProp<Polarization>(p)[y]) / (Particles.getProp<Polarization>(p)[0] * Particles.getProp<Polarization>(p)[0] + Particles.getProp<Polarization>(p)[y] * Particles.getProp<Polarization>(p)[y]) - 2 * nu * (Particles.getProp<Strain_rate>(p)[0][y] * Particles.getProp<Polarization>(p)[0] * Particles.getProp<Polarization>(p)[y]) / (Particles.getProp<Polarization>(p)[0] * Particles.getProp<Polarization>(p)[0] + Particles.getProp<Polarization>(p)[1] * Particles.getProp<Polarization>(p)[1]));
+            dV[x] = 0.5*Dy(h[y]) + zeta*Dx(delmu*Pol[x]*Pol[x]) + zeta*Dy(delmu*Pol[x]*Pol[y]) - zeta*Dx(0.5*delmu*(Pol[x]*Pol[x]+Pol[y]*Pol[y])) - 0.5*nu*Dx(-2*h[y]*Pol[x]*Pol[y])
+                  - 0.5*nu*Dy(h[y]*(Pol[x]*Pol[x] - Pol[y]*Pol[y])) - Dx(sigma[x][x]) - Dy(sigma[x][y]) - g[x]
+                  - 0.5*nu*Dx(-gama*lambda*delmu*(Pol[x]*Pol[x] - Pol[y]*Pol[y])) - 0.5*Dy(-2*gama*lambda*delmu*(Pol[x]*Pol[y])) ;
+
+
+            dV[y] = 0.5*Dx(-h[y]) + zeta*Dy(delmu*Pol[y]*Pol[y]) + zeta*Dx(delmu*Pol[x]*Pol[y]) - zeta*Dy(0.5*delmu*(Pol[x]*Pol[x]+Pol[y]*Pol[y])) - 0.5*nu*Dy(-2*h[y]*Pol[x]*Pol[y])
+                  - 0.5*nu*Dx(h[y]*(Pol[x]*Pol[x] - Pol[y]*Pol[y])) - Dx(sigma[y][x]) - Dy(sigma[y][y]) - g[y]
+                  - 0.5*nu*Dy(gama*lambda*delmu*(Pol[x]*Pol[x] - Pol[y]*Pol[y])) - 0.5*Dx(-2*gama*lambda*delmu*(Pol[x]*Pol[y])) ;
+
+
+/*        //Velocity Solution n iterations
+        eq_id vx,vy;
+        vx.setId(0);
+        vy.setId(1);
+        double sum=0;
+        int n=10;
+        for(int i=1; i<=n ;i++)
+        {   RHS[x]=Grad(P)+dV[x];
+            RHS[y]=Grad(P)+dV[y];
+            DCPSE_scheme<equations2d1,decltype(Particles)> Solver(2 * rCut, Particles);
+            auto Stokes1 = nu*Lap(V[x]) + 0.5*nu*(Dx(f1)+Dx(f2)+Dx(f3)+Dy(f4)+Dy(f5)+Dy(f6));
+            auto Stokes2 = nu*Lap(V[y]) + 0.5*nu*(Dx(f1)+Dx(f2)+Dx(f3)+Dy(f4)+Dy(f5)+Dy(f6));
+            Solver.impose(Stokes1,bulk,RHS[0],vx);
+            Solver.impose(Stokes2,bulk,RHS[1],vy);
+            Solver.impose(V[0], up_p,0,vx);
+            Solver.impose(V[1], up_p,0,vy);
+            Solver.impose(V[0], dw_p,0,vx);
+            Solver.impose(V[1], dw_p,0,vy);
+            Solver.impose(V[0], r_p, 0,vx);
+            Solver.impose(V[1], r_p, 0,vy);
+
+            Solver.impose(V[0], l_p, 0,vx);
+            Solver.impose(V[1], l_p, 0,vy);
+            Solver.solve(V[0],V[1]);
+            //std::cout << "Stokes Solved" << std::endl;
+            RHS=Div(V_star);
+            DCPSE_scheme<equations1d,decltype(Particles)> SolverH(2 * rCut, Particles,options_solver::LAGRANGE_MULTIPLIER);
+            auto Helmholtz = Lap(H);
+            auto D_y=Dy(H);
+            auto D_x=Dx(H);
+            SolverH.impose(Helmholtz,bulk,prop_id<3>());
+            SolverH.impose(D_y, up_p,0);
+            SolverH.impose(D_x, r_p, 0);
+            SolverH.impose(-D_y, dw_p,0);
+            SolverH.impose(-D_x, l_p,0);
+            SolverH.solve(H);
+            //std::cout << "Helmholtz Solved" << std::endl;
+            V=V_star-Grad(H);
+            for(int j=0;j<up_p.size();j++)
+            {   auto p=up_p.get<0>(j);
+                Particles.getProp<1>(p)[0] =  1;
+                Particles.getProp<1>(p)[1] =  0;
+            }
+            for(int j=0;j<l_p.size();j++)
+            {   auto p=l_p.get<0>(j);
+                Particles.getProp<1>(p)[0] =  0;
+                Particles.getProp<1>(p)[1] =  0;
+            }
+            for(int j=0;j<r_p.size();j++)
+            {   auto p=r_p.get<0>(j);
+                Particles.getProp<1>(p)[0] =  0;
+                Particles.getProp<1>(p)[1] =  0;
+            }
+            for(int j=0;j<dw_p.size();j++)
+            {   auto p=dw_p.get<0>(j);
+                Particles.getProp<1>(p)[0] =  0;
+                Particles.getProp<1>(p)[1] =  0;
+            }
+            P=P+Lap(H);
+            //std::cout << "V,P Corrected" << std::endl;
+            sum=0;
+            for(int j=0;j<bulk.size();j++)
+            {   auto p=bulk.get<0>(j);
+                sum+=(Particles.getProp<4>(p)[0]-Particles.getProp<1>(p)[0])*(Particles.getProp<4>(p)[0]- Particles.getProp<1>(p)[0])+(Particles.getProp<4>(p)[1]- Particles.getProp<1>(p)[1])*(Particles.getProp<4>(p)[1]- Particles.getProp<1>(p)[1]);
+            }
+            sum=sqrt(sum);
+            V_t=V;
+            std::cout << "eps RMS=" <<sum<< std::endl;
+            Particles.write_frame("Stokes",i);
+
+        }*/
+
+
+
+
 
             u[x][x] =   Dx(V[x]);
             u[x][y] =   0.5*(Dx(V[y])+Dy(V[x]));
             u[y][x] =   0.5*(Dy(V[x])+Dx(V[y]));
             u[y][y] =   Dy(V[y]);
 
-              Particles.write_frame("Polar",0);
+            Particles.write_frame("Polar",0);
 
 /*
               double dt=5e-4;
@@ -1190,6 +1289,129 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
     }
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+    BOOST_AUTO_TEST_CASE(dcpse_poisson_Periodic) {
+        //https://fenicsproject.org/docs/dolfin/1.4.0/python/demo/documented/periodic/python/documentation.html
+        //  int rank;
+        //  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+        const size_t sz[2] = {31,31};
+        Box<2, double> box({0, 0}, {1.0, 1.0});
+        size_t bc[2] = {PERIODIC, NON_PERIODIC};
+        double spacing = box.getHigh(0) / (sz[0] - 1);
+        Ghost<2, double> ghost(spacing * 3);
+        double rCut = 2.0 * spacing;
+        BOOST_TEST_MESSAGE("Init vector_dist...");
+
+        vector_dist<2, double, aggregate<double,double,double,double,double,VectorS<2, double>>> domain(0, box, bc, ghost);
+
+        //Init_DCPSE(domain)
+        BOOST_TEST_MESSAGE("Init domain...");
+
+        auto it = domain.getGridIterator(sz);
+        while (it.isNext()) {
+            domain.add();
+
+            auto key = it.get();
+            double x = key.get(0) * it.getSpacing(0);
+            domain.getLastPos()[0] = x;
+            double y = key.get(1) * it.getSpacing(1)*0.99999;
+            domain.getLastPos()[1] = y;
+
+            ++it;
+        }
+        BOOST_TEST_MESSAGE("Sync domain across processors...");
+
+        domain.map();
+        domain.ghost_get<0>();
+
+
+        Laplacian Lap(domain, 2, rCut, 1.9,3.1*spacing);
+
+        DCPSE_scheme<equations,decltype(domain)> Solver(2 * rCut, domain);
+
+        openfpm::vector<aggregate<int>> bulk;
+        openfpm::vector<aggregate<int>> up_p;
+        openfpm::vector<aggregate<int>> dw_p;
+        openfpm::vector<aggregate<int>> l_p;
+        openfpm::vector<aggregate<int>> r_p;
+
+        auto v = getV<0>(domain);
+        auto RHS=getV<1>(domain);
+        auto sol = getV<2>(domain);
+        auto anasol = getV<3>(domain);
+        auto err = getV<4>(domain);
+        auto u = getV<5>(domain);
+
+        // Here fill me
+
+        Box<2, double> up({box.getLow(0) - spacing / 2.0, box.getHigh(1) - spacing / 2.0},
+                          {box.getHigh(0) + spacing / 2.0, box.getHigh(1) + spacing / 2.0});
+
+        Box<2, double> down({box.getLow(0) - spacing / 2.0, box.getLow(1) - spacing / 2.0},
+                            {box.getHigh(0) + spacing / 2.0, box.getLow(1) + spacing / 2.0});
+
+        Box<2, double> left({box.getLow(0) - spacing / 2.0, box.getLow(1) + spacing / 2.0},
+                            {box.getLow(0) + spacing / 2.0, box.getHigh(1) - spacing / 2.0});
+
+        Box<2, double> right({box.getHigh(0) - spacing / 2.0, box.getLow(1) + spacing / 2.0},
+                             {box.getHigh(0) + spacing / 2.0, box.getHigh(1) - spacing / 2.0});
+
+        openfpm::vector<Box<2, double>> boxes;
+        boxes.add(up);
+        boxes.add(down);
+        boxes.add(left);
+        boxes.add(right);
+
+        // Create a writer and write
+        VTKWriter<openfpm::vector<Box<2, double>>, VECTOR_BOX> vtk_box;
+        vtk_box.add(boxes);
+        vtk_box.write("vtk_box.vtk");
+
+
+        auto it2 = domain.getDomainIterator();
+
+        while (it2.isNext()) {
+            auto p = it2.get();
+            Point<2, double> xp = domain.getPos(p);
+            //domain.getProp<3>(p)=1+xp[0]*xp[0]+2*xp[1]*xp[1];
+            if (up.isInside(xp) == true) {
+                up_p.add();
+                up_p.last().get<0>() = p.getKey();
+                domain.getProp<1>(p) =  0;
+            } else if (down.isInside(xp) == true) {
+                dw_p.add();
+                dw_p.last().get<0>() = p.getKey();
+                domain.getProp<1>(p) =  0;
+            } else {
+                bulk.add();
+                bulk.last().get<0>() = p.getKey();
+                domain.getProp<1>(p) = xp.get(0)*sin(5*M_PI*xp.get(1))+exp(-((xp.get(0)-0.5)*(xp.get(0)-0.5)+(xp.get(1)-0.5)*(xp.get(1)-0.5))/0.02);
+            }
+
+            ++it2;
+        }
+
+
+        auto Poisson = -Lap(v);
+        Solver.impose(Poisson, bulk, prop_id<1>());
+        Solver.impose(v, up_p, 0);
+        Solver.impose(v, dw_p, 0);
+        Solver.solve(v);
+        anasol=-Lap(v);
+        double worst1 = 0.0;
+
+        for(int j=0;j<bulk.size();j++)
+        {   auto p=bulk.get<0>(j);
+            if (fabs(domain.getProp<3>(p) - domain.getProp<1>(p)) >= worst1) {
+                worst1 = fabs(domain.getProp<3>(p) - domain.getProp<1>(p));
+            }
+            domain.getProp<4>(p) = fabs(domain.getProp<1>(p) - domain.getProp<3>(p));
+
+        }
+        std::cout << "Maximum Auto Error: " << worst1 << std::endl;
+
+        domain.write("Poisson_Periodic");
+    }
+    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
     BOOST_AUTO_TEST_CASE(dcpse_poisson_Robin) {
         //http://e6.ijs.si/medusa/wiki/index.php/Poisson%27s_equation#Full_Neumann_boundary_conditions
