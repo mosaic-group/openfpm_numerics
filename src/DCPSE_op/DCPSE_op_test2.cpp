@@ -82,7 +82,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests2)
         double spacing = box.getHigh(0) / (sz[0] - 1);
         Ghost<2, double> ghost(spacing * 3);
         double rCut = 2.5 * spacing;
-        //                                  P        V                 v_star           RHS            V_BC    Helmholtz
+        //                                  P        V                 v_star           RHS            V_t   Helmholtz
         vector_dist<2, double, aggregate<double,VectorS<2, double>,VectorS<2, double>,double,VectorS<2, double>,double,    double>> Particles(0, box, bc, ghost);
         auto it = Particles.getGridIterator(sz);
         while (it.isNext()) {
@@ -182,12 +182,12 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests2)
         Derivative_x Dx(Particles, 2, rCut,1.9,3.1*spacing );
         Derivative_y Dy(Particles, 2, rCut,1.9,3.1*spacing);
         Gradient Grad(Particles, 2, rCut,1.9,3.1*spacing );
-        Laplacian Lap(Particles, 1, rCut, 4.1,3.1*spacing);
+        Laplacian Lap(Particles, 2, rCut, 1.9,3.1*spacing);
         Advection Adv(Particles, 2, rCut, 1.9,3.1*spacing);
         Divergence Div(Particles, 2, rCut, 1.9,3.1*spacing);
 
 
-        //starting the simulation at a nice *continuous* place
+/*        //starting the simulation at a nice *continuous* place
         V_t=1e-3*(1e-2*Lap(V)-Adv(V,V));
         RHS=Div(V_t);
         DCPSE_scheme<equations1d,decltype(Particles)> Solver(2 * rCut, Particles,options_solver::LAGRANGE_MULTIPLIER);
@@ -202,8 +202,8 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests2)
         Solver.solve(P);
         std::cout << "Poisson Solved" << std::endl;
         V_star = V + (V_t - 1e-3*Grad(P));
-        V = V_star;
-
+        V = V_star;*/
+        double sum=0;
         int n=10;
         double nu=1e-2;
         Particles.write_frame("Stokes",0);
@@ -222,8 +222,8 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests2)
             Solver.impose(V_star[1], dw_p,0,vy);
             Solver.impose(V_star[0], l_p, 0,vx);
             Solver.impose(V_star[1], l_p, 0,vy);
-            Solver.solve(V_star);
-            std::cout << "Stokes Solved" << std::endl;
+            Solver.solve(V_star[0],V_star[1]);
+            //std::cout << "Stokes Solved" << std::endl;
             RHS=Div(V_star);
             DCPSE_scheme<equations1d,decltype(Particles)> SolverH(2 * rCut, Particles,options_solver::LAGRANGE_MULTIPLIER);
             auto Helmholtz = Lap(H);
@@ -235,10 +235,38 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests2)
             SolverH.impose(-D_y, dw_p,0);
             SolverH.impose(-D_x, l_p,0);
             SolverH.solve(H);
-            std::cout << "Helmholtz Solved" << std::endl;
+            //std::cout << "Helmholtz Solved" << std::endl;
             V=V_star-Grad(H);
+            for(int j=0;j<up_p.size();j++)
+            {   auto p=up_p.get<0>(j);
+                Particles.getProp<1>(p)[0] =  1;
+                Particles.getProp<1>(p)[1] =  0;
+            }
+            for(int j=0;j<l_p.size();j++)
+            {   auto p=l_p.get<0>(j);
+                Particles.getProp<1>(p)[0] =  0;
+                Particles.getProp<1>(p)[1] =  0;
+            }
+            for(int j=0;j<r_p.size();j++)
+            {   auto p=r_p.get<0>(j);
+                Particles.getProp<1>(p)[0] =  0;
+                Particles.getProp<1>(p)[1] =  0;
+            }
+            for(int j=0;j<dw_p.size();j++)
+            {   auto p=dw_p.get<0>(j);
+                Particles.getProp<1>(p)[0] =  0;
+                Particles.getProp<1>(p)[1] =  0;
+            }
             P=P+Lap(H);
-            std::cout << "V,P Corrected" << std::endl;
+            //std::cout << "V,P Corrected" << std::endl;
+            sum=0;
+            for(int j=0;j<bulk.size();j++)
+            {   auto p=bulk.get<0>(j);
+                sum+=(Particles.getProp<4>(p)[0]-Particles.getProp<1>(p)[0])*(Particles.getProp<4>(p)[0]- Particles.getProp<1>(p)[0])+(Particles.getProp<4>(p)[1]- Particles.getProp<1>(p)[1])*(Particles.getProp<4>(p)[1]- Particles.getProp<1>(p)[1]);
+            }
+            sum=sqrt(sum);
+            V_t=V;
+            std::cout << "eps RMS=" <<sum<< std::endl;
             Particles.write_frame("Stokes",i);
 
         }

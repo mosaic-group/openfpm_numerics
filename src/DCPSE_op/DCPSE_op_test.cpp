@@ -2293,7 +2293,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
 //  int rank;
 //  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
         const size_t sz[2] = {31,31};
-        Box<2, double> box({0, 0}, {0.5, 0.5});
+        Box<2, double> box({0, 0}, {1, 1});
         size_t bc[2] = {NON_PERIODIC, NON_PERIODIC};
         double spacing = box.getHigh(0) / (sz[0] - 1);
         Ghost<2, double> ghost(spacing * 3);
@@ -2463,8 +2463,8 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
         }
         for(int j=0;j<bulk.size();j++)
         {   auto p=bulk.get<0>(j);
-            if (fabs(domain.getProp<3>(p)[1] - domain.getProp<2>(p)[1]) >= worst1) {
-                worst1 = fabs(domain.getProp<3>(p)[1] - domain.getProp<2>(p)[1]);
+            if (fabs(domain.getProp<3>(p)[1] - domain.getProp<2>(p)[1]) >= worst2) {
+                worst2 = fabs(domain.getProp<3>(p)[1] - domain.getProp<2>(p)[1]);
             }
             domain.getProp<4>(p)[1] = fabs(domain.getProp<3>(p)[1] - domain.getProp<2>(p)[1]);
 
