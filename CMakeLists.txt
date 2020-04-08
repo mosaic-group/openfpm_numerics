@@ -5,6 +5,10 @@ enable_testing()
 
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_LIST_DIR}/cmake_modules/)
 
+if (POLICY CMP0074)
+  cmake_policy(SET CMP0074 NEW)
+endif()
+
 set(BOOST_INCLUDE ${Boost_INCLUDE_DIR} CACHE PATH "Include directory for BOOST")
 set(PETSC_ROOT CACHE PATH "If compiling with linear algebra indicate the PETSC root directory")
 set(PARMETIS_ROOT CACHE PATH "Parmetis root directory")
@@ -42,11 +46,17 @@ if(ENABLE_GPU)
 	enable_language(CUDA)
 	find_package(CUDA)
 
-	if (CUDA_VERSION_MAJOR EQUAL 9 AND CUDA_VERSION_MINOR EQUAL 2)
-		message("CUDA is compatible")
-	else()
-		message(FATAL_ERROR "CUDA is incompatible, version 9.2 is only supported")
-	endif()
+        if (CUDA_VERSION_MAJOR EQUAL 9 AND CUDA_VERSION_MINOR EQUAL 2)
+                message("CUDA is compatible")
+                set(WARNING_SUPPRESSION_AND_OPTION_NVCC  -Xcudafe "--display_error_number --diag_suppress=611 --diag_suppress=2885 --diag_suppress=2886  --diag_suppress=2887  --diag_suppress=2888 --diag_suppress=186 --diag_suppress=111" --expt-extended-lambda)
+        elseif ( CUDA_VERSION_MAJOR EQUAL 10 AND CUDA_VERSION_MINOR EQUAL 1 )
+                message("CUDA is compatible")
+                set(WARNING_SUPPRESSION_AND_OPTION_NVCC -Xcudafe "--display_error_number --diag_suppress=611 --diag_suppress=2885 --diag_suppress=2886  --diag_suppress=2887  --diag_suppress=2888 --diag_suppress=186 --diag_suppress=111 --diag_suppress=2928 --diag_suppress=2931 --diag_suppress=2929 --diag_suppress=2930" --expt-extended-lambda)
+
+        else()
+                message(FATAL_ERROR "CUDA is incompatible, version 9.2 is only supported")
+        endif()
+
 
 endif()
 
