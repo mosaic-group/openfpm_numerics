@@ -59,7 +59,7 @@ private:
 
     vector_type & particles;
 
-    typename vector_type::stype rcut_verlet = -1.0;
+    support_options opt;
 
 public:
 
@@ -70,12 +70,12 @@ public:
           unsigned int convergenceOrder,
           T rCut,
           T supportSizeFactor = 1,
-          T rcut_verlet = -1.0) :
-            particles(particles),
+          support_options opt = support_options::N_PARTICLES)
+		:particles(particles),
             differentialSignature(differentialSignature),
             differentialOrder(Monomial<dim>(differentialSignature).order()),
             monomialBasis(differentialSignature.asArray(), convergenceOrder),
-            rcut_verlet(rcut_verlet)
+            opt(opt)
             {
         if (supportSizeFactor < 1) {
             initializeAdaptive(particles, convergenceOrder, rCut);
@@ -411,7 +411,7 @@ private:
             const T condVTOL = 1e2;
 
             // Get the points in the support of the DCPSE kernel and store the support for reuse
-            Support<dim, T, part_type> support = supportBuilder.getSupport(it, requiredSupportSize,rcut_verlet);
+            Support<dim, T, part_type> support = supportBuilder.getSupport(it, requiredSupportSize,opt);
             EMatrix<T, Eigen::Dynamic, Eigen::Dynamic> V(support.size(), monomialBasis.size());
 
             // Vandermonde matrix computation
@@ -469,7 +469,7 @@ private:
         auto it = particles.getDomainIterator();
         while (it.isNext()) {
             // Get the points in the support of the DCPSE kernel and store the support for reuse
-            Support<dim, T, part_type> support = supportBuilder.getSupport(it, requiredSupportSize,rcut_verlet);
+            Support<dim, T, part_type> support = supportBuilder.getSupport(it, requiredSupportSize,opt);
             EMatrix<T, Eigen::Dynamic, Eigen::Dynamic> V(support.size(), monomialBasis.size());
 /* Some Debug code
             if (it.get().getKey() == 5564)

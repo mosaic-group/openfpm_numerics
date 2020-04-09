@@ -75,7 +75,7 @@ const bool equations3d2::boundary[] = {NON_PERIODIC, NON_PERIODIC};
 
 BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests3)
 
-    BOOST_AUTO_TEST_CASE(dcpse_sphere) {
+/*    BOOST_AUTO_TEST_CASE(dcpse_sphere) {
         const size_t sz[3] = {31,31,31};
         Sphere<3, double> sphere(0, 5);
         double spacing = 0.1;
@@ -108,7 +108,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests3)
         Particles.ghost_get<0>();
 
         Particles.write_frame("Sphere",i);\
-    }
+    }*/
 
 BOOST_AUTO_TEST_SUITE_END()
 

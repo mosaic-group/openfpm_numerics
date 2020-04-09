@@ -376,8 +376,8 @@ public:
      * \param b_g object grid that will store the solution
      *
      */
-    DCPSE_scheme(const typename Sys_eqs::stype r_cut, particles_type & part, options_solver opt = options_solver::STANDARD)
-    :parts(part),p_map(0,part.getDecomposition().getDomain(),part.getDecomposition().periodicity(),Ghost<particles_type::dims,typename particles_type::stype>(r_cut)),row(0),row_b(0),opt(opt)
+    DCPSE_scheme(particles_type & part, options_solver opt = options_solver::STANDARD)
+    :parts(part),p_map(part.getDecomposition(),0),row(0),row_b(0),opt(opt)
     {
         p_map.resize(part.size_local());
 

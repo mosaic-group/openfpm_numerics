@@ -179,18 +179,18 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests2)
         vx.setId(0);
         vy.setId(1);
 
-        Derivative_x Dx(Particles, 2, rCut,1.9,3.1*spacing );
-        Derivative_y Dy(Particles, 2, rCut,1.9,3.1*spacing);
-        Gradient Grad(Particles, 2, rCut,1.9,3.1*spacing );
-        Laplacian Lap(Particles, 2, rCut, 1.9,3.1*spacing);
-        Advection Adv(Particles, 2, rCut, 1.9,3.1*spacing);
-        Divergence Div(Particles, 2, rCut, 1.9,3.1*spacing);
+        Derivative_x Dx(Particles, 2, 3.1*spacing,1.9,support_options::RADIUS );
+        Derivative_y Dy(Particles, 2, 3.1*spacing,1.9,support_options::RADIUS);
+        Gradient Grad(Particles, 2, 3.1*spacing,1.9,support_options::RADIUS );
+        Laplacian Lap(Particles, 2, 3.1*spacing, 1.9,support_options::RADIUS);
+        Advection Adv(Particles, 2, 3.1*spacing, 1.9,support_options::RADIUS);
+        Divergence Div(Particles, 2, 3.1*spacing, 1.9,support_options::RADIUS);
 
 
 /*      starting the simulation at a nice *continuous* place
         V_t=1e-3*(1e-2*Lap(V)-Adv(V,V));
         RHS=Div(V_t);
-        DCPSE_scheme<equations1d,decltype(Particles)> Solver(2 * rCut, Particles,options_solver::LAGRANGE_MULTIPLIER);
+        DCPSE_scheme<equations1d,decltype(Particles)> Solver( Particles,options_solver::LAGRANGE_MULTIPLIER);
         auto Pressure_Poisson = Lap(P);
         auto D_y=Dy(P);
         auto D_x=Dx(P);
@@ -210,7 +210,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests2)
         Particles.write_frame("Stokes",0);
         for(int i=1; i<=n ;i++)
         {   RHS=-Grad(P);
-            DCPSE_scheme<equations2,decltype(Particles)> Solver(2 * rCut, Particles);
+            DCPSE_scheme<equations2,decltype(Particles)> Solver( Particles);
             auto Stokes1 = Adv(V[0],V_star[0])-nu*Lap(V_star[0]);
             auto Stokes2 = Adv(V[1],V_star[1])-nu*Lap(V_star[1]);
             Solver.impose(Stokes1,bulk,RHS[0],vx);
@@ -226,7 +226,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests2)
             Solver.solve(V_star[0],V_star[1]);
             //std::cout << "Stokes Solved" << std::endl;
             RHS=Div(V_star);
-            DCPSE_scheme<equations1d,decltype(Particles)> SolverH(2 * rCut, Particles,options_solver::LAGRANGE_MULTIPLIER);
+            DCPSE_scheme<equations1d,decltype(Particles)> SolverH( Particles,options_solver::LAGRANGE_MULTIPLIER);
             auto Helmholtz = Lap(H);
             auto D_y=Dy(H);
             auto D_x=Dx(H);
@@ -379,18 +379,18 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests2)
         vx.setId(0);
         vy.setId(1);
 
-        Derivative_x Dx(Particles, 2, rCut,1.9,3.1*spacing );
-        Derivative_y Dy(Particles, 2, rCut,1.9,3.1*spacing);
-        Gradient Grad(Particles, 2, rCut,1.9,3.1*spacing );
-        Laplacian Lap(Particles, 2, rCut, 1.9,3.1*spacing);
-        Advection Adv(Particles, 2, rCut, 1.9,3.1*spacing);
-        Divergence Div(Particles, 2, rCut, 1.9,3.1*spacing);
+        Derivative_x Dx(Particles, 2, 3.1*spacing,1.9,support_options::RADIUS );
+        Derivative_y Dy(Particles, 2, 3.1*spacing,1.9,support_options::RADIUS);
+        Gradient Grad(Particles, 2, 3.1*spacing,1.9,support_options::RADIUS );
+        Laplacian Lap(Particles, 2, 3.1*spacing,1.9,support_options::RADIUS);
+        Advection Adv(Particles, 2, 3.1*spacing,1.9,support_options::RADIUS);
+        Divergence Div(Particles, 2, 3.1*spacing,1.9,support_options::RADIUS);
 
 
 /*      starting the simulation at a nice *continuous* place
         V_t=1e-3*(1e-2*Lap(V)-Adv(V,V));
         RHS=Div(V_t);
-        DCPSE_scheme<equations1d,decltype(Particles)> Solver(2 * rCut, Particles,options_solver::LAGRANGE_MULTIPLIER);
+        DCPSE_scheme<equations1d,decltype(Particles)> Solver( Particles,options_solver::LAGRANGE_MULTIPLIER);
         auto Pressure_Poisson = Lap(P);
         auto D_y=Dy(P);
         auto D_x=Dx(P);
@@ -410,7 +410,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests2)
         Particles.write_frame("Stokes",0);
         for(int i=1; i<=n ;i++)
         {   RHS=-Grad(P);
-            DCPSE_scheme<equations2,decltype(Particles)> Solver(2 * rCut, Particles);
+            DCPSE_scheme<equations2,decltype(Particles)> Solver( Particles);
             auto Stokes1 = Adv(V[0],V_star[0])-nu*Lap(V_star[0]);
             auto Stokes2 = Adv(V[1],V_star[1])-nu*Lap(V_star[1]);
             Solver.impose(Stokes1,bulk,RHS[0],vx);
@@ -426,7 +426,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests2)
             Solver.solve(V_star[0],V_star[1]);
             //std::cout << "Stokes Solved" << std::endl;
             RHS=Div(V_star);
-            DCPSE_scheme<equations1d,decltype(Particles)> SolverH(2 * rCut, Particles,options_solver::LAGRANGE_MULTIPLIER);
+            DCPSE_scheme<equations1d,decltype(Particles)> SolverH( Particles,options_solver::LAGRANGE_MULTIPLIER);
             auto Helmholtz = Lap(H);
             auto D_y=Dy(H);
             auto D_x=Dx(H);
@@ -583,17 +583,17 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests2)
             ++it2;
         }
 
-        Derivative_x Dx(Particles, 2, rCut,1.9,3.1*spacing);
-        Derivative_y Dy(Particles, 2, rCut,1.9,3.1*spacing);
-        Gradient Grad(Particles, 2, rCut,1.9,3.1*spacing);
-        Laplacian Lap(Particles, 2, rCut, 1.9,3.1*spacing);
-        Advection Adv(Particles, 2, rCut, 1.9,3.1*spacing);
-        Divergence Div(Particles, 2, rCut, 1.9,3.1*spacing);
+        Derivative_x Dx(Particles, 2, 3.1*spacing,1.9,support_options::RADIUS);
+        Derivative_y Dy(Particles, 2, 3.1*spacing,1.9,support_options::RADIUS);
+        Gradient Grad(Particles, 2, 3.1*spacing,1.9,support_options::RADIUS);
+        Laplacian Lap(Particles, 2, 3.1*spacing,1.9,support_options::RADIUS);
+        Advection Adv(Particles, 2, 3.1*spacing,1.9,support_options::RADIUS);
+        Divergence Div(Particles, 2, 3.1*spacing,1.9,support_options::RADIUS);
         double dt=1e-3;
         int n=50;
         double nu=1e-2;
         dV=dt*(nu*Lap(V)-Adv(V,V));
-        DCPSE_scheme<equations1d,decltype(Particles)> Solver(2 * rCut, Particles,options_solver::LAGRANGE_MULTIPLIER);
+        DCPSE_scheme<equations1d,decltype(Particles)> Solver( Particles,options_solver::LAGRANGE_MULTIPLIER);
         auto Pressure_Poisson = Lap(P);
         auto D_y=Dy(P);
         auto D_x=Dx(P);
@@ -611,7 +611,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests2)
         for(int i=1; i<=n ;i++)
         {   dV=dt*(nu*Lap(V)-Adv(V,V));
             RHS=1/dt*Div(dV);
-            DCPSE_scheme<equations1d,decltype(Particles)> Solver(2 * rCut, Particles,options_solver::LAGRANGE_MULTIPLIER);
+            DCPSE_scheme<equations1d,decltype(Particles)> Solver( Particles,options_solver::LAGRANGE_MULTIPLIER);
             auto Pressure_Poisson = Lap(P);
             auto D_y=Dy(P);
             auto D_x=Dx(P);
@@ -1958,7 +1958,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests2)
             vector_dist_expression_op<void, void, VECT_COPY_1_TO_N> vcp_dl(LL_p, LL_p_ref.get<0>(0));
             vector_dist_expression_op<void, void, VECT_COPY_1_TO_N> vcp_dr(LR_p, LR_p_ref.get<0>(0));
 
-            DCPSE_scheme<equations2, decltype(Particles)> Solver(2 * rCut, Particles);
+            DCPSE_scheme<equations2, decltype(Particles)> Solver( Particles);
             auto Pressure_Poisson = Lap(P);
             Solver.impose(Pressure_Poisson, bulk, prop_id<3>());
             Solver.impose(vcp_up, up_p, 0);
