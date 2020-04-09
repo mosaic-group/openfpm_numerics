@@ -108,7 +108,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
         openfpm::vector<aggregate<int>> ref_p;
 
         constexpr int x      =     0;
-        constexpr int y          =     1;
+        constexpr int y      =     1;
 
         constexpr int Polarization      =     0;
         constexpr int Velocity          =     1;
@@ -245,15 +245,15 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
 
             dV[x] = 0.5*Dy(h[y]) + zeta*Dx(delmu*Pol[x]*Pol[x]) + zeta*Dy(delmu*Pol[x]*Pol[y]) - zeta*Dx(0.5*delmu*(Pol[x]*Pol[x]+Pol[y]*Pol[y])) - 0.5*nu*Dx(-2*h[y]*Pol[x]*Pol[y])
                   - 0.5*nu*Dy(h[y]*(Pol[x]*Pol[x] - Pol[y]*Pol[y])) - Dx(sigma[x][x]) - Dy(sigma[x][y]) - g[x]
-                  - 0.5*nu*Dx(-gama*lambda*delmu*(Pol[x]*Pol[x] - Pol[y]*Pol[y])) - 0.5*Dy(-2*gama*lambda*delmu*(Pol[x]*Pol[y])) ;
+                  - 0.5*nu*Dx(-gama*lambda*delmu*(Pol[x]*Pol[x] - Pol[y]*Pol[y])) - 0.5*Dy(-2*gama*lambda*delmu*(Pol[x]*Pol[y]));
 
 
             dV[y] = 0.5*Dx(-h[y]) + zeta*Dy(delmu*Pol[y]*Pol[y]) + zeta*Dx(delmu*Pol[x]*Pol[y]) - zeta*Dy(0.5*delmu*(Pol[x]*Pol[x]+Pol[y]*Pol[y])) - 0.5*nu*Dy(-2*h[y]*Pol[x]*Pol[y])
                   - 0.5*nu*Dx(h[y]*(Pol[x]*Pol[x] - Pol[y]*Pol[y])) - Dx(sigma[y][x]) - Dy(sigma[y][y]) - g[y]
-                  - 0.5*nu*Dy(gama*lambda*delmu*(Pol[x]*Pol[x] - Pol[y]*Pol[y])) - 0.5*Dx(-2*gama*lambda*delmu*(Pol[x]*Pol[y])) ;
+                  - 0.5*nu*Dy(gama*lambda*delmu*(Pol[x]*Pol[x] - Pol[y]*Pol[y])) - 0.5*Dx(-2*gama*lambda*delmu*(Pol[x]*Pol[y]));
 
 
-/*        //Velocity Solution n iterations
+/*      //Velocity Solution n iterations
         eq_id vx,vy;
         vx.setId(0);
         vy.setId(1);
@@ -1390,7 +1390,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
             ++it2;
         }
 
-
+        domain.ghost_get<1>();
         auto Poisson = -Lap(v);
         Solver.impose(Poisson, bulk, prop_id<1>());
         Solver.impose(v, up_p, 0);
@@ -1408,6 +1408,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
 
         }
         std::cout << "Maximum Auto Error: " << worst1 << std::endl;
+        domain.ghost_get<0>();
 
         domain.write("Poisson_Periodic");
     }
