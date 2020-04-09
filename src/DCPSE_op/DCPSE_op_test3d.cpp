@@ -31,7 +31,7 @@ struct equations3d2 {
     //! boundary at X and Y
     static const bool boundary[];
 
-    //! type of space float, double, ...
+    //! type of space float, double, ..
     typedef double stype;
 
     //! type of base particles
