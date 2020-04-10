@@ -276,7 +276,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests2)
 
 
     BOOST_AUTO_TEST_CASE(dcpse_Lid_Stokes) {
-        const size_t sz[2] = {31,31};
+        const size_t sz[2] = {81,81};
         Box<2, double> box({0, 0}, {1,1});
         size_t bc[2] = {NON_PERIODIC, NON_PERIODIC};
         double spacing = box.getHigh(0) / (sz[0] - 1);
@@ -383,14 +383,30 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests2)
         Derivative_y Dy(Particles, 2, rCut,1.9,support_options::RADIUS);
         Gradient Grad(Particles, 2, rCut,1.9,support_options::RADIUS );
         Laplacian Lap(Particles, 2, rCut,1.9,support_options::RADIUS);
-        Advection Adv(Particles, 3, rCut,1.9,support_options::RADIUS);
+        Advection Adv(Particles, 2, rCut,1.9,support_options::RADIUS);
         Divergence Div(Particles, 2, rCut,1.9,support_options::RADIUS);
 
+        double nu=1e-2;
+
+        V_star=1e-3*(nu*Lap(V)-Adv(V,V));
+        RHS=Div(V_star);
+        DCPSE_scheme<equations1d,decltype(Particles)> Solver( Particles,options_solver::LAGRANGE_MULTIPLIER);
+        auto Pressure_Poisson = Lap(P);
+        auto D_y=Dy(P);
+        auto D_x=Dx(P);
+        Solver.impose(Pressure_Poisson,bulk,prop_id<3>());
+        Solver.impose(D_y, up_p,0);
+        Solver.impose(D_x, r_p, 0);
+        Solver.impose(-D_y, dw_p,0);
+        Solver.impose(-D_x, l_p,0);
+        Solver.solve(P);
+        std::cout << "Poisson Solved" << std::endl;
+        V = V + (V_star - 1e-3*Grad(P));
 
         double sum=0;
         int n=10;
-        double nu=1e-2;
         Particles.write_frame("Stokes",0);
+        V_t=V;
         for(int i=1; i<=n ;i++)
         {   RHS2=-Grad(P);
             DCPSE_scheme<equations2,decltype(Particles)> Solver( Particles);
@@ -441,7 +457,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests2)
                 Particles.getProp<1>(p)[0] =  0;
                 Particles.getProp<1>(p)[1] =  0;
             }
-            P=P+Lap(H)-0.5*Adv(V_t,H);
+            P=P-Lap(H)+0.5*Adv(V_t,H);
             //std::cout << "V,P Corrected" << std::endl;
             sum=0;
             for(int j=0;j<bulk.size();j++)
