@@ -204,7 +204,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests2)
         V_star = V + (V_t - 1e-3*Grad(P));
         V = V_star;*/
 
-        double sum=0;
+        double sum1=0,sum2=0;
         int n=10;
         double nu=1e-2;
         Particles.write_frame("Stokes",0);
@@ -260,14 +260,17 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests2)
             }
             P=P+Lap(H);
             //std::cout << "V,P Corrected" << std::endl;
-            sum=0;
+            sum1=0;
+            sum2=0;
             for(int j=0;j<bulk.size();j++)
             {   auto p=bulk.get<0>(j);
-                sum+=(Particles.getProp<4>(p)[0]-Particles.getProp<1>(p)[0])*(Particles.getProp<4>(p)[0]- Particles.getProp<1>(p)[0])+(Particles.getProp<4>(p)[1]- Particles.getProp<1>(p)[1])*(Particles.getProp<4>(p)[1]- Particles.getProp<1>(p)[1]);
+                sum1+=(Particles.getProp<4>(p)[0]-Particles.getProp<1>(p)[0])*(Particles.getProp<4>(p)[0]- Particles.getProp<1>(p)[0])+(Particles.getProp<4>(p)[1]- Particles.getProp<1>(p)[1])*(Particles.getProp<4>(p)[1]- Particles.getProp<1>(p)[1]);
+                sum2+= Particles.getProp<1>(p)[0]*Particles.getProp<1>(p)[0]+Particles.getProp<1>(p)[1]*Particles.getProp<1>(p)[1];
             }
-            sum=sqrt(sum);
+            sum1=sqrt(sum1);
+            sum2=sqrt(sum2);
             V_t=V;
-            std::cout << "eps RMS=" <<sum<< std::endl;
+            std::cout << "eps RMS=" <<sum1/sum2<< std::endl;
             Particles.write_frame("Stokes",i);
 
         }
@@ -276,7 +279,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests2)
 
 
     BOOST_AUTO_TEST_CASE(dcpse_Lid_Stokes) {
-        const size_t sz[2] = {81,81};
+        const size_t sz[2] = {31,31};
         Box<2, double> box({0, 0}, {1,1});
         size_t bc[2] = {NON_PERIODIC, NON_PERIODIC};
         double spacing = box.getHigh(0) / (sz[0] - 1);
@@ -388,7 +391,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests2)
 
         double nu=1e-2;
 
-        V_star=1e-3*(nu*Lap(V)-Adv(V,V));
+/*        V_star=1e-3*(nu*Lap(V)-Adv(V,V));
         RHS=Div(V_star);
         DCPSE_scheme<equations1d,decltype(Particles)> Solver( Particles,options_solver::LAGRANGE_MULTIPLIER);
         auto Pressure_Poisson = Lap(P);
@@ -401,9 +404,9 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests2)
         Solver.impose(-D_x, l_p,0);
         Solver.solve(P);
         std::cout << "Poisson Solved" << std::endl;
-        V = V + (V_star - 1e-3*Grad(P));
+        V = V + (V_star - 1e-3*Grad(P));*/
 
-        double sum=0;
+        double sum=0,sum2=0;
         int n=10;
         Particles.write_frame("Stokes",0);
         V_t=V;
@@ -463,22 +466,16 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests2)
             for(int j=0;j<bulk.size();j++)
             {   auto p=bulk.get<0>(j);
                 sum+=(Particles.getProp<4>(p)[0]-Particles.getProp<1>(p)[0])*(Particles.getProp<4>(p)[0]- Particles.getProp<1>(p)[0])+(Particles.getProp<4>(p)[1]- Particles.getProp<1>(p)[1])*(Particles.getProp<4>(p)[1]- Particles.getProp<1>(p)[1]);
+                sum2+= Particles.getProp<1>(p)[0]*Particles.getProp<1>(p)[0]+Particles.getProp<1>(p)[1]*Particles.getProp<1>(p)[1];
             }
             sum=sqrt(sum);
             V_t=V;
-            std::cout << "eps RMS=" <<sum<< std::endl;
+            std::cout << "Relative eps RMS=" <<sum/sum2<< std::endl;
             Particles.write_frame("Stokes",i);
 
         }
     }
-
-
-
-
-
-
-
-
+    
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
