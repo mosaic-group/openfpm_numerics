@@ -64,52 +64,6 @@ struct equations2d1 {
     typedef Vector<double> Vector_type;
 };
 
-
-//! Specify the general characteristic of system to solve
-struct equationsp {
-    //! dimensionaly of the equation ( 3D problem ...)
-    static const unsigned int dims = 2;
-    //! number of fields in the system
-    static const unsigned int nvar = 1;
-
-    //! boundary at X and Y
-    static const bool boundary[];
-
-    //! type of space float, double, ...
-    typedef double stype;
-
-    //! type of base particles
-    typedef vector_dist<dims, double, aggregate<double>> b_part;
-
-    //! type of SparseMatrix for the linear solver
-    typedef SparseMatrix<double, int, EIGEN_BASE> SparseMatrix_type;
-
-    //! type of Vector for the linear solver
-    typedef Vector<double> Vector_type;
-};
-
-struct equations2dp {
-    //! dimensionaly of the equation ( 3D problem ...)
-    static const unsigned int dims = 2;
-    //! number of fields in the system
-    static const unsigned int nvar = 2;
-
-    //! boundary at X and Y
-    static const bool boundary[];
-
-    //! type of space float, double, ...
-    typedef double stype;
-
-    //! type of base particles
-    typedef vector_dist<dims, double, aggregate<double>> b_part;
-
-    //! type of SparseMatrix for the linear solver
-    typedef SparseMatrix<double, int, EIGEN_BASE> SparseMatrix_type;
-
-    //! type of Vector for the linear solver
-    typedef Vector<double> Vector_type;
-};
-
 //Change accordingly as per test
 const bool equations2d1::boundary[] = {NON_PERIODIC, NON_PERIODIC};
 const bool equations::boundary[] = {NON_PERIODIC, NON_PERIODIC};
@@ -194,15 +148,15 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
         double lambda    =     0.1;
         double delmu     =     -1;
 
-        Derivative_x Dx(Particles, 2, rCut,1.9,3.1*spacing);
-        Derivative_y Dy(Particles, 2, rCut,1.9,3.1*spacing);
-        Derivative_xy Dxy(Particles, 2, rCut,1.9,3.1*spacing);
-        Derivative_xx Dxx(Particles, 2, rCut,1.9,3.1*spacing);
-        Derivative_yy Dyy(Particles, 2, rCut,1.9,3.1*spacing);
-        Gradient Grad(Particles, 2, rCut,1.9,3.1*spacing);
-        Laplacian Lap(Particles, 2, rCut,1.9,3.1*spacing);
-        Advection Adv(Particles, 2, rCut,1.9,3.1*spacing);
-        Divergence Div(Particles, 2, rCut,1.9,3.1*spacing);
+        Derivative_x Dx(Particles, 2, 3.1*spacing,1.9,support_options::RADIUS);
+        Derivative_y Dy(Particles, 2, 3.1*spacing,1.9,support_options::RADIUS);
+        Derivative_xy Dxy(Particles, 2, 3.1*spacing,1.9,support_options::RADIUS);
+        Derivative_xx Dxx(Particles, 2, 3.1*spacing,1.9,support_options::RADIUS);
+        Derivative_yy Dyy(Particles, 2, 3.1*spacing,1.9,support_options::RADIUS);
+        Gradient Grad(Particles, 2, 3.1*spacing,1.9,support_options::RADIUS);
+        Laplacian Lap(Particles, 2, 3.1*spacing,1.9,support_options::RADIUS);
+        Advection Adv(Particles, 2, 3.1*spacing,1.9,support_options::RADIUS);
+        Divergence Div(Particles, 2, 3.1*spacing,1.9,support_options::RADIUS);
 
         // Here fill up the boxes for particle boundary detection.
 
@@ -309,7 +263,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
         for(int i=1; i<=n ;i++)
         {   RHS[x]=Grad(P)+dV[x];
             RHS[y]=Grad(P)+dV[y];
-            DCPSE_scheme<equations2d1,decltype(Particles)> Solver(2 * rCut, Particles);
+            DCPSE_scheme<equations2d1,decltype(Particles)> Solver( Particles);
             auto Stokes1 = nu*Lap(V[x]) + 0.5*nu*(Dx(f1)+Dx(f2)+Dx(f3)+Dy(f4)+Dy(f5)+Dy(f6));
             auto Stokes2 = nu*Lap(V[y]) + 0.5*nu*(Dx(f1)+Dx(f2)+Dx(f3)+Dy(f4)+Dy(f5)+Dy(f6));
             Solver.impose(Stokes1,bulk,RHS[0],vx);
@@ -394,7 +348,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
                   std::cout<<"dV Done"<<std::endl;
                   RHS = Div(dV);
                   std::cout<<"RHS Done"<<std::endl;
-                  DCPSE_scheme<equations,decltype(Particles)> Solver(2 * rCut, Particles);
+                  DCPSE_scheme<equations,decltype(Particles)> Solver( Particles);
                   auto Pressure_Poisson = Lap(H);
                   auto D_x = Dx(H);
                   auto D_y = Dy(H);
@@ -617,7 +571,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
             Particles.template getProp<9>(bulk.template get<0>(i)) = Particles_subset.getProp<0>(i);
         }
         //subset_create<0,1,2,4>(Particles,Particles_subset,bulk);
-        DCPSE_scheme<equations,decltype(Particles_subset)> Solver(2*rCut, Particles_subset);
+        DCPSE_scheme<equations,decltype(Particles_subset)> Solver(Particles_subset);
         auto Pressure_Poisson = Lap_sub(P_bulk);
         Solver.impose(Pressure_Poisson, bulk_1,prop_id<0>());
         Solver.impose(P_bulk, ref_bulk, 1);
@@ -661,7 +615,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
             }
             //RHS=1.0/dt*Div(dV);
             std::cout<<"RHS Done"<<std::endl;
-            DCPSE_scheme<equations,decltype(Particles)> Solver(2*rCut, Particles);
+            DCPSE_scheme<equations,decltype(Particles)> Solver(Particles);
             auto Pressure_Poisson = Lap(P);
             auto D_x = Dx(P);
             auto D_y = Dy(P);
@@ -949,7 +903,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
 //        Derivative_x Dx(Particles, 2, rCut,1);
 //        Derivative_y Dy(Particles, 2, rCut,1);
 //        Gradient Grad(Particles, 2, rCut,1);
-        Laplacian Lap(Particles, 2, rCut, 1.9,3.1*spacing);
+        Laplacian Lap(Particles, 2, 3.1*spacing,1.9,support_options::RADIUS);
 //        Curl2D Curl(Particles, 2, rCut, 1);
 
         auto its = Particles.getDomainIterator();
@@ -1074,10 +1028,10 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
         domain.map();
         domain.ghost_get<0>();
 
-        Derivative_x Dx(domain, 2, rCut,1.9,3.1*spacing);
-        Derivative_y Dy(domain, 2, rCut,1.9,3.1*spacing);
+        Derivative_x Dx(domain, 2, 3.1*spacing,1.9,support_options::RADIUS);
+        Derivative_y Dy(domain, 2, 3.1*spacing,1.9,support_options::RADIUS);
         //Gradient Grad(domain, 2, rCut);
-        Laplacian Lap(domain, 2, rCut, 1.9,3.1*spacing);
+        Laplacian Lap(domain, 2, 3.1*spacing,1.9,support_options::RADIUS);
         //Advection Adv(domain, 3, rCut, 3);
         //Solver Sol_Lap(Lap),Sol_Dx(Dx);
 
@@ -1159,7 +1113,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
             }
             ++it2;
         }
-        DCPSE_scheme<equations,decltype(domain)> Solver(2 * rCut, domain);
+        DCPSE_scheme<equations,decltype(domain)> Solver( domain);
         auto Poisson = Lap(v);
         auto D_x = Dx(v);
         auto D_y = Dy(v);
@@ -1307,7 +1261,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
             }
             ++it2;
         }
-        DCPSE_scheme<equations,decltype(domain)> Solver(2 * rCut, domain);
+        DCPSE_scheme<equations,decltype(domain)> Solver( domain);
         auto Poisson = Lap(v);
         auto D_x = Dx(v);
         auto D_y = Dy(v);
@@ -1344,8 +1298,8 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
         Box<2, double> box({0, 0}, {1.0, 1.0});
         size_t bc[2] = {PERIODIC, NON_PERIODIC};
         double spacing = box.getHigh(0) / (sz[0] - 1);
-        Ghost<2, double> ghost(spacing * 3);
-        double rCut = 2.0 * spacing;
+        Ghost<2, double> ghost(spacing * 3.1);
+//        double rCut = 2.0 * spacing;
         BOOST_TEST_MESSAGE("Init vector_dist...");
 
         vector_dist<2, double, aggregate<double,double,double,double,double,VectorS<2, double>>> domain(0, box, bc, ghost);
@@ -1371,9 +1325,9 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
         domain.ghost_get<0>();
 
 
-        Laplacian Lap(domain, 2, rCut, 1.9,3.1*spacing);
+        Laplacian Lap(domain, 2, 3.1*spacing, 1.9, support_options::RADIUS);
 
-        DCPSE_scheme<equationsp,decltype(domain)> Solver(2 * rCut, domain);
+        DCPSE_scheme<equations,decltype(domain)> Solver( domain);
 
         openfpm::vector<aggregate<int>> bulk;
         openfpm::vector<aggregate<int>> up_p;
@@ -1443,6 +1397,8 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
         Solver.impose(v, up_p, 0);
         Solver.impose(v, dw_p, 0);
         Solver.solve(v);
+
+        domain.ghost_get<0>();
         anasol=-Lap(v);
         double worst1 = 0.0;
 
@@ -1455,7 +1411,6 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
 
         }
         std::cout << "Maximum Auto Error: " << worst1 << std::endl;
-        domain.ghost_get<0>();
 
         domain.write("Poisson_Periodic");
     }
@@ -1502,8 +1457,8 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
         Laplacian Lap(domain, 2, rCut, 3);
         //Advection Adv(domain, 3, rCut, 3);
         //Solver Sol_Lap(Lap),Sol_Dx(Dx);
-        //DCPSE_scheme<equations,decltype(domain)> Solver(2 * rCut, domain);
-        DCPSE_scheme<equations,decltype(domain)> Solver(2 * rCut, domain);
+        //DCPSE_scheme<equations,decltype(domain)> Solver( domain);
+        DCPSE_scheme<equations,decltype(domain)> Solver( domain);
 
         openfpm::vector<aggregate<int>> bulk;
         openfpm::vector<aggregate<int>> up_p;
@@ -1646,8 +1601,8 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
         Laplacian Lap(domain, 3, rCut, 2);
         //Advection Adv(domain, 3, rCut, 3);
         //Solver Sol_Lap(Lap),Sol_Dx(Dx);
-        //DCPSE_scheme<equations,decltype(domain)> Solver(2 * rCut, domain);
-        DCPSE_scheme<equations,decltype(domain)> Solver(2 * rCut, domain,options_solver::LAGRANGE_MULTIPLIER);
+        //DCPSE_scheme<equations,decltype(domain)> Solver( domain);
+        DCPSE_scheme<equations,decltype(domain)> Solver( domain,options_solver::LAGRANGE_MULTIPLIER);
 
         openfpm::vector<aggregate<int>> bulk;
         openfpm::vector<aggregate<int>> up_p;
@@ -1786,7 +1741,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
         Laplacian Lap(domain, 2, rCut, 2);
         //Advection Adv(domain, 3, rCut, 3);
         //Solver Sol_Lap(Lap),Sol_Dx(Dx);
-        DCPSE_scheme<equations,decltype(domain)> Solver(2 * rCut, domain);
+        DCPSE_scheme<equations,decltype(domain)> Solver( domain);
 
         openfpm::vector<aggregate<int>> bulk;
         openfpm::vector<aggregate<int>> up_p;
@@ -2289,7 +2244,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
         Laplacian Lap(domain, 2, rCut, 3);
         //Advection Adv(domain, 3, rCut, 3);
         //Solver Sol_Lap(Lap),Sol_Dx(Dx);
-        DCPSE_scheme<equations,decltype(domain)> Solver(2 * rCut, domain);
+        DCPSE_scheme<equations,decltype(domain)> Solver( domain);
 
         openfpm::vector<aggregate<int>> bulk;
         openfpm::vector<aggregate<int>> up_p;
@@ -2593,10 +2548,10 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
         domain.map();
         domain.ghost_get<0>();
 
-        Derivative_x Dx(domain, 2, rCut,1.9,3.1*spacing);
-        Derivative_y Dy(domain, 2, rCut,1.9,3.1*spacing);
+        Derivative_x Dx(domain, 2, 3.1*spacing,1.9,support_options::RADIUS);
+        Derivative_y Dy(domain, 2, 3.1*spacing,1.9,support_options::RADIUS);
         //Gradient Grad(domain, 2, rCut);
-        Laplacian Lap(domain, 2, rCut, 1.9,3.1*spacing);
+        Laplacian Lap(domain, 2, 3.1*spacing,1.9,support_options::RADIUS);
         //Advection Adv(domain, 3, rCut, 3);
         //Solver Sol_Lap(Lap),Sol_Dx(Dx);
 
@@ -2700,7 +2655,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
         vx.setId(0);
         vy.setId(1);
 
-        DCPSE_scheme<equations2d1,decltype(domain)> Solver(2 * rCut, domain);
+        DCPSE_scheme<equations2d1,decltype(domain)> Solver( domain);
         auto Poisson0 = Lap(v[0]);
         auto Poisson1 = Lap(v[1]);
         //auto D_x = Dx(v[1]);

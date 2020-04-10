@@ -12,6 +12,12 @@
 #include <Vector/vector_dist.hpp>
 #include "Support.hpp"
 
+enum support_options
+{
+	N_PARTICLES,
+	RADIUS
+};
+
 template<typename vector_type>
 class SupportBuilder
 {
@@ -19,13 +25,14 @@ private:
     vector_type &domain;
     CellList<vector_type::dims, typename vector_type::stype, Mem_fast<HeapMemory, local_index_>> cellList;
     const Point<vector_type::dims, unsigned int> differentialSignature;
+    typename vector_type::stype rCut;
 
 public:
     SupportBuilder(vector_type &domain, Point<vector_type::dims, unsigned int> differentialSignature, typename vector_type::stype rCut);
 
     SupportBuilder(vector_type &domain, unsigned int differentialSignature[vector_type::dims], typename vector_type::stype rCut);
 
-    Support<vector_type::dims, typename vector_type::stype, typename vector_type::value_type> getSupport(vector_dist_iterator itPoint, unsigned int requiredSize, typename vector_type::stype rcut_verlet);
+    Support<vector_type::dims, typename vector_type::stype, typename vector_type::value_type> getSupport(vector_dist_iterator itPoint, unsigned int requiredSize, support_options opt);
 
 private:
     size_t getCellLinId(const grid_key_dx<vector_type::dims> &cellKey);
@@ -36,7 +43,7 @@ private:
 
     void enlargeSetOfCellsUntilSize(std::set<grid_key_dx<vector_type::dims>> &set, unsigned int requiredSize);
 
-    std::vector<size_t> getPointsInSetOfCells(std::set<grid_key_dx<vector_type::dims>> set, vect_dist_key_dx & p, size_t requiredSupportSize, typename vector_type::stype rcut_verlet);
+    std::vector<size_t> getPointsInSetOfCells(std::set<grid_key_dx<vector_type::dims>> set, vect_dist_key_dx & p, size_t requiredSupportSize, support_options opt);
 
     bool isCellKeyInBounds(grid_key_dx<vector_type::dims> key);
 };
@@ -45,14 +52,17 @@ private:
 
 template<typename vector_type>
 SupportBuilder<vector_type>::SupportBuilder(vector_type &domain, const Point<vector_type::dims, unsigned int> differentialSignature,
-                                            typename vector_type::stype rCut) : domain(domain), differentialSignature(differentialSignature)
+                                            typename vector_type::stype rCut)
+:domain(domain),
+ differentialSignature(differentialSignature),
+ rCut(rCut)
 {
     cellList = domain.template getCellList<CellList<vector_type::dims, typename vector_type::stype, Mem_fast<HeapMemory, local_index_>>>(rCut);
 }
 
 template<typename vector_type>
 Support<vector_type::dims, typename vector_type::stype, typename vector_type::value_type> SupportBuilder<vector_type>
-::getSupport(vector_dist_iterator itPoint, unsigned int requiredSize, typename vector_type::stype rcut_verlet)
+::getSupport(vector_dist_iterator itPoint, unsigned int requiredSize, support_options opt)
 {
     // Get spatial position from point iterator
     vect_dist_key_dx p = itPoint.get();
@@ -67,7 +77,7 @@ Support<vector_type::dims, typename vector_type::stype, typename vector_type::va
     enlargeSetOfCellsUntilSize(supportCells, requiredSize + 1); // NOTE: this +1 is because we then remove the point itself
 
     // Now return all the points from the support into a vector
-    std::vector<size_t> supportKeys = getPointsInSetOfCells(supportCells,p,requiredSize,rcut_verlet);
+    std::vector<size_t> supportKeys = getPointsInSetOfCells(supportCells,p,requiredSize,opt);
     std::remove(supportKeys.begin(), supportKeys.end(), p.getKey());
     return Support<vector_type::dims, typename vector_type::stype, typename vector_type::value_type>(domain, p.getKey(), supportKeys);
 }
@@ -127,7 +137,7 @@ template<typename vector_type>
 std::vector<size_t> SupportBuilder<vector_type>::getPointsInSetOfCells(std::set<grid_key_dx<vector_type::dims>> set,
 																		vect_dist_key_dx & p,
 																		size_t requiredSupportSize,
-																		typename vector_type::stype rcut_verlet)
+																		support_options opt)
 {
     struct reord
     {
@@ -163,19 +173,13 @@ std::vector<size_t> SupportBuilder<vector_type>::getPointsInSetOfCells(std::set<
         }
     }
 
-    if (p.getKey() == 174)
-    {
-    	int debug = 0;
-    	debug++;
-    }
-
     rp.sort();
 
-    if (rcut_verlet >= 0)
+    if (opt == support_options::RADIUS)
     {
 		for (int i = 0 ; i < rp.size() ; i++)
 		{
-			if (rp.get(i).dist <= rcut_verlet)
+			if (rp.get(i).dist <= rCut)
 			{
 				points.push_back(rp.get(i).offset);
 			}

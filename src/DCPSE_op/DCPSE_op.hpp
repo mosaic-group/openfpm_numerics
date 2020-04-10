@@ -663,13 +663,13 @@ class Derivative_x
 public:
 
     template<typename particles_type>
-    Derivative_x(particles_type & parts, unsigned int ord ,typename particles_type::stype rCut,double oversampling_factor=dcpse_oversampling_factor, double rcut_verlet = -1.0)
+    Derivative_x(particles_type & parts, unsigned int ord ,typename particles_type::stype rCut,double oversampling_factor=dcpse_oversampling_factor, support_options opt = support_options::N_PARTICLES)
     {
         Point<particles_type::dims,unsigned int> p;
         p.zero();
         p.get(0) = 1;
 
-        dcpse = new Dcpse<particles_type::dims,particles_type>(parts,p, ord, rCut,oversampling_factor, rcut_verlet);
+        dcpse = new Dcpse<particles_type::dims,particles_type>(parts,p, ord, rCut,oversampling_factor, opt);
     }
 
     template<typename operand_type>
@@ -691,13 +691,13 @@ class Derivative_y
 public:
 
     template<typename particles_type>
-    Derivative_y(particles_type & parts, unsigned int ord ,typename particles_type::stype rCut,double oversampling_factor=dcpse_oversampling_factor, double rcut_verlet = -1.0)
+    Derivative_y(particles_type & parts, unsigned int ord ,typename particles_type::stype rCut,double oversampling_factor=dcpse_oversampling_factor, support_options opt = support_options::N_PARTICLES)
     {
         Point<particles_type::dims,unsigned int> p;
         p.zero();
         p.get(1) = 1;
 
-        dcpse = new Dcpse<particles_type::dims,particles_type>(parts,p, ord, rCut,oversampling_factor, rcut_verlet);
+        dcpse = new Dcpse<particles_type::dims,particles_type>(parts,p, ord, rCut,oversampling_factor, opt);
     }
 
     template<typename operand_type>
@@ -717,13 +717,13 @@ class Derivative_z
 public:
 
     template<typename particles_type>
-    Derivative_z(particles_type & parts, unsigned int ord ,typename particles_type::stype rCut,double oversampling_factor=dcpse_oversampling_factor, double rcut_verlet = -1.0)
+    Derivative_z(particles_type & parts, unsigned int ord ,typename particles_type::stype rCut,double oversampling_factor=dcpse_oversampling_factor, support_options opt = support_options::N_PARTICLES)
     {
         Point<particles_type::dims,unsigned int> p;
         p.zero();
         p.get(2) = 1;
 
-        dcpse = new Dcpse<particles_type::dims,particles_type>(parts,p, ord, rCut,oversampling_factor, rcut_verlet);
+        dcpse = new Dcpse<particles_type::dims,particles_type>(parts,p, ord, rCut,oversampling_factor, opt);
     }
 
     template<typename operand_type>
@@ -748,7 +748,7 @@ class Gradient
 public:
 
     template<typename particles_type>
-    Gradient(particles_type & parts, unsigned int ord ,typename particles_type::stype rCut,double oversampling_factor=dcpse_oversampling_factor, double rcut_verlet = -1.0)
+    Gradient(particles_type & parts, unsigned int ord ,typename particles_type::stype rCut,double oversampling_factor=dcpse_oversampling_factor, support_options opt = support_options::N_PARTICLES)
     {
         typedef Dcpse<particles_type::dims,particles_type> DCPSE_type;
 
@@ -761,7 +761,7 @@ public:
             Point<particles_type::dims,unsigned int> p;
             p.zero();
             p.get(i) = 1;
-            new (dcpse_ptr) Dcpse<particles_type::dims,particles_type>(parts,p, ord, rCut,oversampling_factor, rcut_verlet);
+            new (dcpse_ptr) Dcpse<particles_type::dims,particles_type>(parts,p, ord, rCut,oversampling_factor, opt);
             dcpse_ptr++;
         }
     }
@@ -782,7 +782,7 @@ class Curl2D
 public:
 
     template<typename particles_type>
-    Curl2D(particles_type & parts, unsigned int ord ,typename particles_type::stype rCut,double oversampling_factor=dcpse_oversampling_factor, double rcut_verlet = -1.0)
+    Curl2D(particles_type & parts, unsigned int ord ,typename particles_type::stype rCut,double oversampling_factor=dcpse_oversampling_factor, support_options opt = support_options::N_PARTICLES)
     {
         typedef Dcpse<particles_type::dims,particles_type> DCPSE_type;
 
@@ -792,11 +792,11 @@ public:
             Point<particles_type::dims,unsigned int> p;
             p.zero();
             p.get(1) = 1;
-            new (dcpse_ptr) Dcpse<particles_type::dims,particles_type>(parts,p, ord, rCut,oversampling_factor, rcut_verlet);
+            new (dcpse_ptr) Dcpse<particles_type::dims,particles_type>(parts,p, ord, rCut,oversampling_factor, opt);
             dcpse_ptr++;
             p.zero();
             p.get(0) = 1;
-            new (dcpse_ptr) Dcpse<particles_type::dims,particles_type>(parts,p, ord, rCut,oversampling_factor, rcut_verlet);
+            new (dcpse_ptr) Dcpse<particles_type::dims,particles_type>(parts,p, ord, rCut,oversampling_factor, opt);
             dcpse_ptr++;
 
     }
@@ -818,7 +818,7 @@ class Laplacian
 public:
 
     template<typename particles_type>
-    Laplacian(particles_type & parts, unsigned int ord ,typename particles_type::stype rCut,double oversampling_factor=dcpse_oversampling_factor, double rcut_verlet = -1.0)
+    Laplacian(particles_type & parts, unsigned int ord ,typename particles_type::stype rCut,double oversampling_factor=dcpse_oversampling_factor, support_options opt = support_options::N_PARTICLES)
     {
         typedef Dcpse<particles_type::dims,particles_type> DCPSE_type;
 
@@ -831,7 +831,7 @@ public:
             Point<particles_type::dims,unsigned int> p;
             p.zero();
             p.get(i) = 2;
-            new (dcpse_ptr) Dcpse<particles_type::dims,particles_type>(parts,p, ord, rCut,oversampling_factor,rcut_verlet);
+            new (dcpse_ptr) Dcpse<particles_type::dims,particles_type>(parts,p, ord, rCut,oversampling_factor,opt);
             dcpse_ptr++;
         }
     }
@@ -878,7 +878,7 @@ class Divergence
 
 public:
     template<typename particles_type>
-    Divergence(particles_type & parts, unsigned int ord ,typename particles_type::stype rCut,double oversampling_factor=dcpse_oversampling_factor, double rcut_verlet = -1.0)
+    Divergence(particles_type & parts, unsigned int ord ,typename particles_type::stype rCut,double oversampling_factor=dcpse_oversampling_factor, support_options opt = support_options::N_PARTICLES)
     {
         typedef Dcpse<particles_type::dims,particles_type> DCPSE_type;
 
@@ -891,7 +891,7 @@ public:
             Point<particles_type::dims,unsigned int> p;
             p.zero();
             p.get(i) = 1;
-            new (dcpse_ptr) Dcpse<particles_type::dims,particles_type>(parts,p, ord, rCut,oversampling_factor, rcut_verlet);
+            new (dcpse_ptr) Dcpse<particles_type::dims,particles_type>(parts,p, ord, rCut,oversampling_factor, opt);
             dcpse_ptr++;
         }
     }
@@ -914,7 +914,7 @@ class Advection
 public:
 
     template<typename particles_type>
-    Advection(particles_type & parts, unsigned int ord ,typename particles_type::stype rCut,double oversampling_factor=dcpse_oversampling_factor, double rcut_verlet = -1.0)
+    Advection(particles_type & parts, unsigned int ord ,typename particles_type::stype rCut,double oversampling_factor=dcpse_oversampling_factor, support_options opt = support_options::N_PARTICLES)
     {
         typedef Dcpse<particles_type::dims,particles_type> DCPSE_type;
 
@@ -927,7 +927,7 @@ public:
             Point<particles_type::dims,unsigned int> p;
             p.zero();
             p.get(i) = 1;
-            new (dcpse_ptr) Dcpse<particles_type::dims,particles_type>(parts,p, ord, rCut,oversampling_factor, rcut_verlet);
+            new (dcpse_ptr) Dcpse<particles_type::dims,particles_type>(parts,p, ord, rCut,oversampling_factor, opt);
             dcpse_ptr++;
         }
 
@@ -977,14 +977,14 @@ class Derivative_xy
 public:
 
     template<typename particles_type>
-    Derivative_xy(particles_type & parts, unsigned int ord ,typename particles_type::stype rCut,double oversampling_factor=dcpse_oversampling_factor, double rcut_verlet = -1.0)
+    Derivative_xy(particles_type & parts, unsigned int ord ,typename particles_type::stype rCut,double oversampling_factor=dcpse_oversampling_factor, support_options opt = support_options::N_PARTICLES)
     {
         Point<particles_type::dims,unsigned int> p;
         p.zero();
         p.get(0) = 1;
         p.get(1) = 1;
 
-        dcpse = new Dcpse<particles_type::dims,particles_type>(parts,p, ord, rCut,dcpse_oversampling_factor, rcut_verlet);
+        dcpse = new Dcpse<particles_type::dims,particles_type>(parts,p, ord, rCut,dcpse_oversampling_factor, opt);
     }
 
     template<typename operand_type>
@@ -1006,14 +1006,14 @@ class Derivative_xx
 public:
 
     template<typename particles_type>
-    Derivative_xx(particles_type & parts, unsigned int ord ,typename particles_type::stype rCut,double oversampling_factor=dcpse_oversampling_factor, double rcut_verlet = -1.0)
+    Derivative_xx(particles_type & parts, unsigned int ord ,typename particles_type::stype rCut,double oversampling_factor=dcpse_oversampling_factor, support_options opt = support_options::N_PARTICLES)
     {
         Point<particles_type::dims,unsigned int> p;
         p.zero();
         p.get(0) = 2;
         p.get(1) = 0;
 
-        dcpse = new Dcpse<particles_type::dims,particles_type>(parts,p, ord, rCut,dcpse_oversampling_factor, rcut_verlet);
+        dcpse = new Dcpse<particles_type::dims,particles_type>(parts,p, ord, rCut,dcpse_oversampling_factor, opt);
     }
 
     template<typename operand_type>
@@ -1035,14 +1035,14 @@ class Derivative_yy
 public:
 
     template<typename particles_type>
-    Derivative_yy(particles_type & parts, unsigned int ord ,typename particles_type::stype rCut,double oversampling_factor=dcpse_oversampling_factor, double rcut_verlet = -1.0)
+    Derivative_yy(particles_type & parts, unsigned int ord ,typename particles_type::stype rCut,double oversampling_factor=dcpse_oversampling_factor, support_options opt = support_options::N_PARTICLES)
     {
         Point<particles_type::dims,unsigned int> p;
         p.zero();
         p.get(0) = 0;
         p.get(1) = 2;
 
-        dcpse = new Dcpse<particles_type::dims,particles_type>(parts,p, ord, rCut,dcpse_oversampling_factor, rcut_verlet);
+        dcpse = new Dcpse<particles_type::dims,particles_type>(parts,p, ord, rCut,dcpse_oversampling_factor, opt);
     }
 
     template<typename operand_type>
