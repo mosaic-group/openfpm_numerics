@@ -569,6 +569,7 @@ public:
     typedef typename first_or_second<has_vtype<exp1>::value,exp1,exp2>::vtype vtype;
     //typedef typename exp2::vtype vtype;
 
+
     inline vector_dist_expression_op(const exp1 & o1,const exp2 & o2, DCPSE_type (& dcp)[DCPSE_type::vtype::dims])
             :o1(o1),o2(o2),dcp(dcp)
     {}
@@ -579,10 +580,12 @@ public:
         o2.init();
     }
 
-    template<typename r_type=VectorS<dims,stype> > inline r_type value(const vect_dist_key_dx & key) const
+    //template<typename r_type=VectorS<dims,stype> > inline r_type value(const vect_dist_key_dx & key) const
+    template<typename r_type= typename std::remove_reference<decltype(o2.value(vect_dist_key_dx(0)))>::type>
+    inline r_type value(const vect_dist_key_dx & key) const
     {
         //typedef typename std::remove_reference<decltype(o1.value(key))>::type::blabla blabla;
-        typename std::remove_reference<decltype(o1.value(key))>::type adv;
+        typename std::remove_reference<decltype(o2.value(key))>::type adv;
         adv=0.0;
         for (int i = 0 ; i < dims ; i++)
         {
