@@ -125,10 +125,11 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
         Box<2, double> box({0, 0}, {10,10});
         double Lx=box.getHigh(0);
         double Ly=box.getHigh(1);
-        size_t bc[2] = {NON_PERIODIC, NON_PERIODIC};
+        size_t bc[2] = {PERIODIC, NON_PERIODIC};
         double spacing = box.getHigh(0) / (sz[0] - 1);
-        Ghost<2, double> ghost(spacing * 3);
-        double rCut = 2.0 * spacing;
+        double rCut = 3.1 * spacing;
+        Ghost<2, double> ghost(rCut);
+
 /*                                          pol                             V         vort                 Ext    Press     strain       stess                      Mfield,   dPol                      dV         RHS                  f1     f2     f3    f4     f5     f6       H               V_t      div      */
         vector_dist<2, double, aggregate<VectorS<2, double>,VectorS<2, double>, double[2][2], VectorS<2, double>, double, double[2][2], double[2][2], VectorS<2, double>,VectorS<2, double>, VectorS<2, double> , VectorS<2, double>, double,double,double,double,double,double,double,VectorS<2, double>,double>> Particles(0, box, bc, ghost);
 
@@ -196,15 +197,15 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
         double lambda    =     0.1;
         double delmu     =     -1;
 
-        Derivative_x Dx(Particles, 2, 3.1*spacing,1.9,support_options::RADIUS);
-        Derivative_y Dy(Particles, 2, 3.1*spacing,1.9,support_options::RADIUS);
-        Derivative_xy Dxy(Particles, 2, 3.1*spacing,1.9,support_options::RADIUS);
-        Derivative_xx Dxx(Particles, 2, 3.1*spacing,1.9,support_options::RADIUS);
-        Derivative_yy Dyy(Particles, 2, 3.1*spacing,1.9,support_options::RADIUS);
-        Gradient Grad(Particles, 2, 3.1*spacing,1.9,support_options::RADIUS);
-        Laplacian Lap(Particles, 2, 3.1*spacing,1.9,support_options::RADIUS);
-        Advection Adv(Particles, 2, 3.1*spacing,1.9,support_options::RADIUS);
-        Divergence Div(Particles, 2, 3.1*spacing,1.9,support_options::RADIUS);
+        Derivative_x Dx(Particles, 2, rCut,1.9,support_options::RADIUS);
+        Derivative_y Dy(Particles, 2, rCut,1.9,support_options::RADIUS);
+        Derivative_xy Dxy(Particles, 2, rCut,1.9,support_options::RADIUS);
+        Derivative_xx Dxx(Particles, 2, rCut,1.9,support_options::RADIUS);
+        Derivative_yy Dyy(Particles, 2, rCut,1.9,support_options::RADIUS);
+        Gradient Grad(Particles, 2, rCut,1.9,support_options::RADIUS);
+        Laplacian Lap(Particles, 2, rCut,1.9,support_options::RADIUS);
+        Advection Adv(Particles, 2, rCut,1.9,support_options::RADIUS);
+        Divergence Div(Particles, 2, rCut,1.9,support_options::RADIUS);
 
         // Here fill up the boxes for particle boundary detection.
 
@@ -323,11 +324,12 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
         eq_id vx,vy;
         vx.setId(0);
         vy.setId(1);
-        double sum=0;
-        int n=10;
-        /*for(int i=1; i<=n ;i++)
-        {   RHS[x]=Grad(P)+dV[x];
-            RHS[y]=Grad(P)+dV[y];
+        double sum=0,sum1=0;
+        int n=15;
+        for(int i=1; i<=n ;i++)
+        {   RHS[x]=Dx(P)+dV[x];
+            RHS[y]=Dy(P)+dV[y];
+            Particles.ghost_get<10>();
             DCPSE_scheme<equations2dp,decltype(Particles)> Solver( Particles);
             auto Stokes1 = nu*Lap(V[x]) + 0.5*nu*(Dx(f1*Dx(V[x]))+Dx(f2*0.5*(Dx(V[y])+Dy(V[x])))+Dx(f3*Dy(V[y]))+Dy(f4*Dx(V[x]))+Dy(f5*0.5*(Dx(V[y])+Dy(V[x])))+Dy(f6*Dy(V[y])));
             auto Stokes2 = nu*Lap(V[y]) + 0.5*nu*(Dy(f1*Dx(V[x]))+Dy(f2*0.5*(Dx(V[y])+Dy(V[x])))+Dy(f3*Dy(V[y]))+Dx(f4*Dx(V[x]))+Dx(f5*0.5*(Dx(V[y])+Dy(V[x])))+Dx(f6*Dy(V[y])));
@@ -338,8 +340,10 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
             Solver.impose(V[x], dw_p,0,vx);
             Solver.impose(V[y], dw_p,0,vy);
             Solver.solve(V[x],V[y]);
-            //std::cout << "Stokes Solved" << std::endl;
-            RHS=Div(V);
+            std::cout << "Stokes Solved" << std::endl;
+            Particles.ghost_get<1>();
+            div=Div(V);
+            Particles.ghost_get<19>();
             DCPSE_scheme<equationsp,decltype(Particles)> SolverH( Particles,options_solver::LAGRANGE_MULTIPLIER);
             auto Helmholtz = Lap(H);
             auto D_y=Dy(H);
@@ -348,20 +352,11 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
             SolverH.impose(D_y, up_p,0);
             SolverH.impose(-D_y, dw_p,0);
             SolverH.solve(H);
+            Particles.ghost_get<17>();
             //std::cout << "Helmholtz Solved" << std::endl;
             V=V-Grad(H);
             for(int j=0;j<up_p.size();j++)
             {   auto p=up_p.get<0>(j);
-                Particles.getProp<1>(p)[0] =  1;
-                Particles.getProp<1>(p)[1] =  0;
-            }
-            for(int j=0;j<l_p.size();j++)
-            {   auto p=l_p.get<0>(j);
-                Particles.getProp<1>(p)[0] =  0;
-                Particles.getProp<1>(p)[1] =  0;
-            }
-            for(int j=0;j<r_p.size();j++)
-            {   auto p=r_p.get<0>(j);
                 Particles.getProp<1>(p)[0] =  0;
                 Particles.getProp<1>(p)[1] =  0;
             }
@@ -370,17 +365,22 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
                 Particles.getProp<1>(p)[0] =  0;
                 Particles.getProp<1>(p)[1] =  0;
             }
-            P=P+Lap(H);
+            P=P-Lap(H);
+            Particles.ghost_get<1>();
+            Particles.ghost_get<Pressure>();
             //std::cout << "V,P Corrected" << std::endl;
             sum=0;
+            sum1=0;
             for(int j=0;j<bulk.size();j++)
             {   auto p=bulk.get<0>(j);
-                sum+=(Particles.getProp<4>(p)[0]-Particles.getProp<1>(p)[0])*(Particles.getProp<4>(p)[0]- Particles.getProp<1>(p)[0])+(Particles.getProp<4>(p)[1]- Particles.getProp<1>(p)[1])*(Particles.getProp<4>(p)[1]- Particles.getProp<1>(p)[1]);
+                sum+=(Particles.getProp<18>(p)[0]-Particles.getProp<1>(p)[0])*(Particles.getProp<18>(p)[0]- Particles.getProp<1>(p)[0])+(Particles.getProp<18>(p)[1]- Particles.getProp<1>(p)[1])*(Particles.getProp<18>(p)[1]- Particles.getProp<1>(p)[1]);
+                sum1+= Particles.getProp<1>(p)[0]*Particles.getProp<1>(p)[0]+Particles.getProp<1>(p)[1]*Particles.getProp<1>(p)[1];
             }
             sum=sqrt(sum);
+            sum1=sqrt(sum1);
             V_t=V;
-            std::cout << "eps RMS=" <<sum<< std::endl;
-            Particles.write_frame("Stokes",i);
+            std::cout << "Relative l2 convergence error in velocity = " <<sum/sum1<< std::endl;
+            Particles.write_frame("Polar",i);
 
         }
 
@@ -389,7 +389,6 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
             u[y][x] =   0.5*(Dy(V[x])+Dx(V[y]));
             u[y][y] =   Dy(V[y]);
 
-            Particles.write_frame("Polar",0);*/
 
 /*
               double dt=5e-4;
@@ -957,7 +956,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
 //        Derivative_x Dx(Particles, 2, rCut,1);
 //        Derivative_y Dy(Particles, 2, rCut,1);
 //        Gradient Grad(Particles, 2, rCut,1);
-        Laplacian Lap(Particles, 2, 3.1*spacing,1.9,support_options::RADIUS);
+        Laplacian Lap(Particles, 2, rCut,1.9,support_options::RADIUS);
 //        Curl2D Curl(Particles, 2, rCut, 1);
 
         auto its = Particles.getDomainIterator();
@@ -1082,10 +1081,10 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
         domain.map();
         domain.ghost_get<0>();
 
-        Derivative_x Dx(domain, 2, 3.1*spacing,1.9,support_options::RADIUS);
-        Derivative_y Dy(domain, 2, 3.1*spacing,1.9,support_options::RADIUS);
+        Derivative_x Dx(domain, 2, rCut,1.9,support_options::RADIUS);
+        Derivative_y Dy(domain, 2, rCut,1.9,support_options::RADIUS);
         //Gradient Grad(domain, 2, rCut);
-        Laplacian Lap(domain, 2, 3.1*spacing,1.9,support_options::RADIUS);
+        Laplacian Lap(domain, 2, rCut,1.9,support_options::RADIUS);
         //Advection Adv(domain, 3, rCut, 3);
         //Solver Sol_Lap(Lap),Sol_Dx(Dx);
 
@@ -1353,7 +1352,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
         size_t bc[2] = {PERIODIC, NON_PERIODIC};
         double spacing = box.getHigh(0) / (sz[0] - 1);
         Ghost<2, double> ghost(spacing * 3.1);
-//        double rCut = 2.0 * spacing;
+        double rCut = 3.1 * spacing;
         BOOST_TEST_MESSAGE("Init vector_dist...");
 
         vector_dist<2, double, aggregate<double,double,double,double,double,VectorS<2, double>>> domain(0, box, bc, ghost);
@@ -1379,7 +1378,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
         domain.ghost_get<0>();
 
 
-        Laplacian Lap(domain, 2, 3.1*spacing, 1.9, support_options::RADIUS);
+        Laplacian Lap(domain, 2, rCut, 1.9, support_options::RADIUS);
 
         DCPSE_scheme<equationsp,decltype(domain)> Solver( domain);
 
@@ -2639,10 +2638,10 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
         domain.map();
         domain.ghost_get<0>();
 
-        Derivative_x Dx(domain, 2, 3.1*spacing,1.9,support_options::RADIUS);
-        Derivative_y Dy(domain, 2, 3.1*spacing,1.9,support_options::RADIUS);
+        Derivative_x Dx(domain, 2, rCut,1.9,support_options::RADIUS);
+        Derivative_y Dy(domain, 2, rCut,1.9,support_options::RADIUS);
         //Gradient Grad(domain, 2, rCut);
-        Laplacian Lap(domain, 2, 3.1*spacing,1.9,support_options::RADIUS);
+        Laplacian Lap(domain, 2, rCut,1.9,support_options::RADIUS);
         //Advection Adv(domain, 3, rCut, 3);
         //Solver Sol_Lap(Lap),Sol_Dx(Dx);
 

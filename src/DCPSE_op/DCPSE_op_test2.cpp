@@ -80,8 +80,9 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests2)
         Box<2, double> box({0, 0}, {1,1});
         size_t bc[2] = {PERIODIC, NON_PERIODIC};
         double spacing = box.getHigh(0) / (sz[0] - 1);
-        Ghost<2, double> ghost(spacing * 3);
-        double rCut = 2.5 * spacing;
+        double rCut = 3.1 * spacing;
+        Ghost<2, double> ghost(rCut);
+
         //                                  P        V                 v_star           RHS            V_t   Helmholtz                 RHS2
         vector_dist<2, double, aggregate<double,VectorS<2, double>,VectorS<2, double>,double,VectorS<2, double>,double,    double,VectorS<2, double>>> Particles(0, box, bc, ghost);
         auto it = Particles.getGridIterator(sz);
@@ -179,12 +180,12 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests2)
         vx.setId(0);
         vy.setId(1);
 
-        Derivative_x Dx(Particles, 2, 3.1*spacing,1.9,support_options::RADIUS );
-        Derivative_y Dy(Particles, 2, 3.1*spacing,1.9,support_options::RADIUS);
-        Gradient Grad(Particles, 2, 3.1*spacing,1.9,support_options::RADIUS );
-        Laplacian Lap(Particles, 2, 3.1*spacing, 1.9,support_options::RADIUS);
-        Advection Adv(Particles, 2, 3.1*spacing, 1.9,support_options::RADIUS);
-        Divergence Div(Particles, 2, 3.1*spacing, 1.9,support_options::RADIUS);
+        Derivative_x Dx(Particles, 2, rCut,1.9,support_options::RADIUS );
+        Derivative_y Dy(Particles, 2, rCut,1.9,support_options::RADIUS);
+        Gradient Grad(Particles, 2, rCut,1.9,support_options::RADIUS );
+        Laplacian Lap(Particles, 2, rCut, 1.9,support_options::RADIUS);
+        Advection Adv(Particles, 2, rCut, 1.9,support_options::RADIUS);
+        Divergence Div(Particles, 2, rCut, 1.9,support_options::RADIUS);
 
 
 /*      starting the simulation at a nice *continuous* place
@@ -391,23 +392,8 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests2)
 
         double nu=1e-2;
 
-/*        V_star=1e-3*(nu*Lap(V)-Adv(V,V));
-        RHS=Div(V_star);
-        DCPSE_scheme<equations1d,decltype(Particles)> Solver( Particles,options_solver::LAGRANGE_MULTIPLIER);
-        auto Pressure_Poisson = Lap(P);
-        auto D_y=Dy(P);
-        auto D_x=Dx(P);
-        Solver.impose(Pressure_Poisson,bulk,prop_id<3>());
-        Solver.impose(D_y, up_p,0);
-        Solver.impose(D_x, r_p, 0);
-        Solver.impose(-D_y, dw_p,0);
-        Solver.impose(-D_x, l_p,0);
-        Solver.solve(P);
-        std::cout << "Poisson Solved" << std::endl;
-        V = V + (V_star - 1e-3*Grad(P));*/
-
         double sum=0,sum2=0;
-        int n=10;
+        int n=15;
         Particles.write_frame("Stokes",0);
         V_t=V;
         for(int i=1; i<=n ;i++)
@@ -469,13 +455,14 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests2)
                 sum2+= Particles.getProp<1>(p)[0]*Particles.getProp<1>(p)[0]+Particles.getProp<1>(p)[1]*Particles.getProp<1>(p)[1];
             }
             sum=sqrt(sum);
+            sum2=sqrt(sum2);
             V_t=V;
-            std::cout << "Relative eps RMS=" <<sum/sum2<< std::endl;
+            std::cout << "Relative l2 convergence error = " <<sum/sum2<< std::endl;
             Particles.write_frame("Stokes",i);
 
         }
     }
-    
+
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
