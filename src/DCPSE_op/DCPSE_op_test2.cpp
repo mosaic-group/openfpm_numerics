@@ -280,7 +280,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests2)
 
 
     BOOST_AUTO_TEST_CASE(dcpse_Lid_Stokes) {
-        const size_t sz[2] = {31,31};
+        const size_t sz[2] = {161,161};
         Box<2, double> box({0, 0}, {1,1});
         size_t bc[2] = {NON_PERIODIC, NON_PERIODIC};
         double spacing = box.getHigh(0) / (sz[0] - 1);
@@ -393,7 +393,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests2)
         double nu=1e-2;
 
         double sum=0,sum2=0;
-        int n=15;
+        int n=100;
         Particles.write_frame("Stokes",0);
         V_t=V;
         for(int i=1; i<=n ;i++)
@@ -413,19 +413,19 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests2)
             Solver.impose(V_star[1], l_p, 0,vy);
             Solver.solve(V_star[0],V_star[1]);
             //std::cout << "Stokes Solved" << std::endl;
-            RHS=Div(V_star);
+            RHS=-Div(V_star);
             DCPSE_scheme<equations1d,decltype(Particles)> SolverH( Particles,options_solver::LAGRANGE_MULTIPLIER);
             auto Helmholtz = Lap(H);
             auto D_y=Dy(H);
             auto D_x=Dx(H);
             SolverH.impose(Helmholtz,bulk,prop_id<3>());
-            SolverH.impose(D_y, up_p,0);
-            SolverH.impose(D_x, r_p, 0);
-            SolverH.impose(-D_y, dw_p,0);
-            SolverH.impose(-D_x, l_p,0);
+            SolverH.impose(Dy(H), up_p,0);
+            SolverH.impose(Dx(H), r_p, 0);
+            SolverH.impose(Dy(H), dw_p,0);
+            SolverH.impose(Dx(H), l_p,0);
             SolverH.solve(H);
             //std::cout << "Helmholtz Solved" << std::endl;
-            V=V_star-Grad(H);
+            V=V_star+Grad(H);
             for(int j=0;j<up_p.size();j++)
             {   auto p=up_p.get<0>(j);
                 Particles.getProp<1>(p)[0] =  1;
@@ -446,7 +446,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests2)
                 Particles.getProp<1>(p)[0] =  0;
                 Particles.getProp<1>(p)[1] =  0;
             }
-            P=P-Lap(H)+0.5*Adv(V_t,H);
+            P=P+Lap(H)-0.5*Adv(V_t,H);
             //std::cout << "V,P Corrected" << std::endl;
             sum=0;
             for(int j=0;j<bulk.size();j++)
@@ -457,12 +457,12 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests2)
             sum=sqrt(sum);
             sum2=sqrt(sum2);
             V_t=V;
-            std::cout << "Relative l2 convergence error = " <<sum/sum2<< std::endl;
+            std::cout << "Rel l2 cgs err at "<<i<<"= " <<sum/sum2<< std::endl;
+            if(i%5==0)
             Particles.write_frame("Stokes",i);
-
         }
-    }
 
+    }
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

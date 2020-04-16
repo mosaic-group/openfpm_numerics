@@ -121,7 +121,7 @@ const bool equationsp::boundary[] = {PERIODIC, NON_PERIODIC};
 BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
 
     BOOST_AUTO_TEST_CASE(dcpse_Active2D) {
-        const size_t sz[2] = {23, 23};
+        const size_t sz[2] = {31, 31};
         Box<2, double> box({0, 0}, {10,10});
         double Lx=box.getHigh(0);
         double Ly=box.getHigh(1);
@@ -130,8 +130,8 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
         double rCut = 3.1 * spacing;
         Ghost<2, double> ghost(rCut);
 
-/*                                          pol                             V         vort                 Ext    Press     strain       stress                      Mfield,   dPol                      dV         RHS                  f1     f2     f3    f4     f5     f6       H               V_t      div      */
-        vector_dist<2, double, aggregate<VectorS<2, double>,VectorS<2, double>, double[2][2], VectorS<2, double>, double, double[2][2], double[2][2], VectorS<2, double>,VectorS<2, double>, VectorS<2, double> , VectorS<2, double>, double,double,double,double,double,double,double,VectorS<2, double>,double>> Particles(0, box, bc, ghost);
+/*                                          pol                             V         vort                 Ext    Press     strain       stress                      Mfield,   dPol                      dV         RHS                  f1     f2     f3    f4     f5     f6       H               V_t      div   H_t   */
+        vector_dist<2, double, aggregate<VectorS<2, double>,VectorS<2, double>, double[2][2], VectorS<2, double>, double, double[2][2], double[2][2], VectorS<2, double>,VectorS<2, double>, VectorS<2, double> , VectorS<2, double>, double,double,double,double,double,double,double,VectorS<2, double>,double,double>> Particles(0, box, bc, ghost);
 
         auto it = Particles.getGridIterator(sz);
         while (it.isNext()) {
@@ -187,7 +187,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
         auto H = getV<17>(Particles);
         auto V_t = getV<18>(Particles);
         auto div = getV<19>(Particles);
-
+        auto H_t = getV<20>(Particles);
 
         double eta       =     1.0;
         double nu        =     -0.5;
@@ -197,6 +197,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
         double Kb        =     1;
         double lambda    =     0.1;
         double delmu     =     -1;
+        g    =     0;
 
         // Here fill up the boxes for particle boundary detection.
 
@@ -289,6 +290,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
         Derivative_x Dx(Particles, 2, rCut,1.9,support_options::RADIUS);
         Derivative_y Dy(Particles, 2, rCut,1.9,support_options::RADIUS);
         Derivative_xy Dxy(Particles, 2, rCut,1.9,support_options::RADIUS);
+        auto Dyx=Dxy;
         Derivative_xx Dxx(Particles, 2, rCut,1.9,support_options::RADIUS);
         Derivative_yy Dyy(Particles, 2, rCut,1.9,support_options::RADIUS);
         Gradient Grad(Particles, 2, rCut,1.9,support_options::RADIUS);
@@ -311,12 +313,12 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
         f5 = 4.0*gama*nu*Pol[x]*Pol[x]*Pol[y]*Pol[y] / (Pol[x]*Pol[x] + Pol[y]*Pol[y]);
         f6 = 2.0*gama*nu*Pol[x]*Pol[x]*Pol[x]*Pol[y] / (Pol[x]*Pol[x] + Pol[y]*Pol[y]);
 
-        dV[x] = 0.5*Dy(h[y]) + zeta*Dx(delmu*Pol[x]*Pol[x]) + zeta*Dy(delmu*Pol[x]*Pol[y]) - zeta*Dx(0.5*delmu*(Pol[x]*Pol[x]+Pol[y]*Pol[y])) - 0.5*nu*Dx(-2*h[y]*Pol[x]*Pol[y])
+        dV[x] = -0.5*Dy(h[y]) + zeta*Dx(delmu*Pol[x]*Pol[x]) + zeta*Dy(delmu*Pol[x]*Pol[y]) - zeta*Dx(0.5*delmu*(Pol[x]*Pol[x]+Pol[y]*Pol[y])) - 0.5*nu*Dx(-2*h[y]*Pol[x]*Pol[y])
                   - 0.5*nu*Dy(h[y]*(Pol[x]*Pol[x] - Pol[y]*Pol[y])) - Dx(sigma[x][x]) - Dy(sigma[x][y]) - g[x]
                   - 0.5*nu*Dx(-gama*lambda*delmu*(Pol[x]*Pol[x] - Pol[y]*Pol[y])) - 0.5*Dy(-2*gama*lambda*delmu*(Pol[x]*Pol[y]));
 
 
-        dV[y] = 0.5*Dx(-h[y]) + zeta*Dy(delmu*Pol[y]*Pol[y]) + zeta*Dx(delmu*Pol[x]*Pol[y]) - zeta*Dy(0.5*delmu*(Pol[x]*Pol[x]+Pol[y]*Pol[y])) - 0.5*nu*Dy(-2*h[y]*Pol[x]*Pol[y])
+        dV[y] = -0.5*Dx(-h[y]) + zeta*Dy(delmu*Pol[y]*Pol[y]) + zeta*Dx(delmu*Pol[x]*Pol[y]) - zeta*Dy(0.5*delmu*(Pol[x]*Pol[x]+Pol[y]*Pol[y])) - 0.5*nu*Dy(-2*h[y]*Pol[x]*Pol[y])
                   - 0.5*nu*Dx(h[y]*(Pol[x]*Pol[x] - Pol[y]*Pol[y])) - Dx(sigma[y][x]) - Dy(sigma[y][y]) - g[y]
                   - 0.5*nu*Dy(gama*lambda*delmu*(Pol[x]*Pol[x] - Pol[y]*Pol[y])) - 0.5*Dx(-2*gama*lambda*delmu*(Pol[x]*Pol[y]));
 
@@ -327,17 +329,19 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
         vy.setId(1);
         double sum=0,sum1=0;
         int n=30;
-        auto Stokes1 = nu*Lap(V[x]) + 0.5*nu*(Dx(f1*Dx(V[x]))+Dx(f2*0.5*(Dx(V[y])+Dy(V[x])))+Dx(f3*Dy(V[y]))+Dy(f4*Dx(V[x]))+Dy(f5*0.5*(Dx(V[y])+Dy(V[x])))+Dy(f6*Dy(V[y])));
-        auto Stokes2 = nu*Lap(V[y]) + 0.5*nu*(Dy(f1*Dx(V[x]))+Dy(f2*0.5*(Dx(V[y])+Dy(V[x])))+Dy(f3*Dy(V[y]))+Dx(f4*Dx(V[x]))+Dx(f5*0.5*(Dx(V[y])+Dy(V[x])))+Dx(f6*Dy(V[y])));
+/*        auto Stokes1 = nu*Lap(V[x]) + 0.5*nu*(f1*Dxx(V[x])+Dx(f1)*Dx(V[x])) + (Dx(f2)*0.5*(Dx(V[y])+Dy(V[x])) + f2*0.5*(Dxx(V[y])+Dyx(V[x]))) + (Dx(f3)*Dy(V[y])+ f3*Dyx(V[y])) + (Dy(f4)*Dx(V[x])+f4*Dxy(V[x])) + (Dy(f5)*0.5*(Dx(V[y])+Dy(V[x]))+f5*0.5*(Dxy(V[y])+Dyy(V[x]))) + ( Dy(f6)*Dy(V[y])+f6*Dyy(V[y]) );
+        auto Stokes2 = nu*Lap(V[y]) + 0.5*nu*(f1*Dxy(V[x])+Dy(f1)*Dx(V[x])) + (Dy(f2)*0.5*(Dx(V[y])+Dy(V[x])) + f2*0.5*(Dxy(V[y])+Dyy(V[x]))) + (Dy(f3)*Dy(V[y])+ f3*Dyy(V[y])) + (Dx(f4)*Dx(V[x])+f4*Dxx(V[x])) + (Dx(f5)*0.5*(Dx(V[y])+Dy(V[x]))+f5*0.5*(Dxx(V[y])+Dyx(V[x]))) + ( Dx(f6)*Dy(V[y])+f6*Dyx(V[y]) );
         auto Helmholtz = Lap(H);
         auto D_y=Dy(H);
-        auto D_x=Dx(H);
+        auto D_x=Dx(H);*/
 
         for(int i=1; i<=n ;i++)
         {   RHS[x]=Dx(P)+dV[x];
             RHS[y]=Dy(P)+dV[y];
             Particles.ghost_get<10>();
             DCPSE_scheme<equations2dp,decltype(Particles)> Solver( Particles);
+            auto Stokes1 = nu*Lap(V[x]) + 0.5*nu*(f1*Dxx(V[x])+Dx(f1)*Dx(V[x])) + (Dx(f2)*0.5*(Dx(V[y])+Dy(V[x])) + f2*0.5*(Dxx(V[y])+Dyx(V[x]))) + (Dx(f3)*Dy(V[y])+ f3*Dyx(V[y])) + (Dy(f4)*Dx(V[x])+f4*Dxy(V[x])) + (Dy(f5)*0.5*(Dx(V[y])+Dy(V[x]))+f5*0.5*(Dxy(V[y])+Dyy(V[x]))) + ( Dy(f6)*Dy(V[y])+f6*Dyy(V[y]) );
+            auto Stokes2 = nu*Lap(V[y]) + 0.5*nu*(f1*Dxy(V[x])+Dy(f1)*Dx(V[x])) + (Dy(f2)*0.5*(Dx(V[y])+Dy(V[x])) + f2*0.5*(Dxy(V[y])+Dyy(V[x]))) + (Dy(f3)*Dy(V[y])+ f3*Dyy(V[y])) + (Dx(f4)*Dx(V[x])+f4*Dxx(V[x])) + (Dx(f5)*0.5*(Dx(V[y])+Dy(V[x]))+f5*0.5*(Dxx(V[y])+Dyx(V[x]))) + ( Dx(f6)*Dy(V[y])+f6*Dyx(V[y]) );
             Solver.impose(Stokes1,bulk,RHS[0],vx);
             Solver.impose(Stokes2,bulk,RHS[1],vy);
             Solver.impose(V[x], up_p,0,vx);
@@ -349,12 +353,15 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
             Particles.ghost_get<Velocity>();
             div=Div(V);
             Particles.ghost_get<19>();
-            DCPSE_scheme<equationsp,decltype(Particles)> SolverH(Particles,options_solver::LAGRANGE_MULTIPLIER);
+            DCPSE_scheme<equationsp,decltype(Particles)> SolverH(Particles,options_solver::LAGRANGE_MULTIPLIER);//,
+            auto Helmholtz = Lap(H);
+            auto D_y=Dy(H);
             SolverH.impose(Helmholtz,bulk,prop_id<19>());
             SolverH.impose(D_y, up_p,0);
             SolverH.impose(-D_y, dw_p,0);
             SolverH.solve(H);
             Particles.ghost_get<17>();
+            Particles.ghost_get<Velocity>();
             //std::cout << "Helmholtz Solved" << std::endl;
             V=V-Grad(H);
             for(int j=0;j<up_p.size();j++)
@@ -376,12 +383,12 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
             for(int j=0;j<bulk.size();j++)
             {   auto p=bulk.get<0>(j);
                 sum+=(Particles.getProp<18>(p)[0]-Particles.getProp<1>(p)[0])*(Particles.getProp<18>(p)[0]- Particles.getProp<1>(p)[0])+(Particles.getProp<18>(p)[1]- Particles.getProp<1>(p)[1])*(Particles.getProp<18>(p)[1]- Particles.getProp<1>(p)[1]);
-                sum1+= Particles.getProp<1>(p)[0]*Particles.getProp<1>(p)[0]+Particles.getProp<1>(p)[1]*Particles.getProp<1>(p)[1];
+                sum1+=Particles.getProp<1>(p)[0]*Particles.getProp<1>(p)[0]+Particles.getProp<1>(p)[1]*Particles.getProp<1>(p)[1];
             }
             sum=sqrt(sum);
             sum1=sqrt(sum1);
             V_t=V;
-            std::cout << "Relative l2 convergence error in velocity = " <<sum/sum1<< std::endl;
+            std::cout << "Rel l2 cgs err in V at "<<i<<"= " <<sum/sum1<< std::endl;
             Particles.write_frame("Polar",i);
 
         }
@@ -389,10 +396,10 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
         Particles.write_frame("Polar",n+1);
 
 
-        u[x][x] =   Dx(V[x]);
-        u[x][y] =   0.5*(Dx(V[y])+Dy(V[x]));
-        u[y][x] =   0.5*(Dy(V[x])+Dx(V[y]));
-        u[y][y] =   Dy(V[y]);
+        //u[x][x] =   Dx(V[x]);
+        //u[x][y] =   0.5*(Dx(V[y])+Dy(V[x]));
+        //u[y][x] =   0.5*(Dy(V[x])+Dx(V[y]));
+        //u[y][y] =   Dy(V[y]);
 
 
 /*
@@ -1055,12 +1062,12 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
     BOOST_AUTO_TEST_CASE(dcpse_poisson_Robin_anal) {
 //  int rank;
 //  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-        const size_t sz[2] = {81,81};
+        const size_t sz[2] = {161,161};
         Box<2, double> box({0, 0}, {0.5, 0.5});
         size_t bc[2] = {NON_PERIODIC, NON_PERIODIC};
         double spacing = box.getHigh(0) / (sz[0] - 1);
-        Ghost<2, double> ghost(spacing * 3);
-        double rCut = 2 * spacing;
+        Ghost<2, double> ghost(spacing * 3.1);
+        double rCut = 3.1 * spacing;
         BOOST_TEST_MESSAGE("Init vector_dist...");
 
         vector_dist<2, double, aggregate<double,double,double,double,double,double>> domain(0, box, bc, ghost);
@@ -1928,7 +1935,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
     BOOST_AUTO_TEST_CASE(dcpse_op_vec) {
 //  int rank;
 //  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-        size_t edgeSemiSize = 80;
+        size_t edgeSemiSize = 40;
         const size_t sz[2] = {2 * edgeSemiSize+1, 2 * edgeSemiSize+1};
         Box<2, double> box({0, 0}, {1,1});
         size_t bc[2] = {NON_PERIODIC, NON_PERIODIC};

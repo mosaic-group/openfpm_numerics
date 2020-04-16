@@ -1,1 +1,1 @@
--Wl,-rpath -Wl,/home/i-bird/MPI/lib -Wl,--enable-new-dtags -pthread /home/i-bird/MPI/lib/libmpi.so
+ 
