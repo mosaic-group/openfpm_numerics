@@ -17,7 +17,7 @@
 #include "DCPSE_Solver.hpp"
 #include "Operators/Vector/vector_dist_operators.hpp"
 #include "Vector/vector_dist_subset.hpp"
-#include "EqnsStruct.hpp"
+#include "EqnsStructPetsc.hpp"
 
 
 //int vector_dist_expression_op<void,void,VECT_COPY_N_TO_N>::i = 0;
