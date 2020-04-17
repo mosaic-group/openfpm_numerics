@@ -210,7 +210,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests3)
             Solver.solve(V_star[0],V_star[1],V_star[2]);
             std::cout << "Stokes Solved" << std::endl;
             RHS=-Div(V_star);
-            DCPSE_scheme<equations3d,decltype(Particles)> SolverH(Particles,options_solver::LAGRANGE_MULTIPLIER);
+            DCPSE_scheme<equations3d1,decltype(Particles)> SolverH(Particles,options_solver::LAGRANGE_MULTIPLIER);
             auto Helmholtz = Lap(H);
             auto D_x=Dx(H);
             auto D_y=Dy(H);

@@ -165,7 +165,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests2)
         Particles.write_frame("Stokes",0);
         for(int i=1; i<=n ;i++)
         {   RHS2=-Grad(P);
-            DCPSE_scheme<equations2,decltype(Particles)> Solver( Particles);
+            DCPSE_scheme<equations2d2,decltype(Particles)> Solver( Particles);
             auto Stokes1 = Adv(V[0],V_star[0])-nu*Lap(V_star[0]);
             auto Stokes2 = Adv(V[1],V_star[1])-nu*Lap(V_star[1]);
             Solver.impose(Stokes1,bulk,RHS2[0],vx);
@@ -181,7 +181,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests2)
             Solver.solve(V_star[0],V_star[1]);
             //std::cout << "Stokes Solved" << std::endl;
             RHS=Div(V_star);
-            DCPSE_scheme<equations1d,decltype(Particles)> SolverH( Particles,options_solver::LAGRANGE_MULTIPLIER);
+            DCPSE_scheme<equations2d1,decltype(Particles)> SolverH( Particles,options_solver::LAGRANGE_MULTIPLIER);
             auto Helmholtz = Lap(H);
             auto D_y=Dy(H);
             auto D_x=Dx(H);
@@ -352,7 +352,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests2)
         V_t=V;
         for(int i=1; i<=n ;i++)
         {   RHS2=-Grad(P);
-            DCPSE_scheme<equations2,decltype(Particles)> Solver( Particles);
+            DCPSE_scheme<equations2d2,decltype(Particles)> Solver( Particles);
             auto Stokes1 = Adv(V[0],V_star[0])-nu*Lap(V_star[0]);
             auto Stokes2 = Adv(V[1],V_star[1])-nu*Lap(V_star[1]);
             Solver.impose(Stokes1,bulk,RHS2[0],vx);
@@ -368,7 +368,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests2)
             Solver.solve(V_star[0],V_star[1]);
             //std::cout << "Stokes Solved" << std::endl;
             RHS=-Div(V_star);
-            DCPSE_scheme<equations1d,decltype(Particles)> SolverH( Particles,options_solver::LAGRANGE_MULTIPLIER);
+            DCPSE_scheme<equations2d1,decltype(Particles)> SolverH( Particles,options_solver::LAGRANGE_MULTIPLIER);
             auto Helmholtz = Lap(H);
             auto D_y=Dy(H);
             auto D_x=Dx(H);
@@ -530,7 +530,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests2)
         int n=50;
         double nu=1e-2;
         dV=dt*(nu*Lap(V)-Adv(V,V));
-        DCPSE_scheme<equations1d,decltype(Particles)> Solver( Particles,options_solver::LAGRANGE_MULTIPLIER);
+        DCPSE_scheme<equations2d1,decltype(Particles)> Solver( Particles,options_solver::LAGRANGE_MULTIPLIER);
         auto Pressure_Poisson = Lap(P);
         auto D_y=Dy(P);
         auto D_x=Dx(P);
@@ -548,7 +548,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests2)
         for(int i=1; i<=n ;i++)
         {   dV=dt*(nu*Lap(V)-Adv(V,V));
             RHS=1/dt*Div(dV);
-            DCPSE_scheme<equations1d,decltype(Particles)> Solver( Particles,options_solver::LAGRANGE_MULTIPLIER);
+            DCPSE_scheme<equations2d1,decltype(Particles)> Solver( Particles,options_solver::LAGRANGE_MULTIPLIER);
             auto Pressure_Poisson = Lap(P);
             auto D_y=Dy(P);
             auto D_x=Dx(P);

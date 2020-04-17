@@ -19,6 +19,13 @@
 #include "Vector/vector_dist_subset.hpp"
 #include "EqnsStruct.hpp"
 
+const bool equations3d1::boundary[] = {NON_PERIODIC, NON_PERIODIC};
+const bool equations3d3::boundary[] = {NON_PERIODIC, NON_PERIODIC};
+const bool equations2d1::boundary[] = {NON_PERIODIC, NON_PERIODIC};
+const bool equations2d2::boundary[] = {NON_PERIODIC, NON_PERIODIC};
+const bool equations2d1p::boundary[] = {PERIODIC, NON_PERIODIC};
+const bool equations2d2p::boundary[] = {PERIODIC, NON_PERIODIC};
+
 //template<typename T>
 //struct Debug;
 
@@ -27,8 +34,6 @@
 BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
 
     BOOST_AUTO_TEST_CASE(dcpse_Active2D) {
-        equations equation2dp = {};
-        equations equationp = {};
         const size_t sz[2] = {31, 31};
         Box<2, double> box({0, 0}, {10,10});
         double Lx=box.getHigh(0);
@@ -247,7 +252,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
         {   RHS[x]=Dx(P)+dV[x];
             RHS[y]=Dy(P)+dV[y];
             Particles.ghost_get<10>();
-            DCPSE_scheme<equations2dp,decltype(Particles)> Solver( Particles);
+            DCPSE_scheme<equations2d2p,decltype(Particles)> Solver( Particles);
             auto Stokes1 = nu*Lap(V[x]) + 0.5*nu*(f1*Dxx(V[x])+Dx(f1)*Dx(V[x])) + (Dx(f2)*0.5*(Dx(V[y])+Dy(V[x])) + f2*0.5*(Dxx(V[y])+Dyx(V[x]))) + (Dx(f3)*Dy(V[y])+ f3*Dyx(V[y])) + (Dy(f4)*Dx(V[x])+f4*Dxy(V[x])) + (Dy(f5)*0.5*(Dx(V[y])+Dy(V[x]))+f5*0.5*(Dxy(V[y])+Dyy(V[x]))) + ( Dy(f6)*Dy(V[y])+f6*Dyy(V[y]) );
             auto Stokes2 = nu*Lap(V[y]) + 0.5*nu*(f1*Dxy(V[x])+Dy(f1)*Dx(V[x])) + (Dy(f2)*0.5*(Dx(V[y])+Dy(V[x])) + f2*0.5*(Dxy(V[y])+Dyy(V[x]))) + (Dy(f3)*Dy(V[y])+ f3*Dyy(V[y])) + (Dx(f4)*Dx(V[x])+f4*Dxx(V[x])) + (Dx(f5)*0.5*(Dx(V[y])+Dy(V[x]))+f5*0.5*(Dxx(V[y])+Dyx(V[x]))) + ( Dx(f6)*Dy(V[y])+f6*Dyx(V[y]) );
             Solver.impose(Stokes1,bulk,RHS[0],vx);
@@ -261,7 +266,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
             Particles.ghost_get<Velocity>();
             div=Div(V);
             Particles.ghost_get<19>();
-            DCPSE_scheme<equationsp,decltype(Particles)> SolverH(Particles,options_solver::LAGRANGE_MULTIPLIER);//,
+            DCPSE_scheme<equations2d1p,decltype(Particles)> SolverH(Particles,options_solver::LAGRANGE_MULTIPLIER);//,
             auto Helmholtz = Lap(H);
             auto D_y=Dy(H);
             SolverH.impose(Helmholtz,bulk,prop_id<19>());
@@ -544,7 +549,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
             Particles.template getProp<9>(bulk.template get<0>(i)) = Particles_subset.getProp<0>(i);
         }
         //subset_create<0,1,2,4>(Particles,Particles_subset,bulk);
-        DCPSE_scheme<equations,decltype(Particles_subset)> Solver(Particles_subset);
+        DCPSE_scheme<equations2d1,decltype(Particles_subset)> Solver(Particles_subset);
         auto Pressure_Poisson = Lap_sub(P_bulk);
         Solver.impose(Pressure_Poisson, bulk_1,prop_id<0>());
         Solver.impose(P_bulk, ref_bulk, 1);
@@ -588,7 +593,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
             }
             //RHS=1.0/dt*Div(dV);
             std::cout<<"RHS Done"<<std::endl;
-            DCPSE_scheme<equations,decltype(Particles)> Solver(Particles);
+            DCPSE_scheme<equations2d1,decltype(Particles)> Solver(Particles);
             auto Pressure_Poisson = Lap(P);
             auto D_x = Dx(P);
             auto D_y = Dy(P);
@@ -1086,7 +1091,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
             }
             ++it2;
         }
-        DCPSE_scheme<equations,decltype(domain)> Solver( domain);
+        DCPSE_scheme<equations2d1,decltype(domain)> Solver( domain);
         auto Poisson = Lap(v);
         auto D_x = Dx(v);
         auto D_y = Dy(v);
@@ -1234,7 +1239,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
             }
             ++it2;
         }
-        DCPSE_scheme<equations,decltype(domain)> Solver( domain);
+        DCPSE_scheme<equations2d1,decltype(domain)> Solver( domain);
         auto Poisson = Lap(v);
         auto D_x = Dx(v);
         auto D_y = Dy(v);
@@ -1300,7 +1305,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
 
         Laplacian Lap(domain, 2, rCut, 1.9, support_options::RADIUS);
 
-        DCPSE_scheme<equationsp,decltype(domain)> Solver( domain);
+        DCPSE_scheme<equations2d1p,decltype(domain)> Solver( domain);
 
         openfpm::vector<aggregate<int>> bulk;
         openfpm::vector<aggregate<int>> up_p;
@@ -1431,7 +1436,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
         //Advection Adv(domain, 3, rCut, 3);
         //Solver Sol_Lap(Lap),Sol_Dx(Dx);
         //DCPSE_scheme<equations,decltype(domain)> Solver( domain);
-        DCPSE_scheme<equations,decltype(domain)> Solver( domain);
+        DCPSE_scheme<equations2d1,decltype(domain)> Solver( domain);
 
         openfpm::vector<aggregate<int>> bulk;
         openfpm::vector<aggregate<int>> up_p;
@@ -1575,7 +1580,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
         //Advection Adv(domain, 3, rCut, 3);
         //Solver Sol_Lap(Lap),Sol_Dx(Dx);
         //DCPSE_scheme<equations,decltype(domain)> Solver( domain);
-        DCPSE_scheme<equations,decltype(domain)> Solver( domain,options_solver::LAGRANGE_MULTIPLIER);
+        DCPSE_scheme<equations2d1,decltype(domain)> Solver( domain,options_solver::LAGRANGE_MULTIPLIER);
 
         openfpm::vector<aggregate<int>> bulk;
         openfpm::vector<aggregate<int>> up_p;
@@ -1714,7 +1719,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
         Laplacian Lap(domain, 2, rCut, 2);
         //Advection Adv(domain, 3, rCut, 3);
         //Solver Sol_Lap(Lap),Sol_Dx(Dx);
-        DCPSE_scheme<equations,decltype(domain)> Solver( domain);
+        DCPSE_scheme<equations2d1,decltype(domain)> Solver( domain);
 
         openfpm::vector<aggregate<int>> bulk;
         openfpm::vector<aggregate<int>> up_p;
@@ -2254,7 +2259,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
         Laplacian Lap(domain, 2, rCut, 3);
         //Advection Adv(domain, 3, rCut, 3);
         //Solver Sol_Lap(Lap),Sol_Dx(Dx);
-        DCPSE_scheme<equations,decltype(domain)> Solver( domain);
+        DCPSE_scheme<equations2d1,decltype(domain)> Solver( domain);
 
         openfpm::vector<aggregate<int>> bulk;
         openfpm::vector<aggregate<int>> up_p;
