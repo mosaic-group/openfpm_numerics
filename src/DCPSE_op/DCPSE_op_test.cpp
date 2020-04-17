@@ -17,110 +17,18 @@
 #include "DCPSE_Solver.hpp"
 #include "Operators/Vector/vector_dist_operators.hpp"
 #include "Vector/vector_dist_subset.hpp"
-
-
-//! Specify the general characteristic of system to solve
-struct equations {
-    //! dimensionaly of the equation ( 3D problem ...)
-    static const unsigned int dims = 2;
-    //! number of fields in the system
-    static const unsigned int nvar = 1;
-
-    //! boundary at X and Y
-    static const bool boundary[];
-
-    //! type of space float, double, ...
-    typedef double stype;
-
-    //! type of base particles
-    typedef vector_dist<dims, double, aggregate<double>> b_part;
-
-    //! type of SparseMatrix for the linear solver
-    typedef SparseMatrix<double, int, EIGEN_BASE> SparseMatrix_type;
-
-    //! type of Vector for the linear solver
-    typedef Vector<double> Vector_type;
-};
-
-struct equations2d1 {
-    //! dimensionaly of the equation ( 3D problem ...)
-    static const unsigned int dims = 2;
-    //! number of fields in the system
-    static const unsigned int nvar = 2;
-
-    //! boundary at X and Y
-    static const bool boundary[];
-
-    //! type of space float, double, ...
-    typedef double stype;
-
-    //! type of base particles
-    typedef vector_dist<dims, double, aggregate<double>> b_part;
-
-    //! type of SparseMatrix for the linear solver
-    typedef SparseMatrix<double, int, EIGEN_BASE> SparseMatrix_type;
-
-    //! type of Vector for the linear solver
-    typedef Vector<double> Vector_type;
-};
-
-struct equationsp {
-    //! dimensionaly of the equation ( 3D problem ...)
-    static const unsigned int dims = 2;
-    //! number of fields in the system
-    static const unsigned int nvar = 1;
-
-    //! boundary at X and Y
-    static const bool boundary[];
-
-    //! type of space float, double, ...
-    typedef double stype;
-
-    //! type of base particles
-    typedef vector_dist<dims, double, aggregate<double>> b_part;
-
-    //! type of SparseMatrix for the linear solver
-    typedef SparseMatrix<double, int, EIGEN_BASE> SparseMatrix_type;
-
-    //! type of Vector for the linear solver
-    typedef Vector<double> Vector_type;
-};
-
-struct equations2dp {
-    //! dimensionaly of the equation ( 3D problem ...)
-    static const unsigned int dims = 2;
-    //! number of fields in the system
-    static const unsigned int nvar = 2;
-
-    //! boundary at X and Y
-    static const bool boundary[];
-
-    //! type of space float, double, ...
-    typedef double stype;
-
-    //! type of base particles
-    typedef vector_dist<dims, double, aggregate<double>> b_part;
-
-    //! type of SparseMatrix for the linear solver
-    typedef SparseMatrix<double, int, EIGEN_BASE> SparseMatrix_type;
-
-    //! type of Vector for the linear solver
-    typedef Vector<double> Vector_type;
-};
-
-
-//Change accordingly as per test
-const bool equations2d1::boundary[] = {NON_PERIODIC, NON_PERIODIC};
-const bool equations::boundary[] = {NON_PERIODIC, NON_PERIODIC};
-const bool equations2dp::boundary[] = {PERIODIC, NON_PERIODIC};
-const bool equationsp::boundary[] = {PERIODIC, NON_PERIODIC};
+#include "EqnsStruct.hpp"
 
 //template<typename T>
 //struct Debug;
 
+
+
 BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
 
     BOOST_AUTO_TEST_CASE(dcpse_Active2D) {
+        equations equation2dp = {};
+        equations equationp = {};
         const size_t sz[2] = {31, 31};
         Box<2, double> box({0, 0}, {10,10});
         double Lx=box.getHigh(0);

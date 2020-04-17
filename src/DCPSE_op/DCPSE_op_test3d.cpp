@@ -17,57 +17,7 @@
 #include "DCPSE_Solver.hpp"
 #include "Operators/Vector/vector_dist_operators.hpp"
 #include "Vector/vector_dist_subset.hpp"
-
-//int vector_dist_expression_op<void,void,VECT_COPY_N_TO_N>::i = 0;
-//int vector_dist_expression_op<void,void,VECT_COPY_1_TO_N>::i = 0;
-
-//! Specify the general characteristic of system to solve
-struct equations3d3 {
-    //! dimensionaly of the equation ( 3D problem ...)
-    static const unsigned int dims = 3;
-    //! number of fields in the system
-    static const unsigned int nvar = 3;
-
-    //! boundary at X and Y
-    static const bool boundary[];
-
-    //! type of space float, double, ..
-    typedef double stype;
-
-    //! type of base particles
-    typedef vector_dist<dims, double, aggregate<double>> b_part;
-
-    //! type of SparseMatrix for the linear solver
-    typedef SparseMatrix<double, int, EIGEN_BASE> SparseMatrix_type;
-
-    //! type of Vector for the linear solver
-    typedef Vector<double> Vector_type;
-};
-
-struct equations3d {
-    //! dimensionaly of the equation ( 3D problem ...)
-    static const unsigned int dims = 3;
-    //! number of fields in the system
-    static const unsigned int nvar = 1;
-
-    //! boundary at X and Y
-    static const bool boundary[];
-
-    //! type of space float, double, ...
-    typedef double stype;
-
-    //! type of base particles
-    typedef vector_dist<dims, double, aggregate<double>> b_part;
-
-    //! type of SparseMatrix for the linear solver
-    typedef SparseMatrix<double, int, EIGEN_BASE> SparseMatrix_type;
-
-    //! type of Vector for the linear solver
-    typedef Vector<double> Vector_type;
-};
-
-const bool equations3d::boundary[] = {NON_PERIODIC, NON_PERIODIC};
-const bool equations3d3::boundary[] = {NON_PERIODIC, NON_PERIODIC};
+#include "EqnsStruct.hpp"
 
 
 //template<typename T>
