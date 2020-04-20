@@ -26,7 +26,9 @@ struct equations2d1 {
     typedef SparseMatrix<double, int, PETSC_BASE> SparseMatrix_type;
 
     //! type of Vector for the linear solver
-    typedef Vector<double> Vector_type;
+    typedef Vector<double, PETSC_BASE> Vector_type;
+
+    typedef petsc_solver<double> solver_type;
 };
 
 struct equations2d2 {
@@ -48,7 +50,9 @@ struct equations2d2 {
     typedef SparseMatrix<double, int, PETSC_BASE> SparseMatrix_type;
 
     //! type of Vector for the linear solver
-    typedef Vector<double> Vector_type;
+    typedef Vector<double, PETSC_BASE> Vector_type;
+
+    typedef petsc_solver<double> solver_type;
 };
 
 
@@ -71,7 +75,9 @@ struct equations2d1p {
     typedef SparseMatrix<double, int, PETSC_BASE> SparseMatrix_type;
 
     //! type of Vector for the linear solver
-    typedef Vector<double> Vector_type;
+    typedef Vector<double, PETSC_BASE> Vector_type;
+
+    typedef petsc_solver<double> solver_type;
 };
 
 struct equations2d2p {
@@ -93,7 +99,9 @@ struct equations2d2p {
     typedef SparseMatrix<double, int, PETSC_BASE> SparseMatrix_type;
 
     //! type of Vector for the linear solver
-    typedef Vector<double> Vector_type;
+    typedef Vector<double, PETSC_BASE> Vector_type;
+
+    typedef petsc_solver<double> solver_type;
 };
 
 struct equations3d3 {
@@ -115,7 +123,9 @@ struct equations3d3 {
     typedef SparseMatrix<double, int, PETSC_BASE> SparseMatrix_type;
 
     //! type of Vector for the linear solver
-    typedef Vector<double> Vector_type;
+    typedef Vector<double, PETSC_BASE> Vector_type;
+
+    typedef petsc_solver<double> solver_type;
 };
 
 struct equations3d1 {
@@ -137,7 +147,9 @@ struct equations3d1 {
     typedef SparseMatrix<double, int, PETSC_BASE> SparseMatrix_type;
 
     //! type of Vector for the linear solver
-    typedef Vector<double> Vector_type;
+    typedef Vector<double, PETSC_BASE> Vector_type;
+
+    typedef petsc_solver<double> solver_type;
 };
 
 

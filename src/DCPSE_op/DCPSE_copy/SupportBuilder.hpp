@@ -11,6 +11,7 @@
 #include <Space/Shape/Point.hpp>
 #include <Vector/vector_dist.hpp>
 #include "Support.hpp"
+#include <utility>
 
 enum support_options
 {
@@ -23,7 +24,7 @@ class SupportBuilder
 {
 private:
     vector_type &domain;
-    CellList<vector_type::dims, typename vector_type::stype, Mem_fast<HeapMemory, local_index_>> cellList;
+    decltype(std::declval<vector_type>().getCellList(0.0)) cellList;
     const Point<vector_type::dims, unsigned int> differentialSignature;
     typename vector_type::stype rCut;
 
@@ -57,7 +58,7 @@ SupportBuilder<vector_type>::SupportBuilder(vector_type &domain, const Point<vec
  differentialSignature(differentialSignature),
  rCut(rCut)
 {
-    cellList = domain.template getCellList<CellList<vector_type::dims, typename vector_type::stype, Mem_fast<HeapMemory, local_index_>>>(rCut);
+    cellList = domain.getCellList(rCut);
 }
 
 template<typename vector_type>

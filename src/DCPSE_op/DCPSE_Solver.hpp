@@ -295,7 +295,7 @@ class DCPSE_scheme: public MatrixAssembler
         while (it.isNext())
         {
             auto p = it.get();
-            exp.value(p) = x(p.getKey()*Sys_eqs::nvar + comp);
+            exp.value(p) = x(p.getKey()*Sys_eqs::nvar + comp + s_pnt*Sys_eqs::nvar);
             ++it;
         }
     }
@@ -358,9 +358,51 @@ public:
     	{std::cerr << __FILE__ << ":" << __LINE__ << " Error the number of properties you gave does not match the solution in\
     													dimensionality, I am expecting " << Sys_eqs::nvar <<
     													" properties " << std::endl;};
-
-        umfpack_solver<double> solver;
+    	typename Sys_eqs::solver_type solver;
+//        umfpack_solver<double> solver;
         auto x = solver.solve(getA(opt),getB(opt));
+
+        unsigned int comp = 0;
+        copy_nested(x,comp,exps ...);
+    }
+
+    /*! \brief Solve an equation
+     *
+     *  \warning exp must be a scalar type
+     *
+     * \param exp where to store the result
+     *
+     */
+    template<typename SolverType, typename ... expr_type>
+    void solve_with_solver(SolverType & solver, expr_type ... exps)
+    {
+    	if (sizeof...(exps) != Sys_eqs::nvar)
+    	{std::cerr << __FILE__ << ":" << __LINE__ << " Error the number of properties you gave does not match the solution in\
+    													dimensionality, I am expecting " << Sys_eqs::nvar <<
+    													" properties " << std::endl;};
+
+        auto x = solver.solve(getA(opt),getB(opt));
+
+        unsigned int comp = 0;
+        copy_nested(x,comp,exps ...);
+    }
+
+    /*! \brief Solve an equation
+     *
+     *  \warning exp must be a scalar type
+     *
+     * \param exp where to store the result
+     *
+     */
+    template<typename SolverType, typename ... expr_type>
+    void try_solve_with_solver(SolverType & solver, expr_type ... exps)
+    {
+    	if (sizeof...(exps) != Sys_eqs::nvar)
+    	{std::cerr << __FILE__ << ":" << __LINE__ << " Error the number of properties you gave does not match the solution in\
+    													dimensionality, I am expecting " << Sys_eqs::nvar <<
+    													" properties " << std::endl;};
+
+        auto x = solver.try_solve(getA(opt),getB(opt));
 
         unsigned int comp = 0;
         copy_nested(x,comp,exps ...);
@@ -506,6 +548,14 @@ public:
                     trpl.add(t2);
                 }
 
+                triplet t3;
+
+                t3.col() = tot * Sys_eqs::nvar;
+                t3.row() = tot * Sys_eqs::nvar;
+                t3.value() = 0;
+
+                trpl.add(t3);
+
                 row_b++;
                 row++;
             }
@@ -576,6 +626,12 @@ public:
         {
             // get the particle
             auto key = it.get();
+
+            if (key == 298 && create_vcluster().rank() == 1)
+            {
+            	int debug = 0;
+            	debug++;
+            }
 
             // Calculate the non-zero colums
             typename Sys_eqs::stype coeff = 1.0;

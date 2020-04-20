@@ -12,6 +12,7 @@
 #include "Vector/map_vector.hpp"
 #include <boost/mpl/int.hpp>
 #include <petscmat.h>
+#include "VTKWriter/VTKWriter.hpp"
 
 #define PETSC_BASE 2
 
@@ -351,6 +352,46 @@ public:
 		}
 
 		return 0;
+	}
+
+	/* Write matrix on vtk
+	 *
+	 *
+	 */
+	bool write(std::string out)
+	{
+		Vcluster<> & v_cl = create_vcluster();
+
+		openfpm::vector<Point<2, double>> row_col;
+		openfpm::vector<aggregate<double>> values;
+
+		row_col.resize(trpl.size());
+		values.resize(trpl.size());
+
+		for (int i = 0 ; i < trpl.size() ; i++)
+		{
+			row_col.template get<0>(i)[1] = trpl.get(i).row();
+			row_col.template get<0>(i)[0] = trpl.get(i).col();
+
+			values.template get<0>(i) = trpl.get(i).value();
+		}
+
+		auto ft = file_type::BINARY;
+
+		// VTKWriter for a set of points
+		VTKWriter<boost::mpl::pair<openfpm::vector<Point<2, double>>,
+								   openfpm::vector<aggregate<double>>>,
+		                           VECTOR_POINTS> vtk_writer;
+
+		vtk_writer.add(row_col,values,row_col.size());
+
+		std::string output = std::to_string(out + "_" + std::to_string(v_cl.getProcessUnitID()) + std::to_string(".vtk"));
+
+		openfpm::vector<std::string> prp_names;
+		prp_names.add("value");
+
+		// Write the VTK file
+		return vtk_writer.write(output,prp_names,"particles","",ft);
 	}
 };
 

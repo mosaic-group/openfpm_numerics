@@ -974,7 +974,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
     BOOST_AUTO_TEST_CASE(dcpse_poisson_Robin_anal) {
 //  int rank;
 //  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-        const size_t sz[2] = {161,161};
+        const size_t sz[2] = {50,50};
         Box<2, double> box({0, 0}, {0.5, 0.5});
         size_t bc[2] = {NON_PERIODIC, NON_PERIODIC};
         double spacing = box.getHigh(0) / (sz[0] - 1);
@@ -1000,15 +1000,96 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
 
             ++it;
         }
+
+        // Add multi res patch 1
+
+        {
+        const size_t sz2[2] = {40,40};
+        Box<2,double> bx({0.25 + it.getSpacing(0)/4.0,0.25 + it.getSpacing(0)/4.0},{sz2[0]*it.getSpacing(0)/2.0 + 0.25 + it.getSpacing(0)/4.0, sz2[1]*it.getSpacing(0)/2.0 + 0.25 + it.getSpacing(0)/4.0});
+        openfpm::vector<size_t> rem;
+
+        auto it = domain.getDomainIterator();
+
+        while (it.isNext())
+        {
+        	auto k = it.get();
+
+        	Point<2,double> xp = domain.getPos(k);
+
+        	if (bx.isInside(xp) == true)
+        	{
+        		rem.add(k.getKey());
+        	}
+
+        	++it;
+        }
+
+        domain.remove(rem);
+
+        auto it2 = domain.getGridIterator(sz2);
+        while (it2.isNext()) {
+            domain.add();
+
+            auto key = it2.get();
+            double x = key.get(0) * spacing/2.0 + 0.25 + spacing/4.0;
+            domain.getLastPos()[0] = x;
+            double y = key.get(1) * spacing/2.0 + 0.25 + spacing/4.0;
+            domain.getLastPos()[1] = y;
+
+            ++it2;
+        }
+        }
+
+        // Add multi res patch 2
+
+        {
+        const size_t sz2[2] = {40,40};
+        Box<2,double> bx({0.25 + 21.0*spacing/8.0,0.25 + 21.0*spacing/8.0},{sz2[0]*spacing/4.0 + 0.25 + 21.0*spacing/8.0, sz2[1]*spacing/4.0 + 0.25 + 21*spacing/8.0});
+        openfpm::vector<size_t> rem;
+
+        auto it = domain.getDomainIterator();
+
+        while (it.isNext())
+        {
+        	auto k = it.get();
+
+        	Point<2,double> xp = domain.getPos(k);
+
+        	if (bx.isInside(xp) == true)
+        	{
+        		rem.add(k.getKey());
+        	}
+
+        	++it;
+        }
+
+        domain.remove(rem);
+
+        auto it2 = domain.getGridIterator(sz2);
+        while (it2.isNext()) {
+            domain.add();
+
+            auto key = it2.get();
+            double x = key.get(0) * spacing/4.0 + 0.25 + 21*spacing/8.0;
+            domain.getLastPos()[0] = x;
+            double y = key.get(1) * spacing/4.0 + 0.25 + 21*spacing/8.0;
+            domain.getLastPos()[1] = y;
+
+            ++it2;
+        }
+        }
+
+        ///////////////////////
+
         BOOST_TEST_MESSAGE("Sync domain across processors...");
 
         domain.map();
         domain.ghost_get<0>();
 
-        Derivative_x Dx(domain, 2, rCut,1.9,support_options::RADIUS);
-        Derivative_y Dy(domain, 2, rCut,1.9,support_options::RADIUS);
+        Derivative_x Dx(domain, 2, rCut / 3.0 ,1.9/*,support_options::RADIUS*/);
+        Derivative_y Dy(domain, 2, rCut / 3.0 ,1.9/*,support_options::RADIUS*/);
         //Gradient Grad(domain, 2, rCut);
-        Laplacian Lap(domain, 2, rCut,1.9,support_options::RADIUS);
+        Laplacian Lap(domain, 2, rCut / 3.0 ,1.9/*,support_options::RADIUS*/);
         //Advection Adv(domain, 3, rCut, 3);
         //Solver Sol_Lap(Lap),Sol_Dx(Dx);
 
@@ -1090,6 +1171,9 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
             }
             ++it2;
         }
+
+        domain.ghost_get<1,3>();
+
         DCPSE_scheme<equations2d1,decltype(domain)> Solver( domain);
         auto Poisson = Lap(v);
         auto D_x = Dx(v);
@@ -1099,8 +1183,35 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
         Solver.impose(D_x, r_p, 0);
         Solver.impose(v, dw_p, 0);
         Solver.impose(v, l_p, 0);
-        Solver.solve(sol);
+
+        petsc_solver<double> solver;
+
+        solver.setRestart(500);
+
+//        auto A = Solver.getA();
+//        A.write("Matrix_anal_sol");
+
+//        solver.setSolver(KSPGMRES);
+//        solver.setPreconditioner(PCKSP);
+//        solver.setRestart(300);
+
+/*        solver.setPreconditioner(PCHYPRE_BOOMERAMG);
+        solver.setPreconditionerAMG_nl(6);
+        solver.setPreconditionerAMG_maxit(10);
+        solver.setPreconditionerAMG_relax("SOR/Jacobi");
+        solver.setPreconditionerAMG_cycleType("V",0,4);
+        solver.setPreconditionerAMG_coarsenNodalType(0);
+        solver.setPreconditionerAMG_coarsen("HMIS");*/
+
+//        solver.log_monitor();
+
+        Solver.solve_with_solver(solver,sol);
+
+        domain.ghost_get<2>();
+
         DCPSE_sol=Lap(sol);
+        domain.ghost_get<5>();
+
         double worst1 = 0.0;
 
         v=abs(DCPSE_sol-RHS);
@@ -1115,6 +1226,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
         }
         std::cout << "Maximum Analytic Error: " << worst1 << std::endl;
 
+        domain.ghost_get<4>();
         domain.write("Robin_anasol");
     }
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -1123,7 +1235,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
     BOOST_AUTO_TEST_CASE(dcpse_poisson_Dirichlet_anal) {
 //  int rank;
 //  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-        const size_t sz[2] = {81,81};
+        const size_t sz[2] = {512,512};
         Box<2, double> box({0, 0}, {1, 1});
         size_t bc[2] = {NON_PERIODIC, NON_PERIODIC};
         double spacing = box.getHigh(0) / (sz[0] - 1);

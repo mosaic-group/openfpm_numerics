@@ -27,6 +27,8 @@ struct equations2d1 {
 
     //! type of Vector for the linear solver
     typedef Vector<double> Vector_type;
+
+    typedef umfpack_solver<double> solver_type;
 };
 
 struct equations2d2 {
@@ -49,6 +51,8 @@ struct equations2d2 {
 
     //! type of Vector for the linear solver
     typedef Vector<double> Vector_type;
+
+    typedef umfpack_solver<double> solver_type;
 };
 
 
@@ -72,6 +76,8 @@ struct equations2d1p {
 
     //! type of Vector for the linear solver
     typedef Vector<double> Vector_type;
+
+    typedef umfpack_solver<double> solver_type;
 };
 
 struct equations2d2p {
@@ -94,6 +100,8 @@ struct equations2d2p {
 
     //! type of Vector for the linear solver
     typedef Vector<double> Vector_type;
+
+    typedef umfpack_solver<double> solver_type;
 };
 
 struct equations3d3 {
@@ -116,6 +124,8 @@ struct equations3d3 {
 
     //! type of Vector for the linear solver
     typedef Vector<double> Vector_type;
+
+    typedef umfpack_solver<double> solver_type;
 };
 
 struct equations3d1 {
@@ -138,6 +148,8 @@ struct equations3d1 {
 
     //! type of Vector for the linear solver
     typedef Vector<double> Vector_type;
+
+    typedef umfpack_solver<double> solver_type;
 };
 
 
