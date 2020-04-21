@@ -26,7 +26,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests3)
 
 
     BOOST_AUTO_TEST_CASE(stokes_3d_petsc) {
-        size_t grd_sz=51;
+        size_t grd_sz=31;
         const size_t sz[3] = {grd_sz,grd_sz,grd_sz};
         Box<3, double> box({0, 0,0}, {1,1,1});
         size_t bc[3] = {NON_PERIODIC, NON_PERIODIC, NON_PERIODIC};
@@ -100,7 +100,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests3)
         vtk_box.add(boxes);
         vtk_box.write("boxes_3d.vtk");
         auto it2 = Particles.getDomainIterator();
-
+        Particles.ghost_get<0,1,2,3,4,5>();
         while (it2.isNext()) {
             auto p = it2.get();
             Point<3, double> xp = Particles.getPos(p);
@@ -175,7 +175,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests3)
         Divergence Div(Particles, 2, rCut,1.9,support_options::RADIUS);
 
         double nu=1e-2;
-
+        Particles.ghost_get<0,1,2,3,4,5,6,7>();
         double sum=0,sum2=0;
         int n=50;
         Particles.write_frame("Stokes3d",0);
@@ -211,6 +211,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests3)
             solverPetsc.setRestart(500);
             Solver.solve_with_solver(solverPetsc,V_star[0],V_star[1],V_star[2]);
             std::cout << "Stokes Solved" << std::endl;
+            Particles.ghost_get<2>();
             RHS=-Div(V_star);
             DCPSE_scheme<equations3d1,decltype(Particles)> SolverH(Particles);
             auto Helmholtz = Lap(H);
@@ -227,6 +228,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests3)
             petsc_solver<double> solverPetsc2;
             solverPetsc2.setRestart(500);
             SolverH.solve_with_solver(solverPetsc2,H);
+            Particles.ghost_get<5>();
             std::cout << "Helmholtz Solved" << std::endl;
             V=V_star+Grad(H);
             for(int j=0;j<up_p.size();j++)
@@ -266,6 +268,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests3)
                 Particles.getProp<1>(p)[2] =  0;
             }
             P=P+Lap(H)-0.5*Adv(V_t,H);
+            Particles.ghost_get<0,1>();
             std::cout << "V,P Corrected" << std::endl;
             sum=0;
             for(int j=0;j<bulk.size();j++)
@@ -480,6 +483,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests3)
             SolverH.impose(H, b_p,0);
             SolverH.solve(H);
             std::cout << "Helmholtz Solved" << std::endl;
+            Particles.ghost_get<5>();
             V=V_star+Grad(H);
             for(int j=0;j<up_p.size();j++)
             {   auto p=up_p.get<0>(j);
