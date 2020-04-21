@@ -26,7 +26,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests3)
 
 
     BOOST_AUTO_TEST_CASE(stokes_3d_petsc) {
-        size_t grd_sz=51;
+        size_t grd_sz=21;
         const size_t sz[3] = {grd_sz,grd_sz,grd_sz};
         Box<3, double> box({0, 0,0}, {1,1,1});
         size_t bc[3] = {NON_PERIODIC, NON_PERIODIC, NON_PERIODIC};
@@ -212,7 +212,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests3)
             Solver.solve_with_solver(solverPetsc,V_star[0],V_star[1],V_star[2]);
             std::cout << "Stokes Solved" << std::endl;
             RHS=-Div(V_star);
-            DCPSE_scheme<equations3d1,decltype(Particles)> SolverH(Particles,options_solver::LAGRANGE_MULTIPLIER);
+            DCPSE_scheme<equations3d1,decltype(Particles)> SolverH(Particles);
             auto Helmholtz = Lap(H);
             auto D_x=Dx(H);
             auto D_y=Dy(H);
@@ -224,7 +224,9 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests3)
             SolverH.impose(H, l_p,0);
             SolverH.impose(H, f_p,0);
             SolverH.impose(H, b_p,0);
-            SolverH.solve_with_solver(solverPetsc,H);
+            petsc_solver<double> solverPetsc2;
+            solverPetsc2.setRestart(500);
+            SolverH.solve_with_solver(solverPetsc2,H);
             std::cout << "Helmholtz Solved" << std::endl;
             V=V_star+Grad(H);
             for(int j=0;j<up_p.size();j++)
