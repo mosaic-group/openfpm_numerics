@@ -26,7 +26,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests3)
 
 
     BOOST_AUTO_TEST_CASE(stokes_3d_petsc) {
-        size_t grd_sz=21;
+        size_t grd_sz=51;
         const size_t sz[3] = {grd_sz,grd_sz,grd_sz};
         Box<3, double> box({0, 0,0}, {1,1,1});
         size_t bc[3] = {NON_PERIODIC, NON_PERIODIC, NON_PERIODIC};
