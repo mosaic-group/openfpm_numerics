@@ -1568,6 +1568,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
         petsc_solver<double> solver;
 
         solver.setRestart(500);
+	solver.log_monitor();
 
 //        auto A = Solver.getA();
 //        A.write("Matrix_anal_sol");
@@ -1586,7 +1587,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
 
 //        solver.log_monitor();
 
-//        Solver.solve_with_solver(solver,sol);
+        Solver.solve_with_solver(solver,sol);
 
         domain.ghost_get<2>();
 
