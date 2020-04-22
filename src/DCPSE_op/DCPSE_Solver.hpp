@@ -113,10 +113,20 @@ class DCPSE_scheme: public MatrixAssembler
         v_cl.execute();
 
         // resize b if needed
-        if (opt == options_solver::STANDARD) {
+        if (opt == options_solver::STANDARD)
+        {
             b.resize(Sys_eqs::nvar * tot, Sys_eqs::nvar * sz);
-        } else{
-            b.resize(Sys_eqs::nvar * tot + 1, Sys_eqs::nvar * sz + 1);
+        }
+        else
+        {
+        	if (v_cl.rank() == v_cl.size()-1)
+        	{
+        		b.resize(Sys_eqs::nvar * tot + 1, Sys_eqs::nvar * sz + 1);
+        	}
+        	else
+        	{
+        		b.resize(Sys_eqs::nvar * tot + 1, Sys_eqs::nvar * sz);
+        	}
         }
 
         // Calculate the starting point
@@ -534,17 +544,22 @@ public:
                 for (int i = 0 ; i < tot * Sys_eqs::nvar ; i++)
                 {
                     triplet t1;
-                    triplet t2;
 
                     t1.row() = tot * Sys_eqs::nvar;
                     t1.col() = i;
                     t1.value() = 1;
 
-                    t2.row() = i;
+                    trpl.add(t1);
+                }
+
+                for (int i = 0 ; i <  p_map.size_local() * Sys_eqs::nvar ; i++)
+                {
+                    triplet t2;
+
+                    t2.row() = i + s_pnt*Sys_eqs::nvar;
                     t2.col() = tot * Sys_eqs::nvar;
                     t2.value() = 1;
 
-                    trpl.add(t1);
                     trpl.add(t2);
                 }
 
@@ -563,6 +578,17 @@ public:
                 A.resize(tot * Sys_eqs::nvar + 1, tot * Sys_eqs::nvar + 1,
                          p_map.size_local() * Sys_eqs::nvar,
                          p_map.size_local() * Sys_eqs::nvar);
+
+                for (int i = 0 ; i <  p_map.size_local() * Sys_eqs::nvar ; i++)
+                {
+                    triplet t2;
+
+                    t2.row() = i + s_pnt*Sys_eqs::nvar;
+                    t2.col() = tot * Sys_eqs::nvar;
+                    t2.value() = 1;
+
+                    trpl.add(t2);
+                }
             }
 
 
