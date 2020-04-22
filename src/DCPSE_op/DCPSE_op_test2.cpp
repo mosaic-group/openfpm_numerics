@@ -159,13 +159,14 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests2)
         petsc_solver<double> solverPetsc;
         solverPetsc.setRestart(300);
         solverPetsc.setSolver(KSPGMRES);
-        solverPetsc.setPreconditioner(PCKSP);
-
+        solverPetsc.setPreconditioner(PCJACOBI);
 
         petsc_solver<double> solverPetsc2;
         solverPetsc2.setRestart(300);
-        solverPetsc2.setSolver(KSPGMRES);
-        solverPetsc2.setPreconditioner(PCKSP);
+        solverPetsc.setSolver(KSPGMRES);
+        solverPetsc2.setPreconditioner(PCGAMG);
+        solverPetsc2.setRelTol(1e-6);
+
         timer tt;
 
         //Particles.ghost_get<0,1,2,3,4,5,6,7>();
@@ -191,17 +192,18 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests2)
             std::cout << "Stokes Solved in " <<tt.getwct()<< " seconds."<< std::endl;
             Particles.ghost_get<2>();
             RHS=-Div(V_star);
+            Particles.ghost_get<3>();
             DCPSE_scheme<equations2d1,decltype(Particles)> SolverH(Particles,options_solver::LAGRANGE_MULTIPLIER );
             auto Helmholtz = Lap(H);
             auto D_y=Dy(H);
             auto D_x=Dx(H);
             SolverH.impose(Helmholtz,bulk,prop_id<3>());
-            SolverH.impose(Dy(H), up_p,0);
-            SolverH.impose(Dx(H), r_p, 0);
-            SolverH.impose(Dy(H), dw_p,0);
-            SolverH.impose(Dx(H), l_p,0);
+            SolverH.impose(D_y, up_p,0);
+            SolverH.impose(D_y, dw_p,0);
+            SolverH.impose(D_x, r_p, 0);
+            SolverH.impose(D_x, l_p,0);
             tt.start();
-            SolverH.solve_with_solver(solverPetsc2,V_star[0],V_star[1]);
+            SolverH.solve_with_solver(solverPetsc2,H);
             tt.stop();
             Particles.ghost_get<5>();
 
@@ -364,24 +366,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests2)
         Advection Adv(Particles, 2, rCut, 1.9,support_options::RADIUS);
         Divergence Div(Particles, 2, rCut, 1.9,support_options::RADIUS);
 
-
-/*      starting the simulation at a nice *continuous* place
-        V_t=1e-3*(1e-2*Lap(V)-Adv(V,V));
-        RHS=Div(V_t);
-        DCPSE_scheme<equations1d,decltype(Particles)> Solver( Particles,options_solver::LAGRANGE_MULTIPLIER);
-        auto Pressure_Poisson = Lap(P);
-        auto D_y=Dy(P);
-        auto D_x=Dx(P);
-        Solver.impose(Pressure_Poisson,bulk,prop_id<3>());
-        Solver.impose(D_y, up_p,0);
-        Solver.impose(D_x, r_p, 0);
-        Solver.impose(-D_y, dw_p,0);
-        Solver.impose(-D_x, l_p,0);
-        Solver.solve(P);
-        std::cout << "Poisson Solved" << std::endl;
-        V_star = V + (V_t - 1e-3*Grad(P));
-        V = V_star;*/
-
+        timer tt;
         double sum1=0,sum2=0;
         int n=10;
         double nu=1e-2;
@@ -401,19 +386,26 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests2)
             Solver.impose(V_star[1], dw_p,0,vy);
             Solver.impose(V_star[0], l_p, 0,vx);
             Solver.impose(V_star[1], l_p, 0,vy);
+            tt.start();
             Solver.solve(V_star[0],V_star[1]);
-            //std::cout << "Stokes Solved" << std::endl;
-            RHS=Div(V_star);
-            DCPSE_scheme<equations2d1,decltype(Particles)> SolverH( Particles,options_solver::LAGRANGE_MULTIPLIER);
+            tt.stop();
+            std::cout << "Stokes Solved in " <<tt.getwct()<< " seconds."<< std::endl;
+            Particles.ghost_get<2>();
+            RHS=-Div(V_star);
+            Particles.ghost_get<3>();
+            DCPSE_scheme<equations2d1,decltype(Particles)> SolverH(Particles,options_solver::LAGRANGE_MULTIPLIER );
             auto Helmholtz = Lap(H);
             auto D_y=Dy(H);
             auto D_x=Dx(H);
             SolverH.impose(Helmholtz,bulk,prop_id<3>());
-            SolverH.impose(D_y, up_p,0);
-            SolverH.impose(D_x, r_p, 0);
-            SolverH.impose(-D_y, dw_p,0);
-            SolverH.impose(-D_x, l_p,0);
+            SolverH.impose(Dy(H), up_p,0);
+            SolverH.impose(Dx(H), r_p, 0);
+            SolverH.impose(Dy(H), dw_p,0);
+            SolverH.impose(Dx(H), l_p,0);
+            tt.start();
             SolverH.solve(H);
+            tt.stop();
+            Particles.ghost_get<5>();
             //std::cout << "Helmholtz Solved" << std::endl;
             V=V_star-Grad(H);
             for(int j=0;j<up_p.size();j++)
@@ -573,9 +565,12 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests2)
         int n=100;
         Particles.write_frame("Stokes",0);
         V_t=V;
+
+        timer tt;
+
         for(int i=1; i<=n ;i++)
         {   RHS2=-Grad(P);
-            DCPSE_scheme<equations2d2,decltype(Particles)> Solver( Particles);
+            DCPSE_scheme<equations2d2E,decltype(Particles)> Solver( Particles);
             auto Stokes1 = Adv(V[0],V_star[0])-nu*Lap(V_star[0]);
             auto Stokes2 = Adv(V[1],V_star[1])-nu*Lap(V_star[1]);
             Solver.impose(Stokes1,bulk,RHS2[0],vx);
@@ -590,28 +585,25 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests2)
             Solver.impose(V_star[1], l_p, 0,vy);
             Solver.solve(V_star[0],V_star[1]);
 
-            //std::cout << "Stokes Solved" << std::endl;
+            std::cout << "Stokes Solved" << std::endl;
             Particles.ghost_get<2>();
             RHS=-Div(V_star);
 
-            DCPSE_scheme<equations2d1,decltype(Particles)> SolverH( Particles,options_solver::LAGRANGE_MULTIPLIER);
+            DCPSE_scheme<equations2d1E,decltype(Particles)> SolverH( Particles,options_solver::LAGRANGE_MULTIPLIER);
             auto Helmholtz = Lap(H);
             auto D_y=Dy(H);
             auto D_x=Dx(H);
-
-	    petsc_solver<double> solv;
-
             SolverH.impose(Helmholtz,bulk,prop_id<3>());
             SolverH.impose(D_y, up_p,0);
             SolverH.impose(D_x, r_p, 0);
             SolverH.impose(D_y, dw_p,0);
             SolverH.impose(D_x, l_p,0);
-            SolverH.solve_with_solver(solv,H);
+            SolverH.solve(H);
 
             //Particles.write("Debug_out");
             //return;
 
-            //std::cout << "Helmholtz Solved" << std::endl;
+            std::cout << "Helmholtz Solved" << std::endl;
             Particles.ghost_get<4,5>();
             V=V_star+Grad(H);
 
