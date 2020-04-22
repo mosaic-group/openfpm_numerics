@@ -59,7 +59,6 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests2)
         openfpm::vector<aggregate<int>> dw_p;
         openfpm::vector<aggregate<int>> l_p;
         openfpm::vector<aggregate<int>> r_p;
-        openfpm::vector<aggregate<int>> ref_p;
 
         auto P = getV<0>(Particles);
         auto V = getV<1>(Particles);
@@ -599,12 +598,15 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests2)
             auto Helmholtz = Lap(H);
             auto D_y=Dy(H);
             auto D_x=Dx(H);
+
+	    petsc_solver<double> solv;
+
             SolverH.impose(Helmholtz,bulk,prop_id<3>());
-            SolverH.impose(Dy(H), up_p,0);
-            SolverH.impose(Dx(H), r_p, 0);
-            SolverH.impose(H, dw_p,0);
-            SolverH.impose(H, l_p,0);
-            SolverH.solve(H);
+            SolverH.impose(D_y, up_p,0);
+            SolverH.impose(D_x, r_p, 0);
+            SolverH.impose(D_y, dw_p,0);
+            SolverH.impose(D_x, l_p,0);
+            SolverH.solve_with_solver(solv,H);
 
             //Particles.write("Debug_out");
             //return;

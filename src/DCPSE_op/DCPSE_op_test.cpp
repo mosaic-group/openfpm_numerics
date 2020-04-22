@@ -2045,7 +2045,12 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
 
         petsc_solver<double> solver;
 
+<<<<<<< HEAD
         //solver.setRestart(500);
+=======
+        solver.setRestart(500);
+	solver.log_monitor();
+>>>>>>> 1823359adf11e5bfde1257b2b2505838f2af9aea
 
 //        auto A = Solver.getA();
 //        A.write("Matrix_anal_sol");
