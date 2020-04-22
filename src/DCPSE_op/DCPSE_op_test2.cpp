@@ -17,7 +17,8 @@
 #include "DCPSE_Solver.hpp"
 #include "Operators/Vector/vector_dist_operators.hpp"
 #include "Vector/vector_dist_subset.hpp"
-#include "EqnsStructPetsc.hpp"
+#include "EqnsStruct.hpp"
+//#include "EqnsStructEigen.hpp"
 
 
 //int vector_dist_expression_op<void,void,VECT_COPY_N_TO_N>::i = 0;
@@ -151,14 +152,15 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests2)
         V_t=V;
         petsc_solver<double> solverPetsc;
         solverPetsc.setRestart(300);
-        solverPetsc.setSolver(KSPGMRES);
+        solverPetsc.setSolver(KSPLGMRES);
         solverPetsc.setPreconditioner(PCKSP);
 
 
-        petsc_solver<double> solverPetsc2;
+       /* petsc_solver<double> solverPetsc2;
         solverPetsc2.setRestart(300);
-        solverPetsc2.setSolver(KSPGMRES);
-        solverPetsc2.setPreconditioner(PCKSP);
+        solverPetsc2.setSolver(KSPLGMRES);
+        solverPetsc2.setPreconditioner(PCKSP);*/
+        timer tt;
 
         //Particles.ghost_get<0,1,2,3,4,5,6,7>();
         for(int i=1; i<=n ;i++)
@@ -168,7 +170,6 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests2)
             auto Stokes1 = Adv(V[0],V_star[0])-nu*Lap(V_star[0]);
             auto Stokes2 = Adv(V[1],V_star[1])-nu*Lap(V_star[1]);
             Solver.impose(Stokes1,bulk,RHS2[0],vx);
-            return;
             Solver.impose(Stokes2,bulk,RHS2[1],vy);
             Solver.impose(V_star[0], up_p,1.0,vx);
             Solver.impose(V_star[1], up_p,0,vy);
@@ -178,12 +179,13 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests2)
             Solver.impose(V_star[1], dw_p,0,vy);
             Solver.impose(V_star[0], l_p, 0,vx);
             Solver.impose(V_star[1], l_p, 0,vy);
+            tt.start();
             Solver.solve_with_solver(solverPetsc,V_star[0],V_star[1]);
+            tt.stop();
+            std::cout << "Stokes Solved in " <<tt.getwct()<< std::endl;
             Particles.ghost_get<2>();
-
-            //std::cout << "Stokes Solved" << std::endl;
             RHS=-Div(V_star);
-            DCPSE_scheme<equations2d1,decltype(Particles)> SolverH( Particles,options_solver::LAGRANGE_MULTIPLIER);
+            DCPSE_scheme<equations2d1E,decltype(Particles)> SolverH( Particles,options_solver::LAGRANGE_MULTIPLIER);
             auto Helmholtz = Lap(H);
             auto D_y=Dy(H);
             auto D_x=Dx(H);
@@ -192,11 +194,12 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests2)
             SolverH.impose(Dx(H), r_p, 0);
             SolverH.impose(Dy(H), dw_p,0);
             SolverH.impose(Dx(H), l_p,0);
-            SolverH.solve_with_solver(solverPetsc2,H);
-
+            tt.start();
+            SolverH.solve(H);
+            tt.stop();
             Particles.ghost_get<5>();
 
-            //std::cout << "Helmholtz Solved" << std::endl;
+            std::cout << "Helmholtz Solved in " << tt.getwct() << std::endl;
             V=V_star+Grad(H);
 
             for(int j=0;j<up_p.size();j++)
@@ -596,8 +599,8 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests2)
             SolverH.impose(Dx(H), l_p,0);
             SolverH.solve(H);
 
-            Particles.write("Debug_out");
-            return;
+            //Particles.write("Debug_out");
+            //return;
 
             //std::cout << "Helmholtz Solved" << std::endl;
             Particles.ghost_get<4,5>();
