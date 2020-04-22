@@ -59,6 +59,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests2)
         openfpm::vector<aggregate<int>> dw_p;
         openfpm::vector<aggregate<int>> l_p;
         openfpm::vector<aggregate<int>> r_p;
+        openfpm::vector<aggregate<int>> ref_p;
 
         auto P = getV<0>(Particles);
         auto V = getV<1>(Particles);
@@ -104,10 +105,18 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests2)
                 Particles.getProp<1>(p)[1] =  0;
             }
             else if (down.isInside(xp) == true) {
-                dw_p.add();
-                dw_p.last().get<0>() = p.getKey();
-                Particles.getProp<1>(p)[0] =  0;
-                Particles.getProp<1>(p)[1] =  0;
+                /*if (p.getKey()==0)
+                {
+                    ref_p.add();
+                    ref_p.last().get<0>() = p.getKey();
+                    Particles.getProp<1>(p)[0] =  0;
+                    Particles.getProp<1>(p)[1] =  0;
+                }
+                else {*/
+                    dw_p.add();
+                    dw_p.last().get<0>() = p.getKey();
+                    Particles.getProp<1>(p)[0] = 0;
+                    Particles.getProp<1>(p)[1] = 0;
             }
             else if (left.isInside(xp) == true) {
                 l_p.add();
@@ -150,14 +159,14 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests2)
         V_t=V;
         petsc_solver<double> solverPetsc;
         solverPetsc.setRestart(300);
-        solverPetsc.setSolver(KSPLGMRES);
+        solverPetsc.setSolver(KSPGMRES);
         solverPetsc.setPreconditioner(PCKSP);
 
 
-       /* petsc_solver<double> solverPetsc2;
+        petsc_solver<double> solverPetsc2;
         solverPetsc2.setRestart(300);
-        solverPetsc2.setSolver(KSPLGMRES);
-        solverPetsc2.setPreconditioner(PCKSP);*/
+        solverPetsc2.setSolver(KSPGMRES);
+        solverPetsc2.setPreconditioner(PCKSP);
         timer tt;
 
         //Particles.ghost_get<0,1,2,3,4,5,6,7>();
@@ -183,7 +192,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests2)
             std::cout << "Stokes Solved in " <<tt.getwct()<< " seconds."<< std::endl;
             Particles.ghost_get<2>();
             RHS=-Div(V_star);
-            DCPSE_scheme<equations2d1E,decltype(Particles)> SolverH( Particles,options_solver::LAGRANGE_MULTIPLIER);
+            DCPSE_scheme<equations2d1,decltype(Particles)> SolverH(Particles,options_solver::LAGRANGE_MULTIPLIER );
             auto Helmholtz = Lap(H);
             auto D_y=Dy(H);
             auto D_x=Dx(H);
@@ -193,7 +202,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests2)
             SolverH.impose(Dy(H), dw_p,0);
             SolverH.impose(Dx(H), l_p,0);
             tt.start();
-            SolverH.solve(H);
+            SolverH.solve_with_solver(solverPetsc2,V_star[0],V_star[1]);
             tt.stop();
             Particles.ghost_get<5>();
 
@@ -593,8 +602,8 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests2)
             SolverH.impose(Helmholtz,bulk,prop_id<3>());
             SolverH.impose(Dy(H), up_p,0);
             SolverH.impose(Dx(H), r_p, 0);
-            SolverH.impose(Dy(H), dw_p,0);
-            SolverH.impose(Dx(H), l_p,0);
+            SolverH.impose(H, dw_p,0);
+            SolverH.impose(H, l_p,0);
             SolverH.solve(H);
 
             //Particles.write("Debug_out");
@@ -814,6 +823,18 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests2)
     }
 
 
+/*
+  In 3D we use exact solution:
+
+   u = x^2 + y^2
+   v = y^2 + z^2
+   w = x^2 + y^2 - 2(x+y)z
+   p = x + y + z - 3/2
+   f_x = f_y = f_z = 3
+
+  -\Delta u + \nabla p + f = <-4, -4, -4> + <1, 1, 1> + <3, 3, 3> = 0
+\nabla \cdot u           = 2x + 2y - 2(x + y)                   = 0
+*/
 /*    BOOST_AUTO_TEST_CASE(dcpse_Lid_mirror) {
         const size_t sz[2] = {81,81};
         Box<2, double> box_mirror({-0.3, -0.3}, {1.3,1.3});

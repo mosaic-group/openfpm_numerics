@@ -2045,14 +2045,14 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
 
         petsc_solver<double> solver;
 
-        solver.setRestart(500);
+        //solver.setRestart(500);
 
 //        auto A = Solver.getA();
 //        A.write("Matrix_anal_sol");
 
-//        solver.setSolver(KSPGMRES);
-//        solver.setPreconditioner(PCKSP);
-//        solver.setRestart(300);
+          /*solver.setSolver(KSPGMRES);
+          solver.setPreconditioner(PCKSP);
+          solver.setRestart(300);*/
 
 /*        solver.setPreconditioner(PCHYPRE_BOOMERAMG);
         solver.setPreconditionerAMG_nl(6);
@@ -2064,7 +2064,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
 
 //        solver.log_monitor();
 
-//        Solver.solve_with_solver(solver,sol);
+        Solver.solve_with_solver(solver,sol);
 
         domain.ghost_get<2>();
 
@@ -2368,7 +2368,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
         //http://e6.ijs.si/medusa/wiki/index.php/Poisson%27s_equation#Full_Neumann_boundary_conditions
 //  int rank;
 //  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-        const size_t sz[2] = {150,150};
+        const size_t sz[2] = {31,31};
         Box<2, double> box({0, 0}, {1.0, 1.0});
         size_t bc[2] = {NON_PERIODIC, NON_PERIODIC};
         double spacing = box.getHigh(0) / (sz[0] - 1);
@@ -2406,6 +2406,8 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
         //Advection Adv(domain, 3, rCut, 3);
         //Solver Sol_Lap(Lap),Sol_Dx(Dx);
         //DCPSE_scheme<equations,decltype(domain)> Solver( domain);
+
+
         DCPSE_scheme<equations2d1,decltype(domain)> Solver( domain);
 
         openfpm::vector<aggregate<int>> bulk;
@@ -2512,12 +2514,12 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
     //https://fenicsproject.org/docs/dolfin/1.4.0/python/demo/documented/neumann-poisson/python/documentation.html
 //  int rank;
 //  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-        const size_t sz[2] = {81,81};
+        const size_t sz[2] = {31,31};
         Box<2, double> box({0, 0}, {1.0, 1.0});
         size_t bc[2] = {NON_PERIODIC, NON_PERIODIC};
         double spacing = box.getHigh(0) / (sz[0] - 1);
-        Ghost<2, double> ghost(spacing * 3);
-        double rCut = 0.5 * spacing;
+        double rCut = 3.1 * spacing;
+        Ghost<2, double> ghost(spacing * 3.1);
         BOOST_TEST_MESSAGE("Init vector_dist...");
 
         vector_dist<2, double, aggregate<double,double,double,double,double>> domain(0, box, bc, ghost);
@@ -2546,10 +2548,16 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
         Derivative_x Dx(domain, 2, rCut,2);
         Derivative_y Dy(domain, 2, rCut,2);
         //Gradient Grad(domain, 2, rCut);
-        Laplacian Lap(domain, 3, rCut, 2);
+        Laplacian Lap(domain, 2, rCut, 2);
         //Advection Adv(domain, 3, rCut, 3);
         //Solver Sol_Lap(Lap),Sol_Dx(Dx);
         //DCPSE_scheme<equations,decltype(domain)> Solver( domain);
+        petsc_solver<double> solverPetsc;
+        solverPetsc.setRestart(300);
+        solverPetsc.setSolver(KSPGMRES);
+        solverPetsc.setPreconditioner(PCKSP);
+
+
         DCPSE_scheme<equations2d1,decltype(domain)> Solver( domain,options_solver::LAGRANGE_MULTIPLIER);
 
         openfpm::vector<aggregate<int>> bulk;
@@ -2630,7 +2638,9 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
         Solver.impose(-D_y, dw_p, prop_id<1>());
         Solver.impose(-D_x, l_p, prop_id<1>());
         Solver.impose(D_x, r_p, prop_id<1>());
-        Solver.solve(sol);
+        Solver.solve_with_solver(solverPetsc,sol);
+
+//        Solver.solve(sol);
         anasol=-Lap(sol);
         double worst1 = 0.0;
 
