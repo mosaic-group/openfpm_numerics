@@ -17,8 +17,7 @@
 #include "DCPSE_Solver.hpp"
 #include "Operators/Vector/vector_dist_operators.hpp"
 #include "Vector/vector_dist_subset.hpp"
-#include "EqnsStructPetsc.hpp"
-//#include "EqnsStructEigen.hpp"
+#include "EqnsStruct.hpp"
 const bool equations3d1::boundary[] = {NON_PERIODIC, NON_PERIODIC};
 const bool equations3d3::boundary[] = {NON_PERIODIC, NON_PERIODIC};
 const bool equations2d1::boundary[] = {NON_PERIODIC, NON_PERIODIC};

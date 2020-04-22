@@ -18,8 +18,6 @@
 #include "Operators/Vector/vector_dist_operators.hpp"
 #include "Vector/vector_dist_subset.hpp"
 #include "EqnsStruct.hpp"
-//#include "EqnsStructEigen.hpp"
-
 
 //int vector_dist_expression_op<void,void,VECT_COPY_N_TO_N>::i = 0;
 //int vector_dist_expression_op<void,void,VECT_COPY_1_TO_N>::i = 0;
@@ -182,7 +180,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests2)
             tt.start();
             Solver.solve_with_solver(solverPetsc,V_star[0],V_star[1]);
             tt.stop();
-            std::cout << "Stokes Solved in " <<tt.getwct()<< std::endl;
+            std::cout << "Stokes Solved in " <<tt.getwct()<< " seconds."<< std::endl;
             Particles.ghost_get<2>();
             RHS=-Div(V_star);
             DCPSE_scheme<equations2d1E,decltype(Particles)> SolverH( Particles,options_solver::LAGRANGE_MULTIPLIER);
@@ -199,7 +197,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests2)
             tt.stop();
             Particles.ghost_get<5>();
 
-            std::cout << "Helmholtz Solved in " << tt.getwct() << std::endl;
+            std::cout << "Helmholtz Solved in " << tt.getwct()<< " seconds." << std::endl;
             V=V_star+Grad(H);
 
             for(int j=0;j<up_p.size();j++)
