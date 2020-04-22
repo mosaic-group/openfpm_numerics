@@ -580,8 +580,11 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests2)
             Solver.impose(V_star[0], l_p, 0,vx);
             Solver.impose(V_star[1], l_p, 0,vy);
             Solver.solve(V_star[0],V_star[1]);
+
             //std::cout << "Stokes Solved" << std::endl;
+            Particles.ghost_get<2>();
             RHS=-Div(V_star);
+
             DCPSE_scheme<equations2d1,decltype(Particles)> SolverH( Particles,options_solver::LAGRANGE_MULTIPLIER);
             auto Helmholtz = Lap(H);
             auto D_y=Dy(H);
@@ -592,8 +595,14 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests2)
             SolverH.impose(Dy(H), dw_p,0);
             SolverH.impose(Dx(H), l_p,0);
             SolverH.solve(H);
+
+            Particles.write("Debug_out");
+            return;
+
             //std::cout << "Helmholtz Solved" << std::endl;
+            Particles.ghost_get<4,5>();
             V=V_star+Grad(H);
+
             for(int j=0;j<up_p.size();j++)
             {   auto p=up_p.get<0>(j);
                 Particles.getProp<1>(p)[0] =  1;
