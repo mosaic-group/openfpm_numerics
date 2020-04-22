@@ -17,7 +17,7 @@
 #include "DCPSE_Solver.hpp"
 #include "Operators/Vector/vector_dist_operators.hpp"
 #include "Vector/vector_dist_subset.hpp"
-#include "EqnsStructPetsc.hpp"
+#include "EqnsStruct.hpp"
 
 //template<typename T>
 //struct Debug;
