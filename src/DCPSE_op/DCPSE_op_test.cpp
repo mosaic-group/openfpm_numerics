@@ -24,6 +24,8 @@ const bool equations2d1::boundary[] = {NON_PERIODIC, NON_PERIODIC};
 const bool equations2d2::boundary[] = {NON_PERIODIC, NON_PERIODIC};
 const bool equations2d1p::boundary[] = {PERIODIC, NON_PERIODIC};
 const bool equations2d2p::boundary[] = {PERIODIC, NON_PERIODIC};
+const bool equations2d3p::boundary[] = {PERIODIC, NON_PERIODIC};
+
 
 const bool equations3d1E::boundary[] = {NON_PERIODIC, NON_PERIODIC};
 const bool equations3d3E::boundary[] = {NON_PERIODIC, NON_PERIODIC};
@@ -31,6 +33,7 @@ const bool equations2d1E::boundary[] = {NON_PERIODIC, NON_PERIODIC};
 const bool equations2d2E::boundary[] = {NON_PERIODIC, NON_PERIODIC};
 const bool equations2d1pE::boundary[] = {PERIODIC, NON_PERIODIC};
 const bool equations2d2pE::boundary[] = {PERIODIC, NON_PERIODIC};
+const bool equations2d3pE::boundary[] = {PERIODIC, NON_PERIODIC};
 
 //template<typename T>
 //struct Debug;
@@ -633,14 +636,14 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
 
         int ord=2;
         double sampling_factor=2.9;
-        Derivative_x Dx(Particles, ord, rCut,sampling_factor,support_options::RADIUS);
-        Derivative_y Dy(Particles, ord, rCut,sampling_factor,support_options::RADIUS);
+        Derivative_x Dx(Particles, ord, rCut,sampling_factor,support_options::RADIUS),Dx2(Particles, 2, 3.1,1.9,support_options::RADIUS);
+        Derivative_y Dy(Particles, ord, rCut,sampling_factor,support_options::RADIUS),Dy2(Particles, 2, 3.1,1.9,support_options::RADIUS);
         Derivative_xy Dxy(Particles, ord, rCut,sampling_factor,support_options::RADIUS);
         auto Dyx=Dxy;
         Derivative_xx Dxx(Particles, ord, rCut,sampling_factor,support_options::RADIUS);
         Derivative_yy Dyy(Particles, ord, rCut,sampling_factor,support_options::RADIUS);
         Gradient Grad(Particles, ord, rCut,sampling_factor,support_options::RADIUS);
-        Laplacian Lap(Particles, ord, rCut,sampling_factor,support_options::RADIUS);
+        Laplacian Lap(Particles, ord, rCut,sampling_factor,support_options::RADIUS),Lap2(Particles, 2, 3.1,1.9,support_options::RADIUS);
         Advection Adv(Particles, ord, rCut,sampling_factor,support_options::RADIUS);
         Divergence Div(Particles, ord, rCut,sampling_factor,support_options::RADIUS);
 
@@ -1047,7 +1050,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
         Particles.ghost_get<11,12,13,14,15,16>();
 
 
-/*        Df1[x] =Dx(f1);
+/*      Df1[x] =Dx(f1);
         Df2[x] =Dx(f2);
         Df3[x] =Dx(f3);
         Df4[x] =Dx(f4);
@@ -1095,9 +1098,17 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
         solverPetsc.setRestart(250);
         solverPetsc.setPreconditioner(PCJACOBI);
         //solverPetsc.searchDirections(6);
-        solverPetsc.setRelTol(1e-3);
-        solverPetsc.setAbsTol(1e-3);
-        solverPetsc.setDivTol(1e6);
+        solverPetsc.setRelTol(1e-6);
+        solverPetsc.setAbsTol(1e-5);
+        solverPetsc.setDivTol(1e3);
+        petsc_solver<double> solverPetsc2;
+        solverPetsc2.setSolver(KSPGMRES);
+        solverPetsc2.setRestart(250);
+        solverPetsc2.setPreconditioner(PCJACOBI);
+        //solverPetsc.searchDirections(6);
+        solverPetsc2.setRelTol(1e-6);
+        solverPetsc2.setAbsTol(1e-5);
+        solverPetsc2.setDivTol(1e3);
        //-ksp_converged_reason -ksp_error_if_not_converged
         for(int i=1; i<=n ;i++)
         {   RHS[x]=Dx(P)+dV[x];
@@ -1123,7 +1134,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
             //Particles.write_frame("PolarV",i);
             div=-Div(V);
             Particles.ghost_get<19>();
-            DCPSE_scheme<equations2d1E,decltype(Particles)> SolverH(Particles);//,options_solver::LAGRANGE_MULTIPLIER);//,
+            DCPSE_scheme<equations2d1,decltype(Particles)> SolverH(Particles);//,options_solver::LAGRANGE_MULTIPLIER);//,
             auto Helmholtz = Lap(H);
             auto D_y=Dy(H);
             auto D_x=Dy(H);
@@ -1133,7 +1144,8 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
             SolverH.impose(H, l_p,0);
             SolverH.impose(H, r_p,0);
             tt.start();
-            SolverH.solve(H);
+            Solver.solve_with_solver(solverPetsc2,H);
+            //SolverH.solve(H);
             tt.stop();
             std::cout << "Helmholtz Solved in " << tt.getwct()<< " seconds." << std::endl;
             Particles.ghost_get<17>();
@@ -1162,7 +1174,6 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
             P=P+Lap(H);
             Particles.ghost_get<Velocity>();
             Particles.ghost_get<Pressure>();
-            std::cout << "V,P Corrected" << std::endl;
             sum=0;
             sum1=0;
             for(int j=0;j<bulk.size();j++)
@@ -1174,6 +1185,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
             sum1=sqrt(sum1);
             V_t=V;
             std::cout << "Rel l2 cgs err in V at "<<i<<"= " <<sum/sum1<< std::endl;
+            std::cout << "----------------------------------------------------------"<< std::endl;
             Particles.write_frame("Polar",i);
         }
         Particles.deleteGhost();
