@@ -722,22 +722,6 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
     /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
     BOOST_AUTO_TEST_CASE(Active2DEigenP) {
         const size_t sz[2] = {31, 31};
         Box<2, double> box({0, 0}, {10, 10});

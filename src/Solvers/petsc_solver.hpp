@@ -1022,7 +1022,7 @@ public:
 		}
 		else
 		{
-			PETSC_SAFE_CALL(PetscOptionsSetValue(NULL,"-pc_type",PCHYPRE));
+			PETSC_SAFE_CALL(PetscOptionsSetValue(NULL,"-pc_type",type));
 		}
 	}
 

@@ -2560,6 +2560,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
 
         auto it = domain.getGridIterator(sz);
         while (it.isNext()) {
+
             domain.add();
 
             auto key = it.get();
@@ -2583,21 +2584,19 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
         //Solver Sol_Lap(Lap),Sol_Dx(Dx);
         //DCPSE_scheme<equations,decltype(domain)> Solver( domain);
         petsc_solver<double> solver;
-        solver.setRestart(1000);
-        solver.setSolver(KSPBICG);
-        solver.setPreconditioner(PCFIELDSPLIT);
+        solver.setRestart(500);
+        solver.setSolver(KSPGMRES);
+        solver.setPreconditioner(PCSVD);
         //solver.setRelTol(1e-1);
         //solver.setAbsTol(1e-1);
         //solver.setDivTol(1e-1);
         //solver.setMaxIter(10);
-        //solver.setPreconditionerAMG_nl(6);
-        //solver.setPreconditionerAMG_maxit(10);
-        //solver.setPreconditionerAMG_relax("svd");
-        //solver.setPreconditionerAMG_cycleType("V",0,4);
-        //solver.setPreconditionerAMG_coarsenNodalType(0);
-        //solver.setPreconditionerAMG_coarsen("svd");
-
-
+/*        solver.setPreconditionerAMG_nl(6);
+        solver.setPreconditionerAMG_maxit(10);
+        solver.setPreconditionerAMG_relax("svd");
+        solver.setPreconditionerAMG_cycleType("V",0,4);
+        solver.setPreconditionerAMG_coarsenNodalType(0);
+        solver.setPreconditionerAMG_coarsen("svd");*/
 
         openfpm::vector<aggregate<int>> bulk;
         openfpm::vector<aggregate<int>> up_p;
