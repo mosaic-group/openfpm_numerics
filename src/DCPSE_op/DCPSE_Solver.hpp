@@ -655,11 +655,13 @@ public:
             // get the particle
             auto key = it.get();
 
+/*
             if (key == 298 && create_vcluster().rank() == 1)
             {
             	int debug = 0;
             	debug++;
             }
+*/
 
             // Calculate the non-zero colums
             typename Sys_eqs::stype coeff = 1.0;

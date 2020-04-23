@@ -2040,7 +2040,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
         RHS[x] = dV[x];
         RHS[y] = dV[y];
         Particles.ghost_get<10>();
-        DCPSE_scheme<equations2d3p, decltype(Particles)> Solver(Particles);
+        DCPSE_scheme<equations2d3pE, decltype(Particles)> Solver(Particles);
         Solver.impose(Stokes1, bulk, RHS[0], vx);
         Solver.impose(Stokes2, bulk, RHS[1], vy);
         Solver.impose(continuity, bulkF, 0, ic);
@@ -2050,13 +2050,15 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
         Solver.impose(V[y], dw_p, 0, vy);
         Solver.impose(P, ref_p, 0, ic);
         tt.start();
-        auto A = Solver.getA();
-        A.write("Matrix_A");
+        BOOST_TEST_MESSAGE("Solver Imposed...");
+        /*//auto A = Solver.getA();
+        //A.write("Matrix_A");
         petsc_solver<double> solver;
         solver.setSolver(KSPGMRES);
         solver.setRestart(500);
-        solver.setPreconditioner(PCJACOBI);
-        Solver.solve_with_solver(solver, V[x], V[y], P);
+        solver.setPreconditioner(PCJACOBI);*/
+        Solver.solve(V[x], V[y], P);
+        BOOST_TEST_MESSAGE("Solver Solved...");
         //Solver.solve(V[x], V[y],P);
         tt.stop();
         std::cout << "Stokes Solved in " << tt.getwct() << " seconds." << std::endl;
