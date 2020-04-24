@@ -43,6 +43,12 @@ enum options_solver
     LAGRANGE_MULTIPLIER
 };
 
+/*enum eq_struct
+{
+	VECTOR,
+	SCALAR
+};*/
+
 //template<unsigned int prp_id> using prop_id = boost::mpl::int_<prp_id>;
 
 template<typename Sys_eqs, typename particles_type>
@@ -69,6 +75,9 @@ class DCPSE_scheme: public MatrixAssembler
 
     //! Particles used to impose the system
     particles_type & parts;
+
+    //! colums shift map
+    //int col_sm[Sys_eqs::nvar];
 
     //! Each point in the grid has a global id, to decompose correctly the Matrix each processor contain a
     //! contiguos range of global id, example processor 0 can have from 0 to 234 and processor 1 from 235 to 512
@@ -329,30 +338,35 @@ class DCPSE_scheme: public MatrixAssembler
 
 public:
 
-    /*! \brief Solve an equation
+    /*! \brief Set the structure of the system of equation
      *
-     *  \warning exp must be a scalar type
+     * For example for stokes-flow where you are solving for V = velocity (Vector) and P = pressure (scalar)
      *
-     * \param exp where to store the result
+     * you should call this function with
+     *
+     * setEquationStructure({eq_struct::VECTOR,eq_struct::SCALAR})
      *
      */
-/*    template<typename expr_type>
-    void solve(expr_type exp)
+/*    void setEquationStructure(std::initializer_list<eq_struct> l)
     {
-        umfpack_solver<double> solver;
-        auto x = solver.solve(getA(opt),getB(opt));
-
-        auto parts = exp.getVector();
-
-        auto it = parts.getDomainIterator();
-
-        while (it.isNext())
-        {
-            auto p = it.get();
-            exp.value(p) = x(p.getKey());
-            ++it;
-        }
+    	int i = 0;
+    	for (eq_struct e : l)
+    	{
+    		if (e == eq_struct::VECTOR)
+    		{
+    			for (int j = 0 ; j < Sys_eqs::dims ; j++)
+    			{
+    				col_sm[i+j] = i;
+    			}
+    			i += Sys_eqs::dims;
+    		}
+    		else
+    		{
+    			col_sm[i] = i;
+    		}
+    	}
     }*/
+
 
     /*! \brief Solve an equation
      *
@@ -678,6 +692,12 @@ public:
 
                 if (trpl.last().row() == trpl.last().col())
                     is_diag = true;
+
+                if (trpl.last().col() == 1323)
+                {
+                	int debug = 0;
+                	debug++;
+                }
 
 //				std::cout << "(" << trpl.last().row() << "," << trpl.last().col() << "," << trpl.last().value() << ")" << "\n";
             }
