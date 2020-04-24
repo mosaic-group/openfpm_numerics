@@ -556,7 +556,6 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
                Pol[y] * (Ks * Dxx(Pol[x]) + Kb * Dyy(Pol[x]) + (Ks - Kb) * Dxy(Pol[y]));
         Particles.ghost_get<MolField>();
 
-
         f1 = gama * nu * Pol[x] * Pol[x] * (Pol[x] * Pol[x] - Pol[y] * Pol[y]) / (Pol[x] * Pol[x] + Pol[y] * Pol[y]);
         f2 = 2.0 * gama * nu * Pol[x] * Pol[y] * (Pol[x] * Pol[x] - Pol[y] * Pol[y]) /
              (Pol[x] * Pol[x] + Pol[y] * Pol[y]);
@@ -1809,9 +1808,11 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
 
         auto Pol = getV<Polarization>(Particles);
         auto V = getV<Velocity>(Particles);
+        V.setVarId(0);
         auto W = getV<Vorticity>(Particles);
         auto g = getV<ExtForce>(Particles);
         auto P = getV<Pressure>(Particles);
+        P.setVarId(2);
         auto u = getV<Strain_rate>(Particles);
         auto sigma = getV<Stress>(Particles);
         auto h = getV<MolField>(Particles);
@@ -2041,6 +2042,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
         RHS[y] = dV[y];
         Particles.ghost_get<10>();
         DCPSE_scheme<equations2d3pE, decltype(Particles)> Solver(Particles);
+        //Solver.setEquationStructure({eq_struct::VECTOR,eq_struct::SCALAR});
         Solver.impose(Stokes1, bulk, RHS[0], vx);
         Solver.impose(Stokes2, bulk, RHS[1], vy);
         Solver.impose(continuity, bulkF, 0, ic);

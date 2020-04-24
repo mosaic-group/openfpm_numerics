@@ -658,6 +658,13 @@ public:
 	//! Property id of the point
 	static const unsigned int prop = prp;
 
+	int var_id = 0;
+
+	void setVarId(int var_id)
+	{
+		this->var_id = var_id;
+	}
+
 	//! constructor for an external vector
 	vector_dist_expression(vector & v)
 	:v(v)
@@ -783,7 +790,7 @@ public:
     template<typename Sys_eqs, typename pmap_type, typename unordered_map_type, typename coeff_type>
     inline void value_nz(pmap_type & p_map, const vect_dist_key_dx & key, unordered_map_type & cols, coeff_type & coeff, unsigned int comp) const
     {
-	    cols[p_map. template getProp<0>(key)*Sys_eqs::nvar + comp] += coeff;
+	    cols[p_map. template getProp<0>(key)*Sys_eqs::nvar + var_id + comp] += coeff;
     }
 
     inline vector_dist_expression_op<vector_dist_expression<prp,vector>,boost::mpl::int_<1>,VECT_COMP> operator[](int comp)
@@ -792,7 +799,7 @@ public:
 
     	comp_n[0] = comp;
 
-    	vector_dist_expression_op<vector_dist_expression<prp,vector>,boost::mpl::int_<1>,VECT_COMP> v_exp(*this,comp_n);
+    	vector_dist_expression_op<vector_dist_expression<prp,vector>,boost::mpl::int_<1>,VECT_COMP> v_exp(*this,comp_n,var_id);
 
     	return v_exp;
     }
@@ -914,6 +921,8 @@ class vector_dist_expression_op<exp1,boost::mpl::int_<n>,VECT_COMP>
 	//! component
 	int comp[n];
 
+	int var_id = 0;
+
 	typedef vector_dist_expression_op<exp1,boost::mpl::int_<n>,VECT_COMP> myself;
 
 public:
@@ -922,8 +931,8 @@ public:
 
 	//! constructor from an expresssion
 
-	vector_dist_expression_op(const exp1 & o1, int (& comp)[n])
-	:o1(o1)
+	vector_dist_expression_op(const exp1 & o1, int (& comp)[n], int var_id)
+	:o1(o1),var_id(var_id)
 	{
 		for (int i = 0 ; i < n ; i++)
 		{this->comp[i] = comp[i];}
@@ -1004,7 +1013,7 @@ public:
 
 #endif
 
-        o1.template value_nz<Sys_eqs>(p_map,key,cols,coeff,comp_ + comp[0]);
+        o1.template value_nz<Sys_eqs>(p_map,key,cols,coeff,comp_ + var_id + comp[0]);
     }
 
     inline vector_dist_expression_op<exp1,boost::mpl::int_<2>,VECT_COMP> operator[](int comp_)
@@ -1015,7 +1024,7 @@ public:
     	{comp_n[i] = comp[i];}
     	comp_n[n] = comp_;
 
-    	vector_dist_expression_op<exp1,boost::mpl::int_<2>,VECT_COMP> v_exp(o1,comp_n);
+    	vector_dist_expression_op<exp1,boost::mpl::int_<2>,VECT_COMP> v_exp(o1,comp_n,var_id);
 
     	return v_exp;
     }
