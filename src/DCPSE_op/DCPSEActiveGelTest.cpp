@@ -364,7 +364,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
 
 
     BOOST_AUTO_TEST_CASE(Active2DEigen) {
-        const size_t sz[2] = {41, 41};
+        const size_t sz[2] = {21, 21};
         Box<2, double> box({0, 0}, {10, 10});
         double Lx = box.getHigh(0);
         double Ly = box.getHigh(1);
@@ -634,8 +634,8 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
                        (Df6[x] * Dy(V[y]) + f6 * Dyx(V[y]));
 
         auto Helmholtz = Lap(H);
-        auto D_y = Dy(H);
-        auto D_x = Dx(H);
+        auto D_y = Dy2(H);
+        auto D_x = Dx2(H);
 
         for (int i = 1; i <= n; i++) {
             RHS[x] = Dx(P) + dV[x];
@@ -1742,17 +1742,17 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
         double spacing = box.getHigh(0) / (sz[0] - 1);
         int ord = 2;
         double rCut = 3.1 * spacing;
-        double sampling_factor = 1.9;
+        double sampling_factor = 1;
 
 
         int ord2 = 2;
         double rCut2 = 3.1 * spacing;
-        double sampling_factor2 = 1.9;
+        double sampling_factor2 = 1;
 
         Ghost<2, double> ghost(rCut);
 
 /*                                          pol                             V         vort                 Ext    Press     strain       stress                      Mfield,   dPol                      dV         RHS                  f1     f2     f3    f4     f5     f6       H               V_t      div   H_t   */
-        vector_dist<2, double, aggregate<VectorS<2, double>, VectorS<2, double>, double[2][2], VectorS<2, double>, double, double[2][2], double[2][2], VectorS<2, double>, VectorS<2, double>, VectorS<2, double>, VectorS<2, double>, double, double, double, double, double, double, double, VectorS<2, double>, double, double, double[2], double[2], double[2], double[2], double[2], double[2]>> Particles(
+        vector_dist<2, double, aggregate<VectorS<2, double>, VectorS<2I , double>, double[2][2], VectorS<2, double>, double, double[2][2], double[2][2], VectorS<2, double>, VectorS<2, double>, VectorS<2, double>, VectorS<2, double>, double, double, double, double, double, double, double, VectorS<2, double>, double, double, double[2], double[2], double[2], double[2], double[2], double[2]>> Particles(
                 0, box, bc, ghost);
 
         auto it = Particles.getGridIterator(sz);
@@ -2029,8 +2029,8 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
         Solver.impose(Stokes2, bulk, RHS[1], vy);
         Solver.impose(continuity, bulkF, 0, ic);
         Solver.impose(V[x], up_p, 0, vx);
-        Solver.impose(V[x], dw_p, 0, vx);
         Solver.impose(V[y], up_p, 0, vy);
+        Solver.impose(V[x], dw_p, 0, vx);
         Solver.impose(V[y], dw_p, 0, vy);
         Solver.impose(P, ref_p, 0, ic);
         tt.start();
