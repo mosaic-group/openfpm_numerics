@@ -18,8 +18,10 @@
 BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
 
     BOOST_AUTO_TEST_CASE(Active2DPetsc) {
+        timer tt2;
+        tt2.start();
         const size_t sz[2] = {31, 31};
-        Box<2, double> box({0, 0}, {10, 10});
+        Box<2, double> box({0, 0}, {1, 1});
         double Lx = box.getHigh(0);
         double Ly = box.getHigh(1);
         size_t bc[2] = {NON_PERIODIC, NON_PERIODIC};
@@ -166,8 +168,8 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
         int ord = 2;
         double sampling_factor = 1.9;
         int ord2 = 2;
-        double sampling_factor2 = 1.6;
-        double rCut2 = 2.8;
+        double sampling_factor2 = 1.9;
+        double rCut2 = 3.1*spacing;
         Derivative_x Dx(Particles, ord2, rCut2, sampling_factor2, support_options::RADIUS);
         Derivative_y Dy(Particles, ord2, rCut2, sampling_factor2, support_options::RADIUS);
         Derivative_xy Dxy(Particles, ord, rCut, sampling_factor, support_options::RADIUS);
@@ -183,7 +185,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
         sigma[x][x] =
                 -Ks * Dx(Pol[x]) * Dx(Pol[x]) - Kb * Dx(Pol[y]) * Dx(Pol[y]) + (Kb - Ks) * Dy(Pol[x]) * Dx(Pol[y]);
         sigma[x][y] =
-                -Ks * Dy(Pol[y]) * Dx(Pol[y]) - Kb * Dy(Pol[y]) * Dx(Pol[x]) + (Kb - Ks) * Dx(Pol[x]) * Dx(Pol[y]);
+                -Ks * Dy(Pol[y]) * Dx(Pol[y]) - Kb * Dy(Pol[x]) * Dx(Pol[x]) + (Kb - Ks) * Dx(Pol[x]) * Dx(Pol[y]);
         sigma[y][x] =
                 -Ks * Dx(Pol[x]) * Dy(Pol[x]) - Kb * Dx(Pol[y]) * Dy(Pol[y]) + (Kb - Ks) * Dy(Pol[x]) * Dy(Pol[y]);
         sigma[y][y] =
@@ -230,7 +232,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
         vx.setId(0);
         vy.setId(1);
         double sum = 0, sum1 = 0;
-        int n = 30;
+        int n = 100;
         auto Stokes1 = nu * Lap(V[x]) + 0.5 * nu * (f1 * Dxx(V[x]) + Dx(f1) * Dx(V[x])) +
                        (Dx(f2) * 0.5 * (Dx(V[y]) + Dy(V[x])) + f2 * 0.5 * (Dxx(V[y]) + Dyx(V[x]))) +
                        (Dx(f3) * Dy(V[y]) + f3 * Dyx(V[y])) + (Dy(f4) * Dx(V[x]) + f4 * Dxy(V[x])) +
@@ -242,20 +244,15 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
                        (Dx(f5) * 0.5 * (Dx(V[y]) + Dy(V[x])) + f5 * 0.5 * (Dxx(V[y]) + Dyx(V[x]))) +
                        (Dx(f6) * Dy(V[y]) + f6 * Dyx(V[y]));
         auto Helmholtz = Lap(H);
-        auto D_y = Dy(H);
-        auto D_x = Dx(H);
 
         petsc_solver<double> solverPetsc;
         solverPetsc.setSolver(KSPGMRES);
         solverPetsc.setRestart(250);
-        solverPetsc.setPreconditioner(PCJACOBI);
-        solverPetsc.setRelTol(1e-6);
-        solverPetsc.setAbsTol(1e-5);
-        solverPetsc.setDivTol(1e4);
-        /*petsc_solver<double> solverPetsc2;
-        solverPetsc2.setSolver(KSPLGMRES);
+        //solverPetsc.setPreconditioner(PCJACOBI);
+        petsc_solver<double> solverPetsc2;
+        solverPetsc2.setSolver(KSPGMRES);
         solverPetsc2.setRestart(250);
-        solverPetsc2.setPreconditioner(PCJACOBI);
+        /*solverPetsc2.setPreconditioner(PCJACOBI);
         solverPetsc2.setRelTol(1e-6);
         solverPetsc2.setAbsTol(1e-5);
         solverPetsc2.setDivTol(1e4);*/
@@ -277,22 +274,19 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
             Solver.impose(V[y], r_p, 0, vy);
             tt.start();
             Solver.solve_with_solver(solverPetsc, V[x], V[y]);
-            //Solver.solve(V[x],V[y]);
             tt.stop();
             std::cout << "Stokes Solved in " << tt.getwct() << " seconds." << std::endl;
             Particles.ghost_get<Velocity>();
-            //Particles.write_frame("PolarV",i);
             div = -Div(V);
             Particles.ghost_get<19>();
-            DCPSE_scheme<equations2d1E, decltype(Particles)> SolverH(Particles);
+            DCPSE_scheme<equations2d1, decltype(Particles)> SolverH(Particles);
             SolverH.impose(Helmholtz, bulk, prop_id<19>());
             SolverH.impose(H, up_p, 0);
             SolverH.impose(H, dw_p, 0);
             SolverH.impose(H, l_p, 0);
             SolverH.impose(H, r_p, 0);
             tt.start();
-            //Solver.solve_with_solver(solverPetsc2, H);
-            SolverH.solve(H);
+            SolverH.solve_with_solver(solverPetsc2, H);
             tt.stop();
             std::cout << "Helmholtz Solved in " << tt.getwct() << " seconds." << std::endl;
             Particles.ghost_get<17>();
@@ -337,11 +331,12 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
             V_t = V;
             std::cout << "Rel l2 cgs err in V at " << i << "= " << sum / sum1 << std::endl;
             std::cout << "----------------------------------------------------------" << std::endl;
-            Particles.write_frame("Polar", i);
+            Particles.write_frame("Polar_Petsc", i);
         }
         Particles.deleteGhost();
-        Particles.write_frame("Polar", n + 1);
-
+        Particles.write_frame("Polar_Petsc", n + 1);
+        tt2.stop();
+        std::cout << "The simulation took" << tt2.getwct() << "Seconds.";
     }
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -367,7 +362,9 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
 
 
     BOOST_AUTO_TEST_CASE(Active2DEigen) {
-        const size_t sz[2] = {17, 17};
+        timer tt2;
+        tt2.start();
+        const size_t sz[2] = {31, 31};
         Box<2, double> box({0, 0}, {1,1});
         double Lx = box.getHigh(0);
         double Ly = box.getHigh(1);
@@ -609,7 +606,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
         vx.setId(0);
         vy.setId(1);
         double sum = 0, sum1 = 0;
-        int n = 30;
+        int n = 100;
 /*        auto Stokes1 = nu * Lap(V[x]) + 0.5 * nu * (f1 * Dxx(V[x]) + Dx(f1) * Dx(V[x])) +
                        (Dx(f2) * 0.5 * (Dx(V[y]) + Dy(V[x])) + f2 * 0.5 * (Dxx(V[y]) + Dyx(V[x]))) +
                        (Dx(f3) * Dy(V[y]) + f3 * Dyx(V[y])) + (Dy(f4) * Dx(V[x]) + f4 * Dxy(V[x])) +
@@ -716,6 +713,8 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
         }
         Particles.deleteGhost();
         Particles.write_frame("Polar", n + 1);
+        tt2.stop();
+        std::cout << "The simulation took" << tt2.getwct() << "Seconds.";
 
     }
 
