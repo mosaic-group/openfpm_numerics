@@ -673,6 +673,7 @@ public:
         p.get(0) = 1;
 
         dcpse = new Dcpse<particles_type::dims,particles_type>(parts,p, ord, rCut,oversampling_factor, opt);
+
     }
 
     template<typename operand_type>
@@ -682,6 +683,14 @@ public:
         typedef Dcpse<operand_type::vtype::dims,typename operand_type::vtype> dcpse_type;
 
         return vector_dist_expression_op<operand_type,dcpse_type,VECT_DCPSE>(arg,*(dcpse_type *)dcpse);
+    }
+
+    template<unsigned int prp, typename particles_type>
+    void DrawKernel(particles_type &particles,int k)
+    {
+        auto dcpse2 = (Dcpse<particles_type::dims,particles_type> *)dcpse;
+        dcpse2->template DrawKernel<prp>(particles,k);
+
     }
 };
 
@@ -701,6 +710,12 @@ public:
         p.get(1) = 1;
 
         dcpse = new Dcpse<particles_type::dims,particles_type>(parts,p, ord, rCut,oversampling_factor, opt);
+
+        Dcpse<particles_type::dims,particles_type> * dcpse_ptr = (Dcpse<particles_type::dims,particles_type> *)dcpse;
+
+        new (dcpse_ptr) Dcpse<particles_type::dims,particles_type>(parts,p, ord, rCut,oversampling_factor, opt);
+        dcpse_ptr++;
+
     }
 
     template<typename operand_type>
@@ -711,6 +726,17 @@ public:
 
         return vector_dist_expression_op<operand_type,dcpse_type,VECT_DCPSE>(arg,*(dcpse_type *)dcpse);
     }
+
+    template<unsigned int prp, typename particles_type>
+    void DrawKernel(particles_type &particles,int k)
+    {
+        auto dcpse2 = (Dcpse<particles_type::dims,particles_type> *)dcpse;
+        dcpse2->template DrawKernel<prp>(particles,k);
+
+    }
+
+
+
 };
 class Derivative_z
 {
@@ -775,6 +801,18 @@ public:
         typedef Dcpse<operand_type::vtype::dims,typename operand_type::vtype> dcpse_type;
 
         return vector_dist_expression_op<operand_type,dcpse_type,VECT_DCPSE_V>(arg,*(dcpse_type(*)[operand_type::vtype::dims])dcpse);
+    }
+
+    template<unsigned int prp, typename particles_type>
+    void DrawKernel(particles_type &particles,int k)
+    {
+        Dcpse<particles_type::dims,particles_type> * dcpse_ptr = (Dcpse<particles_type::dims,particles_type> *)dcpse;
+
+        for (int i = 0 ; i < particles_type::dims ; i++)
+        {
+            dcpse_ptr[i].template DrawKernel<prp>(particles,i,k);
+        }
+
     }
 };
 
@@ -988,6 +1026,12 @@ public:
         p.get(1) = 1;
 
         dcpse = new Dcpse<particles_type::dims,particles_type>(parts,p, ord, rCut,dcpse_oversampling_factor, opt);
+
+        Dcpse<particles_type::dims,particles_type> * dcpse_ptr = (Dcpse<particles_type::dims,particles_type> *)dcpse;
+
+        new (dcpse_ptr) Dcpse<particles_type::dims,particles_type>(parts,p, ord, rCut,oversampling_factor, opt);
+        dcpse_ptr++;
+
     }
 
     template<typename operand_type>
@@ -997,6 +1041,15 @@ public:
         typedef Dcpse<operand_type::vtype::dims,typename operand_type::vtype> dcpse_type;
 
         return vector_dist_expression_op<operand_type,dcpse_type,VECT_DCPSE>(arg,*(dcpse_type *)dcpse);
+    }
+
+    template<unsigned int prp, typename particles_type>
+    void DrawKernel(particles_type &particles,int k)
+    {
+        Dcpse<particles_type::dims,particles_type> * dcpse_ptr = (Dcpse<particles_type::dims,particles_type> *)dcpse;
+
+        dcpse_ptr[0].template DrawKernel<prp>(particles,k);
+
     }
 };
 

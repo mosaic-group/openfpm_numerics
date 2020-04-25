@@ -922,6 +922,10 @@ class vector_dist_expression_op<exp1,boost::mpl::int_<n>,VECT_COMP>
 	int comp[n];
 
 	int var_id = 0;
+    void setVarId(int var_id)
+    {
+        this->var_id = var_id;
+    }
 
 	typedef vector_dist_expression_op<exp1,boost::mpl::int_<n>,VECT_COMP> myself;
 

@@ -31,6 +31,7 @@ const bool equations3d1E::boundary[] = {NON_PERIODIC, NON_PERIODIC};
 const bool equations3d3E::boundary[] = {NON_PERIODIC, NON_PERIODIC};
 const bool equations2d1E::boundary[] = {NON_PERIODIC, NON_PERIODIC};
 const bool equations2d2E::boundary[] = {NON_PERIODIC, NON_PERIODIC};
+const bool equations2d3E::boundary[] = {NON_PERIODIC, NON_PERIODIC};
 const bool equations2d1pE::boundary[] = {PERIODIC, NON_PERIODIC};
 const bool equations2d2pE::boundary[] = {PERIODIC, NON_PERIODIC};
 const bool equations2d3pE::boundary[] = {PERIODIC, NON_PERIODIC};
@@ -1539,8 +1540,14 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
         Box<2, double> box({0, 0}, {1,1});
         size_t bc[2] = {NON_PERIODIC, NON_PERIODIC};
         double spacing = box.getHigh(0) / (sz[0] - 1);
-        Ghost<2, double> ghost(spacing * 3.1);
-        double rCut = 3.1*spacing;
+        double rCut =spacing*(3.1);
+        double ord = 3;
+        double sampling = 2.3;
+        double rCut2 = 3.1*spacing;
+        double ord2 = 2;
+        double sampling2 = 1.9;
+
+        Ghost<2, double> ghost(rCut);
         std::cout<<spacing<<std::endl;
         //                                  sf    W   DW        RHS    Wnew  V
         vector_dist<2, double, aggregate<double,double,double,double,double,VectorS<2, double>>> Particles(0, box, bc, ghost);
@@ -1637,7 +1644,6 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
             if (up.isInside(xp) == true) {
                 up_p.add();
                 up_p.last().get<0>() = p.getKey();
-                Particles. template getProp<1>(p) = 12.0/spacing;// -2.0*Particles.getProp<0>(p)/(spacing*spacing) - 12.0/spacing;
             }
             else if (down.isInside(xp) == true) {
                     dw_p.add();
@@ -1671,188 +1677,48 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
             }
             ++it2;
         }
-/*        //test for copy
-        for(int j=0;j<up_p1.size();j++)
-        {
-            auto p1=up_p1.get<0>(j);
-            Point<2, double> xp = Particles.getPos(p1);
-            Particles.getProp<3>(p1) =  xp[0];
-        }
-        for(int j=0;j<l_p1.size();j++)
-        {
-            auto p1=l_p1.get<0>(j);
-            Point<2, double> xp = Particles.getPos(p1);
-            Particles.getProp<3>(p1) =  xp[1];
-        }
-        for(int j=0;j<r_p1.size();j++)
-        {
-            auto p1=r_p1.get<0>(j);
-            Point<2, double> xp = Particles.getPos(p1);
-            Particles.getProp<3>(p1) =  xp[1];
-        }
-        for(int j=0;j<dw_p1.size();j++)
-        {
-            auto p1=dw_p1.get<0>(j);
-            Point<2, double> xp = Particles.getPos(p1);
-            Particles.getProp<3>(p1)=  xp[0];
-        }
-        //Copy Module
-        for(int j=0;j<up_p1.size();j++)
-        {   auto p=up_p.get<0>(j);
-            auto p1=up_p1.get<0>(j);
-            Particles.getProp<3>(p) =  Particles.getProp<3>(p1);
-            if(j==0)
-            {   auto p=l_p.get<0>(l_p.size()-1);
-                auto p2=l_p.get<0>(l_p.size()-2);
-                Particles.getProp<3>(p) =  Particles.getProp<3>(p1);
-                Particles.getProp<3>(p2) =  Particles.getProp<3>(p1);
-            }
-            if(j==up_p1.size()-1)
-            {   auto p=r_p.get<0>(r_p.size()-1);
-                auto p2=r_p.get<0>(r_p.size()-2);
-                Particles.getProp<3>(p) =  Particles.getProp<3>(p1);
-                Particles.getProp<3>(p2) =  Particles.getProp<3>(p1);
-            }
-        }
-
-        for(int j=0;j<l_p1.size();j++)
-        {
-            auto p=l_p.get<0>(j+2);
-            auto p1=l_p1.get<0>(j);
-            Particles.getProp<3>(p) =  Particles.getProp<3>(p1);
-        }
-        for(int j=0;j<r_p1.size();j++)
-        {
-            auto p=r_p.get<0>(j+2);
-            auto p1=r_p1.get<0>(j);
-            Particles.getProp<3>(p) =  Particles.getProp<3>(p1);
-        }
-        for(int j=0;j<dw_p1.size();j++)
-        {   auto p=dw_p.get<0>(j);
-            auto p1=dw_p1.get<0>(j);
-            Particles.getProp<3>(p)=  Particles.getProp<3>(p1);
-            if(j==0)
-            {   auto p=l_p.get<0>(0);
-                auto p2=l_p.get<0>(1);
-                Particles.getProp<3>(p) =  Particles.getProp<3>(p1);
-                Particles.getProp<3>(p2) =  Particles.getProp<3>(p1);
-            }
-            if(j==dw_p1.size()-1)
-            {   auto p=r_p.get<0>(0);
-                auto p2=r_p.get<0>(1);
-                Particles.getProp<3>(p) =  Particles.getProp<3>(p1);
-                Particles.getProp<3>(p2) =  Particles.getProp<3>(p1);
-            }
-        }*/
-
-/*
-        auto Sf = getV<0>(Particles);
-        auto W = getV<1>(Particles);
-        auto dW = getV<2>(Particles);
-        auto RHS = getV<3>(Particles);
-        auto Wnew = getV<4>(Particles);
-        auto V = getV<5>(Particles);
-*/
 
         for(int j=0;j<up_p.size();j++) {
             auto p = up_p.get<0>(j);
             Particles.getProp<1>(p) =  -12.0/spacing;
         }
 
-//        Particles.write_frame("Re1000-1e-3-Lid_sf",0);
-//        Derivative_x Dx(Particles, 2, rCut,1);
-//        Derivative_y Dy(Particles, 2, rCut,1);
-//        Gradient Grad(Particles, 2, rCut,1);
-//        Laplacian Lap(Particles, 2, rCut,1.9,support_options::RADIUS);
-        Laplacian Lap(Particles, 2, rCut,1.9);
-//        Curl2D Curl(Particles, 2, rCut, 1);
+        Laplacian Lap(Particles, ord2, rCut2,sampling,support_options::RADIUS);
+        //Gradient Grad(Particles, ord, rCut,sampling,support_options::RADIUS);
+        Derivative_xy Dxy(Particles,ord, rCut, sampling,support_options::RADIUS);
+        Derivative_xy Dxy2(Particles,ord2, rCut2, sampling2,support_options::RADIUS);
+        Derivative_x Dx(Particles,ord, rCut, sampling,support_options::RADIUS);
+        Derivative_y Dy(Particles,ord, rCut, sampling,support_options::RADIUS);
+
 
         auto its = Particles.getDomainIterator();
         int ctr=0;
         while (its.isNext()) {
             auto p = its.get();
-            Lap.DrawKernel<3>(Particles, p.getKey());
+            Dx.DrawKernel<0>(Particles, p.getKey());
+            Dy.DrawKernel<1>(Particles, p.getKey());
+            Dxy.DrawKernel<2>(Particles, p.getKey());
+            Dxy2.DrawKernel<3>(Particles, p.getKey());
+            Lap.DrawKernel<4>(Particles, p.getKey());
+            //Grad.DrawKernel<4>(Particles, p.getKey());
+
             Particles.write_frame("LapKer",ctr);
             for(int j=0;j<BULK.size();j++) {
                 auto p1 = BULK.get<0>(j);
+                Particles.getProp<0>(p1) =  0;
+                Particles.getProp<1>(p1) =  0;
+                Particles.getProp<2>(p1) =  0;
                 Particles.getProp<3>(p1) =  0;
+                Particles.getProp<4>(p1) =  0;
+                Particles.getProp<5>(p1)[0] =  0;
+                Particles.getProp<5>(p1)[1] =  0;
+
             }
             ++its;
             ctr++;
         }
 
-/*        double dt=0.003;
-        double nu=0.01;
-        int n=5;
-        std::cout<<"Init Done"<<std::endl;
-        for(int i =0; i<=n ;i++)
-        {   dW=Dx(Sf)*Dy(W)-Dy(Sf)*Dx(W)+nu*Lap(W);
-            //Lap.DrawKernel<3>(Particles,837);
-            Wnew=W+dt*dW;
-            W=Wnew;
-            //Copy Module
-            for(int j=0;j<up_p1.size();j++)
-            {   auto p=up_p.get<0>(j);
-                auto p1=up_p1.get<0>(j);
-                Particles.getProp<1>(p) =  -2.0*Particles.getProp<0>(p1)/(spacing*spacing)-12.0/spacing;
-                if(j==0)
-                {   auto p=l_p.get<0>(l_p.size()-1);
-                    auto p2=l_p.get<0>(l_p.size()-2);
-                    //Particles.getProp<1>(p) =  0;//-2.0*Particles.getProp<0>(p1)/(spacing*spacing);
-                    Particles.getProp<1>(p2) =  0;//-2.0*Particles.getProp<0>(p1)/(spacing*spacing);
-                }
-                if(j==up_p1.size()-1)
-                {   auto p=r_p.get<0>(r_p.size()-1);
-                    auto p2=r_p.get<0>(r_p.size()-2);
-                    //Particles.getProp<1>(p) =  0;//-2.0*Particles.getProp<0>(p1)/(spacing*spacing);
-                    Particles.getProp<1>(p2) =  0;//-2.0*Particles.getProp<0>(p1)/(spacing*spacing);
-                }
-            }
-            for(int j=0;j<l_p1.size();j++)
-            {
-                auto p=l_p.get<0>(j+2);
-                auto p1=l_p1.get<0>(j);
-                Particles.getProp<1>(p) =  -2.0*Particles.getProp<0>(p1)/(spacing*spacing);
-            }
-            for(int j=0;j<r_p1.size();j++)
-            {
-                auto p=r_p.get<0>(j+2);
-                auto p1=r_p1.get<0>(j);
-                Particles.getProp<1>(p) =  -2.0*Particles.getProp<0>(p1)/(spacing*spacing);
-            }
-            for(int j=0;j<dw_p1.size();j++)
-            {   auto p=dw_p.get<0>(j);
-                auto p1=dw_p1.get<0>(j);
-                Particles.getProp<1>(p) =  -2.0*Particles.getProp<0>(p1)/(spacing*spacing);
-                if(j==0)
-                {   auto p=l_p.get<0>(0);
-                    auto p2=l_p.get<0>(1);
-                    //Particles.getProp<1>(p) =  0;//-2.0*Particles.getProp<0>(p1)/(spacing*spacing);
-                    Particles.getProp<1>(p2) =  0;//-2.0*Particles.getProp<0>(p1)/(spacing*spacing);
-                }
-                if(j==dw_p1.size()-1)
-                {   auto p=r_p.get<0>(0);
-                    auto p2=r_p.get<0>(1);
-                   // Particles.getProp<1>(p) =  0;//-2.0*Particles.getProp<0>(p1)/(spacing*spacing);
-                    Particles.getProp<1>(p2) =  0;//-2.0*Particles.getProp<0>(p1)/(spacing*spacing);
-                }
-            }
-            std::cout<<"W Done"<<std::endl;
 
-            DCPSE_scheme<equations,decltype(Particles)> Solver(2*rCut, Particles);
-            auto Sf_Poisson = -Lap(Sf);
-            Solver.impose(Sf_Poisson, bulk, prop_id<1>());
-            Solver.impose(Sf, up_p, 0);
-            Solver.impose(Sf, dw_p,0);
-            Solver.impose(Sf, l_p,0);
-            Solver.impose(Sf, r_p, 0);
-            Solver.solve(Sf);
-            V=Curl(Sf);
-            std::cout<<"Poisson Solved"<<std::endl;
-            Particles.write_frame("Re1000-1e-3-Lid_sf",i);
-            //if (i%10==0)
-            std::cout<<i<<std::endl;
-        }*/
     }
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     BOOST_AUTO_TEST_CASE(dcpse_poisson_Robin_anal) {

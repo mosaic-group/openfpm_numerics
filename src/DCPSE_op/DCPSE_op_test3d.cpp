@@ -63,9 +63,11 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests3)
         auto P = getV<0>(Particles);
         auto V = getV<1>(Particles);
         auto V_star = getV<2>(Particles);
+        V.setVarId(0);
         auto RHS = getV<3>(Particles);
         auto V_t = getV<4>(Particles);
         auto H = getV<5>(Particles);
+        H.setVarId(0);
         auto temp=getV<6>(Particles);
         auto RHS2 = getV<7>(Particles);
 
@@ -174,6 +176,13 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests3)
         Advection Adv(Particles, 2, rCut,1.9,support_options::RADIUS);
         Divergence Div(Particles, 2, rCut,1.9,support_options::RADIUS);
 
+
+        petsc_solver<double> solverPetsc;
+        solverPetsc.setRestart(250);
+        petsc_solver<double> solverPetsc2;
+        solverPetsc2.setRestart(250);
+
+
         double nu=1e-2;
         Particles.ghost_get<0,1,2,3,4,5,6,7>();
         double sum=0,sum2=0;
@@ -207,8 +216,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests3)
             Solver.impose(V_star[0], b_p, 0,vx);
             Solver.impose(V_star[1], b_p, 0,vy);
             Solver.impose(V_star[2], b_p, 0,vz);
-            petsc_solver<double> solverPetsc;
-            solverPetsc.setRestart(500);
+
             Solver.solve_with_solver(solverPetsc,V_star[0],V_star[1],V_star[2]);
             std::cout << "Stokes Solved" << std::endl;
             Particles.ghost_get<2>();
@@ -225,8 +233,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests3)
             SolverH.impose(H, l_p,0);
             SolverH.impose(H, f_p,0);
             SolverH.impose(H, b_p,0);
-            petsc_solver<double> solverPetsc2;
-            solverPetsc2.setRestart(500);
+
             SolverH.solve_with_solver(solverPetsc2,H);
             Particles.ghost_get<5>();
             std::cout << "Helmholtz Solved" << std::endl;

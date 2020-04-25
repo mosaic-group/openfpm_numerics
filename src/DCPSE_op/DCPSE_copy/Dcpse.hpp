@@ -103,7 +103,7 @@ public:
             particles.template getProp<prp>(xqK) += computeKernel(normalizedArg, a);
             DrawKernelKounter++;
         }
-        //std::cout<<"Number of Neighbours: "<<DrawKernelKounter<<std::endl;
+//        std::cout<<"Number of Neighbours: "<<DrawKernelKounter<<std::endl;
     }
 
     template<unsigned int prp>

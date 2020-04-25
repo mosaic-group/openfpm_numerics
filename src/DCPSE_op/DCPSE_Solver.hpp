@@ -18,23 +18,23 @@ struct prop_id {};
 
 class eq_id
 {
-	int id;
+    int id;
 
 public:
 
-	eq_id()
-	:id(0)
-	{}
+    eq_id()
+            :id(0)
+    {}
 
-	int getId()
-	{
-		return id;
-	}
+    int getId()
+    {
+        return id;
+    }
 
-	void setId(int id)
-	{
-		this->id = id;
-	}
+    void setId(int id)
+    {
+        this->id = id;
+    }
 };
 
 enum options_solver
@@ -128,14 +128,14 @@ class DCPSE_scheme: public MatrixAssembler
         }
         else
         {
-        	if (v_cl.rank() == v_cl.size()-1)
-        	{
-        		b.resize(Sys_eqs::nvar * tot + 1, Sys_eqs::nvar * sz + 1);
-        	}
-        	else
-        	{
-        		b.resize(Sys_eqs::nvar * tot + 1, Sys_eqs::nvar * sz);
-        	}
+            if (v_cl.rank() == v_cl.size()-1)
+            {
+                b.resize(Sys_eqs::nvar * tot + 1, Sys_eqs::nvar * sz + 1);
+            }
+            else
+            {
+                b.resize(Sys_eqs::nvar * tot + 1, Sys_eqs::nvar * sz);
+            }
         }
 
         // Calculate the starting point
@@ -211,7 +211,7 @@ class DCPSE_scheme: public MatrixAssembler
          *
          */
         variable_b(particles_type & parts)
-        :parts(parts)
+                :parts(parts)
         {}
 
         /*! \brief Get the b term on a grid point
@@ -240,15 +240,15 @@ class DCPSE_scheme: public MatrixAssembler
         // A and B must have the same rows
         if (row != row_b)
         {
-        	std::cerr << "Error " << __FILE__ << ":" << __LINE__ << " the term B and the Matrix A for Ax=B must contain the same number of rows\n";
-        	return;
+            std::cerr << "Error " << __FILE__ << ":" << __LINE__ << " the term B and the Matrix A for Ax=B must contain the same number of rows\n";
+            return;
         }
-            if (row_b != p_map.size_local() * Sys_eqs::nvar) {
-                std::cerr << "Error " << __FILE__ << ":" << __LINE__ << " your system is underdetermined you set "
-                          << row_b << " conditions " << " but i am expecting " << p_map.size_local() * Sys_eqs::nvar
-                          << std::endl;
-                return;
-            }
+        if (row_b != p_map.size_local() * Sys_eqs::nvar) {
+            std::cerr << "Error " << __FILE__ << ":" << __LINE__ << " your system is underdetermined you set "
+                      << row_b << " conditions " << " but i am expecting " << p_map.size_local() * Sys_eqs::nvar
+                      << std::endl;
+            return;
+        }
 
         // Indicate all the non zero rows
         openfpm::vector<unsigned char> nz_rows;
@@ -256,11 +256,11 @@ class DCPSE_scheme: public MatrixAssembler
 
         for (size_t i = 0 ; i < trpl.size() ; i++)
         {
-        	if (trpl.get(i).row() - s_pnt*Sys_eqs::nvar >= nz_rows.size())
-        	{
-        		std::cerr << "Error " << __FILE__ << ":" << __LINE__ << " It seems that you are setting colums that does not exist \n";
-        	}
-        	if (trpl.get(i).value() != 0)
+            if (trpl.get(i).row() - s_pnt*Sys_eqs::nvar >= nz_rows.size())
+            {
+                std::cerr << "Error " << __FILE__ << ":" << __LINE__ << " It seems that you are setting colums that does not exist \n";
+            }
+            if (trpl.get(i).value() != 0)
             {nz_rows.get(trpl.get(i).row() - s_pnt*Sys_eqs::nvar) = true;}
         }
 
@@ -275,7 +275,7 @@ class DCPSE_scheme: public MatrixAssembler
 
             for (size_t i = 0 ; i < trpl.size() ; i++)
             {
-            	if (trpl.get(i).value() != 0)
+                if (trpl.get(i).value() != 0)
                 {nz_cols.get(trpl.get(i).col()) = true;}
             }
 
@@ -322,18 +322,18 @@ class DCPSE_scheme: public MatrixAssembler
     template<typename solType, typename exp1, typename ... othersExp>
     void copy_nested(solType & x, unsigned int & comp, exp1 exp, othersExp ... exps)
     {
-    	copy_impl(x,exp,comp);
-    	comp++;
+        copy_impl(x,exp,comp);
+        comp++;
 
-    	copy_nested(x,comp,exps ...);
+        copy_nested(x,comp,exps ...);
     }
 
 
     template<typename solType, typename exp1>
     void copy_nested(solType & x, unsigned int & comp, exp1 exp)
     {
-    	copy_impl(x,exp,comp);
-    	comp++;
+        copy_impl(x,exp,comp);
+        comp++;
     }
 
 public:
@@ -378,11 +378,11 @@ public:
     template<typename ... expr_type>
     void solve(expr_type ... exps)
     {
-    	if (sizeof...(exps) != Sys_eqs::nvar)
-    	{std::cerr << __FILE__ << ":" << __LINE__ << " Error the number of properties you gave does not match the solution in\
+        if (sizeof...(exps) != Sys_eqs::nvar)
+        {std::cerr << __FILE__ << ":" << __LINE__ << " Error the number of properties you gave does not match the solution in\
     													dimensionality, I am expecting " << Sys_eqs::nvar <<
-    													" properties " << std::endl;};
-    	typename Sys_eqs::solver_type solver;
+                   " properties " << std::endl;};
+        typename Sys_eqs::solver_type solver;
 //        umfpack_solver<double> solver;
         auto x = solver.solve(getA(opt),getB(opt));
 
@@ -423,10 +423,10 @@ public:
     template<typename SolverType, typename ... expr_type>
     void try_solve_with_solver(SolverType & solver, expr_type ... exps)
     {
-    	if (sizeof...(exps) != Sys_eqs::nvar)
-    	{std::cerr << __FILE__ << ":" << __LINE__ << " Error the number of properties you gave does not match the solution in\
+        if (sizeof...(exps) != Sys_eqs::nvar)
+        {std::cerr << __FILE__ << ":" << __LINE__ << " Error the number of properties you gave does not match the solution in\
     													dimensionality, I am expecting " << Sys_eqs::nvar <<
-    													" properties " << std::endl;};
+                   " properties " << std::endl;};
 
         auto x = solver.try_solve(getA(opt),getB(opt));
 
@@ -445,7 +445,7 @@ public:
      *
      */
     DCPSE_scheme(particles_type & part, options_solver opt = options_solver::STANDARD)
-    :parts(part),p_map(part.getDecomposition(),0),row(0),row_b(0),opt(opt)
+            :parts(part),p_map(part.getDecomposition(),0),row(0),row_b(0),opt(opt)
     {
         p_map.resize(part.size_local());
 
@@ -470,8 +470,8 @@ public:
 */
     template<typename T, typename index_type, unsigned int prp_id>
     void impose(const T & op , openfpm::vector<index_type> & subset,
-                                                          const prop_id<prp_id> & num,
-                                                          eq_id id = eq_id())
+                const prop_id<prp_id> & num,
+                eq_id id = eq_id())
     {
         auto itd = subset.template getIteratorElements<0>();
 
@@ -497,8 +497,8 @@ public:
 */
     template<typename T, typename index_type, typename RHS_type, typename sfinae = typename std::enable_if< !std::is_fundamental<RHS_type>::type::value >::type >
     void impose(const T & op , openfpm::vector<index_type> & subset,
-                                                          const RHS_type & rhs,
-                                                          eq_id id = eq_id())
+                const RHS_type & rhs,
+                eq_id id = eq_id())
     {
         auto itd = subset.template getIteratorElements<0>();
 
@@ -521,9 +521,9 @@ public:
  *
  */
     template<typename T, typename index_type> void impose(const T & op ,
-                                                                          openfpm::vector<index_type> & subset,
-                                                                          const typename Sys_eqs::stype num,
-                                                                          eq_id id = eq_id())
+                                                          openfpm::vector<index_type> & subset,
+                                                          const typename Sys_eqs::stype num,
+                                                          eq_id id = eq_id())
     {
         auto itd = subset.template getIteratorElements<0>();
 
@@ -669,15 +669,17 @@ public:
             // get the particle
             auto key = it.get();
 
-/*            if (key == 298 && create_vcluster().rank() == 1)
+/*
+            if (key == 298 && create_vcluster().rank() == 1)
             {
             	int debug = 0;
             	debug++;
-            }*/
+            }
+*/
 
             // Calculate the non-zero colums
             typename Sys_eqs::stype coeff = 1.0;
-            op.template value_nz<Sys_eqs>(p_map,key,cols,coeff,id);
+            op.template value_nz<Sys_eqs>(p_map,key,cols,coeff,0);
 
             // indicate if the diagonal has been set
             bool is_diag = false;
@@ -693,11 +695,11 @@ public:
                 if (trpl.last().row() == trpl.last().col())
                     is_diag = true;
 
-                if (trpl.last().col() == 1323)
+/*                if (trpl.last().col() == 1323)
                 {
-                	int debug = 0;
-                	debug++;
-                }
+                    int debug = 0;
+                    debug++;
+                }*/
 
 //				std::cout << "(" << trpl.last().row() << "," << trpl.last().col() << "," << trpl.last().value() << ")" << "\n";
             }
