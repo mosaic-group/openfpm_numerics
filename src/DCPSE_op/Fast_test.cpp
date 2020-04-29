@@ -15,189 +15,124 @@
 #include "EqnsStruct.hpp"
 BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
     BOOST_AUTO_TEST_CASE(dcpse_Kernels) {
-        const size_t sz[2] = {31,31};
-        Box<2, double> box({0, 0}, {1,1});
+//  int rank;
+//  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+        size_t edgeSemiSize = 30;
+        const size_t sz[2] = {2 * edgeSemiSize+1, 2 * edgeSemiSize+1};
+        Box<2, double> box({0, 0}, {10.0, 10.0});
         size_t bc[2] = {NON_PERIODIC, NON_PERIODIC};
-        double spacing = box.getHigh(0) / (sz[0] - 1);
-        double rCut =spacing*(2.8);
-        double ord = 2;
-        double sampling = 1.6;
-        double rCut2 = 3.1*spacing;
-        double ord2 = 2;
-        double sampling2 = 1.9;
+        double spacing[2];
+        spacing[0] = box.getHigh(0) / (sz[0] - 1);
+        spacing[1] = box.getHigh(1) / (sz[1] - 1);
+        Ghost<2, double> ghost(spacing[0] * 3.0);
+        double rCut = 2.0* spacing[0];
+        BOOST_TEST_MESSAGE("Init vector_dist...");
+        double sigma2 = spacing[0] * spacing[1] / (2 * 4);
 
-        Ghost<2, double> ghost(rCut2);
-        std::cout<<spacing<<std::endl;
-        //                                  sf    W   DW        RHS    Wnew  V
-        vector_dist<2, double, aggregate<double,double,double,double,double,VectorS<2, double>>> Particles(0, box, bc, ghost);
+        vector_dist<2, double, aggregate<double, VectorS<2, double>, VectorS<2, double>, VectorS<2, double>, VectorS<2, double>,double,double>> domain(
+                0, box, bc, ghost);
 
-        auto it = Particles.getGridIterator(sz);
+        //Init_DCPSE(domain)
+        BOOST_TEST_MESSAGE("Init domain...");
+//            std::random_device rd{};
+//            std::mt19937 rng{rd()};
+        std::mt19937 rng{6666666};
+
+        std::normal_distribution<> gaussian{0, sigma2};
+
+        auto it = domain.getGridIterator(sz);
+        size_t pointId = 0;
+        size_t counter = 0;
+        double minNormOne = 999;
         while (it.isNext()) {
-            Particles.add();
+            domain.add();
             auto key = it.get();
-            double x = key.get(0) * it.getSpacing(0);
-            Particles.getLastPos()[0] = x;
-            double y = key.get(1) * it.getSpacing(1);
-            Particles.getLastPos()[1] = y;
+            mem_id k0 = key.get(0);
+            double x = k0 * spacing[0];
+            domain.getLastPos()[0] = x;//+ gaussian(rng);
+            mem_id k1 = key.get(1);
+            double y = k1 * spacing[1];
+            domain.getLastPos()[1] = y;//+gaussian(rng);
+            // Here fill the function value
+            domain.template getLastProp<1>()[0] = sin(domain.getLastPos()[0]) + sin(domain.getLastPos()[1]);
+            domain.template getLastProp<1>()[1] = cos(domain.getLastPos()[0]) + cos(domain.getLastPos()[1]);
+            domain.template getLastProp<1>()[1] = cos(domain.getLastPos()[0]) + cos(domain.getLastPos()[1]);
+            domain.template getLastProp<0>()= cos(domain.getLastPos()[0]) - sin(domain.getLastPos()[1]);
+
+//            domain.template getLastProp<0>() = x * x;
+//            domain.template getLastProp<0>() = x;
+            // Here fill the validation value for Df/Dx
+            domain.template getLastProp<2>()[0] = 0;//cos(domain.getLastPos()[0]);//+cos(domain.getLastPos()[1]);
+            domain.template getLastProp<2>()[1] = 0;//-sin(domain.getLastPos()[0]);//+cos(domain.getLastPos()[1]);
+            domain.template getLastProp<4>()[0] =
+                    cos(domain.getLastPos()[0]) * (sin(domain.getLastPos()[0]) + sin(domain.getLastPos()[1])) +
+                    cos(domain.getLastPos()[1]) * (cos(domain.getLastPos()[0]) + cos(domain.getLastPos()[1]));
+            domain.template getLastProp<4>()[1] =
+                    -sin(domain.getLastPos()[0]) * (sin(domain.getLastPos()[0]) + sin(domain.getLastPos()[1])) -
+                    sin(domain.getLastPos()[1]) * (cos(domain.getLastPos()[0]) + cos(domain.getLastPos()[1]));
+
+
+//            domain.template getLastProp<2>() = 2 * x;
+//            domain.template getLastProp<2>() = 1;
+
+            ++counter;
             ++it;
         }
+        BOOST_TEST_MESSAGE("Sync domain across processors...");
 
-        Particles.map();
-        Particles.ghost_get<0>();
+        domain.map();
+        domain.ghost_get<0>();
 
-        openfpm::vector<aggregate<int>> bulk;
-        openfpm::vector<aggregate<int>> up_p;
-        openfpm::vector<aggregate<int>> dw_p;
-        openfpm::vector<aggregate<int>> l_p;
-        openfpm::vector<aggregate<int>> r_p;
+        //Derivative_x Dx(domain, 2, rCut);
+        //Derivative_y Dy(domain, 2, rCut);
+        //Gradient Grad(domain, 2, rCut);
+        //Laplacian Lap(domain, 2, rCut, 3);
+        //Advection Adv(domain, 3, rCut, 2);
+        Divergence Div(domain, 2, rCut, 1.9,support_options::RADIUS);
+        auto v = getV<1>(domain);
+        auto anasol = getV<0>(domain);
+        auto div = getV<5>(domain);
 
-        openfpm::vector<aggregate<int>> up_p1;
-        openfpm::vector<aggregate<int>> dw_p1;
-        openfpm::vector<aggregate<int>> l_p1;
-        openfpm::vector<aggregate<int>> r_p1;
+//        typedef boost::mpl::int_<std::is_fundamental<point_expression_op<Point<2U, double>, point_expression<double>, Point<2U, double>, 3>>::value>::blabla blabla;
 
-        openfpm::vector<aggregate<int>> BULK;
+//        std::is_fundamental<decltype(o1.value(key))>
 
+        //vv=Lap(P);
+        //dv=Lap(v);//+Dy(P);
+        div = Div(v);//+Dy(P);
+        auto it2 = domain.getDomainIterator();
 
-
-        // Here fill up the boxes for particle detection.
-
-        Box<2, double> up({box.getLow(0) + spacing / 2.0, box.getHigh(1) - spacing / 2.0},
-                          {box.getHigh(0) -  spacing / 2.0, box.getHigh(1) + spacing / 2.0});
-
-        Box<2, double> up_d({box.getLow(0) +  spacing / 2.0, box.getHigh(1) - 3 * spacing / 2.0},
-                            {box.getHigh(0) -  spacing / 2.0, box.getHigh(1) - spacing / 2.0});
-
-        Box<2, double> down({box.getLow(0) +  spacing / 2.0, box.getLow(1) - spacing / 2.0},
-                            {box.getHigh(0) -  spacing / 2.0, box.getLow(1) + spacing / 2.0});
-
-        Box<2, double> down_u({box.getLow(0) +   spacing / 2.0, box.getLow(1) + spacing / 2.0},
-                              {box.getHigh(0) -  spacing / 2.0, box.getLow(1) + 3 * spacing / 2.0});
-
-        Box<2, double> left({box.getLow(0) - spacing / 2.0, box.getLow(1) -  spacing / 2.0},
-                            {box.getLow(0) + spacing / 2.0, box.getHigh(1) +  spacing / 2.0});
-
-        Box<2, double> left_r({box.getLow(0) + spacing / 2.0, box.getLow(1) + 3 * spacing / 2.0},
-                              {box.getLow(0) + 3 * spacing / 2.0, box.getHigh(1) - 3 * spacing / 2.0});
-
-        Box<2, double> right({box.getHigh(0) - spacing / 2.0, box.getLow(1) -  spacing / 2.0},
-                             {box.getHigh(0) + spacing / 2.0, box.getHigh(1) +  spacing / 2.0});
-
-        Box<2, double> right_l({box.getHigh(0) - 3 * spacing / 2.0, box.getLow(1) + 3 * spacing / 2.0},
-                               {box.getHigh(0) - spacing / 2.0, box.getHigh(1) - 3 * spacing / 2.0});
-        Box<2, double> Bulk_box({box.getLow(0) - spacing / 2.0, box.getLow(1) - spacing / 2.0},
-                                {box.getHigh(0) + spacing / 2.0, box.getHigh(1)  +spacing / 2.0});
-
-
-        openfpm::vector<Box<2, double>> boxes;
-        boxes.add(up);
-        boxes.add(up_d);
-        boxes.add(down);
-        boxes.add(down_u);
-        boxes.add(left);
-        boxes.add(left_r);
-        boxes.add(right);
-        boxes.add(right_l);
-        boxes.add(Bulk_box);
-        VTKWriter<openfpm::vector<Box<2, double>>, VECTOR_BOX> vtk_box;
-        vtk_box.add(boxes);
-        vtk_box.write("box_sf.vtk");
-        // Particles.write_frame("Re1000-1e-3-Lid_sf",0);
-
-        auto it2 = Particles.getDomainIterator();
+        double worst1 = 0.0;
 
         while (it2.isNext()) {
             auto p = it2.get();
-            Point<2, double> xp = Particles.getPos(p);
-            Particles.getProp<0>(p) =0;//-M_PI*M_PI*sin(M_PI*xp[0])*sin(M_PI*xp[1]);
-            Particles.getProp<1>(p) =0;//sin(M_PI*xp[0])*sin(M_PI*xp[1]);
-            Particles.getProp<2>(p) =0.0;
-            Particles.getProp<3>(p) =0.0;
-            Particles.getProp<4>(p) =0.0;
-            Particles.getProp<5>(p)[0] =0.0;
-            Particles.getProp<5>(p)[1] =0.0;
 
-            BULK.add();
-            BULK.last().get<0>() = p.getKey();
+            //std::cout << "VALS: " << domain.getProp<3>(p)[0] << " " << domain.getProp<4>(p)[0] << std::endl;
+            //std::cout << "VALS: " << domain.getProp<3>(p)[1] << " " << domain.getProp<4>(p)[1] << std::endl;
+            domain.getProp<6>(p)=fabs(domain.getProp<0>(p) - domain.getProp<5>(p));
+            //domain.getProp<0>(p)=std::sqrt((domain.getProp<3>(p)[0] - domain.getProp<4>(p)[0])*(domain.getProp<3>(p)[0] - domain.getProp<4>(p)[0])+(domain.getProp<3>(p)[1] - domain.getProp<4>(p)[1])*(domain.getProp<3>(p)[1] - domain.getProp<4>(p)[1]));
 
-            if (up.isInside(xp) == true) {
-                up_p.add();
-                up_p.last().get<0>() = p.getKey();
-            }
-            else if (down.isInside(xp) == true) {
-                dw_p.add();
-                dw_p.last().get<0>() = p.getKey();
-            }
-            else if (left.isInside(xp) == true) {
-                l_p.add();
-                l_p.last().get<0>() = p.getKey();
-            } else if (right.isInside(xp) == true) {
-                r_p.add();
-                r_p.last().get<0>() = p.getKey();
-            }
-            else if (Bulk_box.isInside(xp) == true)
-            {
-                if (up_d.isInside(xp) == true) {
-                    up_p1.add();
-                    up_p1.last().get<0>() = p.getKey();
-                }
-                else if (down_u.isInside(xp) == true) {
-                    dw_p1.add();
-                    dw_p1.last().get<0>() = p.getKey();
-                }else if (left_r.isInside(xp) == true) {
-                    l_p1.add();
-                    l_p1.last().get<0>() = p.getKey();
-                } else if (right_l.isInside(xp) == true) {
-                    r_p1.add();
-                    r_p1.last().get<0>() = p.getKey();
-                }
-                bulk.add();
-                bulk.last().get<0>() = p.getKey();
+            if (fabs(domain.getProp<0>(p) - domain.getProp<5>(p)) > worst1) {
+                worst1 = fabs(domain.getProp<0>(p) - domain.getProp<5>(p));
+
             }
             ++it2;
         }
+        std::cout << "Maximum Error: " << worst1 << std::endl;
 
-        for(int j=0;j<up_p.size();j++) {
-            auto p = up_p.get<0>(j);
-            Particles.getProp<1>(p) =  -12.0/spacing;
-        }
+        //Adv.checkMomenta(domain);
+        //Adv.DrawKernel<2>(domain,0);
 
-        Laplacian Lap(Particles, ord2, rCut2,sampling,support_options::RADIUS);
-        //Gradient Grad(Particles, ord, rCut,sampling,support_options::RADIUS);
-        //Derivative_xy Dxy(Particles,ord, rCut, sampling,support_options::RADIUS);
-        Derivative_xy Dxy2(Particles,ord2, rCut2, sampling2,support_options::RADIUS);
-        Derivative_x Dx(Particles,ord, rCut, sampling,support_options::RADIUS);
-        Derivative_y Dy(Particles,ord, rCut, sampling,support_options::RADIUS);
+        domain.deleteGhost();
+        domain.write("v");
 
+        //std::cout << demangle(typeid(decltype(v)).name()) << "\n";
 
-        auto its = Particles.getDomainIterator();
-        int ctr=0;
-        while (its.isNext()) {
-            auto p = its.get();
-            Dx.DrawKernel<0>(Particles, p.getKey());
-            Dy.DrawKernel<1>(Particles, p.getKey());
-//            Dxy.DrawKernel<2>(Particles, p.getKey());
-            Dxy2.DrawKernel<3>(Particles, p.getKey());
-            Lap.DrawKernel<4>(Particles, p.getKey());
-            //Grad.DrawKernel<4>(Particles, p.getKey());
+        //Debug<decltype(expr)> a;
 
-            Particles.write_frame("LapKer",ctr);
-            for(int j=0;j<BULK.size();j++) {
-                auto p1 = BULK.get<0>(j);
-                Particles.getProp<0>(p1) =  0;
-                Particles.getProp<1>(p1) =  0;
-                Particles.getProp<2>(p1) =  0;
-                Particles.getProp<3>(p1) =  0;
-                Particles.getProp<4>(p1) =  0;
-                Particles.getProp<5>(p1)[0] =  0;
-                Particles.getProp<5>(p1)[1] =  0;
+        //typedef decltype(expr)::blabla blabla;
 
-            }
-            ++its;
-            ctr++;
-        }
-
-
+        //auto err = Dx + Dx;
     }
 
 

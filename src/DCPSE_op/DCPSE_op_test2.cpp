@@ -32,8 +32,8 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests2)
 
 
     BOOST_AUTO_TEST_CASE(dcpse_Lid_StokesPetsc) {
-        const size_t sz[2] = {31,31};
-        Box<2, double> box({0, 0}, {1,1});
+        const size_t sz[2] = {51,51};
+        Box<2, double> box({0, 0}, {10,10});
         size_t bc[2] = {NON_PERIODIC, NON_PERIODIC};
         double spacing = box.getHigh(0) / (sz[0] - 1);
         double rCut = 3.1 * spacing;
@@ -159,13 +159,13 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests2)
         petsc_solver<double> solverPetsc;
         solverPetsc.setRestart(300);
         solverPetsc.setSolver(KSPGMRES);
-        solverPetsc.setPreconditioner(PCJACOBI);
+        //solverPetsc.setPreconditioner(PCJACOBI);
 
         petsc_solver<double> solverPetsc2;
         solverPetsc2.setRestart(300);
         solverPetsc.setSolver(KSPGMRES);
-        solverPetsc2.setPreconditioner(PCGAMG);
-        solverPetsc2.setRelTol(1e-6);
+        //solverPetsc2.setPreconditioner(PCGAMG);
+        //solverPetsc2.setRelTol(1e-6);
 
         timer tt;
 
@@ -193,15 +193,15 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests2)
             Particles.ghost_get<2>();
             RHS=-Div(V_star);
             Particles.ghost_get<3>();
-            DCPSE_scheme<equations2d1,decltype(Particles)> SolverH(Particles,options_solver::LAGRANGE_MULTIPLIER );
+            DCPSE_scheme<equations2d1,decltype(Particles)> SolverH(Particles);
             auto Helmholtz = Lap(H);
             auto D_y=Dy(H);
             auto D_x=Dx(H);
             SolverH.impose(Helmholtz,bulk,prop_id<3>());
-            SolverH.impose(D_y, up_p,0);
-            SolverH.impose(D_y, dw_p,0);
-            SolverH.impose(D_x, r_p, 0);
-            SolverH.impose(D_x, l_p,0);
+            SolverH.impose(H, up_p,0);
+            SolverH.impose(H, dw_p,0);
+            SolverH.impose(H, r_p, 0);
+            SolverH.impose(H, l_p,0);
             tt.start();
             SolverH.solve_with_solver(solverPetsc2,H);
             tt.stop();

@@ -1537,7 +1537,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     BOOST_AUTO_TEST_CASE(dcpse_Lid_sf) {
         const size_t sz[2] = {31,31};
-        Box<2, double> box({0, 0}, {1,1});
+        Box<2, double> box({0, 0}, {10,10});
         size_t bc[2] = {NON_PERIODIC, NON_PERIODIC};
         double spacing = box.getHigh(0) / (sz[0] - 1);
         double rCut =spacing*(3.1);
@@ -2732,9 +2732,9 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
     BOOST_AUTO_TEST_CASE(dcpse_op_vec) {
 //  int rank;
 //  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-        size_t edgeSemiSize = 40;
+        size_t edgeSemiSize = 160;
         const size_t sz[2] = {2 * edgeSemiSize+1, 2 * edgeSemiSize+1};
-        Box<2, double> box({0, 0}, {1,1});
+        Box<2, double> box({0, 0}, {10,10});
         size_t bc[2] = {NON_PERIODIC, NON_PERIODIC};
         double spacing[2];
         spacing[0] = box.getHigh(0)  / (sz[0] - 1);
@@ -2889,15 +2889,15 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
     BOOST_AUTO_TEST_CASE(dcpse_op_div) {
 //  int rank;
 //  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-        size_t edgeSemiSize = 80;
-        const size_t sz[2] = {2 * edgeSemiSize, 2 * edgeSemiSize};
-        Box<2, double> box({0, 0}, {2 * M_PI, 2 * M_PI});
+        size_t edgeSemiSize = 31;
+        const size_t sz[2] = {2 * edgeSemiSize+1, 2 * edgeSemiSize+1};
+        Box<2, double> box({0, 0}, {10.0, 10.0});
         size_t bc[2] = {NON_PERIODIC, NON_PERIODIC};
         double spacing[2];
-        spacing[0] = 2 * M_PI / (sz[0] - 1);
-        spacing[1] = 2 * M_PI / (sz[1] - 1);
-        Ghost<2, double> ghost(spacing[0] * 3);
-        double rCut = 2.0 * spacing[0];
+        spacing[0] = box.getHigh(0) / (sz[0] - 1);
+        spacing[1] = box.getHigh(1) / (sz[1] - 1);
+        Ghost<2, double> ghost(spacing[0] * 3.0);
+        double rCut = 2.0* spacing[0];
         BOOST_TEST_MESSAGE("Init vector_dist...");
         double sigma2 = spacing[0] * spacing[1] / (2 * 4);
 
@@ -2960,7 +2960,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
         //Gradient Grad(domain, 2, rCut);
         //Laplacian Lap(domain, 2, rCut, 3);
         //Advection Adv(domain, 3, rCut, 2);
-        Divergence Div(domain, 2, rCut, 3);
+        Divergence Div(domain, 2, rCut, 1.9,support_options::RADIUS);
         auto v = getV<1>(domain);
         auto anasol = getV<0>(domain);
         auto div = getV<5>(domain);
@@ -3231,7 +3231,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
     BOOST_AUTO_TEST_CASE(dcpse_op_test_lap) {
 //  int rank;
 //  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-        size_t edgeSemiSize = 160;
+        size_t edgeSemiSize = 81;
         const size_t sz[2] = {2 * edgeSemiSize+1, 2 * edgeSemiSize+1};
         Box<2, double> box({0, 0}, {2 * M_PI, 2 * M_PI});
         size_t bc[2] = {NON_PERIODIC, NON_PERIODIC};
