@@ -563,10 +563,10 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
 
         h[y] = ( Pol[x] * (Ks * Dyy(Pol[y]) + Kb * Dxx(Pol[y]) + (Ks - Kb) * Dxy(Pol[x])) - Pol[y] * (Ks * Dxx(Pol[x]) + Kb * Dyy(Pol[x]) + (Ks - Kb) * Dxy(Pol[y])));
         Particles.ghost_get<MolField>();
-        for (int j = 0; j < bulk.size(); j++) {
+/*        for (int j = 0; j < bulk.size(); j++) {
                 auto p = bulk.get<0>(j);
                 std::cout << Particles.getProp<7>(p)[y] << std::endl;
-            }
+            }*/
 
         f1 = gama * nu * Pol[x] * Pol[x] * (Pol[x] * Pol[x] - Pol[y] * Pol[y]) / (Pol[x] * Pol[x] + Pol[y] * Pol[y]);
         f2 = 2.0 * gama * nu * Pol[x] * Pol[y] * (Pol[x] * Pol[x] - Pol[y] * Pol[y]) /(Pol[x] * Pol[x] + Pol[y] * Pol[y]);
@@ -724,7 +724,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
             std::cout << "Rel l2 cgs err in V at " << i << "= " << sum / sum1 << std::endl;
             std::cout << "----------------------------------------------------------" << std::endl;
             Particles.write_frame("pPolar", i);
-            return;
+//            return;
         }
         Particles.deleteGhost();
         Particles.write_frame("Polar", n + 1);
