@@ -779,6 +779,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
             std::cout << "Rel l2 cgs err in V at " << i << "= " << sum / sum1 << std::endl;
             std::cout << "----------------------------------------------------------" << std::endl;
             Particles.write_frame("pPolar", i);
+//            return;
         }
         Particles.deleteGhost();
         Particles.write_frame("Polar", n + 1);

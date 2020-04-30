@@ -394,8 +394,9 @@ public:
     template<typename Sys_eqs,typename pmap_type, typename unordered_map_type, typename coeff_type>
     inline void value_nz(pmap_type & p_map, const vect_dist_key_dx & key, unordered_map_type & cols, coeff_type & coeff, unsigned int comp) const
     {
-        o1.template value_nz<Sys_eqs>(p_map,key,cols,coeff,comp);
-		o2.template value_nz<Sys_eqs>(p_map,key,cols,coeff,comp);
+        //o1.template value_nz<Sys_eqs>(p_map,key,cols,coeff,comp);
+    	auto coeff_tmp = o1.value(key) * coeff;
+        o2.template value_nz<Sys_eqs>(p_map,key,cols,coeff_tmp,comp);
     }
 
     /*! \brief Return the vector on which is acting
@@ -475,9 +476,7 @@ public:
     template<typename Sys_eqs,typename pmap_type, typename unordered_map_type, typename coeff_type>
     inline void value_nz(pmap_type & p_map, const vect_dist_key_dx & key, unordered_map_type & cols, coeff_type & coeff, unsigned int comp) const
     {
-        o1.template value_nz<Sys_eqs>(p_map,key,cols,coeff,comp);
-		coeff_type tmp = 1/coeff;
-		o2.template value_nz<Sys_eqs>(p_map,key,cols,tmp,comp);
+    	std::cout << __FILE__ << ":" << __LINE__ << " You are trying to divide by an operator,  this is not possible " << std::endl;
     }
 
     /*! \brief Return the vector on which is acting
