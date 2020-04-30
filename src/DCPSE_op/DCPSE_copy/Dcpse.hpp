@@ -235,7 +235,7 @@ public:
             }
             Dfxp /= pow(eps, differentialOrder);
             //
-            T trueDfxp = particles.template getProp<2>(xpK);
+            //T trueDfxp = particles.template getProp<2>(xpK);
             // Store Dfxp in the right position
             particles.template getProp<DfValuePos>(xpK) = Dfxp;
             //

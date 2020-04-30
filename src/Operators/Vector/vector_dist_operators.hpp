@@ -395,7 +395,7 @@ public:
     inline void value_nz(pmap_type & p_map, const vect_dist_key_dx & key, unordered_map_type & cols, coeff_type & coeff, unsigned int comp) const
     {
         o1.template value_nz<Sys_eqs>(p_map,key,cols,coeff,comp);
-        o2.template value_nz<Sys_eqs>(p_map,key,cols,coeff,comp);
+		o2.template value_nz<Sys_eqs>(p_map,key,cols,coeff,comp);
     }
 
     /*! \brief Return the vector on which is acting
@@ -476,7 +476,8 @@ public:
     inline void value_nz(pmap_type & p_map, const vect_dist_key_dx & key, unordered_map_type & cols, coeff_type & coeff, unsigned int comp) const
     {
         o1.template value_nz<Sys_eqs>(p_map,key,cols,coeff,comp);
-        o2.template value_nz<Sys_eqs>(p_map,key,cols,coeff,comp);
+		coeff_type tmp = 1/coeff;
+		o2.template value_nz<Sys_eqs>(p_map,key,cols,tmp,comp);
     }
 
     /*! \brief Return the vector on which is acting

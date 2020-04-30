@@ -29,7 +29,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
         double rCut = 3.1 * spacing;
         Ghost<2, double> ghost(rCut);
 /*                                          pol                             V         vort                 Ext    Press     strain       stress                      Mfield,   dPol                      dV         RHS                  f1     f2     f3    f4     f5     f6       H               V_t      div   H_t   */
-        vector_dist<2, double, aggregate<VectorS<2, double>, VectorS<2, double>, double[2][2], VectorS<2, double>, double, double[2][2], double[2][2], VectorS<2, double>, VectorS<2, double>, VectorS<2, double>, VectorS<2, double>, double, double, double, double, double, double, double, VectorS<2, double>, double, double>> Particles(
+        vector_dist<2, double, aggregate<VectorS<2, double>, VectorS<2, double>, double[2][2], VectorS<2, double>, double, double[2][2], double[2][2], VectorS<2, double>, VectorS<2, double>, VectorS<2, double>, VectorS<2, double>, double, double, double, double, double, double, double, VectorS<2, double>, double, double, double[2], double[2], double[2], double[2], double[2], double[2]>> Particles(
                 0, box, bc, ghost);
 
         auto it = Particles.getGridIterator(sz);
@@ -87,6 +87,12 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
         auto V_t = getV<18>(Particles);
         auto div = getV<19>(Particles);
         auto H_t = getV<20>(Particles);
+        auto Df1 = getV<21>(Particles);
+        auto Df2 = getV<22>(Particles);
+        auto Df3 = getV<23>(Particles);
+        auto Df4 = getV<24>(Particles);
+        auto Df5 = getV<25>(Particles);
+        auto Df6 = getV<26>(Particles);
 
 
         double eta = 1.0;
@@ -187,55 +193,74 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
         int n = 100;
         for(int tim=0;tim<=0.5;tim+=0.5)
         {
-        Particles.ghost_get<Polarization>();
-        sigma[x][x] =
-                -Ks * Dx(Pol[x]) * Dx(Pol[x]) - Kb * Dx(Pol[y]) * Dx(Pol[y]) + (Kb - Ks) * Dy(Pol[x]) * Dx(Pol[y]);
-        sigma[x][y] =
-                -Ks * Dy(Pol[y]) * Dx(Pol[y]) - Kb * Dy(Pol[x]) * Dx(Pol[x]) + (Kb - Ks) * Dx(Pol[x]) * Dx(Pol[y]);
-        sigma[y][x] =
-                -Ks * Dx(Pol[x]) * Dy(Pol[x]) - Kb * Dx(Pol[y]) * Dy(Pol[y]) + (Kb - Ks) * Dy(Pol[x]) * Dy(Pol[y]);
-        sigma[y][y] =
-                -Ks * Dy(Pol[y]) * Dy(Pol[y]) - Kb * Dy(Pol[x]) * Dy(Pol[x]) + (Kb - Ks) * Dy(Pol[x]) * Dx(Pol[y]);
-        Particles.ghost_get<Stress>();
+            Particles.ghost_get<Polarization>();
+            sigma[x][x] =
+                    -Ks * Dx(Pol[x]) * Dx(Pol[x]) - Kb * Dx(Pol[y]) * Dx(Pol[y]) + (Kb - Ks) * Dy(Pol[x]) * Dx(Pol[y]);
+            sigma[x][y] =
+                    -Ks * Dy(Pol[y]) * Dx(Pol[y]) - Kb * Dy(Pol[x]) * Dx(Pol[x]) + (Kb - Ks) * Dx(Pol[y]) * Dx(Pol[x]);
+            sigma[y][x] =
+                    -Ks * Dx(Pol[x]) * Dy(Pol[x]) - Kb * Dx(Pol[y]) * Dy(Pol[y]) + (Kb - Ks) * Dy(Pol[x]) * Dy(Pol[y]);
+            sigma[y][y] =
+                    -Ks * Dy(Pol[y]) * Dy(Pol[y]) - Kb * Dy(Pol[x]) * Dy(Pol[x]) + (Kb - Ks) * Dx(Pol[y]) * Dy(Pol[x]);
+            Particles.ghost_get<Stress>();
 
 
-        h[y] = Pol[x] * (Ks * Dyy(Pol[y]) + Kb * Dxx(Pol[y]) + (Ks - Kb) * Dxy(Pol[x])) -
-               Pol[y] * (Ks * Dxx(Pol[x]) + Kb * Dyy(Pol[x]) + (Ks - Kb) * Dxy(Pol[y]));
-        Particles.ghost_get<MolField>();
+            h[y] = (Pol[x] * (Ks * Dyy(Pol[y]) + Kb * Dxx(Pol[y]) + (Ks - Kb) * Dxy(Pol[x])) - Pol[y] * (Ks * Dxx(Pol[x]) + Kb * Dyy(Pol[x]) + (Ks - Kb) * Dxy(Pol[y])));
+            Particles.ghost_get<MolField>();
+/*        for (int j = 0; j < bulk.size(); j++) {
+                auto p = bulk.get<0>(j);
+                double Tempo;
+                float Temp;
+                Tempo=Particles.getProp<7>(p)[y];
+                Temp=Particles.getProp<7>(p)[y];
+                std::cout << Particles.getProp<7>(p)[x] << std::endl;
+                std::cout << Particles.getProp<7>(p)[y] << std::endl;
+            }*/
+
+            f1 = gama * nu * Pol[x] * Pol[x] * (Pol[x] * Pol[x] - Pol[y] * Pol[y]) / (Pol[x] * Pol[x] + Pol[y] * Pol[y]);
+            f2 = 2.0 * gama * nu * Pol[x] * Pol[y] * (Pol[x] * Pol[x] - Pol[y] * Pol[y]) /(Pol[x] * Pol[x] + Pol[y] * Pol[y]);
+            f3 = gama * nu * Pol[y] * Pol[y] * (Pol[x] * Pol[x] - Pol[y] * Pol[y]) / (Pol[x] * Pol[x] + Pol[y] * Pol[y]);
+            f4 = 2.0 * gama * nu * Pol[x] * Pol[x] * Pol[x] * Pol[y] / (Pol[x] * Pol[x] + Pol[y] * Pol[y]);
+            f5 = 4.0 * gama * nu * Pol[x] * Pol[x] * Pol[y] * Pol[y] / (Pol[x] * Pol[x] + Pol[y] * Pol[y]);
+            f6 = 2.0 * gama * nu * Pol[x] * Pol[y] * Pol[y] * Pol[y] / (Pol[x] * Pol[x] + Pol[y] * Pol[y]);
+            Particles.ghost_get<11, 12, 13, 14, 15, 16>();
+            Df1[x] = Dx(f1);
+            Df2[x] = Dx(f2);
+            Df3[x] = Dx(f3);
+            Df4[x] = Dx(f4);
+            Df5[x] = Dx(f5);
+            Df6[x] = Dx(f6);
+
+            Df1[y] = Dy(f1);
+            Df2[y] = Dy(f2);
+            Df3[y] = Dy(f3);
+            Df4[y] = Dy(f4);
+            Df5[y] = Dy(f5);
+            Df6[y] = Dy(f6);
+            Particles.ghost_get<21, 22, 23, 24, 25, 26>();
 
 
-        f1 = gama * nu * Pol[x] * Pol[x] * (Pol[x] * Pol[x] - Pol[y] * Pol[y])   / (Pol[x] * Pol[x] + Pol[y] * Pol[y]);
-        f2 = 2.0 * gama * nu * Pol[x] * Pol[y] * (Pol[x] * Pol[x] - Pol[y] * Pol[y]) /
-             (Pol[x] * Pol[x] + Pol[y] * Pol[y]);
-        f3 = gama * nu * Pol[y] * Pol[y] * (Pol[x] * Pol[x] - Pol[y] * Pol[y]) / (Pol[x] * Pol[x] + Pol[y] * Pol[y]);
-        f4 = 2.0 * gama * nu * Pol[x] * Pol[x] * Pol[x] * Pol[y] / (Pol[x] * Pol[x] + Pol[y] * Pol[y]);
-        f5 = 4.0 * gama * nu * Pol[x] * Pol[x] * Pol[y] * Pol[y] / (Pol[x] * Pol[x] + Pol[y] * Pol[y]);
-        f6 = 2.0 * gama * nu * Pol[x] * Pol[y] * Pol[y] * Pol[y] / (Pol[x] * Pol[x] + Pol[y] * Pol[y]);
-        Particles.ghost_get<11, 12, 13, 14, 15, 16>();
+            dV[x] = -0.5 * Dy(h[y]) + zeta * Dx(delmu * Pol[x] * Pol[x]) + zeta * Dy(delmu * Pol[x] * Pol[y]) -
+                    zeta * Dx(0.5 * delmu * (Pol[x] * Pol[x] + Pol[y] * Pol[y])) -
+                    0.5 * nu * Dx(-2.0 * h[y] * Pol[x] * Pol[y])
+                    - 0.5 * nu * Dy(h[y] * (Pol[x] * Pol[x] - Pol[y] * Pol[y])) - Dx(sigma[x][x]) - Dy(sigma[x][y]) - g[x]
+                    - 0.5 * nu * Dx(-gama * lambda * delmu * (Pol[x] * Pol[x] - Pol[y] * Pol[y]))
+                    - 0.5 * Dy(-2.0 * gama * lambda * delmu * (Pol[x] * Pol[y]));
 
 
-        dV[x] = -0.5 * Dy(h[y]) + zeta * Dx(delmu * Pol[x] * Pol[x]) + zeta * Dy(delmu * Pol[x] * Pol[y]) -
-                zeta * Dx(0.5 * delmu * (Pol[x] * Pol[x] + Pol[y] * Pol[y])) -
-                0.5 * nu * Dx(-2 * h[y] * Pol[x] * Pol[y])
-                - 0.5 * nu * Dy(h[y] * (Pol[x] * Pol[x] - Pol[y] * Pol[y])) - Dx(sigma[x][x]) - Dy(sigma[x][y]) - g[x]
-                - 0.5 * nu * Dx(-gama * lambda * delmu * (Pol[x] * Pol[x] - Pol[y] * Pol[y])) -
-                0.5 * Dy(-2 * gama * lambda * delmu * (Pol[x] * Pol[y]));
+            dV[y] = -0.5 * Dx(-h[y]) + zeta * Dy(delmu * Pol[y] * Pol[y]) + zeta * Dx(delmu * Pol[x] * Pol[y]) -
+                    zeta * Dy(0.5 * delmu * (Pol[x] * Pol[x] + Pol[y] * Pol[y])) -
+                    0.5 * nu * Dy(2.0 * h[y] * Pol[x] * Pol[y])
+                    - 0.5 * nu * Dx(h[y] * (Pol[x] * Pol[x] - Pol[y] * Pol[y])) - Dx(sigma[y][x]) - Dy(sigma[y][y]) - g[y]
+                    - 0.5 * nu * Dy(gama * lambda * delmu * (Pol[x] * Pol[x] - Pol[y] * Pol[y]))
+                    - 0.5 * Dx(-2.0 * gama * lambda * delmu * (Pol[x] * Pol[y]));
+            Particles.ghost_get<9>();
 
 
-        dV[y] = -0.5 * Dx(-h[y]) + zeta * Dy(delmu * Pol[y] * Pol[y]) + zeta * Dx(delmu * Pol[x] * Pol[y]) -
-                zeta * Dy(0.5 * delmu * (Pol[x] * Pol[x] + Pol[y] * Pol[y])) -
-                0.5 * nu * Dy(-2 * h[y] * Pol[x] * Pol[y])
-                - 0.5 * nu * Dx(h[y] * (Pol[x] * Pol[x] - Pol[y] * Pol[y])) - Dx(sigma[y][x]) - Dy(sigma[y][y]) - g[y]
-                - 0.5 * nu * Dy(gama * lambda * delmu * (Pol[x] * Pol[x] - Pol[y] * Pol[y])) -
-                0.5 * Dx(-2 * gama * lambda * delmu * (Pol[x] * Pol[y]));
-        Particles.ghost_get<9>();
-
-
-        Particles.write_frame("Polar_Petsc", 0);
-        //Velocity Solution n iterations
-        double sum = 0, sum1 = 0;
-        int n = 100;
-        auto Stokes1 = nu * Lap(V[x]) + 0.5 * nu * (f1 * Dxx(V[x]) + Dx(f1) * Dx(V[x])) +
+            Particles.write_frame("Polar10", 0);
+            //Velocity Solution n iterations
+            double sum = 0, sum1 = 0;
+/*        auto Stokes1 = nu * Lap(V[x]) + 0.5 * nu * (f1 * Dxx(V[x]) + Dx(f1) * Dx(V[x])) +
                        (Dx(f2) * 0.5 * (Dx(V[y]) + Dy(V[x])) + f2 * 0.5 * (Dxx(V[y]) + Dyx(V[x]))) +
                        (Dx(f3) * Dy(V[y]) + f3 * Dyx(V[y])) + (Dy(f4) * Dx(V[x]) + f4 * Dxy(V[x])) +
                        (Dy(f5) * 0.5 * (Dx(V[y]) + Dy(V[x])) + f5 * 0.5 * (Dxy(V[y]) + Dyy(V[x]))) +
@@ -244,19 +269,35 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
                        (Dy(f2) * 0.5 * (Dx(V[y]) + Dy(V[x])) + f2 * 0.5 * (Dxy(V[y]) + Dyy(V[x]))) +
                        (Dy(f3) * Dy(V[y]) + f3 * Dyy(V[y])) + (Dx(f4) * Dx(V[x]) + f4 * Dxx(V[x])) +
                        (Dx(f5) * 0.5 * (Dx(V[y]) + Dy(V[x])) + f5 * 0.5 * (Dxx(V[y]) + Dyx(V[x]))) +
-                       (Dx(f6) * Dy(V[y]) + f6 * Dyx(V[y]));
+                       (Dx(f6) * Dy(V[y]) + f6 * Dyx(V[y]));*/
+
+            auto Stokes1 =  eta * Lap(V[x])
+                            + 0.5 * nu * (Df1[x] * Dx(V[x]) + f1 * Dxx(V[x]))
+                            + 0.5 * nu * (Df2[x] * 0.5 * (Dx(V[y]) + Dy(V[x])) + f2 * 0.5 * (Dxx(V[y]) + Dyx(V[x])))
+                            + 0.5 * nu * (Df3[x] * Dy(V[y]) + f3 * Dyx(V[y]))
+                            + 0.5 * nu * (Df4[y] * Dx(V[x]) + f4 * Dxy(V[x]))
+                            + 0.5 * nu * (Df5[y] * 0.5 * (Dx(V[y]) + Dy(V[x])) + f5 * 0.5 * (Dxy(V[y]) + Dyy(V[x])))
+                            + 0.5 * nu * (Df6[y] * Dy(V[y]) + f6 * Dyy(V[y]));
+            auto Stokes2 = eta * Lap(V[y])
+                           - 0.5 * nu * (Df1[y] * Dx(V[x]) + f1 * Dxy(V[x]))
+                           - 0.5 * nu * (Df2[y] * 0.5 * (Dx(V[y]) + Dy(V[x])) + f2 * 0.5 * (Dxy(V[y]) + Dyy(V[x])))
+                           - 0.5 * nu * (Df3[y] * Dy(V[y]) + f3 * Dyy(V[y]))
+                           + 0.5 * nu * (Df4[x] * Dx(V[x]) + f4 * Dxx(V[x]))
+                           + 0.5 * nu * (Df5[x] * 0.5 * (Dx(V[y]) + Dy(V[x])) + f5 * 0.5 * (Dxx(V[y]) + Dyx(V[x])))
+                           + 0.5 * nu * (Df6[x] * Dy(V[y]) + f6 * Dyx(V[y]));
 
         petsc_solver<double> solverPetsc;
-        solverPetsc.setSolver(KSPGMRES);
-        solverPetsc.setRestart(250);
+        //solverPetsc.setSolver(KSPGMRES);
+        //solverPetsc.setRestart(250);
         //solverPetsc.setPreconditioner(PCJACOBI);
         petsc_solver<double> solverPetsc2;
-        solverPetsc2.setSolver(KSPGMRES);
-        solverPetsc2.setRestart(250);
+        //solverPetsc2.setSolver(KSPGMRES);
+        //solverPetsc2.setRestart(250);
         /*solverPetsc2.setPreconditioner(PCJACOBI);
         solverPetsc2.setRelTol(1e-6);
         solverPetsc2.setAbsTol(1e-5);
         solverPetsc2.setDivTol(1e4);*/
+        std::cout<<"Here1"<<std::endl;
 
         for (int i = 1; i <= n; i++) {
             RHS[x] = Dx(P) + dV[x];
@@ -273,8 +314,16 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
             Solver.impose(V[y], l_p, 0, vy);
             Solver.impose(V[x], r_p, 0, vx);
             Solver.impose(V[y], r_p, 0, vy);
-            tt.start();
+            std::cout<<"Here2"<<std::endl;
+            auto AA=Solver.getA();
+            std::cout<<"Here3"<<std::endl;
+            AA.write("Matrix_A10");
+            return;
+
             Solver.solve_with_solver(solverPetsc, V[x], V[y]);
+
+            tt.start();
+
             tt.stop();
             std::cout << "Stokes Solved in " << tt.getwct() << " seconds." << std::endl;
             Particles.ghost_get<Velocity>();
@@ -561,12 +610,17 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
         Particles.ghost_get<Stress>();
 
 
-        h[y] = ( Pol[x] * (Ks * Dyy(Pol[y]) + Kb * Dxx(Pol[y]) + (Ks - Kb) * Dxy(Pol[x])) - Pol[y] * (Ks * Dxx(Pol[x]) + Kb * Dyy(Pol[x]) + (Ks - Kb) * Dxy(Pol[y])));
+        h[y] = (Pol[x] * (Ks * Dyy(Pol[y]) + Kb * Dxx(Pol[y]) + (Ks - Kb) * Dxy(Pol[x])) - Pol[y] * (Ks * Dxx(Pol[x]) + Kb * Dyy(Pol[x]) + (Ks - Kb) * Dxy(Pol[y])));
         Particles.ghost_get<MolField>();
-        for (int j = 0; j < bulk.size(); j++) {
+/*        for (int j = 0; j < bulk.size(); j++) {
                 auto p = bulk.get<0>(j);
+                double Tempo;
+                float Temp;
+                Tempo=Particles.getProp<7>(p)[y];
+                Temp=Particles.getProp<7>(p)[y];
+                std::cout << Particles.getProp<7>(p)[x] << std::endl;
                 std::cout << Particles.getProp<7>(p)[y] << std::endl;
-            }
+            }*/
 
         f1 = gama * nu * Pol[x] * Pol[x] * (Pol[x] * Pol[x] - Pol[y] * Pol[y]) / (Pol[x] * Pol[x] + Pol[y] * Pol[y]);
         f2 = 2.0 * gama * nu * Pol[x] * Pol[y] * (Pol[x] * Pol[x] - Pol[y] * Pol[y]) /(Pol[x] * Pol[x] + Pol[y] * Pol[y]);
@@ -608,7 +662,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
         Particles.ghost_get<9>();
 
 
-        Particles.write_frame("Polar", 0);
+        Particles.write_frame("Polar10", 0);
         //Velocity Solution n iterations
         eq_id vx, vy;
         timer tt;
@@ -627,7 +681,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
                        (Dx(f5) * 0.5 * (Dx(V[y]) + Dy(V[x])) + f5 * 0.5 * (Dxx(V[y]) + Dyx(V[x]))) +
                        (Dx(f6) * Dy(V[y]) + f6 * Dyx(V[y]));*/
 
-        auto Stokes1 = eta * Lap(V[x])
+        auto Stokes1 =  eta * Lap(V[x])
                         + 0.5 * nu * (Df1[x] * Dx(V[x]) + f1 * Dxx(V[x]))
                         + 0.5 * nu * (Df2[x] * 0.5 * (Dx(V[y]) + Dy(V[x])) + f2 * 0.5 * (Dxx(V[y]) + Dyx(V[x])))
                         + 0.5 * nu * (Df3[x] * Dy(V[y]) + f3 * Dyx(V[y]))
@@ -668,7 +722,8 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
             Particles.ghost_get<Velocity>();
             div = -Div(V);
             Particles.ghost_get<19>();
-            Particles.write_frame("pPolarV", i);
+            Particles.write_frame("PolarV10", 1);
+            return;
             DCPSE_scheme<equations2d1E, decltype(Particles)> SolverH(Particles);//, options_solver::LAGRANGE_MULTIPLIER);
             SolverH.impose(Helmholtz, bulk, prop_id<19>());
             SolverH.impose(H, up_p, 0);
@@ -724,7 +779,6 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
             std::cout << "Rel l2 cgs err in V at " << i << "= " << sum / sum1 << std::endl;
             std::cout << "----------------------------------------------------------" << std::endl;
             Particles.write_frame("pPolar", i);
-            return;
         }
         Particles.deleteGhost();
         Particles.write_frame("Polar", n + 1);
