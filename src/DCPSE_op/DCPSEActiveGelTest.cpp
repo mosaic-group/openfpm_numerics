@@ -32,7 +32,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
         double sampling_factor = 1.9;
         int ord2 = 2;
         double sampling_factor2 = 1.9;
-        Ghost<2, double> ghost(rCut);
+        Ghost<2, double> ghost(2*rCut);
 /*                                          pol                             V         vort                 Ext    Press     strain       stress                      Mfield,   dPol                      dV         RHS                  f1     f2     f3    f4     f5     f6       H               V_t      div   H_t                                                                                      delmu */
         vector_dist<2, double, aggregate<VectorS<2, double>, VectorS<2, double>, double[2][2], VectorS<2, double>, double, double[2][2], double[2][2], VectorS<2, double>, VectorS<2, double>, VectorS<2, double>, VectorS<2, double>, double, double, double, double, double, double, double, VectorS<2, double>, double, double, double[2], double[2], double[2], double[2], double[2], double[2], double, VectorS<2, double>, VectorS<2, double>, VectorS<2, double>, VectorS<2, double>>> Particles(
                 0, box, bc, ghost);
@@ -175,8 +175,6 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
                 }
                 bulk.add();
                 bulk.last().get<0>() = p.getKey();
-                // Particles.getProp<0>(p)[x]=  cos(2 * M_PI * (cos((2 * xp[x]- sz[x]) / sz[x]) - sin((2 * xp[y] - sz[y]) / sz[y])));
-                // Particles.getProp<0>(p)[y] =  sin(2 * M_PI * (cos((2 * xp[x]- sz[x]) / sz[x]) - sin((2 * xp[y] - sz[y]) / sz[y])));
             }
 
 
@@ -189,16 +187,14 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
         auto Dyx = Dxy;
         Derivative_xx Dxx(Particles, ord, rCut, sampling_factor, support_options::RADIUS);
         Derivative_yy Dyy(Particles, ord, rCut, sampling_factor, support_options::RADIUS);
-        Laplacian Lap(Particles, ord, rCut, sampling_factor, support_options::RADIUS);
-        Divergence Div(Particles, ord2, rCut2, sampling_factor2, support_options::RADIUS);
 
         petsc_solver<double> solverPetsc;
-        //solverPetsc.setSolver(KSPGMRES);
-        //solverPetsc.setRestart(250);
+        solverPetsc.setSolver(KSPGMRES);
+        solverPetsc.setRestart(250);
         //solverPetsc.setPreconditioner(PCJACOBI);
         petsc_solver<double> solverPetsc2;
-        //solverPetsc2.setSolver(KSPGMRES);
-        //solverPetsc2.setRestart(250);
+        solverPetsc2.setSolver(KSPGMRES);
+        solverPetsc2.setRestart(250);
         /*solverPetsc2.setPreconditioner(PCJACOBI);
         solverPetsc2.setRelTol(1e-6);
         solverPetsc2.setAbsTol(1e-5);
@@ -216,7 +212,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
         double tf = 7.5;
         while (tim <= tf) {
             tt.start();
-            //Particles.ghost_get<Polarization>();
+            Particles.ghost_get<Polarization>();
             sigma[x][x] =
                     -Ks * Dx(Pol[x]) * Dx(Pol[x]) - Kb * Dx(Pol[y]) * Dx(Pol[y]) + (Kb - Ks) * Dy(Pol[x]) * Dx(Pol[y]);
             sigma[x][y] =
@@ -230,7 +226,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
 
             h[y] = (Pol[x] * (Ks * Dyy(Pol[y]) + Kb * Dxx(Pol[y]) + (Ks - Kb) * Dxy(Pol[x])) -
                     Pol[y] * (Ks * Dxx(Pol[x]) + Kb * Dyy(Pol[x]) + (Ks - Kb) * Dxy(Pol[y])));
-            //Particles.ghost_get<MolField>();
+            Particles.ghost_get<MolField>();
 
             f1 = gama * nu * Pol[x] * Pol[x] * (Pol[x] * Pol[x] - Pol[y] * Pol[y]) /
                  (Pol[x] * Pol[x] + Pol[y] * Pol[y]);
@@ -241,7 +237,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
             f4 = 2.0 * gama * nu * Pol[x] * Pol[x] * Pol[x] * Pol[y] / (Pol[x] * Pol[x] + Pol[y] * Pol[y]);
             f5 = 4.0 * gama * nu * Pol[x] * Pol[x] * Pol[y] * Pol[y] / (Pol[x] * Pol[x] + Pol[y] * Pol[y]);
             f6 = 2.0 * gama * nu * Pol[x] * Pol[y] * Pol[y] * Pol[y] / (Pol[x] * Pol[x] + Pol[y] * Pol[y]);
-            //Particles.ghost_get<11, 12, 13, 14, 15, 16>();
+            Particles.ghost_get<11, 12, 13, 14, 15, 16>();
             Df1[x] = Dx(f1);
             Df2[x] = Dx(f2);
             Df3[x] = Dx(f3);
@@ -255,7 +251,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
             Df4[y] = Dy(f4);
             Df5[y] = Dy(f5);
             Df6[y] = Dy(f6);
-            //Particles.ghost_get<21, 22, 23, 24, 25, 26>();
+            Particles.ghost_get<21, 22, 23, 24, 25, 26>();
 
 
             dV[x] = -0.5 * Dy(h[y]) + zeta * Dx(delmu * Pol[x] * Pol[x]) + zeta * Dy(delmu * Pol[x] * Pol[y]) -
@@ -274,21 +270,21 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
                     g[y]
                     - 0.5 * nu * Dy(gama * lambda * delmu * (Pol[x] * Pol[x] - Pol[y] * Pol[y]))
                     - 0.5 * Dx(-2.0 * gama * lambda * delmu * (Pol[x] * Pol[y]));
-            //Particles.ghost_get<9>();
+            Particles.ghost_get<9>();
 
 
             Particles.write("PolarI");
             //Velocity Solution n iterations
             double sum, sum1;
 
-            auto Stokes1 = eta * Lap(V[x])
+            auto Stokes1 = eta * (Dxx(V[x])+Dyy(V[x]))
                            + 0.5 * nu * (Df1[x] * Dx(V[x]) + f1 * Dxx(V[x]))
                            + 0.5 * nu * (Df2[x] * 0.5 * (Dx(V[y]) + Dy(V[x])) + f2 * 0.5 * (Dxx(V[y]) + Dyx(V[x])))
                            + 0.5 * nu * (Df3[x] * Dy(V[y]) + f3 * Dyx(V[y]))
                            + 0.5 * nu * (Df4[y] * Dx(V[x]) + f4 * Dxy(V[x]))
                            + 0.5 * nu * (Df5[y] * 0.5 * (Dx(V[y]) + Dy(V[x])) + f5 * 0.5 * (Dxy(V[y]) + Dyy(V[x])))
                            + 0.5 * nu * (Df6[y] * Dy(V[y]) + f6 * Dyy(V[y]));
-            auto Stokes2 = eta * Lap(V[y])
+            auto Stokes2 = eta * (Dxx(V[y])+Dyy(V[y]))
                            - 0.5 * nu * (Df1[y] * Dx(V[x]) + f1 * Dxy(V[x]))
                            - 0.5 * nu * (Df2[y] * 0.5 * (Dx(V[y]) + Dy(V[x])) + f2 * 0.5 * (Dxy(V[y]) + Dyy(V[x])))
                            - 0.5 * nu * (Df3[y] * Dy(V[y]) + f3 * Dyy(V[y]))
@@ -318,9 +314,9 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
 
                 //std::cout << "Stokes Solved in " << tt.getwct() << " seconds." << std::endl;
                 Particles.ghost_get<Velocity>();
-                div = -Div(V);
+                div = -(Dx(V[x])+Dy(V[y]));
                 Particles.ghost_get<19>();
-                auto Helmholtz = Lap(H);
+                auto Helmholtz = Dxx(H)+Dyy(H);
                 DCPSE_scheme<equations2d1, decltype(Particles)> SolverH(Particles);
                 SolverH.impose(Helmholtz, bulk, prop_id<19>());
                 SolverH.impose(H, up_p, 0);
@@ -353,7 +349,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
                     Particles.getProp<1>(p)[0] = 0;
                     Particles.getProp<1>(p)[1] = 0;
                 }
-                P = P + Lap(H);
+                P = P + Dxx(H)+Dyy(H);
                 Particles.ghost_get<Velocity>();
                 Particles.ghost_get<Pressure>();
 
@@ -397,6 +393,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
                    + 2 * u[x][y] * gama * nu * Pol[x] * Pol[y] / (Pol[x] * Pol[x] + Pol[y] * Pol[y]);
 
             Pos = Pos + dt * V;
+            Particles.map();
             tt.start();
             Dx.update(Particles);
             Dy.update(Particles);
@@ -404,10 +401,8 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
             auto Dyx = Dxy;
             Dxx.update(Particles);
             Dyy.update(Particles);
-            Lap.update(Particles);
-            Div.update(Particles);
             tt.stop();
-            std::cout << "Updattion of operators took " << tt.getwct() << " seconds." << std::endl;
+            std::cout << "Updation of operators took " << tt.getwct() << " seconds." << std::endl;
 
             k1[x] = ((h[x] * Pol[x] - h[y] * Pol[y]) / gama + lambda * delmu * Pol[x] -
                      nu * (u[x][x] * Pol[x] + u[x][y] * Pol[y]) + W[x][x] * Pol[x] + W[x][y] * Pol[y]);
@@ -472,7 +467,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
                                                              sin((2 * Particles.getPos(p)[y] - Ly) / Ly)));
             }
 
-            std::cout << "Time step " << tim << " over." << std::endl;
+            std::cout<<"Time step " << ctr<<" : "<<tim << " over." << std::endl;
             tim += dt;
             std::cout << "----------------------------------------------------------" << std::endl;
 
