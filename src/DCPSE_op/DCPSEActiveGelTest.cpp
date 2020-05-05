@@ -20,16 +20,21 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
     BOOST_AUTO_TEST_CASE(Active2DPetsc) {
         timer tt2;
         tt2.start();
-        const size_t sz[2] = {31, 31};
+        const size_t sz[2] = {51, 51};
         Box<2, double> box({0, 0}, {10, 10});
         double Lx = box.getHigh(0);
         double Ly = box.getHigh(1);
         size_t bc[2] = {NON_PERIODIC, NON_PERIODIC};
         double spacing = box.getHigh(0) / (sz[0] - 1);
         double rCut = 3.1 * spacing;
+        double rCut2 = 3.1 * spacing;
+        int ord = 2;
+        double sampling_factor = 1.9;
+        int ord2 = 2;
+        double sampling_factor2 = 1.9;
         Ghost<2, double> ghost(rCut);
 /*                                          pol                             V         vort                 Ext    Press     strain       stress                      Mfield,   dPol                      dV         RHS                  f1     f2     f3    f4     f5     f6       H               V_t      div   H_t                                                                                      delmu */
-        vector_dist<2, double, aggregate<VectorS<2, double>, VectorS<2, double>, double[2][2], VectorS<2, double>, double, double[2][2], double[2][2], VectorS<2, double>, VectorS<2, double>, VectorS<2, double>, VectorS<2, double>, double, double, double, double, double, double, double, VectorS<2, double>, double, double, double[2], double[2], double[2], double[2], double[2], double[2], double>> Particles(
+        vector_dist<2, double, aggregate<VectorS<2, double>, VectorS<2, double>, double[2][2], VectorS<2, double>, double, double[2][2], double[2][2], VectorS<2, double>, VectorS<2, double>, VectorS<2, double>, VectorS<2, double>, double, double, double, double, double, double, double, VectorS<2, double>, double, double, double[2], double[2], double[2], double[2], double[2], double[2], double,VectorS<2, double>,VectorS<2, double>,VectorS<2, double>,VectorS<2, double>>> Particles(
                 0, box, bc, ghost);
 
         auto it = Particles.getGridIterator(sz);
@@ -65,6 +70,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
         constexpr int Strain_rate = 5;
         constexpr int Stress = 6;
         constexpr int MolField = 7;
+        auto Pos=getV<PROP_POS>(Particles);
 
         auto Pol = getV<Polarization>(Particles);
         auto V = getV<Velocity>(Particles);
@@ -94,6 +100,10 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
         auto Df5 = getV<25>(Particles);
         auto Df6 = getV<26>(Particles);
         auto delmu = getV<27>(Particles);
+        auto k1 = getV<28>(Particles);
+        auto k2 = getV<29>(Particles);
+        auto k3 = getV<30>(Particles);
+        auto k4 = getV<31>(Particles);
 
 
         double eta = 1.0;
@@ -173,21 +183,16 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
             ++it2;
         }
 
-        int ord = 2;
-        double sampling_factor = 1.9;
-        int ord2 = 2;
-        double sampling_factor2 = 1.9;
-        double rCut2 = 3.1 * spacing;
         Derivative_x Dx(Particles, ord2, rCut2, sampling_factor2, support_options::RADIUS);
         Derivative_y Dy(Particles, ord2, rCut2, sampling_factor2, support_options::RADIUS);
         Derivative_xy Dxy(Particles, ord, rCut, sampling_factor, support_options::RADIUS);
         auto Dyx = Dxy;
         Derivative_xx Dxx(Particles, ord, rCut, sampling_factor, support_options::RADIUS);
         Derivative_yy Dyy(Particles, ord, rCut, sampling_factor, support_options::RADIUS);
-        Gradient Grad(Particles, ord2, rCut2, sampling_factor2, support_options::RADIUS);
         Laplacian Lap(Particles, ord, rCut, sampling_factor, support_options::RADIUS);
-        Advection Adv(Particles, ord2, rCut2, sampling_factor2, support_options::RADIUS);
         Divergence Div(Particles, ord2, rCut2, sampling_factor2, support_options::RADIUS);
+
+
 
         eq_id vx, vy;
         timer tt;
@@ -196,7 +201,8 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
         int n = 100;
         double dt = 1e-4;
         double tim=0;
-        while (tim <= 0.1)
+        double tf=1e-3;
+        while (tim <= tf)
         {
             Particles.ghost_get<Polarization>();
             sigma[x][x] =
@@ -389,12 +395,43 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
                    + u[y][y] * gama * nu * Pol[y] * Pol[y] / (Pol[x] * Pol[x] + Pol[y] * Pol[y])
                    + 2 * u[x][y] * gama * nu * Pol[x] * Pol[y] / (Pol[x] * Pol[x] + Pol[y] * Pol[y]);
 
-            Pol[x] = Pol[x] + dt * ((h[x] * Pol[x] - h[y] * Pol[y]) / gama + lambda * delmu * Pol[x] -
-                                    nu * (u[x][x] * Pol[x] + u[x][y] * Pol[y]) + W[x][x] * Pol[x] + W[x][y] * Pol[y] -
-                                    Adv(V, Pol[x]));
+            Pos=Pos+dt*V;
+
+            Derivative_x Dx(Particles, ord2, rCut2, sampling_factor2, support_options::RADIUS);
+            Derivative_y Dy(Particles, ord2, rCut2, sampling_factor2, support_options::RADIUS);
+            Derivative_xy Dxy(Particles, ord, rCut, sampling_factor, support_options::RADIUS);
+            auto Dyx = Dxy;
+            Derivative_xx Dxx(Particles, ord, rCut, sampling_factor, support_options::RADIUS);
+            Derivative_yy Dyy(Particles, ord, rCut, sampling_factor, support_options::RADIUS);
+            Laplacian Lap(Particles, ord, rCut, sampling_factor, support_options::RADIUS);
+            Divergence Div(Particles, ord2, rCut2, sampling_factor2, support_options::RADIUS);
+
+            k1[x]=((h[x] * Pol[x] - h[y] * Pol[y]) / gama + lambda * delmu * Pol[x] -
+                nu * (u[x][x] * Pol[x] + u[x][y] * Pol[y]) + W[x][x] * Pol[x] + W[x][y] * Pol[y]);
+            k1[y]=((h[x] * Pol[y] - h[y] * Pol[x]) / gama + lambda * delmu * Pol[y] -
+                   nu * (u[y][x] * Pol[x] + u[y][y] * Pol[y]) + W[y][x] * Pol[x] + W[y][y] * Pol[y]);
+
+            k2[x]=((h[x] * 0.5*dt*k1[x]*Pol[x] - h[y] * 0.5*dt*k1[y]*Pol[y]) / gama + lambda * delmu * 0.5*dt*k1[x]*Pol[x] -
+                nu * (u[x][x] * 0.5*dt*k1[x]*Pol[x] + u[x][y] * 0.5*dt*k1[y]*Pol[y]) + W[x][x] * 0.5*dt*k1[x]*Pol[x] + W[x][y] * 0.5*dt*k1[y]*Pol[y]);
+            k2[y]=((h[x] * 0.5*dt*k1[y]*Pol[y] - h[y] * 0.5*dt*k1[x]*Pol[x]) / gama + lambda * delmu *0.5*dt*k1[y]* Pol[y] -
+                   nu * (u[y][x] *0.5*dt*k1[x]* Pol[x] + u[y][y] *0.5*dt*k1[y]* Pol[y]) + W[y][x] *0.5*dt*k1[x]* Pol[x] + W[y][y] *0.5*dt*k1[y]* Pol[y]);
+
+            k3[x]=((h[x] * 0.5*dt*k2[x]*Pol[x] - h[y] * 0.5*dt*k2[y]*Pol[y]) / gama + lambda * delmu * 0.5*dt*k2[x]*Pol[x] -
+                nu * (u[x][x] * 0.5*dt*k2[x]*Pol[x] + u[x][y] * 0.5*dt*k2[y]*Pol[y]) + W[x][x] * 0.5*dt*k2[x]*Pol[x] + W[x][y] * 0.5*dt*k2[y]*Pol[y]);
+            k3[y]=((h[x] * 0.5*dt*k2[y]*Pol[y] - h[y] *0.5*dt*k2[x]* Pol[x]) / gama + lambda * delmu * 0.5*dt*k2[y]*Pol[y] -
+                   nu * (u[y][x] * 0.5*dt*k2[x]*Pol[x] + u[y][y] * 0.5*dt*k2[y]*Pol[y]) + W[y][x] *0.5*dt*k2[x]* Pol[x] + W[y][y] *0.5*dt*k2[y]* Pol[y]);
+
+            k4[x]=((h[x] * dt*k3[x]*Pol[x] - h[y] * dt*k3[y]*Pol[y]) / gama + lambda * delmu * dt*k3[x]*Pol[x] -
+                   nu * (u[x][x] * dt*k3[x]*Pol[x] + u[x][y] * dt*k3[y]*Pol[y]) + W[x][x] * dt*k3[x]*Pol[x] + W[x][y] * dt*k3[y]*Pol[y]);
+            k4[y]=((h[x] * dt*k3[y]*Pol[y] - h[y] * dt*k3[x]*Pol[x]) / gama + lambda * delmu * dt*k3[y]*Pol[y] -
+                   nu * (u[y][x] * dt*k3[x]*Pol[x] + u[y][y] * dt*k3[y]*Pol[y]) + W[y][x] * dt*k3[x]*Pol[x] + W[y][y] *dt*k3[y]* Pol[y]);
+
+            Pol= Pol + (dt/6.0)*(k1+(2.0*k2)+(2.0*k3)+k4);
+
+            /*Pol[x] = Pol[x] + dt * ((h[x] * Pol[x] - h[y] * Pol[y]) / gama + lambda * delmu * Pol[x] -
+                                    nu * (u[x][x] * Pol[x] + u[x][y] * Pol[y]) + W[x][x] * Pol[x] + W[x][y] * Pol[y]);
             Pol[y] = Pol[y] + dt * ((h[x] * Pol[y] - h[y] * Pol[x]) / gama + lambda * delmu * Pol[y] -
-                                    nu * (u[y][x] * Pol[x] + u[y][y] * Pol[y]) + W[y][x] * Pol[x] + W[y][y] * Pol[y] -
-                                    Adv(V, Pol[y]));
+                                    nu * (u[y][x] * Pol[x] + u[y][y] * Pol[y]) + W[y][x] * Pol[x] + W[y][y] * Pol[y]);*/
             std::cout << "Time step " << tim << " over." << std::endl;
             tim += dt;
             std::cout << "----------------------------------------------------------" << std::endl;
