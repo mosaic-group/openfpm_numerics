@@ -1,6 +1,6 @@
 //
 // Created by tommaso on 29/03/19.
-//
+// Modified by Abhinav and Pietro
 #ifndef OPENFPM_PDATA_DCPSE_HPP
 #define OPENFPM_PDATA_DCPSE_HPP
 
@@ -397,6 +397,47 @@ public:
         return Dfxp;
     }
 
+    void initializeUpdate(vector_type &particles)
+    {
+        auto it = particles.getDomainIterator();
+        while (it.isNext()) {
+            // Get the points in the support of the DCPSE kernel and store the support for reuse
+            //Support<dim, T, part_type> support = supportBuilder.getSupport(it, requiredSupportSize,opt);
+            auto p = it.get();
+            Support<dim, T, part_type> support = localSupports[p.getKey()];
+            EMatrix<T, Eigen::Dynamic, Eigen::Dynamic> V(support.size(), monomialBasis.size());
+            // Vandermonde matrix computation
+            Vandermonde<dim, T, EMatrix<T, Eigen::Dynamic, Eigen::Dynamic>>
+                    vandermonde(support, monomialBasis);
+            vandermonde.getMatrix(V);
+
+            T eps = vandermonde.getEps();
+
+            localSupports.push_back(support);
+            localEps.push_back(eps);
+            // Compute the diagonal matrix E
+            DcpseDiagonalScalingMatrix<dim> diagonalScalingMatrix(monomialBasis);
+            EMatrix<T, Eigen::Dynamic, Eigen::Dynamic> E(support.size(), support.size());
+            diagonalScalingMatrix.buildMatrix(E, support, eps);
+            // Compute intermediate matrix B
+            EMatrix<T, Eigen::Dynamic, Eigen::Dynamic> B = E * V;
+            // Compute matrix A
+            EMatrix<T, Eigen::Dynamic, Eigen::Dynamic> A = B.transpose() * B;
+            // Compute RHS vector b
+            DcpseRhs<dim> rhs(monomialBasis, differentialSignature);
+            EMatrix<T, Eigen::Dynamic, 1> b(monomialBasis.size(), 1);
+            rhs.template getVector<T>(b);
+            // Get the vector where to store the coefficients...
+            EMatrix<T, Eigen::Dynamic, 1> a(monomialBasis.size(), 1);
+            // ...solve the linear system...
+            a = A.colPivHouseholderQr().solve(b);
+            // ...and store the solution for later reuse
+            localCoefficients.push_back(a);
+            //
+            ++it;
+        }
+    }
+
 private:
 
     void initializeAdaptive(vector_type &particles,
@@ -509,6 +550,8 @@ private:
             ++it;
         }
     }
+
+
 
 
     T computeKernel(Point<dim, T> x, EMatrix<T, Eigen::Dynamic, 1> a) const {

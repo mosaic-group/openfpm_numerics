@@ -677,7 +677,6 @@ public:
     }
 
     template<typename operand_type>
-
     vector_dist_expression_op<operand_type,Dcpse<operand_type::vtype::dims,typename operand_type::vtype>,VECT_DCPSE> operator()(operand_type arg)
     {
         typedef Dcpse<operand_type::vtype::dims,typename operand_type::vtype> dcpse_type;
@@ -688,10 +687,19 @@ public:
     template<unsigned int prp, typename particles_type>
     void DrawKernel(particles_type &particles,int k)
     {
-        auto dcpse2 = (Dcpse<particles_type::dims,particles_type> *)dcpse;
-        dcpse2->template DrawKernel<prp>(particles,k);
+        auto dcpse_temp = (Dcpse<particles_type::dims,particles_type> *)dcpse;
+        dcpse_temp->template DrawKernel<prp>(particles,k);
 
     }
+
+    template<typename particles_type>
+    void update(particles_type &particles)
+    {
+        auto dcpse_temp = (Dcpse<particles_type::dims,particles_type> *)dcpse;
+        dcpse_temp-> initializeUpdate(particles);
+
+    }
+
 };
 
 
@@ -735,6 +743,14 @@ public:
 
     }
 
+    template<typename particles_type>
+    void update(particles_type &particles)
+    {
+        auto dcpse_temp = (Dcpse<particles_type::dims,particles_type> *)dcpse;
+        dcpse_temp-> initializeUpdate(particles);
+
+    }
+
 
 
 };
@@ -763,6 +779,15 @@ public:
 
         return vector_dist_expression_op<operand_type,dcpse_type,VECT_DCPSE>(arg,*(dcpse_type *)dcpse);
     }
+
+    template<typename particles_type>
+    void update(particles_type &particles)
+    {
+        auto dcpse_temp = (Dcpse<particles_type::dims,particles_type> *)dcpse;
+        dcpse_temp-> initializeUpdate(particles);
+
+    }
+
 };
 
 
@@ -814,6 +839,18 @@ public:
         }
 
     }
+
+    template<typename particles_type>
+    void update(particles_type &particles)
+    {
+        Dcpse<particles_type::dims, particles_type> *dcpse_ptr = (Dcpse<particles_type::dims, particles_type> *) dcpse;
+        for (int i = 0 ; i < particles_type::dims ; i++) {
+            dcpse_ptr[i]. initializeUpdate(particles);
+        }
+
+    }
+
+
 };
 
 class Curl2D
@@ -909,6 +946,17 @@ public:
 
     }
 
+    template<typename particles_type>
+    void update(particles_type &particles)
+    {
+        Dcpse<particles_type::dims, particles_type> *dcpse_ptr = (Dcpse<particles_type::dims, particles_type> *) dcpse;
+        for (int i = 0 ; i < particles_type::dims ; i++) {
+            dcpse_ptr[i]. initializeUpdate(particles);
+        }
+
+    }
+
+
 };
 
 
@@ -944,6 +992,17 @@ public:
 
         return vector_dist_expression_op<operand_type,dcpse_type,VECT_DCPSE_V_DIV>(arg,*(dcpse_type(*)[operand_type::vtype::dims])dcpse);
     }
+
+    template<typename particles_type>
+    void update(particles_type &particles)
+    {
+        Dcpse<particles_type::dims, particles_type> *dcpse_ptr = (Dcpse<particles_type::dims, particles_type> *) dcpse;
+        for (int i = 0 ; i < particles_type::dims ; i++) {
+            dcpse_ptr[i]. initializeUpdate(particles);
+        }
+
+    }
+
 };
 
 
@@ -1005,6 +1064,18 @@ public:
         }
 
     }
+
+    template<typename particles_type>
+    void update(particles_type &particles)
+    {
+        Dcpse<particles_type::dims, particles_type> *dcpse_ptr = (Dcpse<particles_type::dims, particles_type> *) dcpse;
+        for (int i = 0 ; i < particles_type::dims ; i++) {
+            dcpse_ptr[i]. initializeUpdate(particles);
+        }
+
+    }
+
+
 };
 
 
@@ -1051,6 +1122,14 @@ public:
         dcpse_ptr[0].template DrawKernel<prp>(particles,k);
 
     }
+
+    template<typename particles_type>
+    void update(particles_type &particles)
+    {
+        auto dcpse_temp = (Dcpse<particles_type::dims,particles_type> *)dcpse;
+        dcpse_temp-> initializeUpdate(particles);
+
+    }
 };
 
 
@@ -1080,6 +1159,14 @@ public:
 
         return vector_dist_expression_op<operand_type,dcpse_type,VECT_DCPSE>(arg,*(dcpse_type *)dcpse);
     }
+
+    template<typename particles_type>
+    void update(particles_type &particles)
+    {
+        auto dcpse_temp = (Dcpse<particles_type::dims,particles_type> *)dcpse;
+        dcpse_temp-> initializeUpdate(particles);
+
+    }
 };
 
 
@@ -1108,6 +1195,14 @@ public:
         typedef Dcpse<operand_type::vtype::dims,typename operand_type::vtype> dcpse_type;
 
         return vector_dist_expression_op<operand_type,dcpse_type,VECT_DCPSE>(arg,*(dcpse_type *)dcpse);
+    }
+
+    template<typename particles_type>
+    void update(particles_type &particles)
+    {
+        auto dcpse_temp = (Dcpse<particles_type::dims,particles_type> *)dcpse;
+        dcpse_temp-> initializeUpdate(particles);
+
     }
 };
 
