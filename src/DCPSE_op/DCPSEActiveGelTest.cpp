@@ -20,7 +20,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
     BOOST_AUTO_TEST_CASE(Active2DPetsc) {
         timer tt2;
         tt2.start();
-        const size_t sz[2] = {51, 51};
+        const size_t sz[2] = {31, 31};
         Box<2, double> box({0, 0}, {10, 10});
         double Lx = box.getHigh(0);
         double Ly = box.getHigh(1);
@@ -198,10 +198,10 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
         timer tt;
         vx.setId(0);
         vy.setId(1);
-        int n = 100;
-        double dt = 1e-4;
+        int n = 50;
+        double dt = 1e-3;
         double tim=0;
-        double tf=1e-3;
+        double tf=1e-2;
         while (tim <= tf)
         {
             Particles.ghost_get<Polarization>();
@@ -396,7 +396,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
                    + 2 * u[x][y] * gama * nu * Pol[x] * Pol[y] / (Pol[x] * Pol[x] + Pol[y] * Pol[y]);
 
             Pos=Pos+dt*V;
-
+            tt.start();
             Derivative_x Dx(Particles, ord2, rCut2, sampling_factor2, support_options::RADIUS);
             Derivative_y Dy(Particles, ord2, rCut2, sampling_factor2, support_options::RADIUS);
             Derivative_xy Dxy(Particles, ord, rCut, sampling_factor, support_options::RADIUS);
@@ -405,6 +405,8 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
             Derivative_yy Dyy(Particles, ord, rCut, sampling_factor, support_options::RADIUS);
             Laplacian Lap(Particles, ord, rCut, sampling_factor, support_options::RADIUS);
             Divergence Div(Particles, ord2, rCut2, sampling_factor2, support_options::RADIUS);
+            tt.stop();
+            std::cout << "Updattion of operators took " << tt.getwct() << " seconds."<< std::endl;
 
             k1[x]=((h[x] * Pol[x] - h[y] * Pol[y]) / gama + lambda * delmu * Pol[x] -
                 nu * (u[x][x] * Pol[x] + u[x][y] * Pol[y]) + W[x][x] * Pol[x] + W[x][y] * Pol[y]);
