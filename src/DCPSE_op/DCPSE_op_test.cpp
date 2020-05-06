@@ -294,7 +294,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
         vx.setId(0);
         vy.setId(1);
         double sum=0,sum1=0;
-        int n=30;
+        int n=2;
 /*        auto Stokes1 = nu*Lap(V[x]) + 0.5*nu*(f1*Dxx(V[x])+Dx(f1)*Dx(V[x])) + (Dx(f2)*0.5*(Dx(V[y])+Dy(V[x])) + f2*0.5*(Dxx(V[y])+Dyx(V[x]))) + (Dx(f3)*Dy(V[y])+ f3*Dyx(V[y])) + (Dy(f4)*Dx(V[x])+f4*Dxy(V[x])) + (Dy(f5)*0.5*(Dx(V[y])+Dy(V[x]))+f5*0.5*(Dxy(V[y])+Dyy(V[x]))) + ( Dy(f6)*Dy(V[y])+f6*Dyy(V[y]) );
         auto Stokes2 = nu*Lap(V[y]) + 0.5*nu*(f1*Dxy(V[x])+Dy(f1)*Dx(V[x])) + (Dy(f2)*0.5*(Dx(V[y])+Dy(V[x])) + f2*0.5*(Dxy(V[y])+Dyy(V[x]))) + (Dy(f3)*Dy(V[y])+ f3*Dyy(V[y])) + (Dx(f4)*Dx(V[x])+f4*Dxx(V[x])) + (Dx(f5)*0.5*(Dx(V[y])+Dy(V[x]))+f5*0.5*(Dxx(V[y])+Dyx(V[x]))) + ( Dx(f6)*Dy(V[y])+f6*Dyx(V[y]) );
         auto Helmholtz = Lap(H);

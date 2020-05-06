@@ -399,12 +399,15 @@ public:
 
     void initializeUpdate(vector_type &particles)
     {
+        localEps.clear();
+        localCoefficients.clear();
         auto it = particles.getDomainIterator();
         while (it.isNext()) {
             // Get the points in the support of the DCPSE kernel and store the support for reuse
             //Support<dim, T, part_type> support = supportBuilder.getSupport(it, requiredSupportSize,opt);
             auto p = it.get();
             Support<dim, T, part_type> support = localSupports[p.getKey()];
+            support.RecomputeOffsets();
             EMatrix<T, Eigen::Dynamic, Eigen::Dynamic> V(support.size(), monomialBasis.size());
             // Vandermonde matrix computation
             Vandermonde<dim, T, EMatrix<T, Eigen::Dynamic, Eigen::Dynamic>>
@@ -413,7 +416,7 @@ public:
 
             T eps = vandermonde.getEps();
 
-            localSupports.push_back(support);
+            //localSupports.push_back(support);
             localEps.push_back(eps);
             // Compute the diagonal matrix E
             DcpseDiagonalScalingMatrix<dim> diagonalScalingMatrix(monomialBasis);

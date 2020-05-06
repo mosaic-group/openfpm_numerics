@@ -20,18 +20,18 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
     BOOST_AUTO_TEST_CASE(Active2DPetsc) {
         timer tt2;
         tt2.start();
-        const size_t sz[2] = {51, 51};
+        const size_t sz[2] = {81, 81};
         Box<2, double> box({0, 0}, {10, 10});
         double Lx = box.getHigh(0);
         double Ly = box.getHigh(1);
         size_t bc[2] = {NON_PERIODIC, NON_PERIODIC};
         double spacing = box.getHigh(0) / (sz[0] - 1);
-        double rCut = 4.1 * spacing;
-        double rCut2 = 4.1 * spacing;
-        int ord = 3;
-        double sampling_factor = 5;
-        int ord2 = 3;
-        double sampling_factor2 = 5;
+        double rCut = 3.6 * spacing;
+        double rCut2 = 3.6 * spacing;
+        int ord = 2;
+        double sampling_factor = 2.5;
+        int ord2 = 2;
+        double sampling_factor2 = 2.5;
         Ghost<2, double> ghost(2*rCut);
 /*                                          pol                             V         vort                 Ext    Press     strain       stress                      Mfield,   dPol                      dV         RHS                  f1     f2     f3    f4     f5     f6       H               V_t      div   H_t                                                                                      delmu */
         vector_dist<2, double, aggregate<VectorS<2, double>, VectorS<2, double>, double[2][2], VectorS<2, double>, double, double[2][2], double[2][2], VectorS<2, double>, VectorS<2, double>, VectorS<2, double>, VectorS<2, double>, double, double, double, double, double, double, double, VectorS<2, double>, double, double, double[2], double[2], double[2], double[2], double[2], double[2], double, VectorS<2, double>, VectorS<2, double>, VectorS<2, double>, VectorS<2, double>>> Particles(
@@ -131,8 +131,12 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
 
         Box<2, double> right({box.getHigh(0) - spacing / 2.0, box.getLow(1) + spacing / 2.0},
                              {box.getHigh(0) + spacing / 2.0, box.getHigh(1) - spacing / 2.0});
-        Box<2, double> mid({box.getHigh(0) / 2.0 - spacing, box.getHigh(1) / 2.0 - spacing / 2.0},
+        /*Box<2, double> mid({box.getHigh(0) / 2.0 - spacing, box.getHigh(1) / 2.0 - spacing / 2.0},
                            {box.getHigh(0) / 2.0, box.getHigh(1) / 2.0 + spacing / 2.0});
+*/
+        Box<2, double> mid({box.getLow(0)  + 3.1 * spacing,box.getLow(1)  + 3.1 * spacing},
+                           {box.getHigh(0) - 3.1 * spacing, box.getHigh(1) - 3.1 * spacing});
+
 
         openfpm::vector<Box<2, double>> boxes;
         boxes.add(up);
@@ -188,24 +192,13 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
         Derivative_xx Dxx(Particles, ord, rCut, sampling_factor, support_options::RADIUS);
         Derivative_yy Dyy(Particles, ord, rCut, sampling_factor, support_options::RADIUS);
 
-        std::cout<<"Dx"<<std::endl;
-        Dx.checkMomenta(Particles);
-        std::cout<<"Dy"<<std::endl;
-        Dy.checkMomenta(Particles);
-        std::cout<<"Dxy"<<std::endl;
-        Dxy.checkMomenta(Particles);
-        std::cout<<"Dxx"<<std::endl;
-        Dxx.checkMomenta(Particles);
-        std::cout<<"Dyy"<<std::endl;
-        Dyy.checkMomenta(Particles);
-
         petsc_solver<double> solverPetsc;
         solverPetsc.setSolver(KSPGMRES);
-        solverPetsc.setRestart(250);
+        //solverPetsc.setRestart(250);
         //solverPetsc.setPreconditioner(PCJACOBI);
         petsc_solver<double> solverPetsc2;
         solverPetsc2.setSolver(KSPGMRES);
-        solverPetsc2.setRestart(250);
+        //solverPetsc2.setRestart(250);
         /*solverPetsc2.setPreconditioner(PCJACOBI);
         solverPetsc2.setRelTol(1e-6);
         solverPetsc2.setAbsTol(1e-5);
@@ -216,7 +209,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
         timer tt3;
         vx.setId(0);
         vy.setId(1);
-        int n = 75;
+        int n = 50;
         int ctr = 0;
         double dt = 3e-3;
         double tim = 0;
@@ -396,6 +389,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
             W[y][y] = 0;
 
 
+
             Particles.write_frame("Polar_Petsc", ctr);
             ctr++;
 
@@ -404,6 +398,13 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
                    + 2 * u[x][y] * gama * nu * Pol[x] * Pol[y] / (Pol[x] * Pol[x] + Pol[y] * Pol[y]);
 
             Pos = Pos + dt * V;
+
+            /*for (int j = 0; j < ref_p.size(); j++) {
+                auto p = ref_p.get<0>(j);
+                Particles.getPos(p)[0] += dt*Particles.getProp<1>(p)[0];
+                Particles.getPos(p)[1] += dt*Particles.getProp<1>(p)[1];
+            }*/
+
             Particles.map();
             tt.start();
             Dx.update(Particles);
@@ -412,21 +413,12 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
             auto Dyx = Dxy;
             Dxx.update(Particles);
             Dyy.update(Particles);
-
-            std::cout<<"Dx"<<std::endl;
-            Dx.checkMomenta(Particles);
-            std::cout<<"Dy"<<std::endl;
-            Dy.checkMomenta(Particles);
-            std::cout<<"Dxy"<<std::endl;
-            Dxy.checkMomenta(Particles);
-            std::cout<<"Dxx"<<std::endl;
-            Dxx.checkMomenta(Particles);
-            std::cout<<"Dyy"<<std::endl;
-            Dyy.checkMomenta(Particles);
-
             tt.stop();
             std::cout << "Updation of operators took " << tt.getwct() << " seconds." << std::endl;
-            return;
+
+
+
+
 
             k1[x] = ((h[x] * Pol[x] - h[y] * Pol[y]) / gama + lambda * delmu * Pol[x] -
                      nu * (u[x][x] * Pol[x] + u[x][y] * Pol[y]) + W[x][x] * Pol[x] + W[x][y] * Pol[y]   -V[x]*Dx(Pol[x]) -V[y]*Dy(Pol[x]));

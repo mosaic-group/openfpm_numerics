@@ -1,6 +1,6 @@
 //
 // Created by tommaso on 29/03/19.
-//
+// Modified by Abhinav and Pietro
 
 #ifndef OPENFPM_PDATA_SUPPORT_HPP
 #define OPENFPM_PDATA_SUPPORT_HPP
@@ -20,7 +20,7 @@ private:
     const vector_dist<dim, T, Prop> &domain;
     const size_t referencePointKey;
     const std::vector<size_t> keys;
-    const std::vector<Point<dim, T>> offsets;
+    std::vector<Point<dim, T>> offsets;
 
 public:
     Support() {};
@@ -43,6 +43,9 @@ public:
 
     const std::vector<Point<dim, T>> &getOffsets() const;
 
+    std::vector<Point<dim, T>>
+    RecomputeOffsets();
+
 private:
     std::vector<Point<dim, T>>
     computeOffsets(const size_t referencePoint, const std::vector<size_t> &keys);
@@ -56,6 +59,20 @@ Support<dim, T, Prop>::computeOffsets(const size_t referencePoint, const std::ve
     for (auto &otherK : keys)
     {
         Point<dim, T> curOffset(domain.getPos(referencePoint));
+        curOffset -= domain.getPos(otherK);
+        offsets.push_back(curOffset);
+    }
+    return offsets;
+}
+
+template<unsigned int dim, typename T, typename Prop>
+std::vector<Point<dim, T>>
+Support<dim, T, Prop>::RecomputeOffsets()
+{
+    offsets.clear();
+    for (auto &otherK : keys)
+    {
+        Point<dim, T> curOffset(domain.getPos(referencePointKey));
         curOffset -= domain.getPos(otherK);
         offsets.push_back(curOffset);
     }

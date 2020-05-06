@@ -19,8 +19,8 @@ private:
     T eps;
 
 public:
-    Vandermonde(const Point<dim, T> &point, const std::vector<Point<dim, T>> &neighbours,
-                const MonomialBasis<dim> &monomialBasis);
+/*    Vandermonde(const Point<dim, T> &point, const std::vector<Point<dim, T>> &neighbours,
+                const MonomialBasis<dim> &monomialBasis);*/
 
     template<typename Prop>
     Vandermonde(const Support<dim, T, Prop> &support,
@@ -54,7 +54,7 @@ void Vandermonde<dim, T, MatrixType>::initialize()
     computeEps(2);
 }
 
-template<unsigned int dim, typename T, typename MatrixType>
+/*template<unsigned int dim, typename T, typename MatrixType>
 Vandermonde<dim, T, MatrixType>::Vandermonde(const Point<dim, T> &point, const std::vector<Point<dim, T>> &neighbours,
                                              const MonomialBasis<dim> &monomialBasis)
         : point(point),
@@ -62,7 +62,7 @@ Vandermonde<dim, T, MatrixType>::Vandermonde(const Point<dim, T> &point, const s
           monomialBasis(monomialBasis)
 {
     initialize();
-}
+}*/
 
 template<unsigned int dim, typename T, typename MatrixType>
 template<typename Prop>
