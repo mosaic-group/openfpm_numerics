@@ -15,7 +15,7 @@
 #include "EqnsStruct.hpp"
 BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
     BOOST_AUTO_TEST_CASE(dcpse_Kernels) {
-        const size_t sz[2] = {31,31};
+        const size_t sz[2] = {51,511};
         Box<2, double> box({0, 0}, {10,10});
         size_t bc[2] = {NON_PERIODIC, NON_PERIODIC};
         double spacing = box.getHigh(0) / (sz[0] - 1);

@@ -693,6 +693,14 @@ public:
     }
 
     template<typename particles_type>
+    void checkMomenta(particles_type &particles)
+    {
+        auto dcpse_temp = (Dcpse<particles_type::dims,particles_type> *)dcpse;
+        dcpse_temp-> checkMomenta(particles);
+
+    }
+
+    template<typename particles_type>
     void update(particles_type &particles)
     {
         auto dcpse_temp = (Dcpse<particles_type::dims,particles_type> *)dcpse;
@@ -744,12 +752,22 @@ public:
     }
 
     template<typename particles_type>
+    void checkMomenta(particles_type &particles)
+    {
+        auto dcpse_temp = (Dcpse<particles_type::dims,particles_type> *)dcpse;
+        dcpse_temp-> checkMomenta(particles);
+
+    }
+
+    template<typename particles_type>
     void update(particles_type &particles)
     {
         auto dcpse_temp = (Dcpse<particles_type::dims,particles_type> *)dcpse;
         dcpse_temp-> initializeUpdate(particles);
 
     }
+
+
 
 
 
@@ -785,6 +803,14 @@ public:
     {
         auto dcpse_temp = (Dcpse<particles_type::dims,particles_type> *)dcpse;
         dcpse_temp-> initializeUpdate(particles);
+
+    }
+
+    template<typename particles_type>
+    void checkMomenta(particles_type &particles)
+    {
+        auto dcpse_temp = (Dcpse<particles_type::dims,particles_type> *)dcpse;
+        dcpse_temp-> checkMomenta(particles);
 
     }
 
@@ -1124,6 +1150,14 @@ public:
     }
 
     template<typename particles_type>
+    void checkMomenta(particles_type &particles)
+    {
+        auto dcpse_temp = (Dcpse<particles_type::dims,particles_type> *)dcpse;
+        dcpse_temp-> checkMomenta(particles);
+
+    }
+
+    template<typename particles_type>
     void update(particles_type &particles)
     {
         auto dcpse_temp = (Dcpse<particles_type::dims,particles_type> *)dcpse;
@@ -1161,6 +1195,14 @@ public:
     }
 
     template<typename particles_type>
+    void checkMomenta(particles_type &particles)
+    {
+        auto dcpse_temp = (Dcpse<particles_type::dims,particles_type> *)dcpse;
+        dcpse_temp-> checkMomenta(particles);
+
+    }
+
+    template<typename particles_type>
     void update(particles_type &particles)
     {
         auto dcpse_temp = (Dcpse<particles_type::dims,particles_type> *)dcpse;
@@ -1195,6 +1237,14 @@ public:
         typedef Dcpse<operand_type::vtype::dims,typename operand_type::vtype> dcpse_type;
 
         return vector_dist_expression_op<operand_type,dcpse_type,VECT_DCPSE>(arg,*(dcpse_type *)dcpse);
+    }
+
+    template<typename particles_type>
+    void checkMomenta(particles_type &particles)
+    {
+        auto dcpse_temp = (Dcpse<particles_type::dims,particles_type> *)dcpse;
+        dcpse_temp-> checkMomenta(particles);
+
     }
 
     template<typename particles_type>
