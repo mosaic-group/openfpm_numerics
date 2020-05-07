@@ -9,11 +9,6 @@
 #define OPENFPM_NUMERICS_SRC_FINITEDIFFERENCE_AVERAGE_HPP_
 
 
-#define CENTRAL 0
-#define CENTRAL_B_ONE_SIDE 1
-#define FORWARD 2
-#define BACKWARD 3
-
 #include "util/mathutil.hpp"
 #include "Vector/map_vector.hpp"
 #include "Grid/comb.hpp"

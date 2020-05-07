@@ -7,250 +7,241 @@
 
 #ifndef FD_OP_HPP_
 #define FD_OP_HPP_
-#include "Derivative.hpp"
-#include "eq.hpp"
 #include "util/common.hpp"
+#include "FD_expressions.hpp"
 
-#include "Operators/Vector/vector_dist_operators.hpp"
-
-
-template <typename exp1,typename FD_type>
-class vector_dist_expression_op<exp1,FD_type,VECT_FD>
+namespace FD
 {
-    //! expression 1
-    const exp1 o1;
+	constexpr int CENTRAL = 0;
+	constexpr int CENTRAL_ONE_SIDE_FORWARD = 1;
+	constexpr int CENTRAL_ONE_SIDE_BACKWARD = 2;
 
-    FD_type & fd;
 
-public:
+	template<unsigned int dir, unsigned int ord, unsigned int impl>
+	struct Derivative_impl
+	{
+		template<typename rtype,typename expr_type>
+		static rtype calculate(expr_type & o1, grid_dist_key_dx<expr_type::gtype::dims> & key)
+		{
+			std::cerr << __FILE__ << ":" << __LINE__ << " Error derivative order: " << ord << " have not been implemented yet" << std::endl;
+		}
+	};
 
-    typedef typename exp1::vtype vtype;
+	template<unsigned int dir>
+	struct Derivative_impl<dir,2,CENTRAL>
+	{
+		template<typename rtype,typename expr_type>
+		static inline rtype calculate(expr_type & o1, grid_dist_key_dx<expr_type::gtype::dims> & key)
+		{
+			rtype ret;
 
-    //! Costruct a FD expression out of two expressions
-    inline vector_dist_expression_op(const exp1 & o1, FD_type & fd)
-            :o1(o1),fd(fd)
-    {}
+			long int old_val = key.getKeyRef().get(dir);
+			key.getKeyRef().set_d(dir, old_val + 1);
+			ret = o1.value(key)*1.0/o1.getGrid().spacing(dir)/2.0;
+			key.getKeyRef().set_d(dir,old_val);
 
-    /*! \brief This function must be called before value
-    *
-    * it initialize the expression if needed
-    *
-     */
-    inline void init() const
-    {
-        o1.init();
-    }
 
-    /*! \brief Evaluate the expression
-     *
-     * \param key where to evaluate the expression
-     *
-     * \return the result of the expression
-     *
-     */
-    template<typename r_type=typename std::remove_reference<decltype(o1.value(vect_dist_key_dx()))>::type > inline r_type value(const vect_dist_key_dx & key) const
-    {
-        return fd.computeDerivative(key,o1);
-    }
+			old_val = key.getKeyRef().get(dir);
+			key.getKeyRef().set_d(dir, old_val - 1);
+			ret += o1.value(key)*(-1.0/o1.getGrid().spacing(dir)/2.0 );
+			key.getKeyRef().set_d(dir,old_val);
 
-    /*! \brief Return the vector on which is acting
-     *
-     * It return the vector used in getVExpr, to get this object
-     *
-     * \return the vector
-     *
-     */
-    vtype & getVector()
-    {
-        return o1.getVector();
-    }
+			return ret;
+		}
+	};
 
-    /*! \brief Return the vector on which is acting
-    *
-    * It return the vector used in getVExpr, to get this object
-    *
-    * \return the vector
-    *
-    */
-    const vtype & getVector() const
-    {
-        return o1.getVector();
-    }
+	enum one_side_direction
+	{
+		OS_CENTRAL,
+		OS_FORWARD,
+		OS_BACKWARD,
+	};
+
+	template<typename gtype, typename key_type>
+	one_side_direction use_one_side(gtype & g, unsigned int dir, key_type & key)
+	{
+		if (g.getDecomposition().periodicity()[dir] == true)
+		{
+			return one_side_direction::OS_CENTRAL;
+		}
+
+		auto keyg = g.getGKey(key);
+		if (keyg.get(dir) == 0)
+		{
+			return one_side_direction::OS_FORWARD;
+		}
+		else if (keyg.get(dir) == g.getGridInfoVoid().size(dir) - 1)
+		{
+			return one_side_direction::OS_BACKWARD;
+		}
+
+		return one_side_direction::OS_CENTRAL;
+	}
+
+	template<unsigned int dir>
+	struct Derivative_impl<dir,2,CENTRAL_ONE_SIDE_FORWARD>
+	{
+		template<typename rtype,typename expr_type>
+		static inline rtype calculate(expr_type & o1, grid_dist_key_dx<expr_type::gtype::dims> & key)
+		{
+			rtype ret;
+
+			ret = o1.value(key)*(-3.0/o1.getGrid().spacing(dir)/2.0);
+
+			long int old_val = key.getKeyRef().get(dir);
+			key.getKeyRef().set_d(dir, old_val + 1);
+			ret += o1.value(key)*2.0/o1.getGrid().spacing(dir);
+			key.getKeyRef().set_d(dir,old_val);
+
+
+			old_val = key.getKeyRef().get(dir);
+			key.getKeyRef().set_d(dir, old_val + 2);
+			ret += o1.value(key)*(-0.5/o1.getGrid().spacing(dir) );
+			key.getKeyRef().set_d(dir,old_val);
+
+			return ret;
+		}
+	};
+
+	template<unsigned int dir>
+	struct Derivative_impl<dir,2,CENTRAL_ONE_SIDE_BACKWARD>
+	{
+		template<typename rtype,typename expr_type>
+		static inline rtype calculate(expr_type & o1, grid_dist_key_dx<expr_type::gtype::dims> & key)
+		{
+			rtype ret;
+
+			ret = o1.value(key)*(3.0/o1.getGrid().spacing(dir)/2.0);
+
+			long int old_val = key.getKeyRef().get(dir);
+			key.getKeyRef().set_d(dir, old_val - 1);
+			ret += o1.value(key)*(-2.0/o1.getGrid().spacing(dir));
+			key.getKeyRef().set_d(dir,old_val);
+
+
+			old_val = key.getKeyRef().get(dir);
+			key.getKeyRef().set_d(dir, old_val - 2);
+			ret += o1.value(key)*0.5/o1.getGrid().spacing(dir);
+			key.getKeyRef().set_d(dir,old_val);
+
+			return ret;
+		}
+	};
+
+	template<unsigned dir_, unsigned int ord_, unsigned int impl_>
+	struct GRID_DERIVATIVE
+	{
+		typedef boost::mpl::int_<dir_> dir;
+		typedef boost::mpl::int_<ord_> ord;
+		typedef boost::mpl::int_<impl_> impl;
+	};
+
+	template <typename exp1, unsigned int dir, unsigned int ord, unsigned int impl>
+	class grid_dist_expression_op<exp1,void,GRID_DERIVATIVE<dir,ord,impl> >
+	{
+		//! expression 1
+		const exp1 o1;
+
+	public:
+
+		typedef typename exp1::gtype gtype;
+
+		//! Costruct a FD expression out of two expressions
+		inline grid_dist_expression_op(const exp1 & o1)
+				:o1(o1)
+		{}
+
+		/*! \brief This function must be called before value
+		*
+		* it initialize the expression if needed
+		*
+		 */
+		inline void init() const
+		{
+			o1.init();
+		}
+
+		/*! \brief Evaluate the expression
+		 *
+		 * \param key where to evaluate the expression
+		 *
+		 * \return the result of the expression
+		 *
+		 */
+		template<typename r_type=typename std::remove_reference<decltype(o1.value(grid_dist_key_dx<gtype::dims>()))>::type >
+		inline r_type value(grid_dist_key_dx<gtype::dims> & key) const
+		{
+			r_type val;
+
+			if (key.getKeyRef().get(0) == 1 && key.getKeyRef().get(1) == 63)
+			{
+				int debug= 0;
+				debug++;
+			}
+
+			one_side_direction os = use_one_side(getGrid(),dir,key);
+
+			if (os == one_side_direction::OS_CENTRAL)
+			{
+				val = Derivative_impl<dir,ord,impl>::template calculate<r_type>(o1,key);
+			}
+			else if (os == one_side_direction::OS_FORWARD)
+			{
+				val = Derivative_impl<dir,ord,impl+1>::template calculate<r_type>(o1,key);
+			}
+			else
+			{
+				val = Derivative_impl<dir,ord,impl+2>::template calculate<r_type>(o1,key);
+			}
+
+			return val;
+		}
+
+		/*! \brief Return the vector on which is acting
+		 *
+		 * It return the vector used in getVExpr, to get this object
+		 *
+		 * \return the vector
+		 *
+		 */
+		gtype & getGrid()
+		{
+			return o1.getGrid();
+		}
+
+		/*! \brief Return the vector on which is acting
+		*
+		* It return the vector used in getVExpr, to get this object
+		*
+		* \return the vector
+		*
+		*/
+		const gtype & getGrid() const
+		{
+			return o1.getGrid();
+		}
+	};
+
+
+	template<unsigned int dir, unsigned int ord, unsigned int impl>
+	class Derivative
+	{
+
+	public:
+
+		Derivative()
+		{
+		}
+
+		template<typename operand_type>
+		grid_dist_expression_op<operand_type,void,GRID_DERIVATIVE<dir,ord,impl>> operator()(operand_type arg)
+		{
+			return grid_dist_expression_op<operand_type,void,GRID_DERIVATIVE<dir,ord,impl>>(arg);
+		}
+	};
+
+	typedef Derivative<0,2,CENTRAL> Derivative_x;
 };
-
-class Derivative_x
-{
-
-    void * fd;
-
-public:
-
-    template<typename particles_type>
-    Derivative_x(particles_type & parts)
-    {
-        fd = new Fd<particles_type::dims,particles_type>(parts);
-
-    }
-
-    template<typename operand_type>
-
-    vector_dist_expression_op<operand_type,Fd<operand_type::vtype::dims,typename operand_type::vtype>,VECT_FD> operator()(operand_type arg)
-    {
-        typedef Fd<operand_type::vtype::dims,typename operand_type::vtype> fd_type;
-
-        return vector_dist_expression_op<operand_type,dcpse_type,VECT_FD>(arg,*(fd_type *)fd);
-    }
-};
-
-
-
-
-
-
-
-
-
-
-
-
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-
-
-
-
-template<typename operand_type>
-class Lap_node
-{
-    operand_type arg;
-
-public:
-
-    typedef int it_is_a_node;
-
-    Lap_node(operand_type & arg)
-            :arg(arg)
-    {}
-};
-
-class Lap
-{
-public:
-
-    template<typename operand_type>
-    Lap_node<operand_type> operator()(operand_type arg)
-    {
-        return Lap_node<operand_type>(arg);
-    }
-};
-
-
-
-template<typename operand_type1, typename operand_type2>
-class plus
-{
-    operand_type1 op1;
-    operand_type2 op2;
-
-public:
-
-    typedef int it_is_a_node;
-
-    plus(const operand_type1 & op1, const operand_type2 & op2)
-            :op1(op1),op2(op2)
-    {}
-
-    void value()
-    {
-        //op1.value() + op.value;
-    }
-
-};
-
-class Field
-{
-    typedef int it_is_a_node;
-
-    void value()
-    {
-        // add non zero
-    }
-};
-
-
-/*template <typename exp1,typename FD_type>
-class vector_dist_expression_op<exp1,DCPSE_type,VECT_FD_V>
-{
-    //! expression 1
-    const exp1 o1;
-
-    FD_type (& fd)[FD_type::vtype::dims];
-
-    static const int dims = FD_type::vtype::dims;
-    typedef typename FD_type::vtype::stype stype;
-
-public:
-
-    typedef typename exp1::vtype vtype;
-
-    //! Costruct a subtraction expression out of two expressions
-    inline vector_dist_expression_op(const exp1 & o1, FD_type (& fd)[FD_type::vtype::dims])
-            :o1(o1),dcp(dcp)
-    {}
-
-    *//*! \brief This function must be called before value
-     *
-     * it initialize the expression if needed
-     *
-     *//*
-    inline void init() const
-    {
-        o1.init();
-    }
-
-    *//*! \brief Evaluate the expression
-     *
-     * \param key where to evaluate the expression
-     *
-     * \return the result of the expression
-     *
-     *//*
-    template<typename r_type=VectorS<dims,stype> > inline r_type value(const vect_dist_key_dx & key) const
-    {
-       VectorS<dims,stype> v_grad;
-
-       for (int i = 0 ; i < dims ; i++)
-       {
-           v_grad.get(i) = fd[i].computeDifferentialOperator(key,o1);
-       }
-
-        return v_grad;
-    }
-     *//*! \brief Return the vector on which is acting
-      *
-      * It return the vector used in getVExpr, to get this object
-      *
-      * \return the vector
-      *
-      *//*
-    vtype & getVector()
-    {
-        return o1.getVector();
-    }
-
-    *//*! \brief Return the vector on which is acting
-    *
-    * It return the vector used in getVExpr, to get this object
-    *
-    * \return the vector
-    *
-    *//*
-    const vtype & getVector() const
-    {
-        return o1.getVector();
-    }
-
-};*/
 
 
 #endif

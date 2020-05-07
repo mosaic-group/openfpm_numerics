@@ -8,7 +8,8 @@
 #ifndef OPENFPM_NUMERICS_SRC_FINITEDIFFERENCE_FDSCHEME_HPP_
 #define OPENFPM_NUMERICS_SRC_FINITEDIFFERENCE_FDSCHEME_HPP_
 
-#include "../Matrix/SparseMatrix.hpp"
+#include "Matrix/SparseMatrix.hpp"
+#include "Vector/Vector.hpp"
 #include "Grid/grid_dist_id.hpp"
 #include "Grid/Iterators/grid_dist_id_iterator_sub.hpp"
 #include "eq.hpp"
@@ -17,6 +18,7 @@
 #include "Grid/grid_dist_id.hpp"
 #include "Vector/Vector_util.hpp"
 #include "Grid/staggered_dist_grid.hpp"
+
 
 /*! \brief Finite Differences
  *
