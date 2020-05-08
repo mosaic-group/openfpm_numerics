@@ -48,7 +48,7 @@ struct no_equation
 BOOST_AUTO_TEST_SUITE(fd_op_suite_tests)
 
     BOOST_AUTO_TEST_CASE(fd_op_tests) {
-        size_t edgeSemiSize = 40;
+        size_t edgeSemiSize = 80;
         const size_t sz[2] = {2 * edgeSemiSize+1, 2 * edgeSemiSize+1};
         Box<2, double> box({0, 0}, {2 * M_PI, 2 * M_PI});
         periodicity<2> bc({NON_PERIODIC, NON_PERIODIC});
@@ -73,19 +73,21 @@ BOOST_AUTO_TEST_SUITE(fd_op_suite_tests)
             double y = j * spacing[1];
             // Here fill the function value P
             domain.template getProp<0>(key_l) = sin(x) + sin(y);
+            domain.template getProp<1>(key_l) = 0;
             // Here fill the validation value for Df/Dx in property 3
-            domain.template getProp<2>(key_l) = cos(x);
+            domain.template getProp<2>(key_l) = cos(y);
             ++it;
         }
 
         domain.ghost_get<0>();
 
         FD::Derivative_x Dx;
+        FD::Derivative_y Dy;
 
         auto v = FD::getV<1>(domain);
         auto P = FD::getV<0>(domain);
 
-        v = Dx(P);
+        v = Dx(P)+Dy(P) ;
         auto it2 = domain.getDomainIterator();
 
         double worst = 0.0;

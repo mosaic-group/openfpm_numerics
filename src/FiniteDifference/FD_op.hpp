@@ -241,6 +241,8 @@ namespace FD
 	};
 
 	typedef Derivative<0,2,CENTRAL> Derivative_x;
+    typedef Derivative<1,2,CENTRAL> Derivative_y;
+
 };
 
 
