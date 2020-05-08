@@ -58,6 +58,9 @@ private:
     std::vector<T> localEps; // Each MPI rank has just access to the local ones
 
     vector_type & particles;
+    T rCut;
+    unsigned int convergenceOrder;
+    T supportSizeFactor;
 
     support_options opt;
 
@@ -77,6 +80,9 @@ public:
             monomialBasis(differentialSignature.asArray(), convergenceOrder),
             opt(opt)
             {
+
+
+
         if (supportSizeFactor < 1) {
             initializeAdaptive(particles, convergenceOrder, rCut);
         } else {
@@ -401,13 +407,17 @@ public:
     {
         localEps.clear();
         localCoefficients.clear();
+        SupportBuilder<vector_type>
+                supportBuilder(particles, differentialSignature, rCut);
+        unsigned int requiredSupportSize = monomialBasis.size() * supportSizeFactor;
+
         auto it = particles.getDomainIterator();
         while (it.isNext()) {
             // Get the points in the support of the DCPSE kernel and store the support for reuse
             //Support<dim, T, part_type> support = supportBuilder.getSupport(it, requiredSupportSize,opt);
-            auto p = it.get();
-            Support<dim, T, part_type> support = localSupports[p.getKey()];
-            support.RecomputeOffsets();
+            Support<dim, T, part_type> support = supportBuilder.getSupport(it, requiredSupportSize,opt);
+            /*Support<dim, T, part_type> support = localSupports[p.getKey()];
+            support.RecomputeOffsets();*/
             EMatrix<T, Eigen::Dynamic, Eigen::Dynamic> V(support.size(), monomialBasis.size());
             // Vandermonde matrix computation
             Vandermonde<dim, T, EMatrix<T, Eigen::Dynamic, Eigen::Dynamic>>
@@ -506,6 +516,10 @@ private:
                               unsigned int convergenceOrder,
                               T rCut,
                               T supportSizeFactor) {
+
+        this->rCut=rCut;
+        this->supportSizeFactor=supportSizeFactor;
+        this->convergenceOrder=convergenceOrder;
         SupportBuilder<vector_type>
                 supportBuilder(particles, differentialSignature, rCut);
         unsigned int requiredSupportSize = monomialBasis.size() * supportSizeFactor;
