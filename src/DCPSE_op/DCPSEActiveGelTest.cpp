@@ -20,7 +20,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
     BOOST_AUTO_TEST_CASE(Active2DPetsc) {
         timer tt2;
         tt2.start();
-        const size_t sz[2] = {81, 81};
+        const size_t sz[2] = {41, 41};
         Box<2, double> box({0, 0}, {10, 10});
         double Lx = box.getHigh(0);
         double Ly = box.getHigh(1);
@@ -415,36 +415,36 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
 
 
             k1[x] = ((h[x] * Pol[x] - h[y] * Pol[y]) / gama + lambda * delmu * Pol[x] -
-                     nu * (u[x][x] * Pol[x] + u[x][y] * Pol[y]) + W[x][x] * Pol[x] + W[x][y] * Pol[y]   -V[x]*Dx(Pol[x]) -V[y]*Dy(Pol[x]));
+                     nu * (u[x][x] * Pol[x] + u[x][y] * Pol[y]) + W[x][x] * Pol[x] + W[x][y] * Pol[y] );//  -V[x]*Dx(Pol[x]) -V[y]*Dy(Pol[x]));
             k1[y] = ((h[x] * Pol[y] - h[y] * Pol[x]) / gama + lambda * delmu * Pol[y] -
-                     nu * (u[y][x] * Pol[x] + u[y][y] * Pol[y]) + W[y][x] * Pol[x] + W[y][y] * Pol[y]   -V[x]*Dx(Pol[y]) -V[y]*Dy(Pol[y]));
+                     nu * (u[y][x] * Pol[x] + u[y][y] * Pol[y]) + W[y][x] * Pol[x] + W[y][y] * Pol[y]  );// -V[x]*Dx(Pol[y]) -V[y]*Dy(Pol[y]));
 
             k2[x] = ((h[x] * 0.5 * dt * k1[x] * Pol[x] - h[y] * 0.5 * dt * k1[y] * Pol[y]) / gama +
                      lambda * delmu * 0.5 * dt * k1[x] * Pol[x] -
                      nu * (u[x][x] * 0.5 * dt * k1[x] * Pol[x] + u[x][y] * 0.5 * dt * k1[y] * Pol[y]) +
-                     W[x][x] * 0.5 * dt * k1[x] * Pol[x] + W[x][y] * 0.5 * dt * k1[y] * Pol[y]   -V[x]*Dx(0.5 * dt * k1[x]*Pol[x]) -V[y]*Dy(0.5 * dt * k1[x]*Pol[x]));
+                     W[x][x] * 0.5 * dt * k1[x] * Pol[x] + W[x][y] * 0.5 * dt * k1[y] * Pol[y]  );// -V[x]*Dx(0.5 * dt * k1[x]*Pol[x]) -V[y]*Dy(0.5 * dt * k1[x]*Pol[x]));
             k2[y] = ((h[x] * 0.5 * dt * k1[y] * Pol[y] - h[y] * 0.5 * dt * k1[x] * Pol[x]) / gama +
                      lambda * delmu * 0.5 * dt * k1[y] * Pol[y] -
                      nu * (u[y][x] * 0.5 * dt * k1[x] * Pol[x] + u[y][y] * 0.5 * dt * k1[y] * Pol[y]) +
-                     W[y][x] * 0.5 * dt * k1[x] * Pol[x] + W[y][y] * 0.5 * dt * k1[y] * Pol[y]   -V[x]*Dx(0.5 * dt * k1[y]*Pol[y]) -V[y]*Dy(0.5 * dt * k1[y]*Pol[y]));
+                     W[y][x] * 0.5 * dt * k1[x] * Pol[x] + W[y][y] * 0.5 * dt * k1[y] * Pol[y] );//  -V[x]*Dx(0.5 * dt * k1[y]*Pol[y]) -V[y]*Dy(0.5 * dt * k1[y]*Pol[y]));
 
             k3[x] = ((h[x] * 0.5 * dt * k2[x] * Pol[x] - h[y] * 0.5 * dt * k2[y] * Pol[y]) / gama +
                      lambda * delmu * 0.5 * dt * k2[x] * Pol[x] -
                      nu * (u[x][x] * 0.5 * dt * k2[x] * Pol[x] + u[x][y] * 0.5 * dt * k2[y] * Pol[y]) +
-                     W[x][x] * 0.5 * dt * k2[x] * Pol[x] + W[x][y] * 0.5 * dt * k2[y] * Pol[y]   -V[x]*Dx(0.5 * dt * k2[x]*Pol[x]) -V[y]*Dy(0.5 * dt * k2[x]*Pol[x]));
+                     W[x][x] * 0.5 * dt * k2[x] * Pol[x] + W[x][y] * 0.5 * dt * k2[y] * Pol[y]  );// -V[x]*Dx(0.5 * dt * k2[x]*Pol[x]) -V[y]*Dy(0.5 * dt * k2[x]*Pol[x]));
             k3[y] = ((h[x] * 0.5 * dt * k2[y] * Pol[y] - h[y] * 0.5 * dt * k2[x] * Pol[x]) / gama +
                      lambda * delmu * 0.5 * dt * k2[y] * Pol[y] -
                      nu * (u[y][x] * 0.5 * dt * k2[x] * Pol[x] + u[y][y] * 0.5 * dt * k2[y] * Pol[y]) +
-                     W[y][x] * 0.5 * dt * k2[x] * Pol[x] + W[y][y] * 0.5 * dt * k2[y] * Pol[y]   -V[x]*Dx(0.5 * dt * k2[y]*Pol[y]) -V[y]*Dy(0.5 * dt * k2[y]*Pol[y]));
+                     W[y][x] * 0.5 * dt * k2[x] * Pol[x] + W[y][y] * 0.5 * dt * k2[y] * Pol[y]  );//  -V[x]*Dx(0.5 * dt * k2[y]*Pol[y]) -V[y]*Dy(0.5 * dt * k2[y]*Pol[y]));
 
             k4[x] = ((h[x] * dt * k3[x] * Pol[x] - h[y] * dt * k3[y] * Pol[y]) / gama +
                      lambda * delmu * dt * k3[x] * Pol[x] -
                      nu * (u[x][x] * dt * k3[x] * Pol[x] + u[x][y] * dt * k3[y] * Pol[y]) +
-                     W[x][x] * dt * k3[x] * Pol[x] + W[x][y] * dt * k3[y] * Pol[y]    -V[x]*Dx( dt * k3[x]*Pol[x]) -V[y]*Dy( dt * k3[x]*Pol[x]));
+                     W[x][x] * dt * k3[x] * Pol[x] + W[x][y] * dt * k3[y] * Pol[y]  );//   -V[x]*Dx( dt * k3[x]*Pol[x]) -V[y]*Dy( dt * k3[x]*Pol[x]));
             k4[y] = ((h[x] * dt * k3[y] * Pol[y] - h[y] * dt * k3[x] * Pol[x]) / gama +
                      lambda * delmu * dt * k3[y] * Pol[y] -
                      nu * (u[y][x] * dt * k3[x] * Pol[x] + u[y][y] * dt * k3[y] * Pol[y]) +
-                     W[y][x] * dt * k3[x] * Pol[x] + W[y][y] * dt * k3[y] * Pol[y]    -V[x]*Dx( dt * k3[y]*Pol[y]) -V[y]*Dy( dt * k3[y]*Pol[y]));
+                     W[y][x] * dt * k3[x] * Pol[x] + W[y][y] * dt * k3[y] * Pol[y] );//   -V[x]*Dx( dt * k3[y]*Pol[y]) -V[y]*Dy( dt * k3[y]*Pol[y]));
 
             Pol = Pol + (dt / 6.0) * (k1 + (2.0 * k2) + (2.0 * k3) + k4);
 
