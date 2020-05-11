@@ -693,10 +693,10 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
         Derivative_y Dy(Particles, ord, rCut, sampling_factor, support_options::RADIUS), Bulk_Dy(Particles_subset, ord2, rCut2, sampling_factor2, support_options::RADIUS);
         Derivative_xy Dxy(Particles, ord, rCut, sampling_factor, support_options::RADIUS);
         auto Dyx = Dxy;
-        Derivative_xx Dxx(Particles, ord, rCut, sampling_factor, support_options::RADIUS),Bulk_Dxx(Particles_subset, ord2, rCut2, sampling_factor2, support_options::RADIUS);
-        Derivative_yy Dyy(Particles, ord, rCut, sampling_factor, support_options::RADIUS),Bulk_Dyy(Particles_subset, ord2, rCut2, sampling_factor2, support_options::RADIUS);
+        Derivative_xx Dxx(Particles, ord, rCut, sampling_factor, support_options::RADIUS);//,Bulk_Dxx(Particles_subset, ord2, rCut2, sampling_factor2, support_options::RADIUS);
+        Derivative_yy Dyy(Particles, ord, rCut, sampling_factor, support_options::RADIUS);//,Bulk_Dyy(Particles_subset, ord2, rCut2, sampling_factor2, support_options::RADIUS);
 
-       /* Derivative_x Dx(Particles, ord, rCut, sampling_factor), Bulk_Dx(Particles_subset, ord, rCut, sampling_factor2);
+        /*Derivative_x Dx(Particles, ord, rCut, sampling_factor), Bulk_Dx(Particles_subset, ord, rCut, sampling_factor2);
         Derivative_y Dy(Particles, ord, rCut, sampling_factor), Bulk_Dy(Particles_subset, ord, rCut, sampling_factor2);
         Derivative_xy Dxy(Particles, ord2, rCut2, sampling_factor2);
         auto Dyx = Dxy;
@@ -715,10 +715,10 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
         timer tt3;
         vx.setId(0);
         vy.setId(1);
-        double V_err_eps = 1e-5;
+        double V_err_eps = 5e-4;
         double V_err=1,V_err_old;
         int n=0;
-        int nmax=75;
+        int nmax=300;
         int ctr = 0,errctr;
         double dt = 2e-7;
         double tim = 0;
@@ -863,48 +863,49 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
                 Particles.ghost_get<17>();
                 Particles.ghost_get<Velocity>();
 
-                for (int i = 0 ; i < bulk.size() ; i++) {
+
+
+                /*for (int i = 0 ; i < bulk.size() ; i++) {
                     Particles_subset.getProp<1>(i) = Particles.template getProp<17>(bulk.template get<0>(i));
                 }
                 Grad_bulk[x]=alpha_V*Bulk_Dx(H_bulk);
-                Grad_bulk[y]=alpha_V*Bulk_Dy(H_bulk);
+                Grad_bulk[y]=alpha_V*Bulk_Dy(H_bulk);*/
                 P=P+div;
-
                 for (int i = 0 ; i < bulk.size() ; i++) {
-                    Particles.template getProp<1>(bulk.template get<0>(i))[x] += Particles_subset.getProp<2>(i)[x];
-                    Particles.template getProp<1>(bulk.template get<0>(i))[y] += Particles_subset.getProp<2>(i)[y];
+                    /*Particles.template getProp<1>(bulk.template get<0>(i))[x] += Particles_subset.getProp<2>(i)[x];
+                    Particles.template getProp<1>(bulk.template get<0>(i))[y] += Particles_subset.getProp<2>(i)[y];*/
                     Particles_subset.getProp<0>(i) = Particles.template getProp<4>(bulk.template get<0>(i));
                 }
-                //V[x] = V[x] + Dx(H);
-                //V[y] = V[y] + Dy(H);
+                V[x] = V[x] + Dx(H);
+                V[y] = V[y] + Dy(H);
                 //P = P + 1.0*(Dxx(H)+Dyy(H));
                 //P = P -(Dx(V[x])+Dy(V[y]));
                 //V[x] = 2*V[x];
                 //V[y] = 2*V[y];
                 for (int j = 0; j < up_p.size(); j++) {
                     auto p = up_p.get<0>(j);
-                    //Particles.getProp<1>(p)[0] = 0;
-                    //Particles.getProp<1>(p)[1] = 0;
+                    Particles.getProp<1>(p)[0] = 0;
+                    Particles.getProp<1>(p)[1] = 0;
                     Particles.getProp<4>(p) = 0;
 
                 }
                 for (int j = 0; j < dw_p.size(); j++) {
                     auto p = dw_p.get<0>(j);
-                    //Particles.getProp<1>(p)[0] = 0;
-                    //Particles.getProp<1>(p)[1] = 0;
+                    Particles.getProp<1>(p)[0] = 0;
+                    Particles.getProp<1>(p)[1] = 0;
                     Particles.getProp<4>(p) = 0;
                 }
                 for (int j = 0; j < l_p.size(); j++) {
                     auto p = l_p.get<0>(j);
-                    //Particles.getProp<1>(p)[0] = 0;
-                    //Particles.getProp<1>(p)[1] = 0;
+                    Particles.getProp<1>(p)[0] = 0;
+                    Particles.getProp<1>(p)[1] = 0;
                     Particles.getProp<4>(p) = 0;
                 }
                 for (int j = 0; j < r_p.size(); j++) {
                     auto p = r_p.get<0>(j);
-                    //Particles.getProp<1>(p)[0] = 0;
-                    //Particles.getProp<1>(p)[1] = 0;
-                     Particles.getProp<4>(p) = 0;
+                    Particles.getProp<1>(p)[0] = 0;
+                    Particles.getProp<1>(p)[1] = 0;
+                    Particles.getProp<4>(p) = 0;
                 }
                 Particles.ghost_get<Velocity>();
                 Particles.ghost_get<Pressure>();
@@ -970,6 +971,8 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
             auto Dyx = Dxy;
             Dxx.update(Particles);
             Dyy.update(Particles);
+            Bulk_Dx.update(Particles_subset);
+            Bulk_Dy.update(Particles_subset);
             tt.stop();
             std::cout << "Updation of operators took " << tt.getwct() << " seconds." << std::endl;
 
@@ -1580,8 +1583,8 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
         Derivative_y Dy(Particles, ord, rCut, sampling_factor, support_options::RADIUS), Bulk_Dy(Particles_subset, ord2, rCut2, sampling_factor2, support_options::RADIUS);
         Derivative_xy Dxy(Particles, ord, rCut, sampling_factor, support_options::RADIUS);
         auto Dyx = Dxy;
-        Derivative_xx Dxx(Particles, ord, rCut, sampling_factor, support_options::RADIUS),Bulk_Dxx(Particles_subset, ord2, rCut2, sampling_factor2, support_options::RADIUS);
-        Derivative_yy Dyy(Particles, ord, rCut, sampling_factor, support_options::RADIUS),Bulk_Dyy(Particles_subset, ord2, rCut2, sampling_factor2, support_options::RADIUS);
+        Derivative_xx Dxx(Particles, ord, rCut, sampling_factor, support_options::RADIUS);//,Bulk_Dxx(Particles_subset, ord2, rCut2, sampling_factor2, support_options::RADIUS);
+        Derivative_yy Dyy(Particles, ord, rCut, sampling_factor, support_options::RADIUS);//,Bulk_Dyy(Particles_subset, ord2, rCut2, sampling_factor2, support_options::RADIUS);
 
         petsc_solver<double> solverPetsc;
         solverPetsc.setSolver(KSPGMRES);
