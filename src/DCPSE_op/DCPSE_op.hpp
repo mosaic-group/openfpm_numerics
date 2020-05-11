@@ -1202,6 +1202,14 @@ public:
 
     }
 
+    template<unsigned int prp, typename particles_type>
+    void DrawKernel(particles_type &particles,int k)
+    {
+        auto dcpse_temp = (Dcpse<particles_type::dims,particles_type> *)dcpse;
+        dcpse_temp->template DrawKernel<prp>(particles,k);
+
+    }
+
     template<typename particles_type>
     void update(particles_type &particles)
     {
@@ -1244,6 +1252,14 @@ public:
     {
         auto dcpse_temp = (Dcpse<particles_type::dims,particles_type> *)dcpse;
         dcpse_temp-> checkMomenta(particles);
+
+    }
+
+    template<unsigned int prp, typename particles_type>
+    void DrawKernel(particles_type &particles,int k)
+    {
+        auto dcpse_temp = (Dcpse<particles_type::dims,particles_type> *)dcpse;
+        dcpse_temp->template DrawKernel<prp>(particles,k);
 
     }
 

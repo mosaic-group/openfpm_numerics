@@ -19,12 +19,12 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
         Box<2, double> box({0, 0}, {10,10});
         size_t bc[2] = {NON_PERIODIC, NON_PERIODIC};
         double spacing = box.getHigh(0) / (sz[0] - 1);
-        double rCut =spacing*(3.1);
+        double rCut = 3.1* spacing;
         double ord = 2;
         double sampling = 1.9;
         double rCut2 = 3.1*spacing;
-        double ord2 = 2;
-        double sampling2 = 1.9;
+        double ord2 = 1;
+        double sampling2 = 1.2;
 
         double sigma2 = spacing * spacing / (2 * 4);
         std::mt19937 rng{7};
@@ -179,11 +179,19 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
 
 
 
-        Laplacian Lap(Particles, ord2, rCut2,sampling,support_options::RADIUS);
-        Derivative_xy Dxy(Particles,ord, rCut, sampling,support_options::RADIUS);
-        Derivative_xy Dxy2(Particles,ord2, rCut2, sampling2,support_options::RADIUS);
+        //Laplacian Lap(Particles, ord2, rCut2,sampling,support_options::RADIUS);
+        Derivative_xx Dxx(Particles, ord2, rCut2,sampling,support_options::RADIUS);
+        Derivative_yy Dyy(Particles, ord2, rCut2,sampling,support_options::RADIUS);
+        Derivative_xy Dxy(Particles,ord2, rCut, sampling,support_options::RADIUS);
+        //Derivative_xy Dxy2(Particles,ord2, rCut2, sampling2,support_options::RADIUS);
         Derivative_x Dx(Particles,ord, rCut, sampling,support_options::RADIUS);
         Derivative_y Dy(Particles,ord, rCut, sampling,support_options::RADIUS);
+
+/*        Laplacian Lap(Particles, ord2, rCut2,sampling);
+        Derivative_xy Dxy(Particles,ord, rCut, sampling);
+        Derivative_xy Dxy2(Particles,ord2, rCut2, sampling2);
+        Derivative_x Dx(Particles,ord, rCut, sampling);
+        Derivative_y Dy(Particles,ord, rCut, sampling);*/
 
         std::cout<<"Dx"<<std::endl;
         Dx.checkMomenta(Particles);
@@ -191,8 +199,10 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
         Dy.checkMomenta(Particles);
         std::cout<<"Dxy"<<std::endl;
         Dxy.checkMomenta(Particles);
-        std::cout<<"Lap"<<std::endl;
-        Lap.checkMomenta(Particles);
+        std::cout<<"Dxx"<<std::endl;
+        Dxx.checkMomenta(Particles);
+        std::cout<<"Dyy"<<std::endl;
+        Dyy.checkMomenta(Particles);
         auto its2 = Particles.getDomainIterator();
         int ctr=0;
         while (its2.isNext()) {
@@ -200,8 +210,8 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
             Dx.DrawKernel<0>(Particles, p.getKey());
             Dy.DrawKernel<1>(Particles, p.getKey());
             Dxy.DrawKernel<2>(Particles, p.getKey());
-            Dxy2.DrawKernel<3>(Particles, p.getKey());
-            Lap.DrawKernel<4>(Particles, p.getKey());
+            Dxx.DrawKernel<3>(Particles, p.getKey());
+            Dyy.DrawKernel<4>(Particles, p.getKey());
             Particles.write_frame("Kernel_moved",ctr);
             f1=0;
             f2=0;
@@ -224,7 +234,8 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
         Dy.update(Particles);
         Dxy.update(Particles);
         auto Dyx = Dxy;
-        Lap.update(Particles);
+        Dxx.update(Particles);
+        Dyy.update(Particles);
 
         std::cout<<"Dx"<<std::endl;
         Dx.checkMomenta(Particles);
@@ -232,8 +243,10 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
         Dy.checkMomenta(Particles);
         std::cout<<"Dxy"<<std::endl;
         Dxy.checkMomenta(Particles);
-        std::cout<<"Lap"<<std::endl;
-        Lap.checkMomenta(Particles);
+        std::cout<<"Dxx"<<std::endl;
+        Dxx.checkMomenta(Particles);
+        std::cout<<"Dyy"<<std::endl;
+        Dyy.checkMomenta(Particles);
 
 
         auto its = Particles.getDomainIterator();
@@ -243,13 +256,14 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
             Dx.DrawKernel<0>(Particles, p.getKey());
             Dy.DrawKernel<1>(Particles, p.getKey());
             Dxy.DrawKernel<2>(Particles, p.getKey());
-            Dxy2.DrawKernel<3>(Particles, p.getKey());
-            Lap.DrawKernel<4>(Particles, p.getKey());
+            Dxx.DrawKernel<3>(Particles, p.getKey());
+            Dyy.DrawKernel<4>(Particles, p.getKey());
             Particles.write_frame("Kernel_unmoved",ctr);
             f1=0;
             f2=0;
             f3=0;
             f4=0;
+            f5=0;
             ++its;
             ctr++;
         }

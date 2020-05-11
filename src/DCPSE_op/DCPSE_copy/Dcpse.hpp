@@ -58,9 +58,9 @@ private:
     std::vector<T> localEps; // Each MPI rank has just access to the local ones
 
     vector_type & particles;
-    T rCut;
+    double rCut;
     unsigned int convergenceOrder;
-    T supportSizeFactor;
+    double supportSizeFactor;
 
     support_options opt;
 
@@ -80,9 +80,6 @@ public:
             monomialBasis(differentialSignature.asArray(), convergenceOrder),
             opt(opt)
             {
-
-
-
         if (supportSizeFactor < 1) {
             initializeAdaptive(particles, convergenceOrder, rCut);
         } else {
@@ -405,10 +402,10 @@ public:
 
     void initializeUpdate(vector_type &particles)
     {
+        localSupports.clear();
         localEps.clear();
         localCoefficients.clear();
-        SupportBuilder<vector_type>
-                supportBuilder(particles, differentialSignature, rCut);
+        SupportBuilder<vector_type> supportBuilder(particles, differentialSignature, rCut);
         unsigned int requiredSupportSize = monomialBasis.size() * supportSizeFactor;
 
         auto it = particles.getDomainIterator();
@@ -426,7 +423,7 @@ public:
 
             T eps = vandermonde.getEps();
 
-            //localSupports.push_back(support);
+            localSupports.push_back(support);
             localEps.push_back(eps);
             // Compute the diagonal matrix E
             DcpseDiagonalScalingMatrix<dim> diagonalScalingMatrix(monomialBasis);
@@ -516,7 +513,6 @@ private:
                               unsigned int convergenceOrder,
                               T rCut,
                               T supportSizeFactor) {
-
         this->rCut=rCut;
         this->supportSizeFactor=supportSizeFactor;
         this->convergenceOrder=convergenceOrder;
@@ -561,6 +557,8 @@ private:
             EMatrix<T, Eigen::Dynamic, 1> a(monomialBasis.size(), 1);
             // ...solve the linear system...
             a = A.colPivHouseholderQr().solve(b);
+            /*std::cout<<"Cond: "<<conditionNumber(V, 1e2)<<std::endl;
+            std::cout<<a.sum()<<std::endl;*/
             // ...and store the solution for later reuse
             localCoefficients.push_back(a);
             //

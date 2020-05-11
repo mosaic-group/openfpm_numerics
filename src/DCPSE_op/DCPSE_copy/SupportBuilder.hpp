@@ -180,7 +180,7 @@ std::vector<size_t> SupportBuilder<vector_type>::getPointsInSetOfCells(std::set<
     {
 		for (int i = 0 ; i < rp.size() ; i++)
 		{
-			if (rp.get(i).dist <= rCut)
+			if (rp.get(i).dist < rCut)
 			{
 				points.push_back(rp.get(i).offset);
 			}
