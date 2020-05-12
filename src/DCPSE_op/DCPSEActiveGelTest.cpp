@@ -14,9 +14,10 @@
 #include "Vector/vector_dist_subset.hpp"
 #include "EqnsStruct.hpp"
 
+template<typename particle_type, typename particle_type2>
 void indexUpdate(
-        vector_dist<2, double, aggregate<VectorS<2, double>, VectorS<2, double>, double[2][2], VectorS<2, double>, double, double[2][2], double[2][2], VectorS<2, double>, VectorS<2, double>, VectorS<2, double>, VectorS<2, double>, double, double, double, double, double, double, double, VectorS<2, double>, double, double, double[2], double[2], double[2], double[2], double[2], double[2], double, VectorS<2, double>, VectorS<2, double>, VectorS<2, double>, VectorS<2, double>>> &Part,
-        vector_dist<2, double, aggregate<double, double, VectorS<2, double>>> &Part_subset,
+        particle_type &Part,
+        particle_type2 &Part_subset,
         openfpm::vector<aggregate<int>> &up_p, openfpm::vector<aggregate<int>> &dw_p,
         openfpm::vector<aggregate<int>> &l_p, openfpm::vector<aggregate<int>> &r_p,
         openfpm::vector<aggregate<int>> &bulk, Box<2, double> &up, Box<2, double> &down, Box<2, double> &left,
@@ -550,7 +551,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
     {
         timer tt2;
         tt2.start();
-        const size_t sz[2] = {257, 257};
+        const size_t sz[2] = {81, 81};
         Box<2, double> box({0, 0}, {10,10});
         double Lx = box.getHigh(0);
         double Ly = box.getHigh(1);
@@ -565,10 +566,13 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
         double alpha_V = 1.0;
         double alpha_P = 1.0;
         Ghost<2, double> ghost(rCut);
+
+        auto & v_cl = create_vcluster();
+
 /*                                          pol                             V         vort                 Ext    Press     strain       stress                      Mfield,   dPol                      dV         RHS                  f1     f2     f3    f4     f5     f6       H               V_t      div   H_t                                                                                      delmu */
         vector_dist<2, double, aggregate<VectorS<2, double>, VectorS<2, double>, double[2][2], VectorS<2, double>, double, double[2][2], double[2][2], VectorS<2, double>, VectorS<2, double>, VectorS<2, double>, VectorS<2, double>, double, double, double, double, double, double, double, VectorS<2, double>, double, double, double[2], double[2], double[2], double[2], double[2], double[2], double, VectorS<2, double>, VectorS<2, double>, VectorS<2, double>, VectorS<2, double>>> Particles(
                 0, box, bc, ghost);
-        vector_dist<2, double, aggregate<double,double,VectorS<2, double>>> Particles_subset(0, box, bc, ghost);
+        vector_dist<2, double, aggregate<double,double,VectorS<2, double>>> Particles_subset(Particles.getDecomposition(),0);
 
         auto it = Particles.getGridIterator(sz);
         while (it.isNext()) {
@@ -751,14 +755,14 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
         timer tt3;
         vx.setId(0);
         vy.setId(1);
-        double V_err_eps = 1e-5;
+        double V_err_eps = 5e-4;
         double V_err=1,V_err_old;
         int n=0;
-        int nmax=100;
+        int nmax=50;
         int ctr = 0,errctr;
-        double dt = 2e-7;
+        double dt = 1e-3;
         double tim = 0;
-        double tf = 2e-6;
+        double tf = 2e-2;
         div=0;
         while (tim <= tf) {
             tt.start();
@@ -776,6 +780,36 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
 
             h[y] = (Pol[x] * (Ks * Dyy(Pol[y]) + Kb * Dxx(Pol[y]) + (Ks - Kb) * Dxy(Pol[x])) -
                     Pol[y] * (Ks * Dxx(Pol[x]) + Kb * Dyy(Pol[x]) + (Ks - Kb) * Dxy(Pol[y])));
+
+            for (int j = 0; j < up_p.size(); j++) {
+                auto p = up_p.get<0>(j);
+                Particles.getProp<0>(p)[x] = sin(2 * M_PI * (cos((2 * Particles.getPos(p)[x] - Lx) / Lx) -
+                                                             sin((2 * Particles.getPos(p)[y] - Ly) / Ly)));
+                Particles.getProp<0>(p)[y] = cos(2 * M_PI * (cos((2 * Particles.getPos(p)[x] - Lx) / Lx) -
+                                                             sin((2 * Particles.getPos(p)[y] - Ly) / Ly)));
+            }
+            for (int j = 0; j < dw_p.size(); j++) {
+                auto p = dw_p.get<0>(j);
+                Particles.getProp<0>(p)[x] = sin(2 * M_PI * (cos((2 * Particles.getPos(p)[x] - Lx) / Lx) -
+                                                             sin((2 * Particles.getPos(p)[y] - Ly) / Ly)));
+                Particles.getProp<0>(p)[y] = cos(2 * M_PI * (cos((2 * Particles.getPos(p)[x] - Lx) / Lx) -
+                                                             sin((2 * Particles.getPos(p)[y] - Ly) / Ly)));
+            }
+            for (int j = 0; j < l_p.size(); j++) {
+                auto p = l_p.get<0>(j);
+                Particles.getProp<0>(p)[x] = sin(2 * M_PI * (cos((2 * Particles.getPos(p)[x] - Lx) / Lx) -
+                                                             sin((2 * Particles.getPos(p)[y] - Ly) / Ly)));
+                Particles.getProp<0>(p)[y] = cos(2 * M_PI * (cos((2 * Particles.getPos(p)[x] - Lx) / Lx) -
+                                                             sin((2 * Particles.getPos(p)[y] - Ly) / Ly)));
+            }
+            for (int j = 0; j < r_p.size(); j++) {
+                auto p = r_p.get<0>(j);
+                Particles.getProp<0>(p)[x] = sin(2 * M_PI * (cos((2 * Particles.getPos(p)[x] - Lx) / Lx) -
+                                                             sin((2 * Particles.getPos(p)[y] - Ly) / Ly)));
+                Particles.getProp<0>(p)[y] = cos(2 * M_PI * (cos((2 * Particles.getPos(p)[x] - Lx) / Lx) -
+                                                             sin((2 * Particles.getPos(p)[y] - Ly) / Ly)));
+            }
+
             Particles.ghost_get<MolField>();
 
             f1 = gama * nu * Pol[x] * Pol[x] * (Pol[x] * Pol[x] - Pol[y] * Pol[y]) /
@@ -970,6 +1004,11 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
                 }
                 sum = sqrt(sum);
                 sum1 = sqrt(sum1);
+
+                v_cl.sum(sum);
+                v_cl.sum(sum1);
+                v_cl.execute();
+
                 V_t = V;
                 V_err_old=V_err;
                 V_err=sum / sum1;
@@ -985,7 +1024,8 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
                 if (errctr>5)
                     break;
                 n++;
-                std::cout << "Rel l2 cgs err in V = " << V_err<< std::endl;
+                if (v_cl.rank() == 0)
+                {std::cout << "Rel l2 cgs err in V = " << V_err<< std::endl;}
             }
             tt.stop();
             std::cout << "Rel l2 cgs err in V = " << V_err << " and took " << tt.getwct() << " seconds with "<<n<<" iterations."
@@ -1070,34 +1110,6 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
             Pol = Pol + (dt / 6.0) * (k1 + (2.0 * k2) + (2.0 * k3) + k4);
 
 
-            for (int j = 0; j < up_p.size(); j++) {
-                auto p = up_p.get<0>(j);
-                Particles.getProp<0>(p)[x] = sin(2 * M_PI * (cos((2 * Particles.getPos(p)[x] - Lx) / Lx) -
-                                                             sin((2 * Particles.getPos(p)[y] - Ly) / Ly)));
-                Particles.getProp<0>(p)[y] = cos(2 * M_PI * (cos((2 * Particles.getPos(p)[x] - Lx) / Lx) -
-                                                             sin((2 * Particles.getPos(p)[y] - Ly) / Ly)));
-            }
-            for (int j = 0; j < dw_p.size(); j++) {
-                auto p = dw_p.get<0>(j);
-                Particles.getProp<0>(p)[x] = sin(2 * M_PI * (cos((2 * Particles.getPos(p)[x] - Lx) / Lx) -
-                                                             sin((2 * Particles.getPos(p)[y] - Ly) / Ly)));
-                Particles.getProp<0>(p)[y] = cos(2 * M_PI * (cos((2 * Particles.getPos(p)[x] - Lx) / Lx) -
-                                                             sin((2 * Particles.getPos(p)[y] - Ly) / Ly)));
-            }
-            for (int j = 0; j < l_p.size(); j++) {
-                auto p = l_p.get<0>(j);
-                Particles.getProp<0>(p)[x] = sin(2 * M_PI * (cos((2 * Particles.getPos(p)[x] - Lx) / Lx) -
-                                                             sin((2 * Particles.getPos(p)[y] - Ly) / Ly)));
-                Particles.getProp<0>(p)[y] = cos(2 * M_PI * (cos((2 * Particles.getPos(p)[x] - Lx) / Lx) -
-                                                             sin((2 * Particles.getPos(p)[y] - Ly) / Ly)));
-            }
-            for (int j = 0; j < r_p.size(); j++) {
-                auto p = r_p.get<0>(j);
-                Particles.getProp<0>(p)[x] = sin(2 * M_PI * (cos((2 * Particles.getPos(p)[x] - Lx) / Lx) -
-                                                             sin((2 * Particles.getPos(p)[y] - Ly) / Ly)));
-                Particles.getProp<0>(p)[y] = cos(2 * M_PI * (cos((2 * Particles.getPos(p)[x] - Lx) / Lx) -
-                                                             sin((2 * Particles.getPos(p)[y] - Ly) / Ly)));
-            }
             for (int j = 0; j < bulk.size(); j++) {
                 auto p = bulk.get<0>(j);
                 sum=sqrt(Particles.getProp<0>(p)[x]*Particles.getProp<0>(p)[x]+Particles.getProp<0>(p)[y]*Particles.getProp<0>(p)[y]);
