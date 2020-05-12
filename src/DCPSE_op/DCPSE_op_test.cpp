@@ -18,23 +18,6 @@
 #include "Operators/Vector/vector_dist_operators.hpp"
 #include "Vector/vector_dist_subset.hpp"
 #include "EqnsStruct.hpp"
-const bool equations3d1::boundary[] = {NON_PERIODIC, NON_PERIODIC};
-const bool equations3d3::boundary[] = {NON_PERIODIC, NON_PERIODIC};
-const bool equations2d1::boundary[] = {NON_PERIODIC, NON_PERIODIC};
-const bool equations2d2::boundary[] = {NON_PERIODIC, NON_PERIODIC};
-const bool equations2d1p::boundary[] = {PERIODIC, NON_PERIODIC};
-const bool equations2d2p::boundary[] = {PERIODIC, NON_PERIODIC};
-const bool equations2d3p::boundary[] = {PERIODIC, NON_PERIODIC};
-
-
-const bool equations3d1E::boundary[] = {NON_PERIODIC, NON_PERIODIC};
-const bool equations3d3E::boundary[] = {NON_PERIODIC, NON_PERIODIC};
-const bool equations2d1E::boundary[] = {NON_PERIODIC, NON_PERIODIC};
-const bool equations2d2E::boundary[] = {NON_PERIODIC, NON_PERIODIC};
-const bool equations2d3E::boundary[] = {NON_PERIODIC, NON_PERIODIC};
-const bool equations2d1pE::boundary[] = {PERIODIC, NON_PERIODIC};
-const bool equations2d2pE::boundary[] = {PERIODIC, NON_PERIODIC};
-const bool equations2d3pE::boundary[] = {PERIODIC, NON_PERIODIC};
 
 //template<typename T>
 //struct Debug;

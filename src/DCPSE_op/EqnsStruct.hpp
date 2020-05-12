@@ -14,7 +14,7 @@ struct equations2d1 {
     static const unsigned int nvar=1;
 
     //! boundary at X and Y
-    static const bool boundary[];
+    static constexpr bool boundary[]={NON_PERIODIC, NON_PERIODIC};
 
     //! type of space float, double, ...
     typedef double stype;
@@ -38,7 +38,7 @@ struct equations2d2 {
     static const unsigned int nvar = 2;
 
     //! boundary at X and Y
-    static const bool boundary[];
+    static constexpr bool boundary[]={NON_PERIODIC, NON_PERIODIC};
 
     //! type of space float, double, ...
     typedef double stype;
@@ -63,7 +63,7 @@ struct equations2d1p {
     static const unsigned int nvar = 1;
 
     //! boundary at X and Y
-    static const bool boundary[];
+    static constexpr bool boundary[]={PERIODIC, PERIODIC};
 
     //! type of space float, double, ...
     typedef double stype;
@@ -87,7 +87,7 @@ struct equations2d2p {
     static const unsigned int nvar = 2;
 
     //! boundary at X and Y
-    static const bool boundary[];
+    static constexpr bool boundary[]={PERIODIC, PERIODIC};
 
     //! type of space float, double, ...
     typedef double stype;
@@ -112,7 +112,7 @@ struct equations2d3p {
     static const unsigned int nvar = 3;
 
     //! boundary at X and Y
-    static const bool boundary[];
+    static constexpr bool boundary[]={PERIODIC, PERIODIC};
 
     //! type of space float, double, ...
     typedef double stype;
@@ -136,7 +136,7 @@ struct equations3d3 {
     static const unsigned int nvar = 3;
 
     //! boundary at X and Y
-    static const bool boundary[];
+    static constexpr bool boundary[]={NON_PERIODIC, NON_PERIODIC,NON_PERIODIC};
 
     //! type of space float, double, ..
     typedef double stype;
@@ -160,7 +160,7 @@ struct equations3d1 {
     static const unsigned int nvar = 1;
 
     //! boundary at X and Y
-    static const bool boundary[];
+    static constexpr bool boundary[]={NON_PERIODIC, NON_PERIODIC,NON_PERIODIC};
 
     //! type of space float, double, ...
     typedef double stype;
@@ -187,7 +187,7 @@ struct equations2d1E {
     static const unsigned int nvar=1;
 
     //! boundary at X and Y
-    static const bool boundary[];
+    static constexpr bool boundary[]={NON_PERIODIC, NON_PERIODIC};
 
     //! type of space float, double, ...
     typedef double stype;
@@ -211,7 +211,7 @@ struct equations2d2E {
     static const unsigned int nvar = 2;
 
     //! boundary at X and Y
-    static const bool boundary[];
+    static constexpr bool boundary[]={NON_PERIODIC, NON_PERIODIC};
 
     //! type of space float, double, ...
     typedef double stype;
@@ -235,7 +235,7 @@ struct equations2d3E {
     static const unsigned int nvar = 3;
 
     //! boundary at X and Y
-    static const bool boundary[];
+    static constexpr bool boundary[]={NON_PERIODIC, NON_PERIODIC};
 
     //! type of space float, double, ...
     typedef double stype;
@@ -260,7 +260,7 @@ struct equations2d1pE {
     static const unsigned int nvar = 1;
 
     //! boundary at X and Y
-    static const bool boundary[];
+    static constexpr bool boundary[]={PERIODIC, PERIODIC};
 
     //! type of space float, double, ...
     typedef double stype;
@@ -284,7 +284,7 @@ struct equations2d2pE {
     static const unsigned int nvar = 2;
 
     //! boundary at X and Y
-    static const bool boundary[];
+    static constexpr bool boundary[]={PERIODIC, PERIODIC};
 
     //! type of space float, double, ...
     typedef double stype;
@@ -308,7 +308,7 @@ struct equations2d3pE {
     static const unsigned int nvar = 3;
 
     //! boundary at X and Y
-    static const bool boundary[];
+    static constexpr bool boundary[]={PERIODIC, PERIODIC};
 
     //! type of space float, double, ...
     typedef double stype;
@@ -332,7 +332,7 @@ struct equations3d3E {
     static const unsigned int nvar = 3;
 
     //! boundary at X and Y
-    static const bool boundary[];
+    static constexpr bool boundary[]={NON_PERIODIC, NON_PERIODIC,NON_PERIODIC};
 
     //! type of space float, double, ..
     typedef double stype;
@@ -356,7 +356,7 @@ struct equations3d1E {
     static const unsigned int nvar = 1;
 
     //! boundary at X and Y
-    static const bool boundary[];
+    static constexpr bool boundary[]={NON_PERIODIC, NON_PERIODIC,NON_PERIODIC};
 
     //! type of space float, double, ...
     typedef double stype;
@@ -372,5 +372,6 @@ struct equations3d1E {
 
     typedef umfpack_solver<double> solver_type;
 };
+
 
 #endif //OPENFPM_PDATA_EQNSSTRUCT_HPP
