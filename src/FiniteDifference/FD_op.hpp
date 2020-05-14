@@ -168,16 +168,11 @@ namespace FD
 		 * \return the result of the expression
 		 *
 		 */
-		template<typename r_type=typename std::remove_reference<decltype(o1.value(grid_dist_key_dx<gtype::dims>()))>::type >
-		inline r_type value(grid_dist_key_dx<gtype::dims> & key) const
+		inline auto value(grid_dist_key_dx<gtype::dims> & key) const -> typename std::remove_reference<decltype(o1.value(key))>::type
 		{
-			r_type val;
+			typedef typename std::remove_reference<decltype(o1.value(key))>::type r_type;
 
-			if (key.getKeyRef().get(0) == 1 && key.getKeyRef().get(1) == 63)
-			{
-				int debug= 0;
-				debug++;
-			}
+			r_type val;
 
 			one_side_direction os = use_one_side(getGrid(),dir,key);
 
@@ -196,6 +191,7 @@ namespace FD
 
 			return val;
 		}
+
 
 		/*! \brief Return the vector on which is acting
 		 *

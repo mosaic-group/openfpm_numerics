@@ -74,7 +74,7 @@ BOOST_AUTO_TEST_SUITE(fd_op_suite_tests)
             // Here fill the function value P
             domain.template getProp<0>(key_l) = sin(x) + sin(y);
             // Here fill the validation value for Df/Dx in property 3
-            domain.template getProp<2>(key_l) = cos(x);
+            domain.template getProp<2>(key_l) = cos(x) + sin(x) + sin(y) + 5.0;
             ++it;
         }
 
@@ -85,7 +85,7 @@ BOOST_AUTO_TEST_SUITE(fd_op_suite_tests)
         auto v = FD::getV<1>(domain);
         auto P = FD::getV<0>(domain);
 
-        v = Dx(P);
+        v = Dx(P) + P + 5;
         auto it2 = domain.getDomainIterator();
 
         double worst = 0.0;
@@ -103,6 +103,8 @@ BOOST_AUTO_TEST_SUITE(fd_op_suite_tests)
         std::cout << "Maximum Error: " << worst << std::endl;
 
         domain.write("g");
+
+        BOOST_REQUIRE(worst < 0.003);
     }
 
 

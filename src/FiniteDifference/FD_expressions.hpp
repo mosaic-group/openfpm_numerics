@@ -16,21 +16,21 @@ namespace FD
 	{
 	};
 
-	/*! \brief Main class that encapsulate a vector properties operand to be used for expressions construction
+	/*! \brief Main class that encapsulate a grid properties operand to be used for expressions construction
 	 *
 	 * \tparam prp property involved
-	 * \tparam vector involved
+	 * \tparam grid involved
 	 *
 	 */
 	template<unsigned int prp, typename grid>
 	class grid_dist_expression
 	{
-		//! The vector
+		//! The grid
 		grid & g;
 
 	public:
 
-		//! The type of the internal vector
+		//! The type of the internal grid
 		typedef grid gtype;
 
 		//! Property id of the point
@@ -43,16 +43,16 @@ namespace FD
 			this->var_id = var_id;
 		}
 
-		//! constructor for an external vector
+		//! constructor for an external grid
 		grid_dist_expression(grid & g)
 		:g(g)
 		{}
 
-		/*! \brief Return the vector on which is acting
+		/*! \brief Return the grid on which is acting
 		 *
-		 * It return the vector used in getVExpr, to get this object
+		 * It return the grid used in getVExpr, to get this object
 		 *
-		 * \return the vector
+		 * \return the grid
 		 *
 		 */
 		grid & getGrid()
@@ -60,11 +60,11 @@ namespace FD
 			return g;
 		}
 
-		/*! \brief Return the vector on which is acting
+		/*! \brief Return the grid on which is acting
 		*
-		* It return the vector used in getVExpr, to get this object
+		* It return the grid used in getVExpr, to get this object
 		*
-		* \return the vector
+		* \return the grid
 		*
 		*/
 		const grid & getGrid() const
@@ -92,7 +92,7 @@ namespace FD
 			return g.template getProp<prp>(k);
 		}
 
-		/*! \brief Fill the vector property with the evaluated expression
+		/*! \brief Fill the grid property with the evaluated expression
 		 *
 		 * \param v_exp expression to evaluate
 		 *
@@ -117,7 +117,7 @@ namespace FD
 			return g;
 		}
 
-		/*! \brief Fill the vector property with the evaluated expression
+		/*! \brief Fill the grid property with the evaluated expression
 		 *
 		 * \param v_exp expression to evaluate
 		 *
@@ -142,11 +142,11 @@ namespace FD
 			return g;
 		}
 
-		/*! \brief Fill the vector property with the double
+		/*! \brief Fill the grid property with the double
 		 *
 		 * \param d value to fill
 		 *
-		 * \return the internal vector
+		 * \return the internal grid
 		 *
 		 */
 		grid & operator=(double d)
@@ -189,7 +189,172 @@ namespace FD
 		}*/
 	};
 
-	/*! \Create an expression from a vector property
+
+	/*! \brief Main class that encapsulate a double constant
+	 *
+	 * \param prp no meaning
+	 *
+	 */
+	template<unsigned int dim>
+	class grid_dist_expression<dim,double>
+	{
+		//! constant parameter
+		double d;
+
+	public:
+
+		//! constructor from a constant expression
+		inline grid_dist_expression(const double & d)
+		:d(d)
+		{}
+
+		/*! \brief This function must be called before value
+		 *
+		 * it initialize the expression if needed
+		 *
+		 */
+		inline void init() const
+		{}
+
+		/*! \brief Evaluate the expression
+		 *
+		 * \param k ignored position in the grid
+		 *
+		 * It just return the value set in the constructor
+		 *
+		 * \return the constant value
+		 *
+		 */
+		inline double value(const grid_dist_key_dx<dim> & k) const
+		{
+			return d;
+		}
+
+
+/*
+	    template<typename Sys_eqs, typename pmap_type, typename unordered_map_type, typename coeff_type>
+	    inline void value_nz(pmap_type & p_map, const vect_dist_key_dx & key, unordered_map_type & cols, coeff_type & coeff, unsigned int comp) const
+	    {
+	        cols[p_map. template getProp<0>(key)*Sys_eqs::nvar + comp] += coeff;
+	    }*/
+	};
+
+
+	/*! \brief Main class that encapsulate a float constant
+	 *
+	 * \param prp no meaning
+	 *
+	 */
+	template<unsigned int dim>
+	class grid_dist_expression<dim,float>
+	{
+		//! constant value
+		float d;
+
+	public:
+
+		//! type of object the structure return then evaluated
+		typedef float vtype;
+
+		//! constrictor from constant value
+		inline grid_dist_expression(const float & d)
+		:d(d)
+		{}
+
+		/*! \brief This function must be called before value
+		 *
+		 * it initialize the expression if needed
+		 *
+		 */
+		inline void init() const
+		{}
+
+		/*! \brief Evaluate the expression
+		 *
+		 * \param k ignored position in the grid
+		 *
+		 * It just return the value set in the constructor
+		 *
+		 * \return the constant value set in the constructor
+		 *
+		 */
+		inline float value(const grid_dist_key_dx<dim> & k) const
+		{
+			return d;
+		}
+	};
+
+	struct sum {};
+
+	template <typename exp1, typename exp2>
+	class grid_dist_expression_op<exp1,exp2,sum>
+	{
+		//! expression 1
+		const exp1 o1;
+
+		//! expression 1
+		const exp2 o2;
+
+	public:
+
+		typedef typename exp1::gtype gtype;
+
+		//! Costruct a FD expression out of two expressions
+		inline grid_dist_expression_op(const exp1 & o1,const exp2 & o2)
+				:o1(o1),o2(o2)
+		{}
+
+		/*! \brief This function must be called before value
+		*
+		* it initialize the expression if needed
+		*
+		 */
+		inline void init() const
+		{
+			o1.init();
+			o2.init();
+		}
+
+		/*! \brief Evaluate the expression
+		 *
+		 * \param key where to evaluate the expression
+		 *
+		 * \return the result of the expression
+		 *
+		 */
+		inline auto value(grid_dist_key_dx<gtype::dims> & key) const -> typename std::remove_reference<decltype(o1.value(key))>::type
+		{
+			typename std::remove_reference<decltype(o1.value(key))>::type val;
+
+			return o1.value(key) + o2.value(key);
+		}
+
+		/*! \brief Return the grid on which is acting
+		 *
+		 * It return the grid used in getVExpr, to get this object
+		 *
+		 * \return the grid
+		 *
+		 */
+		gtype & getGrid()
+		{
+			return o1.getGrid();
+		}
+
+		/*! \brief Return the grid on which is acting
+		*
+		* It return the grid used in getVExpr, to get this object
+		*
+		* \return the grid
+		*
+		*/
+		const gtype & getGrid() const
+		{
+			return o1.getGrid();
+		}
+	};
+
+	/*! \Create an expression from a grid property
 	 *
 	 * \tpatam prp property
 	 * \param v
@@ -204,5 +369,123 @@ namespace FD
 
 };
 
+/* \brief sum two distributed grid expression
+ *
+ * \param ga grid expression one
+ * \param gb grid expression two
+ *
+ * \return an object that encapsulate the expression
+ *
+ */
+template<unsigned int p1, unsigned int p2, typename g1, typename g2>
+inline FD::grid_dist_expression_op<FD::grid_dist_expression<p1,g1>,FD::grid_dist_expression<p2,g2>,FD::sum>
+operator+(const FD::grid_dist_expression<p1,g1> & ga, const FD::grid_dist_expression<p2,g2> & gb)
+{
+	FD::grid_dist_expression_op<FD::grid_dist_expression<p1,g1>,FD::grid_dist_expression<p2,g2>,FD::sum> exp_sum(ga,gb);
+
+	return exp_sum;
+}
+
+/* \brief sum two distributed grid expression
+ *
+ * \param ga grid expression one
+ * \param gb grid expression two
+ *
+ * \return an object that encapsulate the expression
+ *
+ */
+template<typename exp1 , typename exp2, typename op1, unsigned int prp1, typename g1>
+inline FD::grid_dist_expression_op<FD::grid_dist_expression_op<exp1,exp2,op1>,FD::grid_dist_expression<prp1,g1>,FD::sum>
+operator+(const FD::grid_dist_expression_op<exp1,exp2,op1> & ga, const FD::grid_dist_expression<prp1,g1> & gb)
+{
+	FD::grid_dist_expression_op<FD::grid_dist_expression_op<exp1,exp2,op1>,FD::grid_dist_expression<prp1,g1>,FD::sum> exp_sum(ga,gb);
+
+	return exp_sum;
+}
+
+/* \brief sum two distributed grid expression
+ *
+ * \param ga grid expression one
+ * \param gb grid expression two
+ *
+ * \return an object that encapsulate the expression
+ *
+ */
+template<typename exp1 , typename exp2, typename op1, unsigned int prp1, typename g1>
+inline FD::grid_dist_expression_op<FD::grid_dist_expression<prp1,g1>,FD::grid_dist_expression_op<exp1,exp2,op1>,FD::sum>
+operator+(const FD::grid_dist_expression<prp1,g1> & ga, const FD::grid_dist_expression_op<exp1,exp2,op1> & gb)
+{
+	FD::grid_dist_expression_op<FD::grid_dist_expression<prp1,g1>,FD::grid_dist_expression_op<exp1,exp2,op1>,FD::sum> exp_sum(ga,gb);
+
+	return exp_sum;
+}
+
+/* \brief sum two distributed grid expression
+ *
+ * \param ga grid expression one
+ * \param gb grid expression two
+ *
+ * \return an object that encapsulate the expression
+ *
+ */
+template<typename exp1 , typename exp2, typename op1, typename exp3 , typename exp4, typename op2>
+inline FD::grid_dist_expression_op<FD::grid_dist_expression_op<exp1,exp2,op1>,FD::grid_dist_expression_op<exp3,exp4,op2>,FD::sum>
+operator+(const FD::grid_dist_expression_op<exp1,exp2,op1> & ga, const FD::grid_dist_expression_op<exp3,exp4,op2> & gb)
+{
+	FD::grid_dist_expression_op<FD::grid_dist_expression_op<exp1,exp2,op1>,FD::grid_dist_expression_op<exp3,exp4,op2>,FD::sum> exp_sum(ga,gb);
+
+	return exp_sum;
+}
+
+/* \brief sum two distributed grid expression
+ *
+ * \param ga grid expression one
+ * \param gb grid expression two
+ *
+ * \return an object that encapsulate the expression
+ *
+ */
+template<unsigned int prp1 , typename g1>
+inline FD::grid_dist_expression_op<FD::grid_dist_expression<prp1,g1>,FD::grid_dist_expression<g1::dims,double>,FD::sum>
+operator+(const FD::grid_dist_expression<prp1,g1> & ga, double d)
+{
+	FD::grid_dist_expression_op<FD::grid_dist_expression<prp1,g1>,FD::grid_dist_expression<g1::dims,double>,FD::sum> exp_sum(ga,FD::grid_dist_expression<g1::dims,double>(d));
+
+	return exp_sum;
+}
+
+/* \brief sum two distributed grid expression
+ *
+ * \param ga grid expression one
+ * \param gb grid expression two
+ *
+ * \return an object that encapsulate the expression
+ *
+ */
+template<unsigned int prp1 , typename g1>
+inline FD::grid_dist_expression_op<FD::grid_dist_expression<g1::dims,double>,FD::grid_dist_expression<prp1,g1>,FD::sum>
+operator+(double d, const FD::grid_dist_expression<prp1,g1> & gb)
+{
+	FD::grid_dist_expression_op<FD::grid_dist_expression<g1::dims,double>,FD::grid_dist_expression<prp1,g1>,FD::sum> exp_sum(FD::grid_dist_expression<g1::dims,double>(d),gb);
+
+	return exp_sum;
+}
+
+/* \brief sum two distributed grid expression
+ *
+ * \param ga grid expression one
+ * \param gb grid expression two
+ *
+ * \return an object that encapsulate the expression
+ *
+ */
+template<typename exp1 , typename exp2, typename op1>
+inline FD::grid_dist_expression_op<FD::grid_dist_expression_op<exp1,exp2,op1>,FD::grid_dist_expression<exp1::gtype::dims,double>,FD::sum>
+operator+(const FD::grid_dist_expression_op<exp1,exp2,op1> & ga, double d)
+{
+	FD::grid_dist_expression_op<FD::grid_dist_expression_op<exp1,exp2,op1>,FD::grid_dist_expression<exp1::gtype::dims,double>,FD::sum> exp_sum(ga,FD::grid_dist_expression<exp1::gtype::dims,double>(d));
+
+	return exp_sum;
+}
 
 #endif /* FD_EXPRESSIONS_HPP_ */
