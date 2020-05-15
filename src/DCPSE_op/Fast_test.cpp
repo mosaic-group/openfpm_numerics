@@ -21,10 +21,10 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
         double spacing = box.getHigh(0) / (sz[0] - 1);
         double rCut = 3.1* spacing;
         double ord = 2;
-        double sampling = 1.9;
+        double sampling = 3.4;
         double rCut2 = 3.1*spacing;
-        double ord2 = 1;
-        double sampling2 = 1.2;
+        double ord2 = 2;
+        double sampling2 = 1.6;
 
         double sigma2 = spacing * spacing / (2 * 4);
         std::mt19937 rng{7};
