@@ -84,7 +84,7 @@ template<unsigned int impl>
 struct NN_index
 {
 	template<typename NN_type>
-	static auto get(NN_type & NN) -> decltype(NN.get())
+	__device__ __host__ static auto get(NN_type & NN) -> decltype(NN.get())
 	{
 		return NN.get();
 	}
@@ -94,7 +94,7 @@ template<>
 struct NN_index<NN_index_sort>
 {
 	template<typename NN_type>
-	static auto get(NN_type & NN) -> decltype(NN.get_sort())
+	__device__ __host__ static auto get(NN_type & NN) -> decltype(NN.get_sort())
 	{
 		return NN.get_sort();
 	}

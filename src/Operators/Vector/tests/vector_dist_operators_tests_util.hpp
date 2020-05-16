@@ -1586,7 +1586,7 @@ struct exp_kernel
 	 *
 	 */
 	template<typename vector_t>
-	__host__ inline float value(size_t p, size_t q, float pA, float pB, const vector_t & vd1)
+	__host__ __device__ inline float value(size_t p, size_t q, float pA, float pB, const vector_t & vd1)
 	{
 		Point<3,float> pp = vd1.getPos(p);
 		Point<3,float> pq = vd1.getPos(q);
