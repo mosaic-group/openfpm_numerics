@@ -356,7 +356,6 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
         Particles_subset.ghost_get<0>();
 
         Particles_subset.write("Pars");
-/*
         Derivative_x Dx(Particles, ord, rCut, sampling_factor, support_options::RADIUS), Bulk_Dx(Particles_subset, ord,
                                                                                                  rCut,
                                                                                                  sampling_factor,
@@ -370,14 +369,14 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
         Derivative_xx Dxx(Particles, ord, rCut2, sampling_factor2,
                           support_options::RADIUS);//, Dxx2(Particles, ord2, rCut2, sampling_factor2, support_options::RADIUS);
         Derivative_yy Dyy(Particles, ord, rCut2, sampling_factor2,
-                          support_options::RADIUS);//, Dyy2(Particles, ord2, rCut2, sampling_factor2, support_options::RADIUS);*/
+                          support_options::RADIUS);//, Dyy2(Particles, ord2, rCut2, sampling_factor2, support_options::RADIUS);
 
-        Derivative_x Dx(Particles, ord, rCut, sampling_factor), Bulk_Dx(Particles_subset, ord, rCut, sampling_factor);
+/*        Derivative_x Dx(Particles, ord, rCut, sampling_factor), Bulk_Dx(Particles_subset, ord, rCut, sampling_factor);
         Derivative_y Dy(Particles, ord, rCut, sampling_factor), Bulk_Dy(Particles_subset, ord, rCut, sampling_factor);
         Derivative_xy Dxy(Particles, ord2, rCut, sampling_factor);
         auto Dyx = Dxy;
         Derivative_xx Dxx(Particles, ord2, rCut2, sampling_factor2),Bulk_Dxx(Particles_subset, ord2, rCut2, sampling_factor2);
-        Derivative_yy Dyy(Particles, ord2, rCut2, sampling_factor2),Bulk_Dyy(Particles_subset, ord2, rCut2, sampling_factor2);
+        Derivative_yy Dyy(Particles, ord2, rCut2, sampling_factor2),Bulk_Dyy(Particles_subset, ord2, rCut2, sampling_factor2);*/
 
         petsc_solver<double> solverPetsc;
         solverPetsc.setSolver(KSPGMRES);
@@ -393,14 +392,14 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
         timer tt3;
         vx.setId(0);
         vy.setId(1);
-        double V_err_eps = 1e-2;
+        double V_err_eps = 1e-3;
         double V_err = 1, V_err_old;
         int n = 0;
         int nmax = 300;
         int ctr = 0, errctr;
-        double dt = 2e-3    ;
+        double dt = 1e-3;
         double tim = 0;
-        double tf = 2e-1;
+        double tf = 1.25;
         div = 0;
         double sum, sum1, sum_k;
         while (tim <= tf) {
@@ -510,14 +509,10 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
                 Grad_bulk[x] = Bulk_Dx(P_bulk);
                 Grad_bulk[y] = Bulk_Dy(P_bulk);
                 Particles_subset.ghost_get<2>();
-                if (n%5==0)
-                    Particles_subset.write_frame("Grad_debug",n );
                 for (int i = 0; i < bulk.size(); i++) {
                     Particles.template getProp<10>(bulk.template get<0>(i))[x] += Particles_subset.getProp<2>(i)[x];
                     Particles.template getProp<10>(bulk.template get<0>(i))[y] += Particles_subset.getProp<2>(i)[y];
                 }
-                if (n%5==0)
-                    Particles.write_frame("V_debug", n);
                 Particles.ghost_get<10>();
                 DCPSE_scheme<equations2d2, decltype(Particles)> Solver(Particles);
                 Solver.impose(Stokes1, bulk, RHS[0], vx);
@@ -530,19 +525,8 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
                 Solver.impose(V[y], l_p, 0, vy);
                 Solver.impose(V[x], r_p, 0, vx);
                 Solver.impose(V[y], r_p, 0, vy);
-                //Solver.solve(V[x], V[y]);
                 Solver.solve_with_solver(solverPetsc, V[x], V[y]);
-                if (n%5==0)
-                    Particles.write_frame("P_debug", n);
                 Particles.ghost_get<Velocity>();
-                /*for (int i = 0; i < bulk.size(); i++) {
-                    Particles_subset.getProp<2>(i)[x] = Particles.template getProp<1>(bulk.template get<0>(i))[x];
-                    Particles_subset.getProp<2>(i)[y] = Particles.template getProp<1>(bulk.template get<0>(i))[y];
-                }
-                P_bulk= (Bulk_Dx(Grad_bulk[x]) + Bulk_Dy(Grad_bulk[y]));
-                for (int i = 0; i < bulk.size(); i++) {
-                    Particles.template getProp<19>(bulk.template get<0>(i)) = Particles_subset.getProp<0>(i);
-                }*/
                 div = -(Dx(V[x]) + Dy(V[y]));
                 Particles.ghost_get<19>();
                 auto Helmholtz = Dxx(H) + Dyy(H);
@@ -552,28 +536,17 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
                 SolverH.impose(H, dw_p1, 0);
                 SolverH.impose(H, l_p1, 0);
                 SolverH.impose(H, r_p1, 0);
-/*                SolverH.impose(Dy(H), up_p1, 0);
-                SolverH.impose(-Dy(H), dw_p1, 0);
-                SolverH.impose(-Dx(H), l_p1, 0);
-                SolverH.impose(Dx(H), r_p1, 0);*/
                 SolverH.impose(Dy(H)-Dx(H), corner_ul, 0);
                 SolverH.impose(Dx(H)+Dy(H), corner_ur, 0);
-
                 SolverH.impose(-Dy(H)-Dx(H), corner_dl, 0);
                 SolverH.impose(Dx(H)-Dy(H), corner_dr, 0);
-
-                //SolverH.solve(H);
                 SolverH.solve_with_solver(solverPetsc2, H);
-                //V[x] = V[x] - Dx(H);
-                //V[y] = V[y] - Dy(H);
-                //std::cout << "Helmholtz Solved in " << tt.getwct() << " seconds." << std::endl;
                 Particles.ghost_get<17>();
                 Particles.ghost_get<Velocity>();
                 P = P + div;
                 Particles.ghost_get<Pressure>();
                 for (int i = 0; i < bulk.size(); i++) {
                     Particles_subset.getProp<0>(i) = Particles.template getProp<4>(bulk.template get<0>(i));
-                    //Particles_subset.getProp<1>(i) = Particles.template getProp<17>(bulk.template get<0>(i));
                 }
                 Particles_subset.ghost_get<1>();
                 Grad_bulk[x] = Bulk_Dx(H_bulk);
@@ -582,7 +555,6 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
                     Particles.template getProp<1>(bulk.template get<0>(i))[x] += Particles_subset.getProp<2>(i)[x];
                     Particles.template getProp<1>(bulk.template get<0>(i))[y] += Particles_subset.getProp<2>(i)[y];
                 }
-
                 for (int j = 0; j < up_p.size(); j++) {
                     auto p = up_p.get<0>(j);
                     Particles.getProp<1>(p)[0] = 0;
@@ -635,14 +607,16 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
                     errctr++;
                     //alpha_P -= 0.1;
                 }
-                if (errctr > 8)
+                if (n>3){
+                if (errctr > 8 || abs(V_err_old-V_err)<5e-5)
                 {
                     std::cout<<"CONVERGENCE LOOP BROKEN DUE TO INCREASE/Oscillation IN ERROR"<< std::endl;;
                     break;
                 }
+                }
                 n++;
-                if (v_cl.rank() == 0)
-                { std::cout << "Rel l2 cgs err in V = " << V_err <<" at "<<n<< std::endl; }
+                //if (v_cl.rank() == 0)
+                //{ std::cout << "Rel l2 cgs err in V = " << V_err <<" at "<<n<< std::endl; }
             }
             tt.stop();
             std::cout << "Rel l2 cgs err in V = " << V_err << " and took " << tt.getwct() << " seconds with " << n
@@ -665,7 +639,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
             Particles.ghost_get<MolField, Strain_rate, Vorticity>();
             Particles.deleteGhost();
             Particles.write_frame("Polar_3e-3", ctr);
-            Particles.ghost_get<MolField, Strain_rate, Vorticity>();
+            Particles.ghost_get<0,1,MolField, Strain_rate, Vorticity>();
             ctr++;
             H_p_b = Pol[x] * Pol[x] + Pol[y] * Pol[y];
             for (int j = 0; j < bulk.size(); j++) {
