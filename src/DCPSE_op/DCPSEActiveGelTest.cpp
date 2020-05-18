@@ -398,7 +398,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
         int n = 0;
         int nmax = 300;
         int ctr = 0, errctr,Vreset=0;
-        double dt = 1.5*1   e-3;
+        double dt = 1.5*1e-3;
         double tim = 0;
         double tf = 1.25;
         div = 0;
@@ -497,16 +497,18 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
             errctr = 0;
             if (Vreset==1)
                 P_bulk=0;
+                P=0;
                 Vreset=0;
-            //P_bulk=0;
+            P_bulk=0;
+            P=0;
             while (V_err >= V_err_eps && n <= nmax) {
-                petsc_solver<double> solverPetsc;
+/*              petsc_solver<double> solverPetsc;
                 solverPetsc.setSolver(KSPGMRES);
                 //solverPetsc.setRestart(250);
                 solverPetsc.setPreconditioner(PCJACOBI);
                 petsc_solver<double> solverPetsc2;
                 solverPetsc2.setSolver(KSPGMRES);
-                solverPetsc2.setPreconditioner(PCJACOBI);
+                solverPetsc2.setPreconditioner(PCJACOBI);*/
                 RHS[x] = dV[x];
                 RHS[y] = dV[y];
                 Particles_subset.ghost_get<0>();
@@ -518,7 +520,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
                     Particles.template getProp<10>(bulk.template get<0>(i))[y] += Particles_subset.getProp<2>(i)[y];
                 }
                 Particles.ghost_get<10>();
-                DCPSE_scheme<equations2d2, decltype(Particles)> Solver(Particles);
+                DCPSE_scheme<equations2d2E, decltype(Particles)> Solver(Particles);
                 Solver.impose(Stokes1, bulk, RHS[0], vx);
                 Solver.impose(Stokes2, bulk, RHS[1], vy);
                 Solver.impose(V[x], up_p, 0, vx);
@@ -529,22 +531,24 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
                 Solver.impose(V[y], l_p, 0, vy);
                 Solver.impose(V[x], r_p, 0, vx);
                 Solver.impose(V[y], r_p, 0, vy);
-                Solver.solve_with_solver(solverPetsc, V[x], V[y]);
+                //Solver.solve_with_solver(solverPetsc, V[x], V[y]);
+                Solver.solve(V[x], V[y]);
                 Particles.ghost_get<Velocity>();
                 div = -(Dx(V[x]) + Dy(V[y]));
                 Particles.ghost_get<19>();
                 auto Helmholtz = Dxx(H) + Dyy(H);
-                DCPSE_scheme<equations2d1, decltype(Particles)> SolverH(Particles);
+                DCPSE_scheme<equations2d1E, decltype(Particles)> SolverH(Particles);
                 SolverH.impose(Helmholtz, bulk, prop_id<19>());
-                SolverH.impose(H, up_p, 0);
-                SolverH.impose(H, dw_p, 0);
-                SolverH.impose(H, l_p, 0);
-                SolverH.impose(H, r_p, 0);
-                /*SolverH.impose(Dy(H)-Dx(H), corner_ul, 0);
+                SolverH.impose(H, up_p1, 0);
+                SolverH.impose(H, dw_p1, 0);
+                SolverH.impose(H, l_p1, 0);
+                SolverH.impose(H, r_p1, 0);
+                SolverH.impose(Dy(H)-Dx(H), corner_ul, 0);
                 SolverH.impose(Dx(H)+Dy(H), corner_ur, 0);
                 SolverH.impose(-Dy(H)-Dx(H), corner_dl, 0);
-                SolverH.impose(Dx(H)-Dy(H), corner_dr, 0);*/
-                SolverH.solve_with_solver(solverPetsc2, H);
+                SolverH.impose(Dx(H)-Dy(H), corner_dr, 0);
+                //SolverH.solve_with_solver(solverPetsc2, H);
+                SolverH.solve(H);
                 Particles.ghost_get<17>();
                 Particles.ghost_get<Velocity>();
                 P = P + div;
