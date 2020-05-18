@@ -19,10 +19,10 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
         Box<2, double> box({0, 0}, {10,10});
         size_t bc[2] = {NON_PERIODIC, NON_PERIODIC};
         double spacing = box.getHigh(0) / (sz[0] - 1);
-        double rCut = 3.1* spacing;
+        double rCut = 3.6* spacing;
         double ord = 2;
-        double sampling = 3.4;
-        double rCut2 = 3.1*spacing;
+        double sampling = 3.6;
+        double rCut2 = 3.5*spacing;
         double ord2 = 2;
         double sampling2 = 1.6;
 

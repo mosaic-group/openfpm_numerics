@@ -118,18 +118,19 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
     BOOST_AUTO_TEST_CASE(Active2DEigen) {
         timer tt2;
         tt2.start();
-        const size_t sz[2] = {80,80};
-        Box<2, double> box({0, 0}, {10, 10});
+        double boxsize=10;
+        const size_t sz[2] = {41,41};
+        Box<2, double> box({0, 0}, {boxsize, boxsize});
         double Lx = box.getHigh(0);
         double Ly = box.getHigh(1);
         size_t bc[2] = {NON_PERIODIC, NON_PERIODIC};
         double spacing = box.getHigh(0) / (sz[0] - 1);
-        double rCut = 3.1 * spacing;
-        double rCut2 = 3.1 * spacing;
+        double rCut = 3.6 * spacing;
+        double rCut2 = 3.6 * spacing;
         int ord = 2;
         int ord2 = 2;
-        double sampling_factor = 3.4;
-        double sampling_factor2 = 1.6;
+        double sampling_factor = 4.0;
+        double sampling_factor2 = 2.4;
         double alpha_V = 1.0;
         double alpha_P = 1.0;
         Ghost<2, double> ghost(rCut);
@@ -392,12 +393,12 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
         timer tt3;
         vx.setId(0);
         vy.setId(1);
-        double V_err_eps = 1e-3;
+        double V_err_eps = 5e-4;
         double V_err = 1, V_err_old;
         int n = 0;
         int nmax = 300;
-        int ctr = 0, errctr;
-        double dt = 1e-3;
+        int ctr = 0, errctr,Vreset=0;
+        double dt = 1.5*1   e-3;
         double tim = 0;
         double tf = 1.25;
         div = 0;
@@ -494,6 +495,10 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
             V_err = 1;
             n = 0;
             errctr = 0;
+            if (Vreset==1)
+                P_bulk=0;
+                Vreset=0;
+            //P_bulk=0;
             while (V_err >= V_err_eps && n <= nmax) {
                 petsc_solver<double> solverPetsc;
                 solverPetsc.setSolver(KSPGMRES);
@@ -502,7 +507,6 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
                 petsc_solver<double> solverPetsc2;
                 solverPetsc2.setSolver(KSPGMRES);
                 solverPetsc2.setPreconditioner(PCJACOBI);
-
                 RHS[x] = dV[x];
                 RHS[y] = dV[y];
                 Particles_subset.ghost_get<0>();
@@ -532,14 +536,14 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
                 auto Helmholtz = Dxx(H) + Dyy(H);
                 DCPSE_scheme<equations2d1, decltype(Particles)> SolverH(Particles);
                 SolverH.impose(Helmholtz, bulk, prop_id<19>());
-                SolverH.impose(H, up_p1, 0);
-                SolverH.impose(H, dw_p1, 0);
-                SolverH.impose(H, l_p1, 0);
-                SolverH.impose(H, r_p1, 0);
-                SolverH.impose(Dy(H)-Dx(H), corner_ul, 0);
+                SolverH.impose(H, up_p, 0);
+                SolverH.impose(H, dw_p, 0);
+                SolverH.impose(H, l_p, 0);
+                SolverH.impose(H, r_p, 0);
+                /*SolverH.impose(Dy(H)-Dx(H), corner_ul, 0);
                 SolverH.impose(Dx(H)+Dy(H), corner_ur, 0);
                 SolverH.impose(-Dy(H)-Dx(H), corner_dl, 0);
-                SolverH.impose(Dx(H)-Dy(H), corner_dr, 0);
+                SolverH.impose(Dx(H)-Dy(H), corner_dr, 0);*/
                 SolverH.solve_with_solver(solverPetsc2, H);
                 Particles.ghost_get<17>();
                 Particles.ghost_get<Velocity>();
@@ -608,10 +612,14 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
                     //alpha_P -= 0.1;
                 }
                 if (n>3){
-                if (errctr > 8 || abs(V_err_old-V_err)<5e-5)
+                if (errctr > 2 || abs(V_err_old-V_err)<1e-5)
                 {
-                    std::cout<<"CONVERGENCE LOOP BROKEN DUE TO INCREASE/Oscillation IN ERROR"<< std::endl;;
+                    std::cout<<"CONVERGENCE LOOP BROKEN DUE TO INCREASE/Oscillation IN ERROR"<< std::endl;
+                    Vreset=1;
                     break;
+                }
+                else{
+                    Vreset=0;
                 }
                 }
                 n++;
