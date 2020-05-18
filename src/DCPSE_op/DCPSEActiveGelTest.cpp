@@ -499,16 +499,16 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
                 P_bulk=0;
                 P=0;
                 Vreset=0;
-            P_bulk=0;
-            P=0;
+            //P_bulk=0;
+            //P=0;
             while (V_err >= V_err_eps && n <= nmax) {
-/*              petsc_solver<double> solverPetsc;
+              petsc_solver<double> solverPetsc;
                 solverPetsc.setSolver(KSPGMRES);
                 //solverPetsc.setRestart(250);
                 solverPetsc.setPreconditioner(PCJACOBI);
                 petsc_solver<double> solverPetsc2;
                 solverPetsc2.setSolver(KSPGMRES);
-                solverPetsc2.setPreconditioner(PCJACOBI);*/
+                solverPetsc2.setPreconditioner(PCJACOBI);
                 RHS[x] = dV[x];
                 RHS[y] = dV[y];
                 Particles_subset.ghost_get<0>();
@@ -531,8 +531,8 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
                 Solver.impose(V[y], l_p, 0, vy);
                 Solver.impose(V[x], r_p, 0, vx);
                 Solver.impose(V[y], r_p, 0, vy);
-                //Solver.solve_with_solver(solverPetsc, V[x], V[y]);
-                Solver.solve(V[x], V[y]);
+                Solver.solve_with_solver(solverPetsc, V[x], V[y]);
+                //Solver.solve(V[x], V[y]);
                 Particles.ghost_get<Velocity>();
                 div = -(Dx(V[x]) + Dy(V[y]));
                 Particles.ghost_get<19>();
@@ -547,8 +547,8 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
                 SolverH.impose(Dx(H)+Dy(H), corner_ur, 0);
                 SolverH.impose(-Dy(H)-Dx(H), corner_dl, 0);
                 SolverH.impose(Dx(H)-Dy(H), corner_dr, 0);
-                //SolverH.solve_with_solver(solverPetsc2, H);
-                SolverH.solve(H);
+                SolverH.solve_with_solver(solverPetsc2, H);
+                //SolverH.solve(H);
                 Particles.ghost_get<17>();
                 Particles.ghost_get<Velocity>();
                 P = P + div;
