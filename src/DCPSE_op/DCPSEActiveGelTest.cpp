@@ -119,7 +119,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
         timer tt2;
         tt2.start();
         double boxsize=10;
-        const size_t sz[2] = {41,41};
+        const size_t sz[2] = {81,81};
         Box<2, double> box({0, 0}, {boxsize, boxsize});
         double Lx = box.getHigh(0);
         double Ly = box.getHigh(1);
@@ -393,7 +393,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
         timer tt3;
         vx.setId(0);
         vy.setId(1);
-        double V_err_eps = 5e-4;
+        double V_err_eps = 1e-4;
         double V_err = 1, V_err_old;
         int n = 0;
         int nmax = 300;
@@ -422,7 +422,10 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
 
             Particles.ghost_get<MolField>();
 
-            FranckEnergyDensity = (Ks / 2.0) * ((Dx(Pol[x]) * Dx(Pol[x])) + (Dy(Pol[x]) * Dy(Pol[x])) + (Dx(Pol[y]) * Dx(Pol[y])) + (Dy(Pol[y]) * Dy(Pol[y]))) + ((Kb - Ks) / 2.0) * ((Dx(Pol[y]) - Dy(Pol[x])) * (Dx(Pol[y]) - Dy(Pol[x])));
+            FranckEnergyDensity = (Ks / 2.0) *
+                                  ((Dx(Pol[x]) * Dx(Pol[x])) + (Dy(Pol[x]) * Dy(Pol[x])) + (Dx(Pol[y]) * Dx(Pol[y])) +
+                                   (Dy(Pol[y]) * Dy(Pol[y]))) +
+                                  ((Kb - Ks) / 2.0) * ((Dx(Pol[y]) - Dy(Pol[x])) * (Dx(Pol[y]) - Dy(Pol[x])));
             Particles.ghost_get<33>();
 
 
@@ -495,12 +498,14 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
             V_err = 1;
             n = 0;
             errctr = 0;
-            if (Vreset==1)
-                P_bulk=0;
-                P=0;
-                Vreset=0;
-            //P_bulk=0;
-            //P=0;
+            if (Vreset == 1)
+            {
+                P_bulk = 0;
+                P = 0;
+                Vreset = 0;
+            }
+            P_bulk=0;
+            P=0;
             while (V_err >= V_err_eps && n <= nmax) {
               petsc_solver<double> solverPetsc;
                 solverPetsc.setSolver(KSPGMRES);
@@ -520,7 +525,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
                     Particles.template getProp<10>(bulk.template get<0>(i))[y] += Particles_subset.getProp<2>(i)[y];
                 }
                 Particles.ghost_get<10>();
-                DCPSE_scheme<equations2d2E, decltype(Particles)> Solver(Particles);
+                DCPSE_scheme<equations2d2, decltype(Particles)> Solver(Particles);
                 Solver.impose(Stokes1, bulk, RHS[0], vx);
                 Solver.impose(Stokes2, bulk, RHS[1], vy);
                 Solver.impose(V[x], up_p, 0, vx);
@@ -537,7 +542,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
                 div = -(Dx(V[x]) + Dy(V[y]));
                 Particles.ghost_get<19>();
                 auto Helmholtz = Dxx(H) + Dyy(H);
-                DCPSE_scheme<equations2d1E, decltype(Particles)> SolverH(Particles);
+                DCPSE_scheme<equations2d1, decltype(Particles)> SolverH(Particles);
                 SolverH.impose(Helmholtz, bulk, prop_id<19>());
                 SolverH.impose(H, up_p1, 0);
                 SolverH.impose(H, dw_p1, 0);
@@ -819,14 +824,19 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
             H_p_b = sqrt(Pol[x] * Pol[x] + Pol[y] * Pol[y]);
             Pol = Pol / H_p_b;
 
-            Pos = Pos + dt * V;
+            k1= V;
+            k2=0.5*dt*k1+V;
+            k3=0.5*dt*k2+V;
+            k4=dt*k3+V;
+            //Pos = Pos + dt * V;
+            Pos=Pos+dt/6.0*(k1+2*k2+2*k3+k4);
             Particles.map();
             Particles.ghost_get<0>();
             indexUpdate(Particles, Particles_subset, up_p, dw_p, l_p, r_p,up_p1, dw_p1, l_p1, r_p1,corner_ul,corner_ur,corner_dl,corner_dr, bulk, up, down, left, right);
             Particles_subset.map();
             Particles_subset.ghost_get<0>();
 
-            Particles_subset.write("debug");
+            //Particles_subset.write("debug");
             for (int j = 0; j < up_p.size(); j++) {
                 auto p = up_p.get<0>(j);
                 Particles.getProp<0>(p)[x] = sin(2 * M_PI * (cos((2 * Particles.getPos(p)[x] - Lx) / Lx) -
