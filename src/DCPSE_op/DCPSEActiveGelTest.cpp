@@ -526,8 +526,6 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
                     P = 0;
                     Vreset = 0;
                 }
-                P_bulk = 0;
-                P = 0;
                 while (V_err >= V_err_eps && n <= nmax) {
                     petsc_solver<double> solverPetsc;
                     solverPetsc.setSolver(KSPGMRES);
@@ -724,18 +722,34 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
                 for (int j = 0; j < up_p.size(); j++) {
                     auto p = up_p.get<0>(j);
                     Particles.getProp<34>(p) = (Particles.getProp<34>(p) == 0) ? 1 : Particles.getProp<34>(p);
+                    Particles.getProp<8>(p)[x] = sin(2 * M_PI * (cos((2 * Particles.getPos(p)[x] - Lx) / Lx) -
+                                                                 sin((2 * Particles.getPos(p)[y] - Ly) / Ly)));
+                    Particles.getProp<0>(p)[y] = cos(2 * M_PI * (cos((2 * Particles.getPos(p)[x] - Lx) / Lx) -
+                                                                 sin((2 * Particles.getPos(p)[y] - Ly) / Ly)));
                 }
                 for (int j = 0; j < dw_p.size(); j++) {
                     auto p = dw_p.get<0>(j);
                     Particles.getProp<34>(p) = (Particles.getProp<34>(p) == 0) ? 1 : Particles.getProp<34>(p);
+                    Particles.getProp<8>(p)[x] = sin(2 * M_PI * (cos((2 * Particles.getPos(p)[x] - Lx) / Lx) -
+                                                                 sin((2 * Particles.getPos(p)[y] - Ly) / Ly)));
+                    Particles.getProp<0>(p)[y] = cos(2 * M_PI * (cos((2 * Particles.getPos(p)[x] - Lx) / Lx) -
+                                                                 sin((2 * Particles.getPos(p)[y] - Ly) / Ly)));
                 }
                 for (int j = 0; j < l_p.size(); j++) {
                     auto p = l_p.get<0>(j);
                     Particles.getProp<34>(p) = (Particles.getProp<34>(p) == 0) ? 1 : Particles.getProp<34>(p);
+                    Particles.getProp<8>(p)[x] = sin(2 * M_PI * (cos((2 * Particles.getPos(p)[x] - Lx) / Lx) -
+                                                                 sin((2 * Particles.getPos(p)[y] - Ly) / Ly)));
+                    Particles.getProp<0>(p)[y] = cos(2 * M_PI * (cos((2 * Particles.getPos(p)[x] - Lx) / Lx) -
+                                                                 sin((2 * Particles.getPos(p)[y] - Ly) / Ly)));
                 }
                 for (int j = 0; j < r_p.size(); j++) {
                     auto p = r_p.get<0>(j);
                     Particles.getProp<34>(p) = (Particles.getProp<34>(p) == 0) ? 1 : Particles.getProp<34>(p);
+                    Particles.getProp<8>(p)[x] = sin(2 * M_PI * (cos((2 * Particles.getPos(p)[x] - Lx) / Lx) -
+                                                                 sin((2 * Particles.getPos(p)[y] - Ly) / Ly)));
+                    Particles.getProp<0>(p)[y] = cos(2 * M_PI * (cos((2 * Particles.getPos(p)[x] - Lx) / Lx) -
+                                                                 sin((2 * Particles.getPos(p)[y] - Ly) / Ly)));
                 }
 
                 h[y] = (dPol[x] * (Ks * Dyy(dPol[y]) + Kb * Dxx(dPol[y]) + (Ks - Kb) * Dxy(dPol[x])) -
@@ -767,18 +781,34 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
                 for (int j = 0; j < up_p.size(); j++) {
                     auto p = up_p.get<0>(j);
                     Particles.getProp<34>(p) = (Particles.getProp<34>(p) == 0) ? 1 : Particles.getProp<34>(p);
+                    Particles.getProp<8>(p)[x] = sin(2 * M_PI * (cos((2 * Particles.getPos(p)[x] - Lx) / Lx) -
+                                                                 sin((2 * Particles.getPos(p)[y] - Ly) / Ly)));
+                    Particles.getProp<0>(p)[y] = cos(2 * M_PI * (cos((2 * Particles.getPos(p)[x] - Lx) / Lx) -
+                                                                 sin((2 * Particles.getPos(p)[y] - Ly) / Ly)));
                 }
                 for (int j = 0; j < dw_p.size(); j++) {
                     auto p = dw_p.get<0>(j);
                     Particles.getProp<34>(p) = (Particles.getProp<34>(p) == 0) ? 1 : Particles.getProp<34>(p);
+                    Particles.getProp<8>(p)[x] = sin(2 * M_PI * (cos((2 * Particles.getPos(p)[x] - Lx) / Lx) -
+                                                                 sin((2 * Particles.getPos(p)[y] - Ly) / Ly)));
+                    Particles.getProp<0>(p)[y] = cos(2 * M_PI * (cos((2 * Particles.getPos(p)[x] - Lx) / Lx) -
+                                                                 sin((2 * Particles.getPos(p)[y] - Ly) / Ly)));
                 }
                 for (int j = 0; j < l_p.size(); j++) {
                     auto p = l_p.get<0>(j);
                     Particles.getProp<34>(p) = (Particles.getProp<34>(p) == 0) ? 1 : Particles.getProp<34>(p);
+                    Particles.getProp<8>(p)[x] = sin(2 * M_PI * (cos((2 * Particles.getPos(p)[x] - Lx) / Lx) -
+                                                                 sin((2 * Particles.getPos(p)[y] - Ly) / Ly)));
+                    Particles.getProp<0>(p)[y] = cos(2 * M_PI * (cos((2 * Particles.getPos(p)[x] - Lx) / Lx) -
+                                                                 sin((2 * Particles.getPos(p)[y] - Ly) / Ly)));
                 }
                 for (int j = 0; j < r_p.size(); j++) {
                     auto p = r_p.get<0>(j);
                     Particles.getProp<34>(p) = (Particles.getProp<34>(p) == 0) ? 1 : Particles.getProp<34>(p);
+                    Particles.getProp<8>(p)[x] = sin(2 * M_PI * (cos((2 * Particles.getPos(p)[x] - Lx) / Lx) -
+                                                                 sin((2 * Particles.getPos(p)[y] - Ly) / Ly)));
+                    Particles.getProp<0>(p)[y] = cos(2 * M_PI * (cos((2 * Particles.getPos(p)[x] - Lx) / Lx) -
+                                                                 sin((2 * Particles.getPos(p)[y] - Ly) / Ly)));
                 }
 
                 h[y] = (dPol[x] * (Ks * Dyy(dPol[y]) + Kb * Dxx(dPol[y]) + (Ks - Kb) * Dxy(dPol[x])) -
@@ -810,18 +840,35 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
                 for (int j = 0; j < up_p.size(); j++) {
                     auto p = up_p.get<0>(j);
                     Particles.getProp<34>(p) = (Particles.getProp<34>(p) == 0) ? 1 : Particles.getProp<34>(p);
+                    Particles.getProp<8>(p)[x] = sin(2 * M_PI * (cos((2 * Particles.getPos(p)[x] - Lx) / Lx) -
+                                                                 sin((2 * Particles.getPos(p)[y] - Ly) / Ly)));
+                    Particles.getProp<0>(p)[y] = cos(2 * M_PI * (cos((2 * Particles.getPos(p)[x] - Lx) / Lx) -
+                                                                 sin((2 * Particles.getPos(p)[y] - Ly) / Ly)));
                 }
                 for (int j = 0; j < dw_p.size(); j++) {
                     auto p = dw_p.get<0>(j);
                     Particles.getProp<34>(p) = (Particles.getProp<34>(p) == 0) ? 1 : Particles.getProp<34>(p);
+                    Particles.getProp<8>(p)[x] = sin(2 * M_PI * (cos((2 * Particles.getPos(p)[x] - Lx) / Lx) -
+                                                                 sin((2 * Particles.getPos(p)[y] - Ly) / Ly)));
+                    Particles.getProp<0>(p)[y] = cos(2 * M_PI * (cos((2 * Particles.getPos(p)[x] - Lx) / Lx) -
+                                                                 sin((2 * Particles.getPos(p)[y] - Ly) / Ly)));
+
                 }
                 for (int j = 0; j < l_p.size(); j++) {
                     auto p = l_p.get<0>(j);
                     Particles.getProp<34>(p) = (Particles.getProp<34>(p) == 0) ? 1 : Particles.getProp<34>(p);
+                    Particles.getProp<8>(p)[x] = sin(2 * M_PI * (cos((2 * Particles.getPos(p)[x] - Lx) / Lx) -
+                                                                 sin((2 * Particles.getPos(p)[y] - Ly) / Ly)));
+                    Particles.getProp<0>(p)[y] = cos(2 * M_PI * (cos((2 * Particles.getPos(p)[x] - Lx) / Lx) -
+                                                                 sin((2 * Particles.getPos(p)[y] - Ly) / Ly)));
                 }
                 for (int j = 0; j < r_p.size(); j++) {
                     auto p = r_p.get<0>(j);
                     Particles.getProp<34>(p) = (Particles.getProp<34>(p) == 0) ? 1 : Particles.getProp<34>(p);
+                    Particles.getProp<8>(p)[x] = sin(2 * M_PI * (cos((2 * Particles.getPos(p)[x] - Lx) / Lx) -
+                                                                 sin((2 * Particles.getPos(p)[y] - Ly) / Ly)));
+                    Particles.getProp<0>(p)[y] = cos(2 * M_PI * (cos((2 * Particles.getPos(p)[x] - Lx) / Lx) -
+                                                                 sin((2 * Particles.getPos(p)[y] - Ly) / Ly)));
                 }
 
                 h[y] = (dPol[x] * (Ks * Dyy(dPol[y]) + Kb * Dxx(dPol[y]) + (Ks - Kb) * Dxy(dPol[x])) -
