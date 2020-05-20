@@ -17,7 +17,7 @@
 template<typename particle_type, typename particle_type2>
 void indexUpdate(
         particle_type &Particles,
-        particle_type2 &Part_subset,
+        particle_type2 &Particles_subset,
         openfpm::vector<aggregate<int>> &up_p, openfpm::vector<aggregate<int>> &dw_p,
         openfpm::vector<aggregate<int>> &l_p, openfpm::vector<aggregate<int>> &r_p,
         openfpm::vector<aggregate<int>> &up_p1, openfpm::vector<aggregate<int>> &dw_p1,
@@ -39,7 +39,7 @@ void indexUpdate(
     corner_dl.clear();
     corner_dr.clear();
     bulk.clear();
-    Part_subset.clear();
+    Particles_subset.clear();
 
     auto it2 = Particles.getDomainIterator();
 
@@ -105,10 +105,11 @@ void indexUpdate(
         ++it2;
     }
 
+
     for (int i = 0; i < bulk.size(); i++) {
-        Part_subset.add();
-        Part_subset.getLastPos()[0] = Particles.getPos(bulk.template get<0>(i))[0];
-        Part_subset.getLastPos()[1] = Particles.getPos(bulk.template get<0>(i))[1];
+        Particles_subset.add();
+        Particles_subset.getLastPos()[0] = Particles.getPos(bulk.template get<0>(i))[0];
+        Particles_subset.getLastPos()[1] = Particles.getPos(bulk.template get<0>(i))[1];
     }
 
 }
@@ -125,8 +126,8 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
         double Ly = box.getHigh(1);
         size_t bc[2] = {NON_PERIODIC, NON_PERIODIC};
         double spacing = box.getHigh(0) / (sz[0] - 1);
-        double rCut = 3.6 * spacing;
-        double rCut2 = 3.6 * spacing;
+        double rCut = 3.9 * spacing;
+        double rCut2 = 3.9 * spacing;
         int ord = 2;
         int ord2 = 2;
         double sampling_factor = 4.0;
@@ -393,7 +394,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
         timer tt3;
         vx.setId(0);
         vy.setId(1);
-        double V_err_eps = 1e-4;
+        double V_err_eps = 5*1e-4;
         double V_err = 1, V_err_old;
         int n = 0;
         int nmax = 300;
@@ -417,476 +418,502 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
             Particles.ghost_get<Stress>();
 
 
-            h[y] = (Pol[x] * (Ks * Dyy(Pol[y]) + Kb * Dxx(Pol[y]) + (Ks - Kb) * Dxy(Pol[x])) -
-                    Pol[y] * (Ks * Dxx(Pol[x]) + Kb * Dyy(Pol[x]) + (Ks - Kb) * Dxy(Pol[y])));
+            r = Pol[x] * Pol[x] + Pol[y] * Pol[y];
+            for (int j = 0; j < bulk.size(); j++) {
+                auto p = bulk.get<0>(j);
+                Particles.getProp<34>(p) = (Particles.getProp<34>(p) == 0) ? 1 : Particles.getProp<34>(p);
+            }
+            for (int j = 0; j < up_p.size(); j++) {
+                auto p = up_p.get<0>(j);
+                Particles.getProp<34>(p) = (Particles.getProp<34>(p) == 0) ? 1 : Particles.getProp<34>(p);
+            }
+            for (int j = 0; j < dw_p.size(); j++) {
+                auto p = dw_p.get<0>(j);
+                Particles.getProp<34>(p) = (Particles.getProp<34>(p) == 0) ? 1 : Particles.getProp<34>(p);
+            }
+            for (int j = 0; j < l_p.size(); j++) {
+                auto p = l_p.get<0>(j);
+                Particles.getProp<34>(p) = (Particles.getProp<34>(p) == 0) ? 1 : Particles.getProp<34>(p);
+            }
+            for (int j = 0; j < r_p.size(); j++) {
+                auto p = r_p.get<0>(j);
+                Particles.getProp<34>(p) = (Particles.getProp<34>(p) == 0) ? 1 : Particles.getProp<34>(p);
+            }
 
-            Particles.ghost_get<MolField>();
+                h[y] = (Pol[x] * (Ks * Dyy(Pol[y]) + Kb * Dxx(Pol[y]) + (Ks - Kb) * Dxy(Pol[x])) -
+                        Pol[y] * (Ks * Dxx(Pol[x]) + Kb * Dyy(Pol[x]) + (Ks - Kb) * Dxy(Pol[y])));
 
-            FranckEnergyDensity = (Ks / 2.0) *
-                                  ((Dx(Pol[x]) * Dx(Pol[x])) + (Dy(Pol[x]) * Dy(Pol[x])) + (Dx(Pol[y]) * Dx(Pol[y])) +
-                                   (Dy(Pol[y]) * Dy(Pol[y]))) +
-                                  ((Kb - Ks) / 2.0) * ((Dx(Pol[y]) - Dy(Pol[x])) * (Dx(Pol[y]) - Dy(Pol[x])));
-            Particles.ghost_get<33>();
+                Particles.ghost_get<MolField>();
 
-
-            f1 = gama * nu * Pol[x] * Pol[x] * (Pol[x] * Pol[x] - Pol[y] * Pol[y]) /
-                 (Pol[x] * Pol[x] + Pol[y] * Pol[y]);
-            f2 = 2.0 * gama * nu * Pol[x] * Pol[y] * (Pol[x] * Pol[x] - Pol[y] * Pol[y]) /
-                 (Pol[x] * Pol[x] + Pol[y] * Pol[y]);
-            f3 = gama * nu * Pol[y] * Pol[y] * (Pol[x] * Pol[x] - Pol[y] * Pol[y]) /
-                 (Pol[x] * Pol[x] + Pol[y] * Pol[y]);
-            f4 = 2.0 * gama * nu * Pol[x] * Pol[x] * Pol[x] * Pol[y] / (Pol[x] * Pol[x] + Pol[y] * Pol[y]);
-            f5 = 4.0 * gama * nu * Pol[x] * Pol[x] * Pol[y] * Pol[y] / (Pol[x] * Pol[x] + Pol[y] * Pol[y]);
-            f6 = 2.0 * gama * nu * Pol[x] * Pol[y] * Pol[y] * Pol[y] / (Pol[x] * Pol[x] + Pol[y] * Pol[y]);
-            Particles.ghost_get<11, 12, 13, 14, 15, 16>();
-            Df1[x] = Dx(f1);
-            Df2[x] = Dx(f2);
-            Df3[x] = Dx(f3);
-            Df4[x] = Dx(f4);
-            Df5[x] = Dx(f5);
-            Df6[x] = Dx(f6);
-
-            Df1[y] = Dy(f1);
-            Df2[y] = Dy(f2);
-            Df3[y] = Dy(f3);
-            Df4[y] = Dy(f4);
-            Df5[y] = Dy(f5);
-            Df6[y] = Dy(f6);
-            Particles.ghost_get<21, 22, 23, 24, 25, 26>();
+                FranckEnergyDensity = (Ks / 2.0) *
+                                      ((Dx(Pol[x]) * Dx(Pol[x])) + (Dy(Pol[x]) * Dy(Pol[x])) +
+                                       (Dx(Pol[y]) * Dx(Pol[y])) +
+                                       (Dy(Pol[y]) * Dy(Pol[y]))) +
+                                      ((Kb - Ks) / 2.0) * ((Dx(Pol[y]) - Dy(Pol[x])) * (Dx(Pol[y]) - Dy(Pol[x])));
+                Particles.ghost_get<33>();
 
 
-            dV[x] = -0.5 * Dy(h[y]) + zeta * Dx(delmu * Pol[x] * Pol[x]) + zeta * Dy(delmu * Pol[x] * Pol[y]) -
-                    zeta * Dx(0.5 * delmu * (Pol[x] * Pol[x] + Pol[y] * Pol[y])) -
-                    0.5 * nu * Dx(-2.0 * h[y] * Pol[x] * Pol[y])
-                    - 0.5 * nu * Dy(h[y] * (Pol[x] * Pol[x] - Pol[y] * Pol[y])) - Dx(sigma[x][x]) - Dy(sigma[x][y]) -
-                    g[x]
-                    - 0.5 * nu * Dx(-gama * lambda * delmu * (Pol[x] * Pol[x] - Pol[y] * Pol[y]))
-                    - 0.5 * Dy(-2.0 * gama * lambda * delmu * (Pol[x] * Pol[y]));
+                f1 = gama * nu * Pol[x] * Pol[x] * (Pol[x] * Pol[x] - Pol[y] * Pol[y]) / (r);
+                f2 = 2.0 * gama * nu * Pol[x] * Pol[y] * (Pol[x] * Pol[x] - Pol[y] * Pol[y]) / (r);
+                f3 = gama * nu * Pol[y] * Pol[y] * (Pol[x] * Pol[x] - Pol[y] * Pol[y]) / (r);
+                f4 = 2.0 * gama * nu * Pol[x] * Pol[x] * Pol[x] * Pol[y] / (r);
+                f5 = 4.0 * gama * nu * Pol[x] * Pol[x] * Pol[y] * Pol[y] / (r);
+                f6 = 2.0 * gama * nu * Pol[x] * Pol[y] * Pol[y] * Pol[y] / (r);
+                Particles.ghost_get<11, 12, 13, 14, 15, 16>();
+                Df1[x] = Dx(f1);
+                Df2[x] = Dx(f2);
+                Df3[x] = Dx(f3);
+                Df4[x] = Dx(f4);
+                Df5[x] = Dx(f5);
+                Df6[x] = Dx(f6);
+
+                Df1[y] = Dy(f1);
+                Df2[y] = Dy(f2);
+                Df3[y] = Dy(f3);
+                Df4[y] = Dy(f4);
+                Df5[y] = Dy(f5);
+                Df6[y] = Dy(f6);
+                Particles.ghost_get<21, 22, 23, 24, 25, 26>();
 
 
-            dV[y] = -0.5 * Dx(-h[y]) + zeta * Dy(delmu * Pol[y] * Pol[y]) + zeta * Dx(delmu * Pol[x] * Pol[y]) -
-                    zeta * Dy(0.5 * delmu * (Pol[x] * Pol[x] + Pol[y] * Pol[y])) -
-                    0.5 * nu * Dy(2.0 * h[y] * Pol[x] * Pol[y])
-                    - 0.5 * nu * Dx(h[y] * (Pol[x] * Pol[x] - Pol[y] * Pol[y])) - Dx(sigma[y][x]) - Dy(sigma[y][y]) -
-                    g[y]
-                    - 0.5 * nu * Dy(gama * lambda * delmu * (Pol[x] * Pol[x] - Pol[y] * Pol[y]))
-                    - 0.5 * Dx(-2.0 * gama * lambda * delmu * (Pol[x] * Pol[y]));
-            Particles.ghost_get<9>();
+                dV[x] = -0.5 * Dy(h[y]) + zeta * Dx(delmu * Pol[x] * Pol[x]) + zeta * Dy(delmu * Pol[x] * Pol[y]) -
+                        zeta * Dx(0.5 * delmu * (Pol[x] * Pol[x] + Pol[y] * Pol[y])) -
+                        0.5 * nu * Dx(-2.0 * h[y] * Pol[x] * Pol[y])
+                        - 0.5 * nu * Dy(h[y] * (Pol[x] * Pol[x] - Pol[y] * Pol[y])) - Dx(sigma[x][x]) -
+                        Dy(sigma[x][y]) -
+                        g[x]
+                        - 0.5 * nu * Dx(-gama * lambda * delmu * (Pol[x] * Pol[x] - Pol[y] * Pol[y]))
+                        - 0.5 * Dy(-2.0 * gama * lambda * delmu * (Pol[x] * Pol[y]));
 
 
-            //Particles.write("PolarI");
-            //Velocity Solution n iterations
+                dV[y] = -0.5 * Dx(-h[y]) + zeta * Dy(delmu * Pol[y] * Pol[y]) + zeta * Dx(delmu * Pol[x] * Pol[y]) -
+                        zeta * Dy(0.5 * delmu * (Pol[x] * Pol[x] + Pol[y] * Pol[y])) -
+                        0.5 * nu * Dy(2.0 * h[y] * Pol[x] * Pol[y])
+                        - 0.5 * nu * Dx(h[y] * (Pol[x] * Pol[x] - Pol[y] * Pol[y])) - Dx(sigma[y][x]) -
+                        Dy(sigma[y][y]) -
+                        g[y]
+                        - 0.5 * nu * Dy(gama * lambda * delmu * (Pol[x] * Pol[x] - Pol[y] * Pol[y]))
+                        - 0.5 * Dx(-2.0 * gama * lambda * delmu * (Pol[x] * Pol[y]));
+                Particles.ghost_get<9>();
 
 
-            auto Stokes1 = eta * (Dxx(V[x]) + Dyy(V[x]))
-                           + 0.5 * nu * (Df1[x] * Dx(V[x]) + f1 * Dxx(V[x]))
-                           + 0.5 * nu * (Df2[x] * 0.5 * (Dx(V[y]) + Dy(V[x])) + f2 * 0.5 * (Dxx(V[y]) + Dyx(V[x])))
-                           + 0.5 * nu * (Df3[x] * Dy(V[y]) + f3 * Dyx(V[y]))
-                           + 0.5 * nu * (Df4[y] * Dx(V[x]) + f4 * Dxy(V[x]))
-                           + 0.5 * nu * (Df5[y] * 0.5 * (Dx(V[y]) + Dy(V[x])) + f5 * 0.5 * (Dxy(V[y]) + Dyy(V[x])))
-                           + 0.5 * nu * (Df6[y] * Dy(V[y]) + f6 * Dyy(V[y]));
-            auto Stokes2 = eta * (Dxx(V[y]) + Dyy(V[y]))
-                           - 0.5 * nu * (Df1[y] * Dx(V[x]) + f1 * Dxy(V[x]))
-                           - 0.5 * nu * (Df2[y] * 0.5 * (Dx(V[y]) + Dy(V[x])) + f2 * 0.5 * (Dxy(V[y]) + Dyy(V[x])))
-                           - 0.5 * nu * (Df3[y] * Dy(V[y]) + f3 * Dyy(V[y]))
-                           + 0.5 * nu * (Df4[x] * Dx(V[x]) + f4 * Dxx(V[x]))
-                           + 0.5 * nu * (Df5[x] * 0.5 * (Dx(V[y]) + Dy(V[x])) + f5 * 0.5 * (Dxx(V[y]) + Dyx(V[x])))
-                           + 0.5 * nu * (Df6[x] * Dy(V[y]) + f6 * Dyx(V[y]));
-            tt.stop();
-            std::cout << "Init of Velocity took " << tt.getwct() << " seconds." << std::endl;
-            tt.start();
-            V_err = 1;
-            n = 0;
-            errctr = 0;
-            if (Vreset == 1)
-            {
+                Particles.write("PolarI");
+                //Velocity Solution n iterations
+
+
+                auto Stokes1 = eta * (Dxx(V[x]) + Dyy(V[x]))
+                               + 0.5 * nu * (Df1[x] * Dx(V[x]) + f1 * Dxx(V[x]))
+                               + 0.5 * nu * (Df2[x] * 0.5 * (Dx(V[y]) + Dy(V[x])) + f2 * 0.5 * (Dxx(V[y]) + Dyx(V[x])))
+                               + 0.5 * nu * (Df3[x] * Dy(V[y]) + f3 * Dyx(V[y]))
+                               + 0.5 * nu * (Df4[y] * Dx(V[x]) + f4 * Dxy(V[x]))
+                               + 0.5 * nu * (Df5[y] * 0.5 * (Dx(V[y]) + Dy(V[x])) + f5 * 0.5 * (Dxy(V[y]) + Dyy(V[x])))
+                               + 0.5 * nu * (Df6[y] * Dy(V[y]) + f6 * Dyy(V[y]));
+                auto Stokes2 = eta * (Dxx(V[y]) + Dyy(V[y]))
+                               - 0.5 * nu * (Df1[y] * Dx(V[x]) + f1 * Dxy(V[x]))
+                               - 0.5 * nu * (Df2[y] * 0.5 * (Dx(V[y]) + Dy(V[x])) + f2 * 0.5 * (Dxy(V[y]) + Dyy(V[x])))
+                               - 0.5 * nu * (Df3[y] * Dy(V[y]) + f3 * Dyy(V[y]))
+                               + 0.5 * nu * (Df4[x] * Dx(V[x]) + f4 * Dxx(V[x]))
+                               + 0.5 * nu * (Df5[x] * 0.5 * (Dx(V[y]) + Dy(V[x])) + f5 * 0.5 * (Dxx(V[y]) + Dyx(V[x])))
+                               + 0.5 * nu * (Df6[x] * Dy(V[y]) + f6 * Dyx(V[y]));
+                tt.stop();
+                std::cout << "Init of Velocity took " << tt.getwct() << " seconds." << std::endl;
+                tt.start();
+                V_err = 1;
+                n = 0;
+                errctr = 0;
+                if (Vreset == 1) {
+                    P_bulk = 0;
+                    P = 0;
+                    Vreset = 0;
+                }
                 P_bulk = 0;
                 P = 0;
-                Vreset = 0;
-            }
-            P_bulk=0;
-            P=0;
-            while (V_err >= V_err_eps && n <= nmax) {
-              petsc_solver<double> solverPetsc;
-                solverPetsc.setSolver(KSPGMRES);
-                //solverPetsc.setRestart(250);
-                solverPetsc.setPreconditioner(PCJACOBI);
-                petsc_solver<double> solverPetsc2;
-                solverPetsc2.setSolver(KSPGMRES);
-                solverPetsc2.setPreconditioner(PCJACOBI);
-                RHS[x] = dV[x];
-                RHS[y] = dV[y];
-                Particles_subset.ghost_get<0>();
-                Grad_bulk[x] = Bulk_Dx(P_bulk);
-                Grad_bulk[y] = Bulk_Dy(P_bulk);
-                Particles_subset.ghost_get<2>();
-                for (int i = 0; i < bulk.size(); i++) {
-                    Particles.template getProp<10>(bulk.template get<0>(i))[x] += Particles_subset.getProp<2>(i)[x];
-                    Particles.template getProp<10>(bulk.template get<0>(i))[y] += Particles_subset.getProp<2>(i)[y];
+                while (V_err >= V_err_eps && n <= nmax) {
+                    petsc_solver<double> solverPetsc;
+                    solverPetsc.setSolver(KSPGMRES);
+                    solverPetsc.setPreconditioner(PCJACOBI);
+                    petsc_solver<double> solverPetsc2;
+                    solverPetsc2.setSolver(KSPGMRES);
+                    solverPetsc2.setPreconditioner(PCJACOBI);
+                    RHS[x] = dV[x];
+                    RHS[y] = dV[y];
+                    Particles_subset.ghost_get<0>();
+                    Grad_bulk[x] = Bulk_Dx(P_bulk);
+                    Grad_bulk[y] = Bulk_Dy(P_bulk);
+                    Particles_subset.ghost_get<2>();
+                    for (int i = 0; i < bulk.size(); i++) {
+                        Particles.template getProp<10>(bulk.template get<0>(i))[x] += Particles_subset.getProp<2>(i)[x];
+                        Particles.template getProp<10>(bulk.template get<0>(i))[y] += Particles_subset.getProp<2>(i)[y];
+                    }
+                    Particles.ghost_get<10>();
+                    DCPSE_scheme<equations2d2, decltype(Particles)> Solver(Particles);
+                    Solver.impose(Stokes1, bulk, RHS[0], vx);
+                    Solver.impose(Stokes2, bulk, RHS[1], vy);
+                    Solver.impose(V[x], up_p, 0, vx);
+                    Solver.impose(V[y], up_p, 0, vy);
+                    Solver.impose(V[x], dw_p, 0, vx);
+                    Solver.impose(V[y], dw_p, 0, vy);
+                    Solver.impose(V[x], l_p, 0, vx);
+                    Solver.impose(V[y], l_p, 0, vy);
+                    Solver.impose(V[x], r_p, 0, vx);
+                    Solver.impose(V[y], r_p, 0, vy);
+                    Solver.solve_with_solver(solverPetsc, V[x], V[y]);
+                    //Solver.solve(V[x], V[y]);
+                    Particles.ghost_get<Velocity>();
+                    div = -(Dx(V[x]) + Dy(V[y]));
+                    Particles.ghost_get<19>();
+                    auto Helmholtz = Dxx(H) + Dyy(H);
+                    DCPSE_scheme<equations2d1, decltype(Particles)> SolverH(Particles);
+                    SolverH.impose(Helmholtz, bulk, prop_id<19>());
+                    SolverH.impose(H, up_p1, 0);
+                    SolverH.impose(H, dw_p1, 0);
+                    SolverH.impose(H, l_p1, 0);
+                    SolverH.impose(H, r_p1, 0);
+                    SolverH.impose(-Dx(H) + Dy(H), corner_ul, 0);
+                    SolverH.impose(Dx(H) + Dy(H), corner_ur, 0);
+                    SolverH.impose(-Dx(H) - Dy(H), corner_dl, 0);
+                    SolverH.impose(Dx(H) - Dy(H), corner_dr, 0);
+                    SolverH.solve_with_solver(solverPetsc2, H);
+                    //SolverH.solve(H);
+                    Particles.ghost_get<17>();
+                    Particles.ghost_get<Velocity>();
+                    P = P + div;
+                    Particles.ghost_get<Pressure>();
+                    for (int i = 0; i < bulk.size(); i++) {
+                        Particles_subset.getProp<0>(i) = Particles.template getProp<4>(bulk.template get<0>(i));
+                    }
+                    Particles_subset.ghost_get<1>();
+                    Grad_bulk[x] = Bulk_Dx(H_bulk);
+                    Grad_bulk[y] = Bulk_Dy(H_bulk);
+                    for (int i = 0; i < bulk.size(); i++) {
+                        Particles.template getProp<1>(bulk.template get<0>(i))[x] += Particles_subset.getProp<2>(i)[x];
+                        Particles.template getProp<1>(bulk.template get<0>(i))[y] += Particles_subset.getProp<2>(i)[y];
+                    }
+                    for (int j = 0; j < up_p.size(); j++) {
+                        auto p = up_p.get<0>(j);
+                        Particles.getProp<1>(p)[0] = 0;
+                        Particles.getProp<1>(p)[1] = 0;
+                        Particles.getProp<4>(p) = 0;
+
+                    }
+                    for (int j = 0; j < dw_p.size(); j++) {
+                        auto p = dw_p.get<0>(j);
+                        Particles.getProp<1>(p)[0] = 0;
+                        Particles.getProp<1>(p)[1] = 0;
+                        Particles.getProp<4>(p) = 0;
+                    }
+                    for (int j = 0; j < l_p.size(); j++) {
+                        auto p = l_p.get<0>(j);
+                        Particles.getProp<1>(p)[0] = 0;
+                        Particles.getProp<1>(p)[1] = 0;
+                        Particles.getProp<4>(p) = 0;
+                    }
+                    for (int j = 0; j < r_p.size(); j++) {
+                        auto p = r_p.get<0>(j);
+                        Particles.getProp<1>(p)[0] = 0;
+                        Particles.getProp<1>(p)[1] = 0;
+                        Particles.getProp<4>(p) = 0;
+                    }
+                    Particles.ghost_get<Velocity>();
+                    Particles.ghost_get<Pressure>();
+                    sum = 0;
+                    sum1 = 0;
+                    for (int j = 0; j < bulk.size(); j++) {
+                        auto p = bulk.get<0>(j);
+                        sum += (Particles.getProp<18>(p)[0] - Particles.getProp<1>(p)[0]) *
+                               (Particles.getProp<18>(p)[0] - Particles.getProp<1>(p)[0]) +
+                               (Particles.getProp<18>(p)[1] - Particles.getProp<1>(p)[1]) *
+                               (Particles.getProp<18>(p)[1] - Particles.getProp<1>(p)[1]);
+                        sum1 += Particles.getProp<1>(p)[0] * Particles.getProp<1>(p)[0] +
+                                Particles.getProp<1>(p)[1] * Particles.getProp<1>(p)[1];
+                    }
+                    sum = sqrt(sum);
+                    sum1 = sqrt(sum1);
+
+                    v_cl.sum(sum);
+                    v_cl.sum(sum1);
+                    v_cl.execute();
+                    V_t = V;
+                    Particles.ghost_get<18>();
+                    V_err_old = V_err;
+                    V_err = sum / sum1;
+                    if (V_err > V_err_old) {
+                        errctr++;
+                        //alpha_P -= 0.1;
+                    }
+                    if (n > 3) {
+                        if (errctr > 1 || abs(V_err_old - V_err) < 1e-6) {
+                            std::cout << "CONVERGENCE LOOP BROKEN DUE TO INCREASE/Oscillation IN ERROR" << std::endl;
+                            Vreset = 1;
+                            break;
+                        } else {
+                            Vreset = 0;
+                        }
+                    }
+                    n++;
+                    Particles.write_frame("V_debug", n);
+                    if (v_cl.rank() == 0) {
+                        std::cout << "Rel l2 cgs err in V = " << V_err << " at " << n << std::endl;
+                    }
                 }
-                Particles.ghost_get<10>();
-                DCPSE_scheme<equations2d2, decltype(Particles)> Solver(Particles);
-                Solver.impose(Stokes1, bulk, RHS[0], vx);
-                Solver.impose(Stokes2, bulk, RHS[1], vy);
-                Solver.impose(V[x], up_p, 0, vx);
-                Solver.impose(V[y], up_p, 0, vy);
-                Solver.impose(V[x], dw_p, 0, vx);
-                Solver.impose(V[y], dw_p, 0, vy);
-                Solver.impose(V[x], l_p, 0, vx);
-                Solver.impose(V[y], l_p, 0, vy);
-                Solver.impose(V[x], r_p, 0, vx);
-                Solver.impose(V[y], r_p, 0, vy);
-                Solver.solve_with_solver(solverPetsc, V[x], V[y]);
-                //Solver.solve(V[x], V[y]);
-                Particles.ghost_get<Velocity>();
-                div = -(Dx(V[x]) + Dy(V[y]));
-                Particles.ghost_get<19>();
-                auto Helmholtz = Dxx(H) + Dyy(H);
-                DCPSE_scheme<equations2d1, decltype(Particles)> SolverH(Particles);
-                SolverH.impose(Helmholtz, bulk, prop_id<19>());
-                SolverH.impose(H, up_p1, 0);
-                SolverH.impose(H, dw_p1, 0);
-                SolverH.impose(H, l_p1, 0);
-                SolverH.impose(H, r_p1, 0);
-                SolverH.impose(Dy(H)-Dx(H), corner_ul, 0);
-                SolverH.impose(Dx(H)+Dy(H), corner_ur, 0);
-                SolverH.impose(-Dy(H)-Dx(H), corner_dl, 0);
-                SolverH.impose(Dx(H)-Dy(H), corner_dr, 0);
-                SolverH.solve_with_solver(solverPetsc2, H);
-                //SolverH.solve(H);
-                Particles.ghost_get<17>();
-                Particles.ghost_get<Velocity>();
-                P = P + div;
-                Particles.ghost_get<Pressure>();
-                for (int i = 0; i < bulk.size(); i++) {
-                    Particles_subset.getProp<0>(i) = Particles.template getProp<4>(bulk.template get<0>(i));
-                }
-                Particles_subset.ghost_get<1>();
-                Grad_bulk[x] = Bulk_Dx(H_bulk);
-                Grad_bulk[y] = Bulk_Dy(H_bulk);
-                for (int i = 0; i < bulk.size(); i++) {
-                    Particles.template getProp<1>(bulk.template get<0>(i))[x] += Particles_subset.getProp<2>(i)[x];
-                    Particles.template getProp<1>(bulk.template get<0>(i))[y] += Particles_subset.getProp<2>(i)[y];
+                tt.stop();
+                std::cout << "Rel l2 cgs err in V = " << V_err << " and took " << tt.getwct() << " seconds with " << n
+                          << " iterations."
+                          << std::endl;
+                u[x][x] = Dx(V[x]);
+                u[x][y] = 0.5 * (Dx(V[y]) + Dy(V[x]));
+                u[y][x] = 0.5 * (Dy(V[x]) + Dx(V[y]));
+                u[y][y] = Dy(V[y]);
+
+                W[x][x] = 0;
+                W[x][y] = 0.5 * (Dy(V[x]) - Dx(V[y]));
+                W[y][x] = 0.5 * (Dx(V[y]) - Dy(V[x]));
+                W[y][y] = 0;
+
+                H_p_b = Pol[x] * Pol[x] + Pol[y] * Pol[y];
+                for (int j = 0; j < bulk.size(); j++) {
+                    auto p = bulk.get<0>(j);
+                    Particles.getProp<32>(p) = (Particles.getProp<32>(p) == 0) ? 1 : Particles.getProp<32>(p);
                 }
                 for (int j = 0; j < up_p.size(); j++) {
                     auto p = up_p.get<0>(j);
-                    Particles.getProp<1>(p)[0] = 0;
-                    Particles.getProp<1>(p)[1] = 0;
-                    Particles.getProp<4>(p) = 0;
-
+                    Particles.getProp<32>(p) = (Particles.getProp<32>(p) == 0) ? 1 : Particles.getProp<32>(p);
                 }
                 for (int j = 0; j < dw_p.size(); j++) {
                     auto p = dw_p.get<0>(j);
-                    Particles.getProp<1>(p)[0] = 0;
-                    Particles.getProp<1>(p)[1] = 0;
-                    Particles.getProp<4>(p) = 0;
+                    Particles.getProp<32>(p) = (Particles.getProp<32>(p) == 0) ? 1 : Particles.getProp<32>(p);
                 }
                 for (int j = 0; j < l_p.size(); j++) {
                     auto p = l_p.get<0>(j);
-                    Particles.getProp<1>(p)[0] = 0;
-                    Particles.getProp<1>(p)[1] = 0;
-                    Particles.getProp<4>(p) = 0;
+                    Particles.getProp<32>(p) = (Particles.getProp<32>(p) == 0) ? 1 : Particles.getProp<32>(p);
                 }
                 for (int j = 0; j < r_p.size(); j++) {
                     auto p = r_p.get<0>(j);
-                    Particles.getProp<1>(p)[0] = 0;
-                    Particles.getProp<1>(p)[1] = 0;
-                    Particles.getProp<4>(p) = 0;
+                    Particles.getProp<32>(p) = (Particles.getProp<32>(p) == 0) ? 1 : Particles.getProp<32>(p);
                 }
-                Particles.ghost_get<Velocity>();
-                Particles.ghost_get<Pressure>();
-                sum = 0;
-                sum1 = 0;
+
+                h[x] = -gama * (lambda * delmu - nu * (u[x][x] * Pol[x] * Pol[x] + u[y][y] * Pol[y] * Pol[y] +
+                                                       2 * u[x][y] * Pol[x] * Pol[y]) / (H_p_b));
+
+
+                Particles.ghost_get<MolField, Strain_rate, Vorticity>();
+                Particles.deleteGhost();
+                Particles.write_frame("Polar_3e-3", ctr);
+                Particles.ghost_get<0, 1, MolField, Strain_rate, Vorticity>();
+                ctr++;
+
+                H_p_b = sqrt(H_p_b);
+
+                k1[x] = ((h[x] * Pol[x] - h[y] * Pol[y]) / gama + lambda * delmu * Pol[x] -
+                         nu * (u[x][x] * Pol[x] + u[x][y] * Pol[y]) + W[x][x] * Pol[x] +
+                         W[x][y] * Pol[y]);// - V[x] * Dx(Pol[x]) - V[y] * Dy(Pol[x]));
+                k1[y] = ((h[x] * Pol[y] + h[y] * Pol[x]) / gama + lambda * delmu * Pol[y] -
+                         nu * (u[y][x] * Pol[x] + u[y][y] * Pol[y]) + W[y][x] * Pol[x] +
+                         W[y][y] * Pol[y]);// - V[x] * Dx(Pol[y]) - V[y] * Dy(Pol[y]));
+                Particles.ghost_get<28>();
+
+                H_t = H_p_b;//+0.5*dt*(k1[x]*k1[x]+k1[y]*k1[y]);
+                dPol = Pol + (0.5 * dt) * k1;
+                dPol = dPol / H_t;
+                Particles.ghost_get<8>();
+                r = dPol[x] * dPol[x] + dPol[y] * dPol[y];
                 for (int j = 0; j < bulk.size(); j++) {
                     auto p = bulk.get<0>(j);
-                    sum += (Particles.getProp<18>(p)[0] - Particles.getProp<1>(p)[0]) *
-                           (Particles.getProp<18>(p)[0] - Particles.getProp<1>(p)[0]) +
-                           (Particles.getProp<18>(p)[1] - Particles.getProp<1>(p)[1]) *
-                           (Particles.getProp<18>(p)[1] - Particles.getProp<1>(p)[1]);
-                    sum1 += Particles.getProp<1>(p)[0] * Particles.getProp<1>(p)[0] +
-                            Particles.getProp<1>(p)[1] * Particles.getProp<1>(p)[1];
+                    Particles.getProp<34>(p) = (Particles.getProp<34>(p) == 0) ? 1 : Particles.getProp<34>(p);
                 }
-                sum = sqrt(sum);
-                sum1 = sqrt(sum1);
-
-                v_cl.sum(sum);
-                v_cl.sum(sum1);
-                v_cl.execute();
-                V_t = V;
-                Particles.ghost_get<18>();
-                V_err_old = V_err;
-                V_err = sum / sum1;
-                if (V_err > V_err_old) {
-                    errctr++;
-                    //alpha_P -= 0.1;
+                for (int j = 0; j < up_p.size(); j++) {
+                    auto p = up_p.get<0>(j);
+                    Particles.getProp<34>(p) = (Particles.getProp<34>(p) == 0) ? 1 : Particles.getProp<34>(p);
                 }
-                if (n>3){
-                if (errctr > 2 || abs(V_err_old-V_err)<1e-5)
-                {
-                    std::cout<<"CONVERGENCE LOOP BROKEN DUE TO INCREASE/Oscillation IN ERROR"<< std::endl;
-                    Vreset=1;
-                    break;
+                for (int j = 0; j < dw_p.size(); j++) {
+                    auto p = dw_p.get<0>(j);
+                    Particles.getProp<34>(p) = (Particles.getProp<34>(p) == 0) ? 1 : Particles.getProp<34>(p);
                 }
-                else{
-                    Vreset=0;
+                for (int j = 0; j < l_p.size(); j++) {
+                    auto p = l_p.get<0>(j);
+                    Particles.getProp<34>(p) = (Particles.getProp<34>(p) == 0) ? 1 : Particles.getProp<34>(p);
                 }
+                for (int j = 0; j < r_p.size(); j++) {
+                    auto p = r_p.get<0>(j);
+                    Particles.getProp<34>(p) = (Particles.getProp<34>(p) == 0) ? 1 : Particles.getProp<34>(p);
                 }
-                n++;
-                //if (v_cl.rank() == 0)
-                //{ std::cout << "Rel l2 cgs err in V = " << V_err <<" at "<<n<< std::endl; }
+
+                h[y] = (dPol[x] * (Ks * Dyy(dPol[y]) + Kb * Dxx(dPol[y]) + (Ks - Kb) * Dxy(dPol[x])) -
+                        dPol[y] * (Ks * Dxx(dPol[x]) + Kb * Dyy(dPol[x]) + (Ks - Kb) * Dxy(dPol[y])));
+
+                h[x] = -gama * (lambda * delmu - nu * ((u[x][x] * dPol[x] * dPol[x] + u[y][y] * dPol[y] * dPol[y] +
+                                                        2 * u[x][y] * dPol[x] * dPol[y]) / (r)));
+                Particles.ghost_get<7>();
+
+
+                k2[x] = ((h[x] * (dPol[x]) - h[y] * (dPol[y])) / gama +
+                         lambda * delmu * (dPol[x]) -
+                         nu * (u[x][x] * (dPol[x]) + u[x][y] * (dPol[y])) +
+                         W[x][x] * (dPol[x]) + W[x][y] * (dPol[y])); //-V[x] * Dx((dPol[x])) - V[y] * Dy((dPol[x])));
+                k2[y] = ((h[x] * (dPol[y]) + h[y] * (dPol[x])) / gama +
+                         lambda * delmu * (dPol[y]) -
+                         nu * (u[y][x] * (dPol[x]) + u[y][y] * (dPol[y])) +
+                         W[y][x] * (dPol[x]) + W[y][y] * (dPol[y])); //-V[x] * Dx((dPol[y])) - V[y] * Dy((dPol[y])));
+                Particles.ghost_get<29>();
+                H_t = H_p_b;//+0.5*dt*(k2[x]*k2[x]+k2[y]*k2[y]);
+                dPol = Pol + (0.5 * dt) * k2;
+                dPol = dPol / H_t;
+                Particles.ghost_get<8>();
+                r = dPol[x] * dPol[x] + dPol[y] * dPol[y];
+                for (int j = 0; j < bulk.size(); j++) {
+                    auto p = bulk.get<0>(j);
+                    Particles.getProp<34>(p) = (Particles.getProp<34>(p) == 0) ? 1 : Particles.getProp<34>(p);
+                }
+                for (int j = 0; j < up_p.size(); j++) {
+                    auto p = up_p.get<0>(j);
+                    Particles.getProp<34>(p) = (Particles.getProp<34>(p) == 0) ? 1 : Particles.getProp<34>(p);
+                }
+                for (int j = 0; j < dw_p.size(); j++) {
+                    auto p = dw_p.get<0>(j);
+                    Particles.getProp<34>(p) = (Particles.getProp<34>(p) == 0) ? 1 : Particles.getProp<34>(p);
+                }
+                for (int j = 0; j < l_p.size(); j++) {
+                    auto p = l_p.get<0>(j);
+                    Particles.getProp<34>(p) = (Particles.getProp<34>(p) == 0) ? 1 : Particles.getProp<34>(p);
+                }
+                for (int j = 0; j < r_p.size(); j++) {
+                    auto p = r_p.get<0>(j);
+                    Particles.getProp<34>(p) = (Particles.getProp<34>(p) == 0) ? 1 : Particles.getProp<34>(p);
+                }
+
+                h[y] = (dPol[x] * (Ks * Dyy(dPol[y]) + Kb * Dxx(dPol[y]) + (Ks - Kb) * Dxy(dPol[x])) -
+                        dPol[y] * (Ks * Dxx(dPol[x]) + Kb * Dyy(dPol[x]) + (Ks - Kb) * Dxy(dPol[y])));
+
+                h[x] = -gama * (lambda * delmu - nu * ((u[x][x] * dPol[x] * dPol[x] + u[y][y] * dPol[y] * dPol[y] +
+                                                        2 * u[x][y] * dPol[x] * dPol[y]) / (r)));
+
+                k3[x] = ((h[x] * (dPol[x]) - h[y] * (dPol[y])) / gama +
+                         lambda * delmu * (dPol[x]) -
+                         nu * (u[x][x] * (dPol[x]) + u[x][y] * (dPol[y])) +
+                         W[x][x] * (dPol[x]) + W[x][y] * (dPol[y]));
+                // -V[x] * Dx((dPol[x])) - V[y] * Dy((dPol[x])));
+                k3[y] = ((h[x] * (dPol[y]) + h[y] * (dPol[x])) / gama +
+                         lambda * delmu * (dPol[y]) -
+                         nu * (u[y][x] * (dPol[x]) + u[y][y] * (dPol[y])) +
+                         W[y][x] * (dPol[x]) + W[y][y] * (dPol[y]));
+                // -V[x] * Dx((dPol[y])) - V[y] * Dy((dPol[y])));
+                Particles.ghost_get<30>();
+                H_t = H_p_b;//+dt*(k3[x]*k3[x]+k3[y]*k3[y]);
+                dPol = Pol + (dt * k3);
+                dPol = dPol / H_t;
+                Particles.ghost_get<8>();
+                r = dPol[x] * dPol[x] + dPol[y] * dPol[y];
+                for (int j = 0; j < bulk.size(); j++) {
+                    auto p = bulk.get<0>(j);
+                    Particles.getProp<34>(p) = (Particles.getProp<34>(p) == 0) ? 1 : Particles.getProp<34>(p);
+                }
+                for (int j = 0; j < up_p.size(); j++) {
+                    auto p = up_p.get<0>(j);
+                    Particles.getProp<34>(p) = (Particles.getProp<34>(p) == 0) ? 1 : Particles.getProp<34>(p);
+                }
+                for (int j = 0; j < dw_p.size(); j++) {
+                    auto p = dw_p.get<0>(j);
+                    Particles.getProp<34>(p) = (Particles.getProp<34>(p) == 0) ? 1 : Particles.getProp<34>(p);
+                }
+                for (int j = 0; j < l_p.size(); j++) {
+                    auto p = l_p.get<0>(j);
+                    Particles.getProp<34>(p) = (Particles.getProp<34>(p) == 0) ? 1 : Particles.getProp<34>(p);
+                }
+                for (int j = 0; j < r_p.size(); j++) {
+                    auto p = r_p.get<0>(j);
+                    Particles.getProp<34>(p) = (Particles.getProp<34>(p) == 0) ? 1 : Particles.getProp<34>(p);
+                }
+
+                h[y] = (dPol[x] * (Ks * Dyy(dPol[y]) + Kb * Dxx(dPol[y]) + (Ks - Kb) * Dxy(dPol[x])) -
+                        dPol[y] * (Ks * Dxx(dPol[x]) + Kb * Dyy(dPol[x]) + (Ks - Kb) * Dxy(dPol[y])));
+
+                h[x] = -gama * (lambda * delmu - nu * ((u[x][x] * dPol[x] * dPol[x] + u[y][y] * dPol[y] * dPol[y] +
+                                                        2 * u[x][y] * dPol[x] * dPol[y]) / (r)));
+                Particles.ghost_get<7>();
+
+
+                k4[x] = ((h[x] * (dPol[x]) - h[y] * (dPol[y])) / gama +
+                         lambda * delmu * (dPol[x]) -
+                         nu * (u[x][x] * (dPol[x]) + u[x][y] * (dPol[y])) +
+                         W[x][x] * (dPol[x]) +
+                         W[x][y] * (dPol[y]));//   -V[x]*Dx( (dt * k3[x]+Pol[x])) -V[y]*Dy( (dt * k3[x]+Pol[x])));
+                k4[y] = ((h[x] * (dPol[y]) + h[y] * (dPol[x])) / gama +
+                         lambda * delmu * (dPol[y]) -
+                         nu * (u[y][x] * (dPol[x]) + u[y][y] * (dPol[y])) +
+                         W[y][x] * (dPol[x]) +
+                         W[y][y] * (dPol[y]));//  -V[x]*Dx( (dt * k3[y]+Pol*[y])) -V[y]*Dy( (dt * k3[y]+Pol[y])));
+                Particles.ghost_get<31>();
+
+                Pol = Pol + (dt / 6.0) * (k1 + (2.0 * k2) + (2.0 * k3) + k4);
+                Pol = Pol / H_p_b;
+
+                H_p_b = sqrt(Pol[x] * Pol[x] + Pol[y] * Pol[y]);
+                Pol = Pol / H_p_b;
+
+                k1 = V;
+                k2 = 0.5 * dt * k1 + V;
+                k3 = 0.5 * dt * k2 + V;
+                k4 = dt * k3 + V;
+                //Pos = Pos + dt * V;
+                Pos = Pos + dt / 6.0 * (k1 + 2 * k2 + 2 * k3 + k4);
+                Particles.map();
+                Particles.ghost_get<0>();
+                indexUpdate(Particles, Particles_subset, up_p, dw_p, l_p, r_p, up_p1, dw_p1, l_p1, r_p1, corner_ul,
+                            corner_ur, corner_dl, corner_dr, bulk, up, down, left, right);
+                Particles_subset.map();
+                Particles_subset.ghost_get<0>();
+
+                //Particles_subset.write("debug");
+                for (int j = 0; j < up_p.size(); j++) {
+                    auto p = up_p.get<0>(j);
+                    Particles.getProp<0>(p)[x] = sin(2 * M_PI * (cos((2 * Particles.getPos(p)[x] - Lx) / Lx) -
+                                                                 sin((2 * Particles.getPos(p)[y] - Ly) / Ly)));
+                    Particles.getProp<0>(p)[y] = cos(2 * M_PI * (cos((2 * Particles.getPos(p)[x] - Lx) / Lx) -
+                                                                 sin((2 * Particles.getPos(p)[y] - Ly) / Ly)));
+                }
+                for (int j = 0; j < dw_p.size(); j++) {
+                    auto p = dw_p.get<0>(j);
+                    Particles.getProp<0>(p)[x] = sin(2 * M_PI * (cos((2 * Particles.getPos(p)[x] - Lx) / Lx) -
+                                                                 sin((2 * Particles.getPos(p)[y] - Ly) / Ly)));
+                    Particles.getProp<0>(p)[y] = cos(2 * M_PI * (cos((2 * Particles.getPos(p)[x] - Lx) / Lx) -
+                                                                 sin((2 * Particles.getPos(p)[y] - Ly) / Ly)));
+                }
+                for (int j = 0; j < l_p.size(); j++) {
+                    auto p = l_p.get<0>(j);
+                    Particles.getProp<0>(p)[x] = sin(2 * M_PI * (cos((2 * Particles.getPos(p)[x] - Lx) / Lx) -
+                                                                 sin((2 * Particles.getPos(p)[y] - Ly) / Ly)));
+                    Particles.getProp<0>(p)[y] = cos(2 * M_PI * (cos((2 * Particles.getPos(p)[x] - Lx) / Lx) -
+                                                                 sin((2 * Particles.getPos(p)[y] - Ly) / Ly)));
+                }
+                for (int j = 0; j < r_p.size(); j++) {
+                    auto p = r_p.get<0>(j);
+                    Particles.getProp<0>(p)[x] = sin(2 * M_PI * (cos((2 * Particles.getPos(p)[x] - Lx) / Lx) -
+                                                                 sin((2 * Particles.getPos(p)[y] - Ly) / Ly)));
+                    Particles.getProp<0>(p)[y] = cos(2 * M_PI * (cos((2 * Particles.getPos(p)[x] - Lx) / Lx) -
+                                                                 sin((2 * Particles.getPos(p)[y] - Ly) / Ly)));
+                }
+
+                Particles.ghost_get<0, Vorticity, MolField>();
+                Particles_subset.ghost_get<0, 1, 2>();
+
+                tt.start();
+                Dx.update(Particles);
+                Dy.update(Particles);
+                Dxy.update(Particles);
+                auto Dyx = Dxy;
+                Dxx.update(Particles);
+                Dyy.update(Particles);
+
+                Bulk_Dx.update(Particles_subset);
+                Bulk_Dy.update(Particles_subset);
+
+                tt.stop();
+                std::cout << "Updation of operators took " << tt.getwct() << " seconds." << std::endl;
+
+                std::cout << "Time step " << ctr << " : " << tim << " over." << std::endl;
+                tim += dt;
+                std::cout << "----------------------------------------------------------" << std::endl;
             }
-            tt.stop();
-            std::cout << "Rel l2 cgs err in V = " << V_err << " and took " << tt.getwct() << " seconds with " << n
-                      << " iterations."
-                      << std::endl;
-            u[x][x] = Dx(V[x]);
-            u[x][y] = 0.5 * (Dx(V[y]) + Dy(V[x]));
-            u[y][x] = 0.5 * (Dy(V[x]) + Dx(V[y]));
-            u[y][y] = Dy(V[y]);
-
-            W[x][x] = 0;
-            W[x][y] = 0.5 * (Dy(V[x]) - Dx(V[y]));
-            W[y][x] = 0.5 * (Dx(V[y]) - Dy(V[x]));
-            W[y][y] = 0;
-
-
-            h[x] = -gama * (lambda * delmu - nu * (u[x][x] * Pol[x] * Pol[x] +  u[y][y] * Pol[y] * Pol[y] + 2* u[x][y] * Pol[x] * Pol[y]) / (Pol[x] * Pol[x] + Pol[y] * Pol[y]));
-
-
-            Particles.ghost_get<MolField, Strain_rate, Vorticity>();
-            Particles.deleteGhost();
-            Particles.write_frame("Polar_3e-3", ctr);
-            Particles.ghost_get<0,1,MolField, Strain_rate, Vorticity>();
-            ctr++;
-            H_p_b = Pol[x] * Pol[x] + Pol[y] * Pol[y];
-            for (int j = 0; j < bulk.size(); j++) {
-                auto p = bulk.get<0>(j);
-                Particles.getProp<32>(p) =(Particles.getProp<32>(p)== 0) ? 1 : Particles.getProp<32>(p);
-            }
-            for (int j = 0; j < up_p.size(); j++) {
-                auto p = up_p.get<0>(j);
-                Particles.getProp<32>(p) =(Particles.getProp<32>(p)== 0) ? 1 : Particles.getProp<32>(p);
-            }
-            for (int j = 0; j < dw_p.size(); j++) {
-                auto p = dw_p.get<0>(j);
-                Particles.getProp<32>(p) =(Particles.getProp<32>(p)== 0) ? 1 : Particles.getProp<32>(p);
-            }
-            for (int j = 0; j < l_p.size(); j++) {
-                auto p = l_p.get<0>(j);
-                Particles.getProp<32>(p) =(Particles.getProp<32>(p)== 0) ? 1 : Particles.getProp<32>(p);
-            }
-            for (int j = 0; j < r_p.size(); j++) {
-                auto p = r_p.get<0>(j);
-                Particles.getProp<32>(p) =(Particles.getProp<32>(p)== 0) ? 1 : Particles.getProp<32>(p);
-            }
-            H_p_b=sqrt(H_p_b);
-
-            k1[x] = ((h[x] * Pol[x] - h[y] * Pol[y]) / gama + lambda * delmu * Pol[x] -
-                     nu * (u[x][x] * Pol[x] + u[x][y] * Pol[y]) + W[x][x] * Pol[x] +
-                     W[x][y] * Pol[y]);// - V[x] * Dx(Pol[x]) - V[y] * Dy(Pol[x]));
-            k1[y] = ((h[x] * Pol[y] + h[y] * Pol[x]) / gama + lambda * delmu * Pol[y] -
-                     nu * (u[y][x] * Pol[x] + u[y][y] * Pol[y]) + W[y][x] * Pol[x] +
-                     W[y][y] * Pol[y]);// - V[x] * Dx(Pol[y]) - V[y] * Dy(Pol[y]));
-            Particles.ghost_get<28>();
-
-            H_t = H_p_b;//+0.5*dt*(k1[x]*k1[x]+k1[y]*k1[y]);
-            dPol = Pol + (0.5 * dt) * k1;
-            dPol = dPol / H_t;
-            Particles.ghost_get<8>();
-            r=dPol[x]*dPol[x]+dPol[y]*dPol[y];
-            for (int j = 0; j < bulk.size(); j++) {
-                auto p = bulk.get<0>(j);
-                Particles.getProp<34>(p) =(Particles.getProp<34>(p)== 0) ? 1 : Particles.getProp<34>(p);
-            }
-            for (int j = 0; j < up_p.size(); j++) {
-                auto p = up_p.get<0>(j);
-                Particles.getProp<34>(p) =(Particles.getProp<34>(p)== 0) ? 1 : Particles.getProp<34>(p);
-            }
-            for (int j = 0; j < dw_p.size(); j++) {
-                auto p = dw_p.get<0>(j);
-                Particles.getProp<34>(p) =(Particles.getProp<34>(p)== 0) ? 1 : Particles.getProp<34>(p);
-            }
-            for (int j = 0; j < l_p.size(); j++) {
-                auto p = l_p.get<0>(j);
-                Particles.getProp<34>(p) =(Particles.getProp<34>(p)== 0) ? 1 : Particles.getProp<34>(p);
-            }
-            for (int j = 0; j < r_p.size(); j++) {
-                auto p = r_p.get<0>(j);
-                Particles.getProp<34>(p) =(Particles.getProp<34>(p)== 0) ? 1 : Particles.getProp<34>(p);
-            }
-
-            h[y] = (dPol[x] * (Ks * Dyy(dPol[y]) + Kb * Dxx(dPol[y]) + (Ks - Kb) * Dxy(dPol[x])) -
-                    dPol[y] * (Ks * Dxx(dPol[x]) + Kb * Dyy(dPol[x]) + (Ks - Kb) * Dxy(dPol[y])));
-
-            h[x] = -gama * (lambda * delmu - nu * ((u[x][x] * dPol[x] * dPol[x] +  u[y][y] * dPol[y] * dPol[y] + 2* u[x][y] * dPol[x] * dPol[y])/(r)));
-            Particles.ghost_get<7>();
-
-
-            k2[x] = ((h[x] * (dPol[x]) - h[y] * (dPol[y])) / gama +
-                     lambda * delmu * (dPol[x]) -
-                     nu * (u[x][x] * (dPol[x]) + u[x][y] * (dPol[y])) +
-                     W[x][x] * (dPol[x]) + W[x][y] * (dPol[y])); //-V[x] * Dx((dPol[x])) - V[y] * Dy((dPol[x])));
-            k2[y] = ((h[x] * (dPol[y]) + h[y] * (dPol[x])) / gama +
-                     lambda * delmu * (dPol[y]) -
-                     nu * (u[y][x] * (dPol[x]) + u[y][y] * (dPol[y])) +
-                     W[y][x] * (dPol[x]) + W[y][y] * (dPol[y])); //-V[x] * Dx((dPol[y])) - V[y] * Dy((dPol[y])));
-            Particles.ghost_get<29>();
-            H_t = H_p_b;//+0.5*dt*(k2[x]*k2[x]+k2[y]*k2[y]);
-            dPol = Pol + (0.5 * dt) * k2;
-            dPol = dPol / H_t;
-            Particles.ghost_get<8>();
-            r=dPol[x]*dPol[x]+dPol[y]*dPol[y];
-            for (int j = 0; j < bulk.size(); j++) {
-                auto p = bulk.get<0>(j);
-                Particles.getProp<34>(p) =(Particles.getProp<34>(p)== 0) ? 1 : Particles.getProp<34>(p);
-            }
-            for (int j = 0; j < up_p.size(); j++) {
-                auto p = up_p.get<0>(j);
-                Particles.getProp<34>(p) =(Particles.getProp<34>(p)== 0) ? 1 : Particles.getProp<34>(p);
-            }
-            for (int j = 0; j < dw_p.size(); j++) {
-                auto p = dw_p.get<0>(j);
-                Particles.getProp<34>(p) =(Particles.getProp<34>(p)== 0) ? 1 : Particles.getProp<34>(p);
-            }
-            for (int j = 0; j < l_p.size(); j++) {
-                auto p = l_p.get<0>(j);
-                Particles.getProp<34>(p) =(Particles.getProp<34>(p)== 0) ? 1 : Particles.getProp<34>(p);
-            }
-            for (int j = 0; j < r_p.size(); j++) {
-                auto p = r_p.get<0>(j);
-                Particles.getProp<34>(p) =(Particles.getProp<34>(p)== 0) ? 1 : Particles.getProp<34>(p);
-            }
-
-            h[y] = (dPol[x] * (Ks * Dyy(dPol[y]) + Kb * Dxx(dPol[y]) + (Ks - Kb) * Dxy(dPol[x])) -
-                    dPol[y] * (Ks * Dxx(dPol[x]) + Kb * Dyy(dPol[x]) + (Ks - Kb) * Dxy(dPol[y])));
-
-            h[x] = -gama * (lambda * delmu - nu * ((u[x][x] * dPol[x] * dPol[x] +  u[y][y] * dPol[y] * dPol[y] + 2* u[x][y] * dPol[x] * dPol[y])/(r)));
-
-            k3[x] = ((h[x] * (dPol[x]) - h[y] * (dPol[y])) / gama +
-                     lambda * delmu * (dPol[x]) -
-                     nu * (u[x][x] * (dPol[x]) + u[x][y] * (dPol[y])) +
-                     W[x][x] * (dPol[x]) + W[x][y] * (dPol[y]));
-            // -V[x] * Dx((dPol[x])) - V[y] * Dy((dPol[x])));
-            k3[y] = ((h[x] * (dPol[y]) + h[y] * (dPol[x])) / gama +
-                     lambda * delmu * (dPol[y]) -
-                     nu * (u[y][x] * (dPol[x]) + u[y][y] * (dPol[y])) +
-                     W[y][x] * (dPol[x]) + W[y][y] * (dPol[y]));
-            // -V[x] * Dx((dPol[y])) - V[y] * Dy((dPol[y])));
-            Particles.ghost_get<30>();
-            H_t =  H_p_b;//+dt*(k3[x]*k3[x]+k3[y]*k3[y]);
-            dPol = Pol + (dt * k3);
-            dPol = dPol / H_t;
-            Particles.ghost_get<8>();
-            r=dPol[x]*dPol[x]+dPol[y]*dPol[y];
-            for (int j = 0; j < bulk.size(); j++) {
-                auto p = bulk.get<0>(j);
-                Particles.getProp<34>(p) =(Particles.getProp<34>(p)== 0) ? 1 : Particles.getProp<34>(p);
-            }
-            for (int j = 0; j < up_p.size(); j++) {
-                auto p = up_p.get<0>(j);
-                Particles.getProp<34>(p) =(Particles.getProp<34>(p)== 0) ? 1 : Particles.getProp<34>(p);
-            }
-            for (int j = 0; j < dw_p.size(); j++) {
-                auto p = dw_p.get<0>(j);
-                Particles.getProp<34>(p) =(Particles.getProp<34>(p)== 0) ? 1 : Particles.getProp<34>(p);
-            }
-            for (int j = 0; j < l_p.size(); j++) {
-                auto p = l_p.get<0>(j);
-                Particles.getProp<34>(p) =(Particles.getProp<34>(p)== 0) ? 1 : Particles.getProp<34>(p);
-            }
-            for (int j = 0; j < r_p.size(); j++) {
-                auto p = r_p.get<0>(j);
-                Particles.getProp<34>(p) =(Particles.getProp<34>(p)== 0) ? 1 : Particles.getProp<34>(p);
-            }
-
-            h[y] = (dPol[x] * (Ks * Dyy(dPol[y]) + Kb * Dxx(dPol[y]) + (Ks - Kb) * Dxy(dPol[x])) -
-                    dPol[y] * (Ks * Dxx(dPol[x]) + Kb * Dyy(dPol[x]) + (Ks - Kb) * Dxy(dPol[y])));
-
-            h[x] = -gama * (lambda * delmu - nu * ((u[x][x] * dPol[x] * dPol[x] +  u[y][y] * dPol[y] * dPol[y] + 2* u[x][y] * dPol[x] * dPol[y])/(r)));
-            Particles.ghost_get<7>();
-
-
-            k4[x] = ((h[x] * (dPol[x]) - h[y] * (dPol[y])) / gama +
-                     lambda * delmu * (dPol[x]) -
-                     nu * (u[x][x] * (dPol[x]) + u[x][y] * (dPol[y])) +
-                     W[x][x] * (dPol[x]) +
-                     W[x][y] * (dPol[y]));//   -V[x]*Dx( (dt * k3[x]+Pol[x])) -V[y]*Dy( (dt * k3[x]+Pol[x])));
-            k4[y] = ((h[x] * (dPol[y]) + h[y] * (dPol[x])) / gama +
-                     lambda * delmu * (dPol[y]) -
-                     nu * (u[y][x] * (dPol[x]) + u[y][y] * (dPol[y])) +
-                     W[y][x] * (dPol[x]) +
-                     W[y][y] * (dPol[y]));//  -V[x]*Dx( (dt * k3[y]+Pol*[y])) -V[y]*Dy( (dt * k3[y]+Pol[y])));
-            Particles.ghost_get<31>();
-
-            Pol = Pol + (dt / 6.0) * (k1 + (2.0 * k2) + (2.0 * k3) + k4);
-            Pol = Pol / H_p_b;
-
-            H_p_b = sqrt(Pol[x] * Pol[x] + Pol[y] * Pol[y]);
-            Pol = Pol / H_p_b;
-
-            k1= V;
-            k2=0.5*dt*k1+V;
-            k3=0.5*dt*k2+V;
-            k4=dt*k3+V;
-            //Pos = Pos + dt * V;
-            Pos=Pos+dt/6.0*(k1+2*k2+2*k3+k4);
-            Particles.map();
-            Particles.ghost_get<0>();
-            indexUpdate(Particles, Particles_subset, up_p, dw_p, l_p, r_p,up_p1, dw_p1, l_p1, r_p1,corner_ul,corner_ur,corner_dl,corner_dr, bulk, up, down, left, right);
-            Particles_subset.map();
-            Particles_subset.ghost_get<0>();
-
-            //Particles_subset.write("debug");
-            for (int j = 0; j < up_p.size(); j++) {
-                auto p = up_p.get<0>(j);
-                Particles.getProp<0>(p)[x] = sin(2 * M_PI * (cos((2 * Particles.getPos(p)[x] - Lx) / Lx) -
-                                                             sin((2 * Particles.getPos(p)[y] - Ly) / Ly)));
-                Particles.getProp<0>(p)[y] = cos(2 * M_PI * (cos((2 * Particles.getPos(p)[x] - Lx) / Lx) -
-                                                             sin((2 * Particles.getPos(p)[y] - Ly) / Ly)));
-            }
-            for (int j = 0; j < dw_p.size(); j++) {
-                auto p = dw_p.get<0>(j);
-                Particles.getProp<0>(p)[x] = sin(2 * M_PI * (cos((2 * Particles.getPos(p)[x] - Lx) / Lx) -
-                                                             sin((2 * Particles.getPos(p)[y] - Ly) / Ly)));
-                Particles.getProp<0>(p)[y] = cos(2 * M_PI * (cos((2 * Particles.getPos(p)[x] - Lx) / Lx) -
-                                                             sin((2 * Particles.getPos(p)[y] - Ly) / Ly)));
-            }
-            for (int j = 0; j < l_p.size(); j++) {
-                auto p = l_p.get<0>(j);
-                Particles.getProp<0>(p)[x] = sin(2 * M_PI * (cos((2 * Particles.getPos(p)[x] - Lx) / Lx) -
-                                                             sin((2 * Particles.getPos(p)[y] - Ly) / Ly)));
-                Particles.getProp<0>(p)[y] = cos(2 * M_PI * (cos((2 * Particles.getPos(p)[x] - Lx) / Lx) -
-                                                             sin((2 * Particles.getPos(p)[y] - Ly) / Ly)));
-            }
-            for (int j = 0; j < r_p.size(); j++) {
-                auto p = r_p.get<0>(j);
-                Particles.getProp<0>(p)[x] = sin(2 * M_PI * (cos((2 * Particles.getPos(p)[x] - Lx) / Lx) -
-                                                             sin((2 * Particles.getPos(p)[y] - Ly) / Ly)));
-                Particles.getProp<0>(p)[y] = cos(2 * M_PI * (cos((2 * Particles.getPos(p)[x] - Lx) / Lx) -
-                                                             sin((2 * Particles.getPos(p)[y] - Ly) / Ly)));
-            }
-
-            Particles.ghost_get<0, Vorticity, MolField>();
-            Particles_subset.ghost_get<0,1,2>();
-
-            tt.start();
-            Dx.update(Particles);
-            Dy.update(Particles);
-            Dxy.update(Particles);
-            auto Dyx = Dxy;
-            Dxx.update(Particles);
-            Dyy.update(Particles);
-
-            Bulk_Dx.update(Particles_subset);
-            Bulk_Dy.update(Particles_subset);
-
-            tt.stop();
-            std::cout << "Updation of operators took " << tt.getwct() << " seconds." << std::endl;
-
-            std::cout << "Time step " << ctr << " : " << tim << " over." << std::endl;
-            tim += dt;
-            std::cout << "----------------------------------------------------------" << std::endl;
-        }
         Particles.deleteGhost();
         tt2.stop();
         std::cout << "The simulation took " << tt2.getwct() << "Seconds.";

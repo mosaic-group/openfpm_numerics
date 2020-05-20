@@ -56,6 +56,7 @@ private:
     std::vector<EMatrix<T, Eigen::Dynamic, 1>> localCoefficients; // Each MPI rank has just access to the local ones
     std::vector<Support<dim, T, typename vector_type::value_type>> localSupports; // Each MPI rank has just access to the local ones
     std::vector<T> localEps; // Each MPI rank has just access to the local ones
+    std::vector<T> localSumA;
 
     vector_type & particles;
     double rCut;
@@ -537,6 +538,21 @@ private:
                     vandermonde(support, monomialBasis);
             vandermonde.getMatrix(V);
 
+            //T condVTOL=100;
+            //T condV = conditionNumber(V,condVTOL);
+            /*if (condV > condVTOL) {
+                std::cout<< "INFO: Increasing, requiredSupportSize for the particle = " << it.get().getKey()
+                        << std::endl; // debug
+                Support<dim, T, part_type> support = supportBuilder.getSupport(it, requiredSupportSize*2,support_options::N_PARTICLES);
+                EMatrix<T, Eigen::Dynamic, Eigen::Dynamic> V(support.size(), monomialBasis.size());
+                Vandermonde<dim, T, EMatrix<T, Eigen::Dynamic, Eigen::Dynamic>>
+                        vandermonde(support, monomialBasis);
+                vandermonde.getMatrix(V);
+                std::cout
+                        << "New Cond. Number " << conditionNumber(V,condVTOL)
+                        << std::endl;
+
+            }*/
             T eps = vandermonde.getEps();
 
             localSupports.push_back(support);
@@ -557,8 +573,18 @@ private:
             EMatrix<T, Eigen::Dynamic, 1> a(monomialBasis.size(), 1);
             // ...solve the linear system...
             a = A.colPivHouseholderQr().solve(b);
-            /*std::cout<<"Cond: "<<conditionNumber(V, 1e2)<<std::endl;
-            std::cout<<a.sum()<<std::endl;*/
+   //         conditionNumber(V, 1e2);
+/*            double Asum=a.sum();
+            unsigned int order = (Monomial<dim>(differentialSignature)).order();
+            if (Asum>3000 && order%2==0) {
+                *//*std::cout << "Normalizing by ASum: " << Asum << std::endl;
+                a=1000/Asum*a;
+                std::cout << "New ASum: " << a.sum() << std::endl;*//*
+                localSumA.push_back(Asum);
+            }
+            else{
+                localSumA.push_back(0.0);
+            }*/
             // ...and store the solution for later reuse
             localCoefficients.push_back(a);
             //
@@ -572,10 +598,10 @@ private:
     T computeKernel(Point<dim, T> x, EMatrix<T, Eigen::Dynamic, 1> a) const {
         T res = 0;
         unsigned int counter = 0;
+        T expFactor = exp(-norm2(x));
         for (const Monomial<dim> &m : monomialBasis.getElements()) {
             T coeff = a(counter);
             T mbValue = m.evaluate(x);
-            T expFactor = exp(-norm2(x));
             res += coeff * mbValue * expFactor;
             ++counter;
         }
