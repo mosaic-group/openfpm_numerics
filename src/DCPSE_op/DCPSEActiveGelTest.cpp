@@ -357,7 +357,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
         Particles_subset.map();
         Particles_subset.ghost_get<0>();
 
-        Particles_subset.write("Pars");
+        //Particles_subset.write("Pars");
         Derivative_x Dx(Particles, ord, rCut, sampling_factor, support_options::RADIUS), Bulk_Dx(Particles_subset, ord,
                                                                                                  rCut,
                                                                                                  sampling_factor,
@@ -497,7 +497,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
                 Particles.ghost_get<9>();
 
 
-                Particles.write("PolarI");
+                //Particles.write("PolarI");
                 //Velocity Solution n iterations
 
 
@@ -649,7 +649,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
                         }
                     }
                     n++;
-                    Particles.write_frame("V_debug", n);
+                    //Particles.write_frame("V_debug", n);
                     if (v_cl.rank() == 0) {
                         std::cout << "Rel l2 cgs err in V = " << V_err << " at " << n << std::endl;
                     }

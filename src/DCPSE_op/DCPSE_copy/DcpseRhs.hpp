@@ -51,10 +51,10 @@ MatrixType &DcpseRhs<dim>::getVector(MatrixType &b)
         b(i, 0) = sign * dm.evaluate(Point<dim, T>(0));
     }
     //Choosing a(0,0) for even order as a free parameter can let us set b(0,0) for numerical robustness
-    if (b(0,0) == 0.0 && sign == 1)
+/*    if (b(0,0) == 0.0 && sign == 1)
     {
         b(0,0) = 25;
-    }
+    }*/
 
 
     return b;
