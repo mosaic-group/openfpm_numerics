@@ -120,7 +120,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
         timer tt2;
         tt2.start();
         double boxsize=10;
-        const size_t sz[2] = {81,81};
+        const size_t sz[2] = {41,41};
         Box<2, double> box({0, 0}, {boxsize, boxsize});
         double Lx = box.getHigh(0);
         double Ly = box.getHigh(1);
