@@ -120,7 +120,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
         timer tt2;
         tt2.start();
         double boxsize=10;
-        const size_t sz[2] = {41,41};
+        const size_t sz[2] = {81,81};
         Box<2, double> box({0, 0}, {boxsize, boxsize});
         double Lx = box.getHigh(0);
         double Ly = box.getHigh(1);
@@ -526,6 +526,8 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
                     P = 0;
                     Vreset = 0;
                 }
+                P=0;
+                P_bulk = 0;
                 while (V_err >= V_err_eps && n <= nmax) {
                     petsc_solver<double> solverPetsc;
                     solverPetsc.setSolver(KSPGMRES);
