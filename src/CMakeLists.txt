@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.8 FATAL_ERROR)
 
 ########################### Executables
 
-add_executable(numerics main.cpp Matrix/SparseMatrix_unit_tests.cpp interpolation/interpolation_unit_tests.cpp  Vector/Vector_unit_tests.cpp  Solvers/petsc_solver_unit_tests.cpp FiniteDifference/FDScheme_unit_tests.cpp FiniteDifference/eq_unit_test_3d.cpp FiniteDifference/eq_unit_test.cpp  Operators/Vector/vector_dist_operators_unit_tests.cpp ../../openfpm_vcluster/src/VCluster/VCluster.cpp ../../openfpm_devices/src/memory/ShmAllocator_manager.cpp ../../openfpm_devices/src/memory/SemManager.cpp ../../openfpm_devices/src/memory/ShmAllocator.cpp ../../openfpm_devices/src/memory/CudaMemory.cu  ../../openfpm_devices/src/memory/HeapMemory.cpp ../../openfpm_devices/src/memory/PtrMemory.cpp ../../openfpm_devices/src/Memleak_check.cpp)
+add_executable(numerics main.cpp Matrix/SparseMatrix_unit_tests.cpp interpolation/interpolation_unit_tests.cpp  Vector/Vector_unit_tests.cpp  Solvers/petsc_solver_unit_tests.cpp FiniteDifference/FDScheme_unit_tests.cpp FiniteDifference/eq_unit_test_3d.cpp FiniteDifference/eq_unit_test.cpp  Operators/Vector/vector_dist_operators_unit_tests.cpp ../../openfpm_vcluster/src/VCluster/VCluster.cpp ../../openfpm_vcluster/src/VCluster/InVis.cpp ../../openfpm_devices/src/memory/ShmAllocator_manager.cpp ../../openfpm_devices/src/memory/SemManager.cpp ../../openfpm_devices/src/memory/ShmAllocator.cpp ../../openfpm_devices/src/memory/ShmBuffer.cpp ../../openfpm_devices/src/memory/CudaMemory.cu  ../../openfpm_devices/src/memory/HeapMemory.cpp ../../openfpm_devices/src/memory/PtrMemory.cpp ../../openfpm_devices/src/Memleak_check.cpp)
 
 
 ###########################
@@ -21,6 +21,8 @@ if(CUDA_FOUND)
         endif()
 endif()
 
+set(JAVA_HOME /usr/lib/jvm/adoptopenjdk-11-hotspot-amd64)
+
 target_include_directories (numerics PUBLIC ${CUDA_INCLUDE_DIRS})
 target_include_directories (numerics PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 target_include_directories (numerics PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/../../openfpm_devices/src/)
@@ -34,10 +36,12 @@ target_include_directories (numerics PUBLIC ${METIS_ROOT}/include)
 target_include_directories (numerics PUBLIC ${HDF5_ROOT}/include)
 target_include_directories (numerics PUBLIC ${LIBHILBERT_INCLUDE_DIRS})
 target_include_directories (numerics PUBLIC ${Boost_INCLUDE_DIRS})
+target_include_directories (numerics PUBLIC ${JAVA_HOME}/include ${JAVA_HOME}/include/linux)
 if(EIGEN3_FOUND)
 	target_include_directories (numerics PUBLIC ${EIGEN3_INCLUDE_DIR})
 endif()
 
+target_link_libraries(numerics ${JAVA_HOME}/lib/server/libjvm.so)
 target_link_libraries(numerics ${Boost_LIBRARIES})
 target_link_libraries(numerics -L${PARMETIS_ROOT}/lib parmetis)
 target_link_libraries(numerics -L${HDF5_ROOT}/lib hdf5 hdf5_hl)
