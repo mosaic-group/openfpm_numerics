@@ -380,13 +380,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
         Derivative_xx Dxx(Particles, ord2, rCut2, sampling_factor2),Bulk_Dxx(Particles_subset, ord2, rCut2, sampling_factor2);
         Derivative_yy Dyy(Particles, ord2, rCut2, sampling_factor2),Bulk_Dyy(Particles_subset, ord2, rCut2, sampling_factor2);*/
 
-        petsc_solver<double> solverPetsc;
-        solverPetsc.setSolver(KSPGMRES);
-        //solverPetsc.setRestart(250);
-        solverPetsc.setPreconditioner(PCJACOBI);
-        petsc_solver<double> solverPetsc2;
-        solverPetsc2.setSolver(KSPGMRES);
-        solverPetsc2.setPreconditioner(PCJACOBI);
+
 
 
         eq_id vx, vy;
@@ -399,13 +393,22 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
         int n = 0;
         int nmax = 300;
         int ctr = 0, errctr,Vreset=0;
-        double dt = 1.5*1e-3;
+        double dt = 3*1e-3;
+
         double tim = 0;
         double tf = 1.25;
         div = 0;
         double sum, sum1, sum_k;
         while (tim <= tf) {
             tt.start();
+            petsc_solver<double> solverPetsc;
+            solverPetsc.setSolver(KSPGMRES);
+            //solverPetsc.setRestart(250);
+            solverPetsc.setPreconditioner(PCJACOBI);
+            petsc_solver<double> solverPetsc2;
+            solverPetsc2.setSolver(KSPGMRES);
+            solverPetsc2.setPreconditioner(PCJACOBI);
+
             Particles.ghost_get<Polarization>(SKIP_LABELLING);
             sigma[x][x] =
                     -Ks * Dx(Pol[x]) * Dx(Pol[x]) - Kb * Dx(Pol[y]) * Dx(Pol[y]) + (Kb - Ks) * Dy(Pol[x]) * Dx(Pol[y]);
@@ -529,12 +532,6 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
                 P=0;
                 P_bulk = 0;
                 while (V_err >= V_err_eps && n <= nmax) {
-                    petsc_solver<double> solverPetsc;
-                    solverPetsc.setSolver(KSPGMRES);
-                    solverPetsc.setPreconditioner(PCJACOBI);
-                    petsc_solver<double> solverPetsc2;
-                    solverPetsc2.setSolver(KSPGMRES);
-                    solverPetsc2.setPreconditioner(PCJACOBI);
                     RHS[x] = dV[x];
                     RHS[y] = dV[y];
                     Particles_subset.ghost_get<0>(SKIP_LABELLING);
@@ -641,8 +638,11 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
                         errctr++;
                         //alpha_P -= 0.1;
                     }
+                    else{
+                        errctr=0;
+                    }
                     if (n > 3) {
-                        if (errctr > 1 || abs(V_err_old - V_err) < 1e-6) {
+                        if (errctr > 5 || abs(V_err_old - V_err) < 1e-6) {
                             std::cout << "CONVERGENCE LOOP BROKEN DUE TO INCREASE/Oscillation IN ERROR" << std::endl;
                             Vreset = 1;
                             break;
