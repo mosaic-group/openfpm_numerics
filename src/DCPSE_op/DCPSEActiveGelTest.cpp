@@ -154,7 +154,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
         Particles.map();
         Particles.ghost_get<0>();
 
-        Particles.write("Par");
+        //Particles.write("Par");
 
         openfpm::vector<aggregate<int>> bulk;
         openfpm::vector<aggregate<int>> up_p;
@@ -366,7 +366,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
         timer tt3;
         vx.setId(0);
         vy.setId(1);
-        double V_err_eps = 5 * 1e-2;
+        double V_err_eps = 5 * 1e-4;
         double V_err = 1, V_err_old;
         int n = 0;
         int nmax = 300;
@@ -653,9 +653,9 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
 
             //Particles.ghost_get<MolField, Strain_rate, Vorticity>(SKIP_LABELLING);
             //Particles.write_frame("Polar_withGhost_3e-3", ctr);
-            Particles.deleteGhost();
+            //Particles.deleteGhost();
             Particles.write_frame("Polar_3e-3", ctr);
-            Particles.ghost_get<0>();
+            Particles.ghost_get<0>(SKIP_LABELLING);
 
             ctr++;
 
@@ -1348,14 +1348,14 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
 
             auto Helmholtz = Dxx(H) + Dyy(H)+Dx(Stokes1) + Dy(Stokes2);*/
 
-            auto Stokes1 = -(Dx(P)) + eta * (Dxx(V[x]) + Dyy(V[x]))
+            auto Stokes1 = -(Bulk_Dx(P)) + eta * (Dxx(V[x]) + Dyy(V[x]))
                            + 0.5 * nu * (Df1[x] * Dx(V[x]) + f1 * Dxx(V[x]))
                            + 0.5 * nu * (Df2[x] * 0.5 * (Dx(V[y]) + Dy(V[x])) + f2 * 0.5 * (Dxx(V[y]) + Dyx(V[x])))
                            + 0.5 * nu * (Df3[x] * Dy(V[y]) + f3 * Dyx(V[y]))
                            + 0.5 * nu * (Df4[y] * Dx(V[x]) + f4 * Dxy(V[x]))
                            + 0.5 * nu * (Df5[y] * 0.5 * (Dx(V[y]) + Dy(V[x])) + f5 * 0.5 * (Dxy(V[y]) + Dyy(V[x])))
                            + 0.5 * nu * (Df6[y] * Dy(V[y]) + f6 * Dyy(V[y]));
-            auto Stokes2 = -(Dy(P)) + eta * (Dxx(V[y]) + Dyy(V[y]))
+            auto Stokes2 = -(Bulk_Dx(P)) + eta * (Dxx(V[y]) + Dyy(V[y]))
                            - 0.5 * nu * (Df1[y] * Dx(V[x]) + f1 * Dxy(V[x]))
                            - 0.5 * nu * (Df2[y] * 0.5 * (Dx(V[y]) + Dy(V[x])) + f2 * 0.5 * (Dxy(V[y]) + Dyy(V[x])))
                            - 0.5 * nu * (Df3[y] * Dy(V[y]) + f3 * Dyy(V[y]))
