@@ -1273,6 +1273,219 @@ public:
 };
 
 
+class Derivative_xxx
+{
+
+    void * dcpse;
+
+public:
+
+    template<typename particles_type>
+    Derivative_xxx(particles_type & parts, unsigned int ord ,typename particles_type::stype rCut,double oversampling_factor=dcpse_oversampling_factor, support_options opt = support_options::N_PARTICLES)
+    {
+        Point<particles_type::dims,unsigned int> p;
+        p.zero();
+        p.get(0) = 3;
+        p.get(1) = 0;
+
+        dcpse = new Dcpse<particles_type::dims,particles_type>(parts,p, ord, rCut,dcpse_oversampling_factor, opt);
+    }
+
+    template<typename operand_type>
+
+    vector_dist_expression_op<operand_type,Dcpse<operand_type::vtype::dims,typename operand_type::vtype>,VECT_DCPSE> operator()(operand_type arg)
+    {
+        typedef Dcpse<operand_type::vtype::dims,typename operand_type::vtype> dcpse_type;
+
+        return vector_dist_expression_op<operand_type,dcpse_type,VECT_DCPSE>(arg,*(dcpse_type *)dcpse);
+    }
+
+    template<typename particles_type>
+    void checkMomenta(particles_type &particles)
+    {
+        auto dcpse_temp = (Dcpse<particles_type::dims,particles_type> *)dcpse;
+        dcpse_temp-> checkMomenta(particles);
+
+    }
+
+    template<unsigned int prp, typename particles_type>
+    void DrawKernel(particles_type &particles,int k)
+    {
+        auto dcpse_temp = (Dcpse<particles_type::dims,particles_type> *)dcpse;
+        dcpse_temp->template DrawKernel<prp>(particles,k);
+
+    }
+
+    template<typename particles_type>
+    void update(particles_type &particles)
+    {
+        auto dcpse_temp = (Dcpse<particles_type::dims,particles_type> *)dcpse;
+        dcpse_temp-> initializeUpdate(particles);
+
+    }
+};
+
+
+class Derivative_xxy
+{
+
+    void * dcpse;
+
+public:
+
+    template<typename particles_type>
+    Derivative_xxy(particles_type & parts, unsigned int ord ,typename particles_type::stype rCut,double oversampling_factor=dcpse_oversampling_factor, support_options opt = support_options::N_PARTICLES)
+    {
+        Point<particles_type::dims,unsigned int> p;
+        p.zero();
+        p.get(0) = 2;
+        p.get(1) = 1;
+
+        dcpse = new Dcpse<particles_type::dims,particles_type>(parts,p, ord, rCut,dcpse_oversampling_factor, opt);
+    }
+
+    template<typename operand_type>
+
+    vector_dist_expression_op<operand_type,Dcpse<operand_type::vtype::dims,typename operand_type::vtype>,VECT_DCPSE> operator()(operand_type arg)
+    {
+        typedef Dcpse<operand_type::vtype::dims,typename operand_type::vtype> dcpse_type;
+
+        return vector_dist_expression_op<operand_type,dcpse_type,VECT_DCPSE>(arg,*(dcpse_type *)dcpse);
+    }
+
+    template<typename particles_type>
+    void checkMomenta(particles_type &particles)
+    {
+        auto dcpse_temp = (Dcpse<particles_type::dims,particles_type> *)dcpse;
+        dcpse_temp-> checkMomenta(particles);
+
+    }
+
+    template<unsigned int prp, typename particles_type>
+    void DrawKernel(particles_type &particles,int k)
+    {
+        auto dcpse_temp = (Dcpse<particles_type::dims,particles_type> *)dcpse;
+        dcpse_temp->template DrawKernel<prp>(particles,k);
+
+    }
+
+    template<typename particles_type>
+    void update(particles_type &particles)
+    {
+        auto dcpse_temp = (Dcpse<particles_type::dims,particles_type> *)dcpse;
+        dcpse_temp-> initializeUpdate(particles);
+
+    }
+};
+
+
+class Derivative_yyx
+{
+
+    void * dcpse;
+
+public:
+
+    template<typename particles_type>
+    Derivative_yyx(particles_type & parts, unsigned int ord ,typename particles_type::stype rCut,double oversampling_factor=dcpse_oversampling_factor, support_options opt = support_options::N_PARTICLES)
+    {
+        Point<particles_type::dims,unsigned int> p;
+        p.zero();
+        p.get(0) = 1;
+        p.get(1) = 2;
+
+        dcpse = new Dcpse<particles_type::dims,particles_type>(parts,p, ord, rCut,dcpse_oversampling_factor, opt);
+    }
+
+    template<typename operand_type>
+
+    vector_dist_expression_op<operand_type,Dcpse<operand_type::vtype::dims,typename operand_type::vtype>,VECT_DCPSE> operator()(operand_type arg)
+    {
+        typedef Dcpse<operand_type::vtype::dims,typename operand_type::vtype> dcpse_type;
+
+        return vector_dist_expression_op<operand_type,dcpse_type,VECT_DCPSE>(arg,*(dcpse_type *)dcpse);
+    }
+
+    template<typename particles_type>
+    void checkMomenta(particles_type &particles)
+    {
+        auto dcpse_temp = (Dcpse<particles_type::dims,particles_type> *)dcpse;
+        dcpse_temp-> checkMomenta(particles);
+
+    }
+
+    template<unsigned int prp, typename particles_type>
+    void DrawKernel(particles_type &particles,int k)
+    {
+        auto dcpse_temp = (Dcpse<particles_type::dims,particles_type> *)dcpse;
+        dcpse_temp->template DrawKernel<prp>(particles,k);
+
+    }
+
+    template<typename particles_type>
+    void update(particles_type &particles)
+    {
+        auto dcpse_temp = (Dcpse<particles_type::dims,particles_type> *)dcpse;
+        dcpse_temp-> initializeUpdate(particles);
+
+    }
+};
+
+
+class Derivative_yyy
+{
+
+    void * dcpse;
+
+public:
+
+    template<typename particles_type>
+    Derivative_yyy(particles_type & parts, unsigned int ord ,typename particles_type::stype rCut,double oversampling_factor=dcpse_oversampling_factor, support_options opt = support_options::N_PARTICLES)
+    {
+        Point<particles_type::dims,unsigned int> p;
+        p.zero();
+        p.get(0) = 0;
+        p.get(1) = 3;
+
+        dcpse = new Dcpse<particles_type::dims,particles_type>(parts,p, ord, rCut,dcpse_oversampling_factor, opt);
+    }
+
+    template<typename operand_type>
+
+    vector_dist_expression_op<operand_type,Dcpse<operand_type::vtype::dims,typename operand_type::vtype>,VECT_DCPSE> operator()(operand_type arg)
+    {
+        typedef Dcpse<operand_type::vtype::dims,typename operand_type::vtype> dcpse_type;
+
+        return vector_dist_expression_op<operand_type,dcpse_type,VECT_DCPSE>(arg,*(dcpse_type *)dcpse);
+    }
+
+    template<typename particles_type>
+    void checkMomenta(particles_type &particles)
+    {
+        auto dcpse_temp = (Dcpse<particles_type::dims,particles_type> *)dcpse;
+        dcpse_temp-> checkMomenta(particles);
+
+    }
+
+    template<unsigned int prp, typename particles_type>
+    void DrawKernel(particles_type &particles,int k)
+    {
+        auto dcpse_temp = (Dcpse<particles_type::dims,particles_type> *)dcpse;
+        dcpse_temp->template DrawKernel<prp>(particles,k);
+
+    }
+
+    template<typename particles_type>
+    void update(particles_type &particles)
+    {
+        auto dcpse_temp = (Dcpse<particles_type::dims,particles_type> *)dcpse;
+        dcpse_temp-> initializeUpdate(particles);
+
+    }
+};
+
+
+
 //template<typename operand_type1, typename operand_type2/*, typename sfinae=typename std::enable_if<
 //																						std::is_same<typename operand_type1::it_is_a_node,int>::value
 //																						>::type*/ >
