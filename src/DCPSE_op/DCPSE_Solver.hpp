@@ -292,7 +292,7 @@ class DCPSE_scheme : public MatrixAssembler {
      */
     template<typename solType, typename expr_type>
     void copy_impl(solType &x, expr_type exp, unsigned int comp) {
-        auto parts = exp.getVector();
+        auto & parts = exp.getVector();
 
         auto it = parts.getDomainIterator();
 
@@ -416,6 +416,19 @@ public:
         copy_nested(x, comp, exps ...);
     }
 
+    void reset(particles_type &part, options_solver opt = options_solver::STANDARD)
+    {
+    	row = 0;
+    	row_b = 0;
+
+    	p_map.clear();
+    	p_map.resize(part.size_local());
+
+    	A.getMatrixTriplets().clear();
+
+    	construct_pmap(opt);
+    }
+
     /*! \brief Constructor
      *
      * The periodicity is given by the grid b_g
@@ -433,11 +446,11 @@ public:
         construct_pmap(opt);
     }
 
-    DCPSE_scheme(particles_type &part, int option_num)
+/*    DCPSE_scheme(particles_type &part, int option_num)
             : parts(part), p_map(part.getDecomposition(), 0), row(0), row_b(0),opt(options_solver::CUSTOM),offset(option_num) {
         p_map.resize(part.size_local());
         construct_pmap(option_num);
-    }
+    }*/
 
 
     /*! \brief Impose an operator

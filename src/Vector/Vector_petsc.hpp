@@ -152,6 +152,7 @@ public:
 	 *
 	 */
 	Vector(const Vector<T,PETSC_BASE> & v)
+	:Vector()
 	{
 		this->operator=(v);
 	}
@@ -162,7 +163,7 @@ public:
 	 *
 	 */
 	Vector(Vector<T,PETSC_BASE> && v)
-	:n_row(0),n_row_local(0),invalid(0)
+	:Vector()
 	{
 		this->operator=(v);
 	}

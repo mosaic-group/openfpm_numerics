@@ -9,6 +9,8 @@ add_executable(numerics DCPSE_op/DCPSE_op_test3d.cpp DCPSE_op/DCPSE_op_test2.cpp
 
 if ( CMAKE_COMPILER_IS_GNUCC )
     target_compile_options(numerics PRIVATE "-Wno-deprecated-declarations")
+    #target_compile_options(numerics PRIVATE "-fsanitize=leak")
+    #target_link_options(numerics PRIVATE "-fsanitize=leak")
     if (TEST_COVERAGE)
         target_compile_options(numerics PRIVATE $<$<COMPILE_LANGUAGE:CXX>: -fprofile-arcs -ftest-coverage>)
     endif()

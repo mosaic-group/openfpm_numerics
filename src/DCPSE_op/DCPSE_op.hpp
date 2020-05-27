@@ -676,6 +676,12 @@ public:
 
     }
 
+    template<typename particles_type>
+    void deallocate(particles_type & parts)
+    {
+    	delete (Dcpse<particles_type::dims,particles_type> *)dcpse;
+    }
+
     template<typename operand_type>
     vector_dist_expression_op<operand_type,Dcpse<operand_type::vtype::dims,typename operand_type::vtype>,VECT_DCPSE> operator()(operand_type arg)
     {
@@ -734,6 +740,12 @@ public:
 
     }
 
+    template<typename particles_type>
+    void deallocate(particles_type & parts)
+    {
+    	delete (Dcpse<particles_type::dims,particles_type> *)dcpse;
+    }
+
     template<typename operand_type>
 
     vector_dist_expression_op<operand_type,Dcpse<operand_type::vtype::dims,typename operand_type::vtype>,VECT_DCPSE> operator()(operand_type arg)
@@ -766,12 +778,9 @@ public:
         dcpse_temp-> initializeUpdate(particles);
 
     }
-
-
-
-
-
 };
+
+
 class Derivative_z
 {
 
@@ -789,8 +798,13 @@ public:
         dcpse = new Dcpse<particles_type::dims,particles_type>(parts,p, ord, rCut,oversampling_factor, opt);
     }
 
-    template<typename operand_type>
+    template<typename particles_type>
+    void deallocate(particles_type & parts)
+    {
+    	delete (Dcpse<particles_type::dims,particles_type> *)dcpse;
+    }
 
+    template<typename operand_type>
     vector_dist_expression_op<operand_type,Dcpse<operand_type::vtype::dims,typename operand_type::vtype>,VECT_DCPSE> operator()(operand_type arg)
     {
         typedef Dcpse<operand_type::vtype::dims,typename operand_type::vtype> dcpse_type;
@@ -843,6 +857,15 @@ public:
             p.get(i) = 1;
             new (dcpse_ptr) Dcpse<particles_type::dims,particles_type>(parts,p, ord, rCut,oversampling_factor, opt);
             dcpse_ptr++;
+        }
+    }
+
+    template<typename particles_type>
+    void deallocate(particles_type & parts)
+    {
+        for (int i = 0 ; i < particles_type::dims ; i++)
+        {
+        	delete &(((Dcpse<particles_type::dims,particles_type> *)dcpse)[i]);
         }
     }
 
@@ -1131,8 +1154,13 @@ public:
 
     }
 
-    template<typename operand_type>
+    template<typename particles_type>
+    void deallocate(particles_type & parts)
+    {
+    	delete (Dcpse<particles_type::dims,particles_type> *)dcpse;
+    }
 
+    template<typename operand_type>
     vector_dist_expression_op<operand_type,Dcpse<operand_type::vtype::dims,typename operand_type::vtype>,VECT_DCPSE> operator()(operand_type arg)
     {
         typedef Dcpse<operand_type::vtype::dims,typename operand_type::vtype> dcpse_type;
@@ -1185,8 +1213,13 @@ public:
         dcpse = new Dcpse<particles_type::dims,particles_type>(parts,p, ord, rCut,dcpse_oversampling_factor, opt);
     }
 
-    template<typename operand_type>
+    template<typename particles_type>
+    void deallocate(particles_type & parts)
+    {
+    	delete (Dcpse<particles_type::dims,particles_type> *)dcpse;
+    }
 
+    template<typename operand_type>
     vector_dist_expression_op<operand_type,Dcpse<operand_type::vtype::dims,typename operand_type::vtype>,VECT_DCPSE> operator()(operand_type arg)
     {
         typedef Dcpse<operand_type::vtype::dims,typename operand_type::vtype> dcpse_type;
@@ -1238,8 +1271,13 @@ public:
         dcpse = new Dcpse<particles_type::dims,particles_type>(parts,p, ord, rCut,dcpse_oversampling_factor, opt);
     }
 
-    template<typename operand_type>
+    template<typename particles_type>
+    void deallocate(particles_type & parts)
+    {
+    	delete (Dcpse<particles_type::dims,particles_type> *)dcpse;
+    }
 
+    template<typename operand_type>
     vector_dist_expression_op<operand_type,Dcpse<operand_type::vtype::dims,typename operand_type::vtype>,VECT_DCPSE> operator()(operand_type arg)
     {
         typedef Dcpse<operand_type::vtype::dims,typename operand_type::vtype> dcpse_type;
