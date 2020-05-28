@@ -13,7 +13,7 @@ using pointnumber = double;
 #include "sprng_cpp.h"
 
 #ifdef USE_MPI
-#include "mpi_utils.hpp"
+#include "util/mpi_utils.hpp"
 #endif
 
 using UIntType = unsigned int;
