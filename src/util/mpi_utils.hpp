@@ -1,5 +1,5 @@
-#ifndef OPENFPM_NUMERICS_SRC_UTIL_MPI_UTILS_HPP_
-#define OPENFPM_NUMERICS_SRC_UTIL_MPI_UTILS_HPP_
+#ifndef OPENFPM_RANDOM_UTILS_HPP_
+#define OPENFPM_RANDOM_UTILS_HPP_
 
 #include <mpi.h>
 
@@ -19,4 +19,4 @@ auto getSize() -> int {
 
 auto amIMaster() -> bool { return getRank() == 0; }
 
-#endif /* OPENFPM_NUMERICS_SRC_UTIL_MPI_UTILS_HPP_ */
+#endif /* OPENFPM_RANDOM_UTILS_HPP_ */

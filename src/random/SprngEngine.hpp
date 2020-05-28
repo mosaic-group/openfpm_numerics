@@ -16,23 +16,23 @@ using pointnumber = double;
 #include "util/mpi_utils.hpp"
 #endif
 
-using UIntType = unsigned int;
-
 /**
  * Adheres to https://en.cppreference.com/w/cpp/named_req/RandomNumberEngine
  */
-template <UIntType gen>
+template <typename UIntType, UIntType gen>
 class SprngEngine {
 public:
+  // NOLINTNEXTLINE
+  typedef UIntType result_type;  // the type of the generated random value
+
   static constexpr UIntType GARBAGE_SEED = 0;
-  static constexpr UIntType DEFAULT_SEED = 1u;
   static constexpr UIntType SPRNG_GEN_TYPE = gen;
   static constexpr UIntType DEFAULT_STREAM_ID = 0;
   static constexpr UIntType DEFAULT_NUM_STREAMS = 1;
   static constexpr int DEFAULT_PARAM = SPRNG_DEFAULT;
 
 #ifdef USE_MPI
-  SprngEngine() : SprngEngine(DEFAULT_SEED, DEFAULT_PARAM) {}
+  SprngEngine() : SprngEngine(makeSeed(), DEFAULT_PARAM) {}
 
   template <typename Sseq>
   explicit SprngEngine(Sseq& q) : SprngEngine((UIntType)q, DEFAULT_PARAM) {}
@@ -42,7 +42,7 @@ public:
   SprngEngine(const UIntType seed, const int param)
     : SprngEngine(seed, getRank(), getSize(), param) {}
 #else
-  SprngEngine() : SprngEngine(DEFAULT_SEED) {}
+  SprngEngine() : SprngEngine(makeSeed()) {}
 
   template <typename Sseq>
   explicit SprngEngine(Sseq& q) : SprngEngine((UIntType)q) {}
@@ -66,8 +66,8 @@ public:
   }
 
   ~SprngEngine() {
-    if (_s) {
-      _s->free_sprng();
+    if (getCount() > 0 && _s) {
+      getCounter() = _s->free_sprng();
     }
   }
 
@@ -147,6 +147,8 @@ public:
 
   static auto makeSeed() -> UIntType { return make_sprng_seed(); }
 
+  static auto getCount() -> std::size_t { return getCounter(); }
+
   auto toFile(std::string fileName) const -> int {
     FILE* fp = fopen(fileName.c_str(), "w");
     if (fp) {
@@ -195,9 +197,15 @@ private:
             const int seed,
             const int param) {
     _s->init_sprng(streamId, nStreams, seed, param);
+    getCounter() += 1;
   }
 
   auto randInt() const -> UIntType { return _s->isprng(); }
+
+  static auto getCounter() -> std::size_t& {
+    static std::size_t counter = 0;
+    return counter;
+  }
 
   Sprng* _s = nullptr;
 };
