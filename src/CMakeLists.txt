@@ -35,6 +35,7 @@ if ( HIP_ENABLE )
 	target_include_directories (numerics PUBLIC ${MPI_C_INCLUDE_DIRS})
 
 	set_property(TARGET numerics PROPERTY COMPILE_FLAGS "-I${MPI_C_INCLUDE_DIRS}")
+	target_compile_definitions(numerics PUBLIC BOOST_GPU_ENABLED="__device__ __host__")
 
 else()
 
