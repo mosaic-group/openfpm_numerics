@@ -119,6 +119,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
     BOOST_AUTO_TEST_CASE(Active2DConv) {
         timer tt2;
         tt2.start();
+        double dt = 4e-3;
         double boxsize = 10;
         const size_t sz[2] = {41, 41};
         Box<2, double> box({0, 0}, {boxsize, boxsize});
@@ -382,10 +383,8 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
         int n = 0;
         int nmax = 300;
         int ctr = 0, errctr, Vreset = 0;
-        double dt = 2e-7;
-
         double tim = 0;
-        double tf = 2e-6;
+        double tf = 1.024;
         div = 0;
         double sum, sum1, sum_k;
         while (tim <= tf) {
@@ -662,9 +661,11 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
             v_cl.sum(sum);
             v_cl.execute();
             dt=0.5/sum;*/
-            std::cout << "Rel l2 cgs err in V = " << V_err << " and took " << tt.getwct() << " seconds with " << n
-                      << " iterations. dt is set to "<<dt
-                      << std::endl;
+            if (v_cl.rank() == 0) {
+                std::cout << "Rel l2 cgs err in V = " << V_err << " and took " << tt.getwct() << " seconds with " << n
+                          << " iterations. dt is set to " << dt
+                          << std::endl;
+            }
 
             W[x][x] = 0;
             W[x][y] = 0.5 * (Dy(V[x]) - Dx(V[y]));
@@ -699,9 +700,9 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
 
             //Particles.ghost_get<MolField, Strain_rate, Vorticity>(SKIP_LABELLING);
             //Particles.write_frame("Polar_withGhost_3e-3", ctr);
-            Particles.deleteGhost();
-            Particles.write_frame("Polar_2e-7", ctr);
-            Particles.ghost_get<0>();
+            /*Particles.deleteGhost();
+            Particles.write_frame("Polar", ctr);
+            Particles.ghost_get<0>();*/
 
             ctr++;
 
@@ -954,12 +955,17 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
             Bulk_Dy.update(Particles_subset);
 
             tt.stop();
-            std::cout << "Updation of operators took " << tt.getwct() << " seconds." << std::endl;
+            if (v_cl.rank() == 0) {
+                std::cout << "Updation of operators took " << tt.getwct() << " seconds." << std::endl;
+                std::cout << "Time step " << ctr - 1 << " : " << tim << " over." << std::endl;
+                std::cout << "----------------------------------------------------------" << std::endl;
+            }
 
-            std::cout << "Time step " << ctr - 1 << " : " << tim << " over." << std::endl;
             tim += dt;
-            std::cout << "----------------------------------------------------------" << std::endl;
         }
+
+        Particles.deleteGhost();
+        Particles.write("Polar_Last");
 
         Dx.deallocate(Particles);
         Dy.deallocate(Particles);
@@ -970,9 +976,11 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
         Bulk_Dy.deallocate(Particles_subset);
         Particles.deleteGhost();
         tt2.stop();
-        std::cout << "The simulation took " << tt2.getwct() << "Seconds.";
-    }
-
+        if (v_cl.rank() == 0) {
+            std::cout << "The simulation took " << tt2.getcputime() << "(CPU) ------ " << tt2.getwct()
+                      << "(Wall) Seconds.";
+            }
+        }
 
     BOOST_AUTO_TEST_CASE(Active2DExp) {
         timer tt2;
@@ -1782,7 +1790,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
         }
         Particles.deleteGhost();
         tt2.stop();
-        std::cout << "The simulation took " << tt2.getwct() << "Seconds.";
+        std::cout << "The simulation took " <<tt2.getcputime()<<"(CPU) ------ "<<tt2.getwct() << "(Wall) Seconds.";
     }
 
 BOOST_AUTO_TEST_SUITE_END()
