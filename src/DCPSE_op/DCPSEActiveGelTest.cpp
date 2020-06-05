@@ -15,6 +15,16 @@
 #include "EqnsStruct.hpp"
 #include "Decomposition/Distribution/SpaceDistribution.hpp"
 
+/*template<typename T>
+void Anasol(T &POS,
+        T &Pol,T &V){
+    ``
+    Pol[0]=cos()
+    Pol[1]=sin()
+}*/
+
+
+
 template<typename particle_type, typename particle_type2>
 void indexUpdate(
         particle_type &Particles,
@@ -106,7 +116,7 @@ void indexUpdate(
 
 BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
 
-    BOOST_AUTO_TEST_CASE(Active2DEigen) {
+    BOOST_AUTO_TEST_CASE(Active2DConv) {
         timer tt2;
         tt2.start();
         double boxsize = 10;
@@ -372,10 +382,10 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
         int n = 0;
         int nmax = 300;
         int ctr = 0, errctr, Vreset = 0;
-        double dt = 3 * 1e-3;
+        double dt = 2e-7;
 
         double tim = 0;
-        double tf = 1.25;
+        double tf = 2e-6;
         div = 0;
         double sum, sum1, sum_k;
         while (tim <= tf) {
@@ -514,6 +524,16 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
             //////////////////////// DEBUG test //////////////////////////
 
 //            DCPSE_scheme<equations2d2, decltype(Particles)> Solver(Particles);
+                /*PLAN FOR HACKATHON
+
+
+                P=Dx(V);
+                Pbulk=Dx(V);
+                Pbulk=Bulk_Dx(V);
+                 for a tensor say K= double[2][2], K[0]
+                 temp = Pol+Pol
+                 */
+
 //            DCPSE_scheme<equations2d1, decltype(Particles)> SolverH(Particles);
 
             //////////////////////////////////////////////////////////////
@@ -598,18 +618,18 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
                 v_cl.sum(sum1);
                 v_cl.execute();
                 V_t = V;
-                Particles.ghost_get<18>(SKIP_LABELLING);
+                Particles.ghost_get<1,4,18>(SKIP_LABELLING);
                 V_err_old = V_err;
                 V_err = sum / sum1;
-                if (V_err > V_err_old) {
+                if (V_err > V_err_old || abs(V_err_old - V_err) < 1e-8) {
                     errctr++;
                     //alpha_P -= 0.1;
                 } else {
                     errctr = 0;
                 }
                 if (n > 3) {
-                    if (errctr > 5 || abs(V_err_old - V_err) < 1e-6) {
-                        std::cout << "CONVERGENCE LOOP BROKEN DUE TO INCREASE/Oscillation IN ERROR" << std::endl;
+                    if (errctr > 3) {
+                        std::cout << "CONVERGENCE LOOP BROKEN DUE TO INCREASE/VERY SLOW DECREASE IN ERROR" << std::endl;
                         Vreset = 1;
                         break;
                     } else {
@@ -623,13 +643,28 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
                 }
             }
             tt.stop();
-            std::cout << "Rel l2 cgs err in V = " << V_err << " and took " << tt.getwct() << " seconds with " << n
-                      << " iterations."
-                      << std::endl;
             u[x][x] = Dx(V[x]);
             u[x][y] = 0.5 * (Dx(V[y]) + Dy(V[x]));
             u[y][x] = 0.5 * (Dy(V[x]) + Dx(V[y]));
             u[y][y] = Dy(V[y]);
+
+
+            //Adaptive CFL
+            /*sum=0;
+            auto it2 = Particles.getDomainIterator();
+            while (it2.isNext()) {
+                auto p = it2.get();
+                sum += Particles.getProp<Strain_rate>(p)[x][x] * Particles.getProp<Strain_rate>(p)[x][x] +
+                        Particles.getProp<Strain_rate>(p)[y][y] * Particles.getProp<Strain_rate>(p)[y][y];
+                ++it2;
+            }
+            sum = sqrt(sum);
+            v_cl.sum(sum);
+            v_cl.execute();
+            dt=0.5/sum;*/
+            std::cout << "Rel l2 cgs err in V = " << V_err << " and took " << tt.getwct() << " seconds with " << n
+                      << " iterations. dt is set to "<<dt
+                      << std::endl;
 
             W[x][x] = 0;
             W[x][y] = 0.5 * (Dy(V[x]) - Dx(V[y]));
@@ -664,9 +699,9 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
 
             //Particles.ghost_get<MolField, Strain_rate, Vorticity>(SKIP_LABELLING);
             //Particles.write_frame("Polar_withGhost_3e-3", ctr);
-            //Particles.deleteGhost();
-            Particles.write_frame("Polar_3e-3", ctr);
-            Particles.ghost_get<0>(SKIP_LABELLING);
+            Particles.deleteGhost();
+            Particles.write_frame("Polar_2e-7", ctr);
+            Particles.ghost_get<0>();
 
             ctr++;
 
@@ -1228,7 +1263,6 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
         Derivative_xx Dxx(Particles, ord2, rCut2, sampling_factor2),Bulk_Dxx(Particles_subset, ord2, rCut2, sampling_factor2);
         Derivative_yy Dyy(Particles, ord2, rCut2, sampling_factor2),Bulk_Dyy(Particles_subset, ord2, rCut2, sampling_factor2);*/
 
-
         V.setVarId(0);
         P.setVarId(2);
         H.setVarId(3);
@@ -1413,12 +1447,12 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
             Solver.impose(Dx(H) + Dy(H), corner_ur, 0, helm);
             Solver.impose(-Dx(H) - Dy(H), corner_dl, 0, helm);
             Solver.impose(Dx(H) - Dy(H), corner_dr, 0, helm);
-             Solver.impose(P+Dxx(H) + Dyy(H), mid_ref, 0, ic);*/
+            Solver.impose(P+Dxx(H) + Dyy(H), mid_ref, 0, ic);*/
             Solver.impose(incompressibility, bulk_withoutmid, 0, ic);
-           /* Solver.impose(incompressibility, up_p, 0, ic);
-            Solver.impose(incompressibility, dw_p, 0, ic);
-            Solver.impose(incompressibility, l_p, 0, ic);
-            Solver.impose(incompressibility, r_p, 0, ic);*/
+            Solver.impose(P, up_p, 0, ic);
+            Solver.impose(P, dw_p, 0, ic);
+            Solver.impose(P, l_p, 0, ic);
+            Solver.impose(P, r_p, 0, ic);
             Solver.impose(P, mid_ref, 0, ic);
             Solver.solve(V[x], V[y], P);
             //Solver.solve(V[x], V[y]);
@@ -1488,7 +1522,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
             //Particles.ghost_get<MolField, Strain_rate, Vorticity>(SKIP_LABELLING);
             //Particles.write_frame("Polar_withGhost_3e-3", ctr);
             Particles.deleteGhost();
-            Particles.write_frame("Polar_3e-3", ctr);
+            Particles.write_frame("Polar_2e-7", ctr);
             Particles.ghost_get<0>();
 
             ctr++;
