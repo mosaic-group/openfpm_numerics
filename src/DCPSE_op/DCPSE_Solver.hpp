@@ -13,35 +13,7 @@
 #include "Vector/vector_dist.hpp"
 #include "Solvers/umfpack_solver.hpp"
 #include "Solvers/petsc_solver.hpp"
-template<unsigned int prp_id>
-struct prop_id {};
-
-class eq_id
-{
-    int id;
-
-public:
-
-    eq_id()
-            :id(0)
-    {}
-
-    int getId()
-    {
-        return id;
-    }
-
-    void setId(int id)
-    {
-        this->id = id;
-    }
-};
-
-enum options_solver
-{
-    STANDARD,
-    LAGRANGE_MULTIPLIER
-};
+#include "util/eq_solve_common.hpp"
 
 /*enum eq_struct
 {
@@ -307,7 +279,7 @@ class DCPSE_scheme: public MatrixAssembler
     template<typename solType, typename expr_type>
     void copy_impl(solType & x, expr_type exp, unsigned int comp)
     {
-        auto parts = exp.getVector();
+        auto & parts = exp.getVector();
 
         auto it = parts.getDomainIterator();
 
