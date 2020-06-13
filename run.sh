@@ -18,7 +18,6 @@ echo "RUN numerics test"
 
 cd ..
 source $HOME/openfpm_vars_$branch
-cd openfpm_numerics
 
 mpirun -np $3 build/openfpm_numerics/src/numerics
 if [ $? -ne 0 ]; then
