@@ -9,11 +9,12 @@
 #define UNIT_TEST_INIT_CLEANUP_HPP_
 
 #include "VCluster/VCluster.hpp"
+#include "initialize/initialize_wrapper.hpp"
 
 struct ut_start {
     ut_start()   { 
                    BOOST_TEST_MESSAGE("Initialize global VCluster"); 
-                   openfpm_init(&boost::unit_test::framework::master_test_suite().argc,&boost::unit_test::framework::master_test_suite().argv); 
+                   openfpm_init_wrapper(&boost::unit_test::framework::master_test_suite().argc,&boost::unit_test::framework::master_test_suite().argv); 
                  }
 
     ~ut_start()  { 

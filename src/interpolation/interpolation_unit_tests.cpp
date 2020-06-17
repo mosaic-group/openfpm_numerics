@@ -335,8 +335,11 @@ BOOST_AUTO_TEST_CASE( interpolation_full_single_test_3D )
 	{
 		auto p = it.get();
 
+		// coverty[dont_call]
 		vd.getPos(p)[0] = (double)rand()/RAND_MAX;
+		// coverty[dont_call]
 		vd.getPos(p)[1] = (double)rand()/RAND_MAX;
+		// coverty[dont_call]
 		vd.getPos(p)[2] = (double)rand()/RAND_MAX;
 
 		vd.getProp<0>(p) = 5.0;
