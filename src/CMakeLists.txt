@@ -62,13 +62,8 @@ endif()
 
 link_directories(${PARMETIS_ROOT} ${METIS_ROOT})
 target_link_libraries(numerics ${Boost_LIBRARIES})
-<<<<<<< HEAD
-target_link_libraries(numerics -L${PARMETIS_ROOT}/lib parmetis)
 target_link_libraries(numerics ${HDF5_LIBRARIES})
-=======
 target_link_libraries(numerics ${PARMETIS_LIBRARIES})
-target_link_libraries(numerics -L${HDF5_ROOT}/lib hdf5 hdf5_hl)
->>>>>>> sparse_cl
 target_link_libraries(numerics -L${LIBHILBERT_LIBRARY_DIRS} ${LIBHILBERT_LIBRARIES})
 target_link_libraries(numerics ${Vc_LIBRARIES})
 if(PETSC_FOUND)
