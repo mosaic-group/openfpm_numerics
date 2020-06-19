@@ -106,15 +106,44 @@ BOOST_AUTO_TEST_CASE(solver_check_diagonal)
         auto RHS= FD::getV<1>(domain);
         auto sol= FD::getV<2>(domain);
 
+
         FD_scheme<equations2d1,decltype(domain)> Solver(ghost,domain);
 
-        Solver.impose(Dx(v),{1,1},{79,79}, prop_id<1>());
+        Solver.impose(Dx(v)+v,{1,1},{79,79}, prop_id<1>());
         Solver.impose(v,{0,0},{80,0}, prop_id<0>());
         Solver.impose(v,{0,1},{0,79}, prop_id<0>());
         Solver.impose(v,{0,80},{80,80}, prop_id<0>());
         Solver.impose(v,{80,1},{80,79}, prop_id<0>());
         Solver.solve(sol);
+
+        double worst = 0.0;
+        while (it2.isNext()) {
+            auto p = it2.get();
+
+            if (fabs(domain.getProp<0>(p) - domain.getProp<2>(p)) > worst) {
+                worst = fabs(domain.getProp<0>(p) - domain.getProp<2>(p));
+            }
+
+            ++it2;
+        }
+
+        std::cout << "Maximum Error: " << worst << std::endl;
+
         domain.write("FDSOLVER_Dx_test");
     }
+
+
+    /*
+In 3D we use exact solution:
+
+Vx = x^2 + y^2
+Vy = y^2 + z^2
+Vz = x^2 + y^2 - 2(x+y)z
+p = x + y + z - 3/2
+f_x = f_y = f_z = 3
+
+-\Delta u + \nabla p + f = <-4, -4, -4> + <1, 1, 1> + <3, 3, 3> = 0
+\nabla \cdot u           = 2x + 2y - 2(x + y)                   = 0
+*/
 
 BOOST_AUTO_TEST_SUITE_END()

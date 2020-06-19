@@ -209,7 +209,7 @@ namespace FD
                 return;
             }*/
 
-            o1.template value_nz<Sys_eqs>(g_map,kmap,gs,spacing,cols,coeff,comp);
+            //o1.template value_nz<Sys_eqs>(g_map,kmap,gs,spacing,cols,coeff,comp);
 
             long int old_val = kmap.getKeyRef().get(dir);
             kmap.getKeyRef().set_d(dir, kmap.getKeyRef().get(dir) + 1);
