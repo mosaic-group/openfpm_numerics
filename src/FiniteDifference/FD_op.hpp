@@ -10,6 +10,7 @@
 #include "util/common.hpp"
 #include "FD_expressions.hpp"
 
+
 namespace FD
 {
 	constexpr int CENTRAL = 0;
@@ -191,6 +192,38 @@ namespace FD
 
 			return val;
 		}
+
+        template<typename Sys_eqs, typename gmap_type, typename unordered_map_type>
+        inline void value_nz(const gmap_type & g_map,
+                             grid_dist_key_dx<Sys_eqs::dims> & kmap,
+                             const grid_sm<Sys_eqs::dims,void> & gs,
+                             typename Sys_eqs::stype (& spacing )[Sys_eqs::dims],
+                             unordered_map_type & cols,
+                             typename Sys_eqs::stype coeff,
+                             unsigned int comp) const
+        {
+
+        /*    if (is_grid_staggered<Sys_eqs>::value())
+            {
+                D<d,arg,Sys_eqs,BACKWARD>::value(g_map,kmap,gs,spacing,cols,coeff);
+                return;
+            }*/
+
+            o1.template value_nz<Sys_eqs>(g_map,kmap,gs,spacing,cols,coeff,comp);
+
+            long int old_val = kmap.getKeyRef().get(dir);
+            kmap.getKeyRef().set_d(dir, kmap.getKeyRef().get(dir) + 1);
+            o1.template value_nz<Sys_eqs>(g_map,kmap,gs,spacing,cols,coeff/spacing[dir]/2.0,comp);
+            kmap.getKeyRef().set_d(dir,old_val);
+
+            old_val = kmap.getKeyRef().get(dir);
+            kmap.getKeyRef().set_d(dir, kmap.getKeyRef().get(dir) - 1);
+            o1.template value_nz<Sys_eqs>(g_map,kmap,gs,spacing,cols,-coeff/spacing[dir]/2.0,comp);
+            kmap.getKeyRef().set_d(dir,old_val);
+
+
+           // cols[g_map.template getProp<0>(kmap)*Sys_eqs::nvar + FD::var_id + comp] += coeff;
+        }
 
 
 		/*! \brief Return the vector on which is acting

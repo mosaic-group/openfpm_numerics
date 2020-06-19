@@ -352,6 +352,19 @@ namespace FD
 		{
 			return o1.getGrid();
 		}
+
+        template<typename Sys_eqs, typename gmap_type, typename unordered_map_type>
+        inline void value_nz(const gmap_type & g_map,
+                             grid_dist_key_dx<Sys_eqs::dims> & key,
+                             const grid_sm<Sys_eqs::dims,void> & gs,
+                             typename Sys_eqs::stype (& spacing )[Sys_eqs::dims],
+                             unordered_map_type & cols,
+                             typename Sys_eqs::stype coeff,
+                             unsigned int comp) const
+        {
+            o1.template value_nz<Sys_eqs>(g_map,key,gs,spacing,cols,coeff,comp);
+            o2.template value_nz<Sys_eqs>(g_map,key,gs,spacing,cols,coeff,comp);
+        }
 	};
 
 

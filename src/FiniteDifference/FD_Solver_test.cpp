@@ -6,6 +6,8 @@
 #include "FD_Solver.hpp"
 #include "Solvers/petsc_solver.hpp"
 #include "FD_expressions.hpp"
+#include "FD_op.hpp"
+
 
 //! Specify the general characteristic of system to solve
 struct equations2d1 {
@@ -72,5 +74,47 @@ BOOST_AUTO_TEST_CASE(solver_check_diagonal)
 
     domain.write("basic_test");
 }
+
+
+    BOOST_AUTO_TEST_CASE(solver_Dx)
+    {
+        const size_t sz[2] = {81,81};
+        Box<2, double> box({0, 0}, {1, 1});
+        periodicity<2> bc = {NON_PERIODIC, NON_PERIODIC};
+        Ghost<2,long int> ghost(1);
+
+        grid_dist_id<2, double, aggregate<double,double,double>> domain(sz, box, ghost, bc);
+
+
+        auto it = domain.getDomainIterator();
+        while (it.isNext())
+        {
+            auto key = it.get();
+            auto gkey = it.getGKey(key);
+            double x = gkey.get(0) * domain.spacing(0);
+            double y = gkey.get(1) * domain.spacing(1);
+            domain.get<0>(key) = x*x+y;
+            domain.get<1>(key) = 2*x;
+
+            ++it;
+        }
+
+        domain.ghost_get<0>();
+        FD::Derivative_x Dx;
+        FD::Derivative_y Dy;
+        auto v =  FD::getV<0>(domain);
+        auto RHS= FD::getV<1>(domain);
+        auto sol= FD::getV<2>(domain);
+
+        FD_scheme<equations2d1,decltype(domain)> Solver(ghost,domain);
+
+        Solver.impose(Dx(v),{1,1},{79,79}, prop_id<1>());
+        Solver.impose(v,{0,0},{80,0}, prop_id<0>());
+        Solver.impose(v,{0,1},{0,79}, prop_id<0>());
+        Solver.impose(v,{0,80},{80,80}, prop_id<0>());
+        Solver.impose(v,{80,1},{80,79}, prop_id<0>());
+        Solver.solve(sol);
+        domain.write("FDSOLVER_Dx_test");
+    }
 
 BOOST_AUTO_TEST_SUITE_END()
