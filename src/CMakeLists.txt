@@ -138,6 +138,9 @@ install(FILES Operators/Vector/vector_dist_operators_extensions.hpp
       	       Operators/Vector/vector_dist_operator_assign.hpp
       	       DESTINATION openfpm_numerics/include/Operators/Vector )
 
+       install(FILES Operators/Vector/cuda/vector_dist_operators_cuda.cuh
+	      DESTINATION openfpm_numerics/include/Operators/Vector/cuda )
+
 install(FILES Draw/DrawParticles.hpp 
       	      Draw/PointIterator.hpp 
       	      Draw/PointIteratorSkin.hpp

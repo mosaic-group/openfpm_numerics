@@ -139,6 +139,8 @@ BOOST_AUTO_TEST_CASE( vector_dist_operators_assign_test )
 	auto v7 = getV<6>(vd);
 	auto v8 = getV<7>(vd);
 
+	auto v_pos = getV<POS_PROP>(vd);
+
 	reset(vd);
 
 	assign(v1,0.0,
@@ -208,6 +210,10 @@ BOOST_AUTO_TEST_CASE( vector_dist_operators_assign_test )
 		   v8,7.0);
 
 	check(vd,8);
+
+	// Self assign;
+	assign(v_pos,v_pos,
+		   v_pos,v_pos);
 }
 
 BOOST_AUTO_TEST_SUITE_END()
