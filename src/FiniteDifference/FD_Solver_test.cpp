@@ -76,9 +76,9 @@ BOOST_AUTO_TEST_CASE(solver_check_diagonal)
 }
 
 
-    BOOST_AUTO_TEST_CASE(solver_Dx)
+    BOOST_AUTO_TEST_CASE(solver_Lap)
     {
-        const size_t sz[2] = {81,81};
+        const size_t sz[2] = {82,82};
         Box<2, double> box({0, 0}, {1, 1});
         periodicity<2> bc = {NON_PERIODIC, NON_PERIODIC};
         Ghost<2,long int> ghost(1);
@@ -93,9 +93,8 @@ BOOST_AUTO_TEST_CASE(solver_check_diagonal)
             auto gkey = it.getGKey(key);
             double x = gkey.get(0) * domain.spacing(0);
             double y = gkey.get(1) * domain.spacing(1);
-            domain.get<0>(key) = x*x+y;
-            domain.get<1>(key) = 2*x;
-
+            domain.get<0>(key) = sin(M_PI*x)*sin(M_PI*y);
+            domain.get<1>(key) = -2*M_PI*M_PI*sin(M_PI*x)*sin(M_PI*y);
             ++it;
         }
 
@@ -108,14 +107,26 @@ BOOST_AUTO_TEST_CASE(solver_check_diagonal)
 
 
         FD_scheme<equations2d1,decltype(domain)> Solver(ghost,domain);
+        FD::Laplacian_xy Lap;
 
-        Solver.impose(Dx(v)+v,{1,1},{79,79}, prop_id<1>());
+/*        Solver.impose(Lap(v),{1,1},{79,79}, prop_id<1>());
         Solver.impose(v,{0,0},{80,0}, prop_id<0>());
         Solver.impose(v,{0,1},{0,79}, prop_id<0>());
         Solver.impose(v,{0,80},{80,80}, prop_id<0>());
         Solver.impose(v,{80,1},{80,79}, prop_id<0>());
+        Solver.solve(sol);*/
+
+        Solver.impose(Lap(v),{1,1},{80,80}, prop_id<1>());
+        Solver.impose(v,{0,0},{81,0}, prop_id<0>());
+        Solver.impose(v,{0,1},{0,80}, prop_id<0>());
+        Solver.impose(v,{0,81},{81,81}, prop_id<0>());
+        Solver.impose(v,{81,1},{81,80}, prop_id<0>());
+        /*auto A=Solver.getA();
+        A.write("Lap_Matrix");*/
+
         Solver.solve(sol);
 
+        auto it2 = domain.getDomainIterator();
         double worst = 0.0;
         while (it2.isNext()) {
             auto p = it2.get();
@@ -128,8 +139,7 @@ BOOST_AUTO_TEST_CASE(solver_check_diagonal)
         }
 
         std::cout << "Maximum Error: " << worst << std::endl;
-
-        domain.write("FDSOLVER_Dx_test");
+        domain.write("FDSOLVER_Lap_test");
     }
 
 
