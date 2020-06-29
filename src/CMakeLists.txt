@@ -4,6 +4,28 @@ cmake_minimum_required(VERSION 3.8 FATAL_ERROR)
 
 add_executable(numerics FiniteDifference/FD_Solver_test.cpp FiniteDifference/FD_op_Tests.cpp DCPSE_op/DCPSE_op_test3d.cpp DCPSE_op/DCPSE_op_test2.cpp DCPSE_op/DCPSE_op_test.cpp main.cpp Matrix/SparseMatrix_unit_tests.cpp interpolation/interpolation_unit_tests.cpp  Vector/Vector_unit_tests.cpp  Solvers/petsc_solver_unit_tests.cpp FiniteDifference/FDScheme_unit_tests.cpp FiniteDifference/eq_unit_test_3d.cpp FiniteDifference/eq_unit_test.cpp  Operators/Vector/vector_dist_operators_unit_tests.cpp ../../openfpm_vcluster/src/VCluster/VCluster.cpp ../../openfpm_devices/src/memory/CudaMemory.cu  ../../openfpm_devices/src/memory/HeapMemory.cpp ../../openfpm_devices/src/memory/PtrMemory.cpp ../../openfpm_devices/src/Memleak_check.cpp DCPSE_op/DCPSEActiveGelTest.cpp DCPSE_op/Fast_test.cpp)
 
+if (CUDA_FOUND)
+	set(CUDA_SOURCES Operators/Vector/vector_dist_operators_unit_tests.cu
+					 Operators/Vector/vector_dist_operators_apply_kernel_unit_tests.cu)
+endif()
+
+add_executable(numerics ${OPENFPM_INIT_FILE} ${CUDA_SOURCES}
+						main.cpp 
+						Matrix/SparseMatrix_unit_tests.cpp
+						interpolation/interpolation_unit_tests.cpp
+						Vector/Vector_unit_tests.cpp  
+						Solvers/petsc_solver_unit_tests.cpp 
+						FiniteDifference/FDScheme_unit_tests.cpp 
+						FiniteDifference/eq_unit_test_3d.cpp 
+						FiniteDifference/eq_unit_test.cpp  
+						Operators/Vector/vector_dist_operators_unit_tests.cpp 
+						Operators/Vector/vector_dist_operators_apply_kernel_unit_tests.cpp
+						../../openfpm_vcluster/src/VCluster/VCluster.cpp 
+						../../openfpm_devices/src/memory/CudaMemory.cu  
+						../../openfpm_devices/src/memory/HeapMemory.cpp 
+						../../openfpm_devices/src/memory/PtrMemory.cpp 
+						../../openfpm_devices/src/Memleak_check.cpp
+						../../src/lib/pdata.cpp)
 
 ###########################
 
@@ -34,14 +56,17 @@ target_include_directories (numerics PUBLIC ${METIS_ROOT}/include)
 target_include_directories (numerics PUBLIC ${HDF5_ROOT}/include)
 target_include_directories (numerics PUBLIC ${LIBHILBERT_INCLUDE_DIRS})
 target_include_directories (numerics PUBLIC ${Boost_INCLUDE_DIRS})
+target_include_directories (numerics PUBLIC ${Vc_INCLUDE_DIR})
 if(EIGEN3_FOUND)
 	target_include_directories (numerics PUBLIC ${EIGEN3_INCLUDE_DIR})
 endif()
 
+link_directories(${PARMETIS_ROOT} ${METIS_ROOT})
 target_link_libraries(numerics ${Boost_LIBRARIES})
-target_link_libraries(numerics -L${PARMETIS_ROOT}/lib parmetis)
 target_link_libraries(numerics ${HDF5_LIBRARIES})
+target_link_libraries(numerics ${PARMETIS_LIBRARIES})
 target_link_libraries(numerics -L${LIBHILBERT_LIBRARY_DIRS} ${LIBHILBERT_LIBRARIES})
+target_link_libraries(numerics ${Vc_LIBRARIES})
 if(PETSC_FOUND)
 	target_include_directories (numerics PUBLIC ${PETSC_INCLUDES})
 	target_link_libraries(numerics ${PETSC_LIBRARIES})
@@ -113,6 +138,9 @@ install(FILES Operators/Vector/vector_dist_operators_extensions.hpp
       	       Operators/Vector/vector_dist_operators_functions.hpp 
       	       Operators/Vector/vector_dist_operator_assign.hpp
       	       DESTINATION openfpm_numerics/include/Operators/Vector )
+
+       install(FILES Operators/Vector/cuda/vector_dist_operators_cuda.cuh
+	      DESTINATION openfpm_numerics/include/Operators/Vector/cuda )
 
 install(FILES Draw/DrawParticles.hpp 
       	      Draw/PointIterator.hpp 

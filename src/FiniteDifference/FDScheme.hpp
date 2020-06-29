@@ -133,8 +133,6 @@ public:
 	//! Type that specify the properties of the system of equations
 	typedef Sys_eqs Sys_eqs_typ;
 
-private:
-
 	//! Encapsulation of the b term as constant
 	struct constant_b
 	{
@@ -189,11 +187,13 @@ private:
 		 * \return the value
 		 *
 		 */
-		typename Sys_eqs::stype get(grid_dist_key_dx<Sys_eqs::dims> & key)
+		auto get(grid_dist_key_dx<Sys_eqs::dims> & key) -> decltype(gr.template get<prp>(key))
 		{
 			return gr.template get<prp>(key);
 		}
 	};
+
+private:
 
 	//! Padding
 	Padding<Sys_eqs::dims> pd;
@@ -563,82 +563,7 @@ private:
 		}
 	}
 
-	/*! \brief Impose an operator
-	 *
-	 * This function impose an operator on a particular grid region to produce the system
-	 *
-	 * Ax = b
-	 *
-	 * ## Stokes equation 2D, lid driven cavity with one splipping wall
-	 * \snippet eq_unit_test.hpp Copy the solution to grid
-	 *
-	 * \param op Operator to impose (A term)
-	 * \param num right hand side of the term (b term)
-	 * \param id Equation id in the system that we are imposing
-	 * \param it_d iterator that define where you want to impose
-	 *
-	 */
-	template<typename T, typename bop, typename iterator> void impose_git(const T & op ,
-			                         bop num,
-									 long int id ,
-									 const iterator & it_d)
-	{
-		openfpm::vector<triplet> & trpl = A.getMatrixTriplets();
 
-		auto it = it_d;
-		grid_sm<Sys_eqs::dims,void> gs = g_map.getGridInfoVoid();
-
-		std::unordered_map<long int,float> cols;
-
-		// iterate all the grid points
-		while (it.isNext())
-		{
-			// get the position
-			auto key = it.get();
-
-			// Calculate the non-zero colums
-			T::value(g_map,key,gs,spacing,cols,1.0);
-
-			// indicate if the diagonal has been set
-			bool is_diag = false;
-
-			// create the triplet
-			for ( auto it = cols.begin(); it != cols.end(); ++it )
-			{
-				trpl.add();
-				trpl.last().row() = g_map.template get<0>(key)*Sys_eqs::nvar + id;
-				trpl.last().col() = it->first;
-				trpl.last().value() = it->second;
-
-				if (trpl.last().row() == trpl.last().col())
-					is_diag = true;
-
-//				std::cout << "(" << trpl.last().row() << "," << trpl.last().col() << "," << trpl.last().value() << ")" << "\n";
-			}
-
-			// If does not have a diagonal entry put it to zero
-			if (is_diag == false)
-			{
-				trpl.add();
-				trpl.last().row() = g_map.template get<0>(key)*Sys_eqs::nvar + id;
-				trpl.last().col() = g_map.template get<0>(key)*Sys_eqs::nvar + id;
-				trpl.last().value() = 0.0;
-			}
-
-			b(g_map.template get<0>(key)*Sys_eqs::nvar + id) = num.get(key);
-
-			cols.clear();
-
-			// if SE_CLASS1 is defined check the position
-#ifdef SE_CLASS1
-//			T::position(key,gs,s_pos);
-#endif
-
-			++row;
-			++row_b;
-			++it;
-		}
-	}
 
 	/*! \brief Construct the gmap structure
 	 *
@@ -842,6 +767,7 @@ public:
         start_k = grid_key_dx<Sys_eqs::dims>(start);
         stop_k = grid_key_dx<Sys_eqs::dims>(stop);
 
+
         auto it = g_map.getSubDomainIterator(start_k,stop_k);
 
         if (increment == true)
@@ -849,7 +775,7 @@ public:
 
         constant_b b(num);
 
-        impose_git(op,b,id,it);
+        impose_git_gmap(op,b,id,it);
 
 	}
 
@@ -914,6 +840,167 @@ public:
 		constant_b b(num);
 
 		impose_dit(op,b,id,it_d);
+	}
+
+	/*! \brief Impose an operator
+	 *
+	 * This function impose an operator on a particular grid region to produce the system
+	 *
+	 * Ax = b
+	 *
+	 * ## Stokes equation 2D, lid driven cavity with one splipping wall
+	 * \snippet eq_unit_test.hpp Copy the solution to grid
+	 *
+	 * \param op Operator to impose (A term)
+	 * \param num right hand side of the term (b term)
+	 * \param id Equation id in the system that we are imposing
+	 * \param it_d iterator that define where you want to impose
+	 *
+	 */
+	template<typename T, typename bop, typename iterator> void impose_git_gmap(const T & op ,
+			                         bop num,
+									 long int id ,
+									 const iterator & it_d)
+	{
+		openfpm::vector<triplet> & trpl = A.getMatrixTriplets();
+
+		auto it = it_d;
+		grid_sm<Sys_eqs::dims,void> gs = g_map.getGridInfoVoid();
+
+		std::unordered_map<long int,float> cols;
+
+		// iterate all the grid points
+		while (it.isNext())
+		{
+			// get the position
+			auto key = it.get();
+
+			// Calculate the non-zero colums
+			T::value(g_map,key,gs,spacing,cols,1.0);
+
+			// indicate if the diagonal has been set
+			bool is_diag = false;
+
+			// create the triplet
+			for ( auto it = cols.begin(); it != cols.end(); ++it )
+			{
+				trpl.add();
+				trpl.last().row() = g_map.template get<0>(key)*Sys_eqs::nvar + id;
+				trpl.last().col() = it->first;
+				trpl.last().value() = it->second;
+
+				if (trpl.last().row() == trpl.last().col())
+					is_diag = true;
+
+//				std::cout << "(" << trpl.last().row() << "," << trpl.last().col() << "," << trpl.last().value() << ")" << "\n";
+			}
+
+			// If does not have a diagonal entry put it to zero
+			if (is_diag == false)
+			{
+				trpl.add();
+				trpl.last().row() = g_map.template get<0>(key)*Sys_eqs::nvar + id;
+				trpl.last().col() = g_map.template get<0>(key)*Sys_eqs::nvar + id;
+				trpl.last().value() = 0.0;
+			}
+
+			b(g_map.template get<0>(key)*Sys_eqs::nvar + id) = num.get(key);
+
+			cols.clear();
+
+			// if SE_CLASS1 is defined check the position
+#ifdef SE_CLASS1
+//			T::position(key,gs,s_pos);
+#endif
+
+			++row;
+			++row_b;
+			++it;
+		}
+	}
+
+	/*! \brief Impose an operator
+	 *
+	 * This function impose an operator on a particular grid region to produce the system
+	 *
+	 * Ax = b
+	 *
+	 * ## Stokes equation 2D, lid driven cavity with one splipping wall
+	 * \snippet eq_unit_test.hpp Copy the solution to grid
+	 *
+	 * \param op Operator to impose (A term)
+	 * \param num right hand side of the term (b term)
+	 * \param id Equation id in the system that we are imposing
+	 * \param it_d iterator that define where you want to impose
+	 *
+	 */
+	template<typename T, typename bop, typename iterator> void impose_git(const T & op ,
+			                         bop num,
+									 long int id ,
+									 const iterator & it_d)
+	{
+		openfpm::vector<triplet> & trpl = A.getMatrixTriplets();
+
+		auto start = it_d.getStart();
+		auto stop = it_d.getStop();
+
+		auto itg = g_map.getSubDomainIterator(start,stop);
+
+		auto it = it_d;
+		grid_sm<Sys_eqs::dims,void> gs = g_map.getGridInfoVoid();
+
+		std::unordered_map<long int,float> cols;
+
+		// iterate all the grid points
+		while (it.isNext())
+		{
+			// get the position
+			auto key = it.get();
+			auto keyg = itg.get();
+
+			// Calculate the non-zero colums
+			T::value(g_map,keyg,gs,spacing,cols,1.0);
+
+			// indicate if the diagonal has been set
+			bool is_diag = false;
+
+			// create the triplet
+			for ( auto it = cols.begin(); it != cols.end(); ++it )
+			{
+				trpl.add();
+				trpl.last().row() = g_map.template get<0>(keyg)*Sys_eqs::nvar + id;
+				trpl.last().col() = it->first;
+				trpl.last().value() = it->second;
+
+				if (trpl.last().row() == trpl.last().col())
+					is_diag = true;
+
+//				std::cout << "(" << trpl.last().row() << "," << trpl.last().col() << "," << trpl.last().value() << ")" << "\n";
+			}
+
+			// If does not have a diagonal entry put it to zero
+			if (is_diag == false)
+			{
+				trpl.add();
+				trpl.last().row() = g_map.template get<0>(keyg)*Sys_eqs::nvar + id;
+				trpl.last().col() = g_map.template get<0>(keyg)*Sys_eqs::nvar + id;
+				trpl.last().value() = 0.0;
+			}
+
+			b(g_map.template get<0>(keyg)*Sys_eqs::nvar + id) = num.get(key);
+
+			cols.clear();
+
+			// if SE_CLASS1 is defined check the position
+#ifdef SE_CLASS1
+//			T::position(key,gs,s_pos);
+#endif
+
+			++row;
+			++row_b;
+			++it;
+			++itg;
+		}
 	}
 
 	/*! \brief Impose an operator

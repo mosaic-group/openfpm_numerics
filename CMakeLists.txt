@@ -1,13 +1,11 @@
 cmake_minimum_required(VERSION 3.8 FATAL_ERROR)
 project(openfpm_pdata LANGUAGES C CXX)
 
-enable_testing()
-
-list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_LIST_DIR}/cmake_modules/)
-
 if (POLICY CMP0074)
-  cmake_policy(SET CMP0074 NEW)
-endif()
+        cmake_policy(SET CMP0074 OLD)
+endif ()
+
+list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_LIST_DIR}/../cmake_modules/)
 
 set(BOOST_INCLUDE ${Boost_INCLUDE_DIR} CACHE PATH "Include directory for BOOST")
 set(PETSC_ROOT CACHE PATH "If compiling with linear algebra indicate the PETSC root directory")
@@ -43,26 +41,27 @@ set(ENV{PATH} "$ENV{PATH}:${HDF5_ROOT}/bin")
 set(HDF5_PREFER_PARALLEL TRUE)
 
 if(ENABLE_GPU)
-	enable_language(CUDA)
-	find_package(CUDA)
+        enable_language(CUDA)
+        find_package(CUDA)
 
         if (CUDA_VERSION_MAJOR EQUAL 9 AND CUDA_VERSION_MINOR EQUAL 2)
                 message("CUDA is compatible")
                 set(WARNING_SUPPRESSION_AND_OPTION_NVCC  -Xcudafe "--display_error_number --diag_suppress=611 --diag_suppress=2885 --diag_suppress=2886  --diag_suppress=2887  --diag_suppress=2888 --diag_suppress=186 --diag_suppress=111" --expt-extended-lambda)
+                FILE(WRITE cuda_options " -Xcudafe \"--display_error_number --diag_suppress=611 --diag_suppress=2885 --diag_suppress=2886  --diag_suppress=2887  --diag_suppress=2888 --diag_suppress=186 --diag_suppress=111\" --expt-extended-lambda ")
         elseif ( CUDA_VERSION_MAJOR EQUAL 10 AND CUDA_VERSION_MINOR EQUAL 1 )
                 message("CUDA is compatible")
-                set(WARNING_SUPPRESSION_AND_OPTION_NVCC -Xcudafe "--display_error_number --diag_suppress=611 --diag_suppress=2885 --diag_suppress=2886  --diag_suppress=2887  --diag_suppress=2888 --diag_suppress=186 --diag_suppress=111 --diag_suppress=2928 --diag_suppress=2931 --diag_suppress=2929 --diag_suppress=2930" --expt-extended-lambda)
-
+                set(WARNING_SUPPRESSION_AND_OPTION_NVCC  -Xcudafe "--display_error_number --diag_suppress=2915 --diag_suppress=2914 --diag_suppress=2912 --diag_suppress=2913 --diag_suppress=111 --diag_suppress=186 --diag_suppress=611 " --expt-extended-lambda )
+                FILE(WRITE cuda_options "-Xcudafe \"--display_error_number --diag_suppress=2915 --diag_suppress=2914  --diag_suppress=2912 --diag_suppress=2913 --diag_suppress=111 --diag_suppress=186 --diag_suppress=611 \" --expt-extended-lambda")
+        elseif ( CUDA_VERSION_MAJOR EQUAL 10 AND CUDA_VERSION_MINOR EQUAL 2 )
+                message("CUDA is compatible")
+                set(WARNING_SUPPRESSION_AND_OPTION_NVCC  -Xcudafe "--display_error_number --diag_suppress=2976 --diag_suppress=2977  --diag_suppress=2979 --diag_suppress=186" --expt-extended-lambda)
         else()
-                message(FATAL_ERROR "CUDA is incompatible, version 9.2 is only supported")
+                message(FATAL_ERROR "CUDA is incompatible, version 9.2 and 10.1 is only supported")
         endif()
-
-
 endif()
 
-
-find_package(Boost 1.68.0 COMPONENTS unit_test_framework iostreams program_options)
-find_package(MPI)
+find_package(Boost 1.72.0 REQUIRED COMPONENTS unit_test_framework iostreams program_options)
+find_package(MPI REQUIRED)
 find_package(PETSc)
 find_package(HDF5)
 find_package(Eigen3)
@@ -134,6 +133,10 @@ else()
 	message( FATAL_ERROR "MPI is required in order to install OpenFPM" )
 endif()
 
+if(PETSC_FOUND)
+        set(DEFINE_HAVE_PETSC "#define HAVE_PETSC")
+endif()
+
 if (Boost_FOUND)
 	set(DEFINE_HAVE_BOOST "#define HAVE_BOOST")
 	set(DEFINE_HAVE_BOOST_IOSTREAMS "#define HAVE_BOOST_IOSTREAMS")
@@ -160,11 +163,20 @@ if(EIGEN3_FOUND)
 	set(DEFINE_HAVE_EIGEN "#define HAVE_EIGEN")
 endif()
 
+
+if(EIGEN3_FOUND)
+        set(DEFINE_HAVE_EIGEN "#define HAVE_EIGEN")
+endif()
+
 if(LIBHILBERT_FOUND)
-	set(DEFINE_HAVE_LIBHILBERT "#define HAVE_LIBHILBERT 1")
+        set(DEFINE_HAVE_LIBHILBERT "#define HAVE_LIBHILBERT 1")
 else()
-	file(WRITE error_code "210")
-	message( FATAL_ERROR "LibHilbert is required in order to install OpenFPM")
+        file(WRITE error_code "210")
+        message( FATAL_ERROR "LibHilbert is required in order to install OpenFPM")
+endif()
+
+if(SUITESPARSE_FOUND AND SuiteSparse_UMFPACK_FOUND)
+        set(DEFINE_HAVE_SUITESPARSE "#define HAVE_SUITESPARSE")
 endif()
 
 if(SUITESPARSE_FOUND AND SuiteSparse_UMFPACK_FOUND)
@@ -192,4 +204,5 @@ file(WRITE mpi_libs "${MPI_C_LINK_FLAGS} ${MPI_C_LIBRARIES}")
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/src/config/config_cmake.h.in ${CMAKE_CURRENT_SOURCE_DIR}/src/config/config.h)
 
 add_subdirectory (src)
+
 
