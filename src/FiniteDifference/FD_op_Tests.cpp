@@ -252,6 +252,9 @@ BOOST_AUTO_TEST_SUITE(fd_op_suite_tests)
 
     BOOST_AUTO_TEST_CASE(fd_op_tests_derivative_staggered) {
 
+    	constexpr int x = 0;
+    	constexpr int y = 1;
+
     	constexpr int phi_ = 0;
     	constexpr int ux_ = 1;
 
@@ -291,7 +294,7 @@ BOOST_AUTO_TEST_SUITE(fd_op_suite_tests)
             mem_id j = key.get(1);
             double y = j * spacing[1];
             // Here fill the function value P
-            domain.template getProp<phi_>(key_l) = j % 2;
+            domain.template getProp<phi_>(key_l) = x*x + 3.0*y*y;
 
             ++it;
         }
@@ -306,20 +309,33 @@ BOOST_AUTO_TEST_SUITE(fd_op_suite_tests)
 
         ux = Dx(phi) + Dy(phi) + phi + 5;
 
-/*        grid_key_dx<2> start({0ul,0u});
-        grid_key_dx<2> stop({(size_t)sz[0]-2,(size_t)sz[1]-2});
+        grid_key_dx<2> start({1ul,1u});
+        grid_key_dx<2> stop({(long int)(sz[0]-2),(long int)(sz[1]-2)});
+
+        double worst_error = 0.0;
 
         auto it2 = domain.getSubDomainIterator(start,stop);
         while (it2.isNext())
         {
-            auto key_l = it2.get();
+            auto key = it2.get();
 
-            double test = phi.value(key_l,c2);
+            double test = domain.template getProp<ux_>(key);
 
-            BOOST_REQUIRE_EQUAL(test,0.5);
+            double dx = 0.5* (domain.template getProp<phi_>(key.move(x,1).move(y,1)) + domain.template getProp<phi_>(key.move(x,1)) - (domain.template getProp<phi_>(key.move(x,-1).move(y,1)) + domain.template getProp<phi_>(key.move(x,-1))) );
+            double dy = 0.5* (domain.template getProp<phi_>(key.move(y,1).move(y,1)) + domain.template getProp<phi_>(key.move(y,1)) - (domain.template getProp<phi_>(key.move(y,-1).move(y,1)) + domain.template getProp<phi_>(key.move(y,-1))) );
+
+            dx *= 0.5/spacing[0];
+            dy *= 0.5/spacing[1];
+
+            double phi_inte = 0.5*(domain.template getProp<phi_>(key.move(y,1)) + domain.template getProp<phi_>(key));
+
+            if (fabs(test - (dx + dy + phi_inte + 5.0)) > worst_error )
+            {worst_error = fabs(test - (dx + dy + phi_inte + 5.0));}
 
             ++it2;
-        }*/
+        }
+
+        BOOST_REQUIRE(worst_error < 5e-13);
     }
 
 
