@@ -7,6 +7,7 @@
 #include "Solvers/petsc_solver.hpp"
 #include "FD_expressions.hpp"
 #include "FD_op.hpp"
+#include "Grid/staggered_dist_grid.hpp"
 
 
 //! Specify the general characteristic of system to solve
@@ -34,6 +35,34 @@ struct equations2d1 {
 
     typedef petsc_solver<double> solver_type;
 };
+
+//! Specify the general characteristic of system to solve
+struct equations2d1_stag {
+
+    //! dimensionaly of the equation ( 3D problem ...)
+    static const unsigned int dims=2;
+    //! number of fields in the system
+    static const unsigned int nvar=1;
+
+    //! boundary at X and Y
+    static const bool boundary[];
+
+    //! type of space float, double, ...
+    typedef double stype;
+
+    //! type of base particles
+    typedef staggered_grid_dist<dims, double, aggregate<double,double,double>> b_part;
+
+    //! type of SparseMatrix for the linear solver
+    typedef SparseMatrix<double, int, PETSC_BASE> SparseMatrix_type;
+
+    //! type of Vector for the linear solver
+    typedef Vector<double, PETSC_BASE> Vector_type;
+
+    typedef petsc_solver<double> solver_type;
+};
+
+const bool equations2d1_stag::boundary[] = {NON_PERIODIC,NON_PERIODIC};
 
 BOOST_AUTO_TEST_SUITE( FD_Solver_test )
 
@@ -142,6 +171,71 @@ BOOST_AUTO_TEST_CASE(solver_check_diagonal)
         domain.write("FDSOLVER_Lap_test");
     }
 
+    BOOST_AUTO_TEST_CASE(solver_Lap_stag)
+    {
+        const size_t sz[2] = {82,82};
+        Box<2, double> box({0, 0}, {1, 1});
+        periodicity<2> bc = {NON_PERIODIC, NON_PERIODIC};
+        Ghost<2,long int> ghost(1);
+
+        staggered_grid_dist<2, double, aggregate<double,double,double>> domain(sz, box, ghost, bc);
+
+
+        auto it = domain.getDomainIterator();
+        while (it.isNext())
+        {
+            auto key = it.get();
+            auto gkey = it.getGKey(key);
+            double x = gkey.get(0) * domain.spacing(0);
+            double y = gkey.get(1) * domain.spacing(1);
+            domain.get<0>(key) = sin(M_PI*x)*sin(M_PI*y);
+            domain.get<1>(key) = -2*M_PI*M_PI*sin(M_PI*x)*sin(M_PI*y);
+            ++it;
+        }
+
+        domain.ghost_get<0>();
+        FD::Derivative_x Dx;
+        FD::Derivative_y Dy;
+        auto v =  FD::getV<0>(domain);
+        auto RHS= FD::getV<1>(domain);
+        auto sol= FD::getV<2>(domain);
+
+
+        FD_scheme<equations2d1_stag,decltype(domain)> Solver(ghost,domain);
+        FD::Laplacian_xy Lap;
+
+/*        Solver.impose(Lap(v),{1,1},{79,79}, prop_id<1>());
+        Solver.impose(v,{0,0},{80,0}, prop_id<0>());
+        Solver.impose(v,{0,1},{0,79}, prop_id<0>());
+        Solver.impose(v,{0,80},{80,80}, prop_id<0>());
+        Solver.impose(v,{80,1},{80,79}, prop_id<0>());
+        Solver.solve(sol);*/
+
+        Solver.impose(Lap(v),{1,1},{80,80}, prop_id<1>());
+        Solver.impose(v,{0,0},{81,0}, prop_id<0>());
+        Solver.impose(v,{0,1},{0,80}, prop_id<0>());
+        Solver.impose(v,{0,81},{81,81}, prop_id<0>());
+        Solver.impose(v,{81,1},{81,80}, prop_id<0>());
+        /*auto A=Solver.getA();
+        A.write("Lap_Matrix");*/
+
+        Solver.solve(sol);
+
+        auto it2 = domain.getDomainIterator();
+        double worst = 0.0;
+        while (it2.isNext()) {
+            auto p = it2.get();
+
+            if (fabs(domain.getProp<0>(p) - domain.getProp<2>(p)) > worst) {
+                worst = fabs(domain.getProp<0>(p) - domain.getProp<2>(p));
+            }
+
+            ++it2;
+        }
+
+        std::cout << "Maximum Error: " << worst << std::endl;
+        domain.write("FDSOLVER_Lap_test");
+    }
 
     /*
 In 3D we use exact solution:
