@@ -27,21 +27,22 @@ namespace FD
         }
     };
 
+
     template<unsigned int dir>
     struct Derivative_impl<dir,1,2,CENTRAL>
     {
         template<typename rtype,typename expr_type>
-        static inline rtype calculate(expr_type & o1, grid_dist_key_dx<expr_type::gtype::dims> & key)
+        static inline rtype calculate(expr_type & o1, grid_dist_key_dx<expr_type::gtype::dims> & key,comb<expr_type::gtype::dims> & c_where)
         {
             // x0, dx are defined in proper dir є(x, y, z)
             auto dx = o1.getGrid().spacing(dir);
             long int x0 = key.getKeyRef().get(dir);
 
             key.getKeyRef().set_d(dir, x0 + 1);
-            rtype ret = o1.value(key)*1.0/2.0;
+            rtype ret = o1.value(key,c_where)*1.0/2.0;
 
             key.getKeyRef().set_d(dir, x0 - 1);
-            ret += o1.value(key)*(-1.0/2.0);
+            ret += o1.value(key,c_where)*(-1.0/2.0);
 
             key.getKeyRef().set_d(dir, x0);
             return ret/dx;
@@ -73,19 +74,19 @@ namespace FD
     struct Derivative_impl<dir,2,2,CENTRAL>
     {
         template<typename rtype,typename expr_type>
-        static inline rtype calculate(expr_type & o1, grid_dist_key_dx<expr_type::gtype::dims> & key)
+        static inline rtype calculate(expr_type & o1, grid_dist_key_dx<expr_type::gtype::dims> & key, comb<expr_type::gtype::dims> & c_where)
         {
             // x0, dx are defined in proper dir є(x, y, z)
             auto dx = o1.getGrid().spacing(dir);
             long int x0 = key.getKeyRef().get(dir);
 
-            rtype ret = o1.value(key)*(-2.0);
+            rtype ret = o1.value(key,c_where)*(-2.0);
 
             key.getKeyRef().set_d(dir, x0 + 1);
-            ret += o1.value(key)*(1.0);
+            ret += o1.value(key,c_where)*(1.0);
 
             key.getKeyRef().set_d(dir, x0 - 1);
-            ret += o1.value(key)*(1.0);
+            ret += o1.value(key,c_where)*(1.0);
 
             key.getKeyRef().set_d(dir, x0);
             return ret/(dx*dx);
@@ -146,19 +147,19 @@ namespace FD
     struct Derivative_impl<dir,1,2,CENTRAL_ONE_SIDE_FORWARD>
     {
         template<typename rtype,typename expr_type>
-        static inline rtype calculate(expr_type & o1, grid_dist_key_dx<expr_type::gtype::dims> & key)
+        static inline rtype calculate(expr_type & o1, grid_dist_key_dx<expr_type::gtype::dims> & key, comb<expr_type::gtype::dims> & c_where)
         {
             // x0, dx are defined in proper dir є(x, y, z)
             auto dx = o1.getGrid().spacing(dir);
             long int x0 = key.getKeyRef().get(dir);
 
-            rtype ret = o1.value(key)*(-3.0/2.0);
+            rtype ret = o1.value(key,c_where)*(-3.0/2.0);
 
             key.getKeyRef().set_d(dir, x0 + 1);
-            ret += o1.value(key)*2.0;
+            ret += o1.value(key,c_where)*2.0;
 
             key.getKeyRef().set_d(dir, x0 + 2);
-            ret += o1.value(key)*(-0.5);
+            ret += o1.value(key,c_where)*(-0.5);
 
             key.getKeyRef().set_d(dir, x0);
             return ret/dx;
@@ -190,22 +191,22 @@ namespace FD
     struct Derivative_impl<dir,2,2,CENTRAL_ONE_SIDE_FORWARD>
     {
         template<typename rtype,typename expr_type>
-        static inline rtype calculate(expr_type & o1, grid_dist_key_dx<expr_type::gtype::dims> & key)
+        static inline rtype calculate(expr_type & o1, grid_dist_key_dx<expr_type::gtype::dims> & key, comb<expr_type::gtype::dims> & c_where)
         {
             // x0, dx are defined in proper dir є(x, y, z)
             auto dx = o1.getGrid().spacing(dir);
             long int x0 = key.getKeyRef().get(dir);
 
-            rtype ret = o1.value(key)*(2.0);
+            rtype ret = o1.value(key,c_where)*(2.0);
 
             key.getKeyRef().set_d(dir, x0 + 1);
-            ret += o1.value(key)*(-5.0);
+            ret += o1.value(key,c_where)*(-5.0);
 
             key.getKeyRef().set_d(dir, x0 + 2);
-            ret += o1.value(key)*(4.0);
+            ret += o1.value(key,c_where)*(4.0);
 
             key.getKeyRef().set_d(dir, x0 + 3);
-            ret += o1.value(key)*(-1.0);
+            ret += o1.value(key,c_where)*(-1.0);
 
             key.getKeyRef().set_d(dir, x0);
             return ret/(dx*dx);
@@ -241,19 +242,19 @@ namespace FD
     struct Derivative_impl<dir,1,2,CENTRAL_ONE_SIDE_BACKWARD>
     {
         template<typename rtype,typename expr_type>
-        static inline rtype calculate(expr_type & o1, grid_dist_key_dx<expr_type::gtype::dims> & key)
+        static inline rtype calculate(expr_type & o1, grid_dist_key_dx<expr_type::gtype::dims> & key, comb<expr_type::gtype::dims> & c_where)
         {
             // x0, dx are defined in proper dir є(x, y, z)
             auto dx = o1.getGrid().spacing(dir);
             long int x0 = key.getKeyRef().get(dir);
 
-            rtype ret = o1.value(key)*(3.0/2.0);
+            rtype ret = o1.value(key,c_where)*(3.0/2.0);
 
             key.getKeyRef().set_d(dir, x0 - 1);
-            ret += o1.value(key)*(-2.0);
+            ret += o1.value(key,c_where)*(-2.0);
 
             key.getKeyRef().set_d(dir, x0 - 2);
-            ret += o1.value(key)*0.5;
+            ret += o1.value(key,c_where)*0.5;
 
             key.getKeyRef().set_d(dir, x0);
             return ret/dx;
@@ -285,22 +286,22 @@ namespace FD
     struct Derivative_impl<dir,2,2,CENTRAL_ONE_SIDE_BACKWARD>
     {
         template<typename rtype,typename expr_type>
-        static inline rtype calculate(expr_type & o1, grid_dist_key_dx<expr_type::gtype::dims> & key)
+        static inline rtype calculate(expr_type & o1, grid_dist_key_dx<expr_type::gtype::dims> & key, comb<expr_type::gtype::dims> & c_where)
         {
             // x0, dx are defined in proper dir є(x, y, z)
             auto dx = o1.getGrid().spacing(dir);
             long int x0 = key.getKeyRef().get(dir);
 
-            rtype ret = o1.value(key)*(2.0);
+            rtype ret = o1.value(key,c_where)*(2.0);
 
             key.getKeyRef().set_d(dir, x0 - 1);
-            ret += o1.value(key)*(-5.0);
+            ret += o1.value(key,c_where)*(-5.0);
 
             key.getKeyRef().set_d(dir, x0 - 2);
-            ret += o1.value(key)*(4.0);
+            ret += o1.value(key,c_where)*(4.0);
 
             key.getKeyRef().set_d(dir, x0 - 3);
-            ret += o1.value(key)*(-1.0);
+            ret += o1.value(key,c_where)*(-1.0);
 
             key.getKeyRef().set_d(dir, x0);
             return ret/(dx*dx);
@@ -372,9 +373,9 @@ namespace FD
          * \return the result of the expression
          *
          */
-        inline auto value(grid_dist_key_dx<gtype::dims> & key) const -> typename std::remove_reference<decltype(o1.value(key))>::type
+        inline auto value(grid_dist_key_dx<gtype::dims> & key, comb<gtype::dims> & c_where) const -> typename std::remove_reference<decltype(o1.value(key,c_where))>::type
         {
-            typedef typename std::remove_reference<decltype(o1.value(key))>::type r_type;
+            typedef typename std::remove_reference<decltype(o1.value(key,c_where))>::type r_type;
 
             r_type val;
 
@@ -382,15 +383,15 @@ namespace FD
 
             if (os == one_side_direction::OS_CENTRAL)
             {
-                val = Derivative_impl<dir,ord_d,ord,impl>::template calculate<r_type>(o1,key);
+                val = Derivative_impl<dir,ord_d,ord,impl>::template calculate<r_type>(o1,key,c_where);
             }
             else if (os == one_side_direction::OS_FORWARD)
             {
-                val = Derivative_impl<dir,ord_d,ord,impl+1>::template calculate<r_type>(o1,key);
+                val = Derivative_impl<dir,ord_d,ord,impl+1>::template calculate<r_type>(o1,key,c_where);
             }
             else
             {
-                val = Derivative_impl<dir,ord_d,ord,impl+2>::template calculate<r_type>(o1,key);
+                val = Derivative_impl<dir,ord_d,ord,impl+2>::template calculate<r_type>(o1,key,c_where);
             }
 
             return val;

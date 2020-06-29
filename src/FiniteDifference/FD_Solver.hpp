@@ -652,6 +652,8 @@ private:
     template<typename solType, typename expr_type>
     void copy_impl(solType & x, expr_type exp, unsigned int comp)
     {
+    	comb<Sys_eqs::dims> c_where;
+    	c_where.mone();
         auto & grid = exp.getGrid();
 
         auto it = grid.getDomainIterator();
@@ -660,7 +662,7 @@ private:
         while (it.isNext())
         {
             auto p = it.get();
-            exp.value(p) = x(pn*Sys_eqs::nvar + comp + s_pnt*Sys_eqs::nvar);
+            exp.value(p,c_where) = x(pn*Sys_eqs::nvar + comp + s_pnt*Sys_eqs::nvar);
             ++it;
             ++pn;
         }
