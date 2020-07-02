@@ -730,6 +730,7 @@ public:
 		while (it.isNext())
 		{
 			auto key = it.get();
+			auto key_orig = v.getOriginKey(key);
 
 			pos_or_propL<vector,prp>::value(v,key) = v_exp.value(key);
 
@@ -755,8 +756,9 @@ public:
 		while (it.isNext())
 		{
 			auto key = it.get();
+			auto key_orig = v.getOriginKey(key);
 
-			pos_or_propL<vector,prp>::value(v,key) = v_exp.value(key);
+			pos_or_propL<vector,prp>::value(v,key) = v_exp.value(key_orig);
 
 			++it;
 		}
@@ -1051,8 +1053,9 @@ public:
 		while (it.isNext())
 		{
 			auto key = it.get();
+			auto key_orig = v.getOriginKey(key);
 
-			get_vector_dist_expression_op<n,n == rank_gen<property_act>::type::value>::template assign<exp1::prop>(v_exp,v,key,comp);
+			get_vector_dist_expression_op<n,n == rank_gen<property_act>::type::value>::template assign<exp1::prop>(v_exp,v,key_orig,comp);
 
 			++it;
 		}
@@ -1078,8 +1081,9 @@ public:
 		while (it.isNext())
 		{
 			auto key = it.get();
+			auto key_orig = v.getOriginKey(key);
 
-			get_vector_dist_expression_op<n,n == rank_gen<property_act>::type::value>::template assign<exp1::prop>(v_exp,v,key,comp);
+			get_vector_dist_expression_op<n,n == rank_gen<property_act>::type::value>::template assign<exp1::prop>(v_exp,v,key_orig,comp);
 
 			++it;
 		}

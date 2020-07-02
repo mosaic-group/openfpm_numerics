@@ -59,7 +59,7 @@ Support<vector_type>::computeOffsets(const size_t referencePoint, const std::vec
     for (auto &otherK : keys)
     {
         Point<vector_type::dims,typename vector_type::stype> curOffset(domain.getPos(referencePoint));
-        curOffset -= domain.getPos(otherK);
+        curOffset -= domain.getPosOrig(otherK);
         offsets.push_back(curOffset);
     }
     return offsets;
@@ -82,7 +82,7 @@ Support<vector_type>::RecomputeOffsets()
 template<typename vector_type>
 const Point<vector_type::dims,typename vector_type::stype> Support<vector_type>::getReferencePoint() const
 {
-    return Point<vector_type::dims,typename vector_type::stype>(domain.getPos(referencePointKey));
+    return Point<vector_type::dims,typename vector_type::stype>(domain.getPosOrig(referencePointKey));
 }
 
 template<typename vector_type>

@@ -404,7 +404,9 @@ public:
     void initializeUpdate(vector_type &particles)
     {
         localSupports.clear();
+        localSupports.resize(particles.size_local_orig());
         localEps.clear();
+        localEps.resize(particles.size_local_orig());
         localCoefficients.clear();
         SupportBuilder<vector_type> supportBuilder(particles, differentialSignature, rCut);
         unsigned int requiredSupportSize = monomialBasis.size() * supportSizeFactor;
@@ -424,7 +426,8 @@ public:
 
             T eps = vandermonde.getEps();
 
-            localSupports.push_back(support);
+            auto key_o = particles.getOriginKey(it.get());
+            localSupports[key_o.getKey()] = support;
             localEps.push_back(eps);
             // Compute the diagonal matrix E
             DcpseDiagonalScalingMatrix<dim> diagonalScalingMatrix(monomialBasis);
@@ -458,6 +461,9 @@ private:
                 supportBuilder(particles, differentialSignature, rCut);
         unsigned int requiredSupportSize = monomialBasis.size();
 
+        localSupports.resize(particles.size_local_orig());
+        localEps.resize(particles.size_local_orig());
+
         auto it = particles.getDomainIterator();
         while (it.isNext()) {
             const T condVTOL = 1e2;
@@ -484,8 +490,9 @@ private:
                 requiredSupportSize = monomialBasis.size();
             }
 
-            localSupports.push_back(support);
-            localEps.push_back(eps);
+            auto key_o = particles.getOriginKey(it.get());
+            localSupports[key_o.getKey()] = support;
+            localEps[key_o.getKey()] = eps;
             // Compute the diagonal matrix E
             DcpseDiagonalScalingMatrix<dim> diagonalScalingMatrix(monomialBasis);
             EMatrix<T, Eigen::Dynamic, Eigen::Dynamic> E(support.size(), support.size());
@@ -521,6 +528,9 @@ private:
                 supportBuilder(particles, differentialSignature, rCut);
         unsigned int requiredSupportSize = monomialBasis.size() * supportSizeFactor;
 
+        localSupports.resize(particles.size_local_orig());
+        localEps.resize(particles.size_local_orig());
+
         auto it = particles.getDomainIterator();
         while (it.isNext()) {
             // Get the points in the support of the DCPSE kernel and store the support for reuse
@@ -555,8 +565,9 @@ private:
             }*/
             T eps = vandermonde.getEps();
 
-            localSupports.push_back(support);
-            localEps.push_back(eps);
+            auto key_o = particles.getOriginKey(it.get());
+            localSupports[key_o.getKey()] = support;
+            localEps[key_o.getKey()] = eps;
             // Compute the diagonal matrix E
             DcpseDiagonalScalingMatrix<dim> diagonalScalingMatrix(monomialBasis);
             EMatrix<T, Eigen::Dynamic, Eigen::Dynamic> E(support.size(), support.size());

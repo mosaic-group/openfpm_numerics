@@ -162,7 +162,7 @@ std::vector<size_t> SupportBuilder<vector_type>::getPointsInSetOfCells(std::set<
 
             if (p.getKey() == el)   {continue;}
 
-            Point<vector_type::dims,typename vector_type::stype> xq = domain.getPos(el);
+            Point<vector_type::dims,typename vector_type::stype> xq = domain.getPosOrig(el);
             //points.push_back(el);
 
             reord pr;
