@@ -109,6 +109,7 @@ BOOST_AUTO_TEST_CASE(solver_check_diagonal)
         FD_scheme<equations2d1,decltype(domain)> Solver(ghost,domain);
         FD::Laplacian_xy Lap;
         FD::L2Error L2Error;
+        FD::LInfError LInfError;
 
 /*        Solver.impose(Lap(v),{1,1},{79,79}, prop_id<1>());
         Solver.impose(v,{0,0},{80,0}, prop_id<0>());
@@ -127,21 +128,11 @@ BOOST_AUTO_TEST_CASE(solver_check_diagonal)
 
         Solver.solve(sol);
         auto l2error = L2Error(v, sol);
+        auto linferror = LInfError(v, sol);
 
-        auto it2 = domain.getDomainIterator();
-        double worst = 0.0;
-        while (it2.isNext()) {
-            auto p = it2.get();
-
-            if (fabs(domain.getProp<0>(p) - domain.getProp<2>(p)) > worst) {
-                worst = fabs(domain.getProp<0>(p) - domain.getProp<2>(p));
-            }
-
-            ++it2;
-        }
-
-        std::cout << "Maximum Error: " << worst << std::endl;
         std::cout << "L2 error: " << l2error << std::endl;
+        std::cout << "L∞ Error: " << linferror << std::endl;
+
         domain.write("FDSOLVER_Lap_test");
     }
 

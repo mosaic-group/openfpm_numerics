@@ -533,6 +533,38 @@ namespace FD
 	};
 
 
+	class LInfError
+	{
+	public:
+		LInfError() {}
+
+		template<unsigned int p1, unsigned int p2, typename g1, typename g2, unsigned int impl_p1, unsigned int impl_p2>
+		auto operator()(const FD::grid_dist_expression<p1,g1,impl_p1> ga, const FD::grid_dist_expression<p2,g2,impl_p2> gb) const ->
+		typename std::remove_reference<decltype(ga.getGrid().template getProp<p1>(ga.getGrid().getDomainIterator().get()))>::type
+		{
+			typename std::remove_reference<decltype(ga.getGrid().template getProp<p1>(ga.getGrid().getDomainIterator().get()))>::type result = 0.0;
+			comb<FD::grid_dist_expression<p1,g1,impl_p1>::gtype::dims> s_pos;
+			auto diff_expr = ga + -1*gb;
+
+			auto & v_cl = create_vcluster();
+
+			auto it = ga.getGrid().getDomainIterator();
+			while (it.isNext())
+			{
+				auto key = it.get();
+				auto diff = fabs(diff_expr.value(key,s_pos));
+
+				if (diff > result) result = diff;
+				++it;
+			}
+
+			v_cl.max(result);
+			v_cl.execute();
+
+			return result;
+		}
+	};
+
     typedef Derivative<0,1,2,CENTRAL> Derivative_x;
     typedef Derivative<1,1,2,CENTRAL> Derivative_y;
     typedef Derivative<0,2,2,CENTRAL> Derivative_xx;
