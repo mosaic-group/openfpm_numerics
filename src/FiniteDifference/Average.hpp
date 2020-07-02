@@ -8,7 +8,7 @@
 #ifndef OPENFPM_NUMERICS_SRC_FINITEDIFFERENCE_AVERAGE_HPP_
 #define OPENFPM_NUMERICS_SRC_FINITEDIFFERENCE_AVERAGE_HPP_
 
-
+#include "FiniteDifference/FD_util_include.hpp"
 #include "util/mathutil.hpp"
 #include "Vector/map_vector.hpp"
 #include "Grid/comb.hpp"

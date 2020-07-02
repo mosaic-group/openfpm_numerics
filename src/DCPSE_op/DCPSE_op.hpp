@@ -29,6 +29,12 @@ class vector_dist_expression_op<exp1,DCPSE_type,VECT_DCPSE>
 
 public:
 
+    typedef std::false_type is_ker;
+
+    typedef std::false_type NN_type;
+
+    typedef std::false_type is_sort;
+
     typedef typename exp1::vtype vtype;
 
     //! Costruct a subtraction expression out of two expressions
@@ -115,6 +121,12 @@ class vector_dist_expression_op<exp1,DCPSE_type,VECT_DCPSE_V>
     typedef typename DCPSE_type::vtype::stype stype;
 
 public:
+
+    typedef std::false_type is_ker;
+
+    typedef std::false_type NN_type;
+
+    typedef std::false_type is_sort;
 
     typedef typename exp1::vtype vtype;
 
@@ -218,6 +230,12 @@ class vector_dist_expression_op<exp1,DCPSE_type,VECT_DCPSE_V_CURL2D>
 
 public:
 
+    typedef std::false_type is_ker;
+
+    typedef std::false_type NN_type;
+
+    typedef std::false_type is_sort;
+
     typedef typename exp1::vtype vtype;
 
     //! Costruct a subtraction expression out of two expressions
@@ -314,6 +332,11 @@ class vector_dist_expression_op<void,void,VECT_COPY_N_TO_N>
 
 public:
 
+    typedef std::false_type is_ker;
+
+    typedef std::false_type NN_type;
+
+    typedef std::false_type is_sort;
 
     inline vector_dist_expression_op(openfpm::vector<aggregate<int>> & l1,openfpm::vector<aggregate<int>> & l2)
             :l1(l1),l2(l2)
@@ -348,6 +371,12 @@ class vector_dist_expression_op<void,void,VECT_COPY_1_TO_N>
 
 public:
 
+    typedef std::false_type is_ker;
+
+    typedef std::false_type NN_type;
+
+    typedef std::false_type is_sort;
+
     inline vector_dist_expression_op(openfpm::vector<aggregate<int>> & l1, int l2_key)
     :l1(l1),l2_key(l2_key)
     {}
@@ -380,6 +409,12 @@ class vector_dist_expression_op<exp1,DCPSE_type,VECT_DCPSE_V_SUM>
     typedef typename DCPSE_type::vtype::stype stype;
 
 public:
+
+    typedef std::false_type is_ker;
+
+    typedef std::false_type NN_type;
+
+    typedef std::false_type is_sort;
 
     typedef typename exp1::vtype vtype;
 
@@ -470,6 +505,12 @@ class vector_dist_expression_op<exp1,DCPSE_type,VECT_DCPSE_V_DIV>
     typedef typename DCPSE_type::vtype::stype stype;
 
 public:
+
+    typedef std::false_type is_ker;
+
+    typedef std::false_type NN_type;
+
+    typedef std::false_type is_sort;
 
     typedef typename exp1::vtype vtype;
 
@@ -564,6 +605,12 @@ class vector_dist_expression_op<exp1,exp2_pr,VECT_DCPSE_V_DOT>
     typedef typename DCPSE_type::vtype::stype stype;
 
 public:
+
+    typedef std::false_type is_ker;
+
+    typedef std::false_type NN_type;
+
+    typedef std::false_type is_sort;
 
     //! The type of the internal vector
     typedef typename first_or_second<has_vtype<exp1>::value,exp1,exp2>::vtype vtype;

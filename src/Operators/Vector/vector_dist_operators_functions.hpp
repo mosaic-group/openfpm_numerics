@@ -29,8 +29,6 @@ class vector_dist_expression_op<exp1,void,OP_ID>\
 \
 public:\
 \
-    typedef typename exp1::vtype vtype;\
-\
 	typedef typename exp1::is_ker is_ker;\
 \
 	typedef typename vector_result<typename exp1::vtype,void>::type vtype;\
@@ -447,6 +445,30 @@ public:
 	{
 		return val;
 	}
+
+        /*! \brief Return the vector on which is acting
+        *
+        * It return the vector used in getVExpr, to get this object
+        *
+        * \return the vector
+        *
+        */
+        vtype & getVector()
+        {
+                return o1.getVector();
+        }
+
+        /*! \brief Return the vector on which is acting
+        *
+        * It return the vector used in getVExpr, to get this object
+        *
+        * \return the vector
+        *
+        */
+        const vtype & getVector() const
+        {
+                return o1.getVector();
+        }	
 };
 
 //! Reduce function (it generate an expression)

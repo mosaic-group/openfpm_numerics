@@ -1,6 +1,12 @@
 //
 // Created by Abhinav Singh on 23.04.20.
 //
+//
+//
+//
+//
+#define BOOST_MPL_CFG_NO_PREPROCESSED_HEADERS
+#define BOOST_MPL_LIMIT_VECTOR_SIZE 30
 #include "config.h"
 
 #define BOOST_TEST_DYN_LINK

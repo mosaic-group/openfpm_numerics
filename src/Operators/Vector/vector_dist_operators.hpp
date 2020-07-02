@@ -284,14 +284,11 @@ class vector_dist_expression_op<exp1,exp2,VECT_SUM>
 
 public:
 
-    //! The type of the internal vector
-    typedef typename first_or_second<has_vtype<exp1>::value,exp1,exp2>::vtype vtype;
-
 	//! indicate if this vector is kernel type
 	typedef typename exp1::is_ker is_ker;
 
 	//! return the vector type on which this expression operate
-	typedef typename vector_result<typename exp1::vtype,typename exp2::vtype>::type vtype;
+	typedef typename first_or_second<has_vtype<exp1>::value,exp1,exp2>::vtype vtype;
 
 	//! result for is sort
 	typedef typename vector_is_sort_result<exp1::is_sort::value,exp2::is_sort::value>::type is_sort;
@@ -312,16 +309,6 @@ public:
 	inline NN_type * getNN() const
 	{
 		return nn_type_result<typename exp1::NN_type,typename exp2::NN_type>::getNN(o1,o2);
-	}
-
-	/*! \brief Return the underlying vector
-	 *
-	 * \return the vector
-	 *
-	 */
-	const vtype & getVector() const
-	{
-		return vector_result<typename exp1::vtype,typename exp2::vtype>::getVector(o1,o2);
 	}
 
 	/*! \brief This function must be called before value
@@ -362,7 +349,7 @@ public:
 	* \return the vector
 	*
 	*/
-	vtype & getVector()
+	const vtype & getVector()
 	{
 		return first_or_second<has_vtype<exp1>::value,exp1,exp2>::getVector(o1,o2);
 	}
@@ -416,9 +403,6 @@ public:
 
 	typedef typename exp1::is_ker is_ker;
 
-	//! return the vector type on which this expression operate
-	typedef typename vector_result<typename exp1::vtype,typename exp2::vtype>::type vtype;
-
 	//! result for is sort
 	typedef typename vector_is_sort_result<exp1::is_sort::value,exp2::is_sort::value>::type is_sort;
 
@@ -440,15 +424,6 @@ public:
 		return nn_type_result<typename exp1::NN_type,typename exp2::NN_type>::getNN(o1,o2);
 	}
 
-	/*! \brief Return the underlying vector
-	 *
-	 * \return the vector
-	 *
-	 */
-	const vtype & getVector()
-	{
-		return vector_result<typename exp1::vtype,typename exp2::vtype>::getVector(o1,o2);
-	}
 
 	/*! \brief This function must be called before value
 	 *
@@ -494,7 +469,7 @@ public:
     * \return the vector
     *
     */
-    vtype & getVector()
+    const vtype & getVector()
     {
         return first_or_second<has_vtype<exp1>::value,exp1,exp2>::getVector(o1,o2);
     }
@@ -542,9 +517,6 @@ public:
 
 	typedef typename exp1::is_ker is_ker;
 
-	//! return the vector type on which this expression operate
-	typedef typename vector_result<typename exp1::vtype,typename exp2::vtype>::type vtype;
-
 	//! result for is sort
 	typedef typename vector_is_sort_result<exp1::is_sort::value,exp2::is_sort::value>::type is_sort;
 
@@ -555,16 +527,6 @@ public:
 	vector_dist_expression_op(const exp1 & o1, const exp2 & o2)
 	:o1(o1),o2(o2)
 	{}
-
-	/*! \brief Return the underlying vector
-	 *
-	 * \return the vector
-	 *
-	 */
-	const vtype & getVector()
-	{
-		return vector_result<typename exp1::vtype,typename exp2::vtype>::getVector(o1,o2);
-	}
 
 	/*! \brief This function must be called before value
 	 *
@@ -604,7 +566,7 @@ public:
 	 * \return the vector
 	 *
 	 */
-	vtype & getVector()
+	const vtype & getVector()
 	{
         	return first_or_second<has_vtype<exp1>::value,exp1,exp2>::getVector(o1,o2);
 	}
@@ -657,9 +619,6 @@ public:
 
 	typedef typename exp1::is_ker is_ker;
 
-	//! return the vector type on which this expression operate
-	typedef typename vector_result<typename exp1::vtype,typename exp2::vtype>::type vtype;
-
 	//! result for is sort
 	typedef typename vector_is_sort_result<exp1::is_sort::value,exp2::is_sort::value>::type is_sort;
 
@@ -681,15 +640,6 @@ public:
 		return nn_type_result<typename exp1::NN_type,typename exp2::NN_type>::getNN(o1,o2);
 	}
 
-	/*! \brief Return the underlying vector
-	 *
-	 * \return the vector
-	 *
-	 */
-	const vtype & getVector()
-	{
-		return vector_result<typename exp1::vtype,typename exp2::vtype>::getVector(o1,o2);
-	}
 
 	/*! \brief This function must be called before value
 	 *
@@ -727,7 +677,7 @@ public:
  * \return the vector
  *
  */
-    vtype & getVector()
+    const vtype & getVector()
     {
         return first_or_second<has_vtype<exp1>::value,exp1,exp2>::getVector(o1,o2);
     }
@@ -743,38 +693,21 @@ public:
     {
         return first_or_second<has_vtype<exp1>::value,exp1,exp2>::getVector(o1,o2);
     }
+
+        /*! \brief Evaluate the expression
+         *
+         * \param key where to evaluate the expression
+         *
+         * \return the result of the expression
+         *
+         */
+        template<typename r_type=typename std::remove_reference<decltype(o1.value(vect_dist_key_dx()) / o2.value(vect_dist_key_dx()))>::type >
+        __device__ __host__ inline r_type value(const unsigned int & key) const
+        {
+                return o1.value(key) / o2.value(key);
+        }
 };
 
-/*! \brief selector for position or properties left side expression
- *
- * \tparam vector type of the original vector
- *
- * \tparam prp property id
- *
- */
-template <typename vector, unsigned int prp>
-struct pos_or_propL
-{
-	//! return the value (position or property) of the particle k in the vector v
-	static inline auto value(vector & v, const vect_dist_key_dx & k) -> decltype(v.template getProp<prp>(k))
-	{
-		return v.template getProp<prp>(k);
-	}
-};
-
-	/*! \brief Evaluate the expression
-	 *
-	 * \param key where to evaluate the expression
-	 *
-	 * \return the result of the expression
-	 *
-	 */
-	template<typename r_type=typename std::remove_reference<decltype(o1.value(vect_dist_key_dx()) / o2.value(vect_dist_key_dx()))>::type >
-	__device__ __host__ inline r_type value(const unsigned int & key) const
-	{
-		return o1.value(key) / o2.value(key);
-	}
-};
 
 /*! \brief it take an expression and create the negatove of this expression
  *
@@ -788,7 +721,6 @@ class vector_dist_expression_op<exp1,void,VECT_SUB_UNI>
 
 public:
 
-	typedef typename exp1::vtype vtype;
 
 	typedef typename exp1::is_ker is_ker;
 
@@ -1005,18 +937,6 @@ public:
 		vdl = &vdkl;
 	}
 
-    /*! \brief Return the vector on which is acting
-    *
-    * It return the vector used in getVExpr, to get this object
-    *
-    * \return the vector
-    *
-    */
-    const vector & getVector() const
-    {
-        return v;
-    }
-
 	/*! \brief This function must be called before value
 	 *
 	 * it initialize the expression if needed
@@ -1132,6 +1052,24 @@ public:
 
 		return v.v;
 	}
+
+
+    template<typename Sys_eqs, typename pmap_type, typename unordered_map_type, typename coeff_type>
+    inline void value_nz(pmap_type & p_map, const vect_dist_key_dx & key, unordered_map_type & cols, coeff_type & coeff, unsigned int comp) const
+    {
+            cols[p_map. template getProp<0>(key)*Sys_eqs::nvar + var_id + comp] += coeff;
+    }
+
+    inline vector_dist_expression_op<vector_dist_expression<prp,vector>,boost::mpl::int_<1>,VECT_COMP> operator[](int comp)
+    {
+        int comp_n[1];
+
+        comp_n[0] = comp;
+
+        vector_dist_expression_op<vector_dist_expression<prp,vector>,boost::mpl::int_<1>,VECT_COMP> v_exp(*this,comp_n,var_id);
+
+        return v_exp;
+    }
 };
 
 template<typename vector, unsigned int impl>
@@ -1159,23 +1097,6 @@ struct switcher_get_v<vector,comp_dev>
 	{
 		exp_v.set_vector_dist_ker_list(v.private_get_vector_dist_ker_list(),is_sort);
 	}
-
-    template<typename Sys_eqs, typename pmap_type, typename unordered_map_type, typename coeff_type>
-    inline void value_nz(pmap_type & p_map, const vect_dist_key_dx & key, unordered_map_type & cols, coeff_type & coeff, unsigned int comp) const
-    {
-	    cols[p_map. template getProp<0>(key)*Sys_eqs::nvar + var_id + comp] += coeff;
-    }
-
-    inline vector_dist_expression_op<vector_dist_expression<prp,vector>,boost::mpl::int_<1>,VECT_COMP> operator[](int comp)
-    {
-    	int comp_n[1];
-
-    	comp_n[0] = comp;
-
-    	vector_dist_expression_op<vector_dist_expression<prp,vector>,boost::mpl::int_<1>,VECT_COMP> v_exp(*this,comp_n,var_id);
-
-    	return v_exp;
-    }
 };
 
 template<unsigned int, bool is_valid>
@@ -1303,6 +1224,14 @@ class vector_dist_expression_op<exp1,boost::mpl::int_<n>,VECT_COMP>
 	typedef vector_dist_expression_op<exp1,boost::mpl::int_<n>,VECT_COMP> myself;
 
 public:
+
+        typedef std::false_type is_ker;
+
+        //! result for is sort
+        typedef boost::mpl::bool_<false> is_sort;
+
+        //! result for is sort
+        typedef boost::mpl::bool_<false> NN_type;
 
 	typedef typename exp1::vtype vtype;
 
@@ -1538,8 +1467,6 @@ public:
 
 	typedef std::false_type is_ker;
 
-	typedef void vtype;
-
 	//! result for is sort
 	typedef boost::mpl::bool_<false> is_sort;
 
@@ -1609,8 +1536,6 @@ public:
 
 	typedef std::false_type is_ker;
 
-	//! type of object the structure return then evaluated
-	typedef void vtype;
 
 	//! result for is sort
 	typedef boost::mpl::bool_<false> is_sort;

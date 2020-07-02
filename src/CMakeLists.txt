@@ -2,7 +2,6 @@ cmake_minimum_required(VERSION 3.8 FATAL_ERROR)
 
 ########################### Executables
 
-add_executable(numerics FiniteDifference/FD_Solver_test.cpp FiniteDifference/FD_op_Tests.cpp DCPSE_op/DCPSE_op_test3d.cpp DCPSE_op/DCPSE_op_test2.cpp DCPSE_op/DCPSE_op_test.cpp main.cpp Matrix/SparseMatrix_unit_tests.cpp interpolation/interpolation_unit_tests.cpp  Vector/Vector_unit_tests.cpp  Solvers/petsc_solver_unit_tests.cpp FiniteDifference/FDScheme_unit_tests.cpp FiniteDifference/eq_unit_test_3d.cpp FiniteDifference/eq_unit_test.cpp  Operators/Vector/vector_dist_operators_unit_tests.cpp ../../openfpm_vcluster/src/VCluster/VCluster.cpp ../../openfpm_devices/src/memory/CudaMemory.cu  ../../openfpm_devices/src/memory/HeapMemory.cpp ../../openfpm_devices/src/memory/PtrMemory.cpp ../../openfpm_devices/src/Memleak_check.cpp DCPSE_op/DCPSEActiveGelTest.cpp DCPSE_op/Fast_test.cpp)
 
 if (CUDA_FOUND)
 	set(CUDA_SOURCES Operators/Vector/vector_dist_operators_unit_tests.cu
@@ -10,6 +9,13 @@ if (CUDA_FOUND)
 endif()
 
 add_executable(numerics ${OPENFPM_INIT_FILE} ${CUDA_SOURCES}
+						FiniteDifference/FD_Solver_test.cpp 
+						FiniteDifference/FD_op_Tests.cpp 
+						DCPSE_op/DCPSE_op_test3d.cpp 
+						DCPSE_op/DCPSE_op_test2.cpp 
+						DCPSE_op/DCPSE_op_test.cpp
+						DCPSE_op/DCPSEActiveGelTest.cpp 
+						DCPSE_op/Fast_test.cpp
 						main.cpp 
 						Matrix/SparseMatrix_unit_tests.cpp
 						interpolation/interpolation_unit_tests.cpp
@@ -123,7 +129,10 @@ install(FILES FiniteDifference/Average.hpp
       	      FiniteDifference/FDScheme.hpp 
       	      FiniteDifference/Laplacian.hpp 
       	      FiniteDifference/mul.hpp 
-      	      FiniteDifference/sum.hpp 
+      	      FiniteDifference/sum.hpp
+	      FiniteDifference/FD_expressions.hpp
+	      FiniteDifference/FD_op.hpp
+	      FiniteDifference/FD_Solver.hpp 
       	      DESTINATION openfpm_numerics/include/FiniteDifference )
 	      
 install(FILES FiniteDifference/util/common.hpp
