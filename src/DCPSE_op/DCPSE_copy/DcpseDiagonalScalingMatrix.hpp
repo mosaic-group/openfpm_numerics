@@ -17,13 +17,13 @@ private:
 public:
     DcpseDiagonalScalingMatrix(const MonomialBasis<dim> &monomialBasis) : monomialBasis(monomialBasis) {}
 
-    template <typename T, typename MatrixType, typename Prop>
-    void buildMatrix(MatrixType &M, Support<dim, T, Prop> support, T eps);
+    template <typename T, typename MatrixType, typename vector_type>
+    void buildMatrix(MatrixType &M, Support<vector_type> support, T eps);
 };
 
 template<unsigned int dim>
-template<typename T, typename MatrixType, typename Prop>
-void DcpseDiagonalScalingMatrix<dim>::buildMatrix(MatrixType &M, Support<dim, T, Prop> support, T eps)
+template<typename T, typename MatrixType, typename vector_type>
+void DcpseDiagonalScalingMatrix<dim>::buildMatrix(MatrixType &M, Support<vector_type> support, T eps)
 {
     // Check that all the dimension constraints are met
     assert(support.size() >= monomialBasis.size());

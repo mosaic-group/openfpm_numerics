@@ -33,7 +33,7 @@ public:
 
     SupportBuilder(vector_type &domain, unsigned int differentialSignature[vector_type::dims], typename vector_type::stype rCut);
 
-    Support<vector_type::dims, typename vector_type::stype, typename vector_type::value_type> getSupport(vector_dist_iterator itPoint, unsigned int requiredSize, support_options opt);
+    Support<vector_type> getSupport(vector_dist_iterator itPoint, unsigned int requiredSize, support_options opt);
 
 private:
     size_t getCellLinId(const grid_key_dx<vector_type::dims> &cellKey);
@@ -62,7 +62,7 @@ SupportBuilder<vector_type>::SupportBuilder(vector_type &domain, const Point<vec
 }
 
 template<typename vector_type>
-Support<vector_type::dims, typename vector_type::stype, typename vector_type::value_type> SupportBuilder<vector_type>
+Support<vector_type> SupportBuilder<vector_type>
 ::getSupport(vector_dist_iterator itPoint, unsigned int requiredSize, support_options opt)
 {
     // Get spatial position from point iterator
@@ -80,7 +80,7 @@ Support<vector_type::dims, typename vector_type::stype, typename vector_type::va
     // Now return all the points from the support into a vector
     std::vector<size_t> supportKeys = getPointsInSetOfCells(supportCells,p,requiredSize,opt);
     std::remove(supportKeys.begin(), supportKeys.end(), p.getKey());
-    return Support<vector_type::dims, typename vector_type::stype, typename vector_type::value_type>(domain, p.getKey(), supportKeys);
+    return Support<vector_type>(domain, p.getKey(), supportKeys);
 }
 
 template<typename vector_type>

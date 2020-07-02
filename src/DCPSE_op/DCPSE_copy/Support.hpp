@@ -8,7 +8,7 @@
 #include <Space/Shape/Point.hpp>
 #include <Vector/vector_dist.hpp>
 
-template<unsigned int dim, typename T, typename Prop>
+template<typename vector_type>
 class Support
 {
     // This class is basically a wrapper around a point and a set of offsets.
@@ -17,101 +17,101 @@ class Support
     // necessary (it should almost never be the case) (todo: check if this is required)
 
 private:
-    const vector_dist<dim, T, Prop> &domain;
+    const vector_type &domain;
     const size_t referencePointKey;
     const std::vector<size_t> keys;
-    std::vector<Point<dim, T>> offsets;
+    std::vector<Point<vector_type::dims,typename vector_type::stype>> offsets;
 
 public:
     Support() {};
 
-    Support(const vector_dist<dim, T, Prop> &domain, const size_t &referencePoint, const std::vector<size_t> &keys)
+    Support(const vector_type &domain, const size_t &referencePoint, const std::vector<size_t> &keys)
             : domain(domain),
               referencePointKey(referencePoint),
               keys(keys),
               offsets(computeOffsets(referencePoint, keys)) {}
 
-    Support(const Support<dim, T, Prop> &other);
+    Support(const Support<vector_type> &other);
 
     size_t size();
 
-    const Point<dim, T> getReferencePoint() const;
+    const Point<vector_type::dims,typename vector_type::stype> getReferencePoint() const;
 
     const size_t getReferencePointKey() const;
 
     const std::vector<size_t> &getKeys() const;
 
-    const std::vector<Point<dim, T>> &getOffsets() const;
+    const std::vector<Point<vector_type::dims,typename vector_type::stype>> &getOffsets() const;
 
-    std::vector<Point<dim, T>>
+    std::vector<Point<vector_type::dims,typename vector_type::stype>>
     RecomputeOffsets();
 
 private:
-    std::vector<Point<dim, T>>
+    std::vector<Point<vector_type::dims,typename vector_type::stype>>
     computeOffsets(const size_t referencePoint, const std::vector<size_t> &keys);
 };
 
-template<unsigned int dim, typename T, typename Prop>
-std::vector<Point<dim, T>>
-Support<dim, T, Prop>::computeOffsets(const size_t referencePoint, const std::vector<size_t> &keys)
+template<typename vector_type>
+std::vector<Point<vector_type::dims,typename vector_type::stype>>
+Support<vector_type>::computeOffsets(const size_t referencePoint, const std::vector<size_t> &keys)
 {
-    std::vector<Point<dim, T>> offsets;
+    std::vector<Point<vector_type::dims,typename vector_type::stype>> offsets;
     for (auto &otherK : keys)
     {
-        Point<dim, T> curOffset(domain.getPos(referencePoint));
+        Point<vector_type::dims,typename vector_type::stype> curOffset(domain.getPos(referencePoint));
         curOffset -= domain.getPos(otherK);
         offsets.push_back(curOffset);
     }
     return offsets;
 }
 
-template<unsigned int dim, typename T, typename Prop>
-std::vector<Point<dim, T>>
-Support<dim, T, Prop>::RecomputeOffsets()
+template<typename vector_type>
+std::vector<Point<vector_type::dims,typename vector_type::stype>>
+Support<vector_type>::RecomputeOffsets()
 {
     offsets.clear();
     for (auto &otherK : keys)
     {
-        Point<dim, T> curOffset(domain.getPos(referencePointKey));
+        Point<vector_type::dims,typename vector_type::stype> curOffset(domain.getPos(referencePointKey));
         curOffset -= domain.getPos(otherK);
         offsets.push_back(curOffset);
     }
     return offsets;
 }
 
-template<unsigned int dim, typename T, typename Prop>
-const Point<dim, T> Support<dim, T, Prop>::getReferencePoint() const
+template<typename vector_type>
+const Point<vector_type::dims,typename vector_type::stype> Support<vector_type>::getReferencePoint() const
 {
-    return Point<dim, T>(domain.getPos(referencePointKey));
+    return Point<vector_type::dims,typename vector_type::stype>(domain.getPos(referencePointKey));
 }
 
-template<unsigned int dim, typename T, typename Prop>
-const std::vector<Point<dim, T>> &Support<dim, T, Prop>::getOffsets() const
+template<typename vector_type>
+const std::vector<Point<vector_type::dims,typename vector_type::stype>> &Support<vector_type>::getOffsets() const
 {
     return offsets;
 }
 
-template<unsigned int dim, typename T, typename Prop>
-size_t Support<dim, T, Prop>::size()
+template<typename vector_type>
+size_t Support<vector_type>::size()
 {
     return offsets.size();
 }
 
-template<unsigned int dim, typename T, typename Prop>
-Support<dim, T, Prop>::Support(const Support<dim, T, Prop> &other)
+template<typename vector_type>
+Support<vector_type>::Support(const Support<vector_type> &other)
         : domain(other.domain),
           referencePointKey(other.referencePointKey),
           keys(other.keys),
           offsets(other.offsets) {}
 
-template<unsigned int dim, typename T, typename Prop>
-const size_t Support<dim, T, Prop>::getReferencePointKey() const
+template<typename vector_type>
+const size_t Support<vector_type>::getReferencePointKey() const
 {
     return referencePointKey;
 }
 
-template<unsigned int dim, typename T, typename Prop>
-const std::vector<size_t> &Support<dim, T, Prop>::getKeys() const
+template<typename vector_type>
+const std::vector<size_t> &Support<vector_type>::getKeys() const
 {
     return keys;
 }

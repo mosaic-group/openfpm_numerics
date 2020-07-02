@@ -22,8 +22,8 @@ public:
 /*    Vandermonde(const Point<dim, T> &point, const std::vector<Point<dim, T>> &neighbours,
                 const MonomialBasis<dim> &monomialBasis);*/
 
-    template<typename Prop>
-    Vandermonde(const Support<dim, T, Prop> &support,
+    template<typename vector_type>
+    Vandermonde(const Support<vector_type> &support,
                 const MonomialBasis<dim> &monomialBasis);
 
     MatrixType &getMatrix(MatrixType &M);
@@ -65,8 +65,8 @@ Vandermonde<dim, T, MatrixType>::Vandermonde(const Point<dim, T> &point, const s
 }*/
 
 template<unsigned int dim, typename T, typename MatrixType>
-template<typename Prop>
-Vandermonde<dim, T, MatrixType>::Vandermonde(const Support<dim, T, Prop> &support,
+template<typename vector_type>
+Vandermonde<dim, T, MatrixType>::Vandermonde(const Support<vector_type> &support,
                                              const MonomialBasis<dim> &monomialBasis)
         : point(support.getReferencePoint()),
           offsets(support.getOffsets()),
