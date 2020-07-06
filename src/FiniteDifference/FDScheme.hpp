@@ -350,23 +350,17 @@ private:
 	 * \param g_dst target staggered grid
 	 *
 	 */
-	template<typename Vct, typename Grid_dst ,unsigned int ... pos> void copy_staggered(Vct & v, Grid_dst & g_dst)
+	template<typename Vct, typename Grid_dst ,unsigned int ... pos> void copy_staggered(Vct & v, Grid_dst & g_dst, grid_key_dx<Grid_dst::dims> & start_d, grid_key_dx<Grid_dst::dims> & stop_d)
 	{
 		// check that g_dst is staggered
 		if (g_dst.is_staggered() == false)
 			std::cerr << __FILE__ << ":" << __LINE__ << " The destination grid must be staggered " << std::endl;
 
-#ifdef SE_CLASS1
-
-		if (g_map.getLocalDomainSize() != g_dst.getLocalDomainSize())
-			std::cerr << __FILE__ << ":" << __LINE__ << " The staggered and destination grid in size does not match " << std::endl;
-#endif
-
 		// sub-grid iterator over the grid map
-		auto g_map_it = g_map.getDomainIterator();
+		auto g_map_it = g_map.getSubDomainIterator(start_d,stop_d);
 
 		// Iterator over the destination grid
-		auto g_dst_it = g_dst.getDomainIterator();
+		auto g_dst_it = g_dst.getSubDomainIterator(start_d,stop_d);
 
 		while (g_map_it.isNext() == true)
 		{
@@ -1072,12 +1066,17 @@ public:
 	 * \param g_dst Destination grid
 	 *
 	 */
-	template<unsigned int ... pos, typename Vct, typename Grid_dst> void copy(Vct & v,const long int (& start)[Sys_eqs_typ::dims], const long int (& stop)[Sys_eqs_typ::dims], Grid_dst & g_dst)
+	template<unsigned int ... pos, typename Vct, typename Grid_dst>
+	void copy(Vct & v,const long int (& start)[Sys_eqs_typ::dims], const long int (& stop)[Sys_eqs_typ::dims], Grid_dst & g_dst)
 	{
 		if (is_grid_staggered<Sys_eqs>::value())
 		{
 			if (g_dst.is_staggered() == true)
-				copy_staggered<Vct,Grid_dst,pos...>(v,g_dst);
+			{
+				grid_key_dx<Grid_dst::dims> sr(start);
+				grid_key_dx<Grid_dst::dims> st(stop);
+				copy_staggered<Vct,Grid_dst,pos...>(v,g_dst,sr,st);
+			}
 			else
 			{
 				// Create a temporal staggered grid and copy the data there
@@ -1094,7 +1093,17 @@ public:
 
 				staggered_grid_dist<Grid_dst::dims,typename Grid_dst::stype,typename Grid_dst::value_type,typename Grid_dst::decomposition::extended_type, typename Grid_dst::memory_type, typename Grid_dst::device_grid_type> stg(g_dst,g_int,this->getPadding());
 				stg.setDefaultStagPosition();
-				copy_staggered<Vct,decltype(stg),pos...>(v,stg);
+
+				grid_key_dx<Grid_dst::dims> sr;
+				grid_key_dx<Grid_dst::dims> st;
+
+				for (int i = 0 ; i < Grid_dst::dims ; i++)
+				{
+					sr.set_d(i,-1);
+					st.set_d(i,stop[i]);
+				}
+
+				copy_staggered<Vct,decltype(stg),pos...>(v,stg,sr,st);
 
 				// sync the ghost and interpolate to the normal grid
 				stg.template ghost_get<pos...>();
