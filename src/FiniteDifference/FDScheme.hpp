@@ -745,15 +745,30 @@ public:
 	grid_key_dx<Sys_eqs::dims> start_k;
 	grid_key_dx<Sys_eqs::dims> stop_k;
 
+    bool increment = false;
+    if (skip_first == true)
+    {
+            start_k = grid_key_dx<Sys_eqs::dims>(start);
+            stop_k = grid_key_dx<Sys_eqs::dims>(start);
+
+            auto it = g_map.getSubDomainIterator(start_k,stop_k);
+
+            if (it.isNext() == true)
+                    increment = true;
+    }
+
         // add padding to start and stop
         start_k = grid_key_dx<Sys_eqs::dims>(start);
         stop_k = grid_key_dx<Sys_eqs::dims>(stop);
 
         auto it = g_map.getSubDomainIterator(start_k,stop_k);
 
+        if (increment == true)
+        {++it;}
+
         constant_b b(num);
 
-        impose_git_gmap(op,b,id,it,skip_first);
+        impose_git_gmap(op,b,id,it);
 
 	}
 
@@ -838,15 +853,11 @@ public:
 	template<typename T, typename bop, typename iterator> void impose_git_gmap(const T & op ,
 			                         bop num,
 									 long int id ,
-									 const iterator & it_d,
-									 bool skip_first)
+									 const iterator & it_d)
 	{
 		openfpm::vector<triplet> & trpl = A.getMatrixTriplets();
 
 		auto it = it_d;
-
-		if (skip_first == true)
-		{++it;}
 
 		grid_sm<Sys_eqs::dims,void> gs = g_map.getGridInfoVoid();
 
