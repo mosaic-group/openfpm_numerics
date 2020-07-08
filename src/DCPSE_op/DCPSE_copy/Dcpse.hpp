@@ -1,6 +1,6 @@
 //
 // Created by tommaso on 29/03/19.
-//
+// Modified by Abhinav and Pietro
 #ifndef OPENFPM_PDATA_DCPSE_HPP
 #define OPENFPM_PDATA_DCPSE_HPP
 
@@ -54,10 +54,14 @@ private:
     const unsigned int differentialOrder;
     const MonomialBasis<dim> monomialBasis;
     std::vector<EMatrix<T, Eigen::Dynamic, 1>> localCoefficients; // Each MPI rank has just access to the local ones
-    std::vector<Support<dim, T, typename vector_type::value_type>> localSupports; // Each MPI rank has just access to the local ones
+    std::vector<Support> localSupports; // Each MPI rank has just access to the local ones
     std::vector<T> localEps; // Each MPI rank has just access to the local ones
+    std::vector<T> localSumA;
 
     vector_type & particles;
+    double rCut;
+    unsigned int convergenceOrder;
+    double supportSizeFactor;
 
     support_options opt;
 
@@ -90,11 +94,11 @@ public:
     void DrawKernel(vector_type &particles, int k)
     {
         EMatrix<T, Eigen::Dynamic, 1> &a = localCoefficients[k];
-        Support<dim, T, part_type> support = localSupports[k];
+        Support support = localSupports[k];
         auto eps = localEps[k];
         int DrawKernelKounter=0;
         size_t xpK = k;
-        Point<dim, T> xp = support.getReferencePoint();
+        Point<dim, typename vector_type::stype> xp = particles.getPos(support.getReferencePointKey());
         for (auto &xqK : support.getKeys())
         {
             Point<dim, T> xq = particles.getPos(xqK);
@@ -110,11 +114,11 @@ public:
     void DrawKernel(vector_type &particles, int k, int i)
     {
         EMatrix<T, Eigen::Dynamic, 1> &a = localCoefficients[k];
-        Support<dim, T, part_type> support = localSupports[k];
+        Support support = localSupports[k];
         auto eps = localEps[k];
 
         size_t xpK = k;
-        Point<dim, T> xp = support.getReferencePoint();
+        Point<dim, T> xp = particles.getPos(support.getReferencePointKey());
         for (auto &xqK : support.getKeys())
         {
             Point<dim, T> xq = particles.getPos(xqK);
@@ -151,9 +155,9 @@ public:
                 momenta_accu.template get<0>(i) =  0.0;
             }
 
-            Support<dim, T, part_type> support = *supportsIt;
+            Support support = *supportsIt;
             size_t xpK = support.getReferencePointKey();
-            Point<dim, T> xp = support.getReferencePoint();
+            Point<dim, T> xp = particles.getPos(support.getReferencePointKey());
             for (auto &xqK : support.getKeys())
             {
                 Point<dim, T> xq = particles.getPos(xqK);
@@ -222,9 +226,9 @@ public:
             double eps = *epsIt;
 
             T Dfxp = 0;
-            Support<dim, T, part_type> support = *supportsIt;
+            Support support = *supportsIt;
             size_t xpK = support.getReferencePointKey();
-            Point<dim, T> xp = support.getReferencePoint();
+            Point<dim, typename vector_type::stype> xp = particles.getPos(support.getReferencePointKey());
             T fxp = sign * particles.template getProp<fValuePos>(xpK);
             for (auto &xqK : support.getKeys()) {
                 Point<dim, T> xq = particles.getPos(xqK);
@@ -332,9 +336,9 @@ public:
         auto &particles = o1.getVector();
 
         expr_type Dfxp = 0;
-        Support<dim, T, part_type> support = localSupports[key.getKey()];
+        Support support = localSupports[key.getKey()];
         size_t xpK = support.getReferencePointKey();
-        Point<dim, T> xp = support.getReferencePoint();
+        Point<dim, T> xp = particles.getPos(xpK);
         expr_type fxp = sign * o1.value(key);
         for (auto &xqK : support.getKeys()) {
             Point<dim, T> xq = particles.getPos(xqK);
@@ -379,9 +383,9 @@ public:
         auto &particles = o1.getVector();
 
         expr_type Dfxp = 0;
-        Support<dim, T, part_type> support = localSupports[key.getKey()];
+        Support support = localSupports[key.getKey()];
         size_t xpK = support.getReferencePointKey();
-        Point<dim, T> xp = support.getReferencePoint();
+        Point<dim, T> xp = particles.getPos(xpK);
         expr_type fxp = sign * o1.value(key)[i];
         for (auto &xqK : support.getKeys()) {
             Point<dim, T> xq = particles.getPos(xqK);
@@ -397,6 +401,57 @@ public:
         return Dfxp;
     }
 
+    void initializeUpdate(vector_type &particles)
+    {
+        localSupports.clear();
+        localSupports.resize(particles.size_local_orig());
+        localEps.clear();
+        localEps.resize(particles.size_local_orig());
+        localCoefficients.clear();
+        SupportBuilder<vector_type> supportBuilder(particles, differentialSignature, rCut);
+        unsigned int requiredSupportSize = monomialBasis.size() * supportSizeFactor;
+
+        auto it = particles.getDomainIterator();
+        while (it.isNext()) {
+            // Get the points in the support of the DCPSE kernel and store the support for reuse
+            //Support<vector_type> support = supportBuilder.getSupport(it, requiredSupportSize,opt);
+            Support support = supportBuilder.getSupport(it, requiredSupportSize,opt);
+            /*Support<vector_type> support = localSupports[p.getKey()];
+            support.RecomputeOffsets();*/
+            EMatrix<T, Eigen::Dynamic, Eigen::Dynamic> V(support.size(), monomialBasis.size());
+            // Vandermonde matrix computation
+            Vandermonde<dim, T, EMatrix<T, Eigen::Dynamic, Eigen::Dynamic>>
+                    vandermonde(support, monomialBasis,particles);
+            vandermonde.getMatrix(V);
+
+            T eps = vandermonde.getEps();
+
+            auto key_o = particles.getOriginKey(it.get());
+            localSupports[key_o.getKey()] = support;
+            localEps.push_back(eps);
+            // Compute the diagonal matrix E
+            DcpseDiagonalScalingMatrix<dim> diagonalScalingMatrix(monomialBasis);
+            EMatrix<T, Eigen::Dynamic, Eigen::Dynamic> E(support.size(), support.size());
+            diagonalScalingMatrix.buildMatrix(E, support, eps, particles);
+            // Compute intermediate matrix B
+            EMatrix<T, Eigen::Dynamic, Eigen::Dynamic> B = E * V;
+            // Compute matrix A
+            EMatrix<T, Eigen::Dynamic, Eigen::Dynamic> A = B.transpose() * B;
+            // Compute RHS vector b
+            DcpseRhs<dim> rhs(monomialBasis, differentialSignature);
+            EMatrix<T, Eigen::Dynamic, 1> b(monomialBasis.size(), 1);
+            rhs.template getVector<T>(b);
+            // Get the vector where to store the coefficients...
+            EMatrix<T, Eigen::Dynamic, 1> a(monomialBasis.size(), 1);
+            // ...solve the linear system...
+            a = A.colPivHouseholderQr().solve(b);
+            // ...and store the solution for later reuse
+            localCoefficients.push_back(a);
+            //
+            ++it;
+        }
+    }
+
 private:
 
     void initializeAdaptive(vector_type &particles,
@@ -406,17 +461,21 @@ private:
                 supportBuilder(particles, differentialSignature, rCut);
         unsigned int requiredSupportSize = monomialBasis.size();
 
+        localSupports.resize(particles.size_local_orig());
+        localEps.resize(particles.size_local_orig());
+        localCoefficients.resize(particles.size_local_orig());
+
         auto it = particles.getDomainIterator();
         while (it.isNext()) {
             const T condVTOL = 1e2;
 
             // Get the points in the support of the DCPSE kernel and store the support for reuse
-            Support<dim, T, part_type> support = supportBuilder.getSupport(it, requiredSupportSize,opt);
+            Support support = supportBuilder.getSupport(it, requiredSupportSize,opt);
             EMatrix<T, Eigen::Dynamic, Eigen::Dynamic> V(support.size(), monomialBasis.size());
 
             // Vandermonde matrix computation
             Vandermonde<dim, T, EMatrix<T, Eigen::Dynamic, Eigen::Dynamic>>
-                    vandermonde(support, monomialBasis);
+                    vandermonde(support, monomialBasis, particles);
             vandermonde.getMatrix(V);
 
             T condV = conditionNumber(V, condVTOL);
@@ -432,12 +491,13 @@ private:
                 requiredSupportSize = monomialBasis.size();
             }
 
-            localSupports.push_back(support);
-            localEps.push_back(eps);
+            auto key_o = particles.getOriginKey(it.get());
+            localSupports[key_o.getKey()] = support;
+            localEps[key_o.getKey()] = eps;
             // Compute the diagonal matrix E
             DcpseDiagonalScalingMatrix<dim> diagonalScalingMatrix(monomialBasis);
             EMatrix<T, Eigen::Dynamic, Eigen::Dynamic> E(support.size(), support.size());
-            diagonalScalingMatrix.buildMatrix(E, support, eps);
+            diagonalScalingMatrix.buildMatrix(E, support, eps,particles);
             // Compute intermediate matrix B
             EMatrix<T, Eigen::Dynamic, Eigen::Dynamic> B = E * V;
             // Compute matrix A
@@ -451,7 +511,7 @@ private:
             // ...solve the linear system...
             a = A.colPivHouseholderQr().solve(b);
             // ...and store the solution for later reuse
-            localCoefficients.push_back(a);
+            localCoefficients[key_o.getKey()] = a;
             //
             ++it;
         }
@@ -462,39 +522,43 @@ private:
                               unsigned int convergenceOrder,
                               T rCut,
                               T supportSizeFactor) {
+        this->rCut=rCut;
+        this->supportSizeFactor=supportSizeFactor;
+        this->convergenceOrder=convergenceOrder;
         SupportBuilder<vector_type>
                 supportBuilder(particles, differentialSignature, rCut);
         unsigned int requiredSupportSize = monomialBasis.size() * supportSizeFactor;
 
+        localSupports.resize(particles.size_local_orig());
+        localEps.resize(particles.size_local_orig());
+        localCoefficients.resize(particles.size_local_orig());
+
         auto it = particles.getDomainIterator();
         while (it.isNext()) {
             // Get the points in the support of the DCPSE kernel and store the support for reuse
-            Support<dim, T, part_type> support = supportBuilder.getSupport(it, requiredSupportSize,opt);
+            Support support = supportBuilder.getSupport(it, requiredSupportSize,opt);
             EMatrix<T, Eigen::Dynamic, Eigen::Dynamic> V(support.size(), monomialBasis.size());
-/* Some Debug code
-            if (it.get().getKey() == 5564)
-            {
-                int debug = 0;
-                debug++;
-            }
-*/
+
+            auto key_o = particles.getOriginKey(it.get());
+
             // Vandermonde matrix computation
             Vandermonde<dim, T, EMatrix<T, Eigen::Dynamic, Eigen::Dynamic>>
-                    vandermonde(support, monomialBasis);
+                    vandermonde(support, monomialBasis,particles);
             vandermonde.getMatrix(V);
 
             T eps = vandermonde.getEps();
 
-            localSupports.push_back(support);
-            localEps.push_back(eps);
+            localSupports[key_o.getKey()] = support;
+            localEps[key_o.getKey()] = eps;
             // Compute the diagonal matrix E
             DcpseDiagonalScalingMatrix<dim> diagonalScalingMatrix(monomialBasis);
             EMatrix<T, Eigen::Dynamic, Eigen::Dynamic> E(support.size(), support.size());
-            diagonalScalingMatrix.buildMatrix(E, support, eps);
+            diagonalScalingMatrix.buildMatrix(E, support, eps, particles);
             // Compute intermediate matrix B
             EMatrix<T, Eigen::Dynamic, Eigen::Dynamic> B = E * V;
             // Compute matrix A
             EMatrix<T, Eigen::Dynamic, Eigen::Dynamic> A = B.transpose() * B;
+
             // Compute RHS vector b
             DcpseRhs<dim> rhs(monomialBasis, differentialSignature);
             EMatrix<T, Eigen::Dynamic, 1> b(monomialBasis.size(), 1);
@@ -504,20 +568,22 @@ private:
             // ...solve the linear system...
             a = A.colPivHouseholderQr().solve(b);
             // ...and store the solution for later reuse
-            localCoefficients.push_back(a);
+            localCoefficients[key_o.getKey()] = a;
             //
             ++it;
         }
     }
 
 
+
+
     T computeKernel(Point<dim, T> x, EMatrix<T, Eigen::Dynamic, 1> a) const {
         T res = 0;
         unsigned int counter = 0;
+        T expFactor = exp(-norm2(x));
         for (const Monomial<dim> &m : monomialBasis.getElements()) {
             T coeff = a(counter);
             T mbValue = m.evaluate(x);
-            T expFactor = exp(-norm2(x));
             res += coeff * mbValue * expFactor;
             ++counter;
         }

@@ -170,30 +170,33 @@ struct vector_dist_op_compute_op<prp,false,comp_host>
 	{
 		v_exp.init();
 
-		auto it = v.getDomainIterator();
+        auto it = v.getDomainIterator();
 
-		while (it.isNext())
-		{
-			auto key = it.get();
+        while (it.isNext())
+        {
+                auto key = it.get();
+                auto key_orig = v.getOriginKey(key);
 
-			pos_or_propL<vector,prp>::value(v,key) = v_exp.value(key);
+                pos_or_propL<vector,prp>::value(v,key) = v_exp.value(key_orig);
 
-			++it;
+                ++it;
 		}
 	}
 
 	template<typename vector>
 	static void compute_const(vector & v,double d)
 	{
-		auto it = v.getDomainIterator();
+        auto it = v.getDomainIterator();
 
-		while (it.isNext())
-		{
-			auto key = it.get();
+        while (it.isNext())
+        {
+                auto key = it.get();
+                auto key_orig = v.getOriginKey(key);
 
-			pos_or_propL<vector,prp>::value(v,key) = d;
+                pos_or_propL<vector,prp>::value(v,key) = d;
 
-			++it;
+                ++it;
+
 		}
 	}
 };

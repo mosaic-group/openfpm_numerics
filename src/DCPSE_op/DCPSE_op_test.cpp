@@ -20,23 +20,6 @@
 #include "Operators/Vector/vector_dist_operators.hpp"
 #include "Vector/vector_dist_subset.hpp"
 #include "EqnsStruct.hpp"
-const bool equations3d1::boundary[] = {NON_PERIODIC, NON_PERIODIC};
-const bool equations3d3::boundary[] = {NON_PERIODIC, NON_PERIODIC};
-const bool equations2d1::boundary[] = {NON_PERIODIC, NON_PERIODIC};
-const bool equations2d2::boundary[] = {NON_PERIODIC, NON_PERIODIC};
-const bool equations2d1p::boundary[] = {PERIODIC, NON_PERIODIC};
-const bool equations2d2p::boundary[] = {PERIODIC, NON_PERIODIC};
-const bool equations2d3p::boundary[] = {PERIODIC, NON_PERIODIC};
-
-
-const bool equations3d1E::boundary[] = {NON_PERIODIC, NON_PERIODIC};
-const bool equations3d3E::boundary[] = {NON_PERIODIC, NON_PERIODIC};
-const bool equations2d1E::boundary[] = {NON_PERIODIC, NON_PERIODIC};
-const bool equations2d2E::boundary[] = {NON_PERIODIC, NON_PERIODIC};
-const bool equations2d3E::boundary[] = {NON_PERIODIC, NON_PERIODIC};
-const bool equations2d1pE::boundary[] = {PERIODIC, NON_PERIODIC};
-const bool equations2d2pE::boundary[] = {PERIODIC, NON_PERIODIC};
-const bool equations2d3pE::boundary[] = {PERIODIC, NON_PERIODIC};
 
 //template<typename T>
 //struct Debug;
@@ -296,7 +279,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
         vx.setId(0);
         vy.setId(1);
         double sum=0,sum1=0;
-        int n=30;
+        int n=2;
 /*        auto Stokes1 = nu*Lap(V[x]) + 0.5*nu*(f1*Dxx(V[x])+Dx(f1)*Dx(V[x])) + (Dx(f2)*0.5*(Dx(V[y])+Dy(V[x])) + f2*0.5*(Dxx(V[y])+Dyx(V[x]))) + (Dx(f3)*Dy(V[y])+ f3*Dyx(V[y])) + (Dy(f4)*Dx(V[x])+f4*Dxy(V[x])) + (Dy(f5)*0.5*(Dx(V[y])+Dy(V[x]))+f5*0.5*(Dxy(V[y])+Dyy(V[x]))) + ( Dy(f6)*Dy(V[y])+f6*Dyy(V[y]) );
         auto Stokes2 = nu*Lap(V[y]) + 0.5*nu*(f1*Dxy(V[x])+Dy(f1)*Dx(V[x])) + (Dy(f2)*0.5*(Dx(V[y])+Dy(V[x])) + f2*0.5*(Dxy(V[y])+Dyy(V[x]))) + (Dy(f3)*Dy(V[y])+ f3*Dyy(V[y])) + (Dx(f4)*Dx(V[x])+f4*Dxx(V[x])) + (Dx(f5)*0.5*(Dx(V[y])+Dy(V[x]))+f5*0.5*(Dxx(V[y])+Dyx(V[x]))) + ( Dx(f6)*Dy(V[y])+f6*Dyx(V[y]) );
         auto Helmholtz = Lap(H);
@@ -1726,7 +1709,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
     BOOST_AUTO_TEST_CASE(dcpse_poisson_Robin_anal) {
 //  int rank;
 //  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-        const size_t sz[2] = {50,50};
+        const size_t sz[2] = {81,81};
         Box<2, double> box({0, 0}, {0.5, 0.5});
         size_t bc[2] = {NON_PERIODIC, NON_PERIODIC};
         double spacing = box.getHigh(0) / (sz[0] - 1);
@@ -1942,7 +1925,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
         //solver.setRestart(500);
 
         solver.setRestart(500);
-	    solver.log_monitor();
+	    //solver.log_monitor();
 
 
 //        auto A = Solver.getA();
@@ -1987,7 +1970,11 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
         domain.write("Robin_anasol");
     }
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
+    //81 0.00131586
+    //161 0.000328664
+    //320 8.30297e-05
+    //520 3.12398e-05
+    //1024 8.08087e-06
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     BOOST_AUTO_TEST_CASE(dcpse_poisson_Dirichlet_anal) {
 //  int rank;
@@ -1996,8 +1983,8 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
         Box<2, double> box({0, 0}, {1, 1});
         size_t bc[2] = {NON_PERIODIC, NON_PERIODIC};
         double spacing = box.getHigh(0) / (sz[0] - 1);
-        Ghost<2, double> ghost(spacing * 3);
-        double rCut = 2.0 * spacing;
+        Ghost<2, double> ghost(spacing * 3.1);
+        double rCut = 3.1 * spacing;
         BOOST_TEST_MESSAGE("Init vector_dist...");
 
         vector_dist<2, double, aggregate<double,double,double,double,double,double>> domain(0, box, bc, ghost);
@@ -2023,14 +2010,15 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
         domain.map();
         domain.ghost_get<0>();
 
-        Derivative_x Dx(domain, 2, rCut,2);
-        Derivative_y Dy(domain, 2, rCut,2);
+        Derivative_x Dx(domain, 2, rCut,1.9,support_options::RADIUS);
+        Derivative_y Dy(domain, 2, rCut,1.9,support_options::RADIUS);
         //Gradient Grad(domain, 2, rCut);
-        Laplacian Lap(domain, 2, rCut, 2);
+        Laplacian Lap(domain, 2, rCut, 1.9,support_options::RADIUS);
         //Advection Adv(domain, 3, rCut, 3);
         //Solver Sol_Lap(Lap),Sol_Dx(Dx);
 
         openfpm::vector<aggregate<int>> bulk;
+        openfpm::vector<aggregate<int>> bulkF;
         openfpm::vector<aggregate<int>> up_p;
         openfpm::vector<aggregate<int>> dw_p;
         openfpm::vector<aggregate<int>> l_p;
@@ -2081,29 +2069,39 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
                 up_p.last().get<0>() = p.getKey();
                 domain.getProp<1>(p) = -2*M_PI*M_PI*sin(M_PI*xp.get(0))*sin(M_PI*xp.get(1));
                 domain.getProp<3>(p) = sin(M_PI*xp.get(0))*sin(M_PI*xp.get(1));
+                bulkF.add();
+                bulkF.last().get<0>() = p.getKey();
             } else if (down.isInside(xp) == true) {
                 dw_p.add();
                 dw_p.last().get<0>() = p.getKey();
                 domain.getProp<1>(p) =  -2*M_PI*M_PI*sin(M_PI*xp.get(0))*sin(M_PI*xp.get(1));
                 domain.getProp<3>(p) = sin(M_PI*xp.get(0))*sin(M_PI*xp.get(1));
+                bulkF.add();
+                bulkF.last().get<0>() = p.getKey();
 
             } else if (left.isInside(xp) == true) {
                 l_p.add();
                 l_p.last().get<0>() = p.getKey();
                 domain.getProp<1>(p) =  -2*M_PI*M_PI*sin(M_PI*xp.get(0))*sin(M_PI*xp.get(1));
                 domain.getProp<3>(p) = sin(M_PI*xp.get(0))*sin(M_PI*xp.get(1));
+                bulkF.add();
+                bulkF.last().get<0>() = p.getKey();
 
             } else if (right.isInside(xp) == true) {
                 r_p.add();
                 r_p.last().get<0>() = p.getKey();
                 domain.getProp<1>(p) =  -2*M_PI*M_PI*sin(M_PI*xp.get(0))*sin(M_PI*xp.get(1));
                 domain.getProp<3>(p) = sin(M_PI*xp.get(0))*sin(M_PI*xp.get(1));
+                bulkF.add();
+                bulkF.last().get<0>() = p.getKey();
 
             } else {
                 bulk.add();
                 bulk.last().get<0>() = p.getKey();
                 domain.getProp<1>(p) =  -2*M_PI*M_PI*sin(M_PI*xp.get(0))*sin(M_PI*xp.get(1));
                 domain.getProp<3>(p) = sin(M_PI*xp.get(0))*sin(M_PI*xp.get(1));
+                bulkF.add();
+                bulkF.last().get<0>() = p.getKey();
             }
             ++it2;
         }
@@ -2112,18 +2110,37 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
         auto D_x = Dx(v);
         auto D_y = Dy(v);
         Solver.impose(Poisson, bulk, prop_id<1>());
-        Solver.impose(v, up_p, 0);
-        Solver.impose(v, r_p, 0);
-        Solver.impose(v, dw_p, 0);
-        Solver.impose(v, l_p, 0);
+        Solver.impose(v, up_p, prop_id<1>());
+        Solver.impose(v, r_p, prop_id<1>());
+        Solver.impose(v, dw_p, prop_id<1>());
+        Solver.impose(v, l_p, prop_id<1>());
         Solver.solve(sol);
         DCPSE_sol=Lap(sol);
+
+
+        for (int j = 0; j < up_p.size(); j++) {
+            auto p = up_p.get<0>(j);
+            domain.getProp<5>(p) = 0;
+        }
+        for (int j = 0; j < dw_p.size(); j++) {
+            auto p = dw_p.get<0>(j);
+            domain.getProp<5>(p) = 0;
+        }
+        for (int j = 0; j < l_p.size(); j++) {
+            auto p = l_p.get<0>(j);
+            domain.getProp<5>(p) = 0;
+        }
+        for (int j = 0; j < r_p.size(); j++) {
+            auto p = r_p.get<0>(j);
+            domain.getProp<5>(p) = 0;
+        }
+
         double worst1 = 0.0;
 
         v=abs(DCPSE_sol-RHS);
 
-        for(int j=0;j<bulk.size();j++)
-        {   auto p=bulk.get<0>(j);
+        for(int j=0;j<bulkF.size();j++)
+        {   auto p=bulkF.get<0>(j);
             if (fabs(domain.getProp<3>(p) - domain.getProp<2>(p)) >= worst1) {
                 worst1 = fabs(domain.getProp<3>(p) - domain.getProp<2>(p));
             }

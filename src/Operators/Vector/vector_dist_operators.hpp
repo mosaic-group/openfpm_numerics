@@ -978,6 +978,12 @@ public:
 	 */
 	template<unsigned int prp2> vector & operator=(const vector_dist_expression<prp2,vector> & v_exp)
 	{
+        if (v_exp.getVector().isSubset() == true)
+        {
+                        std::cout << __FILE__ << ":" << __LINE__ << " error on the right hand side of the expression you have to use non-subset properties" << std::endl;
+                        return v.v;
+        }
+
 		if (has_vector_kernel<vector>::type::value == false)
 		{
 			vector_dist_op_compute_op<prp,false,vector_dist_expression_comp_sel<comp_host,
@@ -1004,6 +1010,12 @@ public:
 	template<typename exp1, typename exp2, unsigned int op>
 	vector & operator=(const vector_dist_expression_op<exp1,exp2,op> & v_exp)
 	{
+        if (v_exp.getVector().isSubset() == true)
+        {
+        	std::cout << __FILE__ << ":" << __LINE__ << " error on the right hand side of the expression you have to use non-subset properties" << std::endl;
+            return v.v;
+        }
+
 		if (has_vector_kernel<vector>::type::value == false)
 		{
 			vector_dist_op_compute_op<prp,
@@ -1353,8 +1365,9 @@ public:
 		while (it.isNext())
 		{
 			auto key = it.get();
+			auto key_orig = v.getOriginKey(key);
 
-			get_vector_dist_expression_op<n,n == rank_gen<property_act>::type::value>::template assign<exp1::prop>(v_exp,v,key,comp);
+			get_vector_dist_expression_op<n,n == rank_gen<property_act>::type::value>::template assign<exp1::prop>(v_exp,v,key_orig,comp);
 
 			++it;
 		}
@@ -1380,8 +1393,9 @@ public:
 		while (it.isNext())
 		{
 			auto key = it.get();
+			auto key_orig = v.getOriginKey(key);
 
-			get_vector_dist_expression_op<n,n == rank_gen<property_act>::type::value>::template assign<exp1::prop>(v_exp,v,key,comp);
+			get_vector_dist_expression_op<n,n == rank_gen<property_act>::type::value>::template assign<exp1::prop>(v_exp,v,key_orig,comp);
 
 			++it;
 		}

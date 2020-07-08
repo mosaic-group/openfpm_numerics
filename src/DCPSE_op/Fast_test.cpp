@@ -15,21 +15,31 @@
 #include "EqnsStruct.hpp"
 BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
     BOOST_AUTO_TEST_CASE(dcpse_Kernels) {
-        const size_t sz[2] = {31,31};
+        const size_t sz[2] = {41,41};
         Box<2, double> box({0, 0}, {10,10});
         size_t bc[2] = {NON_PERIODIC, NON_PERIODIC};
         double spacing = box.getHigh(0) / (sz[0] - 1);
-        double rCut =spacing*(3.1);
+        double rCut = 3.6* spacing;
         double ord = 2;
-        double sampling = 1.9;
-        double rCut2 = 3.1*spacing;
+        double sampling = 3.6;
+        double rCut2 = 3.6*spacing;
         double ord2 = 2;
-        double sampling2 = 1.9;
+        double sampling2 = 1.6;
+
+        double sigma2 = spacing * spacing / (2 * 4);
+        std::mt19937 rng{7};
+        std::normal_distribution<> gaussian{0, sigma2};
 
         Ghost<2, double> ghost(rCut);
         std::cout<<spacing<<std::endl;
         //                                  sf    W   DW        RHS    Wnew  V
         vector_dist<2, double, aggregate<double,double,double,double,double,VectorS<2, double>>> Particles(0, box, bc, ghost);
+        auto f1 = getV<0>(Particles);
+        auto f2 = getV<1>(Particles);
+        auto f3 = getV<2>(Particles);
+        auto f4 = getV<3>(Particles);
+        auto f5 = getV<4>(Particles);
+        auto f6 = getV<5>(Particles);
 
         auto it = Particles.getGridIterator(sz);
         while (it.isNext()) {
@@ -39,6 +49,13 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
             Particles.getLastPos()[0] = x;
             double y = key.get(1) * it.getSpacing(1);
             Particles.getLastPos()[1] = y;
+            Particles.getLastProp<0>() =0;
+            Particles.getLastProp<1>() =0;
+            Particles.getLastProp<2>() =0.0;
+            Particles.getLastProp<3>() =0.0;
+            Particles.getLastProp<4>() =0.0;
+            Particles.getLastProp<5>()[0] =x;
+            Particles.getLastProp<5>()[1] =y;
             ++it;
         }
 
@@ -114,9 +131,6 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
             Particles.getProp<2>(p) =0.0;
             Particles.getProp<3>(p) =0.0;
             Particles.getProp<4>(p) =0.0;
-            Particles.getProp<5>(p)[0] =0.0;
-            Particles.getProp<5>(p)[1] =0.0;
-
             BULK.add();
             BULK.last().get<0>() = p.getKey();
 
@@ -157,48 +171,103 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
             ++it2;
         }
 
-        for(int j=0;j<up_p.size();j++) {
-            auto p = up_p.get<0>(j);
-            Particles.getProp<1>(p) =  -12.0/spacing;
+        for(int j=0;j<bulk.size();j++) {
+            auto p = bulk.get<0>(j);
+            Particles.getPos(p)[0]=Particles.getPos(p)[0]+gaussian(rng);
+            Particles.getPos(p)[1]=Particles.getPos(p)[1]+gaussian(rng);
         }
 
-        Laplacian Lap(Particles, ord2, rCut2,sampling,support_options::RADIUS);
-        //Gradient Grad(Particles, ord, rCut,sampling,support_options::RADIUS);
-        Derivative_xy Dxy(Particles,ord, rCut, sampling,support_options::RADIUS);
-        Derivative_xy Dxy2(Particles,ord2, rCut2, sampling2,support_options::RADIUS);
+
+
+        //Laplacian Lap(Particles, ord2, rCut2,sampling,support_options::RADIUS);
+        Derivative_xx Dxx(Particles, ord2, rCut2,sampling,support_options::RADIUS);
+        Derivative_yy Dyy(Particles, ord2, rCut2,sampling,support_options::RADIUS);
+        Derivative_xy Dxy(Particles,ord2, rCut, sampling,support_options::RADIUS);
+        //Derivative_xy Dxy2(Particles,ord2, rCut2, sampling2,support_options::RADIUS);
         Derivative_x Dx(Particles,ord, rCut, sampling,support_options::RADIUS);
         Derivative_y Dy(Particles,ord, rCut, sampling,support_options::RADIUS);
 
+/*        Laplacian Lap(Particles, ord2, rCut2,sampling);
+        Derivative_xy Dxy(Particles,ord, rCut, sampling);
+        Derivative_xy Dxy2(Particles,ord2, rCut2, sampling2);
+        Derivative_x Dx(Particles,ord, rCut, sampling);
+        Derivative_y Dy(Particles,ord, rCut, sampling);*/
+
+        std::cout<<"Dx"<<std::endl;
+        Dx.checkMomenta(Particles);
+        std::cout<<"Dy"<<std::endl;
+        Dy.checkMomenta(Particles);
+        std::cout<<"Dxy"<<std::endl;
+        Dxy.checkMomenta(Particles);
+        std::cout<<"Dxx"<<std::endl;
+        Dxx.checkMomenta(Particles);
+        std::cout<<"Dyy"<<std::endl;
+        Dyy.checkMomenta(Particles);
+        auto its2 = Particles.getDomainIterator();
+        int ctr=0;
+        while (its2.isNext()) {
+            auto p = its2.get();
+            Dx.DrawKernel<0>(Particles, p.getKey());
+            Dy.DrawKernel<1>(Particles, p.getKey());
+            Dxy.DrawKernel<2>(Particles, p.getKey());
+            Dxx.DrawKernel<3>(Particles, p.getKey());
+            Dyy.DrawKernel<4>(Particles, p.getKey());
+            Particles.write_frame("Kernel_moved",ctr);
+            f1=0;
+            f2=0;
+            f3=0;
+            f4=0;
+            f5=0;
+            ++its2;
+            ctr++;
+        }
+
+
+        for(int j=0;j<bulk.size();j++) {
+            auto p = bulk.get<0>(j);
+            Particles.getPos(p)[0]=Particles.getProp<5>(p)[0];
+            Particles.getPos(p)[1]=Particles.getProp<5>(p)[1];
+        }
+
+        Particles.map();
+        Dx.update(Particles);
+        Dy.update(Particles);
+        Dxy.update(Particles);
+        auto Dyx = Dxy;
+        Dxx.update(Particles);
+        Dyy.update(Particles);
+
+        std::cout<<"Dx"<<std::endl;
+        Dx.checkMomenta(Particles);
+        std::cout<<"Dy"<<std::endl;
+        Dy.checkMomenta(Particles);
+        std::cout<<"Dxy"<<std::endl;
+        Dxy.checkMomenta(Particles);
+        std::cout<<"Dxx"<<std::endl;
+        Dxx.checkMomenta(Particles);
+        std::cout<<"Dyy"<<std::endl;
+        Dyy.checkMomenta(Particles);
+
 
         auto its = Particles.getDomainIterator();
-        int ctr=0;
+        ctr=0;
         while (its.isNext()) {
             auto p = its.get();
             Dx.DrawKernel<0>(Particles, p.getKey());
             Dy.DrawKernel<1>(Particles, p.getKey());
             Dxy.DrawKernel<2>(Particles, p.getKey());
-            Dxy2.DrawKernel<3>(Particles, p.getKey());
-            Lap.DrawKernel<4>(Particles, p.getKey());
-            //Grad.DrawKernel<4>(Particles, p.getKey());
-
-            Particles.write_frame("LapKer10",ctr);
-            for(int j=0;j<BULK.size();j++) {
-                auto p1 = BULK.get<0>(j);
-                Particles.getProp<0>(p1) =  0;
-                Particles.getProp<1>(p1) =  0;
-                Particles.getProp<2>(p1) =  0;
-                Particles.getProp<3>(p1) =  0;
-                Particles.getProp<4>(p1) =  0;
-                Particles.getProp<5>(p1)[0] =  0;
-                Particles.getProp<5>(p1)[1] =  0;
-
-            }
+            Dxx.DrawKernel<3>(Particles, p.getKey());
+            Dyy.DrawKernel<4>(Particles, p.getKey());
+            Particles.write_frame("Kernel_unmoved",ctr);
+            f1=0;
+            f2=0;
+            f3=0;
+            f4=0;
+            f5=0;
             ++its;
             ctr++;
         }
 
     }
-
-
 
 BOOST_AUTO_TEST_SUITE_END()

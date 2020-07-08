@@ -9,6 +9,7 @@ if (CUDA_FOUND)
 endif()
 
 add_executable(numerics ${OPENFPM_INIT_FILE} ${CUDA_SOURCES}
+	                                        DCPSE_op/DCPSE_op_subset_test.cpp
 						FiniteDifference/FD_Solver_test.cpp 
 						FiniteDifference/FD_op_Tests.cpp 
 						DCPSE_op/DCPSE_op_test3d.cpp 
@@ -37,6 +38,8 @@ add_executable(numerics ${OPENFPM_INIT_FILE} ${CUDA_SOURCES}
 
 if ( CMAKE_COMPILER_IS_GNUCC )
     target_compile_options(numerics PRIVATE "-Wno-deprecated-declarations")
+    #target_compile_options(numerics PRIVATE "-fsanitize=leak")
+    #target_link_options(numerics PRIVATE "-fsanitize=leak")
     if (TEST_COVERAGE)
         target_compile_options(numerics PRIVATE $<$<COMPILE_LANGUAGE:CXX>: -fprofile-arcs -ftest-coverage>)
     endif()

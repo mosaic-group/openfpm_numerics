@@ -36,6 +36,8 @@ struct equations2d1 {
     typedef petsc_solver<double> solver_type;
 };
 
+const bool equations2d1::boundary[] = {NON_PERIODIC,NON_PERIODIC};
+
 //! Specify the general characteristic of system to solve
 struct equations2d1_stag {
 
