@@ -272,7 +272,7 @@ namespace FD
 		 */
 		inline auto value(grid_dist_key_dx<grid::dims> & k, comb<grid::dims> & c_where) const -> typename std::remove_reference<decltype(g.template getProp<prp>(k))>::type
 		{
-			comb<grid::dims> c_o1 = g.template getStagPositions()[prp].get(0);
+			comb<grid::dims> c_o1 = g. getStagPositions()[prp].get(0);
 
             // x0, dx are defined in proper dir є(x, y, z)
 

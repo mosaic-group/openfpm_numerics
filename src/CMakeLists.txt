@@ -36,6 +36,10 @@ add_executable(numerics ${OPENFPM_INIT_FILE} ${CUDA_SOURCES}
 
 ###########################
 
+if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+	target_compile_options(pdata PRIVATE -Wno-undefined-var-template -Wno-macro-redefined)
+endif()
+
 if ( CMAKE_COMPILER_IS_GNUCC )
     target_compile_options(numerics PRIVATE "-Wno-deprecated-declarations")
     #target_compile_options(numerics PRIVATE "-fsanitize=leak")
