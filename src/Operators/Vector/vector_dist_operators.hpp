@@ -725,6 +725,12 @@ public:
 	{
 		v_exp.init();
 
+		if (v_exp.getVector().isSubset() == true)
+		{
+			std::cout << __FILE__ << ":" << __LINE__ << " error on the right hand side of the expression you have to use non-subset properties" << std::endl;
+			return v;
+		}
+
 		auto it = v.getDomainIterator();
 
 		while (it.isNext())
@@ -751,6 +757,12 @@ public:
 	{
 		v_exp.init();
 
+		if (v_exp.getVector().isSubset() == true)
+		{
+			std::cout << __FILE__ << ":" << __LINE__ << " error on the right hand side of the expression you have to use non-subset properties" << std::endl;
+			return v;
+		}
+
 		auto it = v.getDomainIterator();
 
 		while (it.isNext())
@@ -759,6 +771,14 @@ public:
 			auto key_orig = v.getOriginKey(key);
 
 			pos_or_propL<vector,prp>::value(v,key) = v_exp.value(key_orig);
+
+			if (key.getKey() == 1000)
+			{
+				int debug = 0;
+				debug++;
+
+				auto out = v_exp.value(key_orig);
+			}
 
 			++it;
 		}

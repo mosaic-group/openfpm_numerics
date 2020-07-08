@@ -39,6 +39,12 @@ public:\
 	{\
 		return fun_base(o1.value(key));\
 	}\
+	\
+    const vtype & getVector() const\
+    {\
+        return o1.getVector();\
+    }\
+	\
 };\
 \
 \
