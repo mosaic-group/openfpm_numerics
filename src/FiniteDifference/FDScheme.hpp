@@ -853,11 +853,9 @@ public:
 	template<typename T, typename bop, typename iterator> void impose_git_gmap(const T & op ,
 			                         bop num,
 									 long int id ,
-									 const iterator & it_d)
+									 iterator & it)
 	{
 		openfpm::vector<triplet> & trpl = A.getMatrixTriplets();
-
-		auto it = it_d;
 
 		grid_sm<Sys_eqs::dims,void> gs = g_map.getGridInfoVoid();
 
