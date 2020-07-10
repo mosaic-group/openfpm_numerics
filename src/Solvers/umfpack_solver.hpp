@@ -97,7 +97,7 @@ public:
 
 			if(solver.info()!=Eigen::Success)
 			{
-				// decomposition failed
+				// Linear solver failed
 				std::cout << __FILE__ << ":" << __LINE__ << " solver failed" << "\n";
 
 				x.scatter();

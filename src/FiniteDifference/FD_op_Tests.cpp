@@ -152,7 +152,7 @@ BOOST_AUTO_TEST_SUITE(fd_op_suite_tests)
 
         FD::Derivative_x Dx;
         FD::Derivative_y Dy;
-        FD::Laplacian_xy L;
+        FD::Lap L;
 
         auto v = FD::getV<1>(domain);
         auto P = FD::getV<0>(domain);

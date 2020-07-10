@@ -86,7 +86,8 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_subset_suite_tests)
 
         auto P = getV<0>(domain);
         auto P_bulk = getV<2>(domain_bulk);
-        auto Out = getV<1>(domain_bulk);
+        auto Out_bulk = getV<1>(domain_bulk);
+	auto Out_V_bulk = getV<3>(domain_bulk);
 
         P_bulk = 5;
 
@@ -98,7 +99,8 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_subset_suite_tests)
         Derivative_y Dy(domain, 2, rCut);
         Derivative_x Dx_bulk(domain_bulk, 2, rCut);
 
-        Out = Dx_bulk(P);
+        Out_bulk = Dx_bulk(P);
+	Out_V_bulk[0] = P + Dx_bulk(P);
 
 //        P_bulk = Dx_bulk(P_bulk);  <------------ Incorrect produce error message
 //        P = Dx_bulk(P);   <------- Incorrect produce overflow

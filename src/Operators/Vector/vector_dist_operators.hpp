@@ -1121,9 +1121,9 @@ struct get_vector_dist_expression_op
 	}
 
 	template<unsigned int prop, typename exp_type, typename vector_type>
-	inline static void assign(exp_type & o1, vector_type & v, const vect_dist_key_dx & key)
+	inline static void assign(exp_type & o1, vector_type & v, const vect_dist_key_dx & key, const vect_dist_key_dx & key_orig)
 	{
-		pos_or_propL<vector_type,exp_type::prop>::value(v,key) = o1.value(key);
+		pos_or_propL<vector_type,exp_type::prop>::value(v,key) = o1.value(key_orig);
 	}
 
 	template<unsigned int prop, typename vector_type>
@@ -1163,9 +1163,9 @@ struct get_vector_dist_expression_op<1,true>
 	}
 
 	template<unsigned int prop,typename exp_type, typename vector_type>
-	inline static void assign(exp_type & o1, vector_type & v, const vect_dist_key_dx & key, const int (& comp)[1])
+	inline static void assign(exp_type & o1, vector_type & v, const vect_dist_key_dx & key, const vect_dist_key_dx & key_orig, const int (& comp)[1])
 	{
-		pos_or_propL<vector_type,prop>::value(v,key)[comp[0]] = o1.value(key);
+		pos_or_propL<vector_type,prop>::value(v,key)[comp[0]] = o1.value(key_orig);
 	}
 
 	template<unsigned int prop, typename vector_type>
@@ -1185,9 +1185,9 @@ struct get_vector_dist_expression_op<2,true>
 	}
 
 	template<unsigned int prop,typename exp_type, typename vector_type>
-	inline static void assign(exp_type & o1, vector_type & v, const vect_dist_key_dx & key, const int (& comp)[2])
+	inline static void assign(exp_type & o1, vector_type & v, const vect_dist_key_dx & key, const vect_dist_key_dx & key_orig, const int (& comp)[2])
 	{
-		pos_or_propL<vector_type,prop>::value(v,key)[comp[0]][comp[1]] = o1.value(key);
+		pos_or_propL<vector_type,prop>::value(v,key)[comp[0]][comp[1]] = o1.value(key_orig);
 	}
 
 	template<unsigned int prop, typename vector_type>
@@ -1197,22 +1197,7 @@ struct get_vector_dist_expression_op<2,true>
 	}
 };
 
-/*! \brief like std::rank but it also work for openfpm structures like Point where it return 1
- *
- * \tparam T structure to check
- *
- */
-template<typename T, bool is_point = is_Point<T>::value>
-struct rank_gen
-{
-	typedef boost::mpl::int_<std::rank<T>::value> type;
-};
 
-template<typename T>
-struct rank_gen<T,true>
-{
-	typedef boost::mpl::int_<1> type;
-};
 
 /*! \brief it take an expression and create the negatove of this expression
  *
@@ -1367,7 +1352,7 @@ public:
 			auto key = it.get();
 			auto key_orig = v.getOriginKey(key);
 
-			get_vector_dist_expression_op<n,n == rank_gen<property_act>::type::value>::template assign<exp1::prop>(v_exp,v,key_orig,comp);
+			get_vector_dist_expression_op<n,n == rank_gen<property_act>::type::value>::template assign<exp1::prop>(v_exp,v,key,key_orig,comp);
 
 			++it;
 		}
@@ -1395,7 +1380,7 @@ public:
 			auto key = it.get();
 			auto key_orig = v.getOriginKey(key);
 
-			get_vector_dist_expression_op<n,n == rank_gen<property_act>::type::value>::template assign<exp1::prop>(v_exp,v,key_orig,comp);
+			get_vector_dist_expression_op<n,n == rank_gen<property_act>::type::value>::template assign<exp1::prop>(v_exp,v,key,key_orig,comp);
 
 			++it;
 		}

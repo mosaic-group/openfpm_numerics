@@ -13,11 +13,14 @@ namespace FD
 
 	constexpr int NORM_EXPRESSION = 0;
 	constexpr int STAG_EXPRESSION = 1;
+	constexpr int GRID_COMP = 2;
 
 	template <typename exp1,typename exp2, typename impl>
 	class grid_dist_expression_op
 	{
 	};
+
+	struct g_comp {};
 
 	template<unsigned int prp, typename grid, unsigned int impl>
 	class grid_dist_expression
@@ -193,16 +196,16 @@ namespace FD
 			cols[g_map.template getProp<0>(key)*Sys_eqs::nvar + var_id + comp] += coeff;
 		}
 
-	/*    inline vector_dist_expression_op<vector_dist_expression<prp,vector>,boost::mpl::int_<1>,VECT_COMP> operator[](int comp)
+	    inline grid_dist_expression_op<grid_dist_expression<prp,grid,NORM_EXPRESSION>,boost::mpl::int_<1>,g_comp> operator[](int comp)
 		{
 			int comp_n[1];
 
 			comp_n[0] = comp;
 
-			vector_dist_expression_op<vector_dist_expression<prp,vector>,boost::mpl::int_<1>,VECT_COMP> v_exp(*this,comp_n,var_id);
+			grid_dist_expression_op<grid_dist_expression<prp,grid,NORM_EXPRESSION>,boost::mpl::int_<1>,g_comp> v_exp(*this,comp_n,var_id);
 
 			return v_exp;
-		}*/
+		}
 	};
 
 	template<unsigned int prp, typename grid>
@@ -393,16 +396,16 @@ namespace FD
 			cols[g_map.template getProp<0>(key)*Sys_eqs::nvar + var_id + comp] += coeff;
 		}
 
-	/*    inline vector_dist_expression_op<vector_dist_expression<prp,vector>,boost::mpl::int_<1>,VECT_COMP> operator[](int comp)
+	    inline grid_dist_expression_op<grid_dist_expression<prp,grid,STAG_EXPRESSION>,boost::mpl::int_<1>,g_comp> operator[](int comp)
 		{
 			int comp_n[1];
 
 			comp_n[0] = comp;
 
-			vector_dist_expression_op<vector_dist_expression<prp,vector>,boost::mpl::int_<1>,VECT_COMP> v_exp(*this,comp_n,var_id);
+			grid_dist_expression_op<grid_dist_expression<prp,grid,STAG_EXPRESSION>,boost::mpl::int_<1>,g_comp> v_exp(*this,comp_n,var_id);
 
 			return v_exp;
-		}*/
+		}
 	};
 
 	/*! \brief Main class that encapsulate a double constant
@@ -630,6 +633,88 @@ namespace FD
         }
 	};
 
+	struct sub {};
+
+	template <typename exp1, typename exp2>
+	class grid_dist_expression_op<exp1,exp2,sub>
+	{
+		//! expression 1
+		const exp1 o1;
+
+		//! expression 1
+		const exp2 o2;
+
+	public:
+
+		typedef typename exp1::gtype gtype;
+
+		//! Costruct a FD expression out of two expressions
+		inline grid_dist_expression_op(const exp1 & o1,const exp2 & o2)
+				:o1(o1),o2(o2)
+		{}
+
+		/*! \brief This function must be called before value
+		*
+		* it initialize the expression if needed
+		*
+		 */
+		inline void init() const
+		{
+			o1.init();
+			o2.init();
+		}
+
+		/*! \brief Evaluate the expression
+		 *
+		 * \param key where to evaluate the expression
+		 *
+		 * \return the result of the expression
+		 *
+		 */
+		inline auto value(grid_dist_key_dx<gtype::dims> & key, comb<gtype::dims> & c_where) const -> typename std::remove_reference<decltype(o1.value(key,c_where))>::type
+		{
+			typename std::remove_reference<decltype(o1.value(key,c_where))>::type val;
+
+			return o1.value(key,c_where) - o2.value(key,c_where);
+		}
+
+		/*! \brief Return the grid on which is acting
+		 *
+		 * It return the grid used in getVExpr, to get this object
+		 *
+		 * \return the grid
+		 *
+		 */
+		gtype & getGrid()
+		{
+			return o1.getGrid();
+		}
+
+		/*! \brief Return the grid on which is acting
+		*
+		* It return the grid used in getVExpr, to get this object
+		*
+		* \return the grid
+		*
+		*/
+		const gtype & getGrid() const
+		{
+			return o1.getGrid();
+		}
+
+        template<typename Sys_eqs, typename gmap_type, typename unordered_map_type>
+        inline void value_nz(const gmap_type & g_map,
+                             grid_dist_key_dx<Sys_eqs::dims> & key,
+                             const grid_sm<Sys_eqs::dims,void> & gs,
+                             typename Sys_eqs::stype (& spacing )[Sys_eqs::dims],
+                             unordered_map_type & cols,
+                             typename Sys_eqs::stype coeff,
+                             unsigned int comp) const
+        {
+            o1.template value_nz<Sys_eqs>(g_map,key,gs,spacing,cols,coeff,comp);
+            o2.template value_nz<Sys_eqs>(g_map,key,gs,spacing,cols,coeff,comp);
+        }
+	};
 
 	struct mul {};
 
@@ -716,6 +801,319 @@ namespace FD
 			o2.template value_nz<Sys_eqs>(g_map,key,gs,spacing,cols,coeff_tmp,comp);
 		}
 	};
+
+	/*! \brief selector for position or properties left side expression
+	 *
+	 * \tparam vector type of the original vector
+	 *
+	 * \tparam prp property id
+	 *
+	 */
+	template <typename grid_type, unsigned int prp>
+	struct pos_or_propL
+	{
+		//! return the value (position or property) of the particle k in the vector v
+		static inline auto value(grid_type & v, const grid_dist_key_dx<grid_type::dims> & k) -> decltype(v.template getProp<prp>(k))
+		{
+			return v.template getProp<prp>(k);
+		}
+	};
+
+	template<unsigned int, bool is_valid>
+	struct get_grid_dist_expression_op
+	{
+		template<typename exp_type>
+		inline static auto get(exp_type & o1, grid_dist_key_dx<exp_type::gtype::dims> & key, comb<exp_type::gtype::dims> & c_where) -> decltype(o1.value(key,c_where))
+		{
+			return o1.value(key);
+		}
+
+		template<unsigned int prop, typename exp_type, typename grid_type>
+		inline static void assign(exp_type & o1, grid_type & g, const grid_dist_key_dx<exp_type::gtype::dims> & key)
+		{
+			pos_or_propL<grid_type,exp_type::prop>::value(g,key) = o1.value(key);
+		}
+
+		template<unsigned int prop, typename grid_type>
+		inline static void assign_double(double d, grid_type & g, const grid_dist_key_dx<grid_type::dims> & key)
+		{
+			pos_or_propL<grid_type,prop>::value(g,key) = d;
+		}
+	};
+
+	template<>
+	struct get_grid_dist_expression_op<1,false>
+	{
+		template<typename exp_type>
+		static int get(exp_type & o1, grid_dist_key_dx<exp_type::gtype::dims> & key, comb<exp_type::gtype::dims> & c_where, const int (& comp)[1])
+		{
+			return 0;
+		}
+
+		template<unsigned int prop, typename exp_type, typename grid_type>
+		inline static void assign(exp_type & o1, grid_type & g, const grid_dist_key_dx<exp_type::gtype::dims> & key)
+		{
+		}
+
+		template<unsigned int prop, typename grid_type>
+		inline static void assign_double(double d, grid_type & g, const grid_dist_key_dx<grid_type::dims> & key)
+		{
+		}
+	};
+
+	template<>
+	struct get_grid_dist_expression_op<1,true>
+	{
+		template<typename exp_type>
+		static auto get(exp_type & o1, grid_dist_key_dx<exp_type::gtype::dims> & key, comb<exp_type::gtype::dims> & c_where, const int (& comp)[1]) -> decltype(o1.value(key,c_where)[0])
+		{
+			return o1.value(key)[comp[0]];
+		}
+
+		template<unsigned int prop,typename exp_type, typename grid_type>
+		inline static void assign(exp_type & o1, grid_type & g, const grid_dist_key_dx<exp_type::gtype::dims> & key, const int (& comp)[1])
+		{
+			pos_or_propL<grid_type,prop>::value(g,key)[comp[0]] = o1.value(key);
+		}
+
+		template<unsigned int prop, typename grid_type>
+		inline static void assign_double(double d, grid_type & g, const grid_dist_key_dx<grid_type::dims> & key, const int (& comp)[1])
+		{
+			pos_or_propL<grid_type,prop>::value(g,key)[comp[0]] = d;
+		}
+	};
+
+	template<>
+	struct get_grid_dist_expression_op<2,true>
+	{
+		template<typename exp_type>
+		static auto get(exp_type & o1, grid_dist_key_dx<exp_type::gtype::dims> & key, comb<exp_type::gtype::dims> & c_where, const int (& comp)[2]) -> decltype(o1.value(key,c_where)[0][0])
+		{
+			return o1.value(key)[comp[0]][comp[1]];
+		}
+
+		template<unsigned int prop,typename exp_type, typename grid_type>
+		inline static void assign(exp_type & o1, grid_type & g, const grid_dist_key_dx<grid_type::dims> & key, const int (& comp)[2])
+		{
+			pos_or_propL<grid_type,prop>::value(g,key)[comp[0]][comp[1]] = o1.value(key);
+		}
+
+		template<unsigned int prop, typename grid_type>
+		inline static void assign_double(double d, grid_type & g, const grid_dist_key_dx<grid_type::dims> & key, const int (& comp)[2])
+		{
+			pos_or_propL<grid_type,prop>::value(g,key)[comp[0]][comp[1]] = d;
+		}
+	};
+
+	/*! \brief it take an expression and create the negatove of this expression
+	 *
+	 *
+	 */
+	template <typename exp1,int n>
+	class grid_dist_expression_op<exp1,boost::mpl::int_<n>,g_comp>
+	{
+		//! expression 1
+		exp1 o1;
+
+		//! component
+		int comp[n];
+
+		int var_id = 0;
+	    void setVarId(int var_id)
+	    {
+	        this->var_id = var_id;
+	    }
+
+		typedef grid_dist_expression_op<exp1,boost::mpl::int_<n>,g_comp> myself;
+
+	public:
+
+	        typedef std::false_type is_ker;
+
+		typedef typename exp1::gtype gtype;
+
+		//! constructor from an expresssion
+
+		grid_dist_expression_op(const exp1 & o1, int (& comp)[n], int var_id)
+		:o1(o1),var_id(var_id)
+		{
+			for (int i = 0 ; i < n ; i++)
+			{this->comp[i] = comp[i];}
+		}
+
+	    /*! \brief Return the vector on which is acting
+	    *
+	    * It return the vector used in getVExpr, to get this object
+	    *
+	    * \return the vector
+	    *
+	    */
+	    const gtype & getGrid() const
+	    {
+	        return o1.getGrid();
+	    }
+
+	    /*! \brief Return the vector on which is acting
+	    *
+	    * It return the vector used in getVExpr, to get this object
+	    *
+	    * \return the vector
+	    *
+	    */
+	    gtype & getGrid()
+	    {
+	        return o1.getGrid();
+	    }
+
+		//! initialize the expression tree
+		inline void init() const
+		{
+			o1.init();
+		}
+
+		//! property on which this view is acting
+		typedef typename boost::mpl::at<typename gtype::value_type::type,boost::mpl::int_<exp1::prop>>::type property_act;
+
+		/*! \brief Return the result of the expression
+		 *
+		 * \note this function must be deactivated on transitional objects. Suppose we are slicing a tensor of rank 2
+		 *            an object of rank 1 is implicitly created for such object we have to deactivate this function
+		 *            because ill-formed
+		 *
+		 * \param key point where to evaluate
+		 *
+		 *
+		 */
+		inline auto value(grid_dist_key_dx<gtype::dims> & key, comb<gtype::dims> & c_where) const -> decltype(get_grid_dist_expression_op<n,n == rank_gen<property_act>::type::value>::get(o1,key,c_where,comp))
+		{
+			return get_grid_dist_expression_op<n,n == rank_gen<property_act>::type::value>::get(o1,key,c_where,comp);
+		}
+
+		/*! \brief Return the result of the expression
+		 *
+		 * \note this function must be deactivated on transitional objects. Suppose we are slicing a tensor of rank 2
+		 *            an object of rank 1 is implicitly created for such object we have to deactivate this function
+		 *            because ill-formed
+		 *
+		 * \param key point where to evaluate
+		 *
+		 *
+		 */
+		inline auto get(grid_dist_key_dx<gtype::dims> & key, comb<gtype::dims> & c_where) const -> decltype(value(key,c_where))
+		{
+			return this->value(key,c_where);
+		}
+
+	    template<typename Sys_eqs, typename pmap_type, typename unordered_map_type, typename coeff_type>
+	    inline void value_nz(pmap_type & p_map, const grid_dist_key_dx<gtype::dims> & key, unordered_map_type & cols, coeff_type & coeff, unsigned int comp_) const
+	    {
+	#ifdef SE_CLASS1
+
+	    	if (n != 1)
+	    	{
+	    		std::cout << __FILE__ << ":" << __LINE__ << " Error it only work for tensore of rank 1 ... like vectors " << std::endl;
+	    	}
+
+	#endif
+
+	        o1.template value_nz<Sys_eqs>(p_map,key,cols,coeff,comp_ + var_id + comp[0]);
+	    }
+
+	    inline grid_dist_expression_op<exp1,boost::mpl::int_<2>,g_comp> operator[](int comp_)
+	    {
+	    	int comp_n[n+1];
+
+	    	for (int i = 0 ; i < n ; i++)
+	    	{comp_n[i] = comp[i];}
+	    	comp_n[n] = comp_;
+
+	    	grid_dist_expression_op<exp1,boost::mpl::int_<2>,g_comp> v_exp(o1,comp_n,var_id);
+
+	    	return v_exp;
+	    }
+
+		/*! \brief Fill the vector property with the evaluated expression
+		 *
+		 * \param v_exp expression to evaluate
+		 *
+		 * \return itself
+		 *
+		 */
+		template<unsigned int prp2, unsigned int impl> gtype & operator=(const grid_dist_expression<prp2,gtype,impl> & v_exp)
+		{
+			v_exp.init();
+
+			auto & g = getGrid();
+
+			auto it = g.getDomainIterator();
+
+			while (it.isNext())
+			{
+				auto key = it.get();
+
+				get_grid_dist_expression_op<n,n == rank_gen<property_act>::type::value>::template assign<exp1::prop>(v_exp,g,key,comp);
+
+				++it;
+			}
+
+			return g;
+		}
+
+		/*! \brief Fill the vector property with the evaluated expression
+		 *
+		 * \param v_exp expression to evaluate
+		 *
+		 * \return itself
+		 *
+		 */
+		template<typename exp1_, typename exp2_, typename op> gtype & operator=(const grid_dist_expression_op<exp1_,exp2_,op> & v_exp)
+		{
+			v_exp.init();
+
+			auto & g = getGrid();
+
+			auto it = g.getDomainIterator();
+
+			while (it.isNext())
+			{
+				auto key = it.get();
+
+				get_grid_dist_expression_op<n,n == rank_gen<property_act>::type::value>::template assign<exp1::prop>(v_exp,g,key,comp);
+
+				++it;
+			}
+
+			return g;
+		}
+
+		/*! \brief Fill the vector property with the double
+		 *
+		 * \param d value to fill
+		 *
+		 * \return the internal vector
+		 *
+		 */
+		gtype & operator=(double d)
+		{
+			auto & v = getGrid();
+
+			auto it = v.getDomainIterator();
+
+			while (it.isNext())
+			{
+				auto key = it.get();
+
+				//pos_or_propL<vtype,exp1::prp>::value(v,key) = d;
+				get_grid_dist_expression_op<n,n == rank_gen<property_act>::type::value>::template assign_double<exp1::prop>(d,v,key,comp);
+
+
+				++it;
+			}
+
+			return v;
+		}
+	};
+
 
 	/*! \Create an expression from a grid property
 	 *
@@ -864,7 +1262,124 @@ operator+(const FD::grid_dist_expression_op<exp1,exp2,op1> & ga, double d)
 	return exp_sum;
 }
 
+/* \brief sum two distributed grid expression
+ *
+ * \param ga grid expression one
+ * \param gb grid expression two
+ *
+ * \return an object that encapsulate the expression
+ *
+ */
+template<unsigned int p1, unsigned int p2, typename g1, typename g2, unsigned int impl_p1, unsigned int impl_p2>
+inline FD::grid_dist_expression_op<FD::grid_dist_expression<p1,g1,impl_p1>,FD::grid_dist_expression<p2,g2,impl_p2>,FD::sub>
+operator-(const FD::grid_dist_expression<p1,g1,impl_p1> & ga, const FD::grid_dist_expression<p2,g2,impl_p2> & gb)
+{
+	FD::grid_dist_expression_op<FD::grid_dist_expression<p1,g1,impl_p1>,FD::grid_dist_expression<p2,g2,impl_p2>,FD::sub> exp_sum(ga,gb);
 
+	return exp_sum;
+}
+
+/* \brief sum two distributed grid expression
+ *
+ * \param ga grid expression one
+ * \param gb grid expression two
+ *
+ * \return an object that encapsulate the expression
+ *
+ */
+template<typename exp1 , typename exp2, typename op1, unsigned int prp1, typename g1, unsigned int impl_p1>
+inline FD::grid_dist_expression_op<FD::grid_dist_expression_op<exp1,exp2,op1>,FD::grid_dist_expression<prp1,g1,impl_p1>,FD::sub>
+operator-(const FD::grid_dist_expression_op<exp1,exp2,op1> & ga, const FD::grid_dist_expression<prp1,g1,impl_p1> & gb)
+{
+	FD::grid_dist_expression_op<FD::grid_dist_expression_op<exp1,exp2,op1>,FD::grid_dist_expression<prp1,g1,impl_p1>,FD::sub> exp_sum(ga,gb);
+
+	return exp_sum;
+}
+
+/* \brief sum two distributed grid expression
+ *
+ * \param ga grid expression one
+ * \param gb grid expression two
+ *
+ * \return an object that encapsulate the expression
+ *
+ */
+template<typename exp1 , typename exp2, typename op1, unsigned int prp1, typename g1, unsigned int impl_p1>
+inline FD::grid_dist_expression_op<FD::grid_dist_expression<prp1,g1,impl_p1>,FD::grid_dist_expression_op<exp1,exp2,op1>,FD::sub>
+operator-(const FD::grid_dist_expression<prp1,g1,impl_p1> & ga, const FD::grid_dist_expression_op<exp1,exp2,op1> & gb)
+{
+	FD::grid_dist_expression_op<FD::grid_dist_expression<prp1,g1,impl_p1>,FD::grid_dist_expression_op<exp1,exp2,op1>,FD::sub> exp_sum(ga,gb);
+
+	return exp_sum;
+}
+
+/* \brief sum two distributed grid expression
+ *
+ * \param ga grid expression one
+ * \param gb grid expression two
+ *
+ * \return an object that encapsulate the expression
+ *
+ */
+template<typename exp1 , typename exp2, typename op1, typename exp3 , typename exp4, typename op2>
+inline FD::grid_dist_expression_op<FD::grid_dist_expression_op<exp1,exp2,op1>,FD::grid_dist_expression_op<exp3,exp4,op2>,FD::sub>
+operator-(const FD::grid_dist_expression_op<exp1,exp2,op1> & ga, const FD::grid_dist_expression_op<exp3,exp4,op2> & gb)
+{
+	FD::grid_dist_expression_op<FD::grid_dist_expression_op<exp1,exp2,op1>,FD::grid_dist_expression_op<exp3,exp4,op2>,FD::sub> exp_sum(ga,gb);
+
+	return exp_sum;
+}
+
+/* \brief sum two distributed grid expression
+ *
+ * \param ga grid expression one
+ * \param gb grid expression two
+ *
+ * \return an object that encapsulate the expression
+ *
+ */
+template<unsigned int prp1 , typename g1, unsigned int impl_p1>
+inline FD::grid_dist_expression_op<FD::grid_dist_expression<prp1,g1,impl_p1>,FD::grid_dist_expression<g1::dims,double,impl_p1>,FD::sub>
+operator-(const FD::grid_dist_expression<prp1,g1,impl_p1> & ga, double d)
+{
+	FD::grid_dist_expression_op<FD::grid_dist_expression<prp1,g1,impl_p1>,FD::grid_dist_expression<g1::dims,double,impl_p1>,FD::sub> exp_sum(ga,FD::grid_dist_expression<g1::dims,double,impl_p1>(d));
+
+	return exp_sum;
+}
+
+/* \brief sum two distributed grid expression
+ *
+ * \param ga grid expression one
+ * \param gb grid expression two
+ *
+ * \return an object that encapsulate the expression
+ *
+ */
+template<unsigned int prp1 , typename g1, unsigned int impl_p1>
+inline FD::grid_dist_expression_op<FD::grid_dist_expression<g1::dims,double,impl_p1>,FD::grid_dist_expression<prp1,g1,impl_p1>,FD::sub>
+operator-(double d, const FD::grid_dist_expression<prp1,g1,impl_p1> & gb)
+{
+	FD::grid_dist_expression_op<FD::grid_dist_expression<g1::dims,double,impl_p1>,FD::grid_dist_expression<prp1,g1,impl_p1>,FD::sub> exp_sum(FD::grid_dist_expression<g1::dims,double,impl_p1>(d),gb);
+
+	return exp_sum;
+}
+
+/* \brief sum two distributed grid expression
+ *
+ * \param ga grid expression one
+ * \param gb grid expression two
+ *
+ * \return an object that encapsulate the expression
+ *
+ */
+template<typename exp1 , typename exp2, typename op1>
+inline FD::grid_dist_expression_op<FD::grid_dist_expression_op<exp1,exp2,op1>,FD::grid_dist_expression<exp1::gtype::dims,double,FD::NORM_EXPRESSION>,FD::sub>
+operator-(const FD::grid_dist_expression_op<exp1,exp2,op1> & ga, double d)
+{
+	FD::grid_dist_expression_op<FD::grid_dist_expression_op<exp1,exp2,op1>,FD::grid_dist_expression<exp1::gtype::dims,double,FD::NORM_EXPRESSION>,FD::sub> exp_sum(ga,FD::grid_dist_expression<exp1::gtype::dims,double,FD::NORM_EXPRESSION>(d));
+
+	return exp_sum;
+}
 
 /* \brief Multiply two distributed grid expression
  *

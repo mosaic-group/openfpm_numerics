@@ -14,6 +14,7 @@ namespace FD
     constexpr int CENTRAL = 0;
     constexpr int CENTRAL_ONE_SIDE_FORWARD = 1;
     constexpr int CENTRAL_ONE_SIDE_BACKWARD = 2;
+    constexpr int CENTRAL_STAG = 3;
 
 
     // ord_d means order of the derivative and not order of convergence
@@ -565,11 +566,13 @@ namespace FD
 		}
 	};
 
+    typedef Derivative<0,1,2,CENTRAL_STAG> Derivative_x_stag;
+    typedef Derivative<1,1,2,CENTRAL_STAG> Derivative_y_stag;
     typedef Derivative<0,1,2,CENTRAL> Derivative_x;
     typedef Derivative<1,1,2,CENTRAL> Derivative_y;
     typedef Derivative<0,2,2,CENTRAL> Derivative_xx;
     typedef Derivative<1,2,2,CENTRAL> Derivative_yy;
-    typedef Laplacian<2,CENTRAL> Laplacian_xy;
+    typedef Laplacian<2,CENTRAL> Lap;
 };
 
 
