@@ -46,6 +46,10 @@ template<>
 class umfpack_solver<double>
 {
 
+	Eigen::UmfPackLU<Eigen::SparseMatrix<double,0,int> > solver;
+
+	Eigen::SparseMatrix<double,0,int> mat_ei;
+
 public:
 
 	/*! \brief Here we invert the matrix and solve the system
@@ -57,7 +61,7 @@ public:
 	 *	\tparam impl Implementation of the SparseMatrix
 	 *
 	 */
-	static Vector<double,EIGEN_BASE> try_solve(SparseMatrix<double,int,EIGEN_BASE> & A, const Vector<double,EIGEN_BASE> & b, size_t opt = UMFPACK_NONE)
+	Vector<double,EIGEN_BASE> try_solve(SparseMatrix<double,int,EIGEN_BASE> & A, const Vector<double,EIGEN_BASE> & b, size_t opt = UMFPACK_NONE)
 	{
 		return solve(A,b,opt);
 	}
@@ -71,17 +75,14 @@ public:
 	 *	\tparam impl Implementation of the SparseMatrix
 	 *
 	 */
-	static Vector<double,EIGEN_BASE> solve(SparseMatrix<double,int,EIGEN_BASE> & A, const Vector<double,EIGEN_BASE> & b, size_t opt = UMFPACK_NONE)
+	Vector<double,EIGEN_BASE> solve(SparseMatrix<double,int,EIGEN_BASE> & A, const Vector<double,EIGEN_BASE> & b, size_t opt = UMFPACK_NONE)
 	{
 		Vcluster<> & vcl = create_vcluster();
 
 		Vector<double> x;
 
-		// only master processor solve
-		Eigen::UmfPackLU<Eigen::SparseMatrix<double,0,int> > solver;
-
 		// Collect the matrix on master
-		auto mat_ei = A.getMat();
+		mat_ei = A.getMat();
 
 		Eigen::Matrix<double, Eigen::Dynamic, 1> x_ei;
 
@@ -124,6 +125,52 @@ public:
                 std::cout << mat_ei << "\n";
                 std::cout << b_ei << "\n";
             }
+
+			x = x_ei;
+		}
+
+		// Vector is only on master, scatter back the information
+		x.scatter();
+
+		return x;
+	}
+
+	/*! \brief Here we invert the matrix and solve the system
+	 *
+	 *  \warning umfpack is not a parallel solver, this function work only with one processor
+	 *
+	 *  \note if you want to use umfpack in a NON parallel, but on a distributed data, use solve with triplet
+	 *
+	 *	\tparam impl Implementation of the SparseMatrix
+	 *
+	 */
+	Vector<double,EIGEN_BASE> solve(const Vector<double,EIGEN_BASE> & b, size_t opt = UMFPACK_NONE)
+	{
+		Vcluster<> & vcl = create_vcluster();
+
+		Vector<double> x;
+
+		Eigen::Matrix<double, Eigen::Dynamic, 1> x_ei;
+
+		// Collect the vector on master
+		auto b_ei = b.getVec();
+
+		// Copy b into x, this also copy the information on how to scatter back the information on x
+		x = b;
+
+		if (vcl.getProcessUnitID() == 0)
+		{
+			x_ei = solver.solve(b_ei);
+
+			if (opt & SOLVER_PRINT_RESIDUAL_NORM_INFINITY)
+			{
+				std::cout << "umfpack_solver: unsupported you have to pass the matrix for the option SOLVER_PRINT_RESIDUAL_NORM_INFINITY "  << "\n";
+			}
+
+			if (opt & SOLVER_PRINT_DETERMINANT)
+			{
+				std::cout << " Determinant: " << solver.determinant() << "\n";
+			}
 
 			x = x_ei;
 		}

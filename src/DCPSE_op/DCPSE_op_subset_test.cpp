@@ -62,10 +62,6 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_subset_suite_tests)
             // Here fill the function value
             domain.template getLastProp<0>() = sin(domain.getLastPos()[0]) + sin(domain.getLastPos()[1]);
 
-            domain.template getLastProp<2>() = cos(domain.getLastPos()[0]) + cos(domain.getLastPos()[1]);
-            domain.template getLastProp<4>()[0] = -sin(domain.getLastPos()[0]);
-            domain.template getLastProp<4>()[1] = -sin(domain.getLastPos()[1]);
-
             if (k0 != 0 && k1 != 0 && k0 != sz[0] -1 && k1 != sz[1] - 1)
             {
             	no_border_subset.add();
@@ -101,6 +97,19 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_subset_suite_tests)
 
         Out_bulk = Dx_bulk(P);
 	Out_V_bulk[0] = P + Dx_bulk(P);
+
+	// Check
+	auto it2 = domain_bulk.getDomainIterator();
+        while (it2.isNext())
+        {
+		auto p = it2.get();
+
+		BOOST_REQUIRE_EQUAL(domain_bulk.getProp<2>(p),5.0);
+		BOOST_REQUIRE(fabs(domain_bulk.getProp<1>(p) - cos(domain_bulk.getPos(p)[0])) < 0.005 );
+		BOOST_REQUIRE(fabs(domain_bulk.getProp<3>(p)[0] - domain_bulk.getProp<0>(p) - cos(domain_bulk.getPos(p)[0])) < 0.001 );
+
+		++it2;
+	}
 
 //        P_bulk = Dx_bulk(P_bulk);  <------------ Incorrect produce error message
 //        P = Dx_bulk(P);   <------- Incorrect produce overflow
