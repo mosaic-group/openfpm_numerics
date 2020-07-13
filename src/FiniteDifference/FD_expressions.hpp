@@ -184,6 +184,7 @@ namespace FD
 			return g;
 		}
 
+
 		template<typename Sys_eqs, typename gmap_type, typename unordered_map_type>
 		inline void value_nz(const gmap_type & g_map,
 				grid_dist_key_dx<Sys_eqs::dims> & key,
@@ -191,7 +192,8 @@ namespace FD
 				 typename Sys_eqs::stype (& spacing )[Sys_eqs::dims],
 				 unordered_map_type & cols,
 				 typename Sys_eqs::stype coeff,
-				 unsigned int comp) const
+				 unsigned int comp,
+				 comb<Sys_eqs::dims> & c_where) const
 		{
 			cols[g_map.template getProp<0>(key)*Sys_eqs::nvar + var_id + comp] += coeff;
 		}
@@ -391,7 +393,8 @@ namespace FD
 				 typename Sys_eqs::stype (& spacing )[Sys_eqs::dims],
 				 unordered_map_type & cols,
 				 typename Sys_eqs::stype coeff,
-				 unsigned int comp) const
+				 unsigned int comp,
+				 comb<Sys_eqs::dims> & c_where) const
 		{
 			cols[g_map.template getProp<0>(key)*Sys_eqs::nvar + var_id + comp] += coeff;
 		}
@@ -447,14 +450,6 @@ namespace FD
 		{
 			return d;
 		}
-
-
-/*
-	    template<typename Sys_eqs, typename pmap_type, typename unordered_map_type, typename coeff_type>
-	    inline void value_nz(pmap_type & p_map, const vect_dist_key_dx & key, unordered_map_type & cols, coeff_type & coeff, unsigned int comp) const
-	    {
-	        cols[p_map. template getProp<0>(key)*Sys_eqs::nvar + comp] += coeff;
-	    }*/
 	};
 
 	/*! \brief Main class that encapsulate a double constant
@@ -496,14 +491,6 @@ namespace FD
 		{
 			return d;
 		}
-
-
-/*
-	    template<typename Sys_eqs, typename pmap_type, typename unordered_map_type, typename coeff_type>
-	    inline void value_nz(pmap_type & p_map, const vect_dist_key_dx & key, unordered_map_type & cols, coeff_type & coeff, unsigned int comp) const
-	    {
-	        cols[p_map. template getProp<0>(key)*Sys_eqs::nvar + comp] += coeff;
-	    }*/
 	};
 
 	/*! \brief Main class that encapsulate a float constant
@@ -626,10 +613,11 @@ namespace FD
                              typename Sys_eqs::stype (& spacing )[Sys_eqs::dims],
                              unordered_map_type & cols,
                              typename Sys_eqs::stype coeff,
-                             unsigned int comp) const
+                             unsigned int comp,
+                             comb<Sys_eqs::dims> & c_where) const
         {
-            o1.template value_nz<Sys_eqs>(g_map,key,gs,spacing,cols,coeff,comp);
-            o2.template value_nz<Sys_eqs>(g_map,key,gs,spacing,cols,coeff,comp);
+            o1.template value_nz<Sys_eqs>(g_map,key,gs,spacing,cols,coeff,comp,c_where);
+            o2.template value_nz<Sys_eqs>(g_map,key,gs,spacing,cols,coeff,comp,c_where);
         }
 	};
 
@@ -709,10 +697,11 @@ namespace FD
                              typename Sys_eqs::stype (& spacing )[Sys_eqs::dims],
                              unordered_map_type & cols,
                              typename Sys_eqs::stype coeff,
-                             unsigned int comp) const
+                             unsigned int comp,
+                             comb<Sys_eqs::dims> & c_where) const
         {
-            o1.template value_nz<Sys_eqs>(g_map,key,gs,spacing,cols,coeff,comp);
-            o2.template value_nz<Sys_eqs>(g_map,key,gs,spacing,cols,coeff,comp);
+            o1.template value_nz<Sys_eqs>(g_map,key,gs,spacing,cols,coeff,comp,c_where);
+            o2.template value_nz<Sys_eqs>(g_map,key,gs,spacing,cols,coeff,comp,c_where);
         }
 	};
 
@@ -792,13 +781,12 @@ namespace FD
 				 typename Sys_eqs::stype (& spacing )[Sys_eqs::dims],
 				 unordered_map_type & cols,
 				 typename Sys_eqs::stype coeff,
-				 unsigned int comp) const
+				 unsigned int comp,
+				 comb<Sys_eqs::dims> & c_where) const
 		{
-			comb<Sys_eqs::dims> c_where;
-			c_where.mone();
 			typename Sys_eqs::stype coeff_tmp = o1.value(key,c_where) * coeff;
 
-			o2.template value_nz<Sys_eqs>(g_map,key,gs,spacing,cols,coeff_tmp,comp);
+			o2.template value_nz<Sys_eqs>(g_map,key,gs,spacing,cols,coeff_tmp,comp,c_where);
 		}
 	};
 
@@ -867,7 +855,7 @@ namespace FD
 		template<typename exp_type>
 		static auto get(exp_type & o1, grid_dist_key_dx<exp_type::gtype::dims> & key, comb<exp_type::gtype::dims> & c_where, const int (& comp)[1]) -> decltype(o1.value(key,c_where)[0])
 		{
-			return o1.value(key)[comp[0]];
+			return o1.value(key,c_where)[comp[0]];
 		}
 
 		template<unsigned int prop,typename exp_type, typename grid_type>
@@ -931,6 +919,9 @@ namespace FD
 	        typedef std::false_type is_ker;
 
 		typedef typename exp1::gtype gtype;
+
+		//! Property id of the point
+		static const unsigned int prop = exp1::prop;
 
 		//! constructor from an expresssion
 
@@ -1004,8 +995,15 @@ namespace FD
 			return this->value(key,c_where);
 		}
 
-	    template<typename Sys_eqs, typename pmap_type, typename unordered_map_type, typename coeff_type>
-	    inline void value_nz(pmap_type & p_map, const grid_dist_key_dx<gtype::dims> & key, unordered_map_type & cols, coeff_type & coeff, unsigned int comp_) const
+		template<typename Sys_eqs, typename gmap_type, typename unordered_map_type>
+		inline void value_nz(const gmap_type & g_map,
+				grid_dist_key_dx<Sys_eqs::dims> & key,
+				 const grid_sm<Sys_eqs::dims,void> & gs,
+				 typename Sys_eqs::stype (& spacing )[Sys_eqs::dims],
+				 unordered_map_type & cols,
+				 typename Sys_eqs::stype coeff,
+				 unsigned int comp_,
+				 comb<Sys_eqs::dims> & c_where) const
 	    {
 	#ifdef SE_CLASS1
 
@@ -1016,7 +1014,7 @@ namespace FD
 
 	#endif
 
-	        o1.template value_nz<Sys_eqs>(p_map,key,cols,coeff,comp_ + var_id + comp[0]);
+	        o1.template value_nz<Sys_eqs>(g_map,key,gs,spacing,cols,coeff,comp_ + var_id + comp[0],c_where);
 	    }
 
 	    inline grid_dist_expression_op<exp1,boost::mpl::int_<2>,g_comp> operator[](int comp_)

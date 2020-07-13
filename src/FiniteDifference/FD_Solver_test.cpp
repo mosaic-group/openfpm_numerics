@@ -276,7 +276,9 @@ f_x = f_y = f_z = 3
         typedef umfpack_solver<double> solver_type;
     };
 
-/*    BOOST_AUTO_TEST_CASE(solver_Lid_driven_cavity_stag)
+    const bool lid_nn_stag::boundary[] = {NON_PERIODIC,NON_PERIODIC};
+
+    BOOST_AUTO_TEST_CASE(solver_Lid_driven_cavity_stag)
     {
     	Vcluster<> & v_cl = create_vcluster();
 
@@ -358,7 +360,7 @@ f_x = f_y = f_z = 3
     	fd.impose(P, {0,0},{0,0},0.0,ic);
 
     	// Here we impose the Eq1 and Eq2
-    	fd.impose(Stokes_vx, EQ_1, {1,0},{sz[0]-2,sz[1]-2},0.0,vx);
+    	fd.impose(Stokes_vx, {1,0},{sz[0]-2,sz[1]-2},0.0,vx);
     	fd.impose(Stokes_vy, {0,1},{sz[0]-2,sz[1]-2},0.0,vy);
 
     	// v_x and v_y
@@ -394,13 +396,10 @@ f_x = f_y = f_z = 3
 
     	fd.solve(v[x],v[y],P);
 
-    	std::string s = std::string(demangle(typeid(solver_type).name()));
-    	s += "_";
-
     	//! [Copy the solution to grid]
 
-    	g_dist.write(s + "lid_driven_cavity_p" + std::to_string(v_cl.getProcessingUnits()) + "_grid");
-    }*/
+    	//g_dist.write("out_test");
+    }
 
 
 BOOST_AUTO_TEST_SUITE_END()

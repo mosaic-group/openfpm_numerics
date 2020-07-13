@@ -511,7 +511,8 @@ private:
 	template<typename T, typename bop, typename iterator> void impose_git(const T & op ,
 			                         bop num,
 			                         long int id ,
-									 const iterator & it_d)
+									 const iterator & it_d,
+									 comb<Sys_eqs::dims> c_where)
 	{
 		openfpm::vector<triplet> & trpl = A.getMatrixTriplets();
 
@@ -527,7 +528,7 @@ private:
 			auto key = it.get();
 
 			// Calculate the non-zero colums
-			op.template value_nz<Sys_eqs>(g_map,key,gs,spacing,cols,1.0,0);
+			op.template value_nz<Sys_eqs>(g_map,key,gs,spacing,cols,1.0,0,c_where);
 
 			// indicate if the diagonal has been set
 			bool is_diag = false;
@@ -662,7 +663,10 @@ private:
         while (it.isNext())
         {
             auto p = it.get();
-            exp.value(p,c_where) = x(pn*Sys_eqs::nvar + comp + s_pnt*Sys_eqs::nvar);
+
+            grid.template getProp<expr_type::prop>(p) = x(pn*Sys_eqs::nvar + comp + s_pnt*Sys_eqs::nvar);
+
+//            exp.value(p,c_where) = x(pn*Sys_eqs::nvar + comp + s_pnt*Sys_eqs::nvar);
             ++it;
             ++pn;
         }
@@ -793,12 +797,45 @@ public:
 	 *
 	 */
 	template<typename T> void impose(const T & op,
-			                         typename Sys_eqs::stype num,
 									 const grid_key_dx<Sys_eqs::dims> start_k,
 									 const grid_key_dx<Sys_eqs::dims> stop_k,
+									 typename Sys_eqs::stype num,
+									 eq_id id,
+									 comb<Sys_eqs::dims> c_where)
+	{
+        auto it = g_map.getSubDomainIterator(start_k,stop_k);
+
+        constant_b b(num);
+
+        impose_git(op,b,id.getId(),it,c_where);
+	}
+
+	/*! \brief Impose an operator
+	 *
+	 * This function impose an operator on a box region to produce the system
+	 *
+	 * Ax = b
+	 *
+	 * ## Stokes equation, lid driven cavity with one splipping wall
+	 * \snippet eq_unit_test.hpp lid-driven cavity 2D
+	 *
+	 * \param op Operator to impose (A term)
+	 * \param num right hand side of the term (b term)
+	 * \param id Equation id in the system that we are imposing
+	 * \param start starting point of the box
+	 * \param stop stop point of the box
+	 * \param skip_first skip the first point
+	 *
+	 */
+	template<typename T> void impose(const T & op,
+									 const grid_key_dx<Sys_eqs::dims> start_k,
+									 const grid_key_dx<Sys_eqs::dims> stop_k,
+									 typename Sys_eqs::stype num,
 									 eq_id id = eq_id(),
 									 bool skip_first = false)
 	{
+		comb<Sys_eqs::dims> c_zero;
+		c_zero.zero();
         bool increment = false;
         if (skip_first == true)
         {
@@ -816,7 +853,7 @@ public:
 
         constant_b b(num);
 
-        impose_git(op,b,id.getId(),it);
+        impose_git(op,b,id.getId(),it,c_zero);
 
 	}
 
@@ -844,6 +881,8 @@ public:
 									 eq_id id = eq_id(),
 									 bool skip_first = false)
 	{
+		comb<Sys_eqs::dims> c_zero;
+		c_zero.zero();
         bool increment = false;
         if (skip_first == true)
         {
@@ -861,7 +900,7 @@ public:
 
         variable_b<prp_id> b(grid);
 
-        impose_git(op,b,id.getId(),it);
+        impose_git(op,b,id.getId(),it,c_zero);
 
 	}
 

@@ -15,6 +15,8 @@ namespace FD
     constexpr int CENTRAL_ONE_SIDE_FORWARD = 1;
     constexpr int CENTRAL_ONE_SIDE_BACKWARD = 2;
     constexpr int CENTRAL_STAG = 3;
+    constexpr int CENTRAL_STAG_ONE_SIDE_FORWARD = 4;
+    constexpr int CENTRAL_STAG_ONE_SIDE_BACKWARD = 5;
 
 
     // ord_d means order of the derivative and not order of convergence
@@ -57,7 +59,8 @@ namespace FD
                                  typename Sys_eqs::stype (& spacing )[Sys_eqs::dims],
                                  unordered_map_type & cols,
                                  typename Sys_eqs::stype coeff,
-                                 unsigned int comp)
+                                 unsigned int comp,
+                                 comb<Sys_eqs::dims> & c_where)
         {
             long int old_val = kmap.getKeyRef().get(dir);
             kmap.getKeyRef().set_d(dir, kmap.getKeyRef().get(dir) + 1);
@@ -67,6 +70,88 @@ namespace FD
             old_val = kmap.getKeyRef().get(dir);
             kmap.getKeyRef().set_d(dir, kmap.getKeyRef().get(dir) - 1);
             o1.template value_nz<Sys_eqs>(g_map,kmap,gs,spacing,cols,-coeff/spacing[dir]/2.0,comp);
+            kmap.getKeyRef().set_d(dir,old_val);
+        }
+    };
+
+    template<unsigned int dir>
+    struct Derivative_impl<dir,1,2,CENTRAL_STAG>
+    {
+        template<typename rtype,typename expr_type>
+        static inline rtype calculate(expr_type & o1, grid_dist_key_dx<expr_type::gtype::dims> & key,comb<expr_type::gtype::dims> & c_where)
+        {
+        	rtype ret;
+            // x0, dx are defined in proper dir є(x, y, z)
+            auto dx = o1.getGrid().spacing(dir);
+            long int x0 = key.getKeyRef().get(dir);
+
+            if (c_where[dir] == -1)
+            {
+            	char old_c = c_where[dir];
+            	c_where[dir] = 0;
+                key.getKeyRef().set_d(dir, x0 - 1);
+                ret = o1.value(key,c_where)*(-1.0);
+
+                key.getKeyRef().set_d(dir, x0);
+                ret += o1.value(key,c_where)*(1.0);
+
+                c_where[dir] = old_c;
+            }
+            else
+            {
+            	char old_c = c_where[dir];
+            	c_where[dir] = -1;
+                key.getKeyRef().set_d(dir, x0);
+                ret = o1.value(key,c_where)*(-1.0);
+
+                key.getKeyRef().set_d(dir, x0 + 1);
+                ret += o1.value(key,c_where)*(1.0);
+
+                c_where[dir] = old_c;
+            }
+
+            return ret/dx;
+        }
+
+        template<typename Sys_eqs, typename o1_type, typename gmap_type, typename unordered_map_type>
+        inline static void calculate_nz(o1_type o1,
+                                 const gmap_type & g_map,
+                                 grid_dist_key_dx<Sys_eqs::dims> & kmap,
+                                 const grid_sm<Sys_eqs::dims,void> & gs,
+                                 typename Sys_eqs::stype (& spacing )[Sys_eqs::dims],
+                                 unordered_map_type & cols,
+                                 typename Sys_eqs::stype coeff,
+                                 unsigned int comp,
+                                 comb<Sys_eqs::dims> & c_where)
+        {
+            // x0, dx are defined in proper dir є(x, y, z)
+            long int old_val = kmap.getKeyRef().get(dir);
+
+            if (c_where[dir] == -1)
+            {
+            	char old_c = c_where.c[dir];
+            	c_where.c[dir] = 0;
+                kmap.getKeyRef().set_d(dir, old_val - 1);
+                o1.template value_nz<Sys_eqs>(g_map,kmap,gs,spacing,cols,-coeff/spacing[dir],comp,c_where);
+
+                kmap.getKeyRef().set_d(dir, old_val);
+                o1.template value_nz<Sys_eqs>(g_map,kmap,gs,spacing,cols,coeff/spacing[dir],comp,c_where);
+
+                c_where.c[dir] = old_c;
+            }
+            else
+            {
+            	char old_c = c_where.c[dir];
+            	c_where.c[dir] = -1;
+                kmap.getKeyRef().set_d(dir, old_val);
+                o1.template value_nz<Sys_eqs>(g_map,kmap,gs,spacing,cols,-coeff/spacing[dir],comp,c_where);
+
+                kmap.getKeyRef().set_d(dir, old_val + 1);
+                o1.template value_nz<Sys_eqs>(g_map,kmap,gs,spacing,cols,coeff/spacing[dir],comp,c_where);
+
+                c_where.c[dir] = old_c;
+            }
+
             kmap.getKeyRef().set_d(dir,old_val);
         }
     };
@@ -101,17 +186,18 @@ namespace FD
                                         typename Sys_eqs::stype (& spacing )[Sys_eqs::dims],
                                         unordered_map_type & cols,
                                         typename Sys_eqs::stype coeff,
-                                        unsigned int comp)
+                                        unsigned int comp,
+                                        comb<Sys_eqs::dims> & c_where)
         {   long int old_val = kmap.getKeyRef().get(dir);
-            o1.template value_nz<Sys_eqs>(g_map,kmap,gs,spacing,cols,-2.0*coeff/(spacing[dir]*spacing[dir]),comp);
+            o1.template value_nz<Sys_eqs>(g_map,kmap,gs,spacing,cols,-2.0*coeff/(spacing[dir]*spacing[dir]),comp,c_where);
 
             kmap.getKeyRef().set_d(dir, kmap.getKeyRef().get(dir) + 1);
-            o1.template value_nz<Sys_eqs>(g_map,kmap,gs,spacing,cols,coeff/(spacing[dir]*spacing[dir]),comp);
+            o1.template value_nz<Sys_eqs>(g_map,kmap,gs,spacing,cols,coeff/(spacing[dir]*spacing[dir]),comp,c_where);
             kmap.getKeyRef().set_d(dir,old_val);
 
             old_val = kmap.getKeyRef().get(dir);
             kmap.getKeyRef().set_d(dir, kmap.getKeyRef().get(dir) - 1);
-            o1.template value_nz<Sys_eqs>(g_map,kmap,gs,spacing,cols,coeff/(spacing[dir]*spacing[dir]),comp);
+            o1.template value_nz<Sys_eqs>(g_map,kmap,gs,spacing,cols,coeff/(spacing[dir]*spacing[dir]),comp,c_where);
             kmap.getKeyRef().set_d(dir,old_val);
         }
     };
@@ -174,7 +260,8 @@ namespace FD
                                         typename Sys_eqs::stype (& spacing )[Sys_eqs::dims],
                                         unordered_map_type & cols,
                                         typename Sys_eqs::stype coeff,
-                                        unsigned int comp)
+                                        unsigned int comp,
+                                        comb<Sys_eqs::dims> & c_where)
         {   long int old_val = kmap.getKeyRef().get(dir);
             kmap.getKeyRef().set_d(dir, kmap.getKeyRef().get(dir));
             o1.template value_nz<Sys_eqs>(g_map,kmap,gs,spacing,cols,-3.0*coeff/spacing[dir]/2.0,comp);
@@ -185,6 +272,33 @@ namespace FD
             kmap.getKeyRef().set_d(dir, kmap.getKeyRef().get(dir) + 2);
             o1.template value_nz<Sys_eqs>(g_map,kmap,gs,spacing,cols,-0.5*coeff/spacing[dir],comp);
             kmap.getKeyRef().set_d(dir,old_val);
+        }
+    };
+
+    template<unsigned int dir>
+    struct Derivative_impl<dir,1,2,CENTRAL_STAG_ONE_SIDE_FORWARD>
+    {
+        template<typename rtype,typename expr_type>
+        static inline rtype calculate(expr_type & o1, grid_dist_key_dx<expr_type::gtype::dims> & key, comb<expr_type::gtype::dims> & c_where)
+        {
+
+        	std::cout << __FILE__ << ":" << __LINE__ << " error we do not have implemented yet one sided staggered grid" << std::endl;
+
+            return 0.0;
+        }
+
+        template<typename Sys_eqs, typename o1_type, typename gmap_type, typename unordered_map_type>
+        inline static void calculate_nz(o1_type o1,
+                                        const gmap_type & g_map,
+                                        grid_dist_key_dx<Sys_eqs::dims> & kmap,
+                                        const grid_sm<Sys_eqs::dims,void> & gs,
+                                        typename Sys_eqs::stype (& spacing )[Sys_eqs::dims],
+                                        unordered_map_type & cols,
+                                        typename Sys_eqs::stype coeff,
+                                        unsigned int comp,
+                                        comb<Sys_eqs::dims> & c_where)
+        {
+        	std::cout << __FILE__ << ":" << __LINE__ << " error we do not have implemented yet one sided staggered grid" << std::endl;
         }
     };
 
@@ -221,23 +335,26 @@ namespace FD
                                         typename Sys_eqs::stype (& spacing )[Sys_eqs::dims],
                                         unordered_map_type & cols,
                                         typename Sys_eqs::stype coeff,
-                                        unsigned int comp)
+                                        unsigned int comp,
+                                        comb<Sys_eqs::dims> & c_where)
         {
             long int old_val = kmap.getKeyRef().get(dir);
             kmap.getKeyRef().set_d(dir, kmap.getKeyRef().get(dir));
-            o1.template value_nz<Sys_eqs>(g_map,kmap,gs,spacing,cols,2.0*coeff/(spacing[dir]*spacing[dir]),comp);
+            o1.template value_nz<Sys_eqs>(g_map,kmap,gs,spacing,cols,2.0*coeff/(spacing[dir]*spacing[dir]),comp,c_where);
             kmap.getKeyRef().set_d(dir,old_val);
             kmap.getKeyRef().set_d(dir, kmap.getKeyRef().get(dir) + 1);
-            o1.template value_nz<Sys_eqs>(g_map,kmap,gs,spacing,cols,-5.0*coeff/(spacing[dir]*spacing[dir]),comp);
+            o1.template value_nz<Sys_eqs>(g_map,kmap,gs,spacing,cols,-5.0*coeff/(spacing[dir]*spacing[dir]),comp,c_where);
             kmap.getKeyRef().set_d(dir,old_val);
             kmap.getKeyRef().set_d(dir, kmap.getKeyRef().get(dir) + 2);
-            o1.template value_nz<Sys_eqs>(g_map,kmap,gs,spacing,cols,4.0*coeff/(spacing[dir]*spacing[dir]),comp);
+            o1.template value_nz<Sys_eqs>(g_map,kmap,gs,spacing,cols,4.0*coeff/(spacing[dir]*spacing[dir]),comp,c_where);
             kmap.getKeyRef().set_d(dir,old_val);
             kmap.getKeyRef().set_d(dir, kmap.getKeyRef().get(dir) + 3);
-            o1.template value_nz<Sys_eqs>(g_map,kmap,gs,spacing,cols,-1.0*coeff/(spacing[dir]*spacing[dir]),comp);
+            o1.template value_nz<Sys_eqs>(g_map,kmap,gs,spacing,cols,-1.0*coeff/(spacing[dir]*spacing[dir]),comp,c_where);
             kmap.getKeyRef().set_d(dir,old_val);
         }
     };
+
+
 
     template<unsigned int dir>
     struct Derivative_impl<dir,1,2,CENTRAL_ONE_SIDE_BACKWARD>
@@ -269,7 +386,8 @@ namespace FD
                                         typename Sys_eqs::stype (& spacing )[Sys_eqs::dims],
                                         unordered_map_type & cols,
                                         typename Sys_eqs::stype coeff,
-                                        unsigned int comp)
+                                        unsigned int comp,
+                                        comb<Sys_eqs::dims> & c_where)
         {   long int old_val = kmap.getKeyRef().get(dir);
             kmap.getKeyRef().set_d(dir, kmap.getKeyRef().get(dir));
             o1.template value_nz<Sys_eqs>(g_map,kmap,gs,spacing,cols,3.0*coeff/spacing[dir]/2.0,comp);
@@ -280,6 +398,33 @@ namespace FD
             kmap.getKeyRef().set_d(dir, kmap.getKeyRef().get(dir) - 2);
             o1.template value_nz<Sys_eqs>(g_map,kmap,gs,spacing,cols,0.5*coeff/spacing[dir],comp);
             kmap.getKeyRef().set_d(dir,old_val);
+        }
+    };
+
+    template<unsigned int dir>
+    struct Derivative_impl<dir,1,2,CENTRAL_STAG_ONE_SIDE_BACKWARD>
+    {
+        template<typename rtype,typename expr_type>
+        static inline rtype calculate(expr_type & o1, grid_dist_key_dx<expr_type::gtype::dims> & key, comb<expr_type::gtype::dims> & c_where)
+        {
+
+        	std::cout << __FILE__ << ":" << __LINE__ << " error we do not have implemented yet one sided staggered grid" << std::endl;
+
+            return 0.0;
+        }
+
+        template<typename Sys_eqs, typename o1_type, typename gmap_type, typename unordered_map_type>
+        inline static void calculate_nz(o1_type o1,
+                                        const gmap_type & g_map,
+                                        grid_dist_key_dx<Sys_eqs::dims> & kmap,
+                                        const grid_sm<Sys_eqs::dims,void> & gs,
+                                        typename Sys_eqs::stype (& spacing )[Sys_eqs::dims],
+                                        unordered_map_type & cols,
+                                        typename Sys_eqs::stype coeff,
+                                        unsigned int comp,
+                                        comb<Sys_eqs::dims> & c_where)
+        {
+        	std::cout << __FILE__ << ":" << __LINE__ << " error we do not have implemented yet one sided staggered grid" << std::endl;
         }
     };
 
@@ -316,19 +461,20 @@ namespace FD
                                         typename Sys_eqs::stype (& spacing )[Sys_eqs::dims],
                                         unordered_map_type & cols,
                                         typename Sys_eqs::stype coeff,
-                                        unsigned int comp)
+                                        unsigned int comp,
+                                        comb<Sys_eqs::dims> & c_where)
         {               long int old_val = kmap.getKeyRef().get(dir);
             kmap.getKeyRef().set_d(dir, kmap.getKeyRef().get(dir));
-            o1.template value_nz<Sys_eqs>(g_map,kmap,gs,spacing,cols,2.0*coeff/(spacing[dir]*spacing[dir]),comp);
+            o1.template value_nz<Sys_eqs>(g_map,kmap,gs,spacing,cols,2.0*coeff/(spacing[dir]*spacing[dir]),comp,c_where);
             kmap.getKeyRef().set_d(dir,old_val);
             kmap.getKeyRef().set_d(dir, kmap.getKeyRef().get(dir) - 1);
-            o1.template value_nz<Sys_eqs>(g_map,kmap,gs,spacing,cols,-5.0*coeff/(spacing[dir]*spacing[dir]),comp);
+            o1.template value_nz<Sys_eqs>(g_map,kmap,gs,spacing,cols,-5.0*coeff/(spacing[dir]*spacing[dir]),comp,c_where);
             kmap.getKeyRef().set_d(dir,old_val);
             kmap.getKeyRef().set_d(dir, kmap.getKeyRef().get(dir) - 2);
-            o1.template value_nz<Sys_eqs>(g_map,kmap,gs,spacing,cols,4.0*coeff/(spacing[dir]*spacing[dir]),comp);
+            o1.template value_nz<Sys_eqs>(g_map,kmap,gs,spacing,cols,4.0*coeff/(spacing[dir]*spacing[dir]),comp,c_where);
             kmap.getKeyRef().set_d(dir,old_val);
             kmap.getKeyRef().set_d(dir, kmap.getKeyRef().get(dir) - 3);
-            o1.template value_nz<Sys_eqs>(g_map,kmap,gs,spacing,cols,-1.0*coeff/(spacing[dir]*spacing[dir]),comp);
+            o1.template value_nz<Sys_eqs>(g_map,kmap,gs,spacing,cols,-1.0*coeff/(spacing[dir]*spacing[dir]),comp,c_where);
             kmap.getKeyRef().set_d(dir,old_val);
         }
     };
@@ -382,7 +528,7 @@ namespace FD
 
             one_side_direction os = use_one_side(getGrid(),dir,key);
 
-            if (os == one_side_direction::OS_CENTRAL)
+            if (os == one_side_direction::OS_CENTRAL || getGrid().is_staggered() == true)
             {
                 val = Derivative_impl<dir,ord_d,ord,impl>::template calculate<r_type>(o1,key,c_where);
             }
@@ -398,6 +544,7 @@ namespace FD
             return val;
         }
 
+
         template<typename Sys_eqs, typename gmap_type, typename unordered_map_type>
         inline void value_nz(const gmap_type & g_map,
                              grid_dist_key_dx<Sys_eqs::dims> & kmap,
@@ -405,29 +552,23 @@ namespace FD
                              typename Sys_eqs::stype (& spacing )[Sys_eqs::dims],
                              unordered_map_type & cols,
                              typename Sys_eqs::stype coeff,
-                             unsigned int comp) const
+                             unsigned int comp,
+                             comb<Sys_eqs::dims> & c_where) const
         {
-
-            /*    if (is_grid_staggered<Sys_eqs>::value())
-                {
-                    D<d,arg,Sys_eqs,BACKWARD>::value(g_map,kmap,gs,spacing,cols,coeff);
-                    return;
-                }*/
-
             //o1.template value_nz<Sys_eqs>(g_map,kmap,gs,spacing,cols,coeff,comp);
             long int old_val = kmap.getKeyRef().get(dir);
             one_side_direction os = use_one_side(getGrid(),dir,kmap);
             if (os == one_side_direction::OS_CENTRAL)
             {
-                Derivative_impl<dir,ord_d,ord,impl>::template calculate_nz<Sys_eqs>(o1,g_map,kmap,gs,spacing,cols,coeff,comp);
+                Derivative_impl<dir,ord_d,ord,impl>::template calculate_nz<Sys_eqs>(o1,g_map,kmap,gs,spacing,cols,coeff,comp,c_where);
             }
             else if (os == one_side_direction::OS_FORWARD)
             {
-                Derivative_impl<dir,ord_d,ord,impl+1>::template calculate_nz<Sys_eqs>(o1,g_map,kmap,gs,spacing,cols,coeff,comp);
+                Derivative_impl<dir,ord_d,ord,impl+1>::template calculate_nz<Sys_eqs>(o1,g_map,kmap,gs,spacing,cols,coeff,comp,c_where);
             }
             else
             {
-                Derivative_impl<dir,ord_d,ord,impl+2>::template calculate_nz<Sys_eqs>(o1,g_map,kmap,gs,spacing,cols,coeff,comp);
+                Derivative_impl<dir,ord_d,ord,impl+2>::template calculate_nz<Sys_eqs>(o1,g_map,kmap,gs,spacing,cols,coeff,comp,c_where);
             }
 
             // cols[g_map.template getProp<0>(kmap)*Sys_eqs::nvar + FD::var_id + comp] += coeff;
