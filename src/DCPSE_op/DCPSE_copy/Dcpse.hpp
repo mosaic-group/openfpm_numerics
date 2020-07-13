@@ -408,6 +408,8 @@ public:
         localEps.clear();
         localEps.resize(particles.size_local_orig());
         localCoefficients.clear();
+        localCoefficients.resize(particles.size_local_orig());
+
         SupportBuilder<vector_type> supportBuilder(particles, differentialSignature, rCut);
         unsigned int requiredSupportSize = monomialBasis.size() * supportSizeFactor;
 
@@ -416,9 +418,10 @@ public:
             // Get the points in the support of the DCPSE kernel and store the support for reuse
             //Support<vector_type> support = supportBuilder.getSupport(it, requiredSupportSize,opt);
             Support support = supportBuilder.getSupport(it, requiredSupportSize,opt);
-            /*Support<vector_type> support = localSupports[p.getKey()];
-            support.RecomputeOffsets();*/
             EMatrix<T, Eigen::Dynamic, Eigen::Dynamic> V(support.size(), monomialBasis.size());
+
+            auto key_o = particles.getOriginKey(it.get());
+
             // Vandermonde matrix computation
             Vandermonde<dim, T, EMatrix<T, Eigen::Dynamic, Eigen::Dynamic>>
                     vandermonde(support, monomialBasis,particles);
@@ -426,9 +429,8 @@ public:
 
             T eps = vandermonde.getEps();
 
-            auto key_o = particles.getOriginKey(it.get());
             localSupports[key_o.getKey()] = support;
-            localEps.push_back(eps);
+            localEps[key_o.getKey()] = eps;
             // Compute the diagonal matrix E
             DcpseDiagonalScalingMatrix<dim> diagonalScalingMatrix(monomialBasis);
             EMatrix<T, Eigen::Dynamic, Eigen::Dynamic> E(support.size(), support.size());
@@ -437,6 +439,7 @@ public:
             EMatrix<T, Eigen::Dynamic, Eigen::Dynamic> B = E * V;
             // Compute matrix A
             EMatrix<T, Eigen::Dynamic, Eigen::Dynamic> A = B.transpose() * B;
+
             // Compute RHS vector b
             DcpseRhs<dim> rhs(monomialBasis, differentialSignature);
             EMatrix<T, Eigen::Dynamic, 1> b(monomialBasis.size(), 1);
@@ -446,7 +449,7 @@ public:
             // ...solve the linear system...
             a = A.colPivHouseholderQr().solve(b);
             // ...and store the solution for later reuse
-            localCoefficients.push_back(a);
+            localCoefficients[key_o.getKey()] = a;
             //
             ++it;
         }
