@@ -516,6 +516,17 @@ private:
 	{
 		openfpm::vector<triplet> & trpl = A.getMatrixTriplets();
 
+		grid_key_dx<Sys_eqs::dims> shift;
+		shift.zero();
+		for (int i = 0 ; i < Sys_eqs::dims ; i++)
+		{
+			if (c_where[i] == 1)
+			{
+				shift.set_d(i,1);
+				c_where.c[i] = -1;
+			}
+		}
+
 		auto it = it_d;
 		grid_sm<Sys_eqs::dims,void> gs = g_map.getGridInfoVoid();
 
@@ -528,7 +539,9 @@ private:
 			auto key = it.get();
 
 			// Calculate the non-zero colums
+			key.getKeyRef() += shift;
 			op.template value_nz<Sys_eqs>(g_map,key,gs,spacing,cols,1.0,0,c_where);
+			key.getKeyRef() -= shift;
 
 			// indicate if the diagonal has been set
 			bool is_diag = false;
@@ -658,17 +671,27 @@ private:
         auto & grid = exp.getGrid();
 
         auto it = grid.getDomainIterator();
+        grid_key_dx<Sys_eqs::dims> start;
+        grid_key_dx<Sys_eqs::dims> stop;
 
-        size_t pn = 0;
+        for (int i = 0 ; i < Sys_eqs::dims ; i++)
+        {
+        	start.set_d(i,0);
+        	stop.set_d(i,grid.size(i)-1);
+        }
+        auto it_map = g_map.getSubDomainIterator(start,stop);
+
         while (it.isNext())
         {
             auto p = it.get();
+            auto gp = it_map.get();
 
-            grid.template getProp<expr_type::prop>(p) = x(pn*Sys_eqs::nvar + comp + s_pnt*Sys_eqs::nvar);
+            size_t pn = g_map.template get<0>(gp);
+            /*grid.template getProp<expr_type::prop>(p)*/exp.value_ref(p,c_where) = x(pn*Sys_eqs::nvar + comp + s_pnt*Sys_eqs::nvar);
 
 //            exp.value(p,c_where) = x(pn*Sys_eqs::nvar + comp + s_pnt*Sys_eqs::nvar);
             ++it;
-            ++pn;
+            ++it_map;
         }
     }
 

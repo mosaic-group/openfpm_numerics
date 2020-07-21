@@ -188,7 +188,8 @@ namespace FD
                                         typename Sys_eqs::stype coeff,
                                         unsigned int comp,
                                         comb<Sys_eqs::dims> & c_where)
-        {   long int old_val = kmap.getKeyRef().get(dir);
+        {
+        	long int old_val = kmap.getKeyRef().get(dir);
             o1.template value_nz<Sys_eqs>(g_map,kmap,gs,spacing,cols,-2.0*coeff/(spacing[dir]*spacing[dir]),comp,c_where);
 
             kmap.getKeyRef().set_d(dir, kmap.getKeyRef().get(dir) + 1);
@@ -558,7 +559,7 @@ namespace FD
             //o1.template value_nz<Sys_eqs>(g_map,kmap,gs,spacing,cols,coeff,comp);
             long int old_val = kmap.getKeyRef().get(dir);
             one_side_direction os = use_one_side(getGrid(),dir,kmap);
-            if (os == one_side_direction::OS_CENTRAL)
+            if (os == one_side_direction::OS_CENTRAL || getGrid().is_staggered() == true)
             {
                 Derivative_impl<dir,ord_d,ord,impl>::template calculate_nz<Sys_eqs>(o1,g_map,kmap,gs,spacing,cols,coeff,comp,c_where);
             }

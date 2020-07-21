@@ -292,7 +292,7 @@ f_x = f_y = f_z = 3
     	constexpr int pressure = 1;
 
     	constexpr int x = 0;
-    	constexpr int y = 0;
+    	constexpr int y = 1;
 
     	// Domain, a rectangle
     	Box<2,float> domain({0.0,0.0},{3.0,1.0});
@@ -314,8 +314,14 @@ f_x = f_y = f_z = 3
 
     	// Distributed grid that store the solution
     	staggered_grid_dist<2,float,aggregate<Point<2,float>,float>> g_dist(szu,domain,g);
+    	grid_dist_id<2,float,aggregate<Point<2,float>,float>> g_dist_normal(g_dist.getDecomposition(),szu,g);
+
+    	openfpm::vector<comb<2>> cmb_v;
+    	cmb_v.add({0,-1});
+    	cmb_v.add({-1,0});
 
     	g_dist.setDefaultStagPosition();
+    	g_dist.setStagPosition<0>(cmb_v);
 
     	// It is the maximum extension of the stencil
     	Ghost<2,long int> stencil_max(1);
@@ -347,9 +353,11 @@ f_x = f_y = f_z = 3
         vy.setId(1);
 
         comb<2> center_cell({0,0});
-        comb<2> left_cell({-1,0});
-        comb<2> bottom_cell({0,-1});
-        comb<2> corner_cell({-1,-1});
+        comb<2> left_cell({0,-1});
+        comb<2> bottom_cell({-1,0});
+        comb<2> corner_right({-1,1});
+        comb<2> corner_dw({-1,-1});
+        comb<2> corner_up({1,-1});
 
     	// Here we impose the equation, we start from the incompressibility Eq imposed in the bulk with the
     	// exception of the first point {0,0} and than we set P = 0 in {0,0}, why we are doing this is again
@@ -360,23 +368,23 @@ f_x = f_y = f_z = 3
     	fd.impose(P, {0,0},{0,0},0.0,ic);
 
     	// Here we impose the Eq1 and Eq2
-    	fd.impose(Stokes_vx, {1,0},{sz[0]-2,sz[1]-2},0.0,vx);
-    	fd.impose(Stokes_vy, {0,1},{sz[0]-2,sz[1]-2},0.0,vy);
+    	fd.impose(Stokes_vx, {1,0},{sz[0]-2,sz[1]-2},0.0,vx,left_cell);
+    	fd.impose(Stokes_vy, {0,1},{sz[0]-2,sz[1]-2},0.0,vy,bottom_cell);
 
     	// v_x and v_y
     	// Imposing B1
-    	fd.impose(v[x], {0,0},{0,sz[1]-2},0.0,vx);
-    	fd.impose(v[y], {-1,0},{-1,sz[1]-1},0.0,vy,corner_cell);
+    	fd.impose(v[x], {0,0},{0,sz[1]-2},0.0,vx,left_cell);
+    	fd.impose(v[y], {-1,0},{-1,sz[1]-1},0.0,vy,corner_right);
     	// Imposing B2
-    	fd.impose(v[x],{sz[0]-1,0},{sz[0]-1,sz[1]-2},0.0,vx);
-    	fd.impose(v[y],{sz[0]-1,0},{sz[0]-1,sz[1]-1},1.0,vy,corner_cell);
+    	fd.impose(v[x],{sz[0]-1,0},{sz[0]-1,sz[1]-2},0.0,vx,left_cell);
+    	fd.impose(v[y],{sz[0]-1,0},{sz[0]-1,sz[1]-1},1.0,vy,corner_dw);
 
     	// Imposing B3
-    	fd.impose(v[x], {0,-1},{sz[0]-1,-1},0.0,vx,corner_cell);
-    	fd.impose(v[y], {0,0},{sz[0]-2,0},0.0,vy);
+    	fd.impose(v[x], {0,-1},{sz[0]-1,-1},0.0,vx,corner_up);
+    	fd.impose(v[y], {0,0},{sz[0]-2,0},0.0,vy,bottom_cell);
     	// Imposing B4
-    	fd.impose(v[x],{0,sz[1]-1},{sz[0]-1,sz[1]-1},0.0,vx,corner_cell);
-    	fd.impose(v[y],{0,sz[1]-1},{sz[0]-2,sz[1]-1},0.0,vy);
+    	fd.impose(v[x],{0,sz[1]-1},{sz[0]-1,sz[1]-1},0.0,vx,corner_dw);
+    	fd.impose(v[y],{0,sz[1]-1},{sz[0]-2,sz[1]-1},0.0,vy,bottom_cell);
 
     	// When we pad the grid, there are points of the grid that are not
     	// touched by the previous condition. Mathematically this lead
@@ -391,14 +399,32 @@ f_x = f_y = f_z = 3
     	fd.impose(P, {sz[0]-1,0},{sz[0]-1,sz[1]-2},0.0,ic);
 
     	// Impose v_x Padding Impose v_y padding
-    	fd.impose(v[x], {-1,-1},{-1,sz[1]-1},0.0,vx);
-    	fd.impose(v[y], {-1,-1},{sz[0]-1,-1},0.0,vy);
+    	fd.impose(v[x], {-1,-1},{-1,sz[1]-1},0.0,vx,left_cell);
+    	fd.impose(v[y], {-1,-1},{sz[0]-1,-1},0.0,vy,bottom_cell);
 
     	fd.solve(v[x],v[y],P);
+
+    	auto it = g_dist_normal.getDomainIterator();
+
+    	while (it.isNext())
+    	{
+    		auto key = it.get();
+
+    		g_dist_normal.template getProp<0>(key)[0] = g_dist.template getProp<0>(key)[0];
+    		g_dist_normal.template getProp<0>(key)[1] = g_dist.template getProp<0>(key)[1];
+
+    		g_dist_normal.template getProp<1>(key) = g_dist.template getProp<1>(key);
+
+    		++it;
+    	}
+
+    	g_dist_normal.write("out_test");
 
     	//! [Copy the solution to grid]
 
     	//g_dist.write("out_test");
+
+
     }
 
 

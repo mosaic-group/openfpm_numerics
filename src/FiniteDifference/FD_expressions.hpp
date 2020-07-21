@@ -102,6 +102,18 @@ namespace FD
 			return g.template getProp<prp>(k);
 		}
 
+		/*! \brief Evaluate the expression
+		 *
+		 * \param k where to evaluate the expression
+		 *
+		 * \return the result of the expression
+		 *
+		 */
+		inline auto value_ref(const grid_dist_key_dx<grid::dims> & k, comb<grid::dims> & c_where) const -> decltype(g.template getProp<prp>(k))
+		{
+			return g.template getProp<prp>(k);
+		}
+
 		/*! \brief Fill the grid property with the evaluated expression
 		 *
 		 * \param v_exp expression to evaluate
@@ -275,6 +287,18 @@ namespace FD
 		 * \return the result of the expression
 		 *
 		 */
+		inline auto value_ref(const grid_dist_key_dx<grid::dims> & k, comb<grid::dims> & c_where) const -> decltype(g.template getProp<prp>(k))
+		{
+			return g.template getProp<prp>(k);
+		}
+
+		/*! \brief Evaluate the expression
+		 *
+		 * \param k where to evaluate the expression
+		 *
+		 * \return the result of the expression
+		 *
+		 */
 		inline auto value(grid_dist_key_dx<grid::dims> & k, comb<grid::dims> & c_where) const -> typename std::remove_reference<decltype(g.template getProp<prp>(k))>::type
 		{
 			comb<grid::dims> c_o1 = g. getStagPositions()[prp].get(0);
@@ -396,7 +420,37 @@ namespace FD
 				 unsigned int comp,
 				 comb<Sys_eqs::dims> & c_where) const
 		{
-			cols[g_map.template getProp<0>(key)*Sys_eqs::nvar + var_id + comp] += coeff;
+			comb<grid::dims> c_o1 = g.getStagPositions()[prp].get(comp);
+
+            // x0, dx are defined in proper dir є(x, y, z)
+
+            int c = 0;
+        	for (int i = 0 ; i < grid::dims ; i++)
+        	{
+        		if (c_where[i] != c_o1[i])
+        		{c += 2;}
+        	}
+
+        	if (c != 0)
+        	{
+            	for (int i = 0 ; i < grid::dims ; i++)
+            	{
+            		if (c_where[i] != c_o1[i])
+            		{
+            			int sign = (c_where[i] > c_o1[i])?1:-1;
+
+            			cols[g_map.template getProp<0>(key)*Sys_eqs::nvar + var_id + comp] += coeff / c;
+
+            			long int x0 = key.getKeyRef().get(i);
+
+            			key.getKeyRef().set_d(i, x0 + sign);
+            			cols[g_map.template getProp<0>(key)*Sys_eqs::nvar + var_id + comp] += coeff / c;
+            			key.getKeyRef().set_d(i, x0);
+            		}
+            	}
+        	}
+        	else
+        	{cols[g_map.template getProp<0>(key)*Sys_eqs::nvar + var_id + comp] += coeff;}
 		}
 
 	    inline grid_dist_expression_op<grid_dist_expression<prp,grid,STAG_EXPRESSION>,boost::mpl::int_<1>,g_comp> operator[](int comp)
@@ -701,7 +755,7 @@ namespace FD
                              comb<Sys_eqs::dims> & c_where) const
         {
             o1.template value_nz<Sys_eqs>(g_map,key,gs,spacing,cols,coeff,comp,c_where);
-            o2.template value_nz<Sys_eqs>(g_map,key,gs,spacing,cols,coeff,comp,c_where);
+            o2.template value_nz<Sys_eqs>(g_map,key,gs,spacing,cols,-coeff,comp,c_where);
         }
 	};
 
@@ -813,7 +867,13 @@ namespace FD
 		template<typename exp_type>
 		inline static auto get(exp_type & o1, grid_dist_key_dx<exp_type::gtype::dims> & key, comb<exp_type::gtype::dims> & c_where) -> decltype(o1.value(key,c_where))
 		{
-			return o1.value(key);
+			return o1.value(key,c_where);
+		}
+
+		template<typename exp_type>
+		inline static auto get_ref(exp_type & o1, grid_dist_key_dx<exp_type::gtype::dims> & key, comb<exp_type::gtype::dims> & c_where) -> decltype(o1.value_ref(key,c_where))
+		{
+			return o1.value_ref(key,c_where);
 		}
 
 		template<unsigned int prop, typename exp_type, typename grid_type>
@@ -856,6 +916,12 @@ namespace FD
 		static auto get(exp_type & o1, grid_dist_key_dx<exp_type::gtype::dims> & key, comb<exp_type::gtype::dims> & c_where, const int (& comp)[1]) -> decltype(o1.value(key,c_where)[0])
 		{
 			return o1.value(key,c_where)[comp[0]];
+		}
+
+		template<typename exp_type>
+		static auto get_ref(exp_type & o1, grid_dist_key_dx<exp_type::gtype::dims> & key, comb<exp_type::gtype::dims> & c_where, const int (& comp)[1]) -> decltype(o1.value_ref(key,c_where)[0])
+		{
+			return o1.value_ref(key,c_where)[comp[0]];
 		}
 
 		template<unsigned int prop,typename exp_type, typename grid_type>
@@ -978,6 +1044,21 @@ namespace FD
 		inline auto value(grid_dist_key_dx<gtype::dims> & key, comb<gtype::dims> & c_where) const -> decltype(get_grid_dist_expression_op<n,n == rank_gen<property_act>::type::value>::get(o1,key,c_where,comp))
 		{
 			return get_grid_dist_expression_op<n,n == rank_gen<property_act>::type::value>::get(o1,key,c_where,comp);
+		}
+
+		/*! \brief Return the result of the expression
+		 *
+		 * \note this function must be deactivated on transitional objects. Suppose we are slicing a tensor of rank 2
+		 *            an object of rank 1 is implicitly created for such object we have to deactivate this function
+		 *            because ill-formed
+		 *
+		 * \param key point where to evaluate
+		 *
+		 *
+		 */
+		inline auto value_ref(grid_dist_key_dx<gtype::dims> & key, comb<gtype::dims> & c_where) const -> decltype(get_grid_dist_expression_op<n,n == rank_gen<property_act>::type::value>::get(o1,key,c_where,comp))
+		{
+			return get_grid_dist_expression_op<n,n == rank_gen<property_act>::type::value>::get_ref(o1,key,c_where,comp);
 		}
 
 		/*! \brief Return the result of the expression
