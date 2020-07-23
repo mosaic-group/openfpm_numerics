@@ -423,9 +423,7 @@ f_x = f_y = f_z = 3
 
     	//! [Copy the solution to grid]
 
-    	//g_dist.write("out_test");
-
-
+    	//g_dist.write("out_test")
     }
 
 
