@@ -97,7 +97,7 @@ namespace FD
 		 * \return the result of the expression
 		 *
 		 */
-		inline auto value(const grid_dist_key_dx<grid::dims> & k, comb<grid::dims> & c_where) const -> decltype(g.template getProp<prp>(k))
+		inline auto value(const grid_dist_key_dx<grid::dims> & k, comb<grid::dims> & c_where, int comp = 0) const -> decltype(g.template getProp<prp>(k))
 		{
 			return g.template getProp<prp>(k);
 		}
@@ -299,9 +299,9 @@ namespace FD
 		 * \return the result of the expression
 		 *
 		 */
-		inline auto value(grid_dist_key_dx<grid::dims> & k, comb<grid::dims> & c_where) const -> typename std::remove_reference<decltype(g.template getProp<prp>(k))>::type
+		inline auto value(grid_dist_key_dx<grid::dims> & k, comb<grid::dims> & c_where, int comp = 0) const -> typename std::remove_reference<decltype(g.template getProp<prp>(k))>::type
 		{
-			comb<grid::dims> c_o1 = g. getStagPositions()[prp].get(0);
+			comb<grid::dims> c_o1 = g. getStagPositions()[prp].get(comp);
 
             // x0, dx are defined in proper dir є(x, y, z)
 
@@ -915,7 +915,7 @@ namespace FD
 		template<typename exp_type>
 		static auto get(exp_type & o1, grid_dist_key_dx<exp_type::gtype::dims> & key, comb<exp_type::gtype::dims> & c_where, const int (& comp)[1]) -> decltype(o1.value(key,c_where)[0])
 		{
-			return o1.value(key,c_where)[comp[0]];
+			return o1.value(key,c_where,comp[0])[comp[0]];
 		}
 
 		template<typename exp_type>

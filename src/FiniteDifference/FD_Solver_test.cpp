@@ -404,16 +404,17 @@ f_x = f_y = f_z = 3
 
     	fd.solve(v[x],v[y],P);
 
+
     	auto it = g_dist_normal.getDomainIterator();
 
     	while (it.isNext())
     	{
     		auto key = it.get();
 
-    		g_dist_normal.template getProp<0>(key)[0] = g_dist.template getProp<0>(key)[0];
-    		g_dist_normal.template getProp<0>(key)[1] = g_dist.template getProp<0>(key)[1];
+    		g_dist_normal.template getProp<0>(key)[0] = v[x].value(key,left_cell);
+    		g_dist_normal.template getProp<0>(key)[1] = v[y].value(key,bottom_cell);
 
-    		g_dist_normal.template getProp<1>(key) = g_dist.template getProp<1>(key);
+    		g_dist_normal.template getProp<1>(key) = P.value(key,center_cell);
 
     		++it;
     	}

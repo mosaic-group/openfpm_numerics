@@ -527,7 +527,7 @@ private:
 			}
 		}
 
-		auto it = it_d;
+		iterator it(it_d,false);
 		grid_sm<Sys_eqs::dims,void> gs = g_map.getGridInfoVoid();
 
 		std::unordered_map<long int,typename Sys_eqs::stype> cols;
@@ -687,9 +687,8 @@ private:
             auto gp = it_map.get();
 
             size_t pn = g_map.template get<0>(gp);
-            /*grid.template getProp<expr_type::prop>(p)*/exp.value_ref(p,c_where) = x(pn*Sys_eqs::nvar + comp + s_pnt*Sys_eqs::nvar);
+            exp.value_ref(p,c_where) = x(pn*Sys_eqs::nvar + comp + s_pnt*Sys_eqs::nvar);
 
-//            exp.value(p,c_where) = x(pn*Sys_eqs::nvar + comp + s_pnt*Sys_eqs::nvar);
             ++it;
             ++it_map;
         }
