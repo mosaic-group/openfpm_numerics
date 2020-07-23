@@ -18,7 +18,6 @@ set(LIBHILBERT_ROOT CACHE PATH "LibHilbert root path")
 set(SUITESPARSE_ROOT CACHE PATH "The suitesparse root path")
 set(TINYOBJLOADER_ROOT CACHE PATH "TinyObjLoader library path")
 set(SE_CLASS1 CACHE BOOL "Activate compilation with SE_CLASS1")
-set(SE_CLASS2 CACHE BOOL "Activate compilation with SE_CLASS2")
 set(SE_CLASS3 CACHE BOOL "Activate compilation with SE_CLASS3")
 set(PROFILE_WITH_SCOREP CACHE BOOL "Enable profiling with scorep")
 set(ENV{PETSC_DIR} ${PETSC_ROOT})
@@ -90,10 +89,6 @@ endif()
 
 if(SE_CLASS1)
 	set(DEFINE_SE_CLASS1 "#define SE_CLASS1")
-endif()
-
-if(SE_CLASS2)
-	set(DEFINE_SE_CLASS2 "#define SE_CLASS2")
 endif()
 
 if(SE_CLASS3)
