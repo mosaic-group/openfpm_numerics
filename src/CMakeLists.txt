@@ -9,7 +9,8 @@ if (CUDA_FOUND)
 endif()
 
 add_executable(numerics ${OPENFPM_INIT_FILE} ${CUDA_SOURCES}
-	                                        DCPSE_op/DCPSE_op_subset_test.cpp
+		DCPSE_op/3d.cpp
+		DCPSE_op/DCPSE_op_subset_test.cpp
 						FiniteDifference/FD_Solver_test.cpp 
 						FiniteDifference/FD_op_Tests.cpp 
 						DCPSE_op/DCPSE_op_test3d.cpp 

@@ -554,7 +554,6 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
             errctr = 0;
             P_bulk = 0;
             while (V_err >= V_err_eps && n <= nmax) {
-                Particles.write_frame("P_debug", n);
                 RHS_bulk[x] = dV[x] + Bulk_Dx(P);
                 RHS_bulk[y] = dV[y] + Bulk_Dy(P);
                 Particles.ghost_get<10>(SKIP_LABELLING);
@@ -613,7 +612,6 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
                     }
                 }
                 n++;
-                Particles.write_frame("V_debug", n);
                 if (v_cl.rank() == 0) {
                     std::cout << "Rel l2 cgs err in V = " << V_err << " at " << n << std::endl;
                 }
