@@ -339,126 +339,129 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests3)
             solverPetsc.setPreconditioner(PCJACOBI);
             Particles.ghost_get<Polarization>(SKIP_LABELLING);
 
-            auto divP = (Dx(Pol[x]) + Dy(Pol[y]) + Dz(Pol[z]));
-            auto PcurlP = (Pol[x] * (Dy(Pol[z]) - Dz(Pol[y])) + Pol[y] * (Dz(Pol[x]) - Dx(Pol[z])) +
-                           Pol[z] * (Dx(Pol[y]) - Dy(Pol[x])));
-            auto temp1 = Pol[x] * (Dz(Pol[x]) - Dx(Pol[z])) + Pol[y] * (Dz(Pol[y]) - Dy(Pol[z]));
-            auto temp2 = Pol[y] * (Dx(Pol[y]) - Dy(Pol[x])) + Pol[z] * (Dx(Pol[z]) - Dz(Pol[x]));
-            auto temp3 = Pol[x] * (Dy(Pol[x]) - Dx(Pol[y])) + Pol[z] * (Dy(Pol[z]) - Dz(Pol[y]));
-            auto PcrosscurlP_sq = temp1 * temp1 + temp2 * temp2 + temp3 * temp3;
-            //auto temp4= Dx(Pol[x])*Dx(Pol[x]) + Dx(Pol[y])*Dx(Pol[y]) + Dx(Pol[z])*Dx(Pol[z]) - 2*Dx(Pol[y])*Dy(Pol[x]) + Dy(Pol[x])*Dy(Pol[x]) + 2*Dx(Pol[x])*Dy(Pol[y]) + Dy(Pol[y])*Dy(Pol[y]) + Dy(Pol[z])*Dy(Pol[z]) - 2*Dx(Pol[z])*Dz(Pol[x]) + Dz(Pol[x])*Dz(Pol[x]) - 2*Dy(Pol[z])*Dz(Pol[y]) + Dz(Pol[y])*Dz(Pol[y]) + 2*Dx(Pol[x])*Dz(Pol[z]) + 2*Dy(Pol[y])*Dz(Pol[z]) + Dz(Pol[z])*Dz(Pol[z]) + (Dxx(Pol[x]) + Dyy(Pol[x]) + Dzz(Pol[x]))*Pol[x] + (Dxx(Pol[y]) + Dyy(Pol[y]) + Dzz(Pol[y]))*Pol[y] + (Dxx(Pol[z]) + Dyy(Pol[z]) + Dzz(Pol[z]))*Pol[z];
-            //f1[x]=2*(divP*divP+PcurlP*PcurlP+PcrosscurlP_sq-temp4;
-            q[x][x] = Pol[x] * Pol[x];// - 1/3;
-            q[y][y] = Pol[y] * Pol[y];// - 1/3;
-            q[z][z] = Pol[z] * Pol[z];// - 1/3;
-            q[x][y] = Pol[x] * Pol[y];
-            q[y][z] = Pol[y] * Pol[z];
-            q[x][z] = Pol[x] * Pol[z];
-            //q[y][x] = q[x][y];
-            //q[z][y] = q[y][z];
-            //q[z][x] = q[x][z];
+            auto px=Pol[x];
+            auto py=Pol[y];
+            auto pz=Pol[z];
 
-            f1 = 2 * (Dx(Pol[x]) * Dx(Pol[x]) + Dy(Pol[y]) * Dy(Pol[y]) + Dz(Pol[z]) * Dz(Pol[z]) +
-                      Dx(Pol[y]) * Dx(Pol[y]) + Dx(Pol[z]) * Dx(Pol[z]) + Dy(Pol[x]) * Dy(Pol[x]) +
-                      Dy(Pol[z]) * Dy(Pol[z]) + Dz(Pol[x]) * Dz(Pol[x]) + Dz(Pol[y]) * Dz(Pol[y]));
-            f2 = divP * divP + PcrosscurlP_sq;
-            f4 = -PcurlP;
-            f6 = 2 * PcrosscurlP_sq - 1 / 3 * f1[x];
-            FranckEnergyDensity = (-Ks + 3.0 * Kt + Kb) / 12.0 * f1 + (Ks - Kt) / 2.0 * f2 + (Kb - Ks) / 4.0 * f6;
+            auto dxpx=Dx(Pol[x]);
+            auto dxpy=Dx(Pol[y]);
+            auto dxpz=Dx(Pol[z]);
+            auto dypx=Dy(Pol[x]);
+            auto dypy=Dy(Pol[y]);
+            auto dypz=Dy(Pol[z]);
+            auto dzpx=Dz(Pol[x]);
+            auto dzpy=Dz(Pol[y]);
+            auto dzpz=Dz(Pol[z]);
+            auto dxxpx=Dxx(Pol[x]);
+            auto dxxpy=Dxx(Pol[y]);
+            auto dxxpz=Dxx(Pol[z]);
+            auto dyypx=Dyy(Pol[x]);
+            auto dyypy=Dyy(Pol[y]);
+            auto dyypz=Dyy(Pol[z]);
+            auto dzzpx=Dzz(Pol[x]);
+            auto dzzpy=Dzz(Pol[y]);
+            auto dzzpz=Dzz(Pol[z]);
+            auto dxypx=Dxy(Pol[x]);
+            auto dxypy=Dxy(Pol[y]);
+            auto dxypz=Dxy(Pol[z]);
+            auto dxzpx=Dxz(Pol[x]);
+            auto dxzpy=Dxz(Pol[y]);
+            auto dxzpz=Dxz(Pol[z]);
+            auto dyzpx=Dyz(Pol[x]);
+            auto dyzpy=Dyz(Pol[y]);
+            auto dyzpz=Dyz(Pol[z]);
 
-            auto njdllqjx = Pol[x] * (Dxx(q[x][x]) + Dyy(q[x][x]) + Dzz(q[x][x])) +
-                             Pol[y] * (Dxx(q[y][x]) + Dyy(q[y][x]) + Dzz(q[y][x])) +
-                             Pol[z] * (Dxx(q[z][x]) + Dyy(q[z][x]) + Dzz(q[z][x]));
-            auto njdllqjy = Pol[x] * (Dxx(q[x][y]) + Dyy(q[x][y]) + Dzz(q[x][y])) +
-                             Pol[y] * (Dxx(q[y][y]) + Dyy(q[y][y]) + Dzz(q[y][y])) +
-                             Pol[z] * (Dxx(q[z][y]) + Dyy(q[z][y]) + Dzz(q[z][y]));
-            auto njdllqjz = Pol[x] * (Dxx(q[x][z]) + Dyy(q[x][z]) + Dzz(q[x][z])) +
-                             Pol[y] * (Dxx(q[y][z]) + Dyy(q[y][z]) + Dzz(q[y][z])) +
-                             Pol[z] * (Dxx(q[z][z]) + Dyy(q[z][z]) + Dzz(q[z][z]));
+            FranckEnergyDensity = 0.5*Ks*(dxpx + dypy + dzpz)*(dxpx + dypy + dzpz) +
+                                  0.5*Kt*((dypz - dzpy)*px + (-dxpz + dzpx)*py + (dxpy - dypx)*pz)*((dypz - dzpy)*px + (-dxpz + dzpx)*py + (dxpy - dypx)*pz) +
+                                  0.5*Kb*((-dxpz*px + dzpx*px - dypz*py + dzpy*py)*(-dxpz*px + dzpx*px - dypz*py + dzpy*py) +
+                                        (dxpy*py - dypx*py + dxpz*pz - dzpx*pz)*(dxpy*py - dypx*py + dxpz*pz - dzpx*pz) +
+                                        (-dxpy*px + dypx*px + dypz*pz - dzpy*pz)*(-dxpy*px + dypx*px + dypz*pz - dzpy*pz));
 
-       /*     Df1[x] = -4 * njdllqjx;
-            Df1[y] = -4 * njdllqjy;
-            Df1[z] = -4 * njdllqjz;
+            h[x]=Ks*(dxxpx + dxypy + dxzpz) +
+                    Kb*((-dxypy - dxzpz + dyypx + dzzpx)*px*px + (-dxypy + dyypx)*py*py + (dypy*dzpx + dxpy*(dypz - 2*dzpy) + dypx*dzpy + dxpz*(-dypy - 2*dzpz) + 2*dzpx*dzpz)*pz + (-dxzpz + dzzpx)*pz*pz +
+                    py*(dypz*dzpx + dxpz*(-2*dypz + dzpy) + dxpy*(-2*dypy - dzpz) + dypx*(2*dypy + dzpz) + (-dxypz - dxzpy + 2*dyzpx)*pz) +
+                    px*(-dxpy*dxpy - dxpz*dxpz + dypx*dypx + dypz*dypz + dzpx*dzpx - 2*dypz*dzpy + dzpy*dzpy + (-dyzpz + dzzpy)*py + (dyypz - dyzpy)*pz)) +
+                    Kt*((-dxzpz + dzzpx)*py*py + (dxpz*dypy -  dypy*dzpx + dypx*(2*dypz -  dzpy) + dxpy*(-3*dypz + 2*dzpy))*pz + (- dxypy +  dyypx)*pz*pz + py*(-dypz*dzpx + dxpz*(2*dypz - 3*dzpy) + 2*dzpx*dzpy +  dxpy*dzpz -   dypx*dzpz + ( dxypz +  dxzpy - 2*dyzpx)*pz) +
+                    px*(-2*dypz*dypz + 4*dypz*dzpy - 2*dzpy*dzpy + ( dyzpz -  dzzpy)*py + (- dyypz + dyzpy)*pz));
 
-            Df2[x] = -2 * (2 * Pol[x] * (Dxx(q[x][x]) + Dxy(q[x][y]) + Dxz(q[x][z])) + Pol[y] *
-                                                                                       (Dxx(q[y][x]) + Dxy(q[y][y]) +
-                                                                                        Dxz(q[y][z]) + Dyx(q[x][x]) +
-                                                                                        Dyy(q[x][y]) + Dyz(q[x][z])) +
-                           Pol[z] *
-                           (Dxx(q[z][x]) + Dxy(q[z][y]) + Dxz(q[z][z]) + Dzx(q[x][x]) + Dzy(q[x][y]) + Dzz(q[x][z])));
-            Df2[y] = -2 * (Pol[x] *
-                           (Dyx(q[x][x]) + Dyy(q[x][y]) + Dyz(q[x][z]) + Dxx(q[y][x]) + Dxy(q[y][y]) + Dxz(q[y][z])) +
-                           2 * Pol[y] * (Dyx(q[y][x]) + Dyy(q[y][y]) + Dyz(q[y][z])) + Pol[z] *
-                                                                                       (Dyx(q[z][x]) + Dyy(q[z][y]) +
-                                                                                        Dyz(q[z][z]) + Dzx(q[y][x]) +
-                                                                                        Dzy(q[y][y]) + Dzz(q[y][z])));
-            Df2[z] = -2 * (Pol[x] *
-                           (Dzx(q[x][x]) + Dzy(q[x][y]) + Dzz(q[x][z]) + Dxx(q[z][x]) + Dxy(q[z][y]) + Dxz(q[z][z])) +
-                           Pol[y] *
-                           (Dzx(q[y][x]) + Dzy(q[y][y]) + Dzz(q[y][z]) + Dyx(q[z][x]) + Dyy(q[z][y]) + Dyz(q[z][z])) +
-                           2 * Pol[z] * (Dzx(q[z][x]) + Dzy(q[z][y]) + Dzz(q[z][z])));*/
-/*          auto txx=2*(Dx(q[x][x])*Dx(q[x][x])+Dx(q[x][y])*Dy(q[x][x])+Dx(q[x][z])*Dz(q[x][x])+Dy(q[y][x])*Dx(q[x][x])+Dy(q[y][y])*Dy(q[x][x])+Dy(q[y][z])*Dz(q[x][x])+Dz(q[z][x])*Dx(q[x][x])+Dz(q[z][y])*Dy(q[x][x])+Dz(q[z][z])*Dz(q[x][x])) + 2*(q[x][x]*Dxx(q[x][x])+q[x][x]*Dxx(q[x][x]))  +  ;
-            auto txy=2*(Dx(q[x][x])*Dx(q[x][x])+Dx(q[x][y])*Dy(q[x][x])+Dx(q[x][z])*Dz(q[x][x])+Dy(q[y][x])*Dx(q[x][x])+Dy(q[y][y])*Dy(q[x][x])+Dy(q[y][z])*Dz(q[x][x])+Dz(q[z][x])*Dx(q[x][x])+Dz(q[z][y])*Dy(q[x][x])+Dz(q[z][z])*Dz(q[x][x])) +   +  ;
-            auto txz=2*(Dx(q[x][x])*Dx(q[x][x])+Dx(q[x][y])*Dy(q[x][x])+Dx(q[x][z])*Dz(q[x][x])+Dy(q[y][x])*Dx(q[x][x])+Dy(q[y][y])*Dy(q[x][x])+Dy(q[y][z])*Dz(q[x][x])+Dz(q[z][x])*Dx(q[x][x])+Dz(q[z][y])*Dy(q[x][x])+Dz(q[z][z])*Dz(q[x][x])) +   +  ;
-            auto tyx=;
-            auto tyy=;
-            auto tyz=2*(Dx(q[x][x])*Dx(q[x][x])+Dx(q[x][y])*Dy(q[x][x])+Dx(q[x][z])*Dz(q[x][x])+Dy(q[x][l])+Dz(q[x][l]);
-            auto tzx=;
-            auto tzy=2*(Dx(q[x][x])*Dx(q[x][x])+Dx(q[x][y])*Dy(q[x][x])+Dx(q[x][z])*Dz(q[x][x])+Dy(q[x][l])+Dz(q[x][l]);
-            auto tzz=;*/
-
-          /*  for (int i = 0; i <= 2; i += 1) {
-                Df6[i]=0;
-                for (int j = 0; i <= 2; i += 1) {
-                    for (int k = 0; i <= 2; i += 1) {
-                        for (int l = 0; i <= 2; i += 1) {
-                            Df6[i] = Df6[i]+
-                        }
-                    }
-                }
-            }*/
-
-        /*    Df6[x] = -2 * (Pol[x] * ()) + Pol[y] * () + Pol[z] * ();
-            Df6[y] = -2 * (Pol[x] *
-                           (Dyx(q[x][x]) + Dyy(q[x][y]) + Dyz(q[x][z]) + Dxx(q[y][x]) + Dxy(q[y][y]) + Dxz(q[y][z])) +
-                           2 * Pol[y] * (Dyx(q[y][x]) + Dyy(q[y][y]) + Dyz(q[y][z])) + Pol[z] *
-                                                                                       (Dyx(q[z][x]) + Dyy(q[z][y]) +
-                                                                                        Dyz(q[z][z]) + Dzx(q[y][x]) +
-                                                                                        Dzy(q[y][y]) + Dzz(q[y][z])));
-            Df6[z] = -2 * (Pol[x] *
-                           (Dzx(q[x][x]) + Dzy(q[x][y]) + Dzz(q[x][z]) + Dxx(q[z][x]) + Dxy(q[z][y]) + Dxz(q[z][z])) +
-                           Pol[y] *
-                           (Dzx(q[y][x]) + Dzy(q[y][y]) + Dzz(q[y][z]) + Dyx(q[z][x]) + Dyy(q[z][y]) + Dyz(q[z][z])) +
-                           2 * Pol[z] * (Dzx(q[z][x]) + Dzy(q[z][y]) + Dzz(q[z][z])));*/
+            h[y]= Ks*(dxypx + dyypy + dyzpz) +
+                    Kb*((dxxpy - dxypx)*px*px + (dxxpy - dxypx - dyzpz + dzzpy)*py*py + (dxpz*dypx + dxpy*dzpx - 2*dypx*dzpx + dxpx*(-dypz + dzpy) - 2*dypz*dzpz + 2*dzpy*dzpz)*pz + (-dyzpz + dzzpy)*pz*pz +
+                    py*(dxpy*dxpy + dxpz*dxpz - dypx*dypx - dypz*dypz - 2*dxpz*dzpx + dzpx*dzpx + dzpy*dzpy + (dxxpz - dxzpx)*pz) +
+                    px*(dxpx*(2*dxpy - 2*dypx) + dypz*dzpx + dxpz*(-2*dypz + dzpy) + dxpy*dzpz - dypx*dzpz + (-dxzpz + dzzpx)*py + (-dxypz + 2*dxzpy - dyzpx)*pz)) +
+                    Kt*((-dyzpz + dzzpy)*px*px + (-3*dxpz*dypx + dxpy*(2*dxpz - dzpx) + 2*dypx*dzpx + dxpx*(dypz - dzpy))*pz + (dxxpy - dxypx)*pz*pz + py*(-2*dxpz*dxpz + 4*dxpz*dzpx - 2*dzpx*dzpx + (-dxxpz + dxzpx)*pz) +
+                    px*(-3*dypz*dzpx + dxpz*(2*dypz - dzpy) + 2*dzpx*dzpy - dxpy*dzpz + dypx*dzpz + (dxzpz - dzzpx)*py + (dxypz - 2*dxzpy + dyzpx)*pz));
 
 
-
+            h[z]=Ks*(dxzpx + dyzpy + dzzpz) +
+                    Kb*((dxxpz - dxzpx)*px*px + (dyypz - dyzpy)*py*py + (dxpy*dxpy + dxpz*dxpz - 2*dxpy*dypx + dypx*dypx + dypz*dypz - dzpx*dzpx - dzpy*dzpy)*pz + (dxxpz - dxzpx + dyypz - dyzpy)*pz*pz +
+                    py*(dxpz*dypx + dxpy*dzpx - 2*dypx*dzpx + dypy*(2*dypz - 2*dzpy) + dxpx*(dypz - dzpy) + (dxxpy - dxypx)*pz) +
+                    px*(dxpz*dypy + dxpx*(2*dxpz - 2*dzpx) - dypy*dzpx + dxpy*(dypz - 2*dzpy) + dypx*dzpy + (2*dxypz - dxzpy - dyzpx)*py + (-dxypy + dyypx)*pz))+
+                    Kt*((dyypz - dyzpy)*px*px + (dxxpz - dxzpx)*py*py + (-2*dxpy*dxpy + 4*dxpy*dypx - 2*dypx*dypx)*pz + py*(-dxpz*dypx + dxpy*(2*dxpz - 3*dzpx) + 2*dypx*dzpx + dxpx*(-dypz + dzpy) + (-dxxpy + dxypx)*pz) +
+                    px*(-dxpz*dypy + dypy*dzpx + dypx*(2*dypz - 3*dzpy) + dxpy*(-dypz + 2*dzpy) + (-2*dxypz + dxzpy + dyzpx)*py + (dxypy - dyypx)*pz)) ;
 
             //Particles.ghost_get<33>(SKIP_LABELLING);
             Particles.write("Polar_test");
             sigma[x][x] =
-                    -Ks * Dx(Pol[x]) * Dx(Pol[x]) - Kb * Dx(Pol[y]) * Dx(Pol[y]) + (Kb - Ks) * Dy(Pol[x]) * Dx(Pol[y]);
+                    -dxpx*(dxpx + dypy + dzpz)*Ks -
+                    dxpy*Kt*pz*(dypz*px - dzpy*px - dxpz*py + dzpx*py + dxpy*pz - dypx*pz) -
+                    dxpz*Kt*py*(-dypz*px + dzpy*px + dxpz*py - dzpx*py - dxpy*pz + dypx*pz) -
+                    0.5*dxpz*Kb*(2*px*(dxpz*px - dzpx*px + (dypz - dzpy)*py) + 2*pz*(dxpy*py - dypx*py + (dxpz - dzpx)*pz)) -
+                    0.5*dxpy*Kb*(2*py*(dxpy*py - dypx*py + (dxpz - dzpx)*pz) + 2*px*(dxpy*px - dypx*px + (-dypz + dzpy)*pz));
             sigma[x][y] =
-                    -Ks * Dy(Pol[y]) * Dx(Pol[y]) - Kb * Dy(Pol[x]) * Dx(Pol[x]) + (Kb - Ks) * Dx(Pol[y]) * Dx(Pol[x]);
+                    -dxpy*(dxpx + dypy + dzpz)*Ks - dxpz*Kb*py*(dxpz*px - dzpx*px + (dypz - dzpy)*py) +
+                    dxpx*Kt*pz*(dypz*px - dzpy*px - dxpz*py + dzpx*py + dxpy*pz - dypx*pz) +
+                    dxpz*Kt*px*(-dypz*px + dzpy*px + dxpz*py - dzpx*py - dxpy*pz + dypx*pz) +
+                    dxpx*Kb*py*(dxpy*py - dypx*py + (dxpz - dzpx)*pz) -
+                    dxpz*Kb*pz*(-dxpy*px + dypx*px + (dypz - dzpy)*pz) +
+                    dxpx*Kb*px*(dxpy*px - dypx*px + (-dypz + dzpy)*pz);
 
             sigma[x][z] =
-                    -Ks * Dy(Pol[z]) * Dx(Pol[z]) - Kb * Dy(Pol[x]) * Dx(Pol[x]) + (Kb - Ks) * Dx(Pol[z]) * Dx(Pol[x]);
-
-
+                    -dxpz*(dxpx + dypy + dzpz)*Ks +
+                    dxpy*Kt*px*(dypz*px - dzpy*px - dxpz*py + dzpx*py + dxpy*pz - dypx*pz) +
+                    dxpx*Kt*py*(-dypz*px + dzpy*px + dxpz*py - dzpx*py - dxpy*pz + dypx*pz) -
+                    0.5*dxpx*Kb*(2*px*(-dxpz*px + dzpx*px + (-dypz + dzpy)*py) - 2*pz*(dxpy*py - dypx*py + (dxpz - dzpx)*pz)) -
+                    0.5*dxpy*Kb*(2*py*(-dxpz*px + dzpx*px + (-dypz + dzpy)*py) - 2*pz*(-dxpy*px + dypx*px + (dypz - dzpy)*pz));
             sigma[y][x] =
-                    -Ks * Dx(Pol[x]) * Dy(Pol[x]) - Kb * Dx(Pol[y]) * Dy(Pol[y]) + (Kb - Ks) * Dy(Pol[x]) * Dy(Pol[y]);
+                    -dypx*(dxpx + dypy + dzpz)*Ks +
+                    dypz*Kt*py*(dypz*px - dzpy*px - dxpz*py + dzpx*py + dxpy*pz - dypx*pz) -
+                    dypy*Kt*pz*(dypz*px - dzpy*px - dxpz*py + dzpx*py + dxpy*pz - dypx*pz) -
+                    0.5*dypz*Kb*(2*px*(dxpz*px - dzpx*px + (dypz - dzpy)*py) + 2*pz*(dxpy*py - dypx*py + (dxpz - dzpx)*pz)) -
+                    0.5*dypy*Kb*(2*py*(dxpy*py - dypx*py + (dxpz - dzpx)*pz) + 2*px*(dxpy*px - dypx*px + (-dypz + dzpy)*pz));
             sigma[y][y] =
-                    -Ks * Dy(Pol[y]) * Dy(Pol[y]) - Kb * Dy(Pol[x]) * Dy(Pol[x]) + (Kb - Ks) * Dx(Pol[y]) * Dy(Pol[x]);
+                    -dypy*(dxpx + dypy + dzpz)*Ks -
+                    dypz*Kb*py*(dxpz*px - dzpx*px + (dypz - dzpy)*py) -
+                    dypz*Kt*px*(dypz*px - dzpy*px - dxpz*py + dzpx*py + dxpy*pz - dypx*pz) -
+                    dypx*Kt*pz*(-dypz*px + dzpy*px + dxpz*py - dzpx*py -dxpy*pz + dypx*pz) -
+                    dypx*Kb*py*(-dxpy*py + dypx*py + (-dxpz + dzpx)*pz) -
+                    dypx*Kb*px*(-dxpy*px + dypx*px + (dypz - dzpy)*pz) -
+                    dypz*Kb*pz*(-dxpy*px + dypx*px + (dypz - dzpy)*pz);
             sigma[y][z] =
-                    -Ks * Dx(Pol[z]) * Dy(Pol[z]) - Kb * Dx(Pol[y]) * Dy(Pol[y]) + (Kb - Ks) * Dy(Pol[z]) * Dy(Pol[y]);
-
+                    -dypz*(dxpx + dypy + dzpz)*Ks +
+                    dypy*Kt*px*(dypz*px - dzpy*px - dxpz*py + dzpx*py + dxpy*pz - dypx*pz) +
+                    dypx*Kt*py*(-dypz*px + dzpy*px + dxpz*py - dzpx*py -dxpy*pz + dypx*pz) -
+                    0.5*dypx*Kb*(2*px*(-dxpz*px + dzpx*px + (-dypz + dzpy)*py) - 2*pz*(dxpy*py - dypx*py + (dxpz - dzpx)*pz)) -
+                    0.5*dypy*Kb*(2*py*(-dxpz*px + dzpx*px + (-dypz + dzpy)*py) - 2*pz*(-dxpy*px + dypx*px + (dypz - dzpy)*pz));
             sigma[z][x] =
-                    -Ks * Dx(Pol[z]) * Dx(Pol[z]) - Kb * Dx(Pol[y]) * Dx(Pol[y]) + (Kb - Ks) * Dy(Pol[x]) * Dx(Pol[y]);
+                    -dzpx*(dxpx + dypy + dzpz)*Ks -
+                    dzpz*Kt*py*(-dypz*px + dzpy*px + dxpz*py - dzpx*py - dxpy*pz + dypx*pz) +
+                    dzpy*Kt*pz*(-dypz*px + dzpy*px + dxpz*py - dzpx*py - dxpy*pz + dypx*pz) -
+                    0.5*dzpz*Kb*(2*px*(dxpz*px - dzpx*px + (dypz - dzpy)*py) + 2*pz*(dxpy*py - dypx*py + (dxpz - dzpx)*pz)) -
+                    0.5*dzpy*Kb*(2*py*(dxpy*py - dypx*py + (dxpz - dzpx)*pz) + 2*px*(dxpy*px - dypx*px + (-dypz + dzpy)*pz));
             sigma[z][y] =
-                    -Ks * Dy(Pol[y]) * Dx(Pol[y]) - Kb * Dy(Pol[x]) * Dx(Pol[x]) + (Kb - Ks) * Dx(Pol[y]) * Dx(Pol[x]);
+                    -dzpy*(dxpx + dypy + dzpz)*Ks -
+                    dzpz*Kb*py*(dxpz*px - dzpx*px + (dypz - dzpy)*py) -
+                    dzpz*Kt*px*(dypz*px - dzpy*px - dxpz*py + dzpx*py + dxpy*pz - dypx*pz) +
+                    dzpx*Kt*pz*(dypz*px - dzpy*px - dxpz*py + dzpx*py + dxpy*pz - dypx*pz) -
+                    dzpx*Kb*py*(-dxpy*py + dypx*py + (-dxpz + dzpx)*pz) -
+                    dzpz*Kb*pz*(-dxpy*px + dypx*px + (dypz - dzpy)*pz) +
+                    dzpx*Kb*px*(dxpy*px - dypx*px + (-dypz + dzpy)*pz);
 
             sigma[z][z] =
-                    -Ks * Dx(Pol[x]) * Dy(Pol[x]) - Kb * Dx(Pol[y]) * Dy(Pol[y]) + (Kb - Ks) * Dy(Pol[x]) * Dy(Pol[y]);
+                    -dzpz*(dxpx + dypy + dzpz)*Ks -
+                    dzpx*Kt*py*(dypz*px - dzpy*px - dxpz*py + dzpx*py + dxpy*pz - dypx*pz) -
+                    dzpy*Kt*px*(-dypz*px + dzpy*px + dxpz*py - dzpx*py - dxpy*pz + dypx*pz) -
+                    0.5*dzpx*Kb*(2*px*(-dxpz*px + dzpx*px + (-dypz + dzpy)*py) - 2*pz*(dxpy*py - dypx*py + (dxpz - dzpx)*pz)) -
+                    0.5*dzpy*Kb*(2*py*(-dxpz*px + dzpx*px + (-dypz + dzpy)*py) - 2*pz*(-dxpy*px + dypx*px + (dypz - dzpy)*pz));
 
 
             Particles.ghost_get<Stress>(SKIP_LABELLING);
