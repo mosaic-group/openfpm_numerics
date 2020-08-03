@@ -27,7 +27,6 @@ void indexUpdate(
     bulk.clear();
 
     auto it2 = Particles.getDomainIterator();
-
     while (it2.isNext()) {
         auto p = it2.get();
         Point<3, double> xp = Particles.getPos(p);
@@ -253,14 +252,11 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests3)
 
         vector_dist_subset<3, double, aggregate<VectorS<3, double>, VectorS<3, double>, double[3][3], VectorS<3, double>, double, double[3][3], double[3][3], VectorS<3, double>, VectorS<3, double>, VectorS<3, double>, VectorS<3, double>, double, double, double, double, double, double, double, VectorS<3, double>, double, double, double[3], double[3], double[3], double[3], double[3], double[3], double, VectorS<3, double>, VectorS<3, double>, VectorS<3, double>, VectorS<3, double>, double, double, double, double[3][3],double[3][3]>> Particles_subset(
                 Particles, bulk);
+            auto Pol_bulk = getV<0>(Particles_subset);
+            auto P_bulk = getV<Pressure>(Particles_subset);
+            auto dPol_bulk = getV<8>(Particles_subset);
+            auto RHS_bulk = getV<10>(Particles_subset);
 
-        auto P_bulk = getV<Pressure>(Particles_subset);
-        auto dV_bulk = getV<9>(Particles_subset);
-        auto RHS_bulk = getV<10>(Particles_subset);
-        auto H_bulk = getV<17>(Particles_subset); // only on inside
-        auto div_bulk = getV<19>(Particles_subset);
-        auto dPol_bulk = getV<8>(Particles_subset);
-        auto Pol_bulk = getV<0>(Particles_subset);
 
 
 
@@ -292,6 +288,56 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests3)
                           support_options::RADIUS);
 
         V_t = V;
+        auto px=Pol[x];
+        auto py=Pol[y];
+        auto pz=Pol[z];
+
+        auto dxpx=Dx(Pol[x]);
+        auto dxpy=Dx(Pol[y]);
+        auto dxpz=Dx(Pol[z]);
+        auto dypx=Dy(Pol[x]);
+        auto dypy=Dy(Pol[y]);
+        auto dypz=Dy(Pol[z]);
+        auto dzpx=Dz(Pol[x]);
+        auto dzpy=Dz(Pol[y]);
+        auto dzpz=Dz(Pol[z]);
+        auto dxxpx=Dxx(Pol[x]);
+        auto dxxpy=Dxx(Pol[y]);
+        auto dxxpz=Dxx(Pol[z]);
+        auto dyypx=Dyy(Pol[x]);
+        auto dyypy=Dyy(Pol[y]);
+        auto dyypz=Dyy(Pol[z]);
+        auto dzzpx=Dzz(Pol[x]);
+        auto dzzpy=Dzz(Pol[y]);
+        auto dzzpz=Dzz(Pol[z]);
+        auto dxypx=Dxy(Pol[x]);
+        auto dxypy=Dxy(Pol[y]);
+        auto dxypz=Dxy(Pol[z]);
+        auto dxzpx=Dxz(Pol[x]);
+        auto dxzpy=Dxz(Pol[y]);
+        auto dxzpz=Dxz(Pol[z]);
+        auto dyzpx=Dyz(Pol[x]);
+        auto dyzpy=Dyz(Pol[y]);
+        auto dyzpz=Dyz(Pol[z]);
+        auto dxhx=Dx(h[x]);
+        auto dxhy=Dx(h[y]);
+        auto dxhz=Dx(h[z]);
+        auto dyhx=Dy(h[x]);
+        auto dyhy=Dy(h[y]);
+        auto dyhz=Dy(h[z]);
+        auto dzhx=Dz(h[x]);
+        auto dzhy=Dz(h[y]);
+        auto dzhz=Dz(h[z]);
+
+        auto dxqxx=Dx(Pol[x]*Pol[x]-1/3*(Pol[x]*Pol[x]+Pol[y]*Pol[y]+Pol[z]*Pol[z]));
+        auto dyqxy=Dy(Pol[x]*Pol[x]);
+        auto dzqxz=Dz(Pol[x]*Pol[z]);
+        auto dxqyx=Dx(Pol[y]*Pol[x]);
+        auto dyqyy=Dy(Pol[y]*Pol[y]-1/3*(Pol[x]*Pol[x]+Pol[y]*Pol[y]+Pol[z]*Pol[z]));
+        auto dzqyz=Dz(Pol[y]*Pol[z]);
+        auto dxqzx=Dx(Pol[z]*Pol[x]);
+        auto dyqzy=Dy(Pol[z]*Pol[y]);
+        auto dzqzz=Dz(Pol[z]*Pol[z]-1/3*(Pol[x]*Pol[x]+Pol[y]*Pol[y]+Pol[z]*Pol[z]));
 
 
         eq_id vx, vy, vz;
@@ -317,37 +363,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests3)
             solverPetsc.setPreconditioner(PCJACOBI);
             Particles.ghost_get<Polarization>(SKIP_LABELLING);
 
-            auto px=Pol[x];
-            auto py=Pol[y];
-            auto pz=Pol[z];
 
-            auto dxpx=Dx(Pol[x]);
-            auto dxpy=Dx(Pol[y]);
-            auto dxpz=Dx(Pol[z]);
-            auto dypx=Dy(Pol[x]);
-            auto dypy=Dy(Pol[y]);
-            auto dypz=Dy(Pol[z]);
-            auto dzpx=Dz(Pol[x]);
-            auto dzpy=Dz(Pol[y]);
-            auto dzpz=Dz(Pol[z]);
-            auto dxxpx=Dxx(Pol[x]);
-            auto dxxpy=Dxx(Pol[y]);
-            auto dxxpz=Dxx(Pol[z]);
-            auto dyypx=Dyy(Pol[x]);
-            auto dyypy=Dyy(Pol[y]);
-            auto dyypz=Dyy(Pol[z]);
-            auto dzzpx=Dzz(Pol[x]);
-            auto dzzpy=Dzz(Pol[y]);
-            auto dzzpz=Dzz(Pol[z]);
-            auto dxypx=Dxy(Pol[x]);
-            auto dxypy=Dxy(Pol[y]);
-            auto dxypz=Dxy(Pol[z]);
-            auto dxzpx=Dxz(Pol[x]);
-            auto dxzpy=Dxz(Pol[y]);
-            auto dxzpz=Dxz(Pol[z]);
-            auto dyzpx=Dyz(Pol[x]);
-            auto dyzpy=Dyz(Pol[y]);
-            auto dyzpz=Dyz(Pol[z]);
 
             FranckEnergyDensity = 0.5*Ks*(dxpx + dypy + dzpz)*(dxpx + dypy + dzpz) +
                                   0.5*Kt*((dypz - dzpy)*px + (-dxpz + dzpx)*py + (dxpy - dypx)*pz)*((dypz - dzpy)*px + (-dxpz + dzpx)*py + (dxpy - dypx)*pz) +
@@ -443,25 +459,6 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests3)
 
             Particles.ghost_get<Stress>(SKIP_LABELLING);
             Particles.ghost_get<MolField>(SKIP_LABELLING);
-            auto dxhx=Dx(h[x]);
-            auto dxhy=Dx(h[y]);
-            auto dxhz=Dx(h[z]);
-            auto dyhx=Dy(h[x]);
-            auto dyhy=Dy(h[y]);
-            auto dyhz=Dy(h[z]);
-            auto dzhx=Dz(h[x]);
-            auto dzhy=Dz(h[y]);
-            auto dzhz=Dz(h[z]);
-
-            auto dxqxx=Dx(Pol[x]*Pol[x]-1/3*(Pol[x]*Pol[x]+Pol[y]*Pol[y]+Pol[z]*Pol[z]));
-            auto dyqxy=Dy(Pol[x]*Pol[x]);
-            auto dzqxz=Dz(Pol[x]*Pol[z]);
-            auto dxqyx=Dx(Pol[y]*Pol[x]);
-            auto dyqyy=Dy(Pol[y]*Pol[y]-1/3*(Pol[x]*Pol[x]+Pol[y]*Pol[y]+Pol[z]*Pol[z]));
-            auto dzqyz=Dz(Pol[y]*Pol[z]);
-            auto dxqzx=Dx(Pol[z]*Pol[x]);
-            auto dyqzy=Dy(Pol[z]*Pol[y]);
-            auto dzqzz=Dz(Pol[z]*Pol[z]-1/3*(Pol[x]*Pol[x]+Pol[y]*Pol[y]+Pol[z]*Pol[z]));
 
             dV[x] = 0.5*(-dypy*h[x] + dypx*h[y] + dyhy*px - dyhx*py) + 0.5*(-dzpz*h[x] + dzpx*h[z] + dzhz*px - dzhx*pz) +
                     zeta*delmu*(dxqxx + dyqxy + dzqxz)  +
@@ -617,6 +614,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests3)
                     gama*nu*(Pol[x]*Pol[x]*u[x][x]+Pol[y]*Pol[y]*u[y][y]+Pol[z]*Pol[z]*u[z][z]+
                     Pol[x]*(Pol[y]*(u[x][y]+u[y][x])+Pol[z]*(u[x][z]+u[z][x])) +Pol[y]*Pol[z]*(u[y][z]+u[z][y])));
             dPol=Pol;
+            Particles.ghost_get<8>(SKIP_LABELLING);
             k1[x] = h[x]/gama-nu*(Pol[x]*u[x][x]+Pol[y]*u[x][y]+Pol[z]*u[x][z]) + lambda*Pol[x]/delmu + (W[x][x]*Pol[x]+W[x][y]*Pol[y]+W[x][z]*Pol[z]);
             k1[y] = h[y]/gama-nu*(Pol[x]*u[y][x]+Pol[y]*u[y][y]+Pol[z]*u[y][z]) + lambda*Pol[y]/delmu + (W[y][x]*Pol[x]+W[y][y]*Pol[y]+W[y][z]*Pol[z]);
             k1[z] = h[z]/gama-nu*(Pol[x]*u[z][x]+Pol[y]*u[z][y]+Pol[z]*u[z][z]) + lambda*Pol[z]/delmu + (W[z][x]*Pol[x]+W[z][y]*Pol[y]+W[z][z]*Pol[z]);
@@ -677,7 +675,8 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests3)
             k3[x] = h[x]/gama-nu*(Pol[x]*u[x][x]+Pol[y]*u[x][y]+Pol[z]*u[x][z]) + lambda*Pol[x]/delmu + (W[x][x]*Pol[x]+W[x][y]*Pol[y]+W[x][z]*Pol[z]);
             k3[y] = h[y]/gama-nu*(Pol[x]*u[y][x]+Pol[y]*u[y][y]+Pol[z]*u[y][z]) + lambda*Pol[y]/delmu + (W[y][x]*Pol[x]+W[y][y]*Pol[y]+W[y][z]*Pol[z]);
             k3[z] = h[z]/gama-nu*(Pol[x]*u[z][x]+Pol[y]*u[z][y]+Pol[z]*u[z][z]) + lambda*Pol[z]/delmu + (W[z][x]*Pol[x]+W[z][y]*Pol[y]+W[z][z]*Pol[z]);
-            Pol_bulk = dPol + (dt) * k3;
+            Pol_bulk = dPol + (dt)*k3;
+
             Particles.ghost_get<0>(SKIP_LABELLING);
             h[x]=Ks*(dxxpx + dxypy + dxzpz) +
                  Kb*((-dxypy - dxzpz + dyypx + dzzpx)*px*px + (-dxypy + dyypx)*py*py + (dypy*dzpx + dxpy*(dypz - 2*dzpy) + dypx*dzpy + dxpz*(-dypy - 2*dzpz) + 2*dzpx*dzpz)*pz + (-dxzpz + dzzpx)*pz*pz +
@@ -705,7 +704,15 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests3)
             k4[y] = h[y]/gama-nu*(Pol[x]*u[y][x]+Pol[y]*u[y][y]+Pol[z]*u[y][z]) + lambda*Pol[y]/delmu + (W[y][x]*Pol[x]+W[y][y]*Pol[y]+W[y][z]*Pol[z]);
             k4[z] = h[z]/gama-nu*(Pol[x]*u[z][x]+Pol[y]*u[z][y]+Pol[z]*u[z][z]) + lambda*Pol[z]/delmu + (W[z][x]*Pol[x]+W[z][y]*Pol[y]+W[z][z]*Pol[z]);
 
-            Pol_bulk = dPol + (dt / 6.0) * (k1 + (2.0 * k2) + (2.0 * k3) + k4);
+            Pol = dPol + (dt / 6.0) * (k1 + (2.0 * k2) + (2.0 * k3) + k4);
+            for (int j = 0; j < Boundary.size(); j++) {
+                auto p = Boundary.get<0>(j);
+                Particles.getProp<0>(p)[x] = sin(2 * M_PI * (cos((2 * Particles.getPos(p)[x] - Lx) / Lx) -
+                                                             sin((2 * Particles.getPos(p)[y] - Ly) / Ly)));
+                Particles.getProp<0>(p)[y] = cos(2 * M_PI * (cos((2 * Particles.getPos(p)[x] - Lx) / Lx) -
+                                                             sin((2 * Particles.getPos(p)[y] - Ly) / Ly)));
+                Particles.getProp<0>(p)[z] =0;
+            }
 
             k1 = V;
             k2 = 0.5 * dt * k1 + V;
@@ -716,17 +723,14 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests3)
             Particles.map();
 
             Particles.ghost_get<0, ExtForce, 27>();
-            indexUpdate(Particles,Boundary, bulk, up, down, left, right,front, back);
+            indexUpdate(Particles,Boundary, bulk, up, down, left,right,front,back);
             vector_dist_subset<3, double, aggregate<VectorS<3, double>, VectorS<3, double>, double[3][3], VectorS<3, double>, double, double[3][3], double[3][3], VectorS<3, double>, VectorS<3, double>, VectorS<3, double>, VectorS<3, double>, double, double, double, double, double, double, double, VectorS<3, double>, double, double, double[3], double[3], double[3], double[3], double[3], double[3], double, VectorS<3, double>, VectorS<3, double>, VectorS<3, double>, VectorS<3, double>, double, double, double, double[3][3],double[3][3]>> Particles_subset(
                     Particles, bulk);
-
-            auto P_bulk = getV<Pressure>(Particles_subset);
-            auto dV_bulk = getV<9>(Particles_subset);
-            auto RHS_bulk = getV<10>(Particles_subset);
-            auto H_bulk = getV<17>(Particles_subset); // only on inside
-            auto div_bulk = getV<19>(Particles_subset);
-            auto dPol_bulk = getV<8>(Particles_subset);
             auto Pol_bulk = getV<0>(Particles_subset);
+            auto P_bulk = getV<Pressure>(Particles_subset);
+            auto dPol_bulk = getV<8>(Particles_subset);
+            auto RHS_bulk = getV<10>(Particles_subset);
+
 
 
             //Particles_subset.write("debug");
