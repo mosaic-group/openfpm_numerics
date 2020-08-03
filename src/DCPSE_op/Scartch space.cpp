@@ -5581,3 +5581,91 @@ Particles.getLastPos()[1] = y;
 ++it2;
 }
 }*/
+
+
+while (it2.isNext()) {
+auto p = it2.get();
+Point<3, double> xp = Particles.getPos(p);
+Particles.getProp<0>(p)[x] = sin(2 * M_PI * (cos((2 * xp[x] - Lx) / Lx) - sin((2 * xp[y] - Ly) / Ly)));
+Particles.getProp<0>(p)[y] = cos(2 * M_PI * (cos((2 * xp[x] - Lx) / Lx) - sin((2 * xp[y] - Ly) / Ly)));
+Particles.getProp<0>(p)[z] = 0;
+if (front.isInside(xp) == true) {
+if (up.isInside(xp) == true) {
+if (left.isInside(xp) == true) {
+f_ul.add();
+f_ul.last().get<0>() = p.getKey();
+} else if (right.isInside(xp) == true) {
+f_ur.add();
+f_ur.last().get<0>() = p.getKey();
+} else {
+Surface_without_corners.add();
+Surface_without_corners.last().get<0>() = p.getKey();
+}
+} else if (down.isInside(xp) == true) {
+if (left.isInside(xp) == true) {
+f_dl.add();
+f_dl.last().get<0>() = p.getKey();
+}
+if (right.isInside(xp) == true) {
+f_dr.add();
+f_dr.last().get<0>() = p.getKey();
+} else {
+Surface_without_corners.add();
+Surface_without_corners.last().get<0>() = p.getKey();
+}
+}
+Surface.add();
+Surface.last().get<0>() = p.getKey();
+} else if (back.isInside(xp) == true) {
+if (up.isInside(xp) == true) {
+if (left.isInside(xp) == true) {
+b_ul.add();
+b_ul.last().get<0>() = p.getKey();
+} else if (right.isInside(xp) == true) {
+b_ur.add();
+b_ur.last().get<0>() = p.getKey();
+} else {
+Surface_without_corners.add();
+Surface_without_corners.last().get<0>() = p.getKey();
+}
+} else if (down.isInside(xp) == true) {
+if (left.isInside(xp) == true) {
+b_dl.add();
+b_dl.last().get<0>() = p.getKey();
+}
+if (right.isInside(xp) == true) {
+b_dr.add();
+b_dr.last().get<0>() = p.getKey();
+} else {
+Surface_without_corners.add();
+Surface_without_corners.last().get<0>() = p.getKey();
+}
+}
+Surface.add();
+Surface.last().get<0>() = p.getKey();
+} else if (left.isInside(xp) == true) {
+Surface_without_corners.add();
+Surface_without_corners.last().get<0>() = p.getKey();
+Surface.add();
+Surface.last().get<0>() = p.getKey();
+} else if (right.isInside(xp) == true) {
+Surface_without_corners.add();
+Surface_without_corners.last().get<0>() = p.getKey();
+Surface.add();
+Surface.last().get<0>() = p.getKey();
+} else if (up.isInside(xp) == true) {
+Surface_without_corners.add();
+Surface_without_corners.last().get<0>() = p.getKey();
+Surface.add();
+Surface.last().get<0>() = p.getKey();
+} else if (down.isInside(xp) == true) {
+Surface_without_corners.add();
+Surface_without_corners.last().get<0>() = p.getKey();
+Surface.add();
+Surface.last().get<0>() = p.getKey();
+} else {
+bulk.add();
+bulk.last().get<0>() = p.getKey();
+}
+++it2;
+}
