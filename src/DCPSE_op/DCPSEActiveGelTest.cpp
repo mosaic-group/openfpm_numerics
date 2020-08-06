@@ -197,7 +197,8 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
     BOOST_AUTO_TEST_CASE(Active2DSubset) {
         timer tt2;
         tt2.start();
-        double dt = 4e-3;
+        double dt = 1.024/768;
+        double V_err_eps = 1e-3;
         double boxsize = 10;
         const size_t sz[2] = {41, 41};
         Box<2, double> box({0, 0}, {boxsize, boxsize});
@@ -430,8 +431,8 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
         timer tt3;
         vx.setId(0);
         vy.setId(1);
-        double V_err_eps = 1 * 1e-1;
         double V_err = 1, V_err_old;
+
         int n = 0;
         int nmax = 300;
         int ctr = 0, errctr, Vreset = 0;
@@ -445,9 +446,6 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
             solverPetsc.setSolver(KSPGMRES);
             //solverPetsc.setRestart(250);
             solverPetsc.setPreconditioner(PCJACOBI);
-            petsc_solver<double> solverPetsc2;
-            solverPetsc2.setSolver(KSPGMRES);
-            solverPetsc2.setPreconditioner(PCJACOBI);
 
             Particles.ghost_get<Polarization>(SKIP_LABELLING);
             sigma[x][x] =
@@ -602,8 +600,8 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
                 } else {
                     errctr = 0;
                 }
-                if (n > 3) {
-                    if (errctr > 3) {
+                if (n > 5) {
+                    if (errctr > 5) {
                         std::cout << "CONVERGENCE LOOP BROKEN DUE TO INCREASE/VERY SLOW DECREASE IN ERROR" << std::endl;
                         Vreset = 1;
                         break;
@@ -663,9 +661,9 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
 
             //Particles.ghost_get<MolField, Strain_rate, Vorticity>(SKIP_LABELLING);
             //Particles.write_frame("Polar_withGhost_3e-3", ctr);
-            Particles.deleteGhost();
-            Particles.write_frame("Polar_subset", ctr);
-            Particles.ghost_get<0>();
+            //Particles.deleteGhost();
+            //Particles.write_frame("Polar_subset", ctr);
+            //Particles.ghost_get<0>();
 
             ctr++;
 

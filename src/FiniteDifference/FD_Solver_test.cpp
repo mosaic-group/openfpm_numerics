@@ -364,7 +364,7 @@ f_x = f_y = f_z = 3
     	// mathematical to have a well defined system, an intuitive explanation is that P and P + c are both
     	// solution for the incompressibility equation, this produce an ill-posed problem to make it well posed
     	// we set one point in this case {0,0} the pressure to a fixed constant for convenience P = 0
-    	fd.impose(incompressibility, {0,0},{sz[0]-2,sz[1]-2}, 0.0,ic,true);
+    	fd.impose(incompressibility, {0,1},{sz[0]-2,sz[1]-2}, 0.0,ic,true);
     	fd.impose(P, {0,0},{0,0},0.0,ic);
 
     	// Here we impose the Eq1 and Eq2

@@ -1472,4 +1472,20 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests3)
 
 BOOST_AUTO_TEST_SUITE_END()
 
+/*
+
+DCPSE_scheme<equations3d3,decltype(Particles)> Solver(Particles);
+auto Stokes1 = Adv(V[x],V_star[x])-nu*Lap(V_star[x]);
+auto Stokes2 = Adv(V[y],V_star[y])-nu*Lap(V_star[y]);
+auto Stokes3 = Adv(V[z],V_star[z])-nu*Lap(V_star[z]);
+Solver.impose(Stokes1,bulk,RHS[x],vx);
+Solver.impose(Stokes2,bulk,RHS[y],vy);
+Solver.impose(Stokes3,bulk,RHS[z],vz);
+Solver.impose(V_star[x],Boundary,0,vx);
+Solver.impose(V_star[y],Boundary,0,vy);
+Solver.impose(V_star[z],Boundary,0,vz);
+Solver.solve(V_star[x],V_star[y],V_star[z]);
+*/
+
+
 
