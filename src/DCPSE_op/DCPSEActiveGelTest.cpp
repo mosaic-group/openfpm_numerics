@@ -198,7 +198,8 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
         timer tt2;
         tt2.start();
         double dt = 1.024/768;
-        double V_err_eps = 1e-3;
+        double V_err_eps = 5 * 1e-3;
+
         double boxsize = 10;
         const size_t sz[2] = {41, 41};
         Box<2, double> box({0, 0}, {boxsize, boxsize});
@@ -550,6 +551,12 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
             V_err = 1;
             n = 0;
             errctr = 0;
+            if (Vreset == 1) {
+                P_bulk = 0;
+                P = 0;
+                Vreset = 0;
+            }
+            P=0;
             P_bulk = 0;
             while (V_err >= V_err_eps && n <= nmax) {
                 RHS_bulk[x] = dV[x] + Bulk_Dx(P);
@@ -600,8 +607,8 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
                 } else {
                     errctr = 0;
                 }
-                if (n > 5) {
-                    if (errctr > 5) {
+                if (n > 3) {
+                    if (errctr > 3) {
                         std::cout << "CONVERGENCE LOOP BROKEN DUE TO INCREASE/VERY SLOW DECREASE IN ERROR" << std::endl;
                         Vreset = 1;
                         break;
@@ -855,7 +862,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
     BOOST_AUTO_TEST_CASE(Active2DConv) {
         timer tt2;
         tt2.start();
-        double dt = 4e-3;
+        double dt = 1.024/(256.0);
         double boxsize = 10;
         const size_t sz[2] = {41, 41};
         Box<2, double> box({0, 0}, {boxsize, boxsize});
@@ -1114,7 +1121,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
         timer tt3;
         vx.setId(0);
         vy.setId(1);
-        double V_err_eps = 5 * 1e-3;
+        double V_err_eps = 1e-3;
         double V_err = 1, V_err_old;
         int n = 0;
         int nmax = 300;
@@ -1129,9 +1136,9 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
             solverPetsc.setSolver(KSPGMRES);
             //solverPetsc.setRestart(250);
             solverPetsc.setPreconditioner(PCJACOBI);
-            petsc_solver<double> solverPetsc2;
+/*            petsc_solver<double> solverPetsc2;
             solverPetsc2.setSolver(KSPGMRES);
-            solverPetsc2.setPreconditioner(PCJACOBI);
+            solverPetsc2.setPreconditioner(PCJACOBI);*/
 
             Particles.ghost_get<Polarization>(SKIP_LABELLING);
             sigma[x][x] =
@@ -1286,7 +1293,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
                 auto Helmholtz = Dxx(H) + Dyy(H);
                 DCPSE_scheme<equations2d1, decltype(Particles)> SolverH(Particles);
 //                SolverH.reset(Particles);
-                SolverH.impose(Helmholtz, bulk, prop_id<19>());
+/*                SolverH.impose(Helmholtz, bulk, prop_id<19>());
                 SolverH.impose(H, up_p1, 0);
                 SolverH.impose(H, dw_p1, 0);
                 SolverH.impose(H, l_p1, 0);
@@ -1295,7 +1302,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
                 SolverH.impose(Dx(H) + Dy(H), corner_ur, 0);
                 SolverH.impose(-Dx(H) - Dy(H), corner_dl, 0);
                 SolverH.impose(Dx(H) - Dy(H), corner_dr, 0);
-                SolverH.solve_with_solver(solverPetsc2, H);
+                SolverH.solve_with_solver(solverPetsc2, H);*/
                 //SolverH.solve(H);
                 P = P + div;
                 for (int i = 0; i < bulk.size(); i++) {
@@ -1417,7 +1424,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
                                                    2 * u[x][y] * Pol[x] * Pol[y]) / (H_p_b));
 
 
-            //Particles.ghost_get<MolField, Strain_rate, Vorticity>(SKIP_LABELLING);
+            Particles.ghost_get<MolField, Strain_rate, Vorticity>(SKIP_LABELLING);
             //Particles.write_frame("Polar_withGhost_3e-3", ctr);
 /*            Particles.deleteGhost();
             Particles.write_frame("Polar", ctr);
