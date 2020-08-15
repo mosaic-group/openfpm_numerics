@@ -371,19 +371,40 @@ f_x = f_y = f_z = 3
     	fd.impose(Stokes_vx, {1,0},{sz[0]-2,sz[1]-2},0.0,vx,left_cell);
     	fd.impose(Stokes_vy, {0,1},{sz[0]-2,sz[1]-2},0.0,vy,bottom_cell);
 
-    	// v_x and v_y
+    	// Staggering pattern in the domain
+    	// 		+--Vy-+
+        //		|     |
+        //	   Vx  P  Vx
+        //		|     |
+        //		0--Vy-+
+        //
     	// Imposing B1
+    	// Left Wall Vx without touching top wall and with specified location in the cell ("left_cell").
     	fd.impose(v[x], {0,0},{0,sz[1]-2},0.0,vx,left_cell);
+        // Left Wall Vy without touching top wall
+        // (Starts at -1 index since Vy is on top of the cell and needs special boundary treatment "corner_dw")
+        //  cells in the Domain near 0,0 look like:
+        //
+        //		       |     |
+        //	           Vx  P(0,0)
+        //		       |     |
+        // 	           Vy---Vy--+
+        //             :
+        //         "corner_dw" specified by starting at -1,0
     	fd.impose(v[y], {-1,0},{-1,sz[1]-1},0.0,vy,corner_right);
-    	// Imposing B2
+
+        //Imposing B2
+    	// Similarly Right Wall (Also need "corner_dw" treatment for Vy, hence +1 in the y index)
     	fd.impose(v[x],{sz[0]-1,0},{sz[0]-1,sz[1]-2},0.0,vx,left_cell);
     	fd.impose(v[y],{sz[0]-1,0},{sz[0]-1,sz[1]-1},1.0,vy,corner_dw);
 
     	// Imposing B3
+        // Similarly Top Wall (needs "corner_up" treatment for Vx, hence -1 in the x index)
     	fd.impose(v[x], {0,-1},{sz[0]-1,-1},0.0,vx,corner_up);
     	fd.impose(v[y], {0,0},{sz[0]-2,0},0.0,vy,bottom_cell);
     	// Imposing B4
-    	fd.impose(v[x],{0,sz[1]-1},{sz[0]-1,sz[1]-1},0.0,vx,corner_dw);
+        // Similarly Bottom Wall (needs "corner_dw" treatment for Vx, hence +1 in the x index)
+        fd.impose(v[x],{0,sz[1]-1},{sz[0]-1,sz[1]-1},0.0,vx,corner_dw);
     	fd.impose(v[y],{0,sz[1]-1},{sz[0]-2,sz[1]-1},0.0,vy,bottom_cell);
 
     	// When we pad the grid, there are points of the grid that are not
