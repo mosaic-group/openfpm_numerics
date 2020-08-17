@@ -298,8 +298,8 @@ f_x = f_y = f_z = 3
     	Box<2,float> domain({0.0,0.0},{3.0,1.0});
 
     	// Ghost (Not important in this case but required)
-    	//Ghost<2,float> g(0.01); suited for particles
-        Ghost<2,long int> g(1); //better for grids
+    	Ghost<2,float> g(0.011); // suited for particles
+        //Ghost<2,long int> g(1); //better for grids
     	// Grid points on x=256 and y=64
     	long int sz[] = {256,64};
     	size_t szu[2];
@@ -373,7 +373,7 @@ f_x = f_y = f_z = 3
                 //v[y].value(key,bottom_cell)=1.0;
                 g_dist.getProp<2>(key)[1] = 1.0;
                 g_dist.getProp<3>(key) = 1.0;
-                std::cout<<it.getGKey(key).get(0)<<","<<it.getGKey(key).get(1)<<":"<<g_dist.getProp<3>(key)<<std::endl;
+                //std::cout<<it.getGKey(key).get(0)<<","<<it.getGKey(key).get(1)<<":"<<g_dist.getProp<3>(key)<<std::endl;
             }
             ++it;
         }
@@ -383,7 +383,6 @@ f_x = f_y = f_z = 3
     	// mathematical to have a well defined system, an intuitive explanation is that P and P + c are both
     	// solution for the incompressibility equation, this produce an ill-posed problem to make it well posed
     	// we set one point in this case {0,0} the pressure to a fixed constant for convenience P = 0
-        fd.impose(v[y],{sz[0]-1,0},{sz[0]-1,sz[1]-1},prop_id<3>(),vy,corner_dw);
 
         fd.impose(incompressibility, {0,0},{sz[0]-2,sz[1]-2}, 0.0,ic,true);
     	fd.impose(P, {0,0},{0,0},0.0,ic);
@@ -417,7 +416,7 @@ f_x = f_y = f_z = 3
         //Imposing B2
     	// Similarly Right Wall (Also need "corner_dw" treatment for Vy, hence +1 in the y index)
     	fd.impose(v[x],{sz[0]-1,0},{sz[0]-1,sz[1]-2},0.0,vx,left_cell);
-    	fd.impose(v[y],{sz[0]-1,0},{sz[0]-1,sz[1]-1},1.0/*prop_id<3>()*/,vy,corner_dw);
+    	fd.impose(v[y],{sz[0]-1,0},{sz[0]-1,sz[1]-1},prop_id<3>(),vy,corner_dw);
 
     	// Imposing B3
         // Similarly Top Wall (needs "corner_up" treatment for Vx, hence -1 in the x index)

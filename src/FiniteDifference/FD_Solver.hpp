@@ -502,6 +502,44 @@ private:
 		}
 	}
 
+    template<typename T,typename col, typename trp,typename iterator,typename cmb, typename Key> void impose_git_it(const T & op ,
+                                                                col &cols,
+                                                                trp &trpl,
+                                                                long int &id,
+                                                               const iterator &it_d,
+                                                                cmb &c_where, Key &key, grid_key_dx<Sys_eqs::dims> &shift)
+    {       // Calculate the non-zero colums
+            key.getKeyRef() += shift;
+            op.template value_nz<Sys_eqs>(g_map,key,gs,spacing,cols,1.0,0,c_where);
+            key.getKeyRef() -= shift;
+
+            // indicate if the diagonal has been set
+            bool is_diag = false;
+
+            // create the triplet
+            for ( auto it = cols.begin(); it != cols.end(); ++it )
+            {
+                trpl.add();
+                trpl.last().row() = g_map.template get<0>(key)*Sys_eqs::nvar + id;
+                trpl.last().col() = it->first;
+                trpl.last().value() = it->second;
+
+                if (trpl.last().row() == trpl.last().col())
+                    is_diag = true;
+
+                //				std::cout << "(" << trpl.last().row() << "," << trpl.last().col() << "," << trpl.last().value() << ")" << "\n";
+            }
+
+            // If does not have a diagonal entry put it to zero
+            if (is_diag == false)
+            {
+                trpl.add();
+                trpl.last().row() = g_map.template get<0>(key)*Sys_eqs::nvar + id;
+                trpl.last().col() = g_map.template get<0>(key)*Sys_eqs::nvar + id;
+                trpl.last().value() = 0.0;
+            }
+
+    }
 
 	/*! \brief Impose an operator
 	 *
@@ -548,50 +586,16 @@ private:
 		if (num.isConstant() == false)
 		{
 			auto it_num = grid.getSubDomainIterator(it.getStart(),it.getStop());
+                // iterate all the grid points
+            while (it.isNext())
+            {
+                // get the position
+                auto key = it.get();
+                auto key_num=it_num.get();
 
-			// iterate all the grid points
-			while (it.isNext())
-			{
-				// get the position
-				auto key = it.get();
-				auto key_num=it_num.get();
+                impose_git_it(op,cols,trpl,id,it,c_where,key,shift);
 
-
-				// Calculate the non-zero colums
-				key.getKeyRef() += shift;
-				op.template value_nz<Sys_eqs>(g_map,key,gs,spacing,cols,1.0,0,c_where);
-				key.getKeyRef() -= shift;
-
-				// indicate if the diagonal has been set
-				bool is_diag = false;
-
-				// create the triplet
-				for ( auto it = cols.begin(); it != cols.end(); ++it )
-				{
-					trpl.add();
-					trpl.last().row() = g_map.template get<0>(key)*Sys_eqs::nvar + id;
-					trpl.last().col() = it->first;
-					trpl.last().value() = it->second;
-
-					if (trpl.last().row() == trpl.last().col())
-						is_diag = true;
-
-	//				std::cout << "(" << trpl.last().row() << "," << trpl.last().col() << "," << trpl.last().value() << ")" << "\n";
-				}
-
-				// If does not have a diagonal entry put it to zero
-				if (is_diag == false)
-				{
-					trpl.add();
-					trpl.last().row() = g_map.template get<0>(key)*Sys_eqs::nvar + id;
-					trpl.last().col() = g_map.template get<0>(key)*Sys_eqs::nvar + id;
-					trpl.last().value() = 0.0;
-				}
-
-				//if (num.get(key)==1)
-				//std::cout<<it.getGKey(key).get(0)<<","<<it.getGKey(key).get(1)<<":"<<num.get(key_num)<<std::endl;
-
-				b(g_map.template get<0>(key)*Sys_eqs::nvar + id) = num.get(key_num);
+                b(g_map.template get<0>(key)*Sys_eqs::nvar + id) = num.get(key_num);
 
 				cols.clear();
 
@@ -608,45 +612,13 @@ private:
 		}
 		else
 		{
-			// iterate all the grid points
-			while (it.isNext())
-			{
-				// get the position
-				auto key = it.get();
-
-				// Calculate the non-zero colums
-				key.getKeyRef() += shift;
-				op.template value_nz<Sys_eqs>(g_map,key,gs,spacing,cols,1.0,0,c_where);
-				key.getKeyRef() -= shift;
-
-				// indicate if the diagonal has been set
-				bool is_diag = false;
-
-				// create the triplet
-				for ( auto it = cols.begin(); it != cols.end(); ++it )
-				{
-					trpl.add();
-					trpl.last().row() = g_map.template get<0>(key)*Sys_eqs::nvar + id;
-					trpl.last().col() = it->first;
-					trpl.last().value() = it->second;
-
-					if (trpl.last().row() == trpl.last().col())
-						is_diag = true;
-
-	//				std::cout << "(" << trpl.last().row() << "," << trpl.last().col() << "," << trpl.last().value() << ")" << "\n";
-				}
-
-				// If does not have a diagonal entry put it to zero
-				if (is_diag == false)
-				{
-					trpl.add();
-					trpl.last().row() = g_map.template get<0>(key)*Sys_eqs::nvar + id;
-					trpl.last().col() = g_map.template get<0>(key)*Sys_eqs::nvar + id;
-					trpl.last().value() = 0.0;
-				}
-
-				//if (num.get(key)==1)
-				//std::cout<<it.getGKey(key).get(0)<<","<<it.getGKey(key).get(1)<<":"<<num.get(key_num)<<std::endl;
+            // iterate all the grid points
+            while (it.isNext())
+            {
+                // get the position
+                auto key = it.get();
+			    // iterate all the grid points
+		        impose_git_it(op,cols,trpl,id,it,c_where,key,shift);
 
 				b(g_map.template get<0>(key)*Sys_eqs::nvar + id) = num.get(key);
 
@@ -656,7 +628,6 @@ private:
 	#ifdef SE_CLASS1
 	//			T::position(key,gs,s_pos);
 	#endif
-
 				++row;
 				++row_b;
 				++it;
