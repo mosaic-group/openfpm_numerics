@@ -417,7 +417,7 @@ f_x = f_y = f_z = 3
         //Imposing B2
     	// Similarly Right Wall (Also need "corner_dw" treatment for Vy, hence +1 in the y index)
     	fd.impose(v[x],{sz[0]-1,0},{sz[0]-1,sz[1]-2},0.0,vx,left_cell);
-    	fd.impose(v[y],{sz[0]-1,0},{sz[0]-1,sz[1]-1},prop_id<3>(),vy,corner_dw);
+    	fd.impose(v[y],{sz[0]-1,0},{sz[0]-1,sz[1]-1},1.0/*prop_id<3>()*/,vy,corner_dw);
 
     	// Imposing B3
         // Similarly Top Wall (needs "corner_up" treatment for Vx, hence -1 in the x index)

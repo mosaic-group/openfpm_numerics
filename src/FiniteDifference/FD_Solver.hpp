@@ -163,6 +163,11 @@ private:
 		{
 			return scal;
 		}
+
+        inline bool isConstant()
+        {
+        	return true;
+        }
 	};
 
     //! Encapsulation of the b term as constant
@@ -192,6 +197,11 @@ private:
         inline typename Sys_eqs::stype get(grid_dist_key_dx<Sys_eqs::dims> & key)
         {
             return grid.template getProp<prp_id>(key);
+        }
+
+        inline bool isConstant()
+        {
+        	return false;
         }
     };
 
@@ -532,63 +542,125 @@ private:
 
 		std::unordered_map<long int,typename Sys_eqs::stype> cols;
 
-		auto it_num = grid.getSubDomainIterator(it.getStart(),it.getStop());
+		grid_key_dx<Sys_eqs::dims> zero;
+		zero.zero();
 
-		// iterate all the grid points
-		while (it.isNext())
+		if (num.isConstant() == false)
 		{
-			// get the position
-			auto key = it.get();
-            auto key_num=it_num.get();
+			auto it_num = grid.getSubDomainIterator(it.getStart(),it.getStop());
 
-
-            // Calculate the non-zero colums
-			key.getKeyRef() += shift;
-			op.template value_nz<Sys_eqs>(g_map,key,gs,spacing,cols,1.0,0,c_where);
-			key.getKeyRef() -= shift;
-
-			// indicate if the diagonal has been set
-			bool is_diag = false;
-
-			// create the triplet
-			for ( auto it = cols.begin(); it != cols.end(); ++it )
+			// iterate all the grid points
+			while (it.isNext())
 			{
-				trpl.add();
-				trpl.last().row() = g_map.template get<0>(key)*Sys_eqs::nvar + id;
-				trpl.last().col() = it->first;
-				trpl.last().value() = it->second;
+				// get the position
+				auto key = it.get();
+				auto key_num=it_num.get();
 
-				if (trpl.last().row() == trpl.last().col())
-					is_diag = true;
 
-//				std::cout << "(" << trpl.last().row() << "," << trpl.last().col() << "," << trpl.last().value() << ")" << "\n";
+				// Calculate the non-zero colums
+				key.getKeyRef() += shift;
+				op.template value_nz<Sys_eqs>(g_map,key,gs,spacing,cols,1.0,0,c_where);
+				key.getKeyRef() -= shift;
+
+				// indicate if the diagonal has been set
+				bool is_diag = false;
+
+				// create the triplet
+				for ( auto it = cols.begin(); it != cols.end(); ++it )
+				{
+					trpl.add();
+					trpl.last().row() = g_map.template get<0>(key)*Sys_eqs::nvar + id;
+					trpl.last().col() = it->first;
+					trpl.last().value() = it->second;
+
+					if (trpl.last().row() == trpl.last().col())
+						is_diag = true;
+
+	//				std::cout << "(" << trpl.last().row() << "," << trpl.last().col() << "," << trpl.last().value() << ")" << "\n";
+				}
+
+				// If does not have a diagonal entry put it to zero
+				if (is_diag == false)
+				{
+					trpl.add();
+					trpl.last().row() = g_map.template get<0>(key)*Sys_eqs::nvar + id;
+					trpl.last().col() = g_map.template get<0>(key)*Sys_eqs::nvar + id;
+					trpl.last().value() = 0.0;
+				}
+
+				//if (num.get(key)==1)
+				//std::cout<<it.getGKey(key).get(0)<<","<<it.getGKey(key).get(1)<<":"<<num.get(key_num)<<std::endl;
+
+				b(g_map.template get<0>(key)*Sys_eqs::nvar + id) = num.get(key_num);
+
+				cols.clear();
+
+				// if SE_CLASS1 is defined check the position
+	#ifdef SE_CLASS1
+	//			T::position(key,gs,s_pos);
+	#endif
+
+				++row;
+				++row_b;
+				++it;
+				++it_num;
 			}
-
-			// If does not have a diagonal entry put it to zero
-			if (is_diag == false)
+		}
+		else
+		{
+			// iterate all the grid points
+			while (it.isNext())
 			{
-				trpl.add();
-				trpl.last().row() = g_map.template get<0>(key)*Sys_eqs::nvar + id;
-				trpl.last().col() = g_map.template get<0>(key)*Sys_eqs::nvar + id;
-				trpl.last().value() = 0.0;
+				// get the position
+				auto key = it.get();
+
+				// Calculate the non-zero colums
+				key.getKeyRef() += shift;
+				op.template value_nz<Sys_eqs>(g_map,key,gs,spacing,cols,1.0,0,c_where);
+				key.getKeyRef() -= shift;
+
+				// indicate if the diagonal has been set
+				bool is_diag = false;
+
+				// create the triplet
+				for ( auto it = cols.begin(); it != cols.end(); ++it )
+				{
+					trpl.add();
+					trpl.last().row() = g_map.template get<0>(key)*Sys_eqs::nvar + id;
+					trpl.last().col() = it->first;
+					trpl.last().value() = it->second;
+
+					if (trpl.last().row() == trpl.last().col())
+						is_diag = true;
+
+	//				std::cout << "(" << trpl.last().row() << "," << trpl.last().col() << "," << trpl.last().value() << ")" << "\n";
+				}
+
+				// If does not have a diagonal entry put it to zero
+				if (is_diag == false)
+				{
+					trpl.add();
+					trpl.last().row() = g_map.template get<0>(key)*Sys_eqs::nvar + id;
+					trpl.last().col() = g_map.template get<0>(key)*Sys_eqs::nvar + id;
+					trpl.last().value() = 0.0;
+				}
+
+				//if (num.get(key)==1)
+				//std::cout<<it.getGKey(key).get(0)<<","<<it.getGKey(key).get(1)<<":"<<num.get(key_num)<<std::endl;
+
+				b(g_map.template get<0>(key)*Sys_eqs::nvar + id) = num.get(key);
+
+				cols.clear();
+
+				// if SE_CLASS1 is defined check the position
+	#ifdef SE_CLASS1
+	//			T::position(key,gs,s_pos);
+	#endif
+
+				++row;
+				++row_b;
+				++it;
 			}
-
-			//if (num.get(key)==1)
-			//std::cout<<it.getGKey(key).get(0)<<","<<it.getGKey(key).get(1)<<":"<<num.get(key_num)<<std::endl;
-
-			b(g_map.template get<0>(key)*Sys_eqs::nvar + id) = num.get(key_num);
-
-			cols.clear();
-
-			// if SE_CLASS1 is defined check the position
-#ifdef SE_CLASS1
-//			T::position(key,gs,s_pos);
-#endif
-
-			++row;
-			++row_b;
-			++it;
-			++it_num;
 		}
 	}
 

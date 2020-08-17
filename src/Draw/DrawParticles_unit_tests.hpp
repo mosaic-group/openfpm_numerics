@@ -30,7 +30,7 @@ BOOST_AUTO_TEST_CASE(point_iterator)
 	size_t bc[3]={NON_PERIODIC,NON_PERIODIC,NON_PERIODIC};
 
 	// ghost, big enough to contain the interaction radius
-	Ghost<3,float> ghost(0.01);
+	Ghost<3,double> ghost(0.01);
 
 	vector_dist<3,double,aggregate<double>> vd(0,domain,bc,ghost);
 
@@ -87,7 +87,7 @@ BOOST_AUTO_TEST_CASE(point_iterator_skin)
 	size_t bc[3]={NON_PERIODIC,NON_PERIODIC,NON_PERIODIC};
 
 	// ghost, big enough to contain the interaction radius
-	Ghost<3,float> ghost(0.01);
+	Ghost<3,double> ghost(0.01);
 
 	vector_dist<3,double,aggregate<double>> vd(0,domain,bc,ghost);
 
