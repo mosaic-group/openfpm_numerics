@@ -298,8 +298,8 @@ f_x = f_y = f_z = 3
     	Box<2,float> domain({0.0,0.0},{3.0,1.0});
 
     	// Ghost (Not important in this case but required)
-    	Ghost<2,float> g(0.01);
-
+    	//Ghost<2,float> g(0.01); suited for particles
+        Ghost<2,long int> g(1); //better for grids
     	// Grid points on x=256 and y=64
     	long int sz[] = {256,64};
     	size_t szu[2];
@@ -313,8 +313,8 @@ f_x = f_y = f_z = 3
     	Padding<2> pd({1,1},{0,0});
 
     	// Distributed grid that store the solution
-    	staggered_grid_dist<2,float,aggregate<Point<2,float>,float>> g_dist(szu,domain,g);
-    	grid_dist_id<2,float,aggregate<Point<2,float>,float>> g_dist_normal(g_dist.getDecomposition(),szu,g);
+    	staggered_grid_dist<2,float,aggregate<Point<2,float>,float,Point<2,float>,float>> g_dist(szu,domain,g);
+    	grid_dist_id<2,float,aggregate<Point<2,float>,float,Point<2,float>,float>> g_dist_normal(g_dist.getDecomposition(),szu,g);
 
     	openfpm::vector<comb<2>> cmb_v;
     	cmb_v.add({0,-1});
@@ -331,6 +331,9 @@ f_x = f_y = f_z = 3
 
         auto P =  FD::getV_stag<1>(g_dist);
         auto v = FD::getV_stag<0>(g_dist);
+        auto RHS = FD::getV_stag<2>(g_dist);
+        //auto RHSy = FD::getV_stag<3>(g_dist);
+
 
         v.setVarId(0);
         P.setVarId(2);
@@ -359,12 +362,30 @@ f_x = f_y = f_z = 3
         comb<2> corner_dw({-1,-1});
         comb<2> corner_up({1,-1});
 
+        auto it = g_dist.getDomainIterator();
+        while (it.isNext())
+        {
+            auto key = it.get();
+            auto gkey = it.getGKey(key);
+            double xg = gkey.get(0) * g_dist.spacing(0);
+            double yg = gkey.get(1) * g_dist.spacing(1);
+            if (xg==3.0){
+                //v[y].value(key,bottom_cell)=1.0;
+                g_dist.getProp<2>(key)[1] = 1.0;
+                g_dist.getProp<3>(key) = 1.0;
+                std::cout<<it.getGKey(key).get(0)<<","<<it.getGKey(key).get(1)<<":"<<g_dist.getProp<3>(key)<<std::endl;
+            }
+            ++it;
+        }
+
     	// Here we impose the equation, we start from the incompressibility Eq imposed in the bulk with the
     	// exception of the first point {0,0} and than we set P = 0 in {0,0}, why we are doing this is again
     	// mathematical to have a well defined system, an intuitive explanation is that P and P + c are both
     	// solution for the incompressibility equation, this produce an ill-posed problem to make it well posed
     	// we set one point in this case {0,0} the pressure to a fixed constant for convenience P = 0
-    	fd.impose(incompressibility, {0,0},{sz[0]-2,sz[1]-2}, 0.0,ic,true);
+        fd.impose(v[y],{sz[0]-1,0},{sz[0]-1,sz[1]-1},prop_id<3>(),vy,corner_dw);
+
+        fd.impose(incompressibility, {0,0},{sz[0]-2,sz[1]-2}, 0.0,ic,true);
     	fd.impose(P, {0,0},{0,0},0.0,ic);
 
     	// Here we impose the Eq1 and Eq2
@@ -390,13 +411,13 @@ f_x = f_y = f_z = 3
         //		       |     |
         // 	           Vy---Vy--+
         //             :
-        //         "corner_dw" specified by starting at -1,0
+        //         "corner_right of -1" specified by starting at -1,0
     	fd.impose(v[y], {-1,0},{-1,sz[1]-1},0.0,vy,corner_right);
 
         //Imposing B2
     	// Similarly Right Wall (Also need "corner_dw" treatment for Vy, hence +1 in the y index)
     	fd.impose(v[x],{sz[0]-1,0},{sz[0]-1,sz[1]-2},0.0,vx,left_cell);
-    	fd.impose(v[y],{sz[0]-1,0},{sz[0]-1,sz[1]-1},1.0,vy,corner_dw);
+    	fd.impose(v[y],{sz[0]-1,0},{sz[0]-1,sz[1]-1},prop_id<3>(),vy,corner_dw);
 
     	// Imposing B3
         // Similarly Top Wall (needs "corner_up" treatment for Vx, hence -1 in the x index)
@@ -426,18 +447,18 @@ f_x = f_y = f_z = 3
     	fd.solve(v[x],v[y],P);
 
 
-    	auto it = g_dist_normal.getDomainIterator();
+    	auto it2 = g_dist_normal.getDomainIterator();
 
-    	while (it.isNext())
+    	while (it2.isNext())
     	{
-    		auto key = it.get();
+    		auto key = it2.get();
 
     		g_dist_normal.template getProp<0>(key)[0] = v[x].value(key,left_cell);
     		g_dist_normal.template getProp<0>(key)[1] = v[y].value(key,bottom_cell);
 
     		g_dist_normal.template getProp<1>(key) = P.value(key,center_cell);
 
-    		++it;
+    		++it2;
     	}
 
     	g_dist_normal.write("out_test");

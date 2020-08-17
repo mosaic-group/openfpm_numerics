@@ -532,13 +532,17 @@ private:
 
 		std::unordered_map<long int,typename Sys_eqs::stype> cols;
 
+		auto it_num = grid.getSubDomainIterator(it.getStart(),it.getStop());
+
 		// iterate all the grid points
 		while (it.isNext())
 		{
 			// get the position
 			auto key = it.get();
+            auto key_num=it_num.get();
 
-			// Calculate the non-zero colums
+
+            // Calculate the non-zero colums
 			key.getKeyRef() += shift;
 			op.template value_nz<Sys_eqs>(g_map,key,gs,spacing,cols,1.0,0,c_where);
 			key.getKeyRef() -= shift;
@@ -569,7 +573,10 @@ private:
 				trpl.last().value() = 0.0;
 			}
 
-			b(g_map.template get<0>(key)*Sys_eqs::nvar + id) = num.get(key);
+			//if (num.get(key)==1)
+			//std::cout<<it.getGKey(key).get(0)<<","<<it.getGKey(key).get(1)<<":"<<num.get(key_num)<<std::endl;
+
+			b(g_map.template get<0>(key)*Sys_eqs::nvar + id) = num.get(key_num);
 
 			cols.clear();
 
@@ -581,6 +588,7 @@ private:
 			++row;
 			++row_b;
 			++it;
+			++it_num;
 		}
 	}
 
@@ -831,6 +839,37 @@ public:
 
         impose_git(op,b,id.getId(),it,c_where);
 	}
+
+    /*! \brief Impose an operator
+     *
+     * This function impose an operator on a box region to produce the system
+     *
+     * Ax = b
+     *
+     * ## Stokes equation, lid driven cavity with one splipping wall
+     * \snippet eq_unit_test.hpp lid-driven cavity 2D
+     *
+     * \param op Operator to impose (A term)
+     * \param num right hand side of the term (b term)
+     * \param id Equation id in the system that we are imposing
+     * \param start starting point of the box
+     * \param stop stop point of the box
+     * \param skip_first skip the first point
+     *
+     */
+    template<typename T,unsigned int prp_id> void impose(const T & op,
+                                     const grid_key_dx<Sys_eqs::dims> start_k,
+                                     const grid_key_dx<Sys_eqs::dims> stop_k,
+                                     prop_id<prp_id> num,
+                                     eq_id id,
+                                     comb<Sys_eqs::dims> c_where)
+    {
+        auto it = g_map.getSubDomainIterator(start_k,stop_k);
+
+        variable_b<prp_id> b(grid);
+
+        impose_git(op,b,id.getId(),it,c_where);
+    }
 
 	/*! \brief Impose an operator
 	 *
