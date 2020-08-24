@@ -13,11 +13,11 @@
 #include "util/util_debug.hpp"
 #include <boost/test/unit_test.hpp>
 #include <iostream>
-#include "DCPSE_op.hpp"
-#include "DCPSE_Solver.hpp"
+#include "../DCPSE_op.hpp"
+#include "../DCPSE_Solver.hpp"
 #include "Operators/Vector/vector_dist_operators.hpp"
 #include "Vector/vector_dist_subset.hpp"
-#include "EqnsStruct.hpp"
+#include "../EqnsStruct.hpp"
 
 //int vector_dist_expression_op<void,void,VECT_COPY_N_TO_N>::i = 0;
 //int vector_dist_expression_op<void,void,VECT_COPY_1_TO_N>::i = 0;
@@ -819,6 +819,8 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests2)
 
 /*
   In 3D we use exact solution:
+
+   u = x^2 + y^2  In 3D we use exact solution:
 
    u = x^2 + y^2
    v = y^2 + z^2

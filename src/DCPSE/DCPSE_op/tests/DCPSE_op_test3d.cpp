@@ -5,7 +5,7 @@
  *      Author: Abhinav Singh
  *
  */
-
+the
 #include "config.h"
 
 #define BOOST_TEST_DYN_LINK
@@ -13,16 +13,276 @@
 #include "util/util_debug.hpp"
 #include <boost/test/unit_test.hpp>
 #include <iostream>
-#include "DCPSE_op.hpp"
-#include "DCPSE_Solver.hpp"
+#include "../DCPSE_op.hpp"
+#include "../DCPSE_Solver.hpp"
 #include "Operators/Vector/vector_dist_operators.hpp"
 #include "Vector/vector_dist_subset.hpp"
-#include "EqnsStruct.hpp"
+#include "../EqnsStruct.hpp"
 
 //template<typename T>
 //struct Debug;
 
 BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests3)
+    BOOST_AUTO_TEST_CASE(dcpse_op_vec3d) {
+//  int rank;
+//  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+        size_t edgeSemiSize = 31;
+        const size_t sz[3] = {2 * edgeSemiSize+1, 2 * edgeSemiSize+1,2 * edgeSemiSize+1};
+        Box<3, double> box({0, 0,0}, {1,1,1});
+        size_t bc[3] = {NON_PERIODIC, NON_PERIODIC, NON_PERIODIC};
+        double spacing = box.getHigh(0) / (sz[0] - 1);
+        double rCut = 3.1 * spacing;
+        Ghost<3, double> ghost(rCut);
+        BOOST_TEST_MESSAGE("Init vector_dist...");
+        double sigma2 = spacing * spacing/ (2 * 4);
+
+        vector_dist<3, double, aggregate<double, VectorS<3, double>, VectorS<3, double>, VectorS<3, double>, VectorS<3, double>,double,double>> domain(
+                0, box, bc, ghost);
+
+        //Init_DCPSE(domain)
+        BOOST_TEST_MESSAGE("Init domain...");
+
+        auto it = domain.getGridIterator(sz);
+        size_t pointId = 0;
+        size_t counter = 0;
+        double minNormOne = 999;
+        while (it.isNext()) {
+            domain.add();
+            auto key = it.get();
+            mem_id k0 = key.get(0);
+            double x = k0 * spacing;
+            domain.getLastPos()[0] = x;//+ gaussian(rng);
+            mem_id k1 = key.get(1);
+            double y = k1 * spacing;
+            domain.getLastPos()[1] = y;//+gaussian(rng);
+            mem_id k2 = key.get(2);
+            double z = k2 * spacing;
+            domain.getLastPos()[1] = z;//+gaussian(rng);
+            // Here fill the function value
+            domain.template getLastProp<0>()    = sin(domain.getLastPos()[0]) + sin(domain.getLastPos()[1]) + sin(domain.getLastPos()[2]) ;
+            domain.template getLastProp<1>()[0] = cos(domain.getLastPos()[0]);
+            domain.template getLastProp<1>()[1] = cos(domain.getLastPos()[1]) ;
+            domain.template getLastProp<1>()[2] = cos(domain.getLastPos()[2]);
+            // Here fill the validation value for Df/Dx
+            domain.template getLastProp<2>()[0] = 0;//cos(domain.getLastPos()[0]);//+cos(domain.getLastPos()[1]);
+            domain.template getLastProp<2>()[1] = 0;//-sin(domain.getLastPos()[0]);//+cos(domain.getLastPos()[1]);
+            domain.template getLastProp<3>()[0] = 0;//cos(domain.getLastPos()[0]);//+cos(domain.getLastPos()[1]);
+            domain.template getLastProp<3>()[1] = 0;//-sin(domain.getLastPos()[0]);//+cos(domain.getLastPos()[1]);
+            domain.template getLastProp<3>()[2] = 0;
+
+            domain.template getLastProp<4>()[0] = cos(domain.getLastPos()[0]) * (sin(domain.getLastPos()[0]) + sin(domain.getLastPos()[1])) +
+                                                  cos(domain.getLastPos()[1]) * (cos(domain.getLastPos()[0]) + cos(domain.getLastPos()[1]));
+            domain.template getLastProp<4>()[1] = -sin(domain.getLastPos()[0]) * (sin(domain.getLastPos()[0]) + sin(domain.getLastPos()[1])) -
+                                                  sin(domain.getLastPos()[1]) * (cos(domain.getLastPos()[0]) + cos(domain.getLastPos()[1]));
+            domain.template getLastProp<4>()[2] = -sin(domain.getLastPos()[0]) * (sin(domain.getLastPos()[0]) + sin(domain.getLastPos()[1])) -
+                                                  sin(domain.getLastPos()[1]) * (cos(domain.getLastPos()[0]) + cos(domain.getLastPos()[1]));
+
+            domain.template getLastProp<5>()    = -(sin(domain.getLastPos()[0]) + sin(domain.getLastPos()[1]) + sin(domain.getLastPos()[2])) ;
+
+
+            ++counter;
+            ++it;
+        }
+        BOOST_TEST_MESSAGE("Sync domain across processors...");
+
+        domain.map();
+        domain.ghost_get<0>();
+
+        Advection Adv(domain, 2, rCut, 1.9,support_options::RADIUS);
+        auto v = getV<1>(domain);
+        auto P = getV<0>(domain);
+        auto dv = getV<3>(domain);
+        auto dP = getV<6>(domain);
+
+
+//        typedef boost::mpl::int_<std::is_fundamental<point_expression_op<Point<2U, double>, point_expression<double>, Point<2U, double>, 3>>::value>::blabla blabla;
+
+//        std::is_fundamental<decltype(o1.value(key))>
+
+        dv = Adv(v, v);
+        auto it2 = domain.getDomainIterator();
+
+        double worst1 = 0.0;
+
+        while (it2.isNext()) {
+            auto p = it2.get();
+
+            if (fabs(domain.getProp<3>(p)[1] - domain.getProp<4>(p)[1]) > worst1) {
+                worst1 = fabs(domain.getProp<3>(p)[1] - domain.getProp<4>(p)[1]);
+
+            }
+
+            ++it2;
+        }
+
+        std::cout << "Maximum Error in component 2: " << worst1 << std::endl;
+
+        //Adv.checkMomenta(domain);
+        //Adv.DrawKernel<2>(domain,0);
+
+        //domain.deleteGhost();
+        domain.write("v1");
+
+        dP = Adv(v, P);//+Dy(P);
+        auto it3 = domain.getDomainIterator();
+
+        double worst2 = 0.0;
+
+        while (it3.isNext()) {
+            auto p = it3.get();
+            if (fabs(domain.getProp<6>(p) - domain.getProp<5>(p)) > worst2) {
+                worst2 = fabs(domain.getProp<6>(p) - domain.getProp<5>(p));
+
+            }
+
+            ++it3;
+        }
+
+        //std::cout << "Maximum Error: " << worst2 << std::endl;
+
+        domain.deleteGhost();
+        domain.write("v2");
+        BOOST_REQUIRE(worst2 < 0.03);
+
+
+    }
+    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    BOOST_AUTO_TEST_CASE(dcpse_poisson_Robin_anal3d) {
+//  int rank;
+//  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+        const size_t sz[2] = {161,161};
+        Box<2, double> box({0, 0}, {0.5, 0.5});
+        size_t bc[2] = {NON_PERIODIC, NON_PERIODIC};
+        double spacing = box.getHigh(0) / (sz[0] - 1);
+        Ghost<2, double> ghost(spacing * 3.1);
+        double rCut = 3.1 * spacing;
+        BOOST_TEST_MESSAGE("Init vector_dist...");
+
+        vector_dist<2, double, aggregate<double,double,double,double,double,double>> domain(0, box, bc, ghost);
+
+
+        //Init_DCPSE(domain)
+        BOOST_TEST_MESSAGE("Init domain...");
+
+        auto it = domain.getGridIterator(sz);
+        while (it.isNext()) {
+            domain.add();
+
+            auto key = it.get();
+            double x = key.get(0) * it.getSpacing(0);
+            domain.getLastPos()[0] = x;
+            double y = key.get(1) * it.getSpacing(1);
+            domain.getLastPos()[1] = y;
+
+            ++it;
+        }
+        BOOST_TEST_MESSAGE("Sync domain across processors...");
+
+        domain.map();
+        domain.ghost_get<0>();
+
+        Derivative_x Dx(domain, 2, rCut,1.9,support_options::RADIUS);
+        Derivative_y Dy(domain, 2, rCut,1.9,support_options::RADIUS);
+        Laplacian Lap(domain, 2, rCut,1.9,support_options::RADIUS);
+
+
+
+        openfpm::vector<aggregate<int>> bulk;
+        openfpm::vector<aggregate<int>> up_p;
+        openfpm::vector<aggregate<int>> dw_p;
+        openfpm::vector<aggregate<int>> l_p;
+        openfpm::vector<aggregate<int>> r_p;
+        openfpm::vector<aggregate<int>> ref_p;
+
+        auto v = getV<0>(domain);
+        auto RHS=getV<1>(domain);
+        auto sol = getV<2>(domain);
+        auto anasol = getV<3>(domain);
+        auto err = getV<4>(domain);
+        auto DCPSE_sol=getV<5>(domain);
+
+        // Here fill me
+
+        Box<2, double> up({box.getLow(0) - spacing / 2.0, box.getHigh(1) - spacing / 2.0},
+                          {box.getHigh(0) + spacing / 2.0, box.getHigh(1) + spacing / 2.0});
+
+        Box<2, double> down({box.getLow(0) - spacing / 2.0, box.getLow(1) - spacing / 2.0},
+                            {box.getHigh(0) + spacing / 2.0, box.getLow(1) + spacing / 2.0});
+
+        Box<2, double> left({box.getLow(0) - spacing / 2.0, box.getLow(1) + spacing / 2.0},
+                            {box.getLow(0) + spacing / 2.0, box.getHigh(1) - spacing / 2.0});
+
+        Box<2, double> right({box.getHigh(0) - spacing / 2.0, box.getLow(1) + spacing / 2.0},
+                             {box.getHigh(0) + spacing / 2.0, box.getHigh(1) - spacing / 2.0});
+
+        openfpm::vector<Box<2, double>> boxes;
+        boxes.add(up);
+        boxes.add(down);
+        boxes.add(left);
+        boxes.add(right);
+
+        // Create a writer and write
+        VTKWriter<openfpm::vector<Box<2, double>>, VECTOR_BOX> vtk_box;
+        vtk_box.add(boxes);
+        vtk_box.write("vtk_box.vtk");
+
+
+        auto it2 = domain.getDomainIterator();
+
+        while (it2.isNext()) {
+            auto p = it2.get();
+            Point<2, double> xp = domain.getPos(p);
+            //domain.getProp<3>(p)=1+xp[0]*xp[0]+2*xp[1]*xp[1];
+            if (up.isInside(xp) == true) {
+                up_p.add();
+                up_p.last().get<0>() = p.getKey();
+                domain.getProp<1>(p) = -2*M_PI*M_PI*sin(M_PI*xp.get(0))*sin(M_PI*xp.get(1));
+                domain.getProp<3>(p) = sin(M_PI*xp.get(0))*sin(M_PI*xp.get(1));
+            } else if (down.isInside(xp) == true) {
+                dw_p.add();
+                dw_p.last().get<0>() = p.getKey();
+                domain.getProp<1>(p) =  -2*M_PI*M_PI*sin(M_PI*xp.get(0))*sin(M_PI*xp.get(1));
+                domain.getProp<3>(p) = sin(M_PI*xp.get(0))*sin(M_PI*xp.get(1));
+
+            } else if (left.isInside(xp) == true) {
+                l_p.add();
+                l_p.last().get<0>() = p.getKey();
+                domain.getProp<1>(p) =  -2*M_PI*M_PI*sin(M_PI*xp.get(0))*sin(M_PI*xp.get(1));
+                domain.getProp<3>(p) = sin(M_PI*xp.get(0))*sin(M_PI*xp.get(1));
+
+            } else if (right.isInside(xp) == true) {
+                r_p.add();
+                r_p.last().get<0>() = p.getKey();
+                domain.getProp<1>(p) =  -2*M_PI*M_PI*sin(M_PI*xp.get(0))*sin(M_PI*xp.get(1));
+                domain.getProp<3>(p) = sin(M_PI*xp.get(0))*sin(M_PI*xp.get(1));
+
+            } else {
+                bulk.add();
+                bulk.last().get<0>() = p.getKey();
+                domain.getProp<1>(p) =  -2*M_PI*M_PI*sin(M_PI*xp.get(0))*sin(M_PI*xp.get(1));
+                domain.getProp<3>(p) = sin(M_PI*xp.get(0))*sin(M_PI*xp.get(1));
+            }
+            ++it2;
+        }
+
+        v=abs(DCPSE_sol-RHS);
+        double worst1 = 0.0;
+
+        it2 = domain.getDomainIterator();
+
+        while (it2.isNext()) {
+            auto p = it2.get();
+            if (fabs(domain.getProp<1>(p) - domain.getProp<5>(p)) >= worst1) {
+                worst1 = fabs(domain.getProp<1>(p) - domain.getProp<5>(p));
+            }
+            ++it2;
+        }
+        BOOST_REQUIRE(worst1 < 0.03);
+
+
+
+
+    }
 
     BOOST_AUTO_TEST_CASE(stokes_3d_petscP) {
         size_t grd_sz=21;
@@ -295,11 +555,9 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests3)
                 Particles.getProp<1>(p)[1] =  0;
                 Particles.getProp<1>(p)[2] =  0;
             }
-            //P=P+Lap(H)-0.5*Adv(V_t,H);
             P_bulk=P_bulk+B_Lap(H_bulk);//-0.5*B_Adv(V_t,H);
             for (int i = 0 ; i < bulk.size() ; i++) {
-                //Particles.template getProp<1>(bulk.template get<0>(i))[x] += Particles_subset.getProp<2>(i)[x];
-                //Particles.template getProp<1>(bulk.template get<0>(i))[y] += Particles_subset.getProp<2>(i)[y];
+
                 Particles.template getProp<0>(bulk.template get<0>(i)) = Particles_subset.getProp<0>(i);
             }
             Particles.ghost_get<0,1>();
@@ -1112,380 +1370,6 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests3)
         }
     }
 
-
-    BOOST_AUTO_TEST_CASE(dcpse_op_vec3d) {
-//  int rank;
-//  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-        size_t edgeSemiSize = 31;
-        const size_t sz[3] = {2 * edgeSemiSize+1, 2 * edgeSemiSize+1,2 * edgeSemiSize+1};
-        Box<3, double> box({0, 0,0}, {1,1,1});
-        size_t bc[3] = {NON_PERIODIC, NON_PERIODIC, NON_PERIODIC};
-        double spacing = box.getHigh(0) / (sz[0] - 1);
-        double rCut = 3.1 * spacing;
-        Ghost<3, double> ghost(rCut);
-        BOOST_TEST_MESSAGE("Init vector_dist...");
-        double sigma2 = spacing * spacing/ (2 * 4);
-
-        vector_dist<3, double, aggregate<double, VectorS<3, double>, VectorS<3, double>, VectorS<3, double>, VectorS<3, double>,double,double>> domain(
-                0, box, bc, ghost);
-
-        //Init_DCPSE(domain)
-        BOOST_TEST_MESSAGE("Init domain...");
-//            std::random_device rd{};
-//            std::mt19937 rng{rd()};
-//        std::mt19937 rng{6666666};
-
-//        std::normal_distribution<> gaussian{0, sigma2};
-
-        auto it = domain.getGridIterator(sz);
-        size_t pointId = 0;
-        size_t counter = 0;
-        double minNormOne = 999;
-        while (it.isNext()) {
-            domain.add();
-            auto key = it.get();
-            mem_id k0 = key.get(0);
-            double x = k0 * spacing;
-            domain.getLastPos()[0] = x;//+ gaussian(rng);
-            mem_id k1 = key.get(1);
-            double y = k1 * spacing;
-            domain.getLastPos()[1] = y;//+gaussian(rng);
-            mem_id k2 = key.get(2);
-            double z = k2 * spacing;
-            domain.getLastPos()[1] = z;//+gaussian(rng);
-            // Here fill the function value
-            domain.template getLastProp<0>()    = sin(domain.getLastPos()[0]) + sin(domain.getLastPos()[1]) + sin(domain.getLastPos()[2]) ;
-            domain.template getLastProp<1>()[0] = cos(domain.getLastPos()[0]);
-            domain.template getLastProp<1>()[1] = cos(domain.getLastPos()[1]) ;
-            domain.template getLastProp<1>()[2] = cos(domain.getLastPos()[2]);
-//            domain.template getLastProp<0>() = x * x;
-//            domain.template getLastProp<0>() = x;
-            // Here fill the validation value for Df/Dx
-            domain.template getLastProp<2>()[0] = 0;//cos(domain.getLastPos()[0]);//+cos(domain.getLastPos()[1]);
-            domain.template getLastProp<2>()[1] = 0;//-sin(domain.getLastPos()[0]);//+cos(domain.getLastPos()[1]);
-            domain.template getLastProp<3>()[0] = 0;//cos(domain.getLastPos()[0]);//+cos(domain.getLastPos()[1]);
-            domain.template getLastProp<3>()[1] = 0;//-sin(domain.getLastPos()[0]);//+cos(domain.getLastPos()[1]);
-            domain.template getLastProp<3>()[2] = 0;
-
-            domain.template getLastProp<4>()[0] = cos(domain.getLastPos()[0]) * (sin(domain.getLastPos()[0]) + sin(domain.getLastPos()[1])) +
-                                                  cos(domain.getLastPos()[1]) * (cos(domain.getLastPos()[0]) + cos(domain.getLastPos()[1]));
-            domain.template getLastProp<4>()[1] = -sin(domain.getLastPos()[0]) * (sin(domain.getLastPos()[0]) + sin(domain.getLastPos()[1])) -
-                                                   sin(domain.getLastPos()[1]) * (cos(domain.getLastPos()[0]) + cos(domain.getLastPos()[1]));
-            domain.template getLastProp<4>()[2] = -sin(domain.getLastPos()[0]) * (sin(domain.getLastPos()[0]) + sin(domain.getLastPos()[1])) -
-                                                  sin(domain.getLastPos()[1]) * (cos(domain.getLastPos()[0]) + cos(domain.getLastPos()[1]));
-
-            domain.template getLastProp<5>()    = -(sin(domain.getLastPos()[0]) + sin(domain.getLastPos()[1]) + sin(domain.getLastPos()[2])) ;
-
-
-
-
-//            domain.template getLastProp<2>() = 2 * x;
-//            domain.template getLastProp<2>() = 1;
-
-            ++counter;
-            ++it;
-        }
-        BOOST_TEST_MESSAGE("Sync domain across processors...");
-
-        domain.map();
-        domain.ghost_get<0>();
-
-        //Derivative_x Dx(domain, 2, rCut);
-        //Derivative_y Dy(domain, 2, rCut);
-        //Gradient Grad(domain, 2, rCut);
-        //Laplacian Lap(domain, 2, rCut, 3);
-        Advection Adv(domain, 2, rCut, 1.9,support_options::RADIUS);
-        auto v = getV<1>(domain);
-        auto P = getV<0>(domain);
-        auto dv = getV<3>(domain);
-        auto dP = getV<6>(domain);
-
-
-//        typedef boost::mpl::int_<std::is_fundamental<point_expression_op<Point<2U, double>, point_expression<double>, Point<2U, double>, 3>>::value>::blabla blabla;
-
-//        std::is_fundamental<decltype(o1.value(key))>
-
-        //vv=Lap(P);
-        //dv=Lap(v);//+Dy(P);
-        dv = Adv(v, v);//+Dy(P);
-        auto it2 = domain.getDomainIterator();
-
-        double worst1 = 0.0;
-
-        while (it2.isNext()) {
-            auto p = it2.get();
-
-            //std::cout << "VALS: " << domain.getProp<3>(p)[0] << " " << domain.getProp<4>(p)[0] << std::endl;
-            //std::cout << "VALS: " << domain.getProp<3>(p)[1] << " " << domain.getProp<4>(p)[1] << std::endl;
-
-            //domain.getProp<0>(p)=std::sqrt((domain.getProp<3>(p)[0] - domain.getProp<4>(p)[0])*(domain.getProp<3>(p)[0] - domain.getProp<4>(p)[0])+(domain.getProp<3>(p)[1] - domain.getProp<4>(p)[1])*(domain.getProp<3>(p)[1] - domain.getProp<4>(p)[1]));
-
-            if (fabs(domain.getProp<3>(p)[1] - domain.getProp<4>(p)[1]) > worst1) {
-                worst1 = fabs(domain.getProp<3>(p)[1] - domain.getProp<4>(p)[1]);
-
-            }
-
-            ++it2;
-        }
-
-        std::cout << "Maximum Error in component 2: " << worst1 << std::endl;
-
-        //Adv.checkMomenta(domain);
-        //Adv.DrawKernel<2>(domain,0);
-
-        //domain.deleteGhost();
-        domain.write("v1");
-
-        dP = Adv(v, P);//+Dy(P);
-        auto it3 = domain.getDomainIterator();
-
-        double worst2 = 0.0;
-
-        while (it3.isNext()) {
-            auto p = it3.get();
-
-            //std::cout << "VALS: " << domain.getProp<3>(p)[0] << " " << domain.getProp<4>(p)[0] << std::endl;
-            //std::cout << "VALS: " << domain.getProp<3>(p)[1] << " " << domain.getProp<4>(p)[1] << std::endl;
-
-            //domain.getProp<0>(p)=std::sqrt((domain.getProp<3>(p)[0] - domain.getProp<4>(p)[0])*(domain.getProp<3>(p)[0] - domain.getProp<4>(p)[0])+(domain.getProp<3>(p)[1] - domain.getProp<4>(p)[1])*(domain.getProp<3>(p)[1] - domain.getProp<4>(p)[1]));
-
-            if (fabs(domain.getProp<6>(p) - domain.getProp<5>(p)) > worst2) {
-                worst2 = fabs(domain.getProp<6>(p) - domain.getProp<5>(p));
-
-            }
-
-            ++it3;
-        }
-
-        std::cout << "Maximum Error: " << worst2 << std::endl;
-
-        //Adv.checkMomenta(domain);
-        //Adv.DrawKernel<2>(domain,0);
-
-        domain.deleteGhost();
-        domain.write("v2");
-
-
-
-        //std::cout << demangle(typeid(decltype(v)).name()) << "\n";
-
-        //Debug<decltype(expr)> a;
-
-        //typedef decltype(expr)::blabla blabla;
-
-        //auto err = Dx + Dx;
-    }
-
-    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    BOOST_AUTO_TEST_CASE(dcpse_poisson_Robin_anal3d) {
-//  int rank;
-//  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-        const size_t sz[2] = {161,161};
-        Box<2, double> box({0, 0}, {0.5, 0.5});
-        size_t bc[2] = {NON_PERIODIC, NON_PERIODIC};
-        double spacing = box.getHigh(0) / (sz[0] - 1);
-        Ghost<2, double> ghost(spacing * 3.1);
-        double rCut = 3.1 * spacing;
-        BOOST_TEST_MESSAGE("Init vector_dist...");
-
-        vector_dist<2, double, aggregate<double,double,double,double,double,double>> domain(0, box, bc, ghost);
-
-
-        //Init_DCPSE(domain)
-        BOOST_TEST_MESSAGE("Init domain...");
-
-        auto it = domain.getGridIterator(sz);
-        while (it.isNext()) {
-            domain.add();
-
-            auto key = it.get();
-            double x = key.get(0) * it.getSpacing(0);
-            domain.getLastPos()[0] = x;
-            double y = key.get(1) * it.getSpacing(1);
-            domain.getLastPos()[1] = y;
-
-            ++it;
-        }
-        BOOST_TEST_MESSAGE("Sync domain across processors...");
-
-        domain.map();
-        domain.ghost_get<0>();
-
-        Derivative_x Dx(domain, 2, rCut,1.9,support_options::RADIUS);
-        Derivative_y Dy(domain, 2, rCut,1.9,support_options::RADIUS);
-        //Gradient Grad(domain, 2, rCut);
-        Laplacian Lap(domain, 2, rCut,1.9,support_options::RADIUS);
-        //Advection Adv(domain, 3, rCut, 3);
-        //Solver Sol_Lap(Lap),Sol_Dx(Dx);
-
-
-        openfpm::vector<aggregate<int>> bulk;
-        openfpm::vector<aggregate<int>> up_p;
-        openfpm::vector<aggregate<int>> dw_p;
-        openfpm::vector<aggregate<int>> l_p;
-        openfpm::vector<aggregate<int>> r_p;
-        openfpm::vector<aggregate<int>> ref_p;
-
-        auto v = getV<0>(domain);
-        auto RHS=getV<1>(domain);
-        auto sol = getV<2>(domain);
-        auto anasol = getV<3>(domain);
-        auto err = getV<4>(domain);
-        auto DCPSE_sol=getV<5>(domain);
-
-        // Here fill me
-
-        Box<2, double> up({box.getLow(0) - spacing / 2.0, box.getHigh(1) - spacing / 2.0},
-                          {box.getHigh(0) + spacing / 2.0, box.getHigh(1) + spacing / 2.0});
-
-        Box<2, double> down({box.getLow(0) - spacing / 2.0, box.getLow(1) - spacing / 2.0},
-                            {box.getHigh(0) + spacing / 2.0, box.getLow(1) + spacing / 2.0});
-
-        Box<2, double> left({box.getLow(0) - spacing / 2.0, box.getLow(1) + spacing / 2.0},
-                            {box.getLow(0) + spacing / 2.0, box.getHigh(1) - spacing / 2.0});
-
-        Box<2, double> right({box.getHigh(0) - spacing / 2.0, box.getLow(1) + spacing / 2.0},
-                             {box.getHigh(0) + spacing / 2.0, box.getHigh(1) - spacing / 2.0});
-
-        openfpm::vector<Box<2, double>> boxes;
-        boxes.add(up);
-        boxes.add(down);
-        boxes.add(left);
-        boxes.add(right);
-
-        // Create a writer and write
-        VTKWriter<openfpm::vector<Box<2, double>>, VECTOR_BOX> vtk_box;
-        vtk_box.add(boxes);
-        vtk_box.write("vtk_box.vtk");
-
-
-        auto it2 = domain.getDomainIterator();
-
-        while (it2.isNext()) {
-            auto p = it2.get();
-            Point<2, double> xp = domain.getPos(p);
-            //domain.getProp<3>(p)=1+xp[0]*xp[0]+2*xp[1]*xp[1];
-            if (up.isInside(xp) == true) {
-                up_p.add();
-                up_p.last().get<0>() = p.getKey();
-                domain.getProp<1>(p) = -2*M_PI*M_PI*sin(M_PI*xp.get(0))*sin(M_PI*xp.get(1));
-                domain.getProp<3>(p) = sin(M_PI*xp.get(0))*sin(M_PI*xp.get(1));
-            } else if (down.isInside(xp) == true) {
-                dw_p.add();
-                dw_p.last().get<0>() = p.getKey();
-                domain.getProp<1>(p) =  -2*M_PI*M_PI*sin(M_PI*xp.get(0))*sin(M_PI*xp.get(1));
-                domain.getProp<3>(p) = sin(M_PI*xp.get(0))*sin(M_PI*xp.get(1));
-
-            } else if (left.isInside(xp) == true) {
-                l_p.add();
-                l_p.last().get<0>() = p.getKey();
-                domain.getProp<1>(p) =  -2*M_PI*M_PI*sin(M_PI*xp.get(0))*sin(M_PI*xp.get(1));
-                domain.getProp<3>(p) = sin(M_PI*xp.get(0))*sin(M_PI*xp.get(1));
-
-            } else if (right.isInside(xp) == true) {
-                r_p.add();
-                r_p.last().get<0>() = p.getKey();
-                domain.getProp<1>(p) =  -2*M_PI*M_PI*sin(M_PI*xp.get(0))*sin(M_PI*xp.get(1));
-                domain.getProp<3>(p) = sin(M_PI*xp.get(0))*sin(M_PI*xp.get(1));
-
-            } else {
-                bulk.add();
-                bulk.last().get<0>() = p.getKey();
-                domain.getProp<1>(p) =  -2*M_PI*M_PI*sin(M_PI*xp.get(0))*sin(M_PI*xp.get(1));
-                domain.getProp<3>(p) = sin(M_PI*xp.get(0))*sin(M_PI*xp.get(1));
-            }
-            ++it2;
-        }
-        /*DCPSE_scheme<equations3d,decltype(domain)> Solver( domain);
-        auto Poisson = Lap(v);
-        auto D_x = Dx(v);
-        auto D_y = Dy(v);
-        Solver.impose(Poisson, bulk, prop_id<1>());
-        Solver.impose(D_y, up_p, 0);
-        Solver.impose(D_x, r_p, 0);
-        Solver.impose(v, dw_p, 0);
-        Solver.impose(v, l_p, 0);
-        Solver.solve(sol);
-        DCPSE_sol=Lap(sol);
-        double worst1 = 0.0;*/
-
-        v=abs(DCPSE_sol-RHS);
-
-/*        for(int j=0;j<bulk.size();j++)
-        {   auto p=bulk.get<0>(j);
-            if (fabs(domain.getProp<3>(p) - domain.getProp<2>(p)) >= worst1) {
-                worst1 = fabs(domain.getProp<3>(p) - domain.getProp<2>(p));
-            }
-            domain.getProp<4>(p) = fabs(domain.getProp<3>(p) - domain.getProp<2>(p));
-
-        }
-        std::cout << "Maximum Analytic Error: " << worst1 << std::endl;
-
-        domain.write("Robin_anasol");*/
-    }
-
-
-
-
-
-
-
-
-/*    BOOST_AUTO_TEST_CASE(dcpse_sphere) {
-        const size_t sz[3] = {31,31,31};
-        Box<3, double> box({0, 0}, {1,1});
-        size_t bc[3] = {NON_PERIODIC, NON_PERIODIC,NON_PERIODIC};
-        double spacing = box.getHigh(0) / (sz[0] - 1);
-        double rCut = 3.1 * spacing;
-        Ghost<2, double> ghost(rCut);
-        //                                  P        V                 v_star           RHS            V_t       Helmholtz
-        vector_dist<2, double, aggregate<double,VectorS<3, double>,VectorS<3, double>,double,VectorS<3, double>, double,    double>> Particles(0, box, bc, ghost);
-        double r=5,theta=0,phi=-M_PI/2;
-        double dtheta=2*M_PI/sz[0],dphi=M_PI/sz[0];
-        auto it = Particles.getGridIterator(sz);
-        while (it.isNext()) {
-            Particles.add();
-            auto key = it.get();
-            double x = key.get(0) * it.getSpacing(0);
-            Particles.getLastPos()[0] = r*cos(theta)*cos(phi);
-            double y = key.get(1) * it.getSpacing(1);
-            Particles.getLastPos()[1] = r*sin(theta)*cos(phi);
-            double z = key.get(1) * it.getSpacing(1);
-            Particles.getLastPos()[1] = r*sin(phi);
-            theta+=dtheta;
-            phi+=dphi;
-            ++it;
-        }
-
-        Sphere<3, double> bulk({0,0,0},5);
-        openfpm::vector<Sphere<3, double>> spheres;
-        spheres.add(bulk);
-        VTKWriter<openfpm::vector<Box<2, double>>, VECTOR_BOX> vtk_sph;
-        vtk_sph.add(bulk);
-        vtk_sph.write("vtk_sph.vtk");
-
-        Particles.map();
-        Particles.ghost_get<0>();
-
-        Particles.write_frame("Sphere",i);\
-    }*/
-
 BOOST_AUTO_TEST_SUITE_END()
-
-/*
-
-DCPSE_scheme<equations3d3,decltype(Particles)> Solver(Particles);
-auto Stokes1 = Adv(V[x],V_star[x])-nu*Lap(V_star[x]);
-auto Stokes2 = Adv(V[y],V_star[y])-nu*Lap(V_star[y]);
-auto Stokes3 = Adv(V[z],V_star[z])-nu*Lap(V_star[z]);
-Solver.impose(Stokes1,bulk,RHS[x],vx);
-Solver.impose(Stokes2,bulk,RHS[y],vy);
-Solver.impose(Stokes3,bulk,RHS[z],vz);
-Solver.impose(V_star[x],Boundary,0,vx);
-Solver.impose(V_star[y],Boundary,0,vy);
-Solver.impose(V_star[z],Boundary,0,vz);
-Solver.solve(V_star[x],V_star[y],V_star[z]);
-*/
-
 
 

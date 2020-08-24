@@ -456,8 +456,11 @@ f_x = f_y = f_z = 3
     		g_dist_normal.template getProp<0>(key)[1] = v[y].value(key,bottom_cell);
 
     		g_dist_normal.template getProp<1>(key) = P.value(key,center_cell);
+            g_dist_normal.template getProp<2>(key)[x] = RHS[x].value(key,center_cell);
+            g_dist_normal.template getProp<2>(key)[y] = RHS[y].value(key,center_cell);
 
-    		++it2;
+
+            ++it2;
     	}
 
     	g_dist_normal.write("out_test");

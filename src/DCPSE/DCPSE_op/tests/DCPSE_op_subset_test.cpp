@@ -1,3 +1,10 @@
+/*
+ * DCPSE_op_test.cpp
+ *
+ *  Created on: May 15, 2020
+ *      Author: Abhinav Singh
+ *
+ */
 #include "config.h"
 
 #define BOOST_TEST_DYN_LINK
@@ -5,11 +12,11 @@
 #include "util/util_debug.hpp"
 #include <boost/test/unit_test.hpp>
 #include <iostream>
-#include "DCPSE_op.hpp"
-#include "DCPSE_Solver.hpp"
+#include "../DCPSE_op.hpp"
+#include "../DCPSE_Solver.hpp"
 #include "Operators/Vector/vector_dist_operators.hpp"
 #include "Vector/vector_dist_subset.hpp"
-#include "EqnsStruct.hpp"
+#include "../EqnsStruct.hpp"
 
 //template<typename T>
 //struct Debug;

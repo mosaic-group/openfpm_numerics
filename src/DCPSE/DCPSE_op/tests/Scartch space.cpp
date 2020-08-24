@@ -12,11 +12,11 @@
 #include "util/util_debug.hpp"
 #include <boost/test/unit_test.hpp>
 #include <iostream>
-#include "DCPSE_op.hpp"
-#include "DCPSE_Solver.hpp"
+#include "../DCPSE_op.hpp"
+#include "../DCPSE_Solver.hpp"
 #include "Operators/Vector/vector_dist_operators.hpp"
 #include "Vector/vector_dist_subset.hpp"
-#include "EqnsStruct.hpp"
+#include "../EqnsStruct.hpp"
 
 template<typename particle_type, typename particle_type2>
 void indexUpdate(
