@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 #                        configure script
 #
 #
@@ -117,13 +117,17 @@ with_lapack
 with_suitesparse
 with_petsc
 with_eigen
+with_vcdevel
 enable_gpu
+enable_asan
 '
 
 rm -rf build
 if [ ! -d "build" ]; then
   mkdir build
 fi
+
+echo "/usr/local" > install_dir
 
 ##### Go over all options
 for ac_option
@@ -232,6 +236,9 @@ do
     scan_coverty)
        conf_options="$conf_options -DSCAN_COVERTY=ON"
        ;;
+    test_performance)
+       conf_options="$conf_options -DTEST_PERFORMANCE=ON"
+       ;;
     gpu)
         if [ x"$CXX" == x"" ]; then
                 conf_options="$conf_options"
@@ -239,6 +246,9 @@ do
 		conf_options="$conf_options -DCMAKE_CUDA_HOST_COMPILER=$(which $CXX)"
         fi
        conf_options="$conf_options -DENABLE_GPU=ON"
+       ;;
+    asan)
+       conf_options="$conf_options -DENABLE_ASAN=ON"
        ;;
     *) ac_unrecognized_opts="$ac_unrecognized_opts$ac_unrecognized_sep--enable-$ac_useropt_orig"
        ac_unrecognized_sep=', '
@@ -472,8 +482,14 @@ do
       boost)
       conf_options="$conf_options -DBOOST_ROOT=$ac_optarg"
       ;;
+      action_on_error)
+      conf_options="$conf_options -DACTION_ON_ERROR=$ac_optarg"
+      ;;
       mpivendor)
       conf_options="$conf_options -DMPI_VENDOR=$ac_optarg"
+      ;;
+      vcdevel)
+      conf_options="$conf_options -DVc_ROOT=$ac_optarg"
       ;;
       *) ac_unrecognized_opts="$ac_unrecognized_opts$ac_unrecognized_sep--with-$ac_useropt_orig"
 	 ac_unrecognized_sep=', ';;
