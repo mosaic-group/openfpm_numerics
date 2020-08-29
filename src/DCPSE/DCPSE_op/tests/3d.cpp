@@ -257,10 +257,6 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests3)
             auto dPol_bulk = getV<8>(Particles_subset);
             auto RHS_bulk = getV<10>(Particles_subset);
 
-
-
-
-
         //Particles.write_frame("Active3d_Parts", 0);
 
         //Particles_subset.write("Pars");
@@ -506,7 +502,6 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests3)
                 RHS_bulk[z] = -dV[z]+Bulk_Dz(P);
                 Particles.ghost_get<10>(SKIP_LABELLING);
                 DCPSE_scheme<equations3d3, decltype(Particles)> Solver(Particles);
-//                Solver.reset(Particles);
                 Solver.impose(Stokes1, bulk, RHS[0], vx);
                 Solver.impose(Stokes2, bulk, RHS[1], vy);
                 Solver.impose(Stokes3, bulk, RHS[2], vz);
@@ -514,7 +509,6 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests3)
                 Solver.impose(V[y], Boundary, 0, vy);
                 Solver.impose(V[z], Boundary, 0, vx);
                 Solver.solve_with_solver(solverPetsc, V[x], V[y], V[z]);
-                //Solver.solve(V[x], V[y]);
                 Particles.ghost_get<Velocity>(SKIP_LABELLING);
                 div = -(Dx(V[x]) + Dy(V[y])+Dz(V[z]));
                 P_bulk = P + div;
@@ -576,20 +570,6 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests3)
             u[z][y] = 0.5 * (Dz(V[y]) + Dy(V[z]));
             u[z][z] = Dz(V[z]);
 
-
-            //Adaptive CFL
-            /*sum=0;
-            auto it2 = Particles.getDomainIterator();
-            while (it2.isNext()) {
-                auto p = it2.get();
-                sum += Particles.getProp<Strain_rate>(p)[x][x] * Particles.getProp<Strain_rate>(p)[x][x] +
-                        Particles.getProp<Strain_rate>(p)[y][y] * Particles.getProp<Strain_rate>(p)[y][y];
-                ++it2;
-            }
-            sum = sqrt(sum);
-            v_cl.sum(sum);
-            v_cl.execute();
-            dt=0.5/sum;*/
             if (v_cl.rank() == 0) {
                 std::cout << "Rel l2 cgs err in V = " << V_err << " and took " << tt.getwct() << " seconds with " << n
                           << " iterations. dt is set to " << dt
@@ -610,9 +590,9 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests3)
             Particles.write_frame("Polar3d", ctr);
             Particles.ghost_get<0>();
             ctr++;
-            auto lambda = -1/(9*gama)*(-3*h[x]*Pol[x]-3*h[y]*Pol[y]-3*h[z]*Pol[z]+
-                    gama*nu*(Pol[x]*Pol[x]*u[x][x]+Pol[y]*Pol[y]*u[y][y]+Pol[z]*Pol[z]*u[z][z]+
-                    Pol[x]*(Pol[y]*(u[x][y]+u[y][x])+Pol[z]*(u[x][z]+u[z][x])) +Pol[y]*Pol[z]*(u[y][z]+u[z][y])))/(Pol[x]*Pol[x]+Pol[y]*Pol[y]+Pol[z]*Pol[z]);
+            //auto lambda = -1/(9*gama)*(-3*h[x]*Pol[x]-3*h[y]*Pol[y]-3*h[z]*Pol[z]+
+            //        gama*nu*(Pol[x]*Pol[x]*u[x][x]+Pol[y]*Pol[y]*u[y][y]+Pol[z]*Pol[z]*u[z][z]+
+            //        Pol[x]*(Pol[y]*(u[x][y]+u[y][x])+Pol[z]*(u[x][z]+u[z][x])) +Pol[y]*Pol[z]*(u[y][z]+u[z][y])))/(Pol[x]*Pol[x]+Pol[y]*Pol[y]+Pol[z]*Pol[z]);
             dPol=Pol;
             Particles.ghost_get<8>(SKIP_LABELLING);
             k1[x] = h[x]/gama-nu*(Pol[x]*u[x][x]+Pol[y]*u[x][y]+Pol[z]*u[x][z]) + lambda*Pol[x]/delmu + (W[x][x]*Pol[x]+W[x][y]*Pol[y]+W[x][z]*Pol[z]);
@@ -730,8 +710,6 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests3)
             auto P_bulk = getV<Pressure>(Particles_subset);
             auto dPol_bulk = getV<8>(Particles_subset);
             auto RHS_bulk = getV<10>(Particles_subset);
-
-
 
             //Particles_subset.write("debug");
 

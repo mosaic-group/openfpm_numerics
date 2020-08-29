@@ -419,11 +419,11 @@ f_x = f_y = f_z = 3
     	fd.impose(v[y],{sz[0]-1,0},{sz[0]-1,sz[1]-1},prop_id<3>(),vy,corner_dw);
 
     	// Imposing B3
-        // Similarly Top Wall (needs "corner_up" treatment for Vx, hence -1 in the x index)
+        // Similarly Bottom Wall (needs "corner_up" treatment for Vx, hence -1 in the x index)
     	fd.impose(v[x], {0,-1},{sz[0]-1,-1},0.0,vx,corner_up);
     	fd.impose(v[y], {0,0},{sz[0]-2,0},0.0,vy,bottom_cell);
     	// Imposing B4
-        // Similarly Bottom Wall (needs "corner_dw" treatment for Vx, hence +1 in the x index)
+        // Similarly Top Wall (needs "corner_dw" treatment for Vx, hence +1 in the x index)
         fd.impose(v[x],{0,sz[1]-1},{sz[0]-1,sz[1]-1},0.0,vx,corner_dw);
     	fd.impose(v[y],{0,sz[1]-1},{sz[0]-2,sz[1]-1},0.0,vy,bottom_cell);
 
@@ -469,6 +469,330 @@ f_x = f_y = f_z = 3
 
     	//g_dist.write("out_test")
     }
+
+
+    struct ana_nn_stag
+    {
+        // dimensionaly of the equation (2D problem 3D problem ...)
+        static const unsigned int dims = 2;
+
+        // number of fields in the system v_x, v_y, P so a total of 3
+        static const unsigned int nvar = 3;
+
+        // boundary conditions PERIODIC OR NON_PERIODIC
+        static const bool boundary[];
+
+        // type of space float, double, ...
+        typedef float stype;
+
+        // type of base grid, it is the distributed grid that will store the result
+        // Note the first property is a 2D vector (velocity), the second is a scalar (Pressure)
+        typedef staggered_grid_dist<2,float,aggregate<float[2],float,float[2],float>,CartDecomposition<2,float>> b_grid;
+
+        // type of SparseMatrix, for the linear system, this parameter is bounded by the solver
+        // that you are using, in case of umfpack it is the only possible choice
+        // typedef SparseMatrix<double,int> SparseMatrix_type;
+        // // typedef SparseMatrix<double, int, PETSC_BASE> SparseMatrix_type;
+
+        // // type of Vector for the linear system, this parameter is bounded by the solver
+        // // that you are using, in case of umfpack it is the only possible choice
+        // typedef Vector<double> Vector_type;
+        // // typedef Vector<double, PETSC_BASE> Vector_type;
+
+        // typedef umfpack_solver<double> solver_type;
+        // // typedef petsc_solver<double> solver_type;
+        //! type of SparseMatrix for the linear solver
+        typedef SparseMatrix<double, int, PETSC_BASE> SparseMatrix_type;
+
+        //! type of Vector for the linear solver
+        typedef Vector<double, PETSC_BASE> Vector_type;
+
+        typedef petsc_solver<double> solver_type;
+    };
+
+    const bool ana_nn_stag::boundary[] = {NON_PERIODIC,NON_PERIODIC};
+
+    /*
+    In 2D we use exact solution:
+
+     u = x^2 + y^2
+     v = 2 x^2 - 2xy
+     p = x + y - 1
+     f_x = f_y = 3
+
+    so that
+
+     -\Delta u + \nabla p + f = <-4, -4> + <1, 1> + <3, 3> = 0
+     \nabla \cdot u           = 2x - 2x                    = 0
+    */
+
+    BOOST_AUTO_TEST_CASE(solver_ana_stag)
+    {
+        Vcluster<> & v_cl = create_vcluster();
+
+        if (v_cl.getProcessingUnits() > 3)
+            return;
+
+        // velocity in the grid is the property 0, pressure is the property 1
+        constexpr int velocity = 0;
+        constexpr int pressure = 1;
+
+        constexpr int x = 0;
+        constexpr int y = 1;
+
+        // Domain, a rectangle
+        Box<2,float> domain({0.0,0.0},{1.0,1.0});
+
+        // Ghost (Not important in this case but required)
+        //Ghost<2,long int> g(1);;
+
+        // Grid points on x=256 and y=256
+        long int sz[] = {81,81};
+        Ghost<2,float> g(domain.getHigh(0)/sz[0]);
+
+        size_t szu[2];
+        szu[0] = (size_t)sz[0];
+        szu[1] = (size_t)sz[1];
+
+        Padding<2> pd({1,1},{0,0});
+
+        // Distributed grid that store the solution
+        staggered_grid_dist<2,float,aggregate<Point<2,float>,float,Point<2,float>,float,float,float>> g_dist(szu,domain,g);
+        grid_dist_id<2,float,aggregate<Point<2,float>,float,Point<2,float>,float,float,float>> g_dist_normal(g_dist.getDecomposition(),szu,g);
+
+        double hx = g_dist.spacing(0);
+        double hy = g_dist.spacing(1);
+
+        openfpm::vector<comb<2>> cmb_v;
+        cmb_v.add({0,-1});
+        cmb_v.add({-1,0});
+
+        g_dist.setDefaultStagPosition();
+        g_dist.setStagPosition<0>(cmb_v);
+
+        // It is the maximum extension of the stencil
+        Ghost<2,long int> stencil_max(1);
+
+        // Finite difference scheme
+        FD_scheme<lid_nn_stag,decltype(g_dist)> fd(pd,stencil_max,g_dist);
+
+        auto P =  FD::getV_stag<1>(g_dist);
+        auto v = FD::getV_stag<0>(g_dist);
+        auto Ana_v = FD::getV_stag<2>(g_dist);
+        auto Ana_P = FD::getV_stag<3>(g_dist);
+
+
+
+        v.setVarId(0);
+        P.setVarId(2);
+
+        FD::Derivative_x_stag Dx;
+        FD::Derivative_y_stag Dy;
+        FD::Lap Lap;
+
+        double nu = 1.0;
+
+        auto Stokes_vx = Lap(v[x]) - Dx(P);
+        auto Stokes_vy = Lap(v[y]) - Dy(P);
+
+        auto incompressibility = Dx(v[x]) + Dy(v[y]);
+
+        eq_id ic,vx,vy;
+
+        ic.setId(2);
+        vx.setId(0);
+        vy.setId(1);
+
+        comb<2> center_cell({0,0});
+        comb<2> left_cell({0,-1});
+        comb<2> bottom_cell({-1,0});
+        comb<2> corner_right({-1,1});
+        comb<2> corner_dw({-1,-1});
+        comb<2> corner_up({1,-1});
+
+        auto it = g_dist.getDomainIterator();
+        while (it.isNext())
+        {
+            auto key = it.get();
+            auto gkey = it.getGKey(key);
+            double xg = gkey.get(0) * g_dist.spacing(0);
+            double yg = gkey.get(1) * g_dist.spacing(1);
+            //v[y].value(key,bottom_cell)=1.0;
+            g_dist.getProp<2>(key)[0] = xg*xg + yg*yg;
+            g_dist.getProp<2>(key)[1] = 2*xg*xg - 2*yg*yg;
+            g_dist.getProp<4>(key)    = xg*xg + yg*yg;
+            g_dist.getProp<5>(key)    = 2*xg*xg - 2*xg*yg;
+            g_dist.getProp<3>(key) = xg + yg - 1;
+            //std::cout<<it.getGKey(key).get(0)<<","<<it.getGKey(key).get(1)<<":"<<g_dist.getProp<3>(key)<<std::endl;
+            ++it;
+        }
+
+//        fd.impose(incompressibility, {0,0},{sz[0]-2,sz[1]-2}, 0.0,ic,true);
+//        fd.impose(P, {0,0},{0,0},-1.0,ic);
+
+        for (int i = 0; i <= sz[0]-2 ; i++)
+        {
+            for (int j = 0; j <= sz[0]-2 ; j++)
+            {
+            double X = i * hx;
+            double Y = j * hy;
+            if (X<0.6 && X>0.4 && Y<0.6 && Y>0.4){
+                fd.impose(P, {i,j},{i,j}, X+Y-1,ic);
+            }
+            else{
+                fd.impose(incompressibility, {i,j},{i,j}, 0.0,ic);
+            }
+            }
+        }
+
+
+
+        fd.impose(Stokes_vx, {1,0},{sz[0]-2,sz[1]-2},-3.0,vx,left_cell);
+        fd.impose(Stokes_vy, {0,1},{sz[0]-2,sz[1]-2},-3.0,vy,bottom_cell);
+
+
+        // Staggering pattern in the domain
+        //      +--Vy-+
+        //      |     |
+        //     Vx  P  Vx
+        //      |     |
+        //      0--Vy-+
+        //
+
+
+        // Imposing B1 Left Wall
+        fd.impose(v[x], {0,0},{0,sz[1]-2},prop_id<4>(),vx,left_cell);
+/*        for (int j = 0; j <= sz[1]-2 ; j++)
+        {
+            double X = 0.0;
+            double Y = j * hy;
+            double Vx = X*X + Y*Y;
+            fd.impose(v[x], {0,j},{0,j},Vx,vx,left_cell);
+        }*/
+
+        //fd.impose(v[y], {-1,0},{-1,sz[1]-1},prop_id<5>(),vy,corner_right);
+        for (int j = 0; j <= sz[1]-1 ; j++)
+        {
+            double X = -1 * hx/2.0;
+            double Y = j * hy;
+            double Vy = 2*X*X - 2*X*Y;
+            fd.impose(v[y], {-1,j},{-1,j},Vy,vy,corner_right);
+        }
+
+        // //Imposing B2 Right Wall
+        fd.impose(v[x],{sz[0]-1,0},{sz[0]-1,sz[1]-2},prop_id<4>(),vx,left_cell);
+        /*for (int j = 0; j <= sz[1]-2 ; j++)
+        {
+            double X = (sz[0]-1) * hx;
+            double Y = j * hy;
+            double Vx = X*X + Y*Y;
+            fd.impose(v[x],{sz[0]-1,j},{sz[0]-1,j},Vx,vx,left_cell);
+        }*/
+
+        fd.impose(v[y],{sz[0]-1,0},{sz[0]-1,sz[1]-1},prop_id<5>(),vy,corner_dw);
+        /*for (int j = 0; j <= sz[1]-1 ; j++)
+        {
+            double X = (sz[0]-1) * hx;
+            double Y = j * hy;
+            double Vy = 2*X*X - 2*X*Y;
+            fd.impose(v[y],{sz[0]-1,j},{sz[0]-1,j},Vy,vy,corner_dw);
+        }*/
+
+        // // Imposing B3 Bottom Wall
+        //fd.impose(v[x], {0,-1},{sz[0]-1,-1},prop_id<4>(),vx,corner_up);
+        for (int i = 0; i <= sz[0]-1 ; i++)
+        {
+            double X = i * hx;
+            double Y = -1 * hy/2.0;
+            double Vx = X*X + Y*Y;
+            fd.impose(v[x], {i,-1},{i,-1},Vx,vx,corner_up);
+        }
+
+        fd.impose(v[y], {0,0},{sz[0]-2,0},prop_id<5>(),vy,bottom_cell);
+        /*for (int i = 0; i <= sz[0]-2 ; i++)
+        {
+            double X = i * hx;
+            double Y = 0.0;
+            double Vy = 2*X*X - 2*X*Y;
+            fd.impose(v[y], {i,0},{i,0},Vy,vy,bottom_cell);
+        }*/
+
+        // Imposing B4 Top Wall
+        fd.impose(v[x],{0,sz[1]-1},{sz[0]-1,sz[1]-1},prop_id<4>(),vx,corner_dw);
+        /*for (int i = 0; i <= sz[0]-1 ; i++)
+        {
+            double X = i * hx;
+            double Y = (sz[1]-1) * hy;
+            double Vx = X*X + Y*Y;
+            fd.impose(v[x],{i,sz[1]-1},{i,sz[1]-1},Vx,vx,corner_dw);
+        }*/
+
+        fd.impose(v[y],{0,sz[1]-1},{sz[0]-2,sz[1]-1},prop_id<5>(),vy,bottom_cell);
+        /*for (int i = 0; i <= sz[0]-2 ; i++)
+        {
+            double X = i * hx;
+            double Y = (sz[1]-1) * hy;
+            double Vy = 2*X*X - 2*X*Y;
+            fd.impose(v[y],{i,sz[1]-1},{i,sz[1]-1},Vy,vy,bottom_cell);
+        }*/
+
+        // Padding pressure
+        fd.impose(P, {-1,-1},{sz[0]-1,-1},0.0,ic);
+        fd.impose(P, {-1,sz[1]-1},{sz[0]-1,sz[1]-1},0.0,ic);
+        fd.impose(P, {-1,0},{-1,sz[1]-2},0.0,ic);
+        fd.impose(P, {sz[0]-1,0},{sz[0]-1,sz[1]-2},0.0,ic);
+
+        // Impose v_x Padding Impose v_y padding
+
+        //fd.impose(v[x], {-1,-1},{-1,sz[1]-1},prop_id<4>(),vx,left_cell);
+        for (int j = -1; j <= sz[1]-1 ; j++)
+        {
+            double X = -1 * hx/2.0;
+            double Y = j * hy;
+            double Vx = X*X + Y*Y;
+            fd.impose(v[x], {-1,j},{-1,j},Vx,vx,left_cell);
+        }
+
+        //fd.impose(v[y], {-1,-1},{sz[0]-1,-1},prop_id<5>(),vy,bottom_cell);
+        for (int i = -1; i <= sz[0]-1 ; i++)
+        {
+            double X = i * hx;
+            double Y = -1 * hy/2.0;
+            double Vy = 2*X*X - 2*X*Y;
+            fd.impose(v[y], {i,-1},{i,-1},Vy,vy,bottom_cell);
+        }
+
+        fd.solve(v[x],v[y],P);
+
+        auto it2 = g_dist_normal.getDomainIterator();
+
+        while (it2.isNext())
+        {
+            auto key = it2.get();
+            auto gkey = it2.getGKey(key);
+            double x = gkey.get(0) * g_dist_normal.spacing(0);
+            double y = gkey.get(1) * g_dist_normal.spacing(1);
+
+            g_dist_normal.template getProp<0>(key)[0] = v[0].value(key,left_cell);
+            g_dist_normal.template getProp<0>(key)[1] = v[1].value(key,bottom_cell);
+
+            g_dist_normal.template getProp<1>(key) = P.value(key,center_cell);
+
+           g_dist_normal.template getProp<2>(key)[0] = x*x + y*y;
+           g_dist_normal.template getProp<2>(key)[1] = 2*x*x - 2*x*y;
+
+           g_dist_normal.template getProp<3>(key) = x + y - 1;
+
+            ++it2;
+        }
+
+        g_dist_normal.write("ana_stokes");
+
+        //! [Copy the solution to grid]
+
+        //g_dist.write("ana_stokes")
+    }
+
 
 
 BOOST_AUTO_TEST_SUITE_END()

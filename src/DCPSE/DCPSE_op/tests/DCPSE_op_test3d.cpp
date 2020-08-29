@@ -5,7 +5,6 @@
  *      Author: Abhinav Singh
  *
  */
-the
 #include "config.h"
 
 #define BOOST_TEST_DYN_LINK
