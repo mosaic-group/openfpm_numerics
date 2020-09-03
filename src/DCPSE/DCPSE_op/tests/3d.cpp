@@ -59,6 +59,7 @@ void indexUpdate(
         Particles_subset.add();
         Particles_subset.getLastPos()[0] = Particles.getPos(bulk.template get<0>(i))[0];
         Particles_subset.getLastPos()[1] = Particles.getPos(bulk.template get<0>(i))[1];
+        Particles_subset.getLastPos()[2] = Particles.getPos(bulk.template get<0>(i))[2];
     }
 
 }
@@ -263,6 +264,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests3)
             Particles_subset.add();
             Particles_subset.getLastPos()[0] = Particles.getPos(bulk.template get<0>(i))[0];
             Particles_subset.getLastPos()[1] = Particles.getPos(bulk.template get<0>(i))[1];
+            Particles_subset.getLastPos()[2] = Particles.getPos(bulk.template get<0>(i))[2];
         }
 
         Particles_subset.map();
