@@ -265,6 +265,9 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests3)
             Particles_subset.getLastPos()[1] = Particles.getPos(bulk.template get<0>(i))[1];
         }
 
+        Particles_subset.map();
+        Particles_subset.ghost_get<0>();
+
         auto Grad_bulk = getV<1>(Particles_subset);
         auto P_bulk = getV<0>(Particles_subset);
 
@@ -879,6 +882,8 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests3)
             indexUpdate(Particles,Particles_subset,Boundary, bulk, up, down, left,right,front,back);
             vector_dist_subset<3, double, aggregate<VectorS<3, double>, VectorS<3, double>, double[3][3], VectorS<3, double>, double, double[3][3], double[3][3], VectorS<3, double>, VectorS<3, double>, VectorS<3, double>, VectorS<3, double>, double, double, double, double, double, double, double, VectorS<3, double>, double, double, double[3], double[3], double[3], double[3], double[3], double[3], double, VectorS<3, double>, VectorS<3, double>, VectorS<3, double>, VectorS<3, double>, double, double, double, double[3][3],double[3][3]>> Particles_subset(
                     Particles, bulk);
+            Particles_subset.map();
+            Particles_subset.ghost_get<0>();
             auto Pol_bulk = getV<0>(Particles_subset);
             auto P_bulk = getV<Pressure>(Particles_subset);
             auto dPol_bulk = getV<8>(Particles_subset);
