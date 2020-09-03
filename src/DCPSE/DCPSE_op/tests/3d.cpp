@@ -70,6 +70,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests3)
         tt2.start();
         size_t grd_sz = 21;
         double dt = 1e-3;
+        double V_err_eps = 5e-2;
         double boxsize = 10;
         const size_t sz[3] = {grd_sz, grd_sz, grd_sz};
         Box<3, double> box({0, 0, 0}, {boxsize, boxsize, boxsize});
@@ -353,7 +354,6 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests3)
         vy.setId(1);
         vz.setId(2);
         timer tt;
-        double V_err_eps = 5e-2;
         double V_err = 1, V_err_old;
         int n = 0;
         int nmax = 300;
@@ -608,12 +608,15 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests3)
             while (V_err >= V_err_eps && n <= nmax) {
                 RHS[x] = dV[x];
                 RHS[y] = dV[y];
+                RHS[z] = dV[z];
                 Particles_subset.ghost_get<0>(SKIP_LABELLING);
                 Grad_bulk[x] = Bulk_Dx(P_bulk);
                 Grad_bulk[y] = Bulk_Dy(P_bulk);
+                Grad_bulk[z] = Bulk_Dz(P_bulk);
                 for (int i = 0; i < bulk.size(); i++) {
                     Particles.template getProp<10>(bulk.template get<0>(i))[x] += Particles_subset.getProp<1>(i)[x];
                     Particles.template getProp<10>(bulk.template get<0>(i))[y] += Particles_subset.getProp<1>(i)[y];
+                    Particles.template getProp<10>(bulk.template get<0>(i))[z] += Particles_subset.getProp<1>(i)[z];
                 }
                 Particles.ghost_get<10>(SKIP_LABELLING);
                 DCPSE_scheme<equations3d3, decltype(Particles)> Solver(Particles);
