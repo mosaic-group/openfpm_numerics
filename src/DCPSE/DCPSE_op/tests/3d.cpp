@@ -69,9 +69,9 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests3)
     BOOST_AUTO_TEST_CASE(Active3dSimple) {
         timer tt2;
         tt2.start();
-        size_t grd_sz = 21;
+        size_t grd_sz = 41;
         double dt = 1e-3;
-        double V_err_eps = 5e-2;
+        double V_err_eps = 1e-3;
         double boxsize = 10;
         const size_t sz[3] = {grd_sz, grd_sz, grd_sz};
         Box<3, double> box({0, 0, 0}, {boxsize, boxsize, boxsize});
@@ -180,7 +180,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests3)
         double Ks = 1.0;
         double Kt = 1.1;
         double Kb = 1.5;
-        double lambda = 0.1;
+        //double lambda = 0.1;
         //double delmu = -1.0;
         g = 0;
         delmu = -1.0;
