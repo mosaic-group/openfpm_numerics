@@ -19,12 +19,13 @@
 #include "Vector/vector_dist_subset.hpp"
 #include "../EqnsStruct.hpp"
 #include "Decomposition/Distribution/SpaceDistribution.hpp"
-template<typename particle_type>
+template<typename particle_type,typename particle_type2>
 void indexUpdate(
-        particle_type &Particles,openfpm::vector<aggregate<int>> &Boundary,openfpm::vector<aggregate<int>> &bulk,
+        particle_type &Particles,particle_type2 &Particles_subset,openfpm::vector<aggregate<int>> &Boundary,openfpm::vector<aggregate<int>> &bulk,
         Box<3, double> &up, Box<3, double> &down, Box<3, double> &left, Box<3, double> &right,Box<3, double> &front, Box<3, double> &back) {
     Boundary.clear();
     bulk.clear();
+    Particles_subset.clear();
 
     auto it2 = Particles.getDomainIterator();
     while (it2.isNext()) {
@@ -53,6 +54,11 @@ void indexUpdate(
             bulk.last().get<0>() = p.getKey();
         }
         ++it2;
+    }
+    for (int i = 0; i < bulk.size(); i++) {
+        Particles_subset.add();
+        Particles_subset.getLastPos()[0] = Particles.getPos(bulk.template get<0>(i))[0];
+        Particles_subset.getLastPos()[1] = Particles.getPos(bulk.template get<0>(i))[1];
     }
 
 }
@@ -178,7 +184,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests3)
         delmu = -1.0;
         P = 0;
         V = 0;
-        // Here fill up the boxes for particle boundary detection.
+        // Here fill up the boxes for particle Boundary detection.
         Particles.ghost_get<ExtForce, 27>(SKIP_LABELLING);
 
         // Here fill up the boxes for particle detection.
@@ -250,12 +256,17 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests3)
             ++it2;
         }
 
-        vector_dist_subset<3, double, aggregate<VectorS<3, double>, VectorS<3, double>, double[3][3], VectorS<3, double>, double, double[3][3], double[3][3], VectorS<3, double>, VectorS<3, double>, VectorS<3, double>, VectorS<3, double>, double, double, double, double, double, double, double, VectorS<3, double>, double, double, double[3], double[3], double[3], double[3], double[3], double[3], double, VectorS<3, double>, VectorS<3, double>, VectorS<3, double>, VectorS<3, double>, double, double, double, double[3][3],double[3][3]>> Particles_subset(
-                Particles, bulk);
-            auto Pol_bulk = getV<0>(Particles_subset);
-            auto P_bulk = getV<Pressure>(Particles_subset);
-            auto dPol_bulk = getV<8>(Particles_subset);
-            auto RHS_bulk = getV<10>(Particles_subset);
+        //vector_dist_subset<3, double, aggregate<VectorS<3, double>, VectorS<3, double>, double[3][3], VectorS<3, double>, double, double[3][3], double[3][3], VectorS<3, double>, VectorS<3, double>, VectorS<3, double>, VectorS<3, double>, double, double, double, double, double, double, double, VectorS<3, double>, double, double, double[3], double[3], double[3], double[3], double[3], double[3], double, VectorS<3, double>, VectorS<3, double>, VectorS<3, double>, VectorS<3, double>, double, double, double, double[3][3],double[3][3]>> Particles_subset(Particles, bulk);
+        vector_dist<3, double, aggregate<double, VectorS<3, double>>> Particles_subset(Particles.getDecomposition(), 0);
+        for (int i = 0; i < bulk.size(); i++) {
+            Particles_subset.add();
+            Particles_subset.getLastPos()[0] = Particles.getPos(bulk.template get<0>(i))[0];
+            Particles_subset.getLastPos()[1] = Particles.getPos(bulk.template get<0>(i))[1];
+        }
+
+        auto Grad_bulk = getV<1>(Particles_subset);
+        auto P_bulk = getV<0>(Particles_subset);
+
 
         //Particles.write_frame("Active3d_Parts", 0);
 
@@ -454,6 +465,104 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests3)
 
 
             Particles.ghost_get<Stress>(SKIP_LABELLING);
+            tt.start();
+            Particles.ghost_get<Polarization>(SKIP_LABELLING);
+
+
+
+            FranckEnergyDensity = 0.5*Ks*(dxpx + dypy + dzpz)*(dxpx + dypy + dzpz) +
+                                  0.5*Kt*((dypz - dzpy)*px + (-dxpz + dzpx)*py + (dxpy - dypx)*pz)*((dypz - dzpy)*px + (-dxpz + dzpx)*py + (dxpy - dypx)*pz) +
+                                  0.5*Kb*((-dxpz*px + dzpx*px - dypz*py + dzpy*py)*(-dxpz*px + dzpx*px - dypz*py + dzpy*py) +
+                                          (dxpy*py - dypx*py + dxpz*pz - dzpx*pz)*(dxpy*py - dypx*py + dxpz*pz - dzpx*pz) +
+                                          (-dxpy*px + dypx*px + dypz*pz - dzpy*pz)*(-dxpy*px + dypx*px + dypz*pz - dzpy*pz));
+
+            h[x]=Ks*(dxxpx + dxypy + dxzpz) +
+                 Kb*((-dxypy - dxzpz + dyypx + dzzpx)*px*px + (-dxypy + dyypx)*py*py + (dypy*dzpx + dxpy*(dypz - 2*dzpy) + dypx*dzpy + dxpz*(-dypy - 2*dzpz) + 2*dzpx*dzpz)*pz + (-dxzpz + dzzpx)*pz*pz +
+                     py*(dypz*dzpx + dxpz*(-2*dypz + dzpy) + dxpy*(-2*dypy - dzpz) + dypx*(2*dypy + dzpz) + (-dxypz - dxzpy + 2*dyzpx)*pz) +
+                     px*(-dxpy*dxpy - dxpz*dxpz + dypx*dypx + dypz*dypz + dzpx*dzpx - 2*dypz*dzpy + dzpy*dzpy + (-dyzpz + dzzpy)*py + (dyypz - dyzpy)*pz)) +
+                 Kt*((-dxzpz + dzzpx)*py*py + (dxpz*dypy -  dypy*dzpx + dypx*(2*dypz -  dzpy) + dxpy*(-3*dypz + 2*dzpy))*pz + (- dxypy +  dyypx)*pz*pz + py*(-dypz*dzpx + dxpz*(2*dypz - 3*dzpy) + 2*dzpx*dzpy +  dxpy*dzpz -   dypx*dzpz + ( dxypz +  dxzpy - 2*dyzpx)*pz) +
+                     px*(-2*dypz*dypz + 4*dypz*dzpy - 2*dzpy*dzpy + ( dyzpz -  dzzpy)*py + (- dyypz + dyzpy)*pz));
+
+            h[y]= Ks*(dxypx + dyypy + dyzpz) +
+                  Kb*((dxxpy - dxypx)*px*px + (dxxpy - dxypx - dyzpz + dzzpy)*py*py + (dxpz*dypx + dxpy*dzpx - 2*dypx*dzpx + dxpx*(-dypz + dzpy) - 2*dypz*dzpz + 2*dzpy*dzpz)*pz + (-dyzpz + dzzpy)*pz*pz +
+                      py*(dxpy*dxpy + dxpz*dxpz - dypx*dypx - dypz*dypz - 2*dxpz*dzpx + dzpx*dzpx + dzpy*dzpy + (dxxpz - dxzpx)*pz) +
+                      px*(dxpx*(2*dxpy - 2*dypx) + dypz*dzpx + dxpz*(-2*dypz + dzpy) + dxpy*dzpz - dypx*dzpz + (-dxzpz + dzzpx)*py + (-dxypz + 2*dxzpy - dyzpx)*pz)) +
+                  Kt*((-dyzpz + dzzpy)*px*px + (-3*dxpz*dypx + dxpy*(2*dxpz - dzpx) + 2*dypx*dzpx + dxpx*(dypz - dzpy))*pz + (dxxpy - dxypx)*pz*pz + py*(-2*dxpz*dxpz + 4*dxpz*dzpx - 2*dzpx*dzpx + (-dxxpz + dxzpx)*pz) +
+                      px*(-3*dypz*dzpx + dxpz*(2*dypz - dzpy) + 2*dzpx*dzpy - dxpy*dzpz + dypx*dzpz + (dxzpz - dzzpx)*py + (dxypz - 2*dxzpy + dyzpx)*pz));
+
+
+            h[z]=Ks*(dxzpx + dyzpy + dzzpz) +
+                 Kb*((dxxpz - dxzpx)*px*px + (dyypz - dyzpy)*py*py + (dxpy*dxpy + dxpz*dxpz - 2*dxpy*dypx + dypx*dypx + dypz*dypz - dzpx*dzpx - dzpy*dzpy)*pz + (dxxpz - dxzpx + dyypz - dyzpy)*pz*pz +
+                     py*(dxpz*dypx + dxpy*dzpx - 2*dypx*dzpx + dypy*(2*dypz - 2*dzpy) + dxpx*(dypz - dzpy) + (dxxpy - dxypx)*pz) +
+                     px*(dxpz*dypy + dxpx*(2*dxpz - 2*dzpx) - dypy*dzpx + dxpy*(dypz - 2*dzpy) + dypx*dzpy + (2*dxypz - dxzpy - dyzpx)*py + (-dxypy + dyypx)*pz))+
+                 Kt*((dyypz - dyzpy)*px*px + (dxxpz - dxzpx)*py*py + (-2*dxpy*dxpy + 4*dxpy*dypx - 2*dypx*dypx)*pz + py*(-dxpz*dypx + dxpy*(2*dxpz - 3*dzpx) + 2*dypx*dzpx + dxpx*(-dypz + dzpy) + (-dxxpy + dxypx)*pz) +
+                     px*(-dxpz*dypy + dypy*dzpx + dypx*(2*dypz - 3*dzpy) + dxpy*(-dypz + 2*dzpy) + (-2*dxypz + dxzpy + dyzpx)*py + (dxypy - dyypx)*pz));
+
+            //Particles.ghost_get<33>(SKIP_LABELLING);
+            sigma[x][x] =
+                    -dxpx*(dxpx + dypy + dzpz)*Ks -
+                    dxpy*Kt*pz*(dypz*px - dzpy*px - dxpz*py + dzpx*py + dxpy*pz - dypx*pz) -
+                    dxpz*Kt*py*(-dypz*px + dzpy*px + dxpz*py - dzpx*py - dxpy*pz + dypx*pz) -
+                    0.5*dxpz*Kb*(2*px*(dxpz*px - dzpx*px + (dypz - dzpy)*py) + 2*pz*(dxpy*py - dypx*py + (dxpz - dzpx)*pz)) -
+                    0.5*dxpy*Kb*(2*py*(dxpy*py - dypx*py + (dxpz - dzpx)*pz) + 2*px*(dxpy*px - dypx*px + (-dypz + dzpy)*pz));
+            sigma[x][y] =
+                    -dxpy*(dxpx + dypy + dzpz)*Ks - dxpz*Kb*py*(dxpz*px - dzpx*px + (dypz - dzpy)*py) +
+                    dxpx*Kt*pz*(dypz*px - dzpy*px - dxpz*py + dzpx*py + dxpy*pz - dypx*pz) +
+                    dxpz*Kt*px*(-dypz*px + dzpy*px + dxpz*py - dzpx*py - dxpy*pz + dypx*pz) +
+                    dxpx*Kb*py*(dxpy*py - dypx*py + (dxpz - dzpx)*pz) -
+                    dxpz*Kb*pz*(-dxpy*px + dypx*px + (dypz - dzpy)*pz) +
+                    dxpx*Kb*px*(dxpy*px - dypx*px + (-dypz + dzpy)*pz);
+
+            sigma[x][z] =
+                    -dxpz*(dxpx + dypy + dzpz)*Ks +
+                    dxpy*Kt*px*(dypz*px - dzpy*px - dxpz*py + dzpx*py + dxpy*pz - dypx*pz) +
+                    dxpx*Kt*py*(-dypz*px + dzpy*px + dxpz*py - dzpx*py - dxpy*pz + dypx*pz) -
+                    0.5*dxpx*Kb*(2*px*(-dxpz*px + dzpx*px + (-dypz + dzpy)*py) - 2*pz*(dxpy*py - dypx*py + (dxpz - dzpx)*pz)) -
+                    0.5*dxpy*Kb*(2*py*(-dxpz*px + dzpx*px + (-dypz + dzpy)*py) - 2*pz*(-dxpy*px + dypx*px + (dypz - dzpy)*pz));
+            sigma[y][x] =
+                    -dypx*(dxpx + dypy + dzpz)*Ks +
+                    dypz*Kt*py*(dypz*px - dzpy*px - dxpz*py + dzpx*py + dxpy*pz - dypx*pz) -
+                    dypy*Kt*pz*(dypz*px - dzpy*px - dxpz*py + dzpx*py + dxpy*pz - dypx*pz) -
+                    0.5*dypz*Kb*(2*px*(dxpz*px - dzpx*px + (dypz - dzpy)*py) + 2*pz*(dxpy*py - dypx*py + (dxpz - dzpx)*pz)) -
+                    0.5*dypy*Kb*(2*py*(dxpy*py - dypx*py + (dxpz - dzpx)*pz) + 2*px*(dxpy*px - dypx*px + (-dypz + dzpy)*pz));
+            sigma[y][y] =
+                    -dypy*(dxpx + dypy + dzpz)*Ks -
+                    dypz*Kb*py*(dxpz*px - dzpx*px + (dypz - dzpy)*py) -
+                    dypz*Kt*px*(dypz*px - dzpy*px - dxpz*py + dzpx*py + dxpy*pz - dypx*pz) -
+                    dypx*Kt*pz*(-dypz*px + dzpy*px + dxpz*py - dzpx*py -dxpy*pz + dypx*pz) -
+                    dypx*Kb*py*(-dxpy*py + dypx*py + (-dxpz + dzpx)*pz) -
+                    dypx*Kb*px*(-dxpy*px + dypx*px + (dypz - dzpy)*pz) -
+                    dypz*Kb*pz*(-dxpy*px + dypx*px + (dypz - dzpy)*pz);
+            sigma[y][z] =
+                    -dypz*(dxpx + dypy + dzpz)*Ks +
+                    dypy*Kt*px*(dypz*px - dzpy*px - dxpz*py + dzpx*py + dxpy*pz - dypx*pz) +
+                    dypx*Kt*py*(-dypz*px + dzpy*px + dxpz*py - dzpx*py -dxpy*pz + dypx*pz) -
+                    0.5*dypx*Kb*(2*px*(-dxpz*px + dzpx*px + (-dypz + dzpy)*py) - 2*pz*(dxpy*py - dypx*py + (dxpz - dzpx)*pz)) -
+                    0.5*dypy*Kb*(2*py*(-dxpz*px + dzpx*px + (-dypz + dzpy)*py) - 2*pz*(-dxpy*px + dypx*px + (dypz - dzpy)*pz));
+            sigma[z][x] =
+                    -dzpx*(dxpx + dypy + dzpz)*Ks -
+                    dzpz*Kt*py*(-dypz*px + dzpy*px + dxpz*py - dzpx*py - dxpy*pz + dypx*pz) +
+                    dzpy*Kt*pz*(-dypz*px + dzpy*px + dxpz*py - dzpx*py - dxpy*pz + dypx*pz) -
+                    0.5*dzpz*Kb*(2*px*(dxpz*px - dzpx*px + (dypz - dzpy)*py) + 2*pz*(dxpy*py - dypx*py + (dxpz - dzpx)*pz)) -
+                    0.5*dzpy*Kb*(2*py*(dxpy*py - dypx*py + (dxpz - dzpx)*pz) + 2*px*(dxpy*px - dypx*px + (-dypz + dzpy)*pz));
+            sigma[z][y] =
+                    -dzpy*(dxpx + dypy + dzpz)*Ks -
+                    dzpz*Kb*py*(dxpz*px - dzpx*px + (dypz - dzpy)*py) -
+                    dzpz*Kt*px*(dypz*px - dzpy*px - dxpz*py + dzpx*py + dxpy*pz - dypx*pz) +
+                    dzpx*Kt*pz*(dypz*px - dzpy*px - dxpz*py + dzpx*py + dxpy*pz - dypx*pz) -
+                    dzpx*Kb*py*(-dxpy*py + dypx*py + (-dxpz + dzpx)*pz) -
+                    dzpz*Kb*pz*(-dxpy*px + dypx*px + (dypz - dzpy)*pz) +
+                    dzpx*Kb*px*(dxpy*px - dypx*px + (-dypz + dzpy)*pz);
+
+            sigma[z][z] =
+                    -dzpz*(dxpx + dypy + dzpz)*Ks -
+                    dzpx*Kt*py*(dypz*px - dzpy*px - dxpz*py + dzpx*py + dxpy*pz - dypx*pz) -
+                    dzpy*Kt*px*(-dypz*px + dzpy*px + dxpz*py - dzpx*py - dxpy*pz + dypx*pz) -
+                    0.5*dzpx*Kb*(2*px*(-dxpz*px + dzpx*px + (-dypz + dzpy)*py) - 2*pz*(dxpy*py - dypx*py + (dxpz - dzpx)*pz)) -
+                    0.5*dzpy*Kb*(2*py*(-dxpz*px + dzpx*px + (-dypz + dzpy)*py) - 2*pz*(-dxpy*px + dypx*px + (dypz - dzpy)*pz));
+
+
+            Particles.ghost_get<Stress>(SKIP_LABELLING);
             Particles.ghost_get<MolField>(SKIP_LABELLING);
 
             dV[x] = 0.5*(-dypy*h[x] + dypx*h[y] + dyhy*px - dyhx*py) + 0.5*(-dzpz*h[x] + dzpx*h[z] + dzhz*px - dzhx*pz) +
@@ -468,9 +577,9 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests3)
                     Dx(sigma[y][x])+Dy(sigma[y][y])+Dz(sigma[y][z]);
 
             dV[z]=0.5*(dxpz*h[x] - dxpx*h[z] - dxhz*px + dxhx*pz) + 0.5*(dypz*h[y] - dypy*h[z] - dyhz*py + dyhy*pz) +
-                    zeta*delmu*(dxqzx + dyqzy +dzqzz)  +
-                    nu*(1/2*(dxpz*h[x] - dxpx*h[z] - dxhz*px + dxhx*pz)+ 1/2*(dypz*h[y] - dypy*h[z] - dyhz*py + dyhy*pz) + 1/3*(-dzpx*h[x] - dzpy*h[y] - dzpz*h[z] - dzhx*px - dzhy*py -dzhz*pz))+
-                    Dx(sigma[z][x])+Dy(sigma[z][y])+Dz(sigma[z][z]);
+                  zeta*delmu*(dxqzx + dyqzy +dzqzz)  +
+                  nu*(1/2*(dxpz*h[x] - dxpx*h[z] - dxhz*px + dxhx*pz)+ 1/2*(dypz*h[y] - dypy*h[z] - dyhz*py + dyhy*pz) + 1/3*(-dzpx*h[x] - dzpy*h[y] - dzpz*h[z] - dzhx*px - dzhy*py -dzhz*pz))+
+                  Dx(sigma[z][x])+Dy(sigma[z][y])+Dz(sigma[z][z]);
 
             Particles.ghost_get<9>(SKIP_LABELLING);
 
@@ -497,9 +606,15 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests3)
             P_bulk = 0;
 
             while (V_err >= V_err_eps && n <= nmax) {
-                RHS_bulk[x] = -dV[x]+Bulk_Dx(P);
-                RHS_bulk[y] = -dV[y]+Bulk_Dy(P);
-                RHS_bulk[z] = -dV[z]+Bulk_Dz(P);
+                RHS[x] = dV[x];
+                RHS[y] = dV[y];
+                Particles_subset.ghost_get<0>(SKIP_LABELLING);
+                Grad_bulk[x] = Bulk_Dx(P_bulk);
+                Grad_bulk[y] = Bulk_Dy(P_bulk);
+                for (int i = 0; i < bulk.size(); i++) {
+                    Particles.template getProp<10>(bulk.template get<0>(i))[x] += Particles_subset.getProp<1>(i)[x];
+                    Particles.template getProp<10>(bulk.template get<0>(i))[y] += Particles_subset.getProp<1>(i)[y];
+                }
                 Particles.ghost_get<10>(SKIP_LABELLING);
                 DCPSE_scheme<equations3d3, decltype(Particles)> Solver(Particles);
                 Solver.impose(Stokes1, bulk, RHS[0], vx);
@@ -511,7 +626,14 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests3)
                 Solver.solve_with_solver(solverPetsc, V[x], V[y], V[z]);
                 Particles.ghost_get<Velocity>(SKIP_LABELLING);
                 div = -(Dx(V[x]) + Dy(V[y])+Dz(V[z]));
-                P_bulk = P + div;
+                P = P + div;
+                for (int i = 0; i < bulk.size(); i++) {
+                    Particles_subset.getProp<0>(i) = Particles.template getProp<4>(bulk.template get<0>(i));
+                }
+                for (int j = 0; j < Boundary.size(); j++) {
+                    auto p = Boundary.get<0>(j);
+                    Particles.getProp<4>(p) = 0;
+                }
                 sum = 0;
                 sum1 = 0;
                 for (int j = 0; j < bulk.size(); j++) {
@@ -520,8 +642,8 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests3)
                            (Particles.getProp<18>(p)[0] - Particles.getProp<1>(p)[0]) +
                            (Particles.getProp<18>(p)[1] - Particles.getProp<1>(p)[1]) *
                            (Particles.getProp<18>(p)[1] - Particles.getProp<1>(p)[1]) +
-                            (Particles.getProp<18>(p)[2] - Particles.getProp<1>(p)[2]) *
-                            (Particles.getProp<18>(p)[2] - Particles.getProp<1>(p)[2])
+                           (Particles.getProp<18>(p)[2] - Particles.getProp<1>(p)[2]) *
+                           (Particles.getProp<18>(p)[2] - Particles.getProp<1>(p)[2])
 
                             ;
                     sum1 += Particles.getProp<1>(p)[0] * Particles.getProp<1>(p)[0] +
@@ -590,15 +712,28 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests3)
             Particles.write_frame("Polar3d", ctr);
             Particles.ghost_get<0>();
             ctr++;
-            //auto lambda = -1/(9*gama)*(-3*h[x]*Pol[x]-3*h[y]*Pol[y]-3*h[z]*Pol[z]+
-            //        gama*nu*(Pol[x]*Pol[x]*u[x][x]+Pol[y]*Pol[y]*u[y][y]+Pol[z]*Pol[z]*u[z][z]+
-            //        Pol[x]*(Pol[y]*(u[x][y]+u[y][x])+Pol[z]*(u[x][z]+u[z][x])) +Pol[y]*Pol[z]*(u[y][z]+u[z][y])))/(Pol[x]*Pol[x]+Pol[y]*Pol[y]+Pol[z]*Pol[z]);
+            auto lambda = -1/(9*gama)*(-3*h[x]*Pol[x]-3*h[y]*Pol[y]-3*h[z]*Pol[z]+
+                    gama*nu*(Pol[x]*Pol[x]*u[x][x]+Pol[y]*Pol[y]*u[y][y]+Pol[z]*Pol[z]*u[z][z]+
+                    Pol[x]*(Pol[y]*(u[x][y]+u[y][x])+Pol[z]*(u[x][z]+u[z][x])) +Pol[y]*Pol[z]*(u[y][z]+u[z][y])))/(Pol[x]*Pol[x]+Pol[y]*Pol[y]+Pol[z]*Pol[z]);
             dPol=Pol;
             Particles.ghost_get<8>(SKIP_LABELLING);
             k1[x] = h[x]/gama-nu*(Pol[x]*u[x][x]+Pol[y]*u[x][y]+Pol[z]*u[x][z]) + lambda*Pol[x]/delmu + (W[x][x]*Pol[x]+W[x][y]*Pol[y]+W[x][z]*Pol[z]);
             k1[y] = h[y]/gama-nu*(Pol[x]*u[y][x]+Pol[y]*u[y][y]+Pol[z]*u[y][z]) + lambda*Pol[y]/delmu + (W[y][x]*Pol[x]+W[y][y]*Pol[y]+W[y][z]*Pol[z]);
             k1[z] = h[z]/gama-nu*(Pol[x]*u[z][x]+Pol[y]*u[z][y]+Pol[z]*u[z][z]) + lambda*Pol[z]/delmu + (W[z][x]*Pol[x]+W[z][y]*Pol[y]+W[z][z]*Pol[z]);
-            Pol_bulk = dPol + (0.5 * dt) * k1;
+            Pol = dPol + (0.5 * dt) * k1;
+    /*        for (int j = 0; j < bulk.size(); j++) {
+                auto p = bulk.get<0>(j);
+                Particles.getProp<0>(p) = (Particles.getProp<0>(p) == 0) ? 1 : Particles.getProp<0>(p);
+            }*/
+            for (int j = 0; j < Boundary.size(); j++) {
+                auto p = Boundary.get<0>(j);
+                Particles.getProp<0>(p) = (Particles.getProp<0>(p) == 0) ? 1 : Particles.getProp<0>(p);
+                Particles.getProp<0>(p)[x] = sin(2 * M_PI * (cos((2 * Particles.getPos(p)[x] - Lx) / Lx) -
+                                                             sin((2 * Particles.getPos(p)[y] - Ly) / Ly)));
+                Particles.getProp<0>(p)[y] = cos(2 * M_PI * (cos((2 * Particles.getPos(p)[x] - Lx) / Lx) -
+                                                             sin((2 * Particles.getPos(p)[y] - Ly) / Ly)));
+                Particles.getProp<0>(p)[z] = 0.0;
+            }
             Particles.ghost_get<0>(SKIP_LABELLING);
 
             h[x]=Ks*(dxxpx + dxypy + dxzpz) +
@@ -627,7 +762,23 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests3)
             k2[x] = h[x]/gama-nu*(Pol[x]*u[x][x]+Pol[y]*u[x][y]+Pol[z]*u[x][z]) + lambda*Pol[x]/delmu + (W[x][x]*Pol[x]+W[x][y]*Pol[y]+W[x][z]*Pol[z]);
             k2[y] = h[y]/gama-nu*(Pol[x]*u[y][x]+Pol[y]*u[y][y]+Pol[z]*u[y][z]) + lambda*Pol[y]/delmu + (W[y][x]*Pol[x]+W[y][y]*Pol[y]+W[y][z]*Pol[z]);
             k2[z] = h[z]/gama-nu*(Pol[x]*u[z][x]+Pol[y]*u[z][y]+Pol[z]*u[z][z]) + lambda*Pol[z]/delmu + (W[z][x]*Pol[x]+W[z][y]*Pol[y]+W[z][z]*Pol[z]);
-            Pol_bulk = dPol + (0.5 * dt) * k2;
+            Pol = dPol + (0.5 * dt) * k2;
+       /*     for (int j = 0; j < bulk.size(); j++) {
+                auto p = bulk.get<0>(j);
+                Particles.getProp<0>(p) = (Particles.getProp<0>(p) == 0) ? 1 : Particles.getProp<0>(p);
+            }*/
+            for (int j = 0; j < Boundary.size(); j++) {
+                auto p = Boundary.get<0>(j);
+                Particles.getProp<0>(p) = (Particles.getProp<0>(p) == 0) ? 1 : Particles.getProp<0>(p);
+                Particles.getProp<0>(p)[x] = sin(2 * M_PI * (cos((2 * Particles.getPos(p)[x] - Lx) / Lx) -
+                                                             sin((2 * Particles.getPos(p)[y] - Ly) / Ly)));
+                Particles.getProp<0>(p)[y] = cos(2 * M_PI * (cos((2 * Particles.getPos(p)[x] - Lx) / Lx) -
+                                                             sin((2 * Particles.getPos(p)[y] - Ly) / Ly)));
+                Particles.getProp<0>(p)[z] = 0.0;
+
+            }
+
+
             Particles.ghost_get<0>(SKIP_LABELLING);
             h[x]=Ks*(dxxpx + dxypy + dxzpz) +
                  Kb*((-dxypy - dxzpz + dyypx + dzzpx)*px*px + (-dxypy + dyypx)*py*py + (dypy*dzpx + dxpy*(dypz - 2*dzpy) + dypx*dzpy + dxpz*(-dypy - 2*dzpz) + 2*dzpx*dzpz)*pz + (-dxzpz + dzzpx)*pz*pz +
@@ -655,7 +806,21 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests3)
             k3[x] = h[x]/gama-nu*(Pol[x]*u[x][x]+Pol[y]*u[x][y]+Pol[z]*u[x][z]) + lambda*Pol[x]/delmu + (W[x][x]*Pol[x]+W[x][y]*Pol[y]+W[x][z]*Pol[z]);
             k3[y] = h[y]/gama-nu*(Pol[x]*u[y][x]+Pol[y]*u[y][y]+Pol[z]*u[y][z]) + lambda*Pol[y]/delmu + (W[y][x]*Pol[x]+W[y][y]*Pol[y]+W[y][z]*Pol[z]);
             k3[z] = h[z]/gama-nu*(Pol[x]*u[z][x]+Pol[y]*u[z][y]+Pol[z]*u[z][z]) + lambda*Pol[z]/delmu + (W[z][x]*Pol[x]+W[z][y]*Pol[y]+W[z][z]*Pol[z]);
-            Pol_bulk = dPol + (dt)*k3;
+            Pol = dPol + (dt)*k3;
+            /*for (int j = 0; j < bulk.size(); j++) {
+                auto p = bulk.get<0>(j);
+                Particles.getProp<0>(p) = (Particles.getProp<0>(p) == 0) ? 1 : Particles.getProp<0>(p);
+            }*/
+            for (int j = 0; j < Boundary.size(); j++) {
+                auto p = Boundary.get<0>(j);
+                Particles.getProp<0>(p) = (Particles.getProp<0>(p) == 0) ? 1 : Particles.getProp<0>(p);
+                Particles.getProp<0>(p)[x] = sin(2 * M_PI * (cos((2 * Particles.getPos(p)[x] - Lx) / Lx) -
+                                                             sin((2 * Particles.getPos(p)[y] - Ly) / Ly)));
+                Particles.getProp<0>(p)[y] = cos(2 * M_PI * (cos((2 * Particles.getPos(p)[x] - Lx) / Lx) -
+                                                             sin((2 * Particles.getPos(p)[y] - Ly) / Ly)));
+                Particles.getProp<0>(p)[z] = 0.0;
+
+            }
 
             Particles.ghost_get<0>(SKIP_LABELLING);
             h[x]=Ks*(dxxpx + dxypy + dxzpz) +
@@ -685,13 +850,18 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests3)
             k4[z] = h[z]/gama-nu*(Pol[x]*u[z][x]+Pol[y]*u[z][y]+Pol[z]*u[z][z]) + lambda*Pol[z]/delmu + (W[z][x]*Pol[x]+W[z][y]*Pol[y]+W[z][z]*Pol[z]);
 
             Pol = dPol + (dt / 6.0) * (k1 + (2.0 * k2) + (2.0 * k3) + k4);
+           /* for (int j = 0; j < bulk.size(); j++) {
+                auto p = bulk.get<0>(j);
+                Particles.getProp<0>(p) = (Particles.getProp<0>(p) == 0) ? 1 : Particles.getProp<0>(p);
+            }*/
             for (int j = 0; j < Boundary.size(); j++) {
                 auto p = Boundary.get<0>(j);
+                Particles.getProp<0>(p) = (Particles.getProp<0>(p) == 0) ? 1 : Particles.getProp<0>(p);
                 Particles.getProp<0>(p)[x] = sin(2 * M_PI * (cos((2 * Particles.getPos(p)[x] - Lx) / Lx) -
                                                              sin((2 * Particles.getPos(p)[y] - Ly) / Ly)));
                 Particles.getProp<0>(p)[y] = cos(2 * M_PI * (cos((2 * Particles.getPos(p)[x] - Lx) / Lx) -
                                                              sin((2 * Particles.getPos(p)[y] - Ly) / Ly)));
-                Particles.getProp<0>(p)[z] =0;
+                Particles.getProp<0>(p)[z] = 0.0;
             }
 
             k1 = V;
@@ -703,7 +873,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests3)
             Particles.map();
 
             Particles.ghost_get<0, ExtForce, 27>();
-            indexUpdate(Particles,Boundary, bulk, up, down, left,right,front,back);
+            indexUpdate(Particles,Particles_subset,Boundary, bulk, up, down, left,right,front,back);
             vector_dist_subset<3, double, aggregate<VectorS<3, double>, VectorS<3, double>, double[3][3], VectorS<3, double>, double, double[3][3], double[3][3], VectorS<3, double>, VectorS<3, double>, VectorS<3, double>, VectorS<3, double>, double, double, double, double, double, double, double, VectorS<3, double>, double, double, double[3], double[3], double[3], double[3], double[3], double[3], double, VectorS<3, double>, VectorS<3, double>, VectorS<3, double>, VectorS<3, double>, double, double, double, double[3][3],double[3][3]>> Particles_subset(
                     Particles, bulk);
             auto Pol_bulk = getV<0>(Particles_subset);
