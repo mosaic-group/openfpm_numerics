@@ -69,9 +69,9 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests3)
     BOOST_AUTO_TEST_CASE(Active3dSimple) {
         timer tt2;
         tt2.start();
-        size_t grd_sz = 41;
+        size_t grd_sz = 31;
         double dt = 1e-3;
-        double V_err_eps = 1e-3;
+        double V_err_eps = 5e-3;
         double boxsize = 10;
         const size_t sz[3] = {grd_sz, grd_sz, grd_sz};
         Box<3, double> box({0, 0, 0}, {boxsize, boxsize, boxsize});
@@ -720,7 +720,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests3)
             Particles.write_frame("Polar3d", ctr);
             Particles.ghost_get<0>();
             ctr++;
-            auto lambda = -1/(9*gama)*(-3*h[x]*Pol[x]-3*h[y]*Pol[y]-3*h[z]*Pol[z]+
+            auto lambda = 1/(3*gama)*(-3*h[x]*Pol[x]-3*h[y]*Pol[y]-3*h[z]*Pol[z]+
                     gama*nu*(Pol[x]*Pol[x]*u[x][x]+Pol[y]*Pol[y]*u[y][y]+Pol[z]*Pol[z]*u[z][z]+
                     Pol[x]*(Pol[y]*(u[x][y]+u[y][x])+Pol[z]*(u[x][z]+u[z][x])) +Pol[y]*Pol[z]*(u[y][z]+u[z][y])))/(Pol[x]*Pol[x]+Pol[y]*Pol[y]+Pol[z]*Pol[z]);
             dPol=Pol;
