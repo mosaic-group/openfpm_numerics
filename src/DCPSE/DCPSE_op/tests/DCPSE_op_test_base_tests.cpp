@@ -459,6 +459,94 @@ BOOST_AUTO_TEST_CASE(dcpse_op_tests) {
 
     }
 
+    BOOST_AUTO_TEST_CASE(dcpse_slice_3d) {
+        const size_t sz[3] = {17,17,17};
+        Box<3, double> box({0, 0,0}, {1,1,1});
+        size_t bc[3] = {NON_PERIODIC, NON_PERIODIC,NON_PERIODIC};
+        double spacing = box.getHigh(0) / (sz[0] - 1);
+        Ghost<3, double> ghost(spacing * 3);
+        double rCut = 2.0 * spacing;
+
+        vector_dist<3, double, aggregate<double,VectorS<3, double>,double,double[3][3]>> Particles(0, box, bc, ghost);
+
+        auto it = Particles.getGridIterator(sz);
+        while (it.isNext()) {
+            Particles.add();
+            auto key = it.get();
+            double x = key.get(0) * it.getSpacing(0);
+            Particles.getLastPos()[0] = x;
+            double y = key.get(1) * it.getSpacing(1);
+            Particles.getLastPos()[1] = y;
+            double z = key.get(2) * it.getSpacing(2);
+            Particles.getLastPos()[2] = z;
+
+            Particles.getLastProp<1>()[0] = sin(x+y);
+            Particles.getLastProp<1>()[1] = cos(x+y);
+            Particles.getLastProp<1>()[2] = 1.0;
+
+            ++it;
+        }
+
+        Particles.map();
+        Particles.ghost_get<0>();
+
+
+        auto P = getV<0>(Particles);
+        auto V = getV<1>(Particles);
+        auto S = getV<2>(Particles);
+        auto Sig = getV<3>(Particles);
+
+
+        Derivative_x Dx(Particles, 2, rCut,2);
+
+        P = Dx(V[0]);
+        S = V[0]*V[0] + V[1]*V[1]+V[2]*V[2];
+
+        Sig[0][1] = V[0]*V[0] + V[1]*V[1]+V[2]*V[2];
+        Sig[1][0] = P;
+        Sig[2][2] = 5.0;
+
+        auto it2 = Particles.getDomainIterator();
+
+        double err = 0.0;
+
+        while (it2.isNext())
+        {
+            auto p = it2.get();
+
+            if (fabs(Particles.getProp<0>(p) - Particles.getProp<1>(p)[1]) >= err )
+            {
+                err = fabs(Particles.getProp<0>(p) - Particles.getProp<1>(p)[1]);
+            }
+
+            if (fabs(Particles.getProp<2>(p) - 2.0) >= err )
+            {
+                err = fabs(Particles.getProp<2>(p) - 2.0);
+            }
+
+            if (fabs(Particles.getProp<3>(p)[0][1] - 2.0) >= err )
+            {
+                err = fabs(Particles.getProp<3>(p)[0][1] - 2.0);
+            }
+
+            if (fabs(Particles.getProp<3>(p)[1][0] - Particles.getProp<1>(p)[1]) >= err )
+            {
+                err = fabs(Particles.getProp<3>(p)[0][1] - Particles.getProp<1>(p)[1]);
+            }
+
+            if (fabs(Particles.getProp<3>(p)[2][2] - 5.0) >= err )
+            {
+                err = fabs(Particles.getProp<3>(p)[2][2] - 5.0);
+            }
+
+            ++it2;
+        }
+
+        Particles.write("test_out");
+        BOOST_REQUIRE(err < 0.03);
+
+    }
+
 
 BOOST_AUTO_TEST_SUITE_END()
 

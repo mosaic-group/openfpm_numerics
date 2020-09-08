@@ -911,11 +911,11 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests3)
                 Particles.getProp<0>(p)[z] = 0.0;
             }
 
-            k1 = V;
-            k2 = 0.5 * dt * k1 + V;
-            k3 = 0.5 * dt * k2 + V;
-            k4 = dt * k3 + V;
-            Pos = Pos + dt / 6.0 * (k1 + 2 * k2 + 2 * k3 + k4);
+//            k1 = V;
+//            k2 = 0.5 * dt * k1 + V;
+//            k3 = 0.5 * dt * k2 + V;
+//            k4 = dt * k3 + V;
+            Pos = Pos + dt*V;/// 6.0 * (k1 + 2 * k2 + 2 * k3 + k4);
 
             Particles.map();
 
