@@ -646,7 +646,8 @@ f_x = f_y = f_z = 3
             }
         }
 
-
+        auto fu = [](double x, double y) { return x*x + y*y; };
+        auto fv = [](double x, double y) { return 2.0*x*x - 2.0*x*y; };
 
         fd.impose(Stokes_vx, {1,0},{sz[0]-2,sz[1]-2},3.0,vx,left_cell);
         fd.impose(Stokes_vy, {0,1},{sz[0]-2,sz[1]-2},3.0,vy,bottom_cell);
@@ -703,10 +704,7 @@ f_x = f_y = f_z = 3
         //fd.impose(v[x], {0,-1},{sz[0]-1,-1},prop_id<4>(),vx,corner_up);
         for (int i = 0; i <= sz[0]-1 ; i++)
         {
-            double X = (i) * hx;
-            double Y = 0.0;
-            double Vx = X*X + Y*Y;
-            fd.impose(v[x], {i,-1},{i,-1},Vx,vx,corner_up);
+            fd.impose(v[x], {i,-1},{i,-1},fu,vx,corner_up);
         }
 
         fd.impose(v[y], {0,0},{sz[0]-2,0},prop_id<5>(),vy,bottom_cell);

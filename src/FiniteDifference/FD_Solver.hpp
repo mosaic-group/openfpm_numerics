@@ -8,6 +8,8 @@
 #ifndef FDSOLVER_HPP_
 #define FDSOLVER_HPP_
 
+#include <functional>
+
 #include "Matrix/SparseMatrix.hpp"
 #include "Vector/Vector.hpp"
 #include "Grid/grid_dist_id.hpp"
@@ -202,6 +204,44 @@ private:
         inline bool isConstant()
         {
         	return false;
+        }
+    };
+
+    //! Encapsulation of the b term as a function
+    struct function_b
+    {
+        grid_type & grid;
+		typename Sys_eqs::stype* spacing;
+		const std::function<double(double,double)> &f;
+		comb<Sys_eqs::dims> c_where;
+        /*! \brief Constrictor from a function
+         *
+         *
+         *
+         */
+        function_b(grid_type & grid, typename Sys_eqs::stype *spacing, const std::function<double(double,double)> &f, comb<Sys_eqs::dims> c_where=comb<2>({0,0}))
+                :grid(grid), spacing(spacing), f(f), c_where(c_where)
+        {}
+
+        inline typename Sys_eqs::stype get(grid_dist_key_dx<Sys_eqs::dims> & key)
+        {
+
+			double hx = spacing[0];
+			double hy = spacing[1];
+			double x = hx * key.getKeyRef().value(0);
+			double y = hy * key.getKeyRef().value(1);
+
+			// shift x, y according to the staggered location
+			x -= (-1-c_where[0])*(hx/2.0);
+			y -= (-1-c_where[1])*(hy/2.0);
+
+			std::cout << "function_b: "  << key.getKeyRef().value(0) << " " << key.getKeyRef().value(1) << " " << f(x, y) << std::endl;
+			return f(x,y);
+        }
+
+        inline bool isConstant()
+        {
+			return false;
         }
     };
 
@@ -914,6 +954,22 @@ public:
         impose_git(op,b,id.getId(),it,c_where);
     }
 
+
+    template<typename T> void impose(const T & op,
+                                     const grid_key_dx<Sys_eqs::dims> start_k,
+                                     const grid_key_dx<Sys_eqs::dims> stop_k,
+                                     const std::function<double(double,double)> &f,
+                                     eq_id id,
+                                     comb<Sys_eqs::dims> c_where)
+    {
+        auto it = g_map.getSubDomainIterator(start_k,stop_k);
+
+        function_b b(grid, spacing, f, c_where);
+
+        impose_git(op,b,id.getId(),it,c_where);
+    }
+
+
 	/*! \brief Impose an operator
 	 *
 	 * This function impose an operator on a box region to produce the system
@@ -1003,6 +1059,37 @@ public:
                 ++it;
 
         variable_b<prp_id> b(grid);
+
+        impose_git(op,b,id.getId(),it,c_zero);
+
+	}
+
+
+	template<typename T> void impose(const T & op,
+									const grid_key_dx<Sys_eqs::dims> start_k,
+									const grid_key_dx<Sys_eqs::dims> stop_k,
+									const std::function<double(double,double)> &f,
+									eq_id id = eq_id(),
+									bool skip_first = false)
+	{
+		comb<Sys_eqs::dims> c_zero;
+		c_zero.zero();
+        bool increment = false;
+        if (skip_first == true)
+        {
+
+                auto it = g_map.getSubDomainIterator(start_k,stop_k);
+
+                if (it.isNext() == true)
+                        increment = true;
+        }
+
+        auto it = g_map.getSubDomainIterator(start_k,stop_k);
+
+        if (increment == true)
+                ++it;
+
+        function_b b(grid, spacing, f);
 
         impose_git(op,b,id.getId(),it,c_zero);
 
