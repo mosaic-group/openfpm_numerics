@@ -210,7 +210,7 @@ private:
     //! Encapsulation of the b term as a function
     struct function_b
     {
-        grid_type & grid;
+    	g_map_type & grid;
 		typename Sys_eqs::stype* spacing;
 		const std::function<double(double,double)> &f;
 		comb<Sys_eqs::dims> c_where;
@@ -219,7 +219,7 @@ private:
          *
          *
          */
-        function_b(grid_type & grid, typename Sys_eqs::stype *spacing, const std::function<double(double,double)> &f, comb<Sys_eqs::dims> c_where=comb<2>({0,0}))
+        function_b(g_map_type & grid, typename Sys_eqs::stype *spacing, const std::function<double(double,double)> &f, comb<Sys_eqs::dims> c_where=comb<2>({0,0}))
                 :grid(grid), spacing(spacing), f(f), c_where(c_where)
         {}
 
@@ -228,8 +228,8 @@ private:
 
 			double hx = spacing[0];
 			double hy = spacing[1];
-			double x = hx * key.getKeyRef().value(0);
-			double y = hy * key.getKeyRef().value(1);
+			double x = hx * (key.getKeyRef().value(0) + grid.getLocalGridsInfo().get(key.getSub()).origin[0]);
+			double y = hy * (key.getKeyRef().value(1) + grid.getLocalGridsInfo().get(key.getSub()).origin[1]);
 
 			// shift x, y according to the staggered location
 			x -= (-1-c_where[0])*(hx/2.0);
@@ -241,7 +241,7 @@ private:
 
         inline bool isConstant()
         {
-			return false;
+			return true;
         }
     };
 
@@ -964,7 +964,7 @@ public:
     {
         auto it = g_map.getSubDomainIterator(start_k,stop_k);
 
-        function_b b(grid, spacing, f, c_where);
+        function_b b(g_map, spacing, f, c_where);
 
         impose_git(op,b,id.getId(),it,c_where);
     }
