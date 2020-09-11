@@ -508,42 +508,53 @@ BOOST_AUTO_TEST_CASE(dcpse_op_tests) {
 
         auto it2 = Particles.getDomainIterator();
 
-        double err = 0.0;
+        double err1 = 0.0;
+        double err2 = 0.0;
+        double err3 = 0.0;
+        double err4 = 0.0;
+        double err5 = 0.0;
 
         while (it2.isNext())
         {
             auto p = it2.get();
 
-            if (fabs(Particles.getProp<0>(p) - Particles.getProp<1>(p)[1]) >= err )
+            // Here we check that P = Dx(V[0]) works   P is Prop 0 = sin(x+y) V[0] = sin(x+y) and V[1] is cos(x+y)
+            if (fabs(Particles.getProp<0>(p) - Particles.getProp<1>(p)[1]) >= err1 )
             {
-                err = fabs(Particles.getProp<0>(p) - Particles.getProp<1>(p)[1]);
+                err1 = fabs(Particles.getProp<0>(p) - Particles.getProp<1>(p)[1]);
             }
 
-            if (fabs(Particles.getProp<2>(p) - 2.0) >= err )
+            if (fabs(Particles.getProp<2>(p) - 2.0) >= err2 )
             {
-                err = fabs(Particles.getProp<2>(p) - 2.0);
+                err2 = fabs(Particles.getProp<2>(p) - 2.0);
             }
 
-            if (fabs(Particles.getProp<3>(p)[0][1] - 2.0) >= err )
+            if (fabs(Particles.getProp<3>(p)[0][1] - 2.0) >= err3 )
             {
-                err = fabs(Particles.getProp<3>(p)[0][1] - 2.0);
+                err3 = fabs(Particles.getProp<3>(p)[0][1] - 2.0);
             }
 
-            if (fabs(Particles.getProp<3>(p)[1][0] - Particles.getProp<1>(p)[1]) >= err )
+            // V[0]*V[0] + V[1]*V[1]+V[2]*V[2] = 2 and
+            if (fabs(Particles.getProp<3>(p)[0][1] - Particles.getProp<2>(p)) >= err4 )
             {
-                err = fabs(Particles.getProp<3>(p)[0][1] - Particles.getProp<1>(p)[1]);
+                err4 = fabs(Particles.getProp<3>(p)[0][1] - Particles.getProp<2>(p));
             }
 
-            if (fabs(Particles.getProp<3>(p)[2][2] - 5.0) >= err )
+            if (fabs(Particles.getProp<3>(p)[2][2] - 5.0) >= err5 )
             {
-                err = fabs(Particles.getProp<3>(p)[2][2] - 5.0);
+                err5 = fabs(Particles.getProp<3>(p)[2][2] - 5.0);
             }
 
             ++it2;
         }
 
         Particles.write("test_out");
-        BOOST_REQUIRE(err < 0.03);
+        std::cout << err1 << " " << err2 << " " << err3 << " " << err4 << " " << err5 << std::endl;
+        BOOST_REQUIRE(err1 < 0.08);
+        BOOST_REQUIRE(err2 < 0.03);
+        BOOST_REQUIRE(err3 < 0.03);
+        BOOST_REQUIRE(err4 < 0.03);
+        BOOST_REQUIRE(err5 < 0.03);
 
     }
 
