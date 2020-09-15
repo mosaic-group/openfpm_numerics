@@ -728,17 +728,14 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests3)
                     Pol[x]*(Pol[y]*(u[x][y]+u[y][x])+Pol[z]*(u[x][z]+u[z][x])) +Pol[y]*Pol[z]*(u[y][z]+u[z][y])))/(Pol[x]*Pol[x]+Pol[y]*Pol[y]+Pol[z]*Pol[z]);
             dPol=Pol;
             r=(dPol[x]*dPol[x]+dPol[y]*dPol[y]+dPol[z]*dPol[z]);
-            Particles.ghost_get<8>(SKIP_LABELLING);
             k1[x] = h[x]/gama-nu*(Pol[x]*u[x][x]+Pol[y]*u[x][y]+Pol[z]*u[x][z]) + lambda*Pol[x]/(delmu) + (W[x][x]*Pol[x]+W[x][y]*Pol[y]+W[x][z]*Pol[z]);
             k1[y] = h[y]/gama-nu*(Pol[x]*u[y][x]+Pol[y]*u[y][y]+Pol[z]*u[y][z]) + lambda*Pol[y]/(delmu) + (W[y][x]*Pol[x]+W[y][y]*Pol[y]+W[y][z]*Pol[z]);
             k1[z] = h[z]/gama-nu*(Pol[x]*u[z][x]+Pol[y]*u[z][y]+Pol[z]*u[z][z]) + lambda*Pol[z]/(delmu) + (W[z][x]*Pol[x]+W[z][y]*Pol[y]+W[z][z]*Pol[z]);
-            //f1  = (k1[x]*k1[x])+(k1[y]*k1[y])+(k1[z]*k1[z]);
+            f1  = (k1[x]*k1[x])+(k1[y]*k1[y])+(k1[z]*k1[z]);
             Pol = dPol + (0.5 * dt) * k1;
-            //H_p_b=(Pol[x]*Pol[x]+Pol[y]*Pol[y]+Pol[z]*Pol[z]);
+            H_p_b=(Pol[x]*Pol[x]+Pol[y]*Pol[y]+Pol[z]*Pol[z]);
             for (int j = 0; j < bulk.size(); j++) {
                 auto p = bulk.get<0>(j);
-                Particles.getProp<11>(p)=Particles.getProp<28>(p)[0]*Particles.getProp<28>(p)[0]+Particles.getProp<28>(p)[1]*Particles.getProp<28>(p)[1]+Particles.getProp<28>(p)[2]*Particles.getProp<28>(p)[2];
-                Particles.getProp<32>(p)=Particles.getProp<0>(p)[0]*Particles.getProp<0>(p)[0]+Particles.getProp<0>(p)[1]*Particles.getProp<0>(p)[1]+Particles.getProp<0>(p)[2]*Particles.getProp<0>(p)[2];
                 Particles.getProp<32>(p) = (Particles.getProp<32>(p) == 0) ? 1.0 : Particles.getProp<32>(p);
             }
             Psumsquare=r+(0.5*dt)*f1;
@@ -755,6 +752,9 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests3)
 
             }
             Particles.ghost_get<0>(SKIP_LABELLING);
+            Particles.deleteGhost();
+            Particles.write_frame("Polar3d_DEBUG", ctr);
+            return;
 
             h[x]=Ks*(dxxpx + dxypy + dxzpz) +
                  Kb*((-dxypy - dxzpz + dyypx + dzzpx)*px*px + (-dxypy + dyypx)*py*py + (dypy*dzpx + dxpy*(dypz - 2*dzpy) + dypx*dzpy + dxpz*(-dypy - 2*dzpz) + 2*dzpx*dzpz)*pz + (-dxzpz + dzzpx)*pz*pz +

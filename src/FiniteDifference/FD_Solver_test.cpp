@@ -523,6 +523,7 @@ f_x = f_y = f_z = 3
     so that
 
      -\Delta u + \nabla p + f = <-4, -4> + <1, 1> + <3, 3> = 0
+     \Delta u - \nabla p  = +f
      \nabla \cdot u           = 2x - 2x                    = 0
     */
 
@@ -619,16 +620,16 @@ f_x = f_y = f_z = 3
             double yg = gkey.get(1) * g_dist.spacing(1);
             //v[y].value(key,bottom_cell)=1.0;
             g_dist.getProp<2>(key)[0] = xg*xg + yg*yg;
-            g_dist.getProp<2>(key)[1] = 2*xg*xg - 2*yg*yg;
-            g_dist.getProp<4>(key)    = xg*xg + yg*yg;
-            g_dist.getProp<5>(key)    = 2*xg*xg - 2*xg*yg;
+            g_dist.getProp<2>(key)[1] = 2*xg*xg - 2*xg*yg;
+            g_dist.getProp<4>(key)    = (xg)*(xg) + (yg+hy/2.0)*(yg+hy/2.0);
+            g_dist.getProp<5>(key)    = 2*(xg+hx/2.0)*(xg+hx/2.0) - 2*(xg+hx/2.0)*(yg);
             g_dist.getProp<3>(key) = xg + yg - 1;
             //std::cout<<it.getGKey(key).get(0)<<","<<it.getGKey(key).get(1)<<":"<<g_dist.getProp<3>(key)<<std::endl;
             ++it;
         }
 
-//        fd.impose(incompressibility, {0,0},{sz[0]-2,sz[1]-2}, 0.0,ic,true);
-//        fd.impose(P, {0,0},{0,0},-1.0,ic);
+        //fd.impose(incompressibility, {0,0},{sz[0]-2,sz[1]-2}, 0.0,ic,true);
+        //fd.impose(P, {0,0},{0,0},(hx+hy)/2-1.0,ic);
 
         for (int i = 0; i <= sz[0]-2 ; i++)
         {
@@ -637,7 +638,7 @@ f_x = f_y = f_z = 3
             double X = i * hx;
             double Y = j * hy;
             if (X<0.6 && X>0.4 && Y<0.6 && Y>0.4){
-                fd.impose(P, {i,j},{i,j}, X+Y-1,ic);
+                fd.impose(P, {i,j},{i,j}, (X+hx/2.0)+(Y+hy/2.0)-1,ic);
             }
             else{
                 fd.impose(incompressibility, {i,j},{i,j}, 0.0,ic);
@@ -647,8 +648,8 @@ f_x = f_y = f_z = 3
 
 
 
-        fd.impose(Stokes_vx, {1,0},{sz[0]-2,sz[1]-2},-3.0,vx,left_cell);
-        fd.impose(Stokes_vy, {0,1},{sz[0]-2,sz[1]-2},-3.0,vy,bottom_cell);
+        fd.impose(Stokes_vx, {1,0},{sz[0]-2,sz[1]-2},3.0,vx,left_cell);
+        fd.impose(Stokes_vy, {0,1},{sz[0]-2,sz[1]-2},3.0,vy,bottom_cell);
 
 
         // Staggering pattern in the domain
@@ -673,7 +674,7 @@ f_x = f_y = f_z = 3
         //fd.impose(v[y], {-1,0},{-1,sz[1]-1},prop_id<5>(),vy,corner_right);
         for (int j = 0; j <= sz[1]-1 ; j++)
         {
-            double X = -1 * hx/2.0;
+            double X = 0.0;
             double Y = j * hy;
             double Vy = 2*X*X - 2*X*Y;
             fd.impose(v[y], {-1,j},{-1,j},Vy,vy,corner_right);
@@ -689,21 +690,21 @@ f_x = f_y = f_z = 3
             fd.impose(v[x],{sz[0]-1,j},{sz[0]-1,j},Vx,vx,left_cell);
         }*/
 
-        fd.impose(v[y],{sz[0]-1,0},{sz[0]-1,sz[1]-1},prop_id<5>(),vy,corner_dw);
-        /*for (int j = 0; j <= sz[1]-1 ; j++)
+        //fd.impose(v[y],{sz[0]-1,0},{sz[0]-1,sz[1]-1},prop_id<5>(),vy,corner_dw);
+        for (int j = 0; j <= sz[1]-1 ; j++)
         {
             double X = (sz[0]-1) * hx;
             double Y = j * hy;
             double Vy = 2*X*X - 2*X*Y;
             fd.impose(v[y],{sz[0]-1,j},{sz[0]-1,j},Vy,vy,corner_dw);
-        }*/
+        }
 
         // // Imposing B3 Bottom Wall
         //fd.impose(v[x], {0,-1},{sz[0]-1,-1},prop_id<4>(),vx,corner_up);
         for (int i = 0; i <= sz[0]-1 ; i++)
         {
-            double X = i * hx;
-            double Y = -1 * hy/2.0;
+            double X = (i) * hx;
+            double Y = 0.0;
             double Vx = X*X + Y*Y;
             fd.impose(v[x], {i,-1},{i,-1},Vx,vx,corner_up);
         }
@@ -718,14 +719,14 @@ f_x = f_y = f_z = 3
         }*/
 
         // Imposing B4 Top Wall
-        fd.impose(v[x],{0,sz[1]-1},{sz[0]-1,sz[1]-1},prop_id<4>(),vx,corner_dw);
-        /*for (int i = 0; i <= sz[0]-1 ; i++)
+        //fd.impose(v[x],{0,sz[1]-1},{sz[0]-1,sz[1]-1},prop_id<4>(),vx,corner_dw);
+        for (int i = 0; i <= sz[0]-1 ; i++)
         {
             double X = i * hx;
             double Y = (sz[1]-1) * hy;
             double Vx = X*X + Y*Y;
             fd.impose(v[x],{i,sz[1]-1},{i,sz[1]-1},Vx,vx,corner_dw);
-        }*/
+        }
 
         fd.impose(v[y],{0,sz[1]-1},{sz[0]-2,sz[1]-1},prop_id<5>(),vy,bottom_cell);
         /*for (int i = 0; i <= sz[0]-2 ; i++)
@@ -742,26 +743,28 @@ f_x = f_y = f_z = 3
         fd.impose(P, {-1,0},{-1,sz[1]-2},0.0,ic);
         fd.impose(P, {sz[0]-1,0},{sz[0]-1,sz[1]-2},0.0,ic);
 
+        fd.impose(v[x], {-1,-1},{-1,sz[1]-1},0.0,vx,left_cell);
+        fd.impose(v[y], {-1,-1},{sz[0]-1,-1},0.0,vy,bottom_cell);
+
         // Impose v_x Padding Impose v_y padding
 
         //fd.impose(v[x], {-1,-1},{-1,sz[1]-1},prop_id<4>(),vx,left_cell);
-        for (int j = -1; j <= sz[1]-1 ; j++)
-        {
-            double X = -1 * hx/2.0;
-            double Y = j * hy;
-            double Vx = X*X + Y*Y;
-            fd.impose(v[x], {-1,j},{-1,j},Vx,vx,left_cell);
-        }
+        //for (int j = -1; j <= sz[1]-1 ; j++)
+        //{
+            //double X = -hx/2.0;
+            //double Y = j * hy/2.0;
+            //double Vx = X*X + Y*Y;
+        //    fd.impose(v[x], {-1,j},{-1,j},Vx,vx,left_cell);
+        //}
 
         //fd.impose(v[y], {-1,-1},{sz[0]-1,-1},prop_id<5>(),vy,bottom_cell);
-        for (int i = -1; i <= sz[0]-1 ; i++)
-        {
-            double X = i * hx;
-            double Y = -1 * hy/2.0;
-            double Vy = 2*X*X - 2*X*Y;
-            fd.impose(v[y], {i,-1},{i,-1},Vy,vy,bottom_cell);
-        }
-
+        ///for (int i = -1; i <= sz[0]-1 ; i++)
+        //{
+            //double X = i * hx;
+            //double Y = -1 * hy/2.0;
+            //double Vy = 2*X*X - 2*X*Y;
+          //  fd.impose(v[y], {i,-1},{i,-1},0,vy,bottom_cell);
+        //}
         fd.solve(v[x],v[y],P);
 
         auto it2 = g_dist_normal.getDomainIterator();

@@ -548,14 +548,12 @@ BOOST_AUTO_TEST_CASE(dcpse_op_tests) {
             ++it2;
         }
 
-        Particles.write("test_out");
         std::cout << err1 << " " << err2 << " " << err3 << " " << err4 << " " << err5 << std::endl;
         BOOST_REQUIRE(err1 < 0.08);
         BOOST_REQUIRE(err2 < 0.03);
         BOOST_REQUIRE(err3 < 0.03);
         BOOST_REQUIRE(err4 < 0.03);
         BOOST_REQUIRE(err5 < 0.03);
-
     }
 
 

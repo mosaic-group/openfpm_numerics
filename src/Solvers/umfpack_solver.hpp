@@ -108,13 +108,13 @@ public:
 
 			x_ei = solver.solve(b_ei);
 
-			if (opt & SOLVER_PRINT_RESIDUAL_NORM_INFINITY)
-			{
+			//if (opt & SOLVER_PRINT_RESIDUAL_NORM_INFINITY)
+			//{
 				Eigen::Matrix<double, Eigen::Dynamic, 1> res;
 				res = mat_ei * x_ei - b_ei;
 
 				std::cout << "Infinity norm: " << res.lpNorm<Eigen::Infinity>() << "\n";
-			}
+			//}
 
 			if (opt & SOLVER_PRINT_DETERMINANT)
 			{
