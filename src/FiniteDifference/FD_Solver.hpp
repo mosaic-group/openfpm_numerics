@@ -235,7 +235,6 @@ private:
 			x -= (-1-c_where[0])*(hx/2.0);
 			y -= (-1-c_where[1])*(hy/2.0);
 
-			std::cout << "function_b: "  << key.getKeyRef().value(0) << " " << key.getKeyRef().value(1) << " " << f(x, y) << std::endl;
 			return f(x,y);
         }
 
@@ -954,7 +953,21 @@ public:
         impose_git(op,b,id.getId(),it,c_where);
     }
 
-
+    /*! \brief Impose an operator
+     *
+     * This function impose an operator on a box region to produce the system
+     *
+     * Ax = b
+     *
+     *
+     * \param op Operator to impose (A term)
+     * \param f right hand side of the term (b term)
+     * \param id Equation id in the system that we are imposing
+     * \param start starting point of the box
+     * \param stop stop point of the box
+     * \param skip_first skip the first point
+     *
+     */
     template<typename T> void impose(const T & op,
                                      const grid_key_dx<Sys_eqs::dims> start_k,
                                      const grid_key_dx<Sys_eqs::dims> stop_k,
@@ -1064,7 +1077,21 @@ public:
 
 	}
 
-
+    /*! \brief Impose an operator
+     *
+     * This function impose an operator on a box region to produce the system
+     *
+     * Ax = b
+     *
+     *
+     * \param op Operator to impose (A term)
+     * \param f right hand side of the term (b term)
+     * \param id Equation id in the system that we are imposing
+     * \param start starting point of the box
+     * \param stop stop point of the box
+     * \param skip_first skip the first point
+     *
+     */
 	template<typename T> void impose(const T & op,
 									const grid_key_dx<Sys_eqs::dims> start_k,
 									const grid_key_dx<Sys_eqs::dims> stop_k,
