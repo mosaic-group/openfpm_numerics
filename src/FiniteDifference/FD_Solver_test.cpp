@@ -544,11 +544,9 @@ f_x = f_y = f_z = 3
         // Domain, a rectangle
         Box<2,float> domain({0.0,0.0},{1.0,1.0});
 
-        // Ghost (Not important in this case but required)
-        //Ghost<2,long int> g(1);;
-
         // Grid points on x=256 and y=256
-        long int sz[] = {81,81};
+        long int sz[] = {256,256};
+        // Ghost (Not important in this case but required)
         Ghost<2,float> g(domain.getHigh(0)/sz[0]);
 
         size_t szu[2];
@@ -582,16 +580,12 @@ f_x = f_y = f_z = 3
         auto Ana_v = FD::getV_stag<2>(g_dist);
         auto Ana_P = FD::getV_stag<3>(g_dist);
 
-
-
         v.setVarId(0);
         P.setVarId(2);
 
         FD::Derivative_x_stag Dx;
         FD::Derivative_y_stag Dy;
         FD::Lap Lap;
-
-        double nu = 1.0;
 
         auto Stokes_vx = Lap(v[x]) - Dx(P);
         auto Stokes_vy = Lap(v[y]) - Dy(P);
@@ -611,46 +605,8 @@ f_x = f_y = f_z = 3
         comb<2> corner_dw({-1,-1});
         comb<2> corner_up({1,-1});
 
-        auto it = g_dist.getDomainIterator();
-        while (it.isNext())
-        {
-            auto key = it.get();
-            auto gkey = it.getGKey(key);
-            double xg = gkey.get(0) * g_dist.spacing(0);
-            double yg = gkey.get(1) * g_dist.spacing(1);
-            //v[y].value(key,bottom_cell)=1.0;
-            g_dist.getProp<2>(key)[0] = xg*xg + yg*yg;
-            g_dist.getProp<2>(key)[1] = 2*xg*xg - 2*xg*yg;
-            g_dist.getProp<4>(key)    = (xg)*(xg) + (yg+hy/2.0)*(yg+hy/2.0);
-            g_dist.getProp<5>(key)    = 2*(xg+hx/2.0)*(xg+hx/2.0) - 2*(xg+hx/2.0)*(yg);
-            g_dist.getProp<3>(key) = xg + yg - 1;
-            //std::cout<<it.getGKey(key).get(0)<<","<<it.getGKey(key).get(1)<<":"<<g_dist.getProp<3>(key)<<std::endl;
-            ++it;
-        }
-
-        //fd.impose(incompressibility, {0,0},{sz[0]-2,sz[1]-2}, 0.0,ic,true);
-        //fd.impose(P, {0,0},{0,0},(hx+hy)/2-1.0,ic);
-
-        for (int i = 0; i <= sz[0]-2 ; i++)
-        {
-            for (int j = 0; j <= sz[0]-2 ; j++)
-            {
-            double X = i * hx;
-            double Y = j * hy;
-            if (X<0.6 && X>0.4 && Y<0.6 && Y>0.4){
-                fd.impose(P, {i,j},{i,j}, (X+hx/2.0)+(Y+hy/2.0)-1,ic);
-            }
-            else{
-                fd.impose(incompressibility, {i,j},{i,j}, 0.0,ic);
-            }
-            }
-        }
-
-
-
-        fd.impose(Stokes_vx, {1,0},{sz[0]-2,sz[1]-2},3.0,vx,left_cell);
-        fd.impose(Stokes_vy, {0,1},{sz[0]-2,sz[1]-2},3.0,vy,bottom_cell);
-
+        auto fu = [](double x, double y) { return x*x + y*y; };
+        auto fv = [](double x, double y) { return 2.0*x*x - 2.0*x*y; };
 
         // Staggering pattern in the domain
         //      +--Vy-+
@@ -660,82 +616,27 @@ f_x = f_y = f_z = 3
         //      0--Vy-+
         //
 
+        fd.impose(incompressibility, {0,0},{sz[0]-2,sz[1]-2}, 0.0,ic,true);
+        fd.impose(P, {0,0},{0,0},(hx+hy)/2-1.0,ic);
+
+        fd.impose(Stokes_vx, {1,0},{sz[0]-2,sz[1]-2},3.0,vx,left_cell);
+        fd.impose(Stokes_vy, {0,1},{sz[0]-2,sz[1]-2},3.0,vy,bottom_cell);
 
         // Imposing B1 Left Wall
-        fd.impose(v[x], {0,0},{0,sz[1]-2},prop_id<4>(),vx,left_cell);
-/*        for (int j = 0; j <= sz[1]-2 ; j++)
-        {
-            double X = 0.0;
-            double Y = j * hy;
-            double Vx = X*X + Y*Y;
-            fd.impose(v[x], {0,j},{0,j},Vx,vx,left_cell);
-        }*/
-
-        //fd.impose(v[y], {-1,0},{-1,sz[1]-1},prop_id<5>(),vy,corner_right);
-        for (int j = 0; j <= sz[1]-1 ; j++)
-        {
-            double X = 0.0;
-            double Y = j * hy;
-            double Vy = 2*X*X - 2*X*Y;
-            fd.impose(v[y], {-1,j},{-1,j},Vy,vy,corner_right);
-        }
+        fd.impose(v[x], {0,0},{0,sz[1]-2},fu,vx,left_cell);
+        fd.impose(v[y], {-1,0},{-1,sz[1]-1},fv,vy,corner_right);
 
         // //Imposing B2 Right Wall
-        fd.impose(v[x],{sz[0]-1,0},{sz[0]-1,sz[1]-2},prop_id<4>(),vx,left_cell);
-        /*for (int j = 0; j <= sz[1]-2 ; j++)
-        {
-            double X = (sz[0]-1) * hx;
-            double Y = j * hy;
-            double Vx = X*X + Y*Y;
-            fd.impose(v[x],{sz[0]-1,j},{sz[0]-1,j},Vx,vx,left_cell);
-        }*/
+        fd.impose(v[x],{sz[0]-1,0},{sz[0]-1,sz[1]-2},fu,vx,left_cell);
+        fd.impose(v[y],{sz[0]-1,0},{sz[0]-1,sz[1]-1},fv,vy,corner_dw);
 
-        //fd.impose(v[y],{sz[0]-1,0},{sz[0]-1,sz[1]-1},prop_id<5>(),vy,corner_dw);
-        for (int j = 0; j <= sz[1]-1 ; j++)
-        {
-            double X = (sz[0]-1) * hx;
-            double Y = j * hy;
-            double Vy = 2*X*X - 2*X*Y;
-            fd.impose(v[y],{sz[0]-1,j},{sz[0]-1,j},Vy,vy,corner_dw);
-        }
-
-        // // Imposing B3 Bottom Wall
-        //fd.impose(v[x], {0,-1},{sz[0]-1,-1},prop_id<4>(),vx,corner_up);
-        for (int i = 0; i <= sz[0]-1 ; i++)
-        {
-            double X = (i) * hx;
-            double Y = 0.0;
-            double Vx = X*X + Y*Y;
-            fd.impose(v[x], {i,-1},{i,-1},Vx,vx,corner_up);
-        }
-
-        fd.impose(v[y], {0,0},{sz[0]-2,0},prop_id<5>(),vy,bottom_cell);
-        /*for (int i = 0; i <= sz[0]-2 ; i++)
-        {
-            double X = i * hx;
-            double Y = 0.0;
-            double Vy = 2*X*X - 2*X*Y;
-            fd.impose(v[y], {i,0},{i,0},Vy,vy,bottom_cell);
-        }*/
+        // Imposing B3 Bottom Wall
+        fd.impose(v[x],{0,-1},{sz[0]-1,-1},fu,vx,corner_up);
+        fd.impose(v[y], {0,0},{sz[0]-2,0},fv,vy,bottom_cell);
 
         // Imposing B4 Top Wall
-        //fd.impose(v[x],{0,sz[1]-1},{sz[0]-1,sz[1]-1},prop_id<4>(),vx,corner_dw);
-        for (int i = 0; i <= sz[0]-1 ; i++)
-        {
-            double X = i * hx;
-            double Y = (sz[1]-1) * hy;
-            double Vx = X*X + Y*Y;
-            fd.impose(v[x],{i,sz[1]-1},{i,sz[1]-1},Vx,vx,corner_dw);
-        }
-
-        fd.impose(v[y],{0,sz[1]-1},{sz[0]-2,sz[1]-1},prop_id<5>(),vy,bottom_cell);
-        /*for (int i = 0; i <= sz[0]-2 ; i++)
-        {
-            double X = i * hx;
-            double Y = (sz[1]-1) * hy;
-            double Vy = 2*X*X - 2*X*Y;
-            fd.impose(v[y],{i,sz[1]-1},{i,sz[1]-1},Vy,vy,bottom_cell);
-        }*/
+        fd.impose(v[x],{0,sz[1]-1},{sz[0]-1,sz[1]-1},fu,vx,corner_dw);
+        fd.impose(v[y],{0,sz[1]-1},{sz[0]-2,sz[1]-1},fv,vy,bottom_cell);
 
         // Padding pressure
         fd.impose(P, {-1,-1},{sz[0]-1,-1},0.0,ic);
@@ -743,28 +644,10 @@ f_x = f_y = f_z = 3
         fd.impose(P, {-1,0},{-1,sz[1]-2},0.0,ic);
         fd.impose(P, {sz[0]-1,0},{sz[0]-1,sz[1]-2},0.0,ic);
 
+        // Impose v_x Padding Impose v_y padding
         fd.impose(v[x], {-1,-1},{-1,sz[1]-1},0.0,vx,left_cell);
         fd.impose(v[y], {-1,-1},{sz[0]-1,-1},0.0,vy,bottom_cell);
 
-        // Impose v_x Padding Impose v_y padding
-
-        //fd.impose(v[x], {-1,-1},{-1,sz[1]-1},prop_id<4>(),vx,left_cell);
-        //for (int j = -1; j <= sz[1]-1 ; j++)
-        //{
-            //double X = -hx/2.0;
-            //double Y = j * hy/2.0;
-            //double Vx = X*X + Y*Y;
-        //    fd.impose(v[x], {-1,j},{-1,j},Vx,vx,left_cell);
-        //}
-
-        //fd.impose(v[y], {-1,-1},{sz[0]-1,-1},prop_id<5>(),vy,bottom_cell);
-        ///for (int i = -1; i <= sz[0]-1 ; i++)
-        //{
-            //double X = i * hx;
-            //double Y = -1 * hy/2.0;
-            //double Vy = 2*X*X - 2*X*Y;
-          //  fd.impose(v[y], {i,-1},{i,-1},0,vy,bottom_cell);
-        //}
         fd.solve(v[x],v[y],P);
 
         auto it2 = g_dist_normal.getDomainIterator();
@@ -781,11 +664,9 @@ f_x = f_y = f_z = 3
 
             g_dist_normal.template getProp<1>(key) = P.value(key,center_cell);
 
-           g_dist_normal.template getProp<2>(key)[0] = x*x + y*y;
-           g_dist_normal.template getProp<2>(key)[1] = 2*x*x - 2*x*y;
-
-           g_dist_normal.template getProp<3>(key) = x + y - 1;
-
+            g_dist_normal.template getProp<2>(key)[0] = x*x + y*y;
+            g_dist_normal.template getProp<2>(key)[1] = 2*x*x - 2*x*y;
+            g_dist_normal.template getProp<3>(key) = x + y - 1;
             ++it2;
         }
 
@@ -795,7 +676,6 @@ f_x = f_y = f_z = 3
 
         //g_dist.write("ana_stokes")
     }
-
 
 
 BOOST_AUTO_TEST_SUITE_END()
