@@ -1007,6 +1007,22 @@ public:
 	 * \return itself
 	 *
 	 */
+	template<typename T> vector & operator=(const vector_dist_expression<0,openfpm::vector<aggregate<T>>> & v_exp)
+	{
+		vector_dist_op_compute_op<prp,false,vector_dist_expression_comp_sel<comp_host,
+																	   	  has_vector_kernel<vector>::type::value>::type::value>
+		::compute_expr(v.v,v_exp);
+
+		return v.v;
+	}
+
+	/*! \brief Fill the vector property with the evaluated expression
+	 *
+	 * \param v_exp expression to evaluate
+	 *
+	 * \return itself
+	 *
+	 */
 	template<typename exp1, typename exp2, unsigned int op>
 	vector & operator=(const vector_dist_expression_op<exp1,exp2,op> & v_exp)
 	{
@@ -1083,6 +1099,206 @@ public:
         return v_exp;
     }
 };
+
+/*! \brief Main class that encapsulate a vector properties operand to be used for expressions construction
+ *
+ * \tparam prp property involved
+ * \tparam vector involved
+ *
+ */
+template<typename T>
+class vector_dist_expression<0,openfpm::vector<aggregate<T>> >
+{
+	//! Internal vector
+	typedef openfpm::vector<aggregate<T>> vector;
+
+	//! The temporal vector
+	mutable vector v;
+
+public:
+
+	typedef typename has_vector_kernel<vector>::type is_ker;
+
+	//! The type of the internal vector
+	typedef vector vtype;
+
+	//! result for is sort
+	typedef boost::mpl::bool_<false> is_sort;
+
+	//! NN_type
+	typedef void NN_type;
+
+	int var_id = 0;
+
+	void setVarId(int var_id)
+	{
+		this->var_id = var_id;
+	}
+
+	template<typename exp1, typename exp2, unsigned int op>
+	vector_dist_expression(const vector_dist_expression_op<exp1,exp2,op> & v_exp)
+	{
+		this->operator=(v_exp);
+	}
+
+	/*! \brief get the NN object
+	 *
+	 * \return the NN object
+	 *
+	 */
+	inline void * getNN() const
+	{
+		return NULL;
+	}
+
+	/*! \brief Return the vector on which is acting
+	 *
+	 * It return the vector used in getVExpr, to get this object
+	 *
+	 * \return the vector
+	 *
+	 */
+	__device__ __host__ const vector & getVector() const
+	{
+		return v;
+	}
+
+	/*! \brief Return the vector on which is acting
+	 *
+	 * It return the vector used in getVExpr, to get this object
+	 *
+	 * \return the vector
+	 *
+	 */
+	__device__ __host__ vector & getVector()
+	{
+		return v;
+	}
+
+	/*! \brief This function must be called before value
+	 *
+	 * it initialize the expression if needed
+	 *
+	 */
+	inline void init() const
+	{}
+
+	/*! \brief Evaluate the expression
+	 *
+	 * \param k where to evaluate the expression
+	 *
+	 * \return the result of the expression
+	 *
+	 */
+	__host__ inline auto value(const vect_dist_key_dx & k) const -> decltype(v.template get<0>(k.getKey()))
+	{
+		return v.template get<0>(k.getKey());
+	}
+
+
+	/*! \brief Fill the vector property with the evaluated expression
+	 *
+	 * \param v_exp expression to evaluate
+	 *
+	 * \return itself
+	 *
+	 */
+	template<unsigned int prp2> vector & operator=(const vector_dist_expression<prp2,vector> & v_exp)
+	{
+        if (v_exp.getVector().isSubset() == true)
+        {
+                        std::cout << __FILE__ << ":" << __LINE__ << " error on the right hand side of the expression you have to use non-subset properties" << std::endl;
+                        return v;
+        }
+
+        v.resize(v_exp.getVector().size_local());
+
+		if (has_vector_kernel<vector>::type::value == false)
+		{
+			vector_dist_op_compute_op<0,false,vector_dist_expression_comp_sel<comp_host,
+																	   	  has_vector_kernel<vector>::type::value>::type::value>
+			::compute_expr(v,v_exp);
+		}
+		else
+		{
+			vector_dist_op_compute_op<0,false,vector_dist_expression_comp_sel<comp_dev,
+		   	  	  	  	  	  	  	  	  	  	  	  	  	  	  	  	  has_vector_kernel<vector>::type::value>::type::value>
+			::compute_expr(v,v_exp);
+		}
+
+		return v;
+	}
+
+	/*! \brief Fill the vector property with the evaluated expression
+	 *
+	 * \param v_exp expression to evaluate
+	 *
+	 * \return itself
+	 *
+	 */
+	template<typename exp1, typename exp2, unsigned int op>
+	vector & operator=(const vector_dist_expression_op<exp1,exp2,op> & v_exp)
+	{
+        if (v_exp.getVector().isSubset() == true)
+        {
+        	std::cout << __FILE__ << ":" << __LINE__ << " error on the right hand side of the expression you have to use non-subset properties" << std::endl;
+            return v;
+        }
+
+        v.resize(v_exp.getVector().size_local());
+
+		if (has_vector_kernel<vector>::type::value == false)
+		{
+			vector_dist_op_compute_op<0,
+									  vector_dist_expression_op<exp1,exp2,op>::is_sort::value,
+									  vector_dist_expression_comp_sel<comp_host,
+																	  has_vector_kernel<vector>::type::value>::type::value>
+			::compute_expr(v,v_exp);
+		}
+		else
+		{
+			vector_dist_op_compute_op<0,
+									  vector_dist_expression_op<exp1,exp2,op>::is_sort::value,
+									  vector_dist_expression_comp_sel<comp_dev,
+		   	  	  	  	  	  	  	  	  	  	  	  	  	  	  	  has_vector_kernel<vector>::type::value>::type::value>
+			::compute_expr(v,v_exp);
+		}
+
+		return v;
+	}
+
+	/*! \brief Fill the vector property with the double
+	 *
+	 * \param d value to fill
+	 *
+	 * \return the internal vector
+	 *
+	 */
+	vector & operator=(double d)
+	{
+		std::cout << __FILE__ << ":" << __LINE__ << " Error: temporal with constants is unsupported" << std::endl;
+	}
+
+
+    template<typename Sys_eqs, typename pmap_type, typename unordered_map_type, typename coeff_type>
+    inline void value_nz(pmap_type & p_map, const vect_dist_key_dx & key, unordered_map_type & cols, coeff_type & coeff, unsigned int comp) const
+    {
+    	std::cout << __FILE__ << ":" << __LINE__ << " Error: use of temporal is not supported to construct equations";
+    }
+
+    inline vector_dist_expression_op<vector_dist_expression<0,vector>,boost::mpl::int_<1>,VECT_COMP> operator[](int comp)
+    {
+        int comp_n[1];
+
+        comp_n[0] = comp;
+
+        vector_dist_expression_op<vector_dist_expression<0,vector>,boost::mpl::int_<1>,VECT_COMP> v_exp(*this,comp_n,var_id);
+
+        return v_exp;
+    }
+};
+
+template<typename T> using texp_v = vector_dist_expression<0,openfpm::vector<aggregate<T>> >;
 
 template<typename vector, unsigned int impl>
 struct switcher_get_v

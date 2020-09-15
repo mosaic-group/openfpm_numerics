@@ -16,6 +16,7 @@ add_executable(numerics ${OPENFPM_INIT_FILE} ${CUDA_SOURCES}
 		FiniteDifference/FD_op_Tests.cpp
 		DCPSE/DCPSE_op/tests/DCPSE_op_test3d.cpp
         DCPSE/DCPSE_op/tests/DCPSE_op_Solver_test.cpp
+        DCPSE/DCPSE_op/tests/DCPSE_op_test_temporal.cpp
 						main.cpp
 						Matrix/SparseMatrix_unit_tests.cpp
 						interpolation/interpolation_unit_tests.cpp
