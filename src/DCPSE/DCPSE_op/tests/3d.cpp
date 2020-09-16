@@ -308,53 +308,16 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests3)
         auto py=Pol[y];
         auto pz=Pol[z];
 
-        texp_v<double> dxpx=Dx(Pol[x]);
-        texp_v<double> dxpy=Dx(Pol[y]);
-        texp_v<double> dxpz=Dx(Pol[z]);
-        texp_v<double> dypx=Dy(Pol[x]);
-        texp_v<double> dypy=Dy(Pol[y]);
-        texp_v<double> dypz=Dy(Pol[z]);
-        texp_v<double> dzpx=Dz(Pol[x]);
-        texp_v<double> dzpy=Dz(Pol[y]);
-        texp_v<double> dzpz=Dz(Pol[z]);
-        texp_v<double> dxxpx=Dxx(Pol[x]);
-        texp_v<double> dxxpy=Dxx(Pol[y]);
-        texp_v<double> dxxpz=Dxx(Pol[z]);
-        texp_v<double> dyypx=Dyy(Pol[x]);
-        texp_v<double> dyypy=Dyy(Pol[y]);
-        texp_v<double> dyypz=Dyy(Pol[z]);
-        texp_v<double> dzzpx=Dzz(Pol[x]);
-        texp_v<double> dzzpy=Dzz(Pol[y]);
-        texp_v<double> dzzpz=Dzz(Pol[z]);
-        texp_v<double> dxypx=Dxy(Pol[x]);
-        texp_v<double> dxypy=Dxy(Pol[y]);
-        texp_v<double> dxypz=Dxy(Pol[z]);
-        texp_v<double> dxzpx=Dxz(Pol[x]);
-        texp_v<double> dxzpy=Dxz(Pol[y]);
-        texp_v<double> dxzpz=Dxz(Pol[z]);
-        texp_v<double> dyzpx=Dyz(Pol[x]);
-        texp_v<double> dyzpy=Dyz(Pol[y]);
-        texp_v<double> dyzpz=Dyz(Pol[z]);
-        texp_v<double> dxhx=Dx(h[x]);
-        texp_v<double> dxhy=Dx(h[y]);
-        texp_v<double> dxhz=Dx(h[z]);
-        texp_v<double> dyhx=Dy(h[x]);
-        texp_v<double> dyhy=Dy(h[y]);
-        texp_v<double> dyhz=Dy(h[z]);
-        texp_v<double> dzhx=Dz(h[x]);
-        texp_v<double> dzhy=Dz(h[y]);
-        texp_v<double> dzhz=Dz(h[z]);
+        texp_v<double> dxpx=Dx(Pol[x]), dxpy=Dx(Pol[y]), dxpz=Dx(Pol[z]), dypx=Dy(Pol[x]), dypy=Dy(Pol[y]), dypz=Dy(Pol[z]),dzpx=Dz(Pol[x]),dzpy=Dz(Pol[y]),dzpz=Dz(Pol[z]);
+        texp_v<double> dxxpx=Dxx(Pol[x]),dxxpy=Dxx(Pol[y]),dxxpz=Dxx(Pol[z]),dyypx=Dyy(Pol[x]), dyypy=Dyy(Pol[y]), dyypz=Dyy(Pol[z]), dzzpx=Dzz(Pol[x]), dzzpy=Dzz(Pol[y]),
+        dzzpz=Dzz(Pol[z]), dxypx=Dxy(Pol[x]), dxypy=Dxy(Pol[y]), dxypz=Dxy(Pol[z]), dxzpx=Dxz(Pol[x]), dxzpy=Dxz(Pol[y]), dxzpz=Dxz(Pol[z]), dyzpx=Dyz(Pol[x]), dyzpy=Dyz(Pol[y]),
+        dyzpz=Dyz(Pol[z]) , dxhx=Dx(h[x]), dxhy=Dx(h[y]), dxhz=Dx(h[z]), dyhx=Dy(h[x]), dyhy=Dy(h[y]), dyhz=Dy(h[z]), dzhx=Dz(h[x]), dzhy=Dz(h[y]), dzhz=Dz(h[z]);
 
-        texp_v<double> dxqxx=Dx(Pol[x]*Pol[x]-1/3*(Pol[x]*Pol[x]+Pol[y]*Pol[y]+Pol[z]*Pol[z]));
-        texp_v<double> dyqxy=Dy(Pol[x]*Pol[x]);
-        texp_v<double> dzqxz=Dz(Pol[x]*Pol[z]);
-        texp_v<double> dxqyx=Dx(Pol[y]*Pol[x]);
-        texp_v<double> dyqyy=Dy(Pol[y]*Pol[y]-1/3*(Pol[x]*Pol[x]+Pol[y]*Pol[y]+Pol[z]*Pol[z]));
-        texp_v<double> dzqyz=Dz(Pol[y]*Pol[z]);
-        texp_v<double> dxqzx=Dx(Pol[z]*Pol[x]);
-        texp_v<double> dyqzy=Dy(Pol[z]*Pol[y]);
-        texp_v<double> dzqzz=Dz(Pol[z]*Pol[z]-1/3*(Pol[x]*Pol[x]+Pol[y]*Pol[y]+Pol[z]*Pol[z]));
-
+        texp_v<double> dxqxx=Dx(Pol[x]*Pol[x]-1/3*(Pol[x]*Pol[x]+Pol[y]*Pol[y]+Pol[z]*Pol[z])),
+        dyqxy=Dy(Pol[x]*Pol[x]) , dzqxz=Dz(Pol[x]*Pol[z]) , dxqyx=Dx(Pol[y]*Pol[x]),
+        dyqyy=Dy(Pol[y]*Pol[y]-1/3*(Pol[x]*Pol[x]+Pol[y]*Pol[y]+Pol[z]*Pol[z])),
+        dzqyz=Dz(Pol[y]*Pol[z]) , dxqzx=Dx(Pol[z]*Pol[x]) , dyqzy=Dy(Pol[z]*Pol[y]),
+        dzqzz=Dz(Pol[z]*Pol[z]-1/3*(Pol[x]*Pol[x]+Pol[y]*Pol[y]+Pol[z]*Pol[z]));
 
         eq_id vx, vy, vz;
 
@@ -751,10 +714,13 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests3)
                 //Particles.getProp<11>(p) = 1.0;
 
             }
-            Particles.ghost_get<0>(SKIP_LABELLING);
-            Particles.deleteGhost();
-            Particles.write_frame("Polar3d_DEBUG", ctr);
-            return;
+//            Particles.ghost_get<0>(SKIP_LABELLING);
+//            Particles.deleteGhost();
+//            Particles.write_frame("Polar3d_DEBUG", ctr);
+             dxpx=Dx(Pol[x]), dxpy=Dx(Pol[y]), dxpz=Dx(Pol[z]), dypx=Dy(Pol[x]), dypy=Dy(Pol[y]), dypz=Dy(Pol[z]),dzpx=Dz(Pol[x]),dzpy=Dz(Pol[y]),dzpz=Dz(Pol[z]);
+             dxxpx=Dxx(Pol[x]),dxxpy=Dxx(Pol[y]),dxxpz=Dxx(Pol[z]),dyypx=Dyy(Pol[x]), dyypy=Dyy(Pol[y]), dyypz=Dyy(Pol[z]), dzzpx=Dzz(Pol[x]), dzzpy=Dzz(Pol[y]),
+                    dzzpz=Dzz(Pol[z]), dxypx=Dxy(Pol[x]), dxypy=Dxy(Pol[y]), dxypz=Dxy(Pol[z]), dxzpx=Dxz(Pol[x]), dxzpy=Dxz(Pol[y]), dxzpz=Dxz(Pol[z]), dyzpx=Dyz(Pol[x]), dyzpy=Dyz(Pol[y]),
+                    dyzpz=Dyz(Pol[z]) , dxhx=Dx(h[x]), dxhy=Dx(h[y]), dxhz=Dx(h[z]), dyhx=Dy(h[x]), dyhy=Dy(h[y]), dyhz=Dy(h[z]), dzhx=Dz(h[x]), dzhy=Dz(h[y]), dzhz=Dz(h[z]);
 
             h[x]=Ks*(dxxpx + dxypy + dxzpz) +
                  Kb*((-dxypy - dxzpz + dyypx + dzzpx)*px*px + (-dxypy + dyypx)*py*py + (dypy*dzpx + dxpy*(dypz - 2*dzpy) + dypx*dzpy + dxpz*(-dypy - 2*dzpz) + 2*dzpx*dzpz)*pz + (-dxzpz + dzzpx)*pz*pz +
@@ -809,6 +775,11 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests3)
 
 
             Particles.ghost_get<0>(SKIP_LABELLING);
+            dxpx=Dx(Pol[x]), dxpy=Dx(Pol[y]), dxpz=Dx(Pol[z]), dypx=Dy(Pol[x]), dypy=Dy(Pol[y]), dypz=Dy(Pol[z]),dzpx=Dz(Pol[x]),dzpy=Dz(Pol[y]),dzpz=Dz(Pol[z]);
+            dxxpx=Dxx(Pol[x]),dxxpy=Dxx(Pol[y]),dxxpz=Dxx(Pol[z]),dyypx=Dyy(Pol[x]), dyypy=Dyy(Pol[y]), dyypz=Dyy(Pol[z]), dzzpx=Dzz(Pol[x]), dzzpy=Dzz(Pol[y]),
+                    dzzpz=Dzz(Pol[z]), dxypx=Dxy(Pol[x]), dxypy=Dxy(Pol[y]), dxypz=Dxy(Pol[z]), dxzpx=Dxz(Pol[x]), dxzpy=Dxz(Pol[y]), dxzpz=Dxz(Pol[z]), dyzpx=Dyz(Pol[x]), dyzpy=Dyz(Pol[y]),
+                    dyzpz=Dyz(Pol[z]) , dxhx=Dx(h[x]), dxhy=Dx(h[y]), dxhz=Dx(h[z]), dyhx=Dy(h[x]), dyhy=Dy(h[y]), dyhz=Dy(h[z]), dzhx=Dz(h[x]), dzhy=Dz(h[y]), dzhz=Dz(h[z]);
+
             h[x]=Ks*(dxxpx + dxypy + dxzpz) +
                  Kb*((-dxypy - dxzpz + dyypx + dzzpx)*px*px + (-dxypy + dyypx)*py*py + (dypy*dzpx + dxpy*(dypz - 2*dzpy) + dypx*dzpy + dxpz*(-dypy - 2*dzpz) + 2*dzpx*dzpz)*pz + (-dxzpz + dzzpx)*pz*pz +
                      py*(dypz*dzpx + dxpz*(-2*dypz + dzpy) + dxpy*(-2*dypy - dzpz) + dypx*(2*dypy + dzpz) + (-dxypz - dxzpy + 2*dyzpx)*pz) +
@@ -860,6 +831,10 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests3)
             }
 
             Particles.ghost_get<0>(SKIP_LABELLING);
+            dxpx=Dx(Pol[x]), dxpy=Dx(Pol[y]), dxpz=Dx(Pol[z]), dypx=Dy(Pol[x]), dypy=Dy(Pol[y]), dypz=Dy(Pol[z]),dzpx=Dz(Pol[x]),dzpy=Dz(Pol[y]),dzpz=Dz(Pol[z]);
+            dxxpx=Dxx(Pol[x]),dxxpy=Dxx(Pol[y]),dxxpz=Dxx(Pol[z]),dyypx=Dyy(Pol[x]), dyypy=Dyy(Pol[y]), dyypz=Dyy(Pol[z]), dzzpx=Dzz(Pol[x]), dzzpy=Dzz(Pol[y]),
+                    dzzpz=Dzz(Pol[z]), dxypx=Dxy(Pol[x]), dxypy=Dxy(Pol[y]), dxypz=Dxy(Pol[z]), dxzpx=Dxz(Pol[x]), dxzpy=Dxz(Pol[y]), dxzpz=Dxz(Pol[z]), dyzpx=Dyz(Pol[x]), dyzpy=Dyz(Pol[y]),
+                    dyzpz=Dyz(Pol[z]) , dxhx=Dx(h[x]), dxhy=Dx(h[y]), dxhz=Dx(h[z]), dyhx=Dy(h[x]), dyhy=Dy(h[y]), dyhz=Dy(h[z]), dzhx=Dz(h[x]), dzhy=Dz(h[y]), dzhz=Dz(h[z]);
             h[x]=Ks*(dxxpx + dxypy + dxzpz) +
                  Kb*((-dxypy - dxzpz + dyypx + dzzpx)*px*px + (-dxypy + dyypx)*py*py + (dypy*dzpx + dxpy*(dypz - 2*dzpy) + dypx*dzpy + dxpz*(-dypy - 2*dzpz) + 2*dzpx*dzpz)*pz + (-dxzpz + dzzpx)*pz*pz +
                      py*(dypz*dzpx + dxpz*(-2*dypz + dzpy) + dxpy*(-2*dypy - dzpz) + dypx*(2*dypy + dzpz) + (-dxypz - dxzpy + 2*dyzpx)*pz) +
