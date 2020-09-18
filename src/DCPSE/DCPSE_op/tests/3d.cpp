@@ -69,9 +69,9 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests3)
     BOOST_AUTO_TEST_CASE(Active3dSimple) {
         timer tt2;
         tt2.start();
-        size_t grd_sz = 17;
+        size_t grd_sz = 21;
         double dt = 1e-3;
-        double V_err_eps = 1e-2;
+        double V_err_eps = 5e-3;
         double boxsize = 10;
         const size_t sz[3] = {grd_sz, grd_sz, grd_sz};
         Box<3, double> box({0, 0, 0}, {boxsize, boxsize, boxsize});
@@ -341,7 +341,15 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests3)
             solverPetsc.setPreconditioner(PCJACOBI);
             Particles.ghost_get<Polarization>(SKIP_LABELLING);
 
-
+           /* dxpx=Dx(Pol[x]), dxpy=Dx(Pol[y]), dxpz=Dx(Pol[z]), dypx=Dy(Pol[x]), dypy=Dy(Pol[y]), dypz=Dy(Pol[z]),dzpx=Dz(Pol[x]),dzpy=Dz(Pol[y]),dzpz=Dz(Pol[z]);
+            dxxpx=Dxx(Pol[x]),dxxpy=Dxx(Pol[y]),dxxpz=Dxx(Pol[z]),dyypx=Dyy(Pol[x]), dyypy=Dyy(Pol[y]), dyypz=Dyy(Pol[z]), dzzpx=Dzz(Pol[x]), dzzpy=Dzz(Pol[y]),
+            dzzpz=Dzz(Pol[z]), dxypx=Dxy(Pol[x]), dxypy=Dxy(Pol[y]), dxypz=Dxy(Pol[z]), dxzpx=Dxz(Pol[x]), dxzpy=Dxz(Pol[y]), dxzpz=Dxz(Pol[z]), dyzpx=Dyz(Pol[x]), dyzpy=Dyz(Pol[y]),
+            dyzpz=Dyz(Pol[z]) , dxhx=Dx(h[x]), dxhy=Dx(h[y]), dxhz=Dx(h[z]), dyhx=Dy(h[x]), dyhy=Dy(h[y]), dyhz=Dy(h[z]), dzhx=Dz(h[x]), dzhy=Dz(h[y]), dzhz=Dz(h[z]);
+            dxqxx=Dx(Pol[x]*Pol[x]-1/3*(Pol[x]*Pol[x]+Pol[y]*Pol[y]+Pol[z]*Pol[z])),
+            dyqxy=Dy(Pol[x]*Pol[x]) , dzqxz=Dz(Pol[x]*Pol[z]) , dxqyx=Dx(Pol[y]*Pol[x]),
+            dyqyy=Dy(Pol[y]*Pol[y]-1/3*(Pol[x]*Pol[x]+Pol[y]*Pol[y]+Pol[z]*Pol[z])),
+            dzqyz=Dz(Pol[y]*Pol[z]) , dxqzx=Dx(Pol[z]*Pol[x]) , dyqzy=Dy(Pol[z]*Pol[y]),
+            dzqzz=Dz(Pol[z]*Pol[z]-1/3*(Pol[x]*Pol[x]+Pol[y]*Pol[y]+Pol[z]*Pol[z]));*/
 
             FranckEnergyDensity = 0.5*Ks*(dxpx + dypy + dzpz)*(dxpx + dypy + dzpz) +
                                   0.5*Kt*((dypz - dzpy)*px + (-dxpz + dzpx)*py + (dxpy - dypx)*pz)*((dypz - dzpy)*px + (-dxpz + dzpx)*py + (dxpy - dypx)*pz) +
@@ -690,37 +698,33 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests3)
                     gama*nu*(Pol[x]*Pol[x]*u[x][x]+Pol[y]*Pol[y]*u[y][y]+Pol[z]*Pol[z]*u[z][z]+
                     Pol[x]*(Pol[y]*(u[x][y]+u[y][x])+Pol[z]*(u[x][z]+u[z][x])) +Pol[y]*Pol[z]*(u[y][z]+u[z][y])))/(Pol[x]*Pol[x]+Pol[y]*Pol[y]+Pol[z]*Pol[z]);
             dPol=Pol;
-            r=(dPol[x]*dPol[x]+dPol[y]*dPol[y]+dPol[z]*dPol[z]);
+            H_p_b=(dPol[x]*dPol[x]+dPol[y]*dPol[y]+dPol[z]*dPol[z]);
             k1[x] = h[x]/gama-nu*(Pol[x]*u[x][x]+Pol[y]*u[x][y]+Pol[z]*u[x][z]) + lambda*Pol[x]/(delmu) + (W[x][x]*Pol[x]+W[x][y]*Pol[y]+W[x][z]*Pol[z]);
             k1[y] = h[y]/gama-nu*(Pol[x]*u[y][x]+Pol[y]*u[y][y]+Pol[z]*u[y][z]) + lambda*Pol[y]/(delmu) + (W[y][x]*Pol[x]+W[y][y]*Pol[y]+W[y][z]*Pol[z]);
             k1[z] = h[z]/gama-nu*(Pol[x]*u[z][x]+Pol[y]*u[z][y]+Pol[z]*u[z][z]) + lambda*Pol[z]/(delmu) + (W[z][x]*Pol[x]+W[z][y]*Pol[y]+W[z][z]*Pol[z]);
             f1  = (k1[x]*k1[x])+(k1[y]*k1[y])+(k1[z]*k1[z]);
             Pol = dPol + (0.5 * dt) * k1;
-            H_p_b=(Pol[x]*Pol[x]+Pol[y]*Pol[y]+Pol[z]*Pol[z]);
+            r=(Pol[x]*Pol[x]+Pol[y]*Pol[y]+Pol[z]*Pol[z]);
             for (int j = 0; j < bulk.size(); j++) {
                 auto p = bulk.get<0>(j);
-                Particles.getProp<32>(p) = (Particles.getProp<32>(p) == 0) ? 1.0 : Particles.getProp<32>(p);
+                Particles.getProp<34>(p) = (Particles.getProp<34>(p) == 0) ? 1 : Particles.getProp<34>(p);
             }
-            Psumsquare=r+(0.5*dt)*f1;
-            Pol=Pol*sqrt(Psumsquare/H_p_b);
+            Psumsquare=H_p_b+(0.5*dt)*f1;
+            Pol=Pol*sqrt(Psumsquare/r);
             for (int j = 0; j < Boundary.size(); j++) {
                 auto p = Boundary.get<0>(j);
-                //Particles.getProp<0>(p) = (Particles.getProp<0>(p) == 0) ? 1.0 : Particles.getProp<0>(p);
+                Particles.getProp<34>(p) = (Particles.getProp<34>(p) == 0) ? 1 : Particles.getProp<34>(p);
                 Particles.getProp<0>(p)[x] = sin(2 * M_PI * (cos((2 * Particles.getPos(p)[x] - Lx) / Lx) -
                                                              sin((2 * Particles.getPos(p)[y] - Ly) / Ly)));
                 Particles.getProp<0>(p)[y] = cos(2 * M_PI * (cos((2 * Particles.getPos(p)[x] - Lx) / Lx) -
                                                              sin((2 * Particles.getPos(p)[y] - Ly) / Ly)));
                 Particles.getProp<0>(p)[z] = 0.0;
-                //Particles.getProp<11>(p) = 1.0;
-
             }
-//            Particles.ghost_get<0>(SKIP_LABELLING);
-//            Particles.deleteGhost();
-//            Particles.write_frame("Polar3d_DEBUG", ctr);
-             dxpx=Dx(Pol[x]), dxpy=Dx(Pol[y]), dxpz=Dx(Pol[z]), dypx=Dy(Pol[x]), dypy=Dy(Pol[y]), dypz=Dy(Pol[z]),dzpx=Dz(Pol[x]),dzpy=Dz(Pol[y]),dzpz=Dz(Pol[z]);
-             dxxpx=Dxx(Pol[x]),dxxpy=Dxx(Pol[y]),dxxpz=Dxx(Pol[z]),dyypx=Dyy(Pol[x]), dyypy=Dyy(Pol[y]), dyypz=Dyy(Pol[z]), dzzpx=Dzz(Pol[x]), dzzpy=Dzz(Pol[y]),
+            Particles.ghost_get<0>(SKIP_LABELLING);
+            dxpx=Dx(Pol[x]), dxpy=Dx(Pol[y]), dxpz=Dx(Pol[z]), dypx=Dy(Pol[x]), dypy=Dy(Pol[y]), dypz=Dy(Pol[z]),dzpx=Dz(Pol[x]),dzpy=Dz(Pol[y]),dzpz=Dz(Pol[z]);
+            dxxpx=Dxx(Pol[x]),dxxpy=Dxx(Pol[y]),dxxpz=Dxx(Pol[z]),dyypx=Dyy(Pol[x]), dyypy=Dyy(Pol[y]), dyypz=Dyy(Pol[z]), dzzpx=Dzz(Pol[x]), dzzpy=Dzz(Pol[y]),
                     dzzpz=Dzz(Pol[z]), dxypx=Dxy(Pol[x]), dxypy=Dxy(Pol[y]), dxypz=Dxy(Pol[z]), dxzpx=Dxz(Pol[x]), dxzpy=Dxz(Pol[y]), dxzpz=Dxz(Pol[z]), dyzpx=Dyz(Pol[x]), dyzpy=Dyz(Pol[y]),
-                    dyzpz=Dyz(Pol[z]) , dxhx=Dx(h[x]), dxhy=Dx(h[y]), dxhz=Dx(h[z]), dyhx=Dy(h[x]), dyhy=Dy(h[y]), dyhz=Dy(h[z]), dzhx=Dz(h[x]), dzhy=Dz(h[y]), dzhz=Dz(h[z]);
+                    dyzpz=Dyz(Pol[z]);
 
             h[x]=Ks*(dxxpx + dxypy + dxzpz) +
                  Kb*((-dxypy - dxzpz + dyypx + dzzpx)*px*px + (-dxypy + dyypx)*py*py + (dypy*dzpx + dxpy*(dypz - 2*dzpy) + dypx*dzpy + dxpz*(-dypy - 2*dzpz) + 2*dzpx*dzpz)*pz + (-dxzpz + dzzpx)*pz*pz +
@@ -752,15 +756,14 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests3)
             k2[y] = h[y]/gama-nu*(Pol[x]*u[y][x]+Pol[y]*u[y][y]+Pol[z]*u[y][z]) + lambda*Pol[y]/(delmu) + (W[y][x]*Pol[x]+W[y][y]*Pol[y]+W[y][z]*Pol[z]);
             k2[z] = h[z]/gama-nu*(Pol[x]*u[z][x]+Pol[y]*u[z][y]+Pol[z]*u[z][z]) + lambda*Pol[z]/(delmu) + (W[z][x]*Pol[x]+W[z][y]*Pol[y]+W[z][z]*Pol[z]);
             f2  =  (k2[x]*k2[x])+(k2[y]*k2[y])+(k2[z]*k2[z]);
-
+            Psumsquare=H_p_b+(0.5*dt)*f2;
             Pol = dPol + (0.5 * dt) * k2;
             H_p_b=(Pol[x]*Pol[x]+Pol[y]*Pol[y]+Pol[z]*Pol[z]);
-            Psumsquare=r+(0.5*dt)*f2;
             for (int j = 0; j < bulk.size(); j++) {
                 auto p = bulk.get<0>(j);
-                Particles.getProp<32>(p) = (Particles.getProp<32>(p) == 0) ? 1.0 : Particles.getProp<32>(p);
+                Particles.getProp<34>(p) = (Particles.getProp<34>(p) == 0) ? 1 : Particles.getProp<34>(p);
             }
-            Pol=Pol*sqrt(Psumsquare/H_p_b);
+            Pol=Pol*sqrt(Psumsquare/r);
             for (int j = 0; j < Boundary.size(); j++) {
                 auto p = Boundary.get<0>(j);
                 //Particles.getProp<0>(p) = (Particles.getProp<0>(p) == 0) ? 1.0 : Particles.getProp<0>(p);
@@ -772,13 +775,11 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests3)
                 //Particles.getProp<11>(p) = 1.0;
 
             }
-
-
             Particles.ghost_get<0>(SKIP_LABELLING);
             dxpx=Dx(Pol[x]), dxpy=Dx(Pol[y]), dxpz=Dx(Pol[z]), dypx=Dy(Pol[x]), dypy=Dy(Pol[y]), dypz=Dy(Pol[z]),dzpx=Dz(Pol[x]),dzpy=Dz(Pol[y]),dzpz=Dz(Pol[z]);
             dxxpx=Dxx(Pol[x]),dxxpy=Dxx(Pol[y]),dxxpz=Dxx(Pol[z]),dyypx=Dyy(Pol[x]), dyypy=Dyy(Pol[y]), dyypz=Dyy(Pol[z]), dzzpx=Dzz(Pol[x]), dzzpy=Dzz(Pol[y]),
                     dzzpz=Dzz(Pol[z]), dxypx=Dxy(Pol[x]), dxypy=Dxy(Pol[y]), dxypz=Dxy(Pol[z]), dxzpx=Dxz(Pol[x]), dxzpy=Dxz(Pol[y]), dxzpz=Dxz(Pol[z]), dyzpx=Dyz(Pol[x]), dyzpy=Dyz(Pol[y]),
-                    dyzpz=Dyz(Pol[z]) , dxhx=Dx(h[x]), dxhy=Dx(h[y]), dxhz=Dx(h[z]), dyhx=Dy(h[x]), dyhy=Dy(h[y]), dyhz=Dy(h[z]), dzhx=Dz(h[x]), dzhy=Dz(h[y]), dzhz=Dz(h[z]);
+                    dyzpz=Dyz(Pol[z]);
 
             h[x]=Ks*(dxxpx + dxypy + dxzpz) +
                  Kb*((-dxypy - dxzpz + dyypx + dzzpx)*px*px + (-dxypy + dyypx)*py*py + (dypy*dzpx + dxpy*(dypz - 2*dzpy) + dypx*dzpy + dxpz*(-dypy - 2*dzpz) + 2*dzpx*dzpz)*pz + (-dxzpz + dzzpx)*pz*pz +
@@ -815,19 +816,17 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests3)
             H_p_b=(Pol[x]*Pol[x])+(Pol[y]*Pol[y])+(Pol[z]*Pol[z]);
             for (int j = 0; j < bulk.size(); j++) {
                 auto p = bulk.get<0>(j);
-                Particles.getProp<32>(p) = (Particles.getProp<32>(p) == 0) ? 1.0 : Particles.getProp<32>(p);
+                Particles.getProp<34>(p) = (Particles.getProp<34>(p) == 0) ? 1 : Particles.getProp<34>(p);
             }
             Pol=Pol*sqrt(Psumsquare/H_p_b);
             for (int j = 0; j < Boundary.size(); j++) {
                 auto p = Boundary.get<0>(j);
-                //Particles.getProp<0>(p) = (Particles.getProp<0>(p) == 0) ? 1.0 : Particles.getProp<0>(p);
+                Particles.getProp<34>(p) = (Particles.getProp<34>(p) == 0) ? 1 : Particles.getProp<34>(p);
                 Particles.getProp<0>(p)[x] = sin(2 * M_PI * (cos((2 * Particles.getPos(p)[x] - Lx) / Lx) -
                                                              sin((2 * Particles.getPos(p)[y] - Ly) / Ly)));
                 Particles.getProp<0>(p)[y] = cos(2 * M_PI * (cos((2 * Particles.getPos(p)[x] - Lx) / Lx) -
                                                              sin((2 * Particles.getPos(p)[y] - Ly) / Ly)));
                 Particles.getProp<0>(p)[z] = 0.0;
-                //Particles.getProp<11>(p) = 1.0;
-
             }
 
             Particles.ghost_get<0>(SKIP_LABELLING);
@@ -864,20 +863,17 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests3)
             k4[y] = h[y]/gama-nu*(Pol[x]*u[y][x]+Pol[y]*u[y][y]+Pol[z]*u[y][z]) + lambda*Pol[y]/(delmu) + (W[y][x]*Pol[x]+W[y][y]*Pol[y]+W[y][z]*Pol[z]);
             k4[z] = h[z]/gama-nu*(Pol[x]*u[z][x]+Pol[y]*u[z][y]+Pol[z]*u[z][z]) + lambda*Pol[z]/(delmu) + (W[z][x]*Pol[x]+W[z][y]*Pol[y]+W[z][z]*Pol[z]);
             f4  =  (k4[x]*k4[x])+(k4[y]*k4[y])+(k4[z]*k4[z]);
-            //for (int j = 0; j < Boundary.size(); j++) {
-            //    auto p = Boundary.get<0>(j);
-            //    Particles.getProp<14>(p) = 1.0;
-            //}
+
 
             Pol = dPol + (dt / 6.0) * (k1 + (2.0 * k2) + (2.0 * k3) + k4);
-            Psumsquare = r + (dt / 6.0) * (f1 + 2.0 * f2 + 2.0 * f3 + f4);
+            Psumsquare = H_p_b + (dt / 6.0) * (f1 + 2.0 * f2 + 2.0 * f3 + f4);
 
-            H_p_b=(Pol[x]*Pol[x]+Pol[y]*Pol[y]+Pol[z]*Pol[z]);
+            r=(Pol[x]*Pol[x]+Pol[y]*Pol[y]+Pol[z]*Pol[z]);
             for (int j = 0; j < bulk.size(); j++) {
                 auto p = bulk.get<0>(j);
-                Particles.getProp<32>(p) = (Particles.getProp<32>(p) == 0) ? 1 : Particles.getProp<32>(p);
+                Particles.getProp<34>(p) = (Particles.getProp<34>(p) == 0) ? 1 : Particles.getProp<34>(p);
             }
-            Pol=Pol*sqrt(Psumsquare/H_p_b);
+            Pol=Pol*sqrt(Psumsquare/r);
             for (int j = 0; j < Boundary.size(); j++) {
                 auto p = Boundary.get<0>(j);
                 Particles.getProp<0>(p)[x] = sin(2 * M_PI * (cos((2 * Particles.getPos(p)[x] - Lx) / Lx) -
@@ -887,11 +883,11 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests3)
                 Particles.getProp<0>(p)[z] = 0.0;
             }
 
-//            k1 = V;
-//            k2 = 0.5 * dt * k1 + V;
-//            k3 = 0.5 * dt * k2 + V;
-//            k4 = dt * k3 + V;
-            Pos = Pos + dt*V;/// 6.0 * (k1 + 2 * k2 + 2 * k3 + k4);
+            k1 = V;
+            k2 = 0.5 * dt * k1 + V;
+            k3 = 0.5 * dt * k2 + V;
+            k4 = dt * k3 + V;
+            Pos = Pos + (dt/6.0) * (k1 + 2 * k2 + 2 * k3 + k4);
 
             Particles.map();
 
