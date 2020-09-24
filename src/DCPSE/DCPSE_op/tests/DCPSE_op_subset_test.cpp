@@ -252,17 +252,8 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_subset_suite_tests)
             Solver.impose(V[x], boundary, RHS[0], vx);
             Solver.impose(V[y], boundary, RHS[1], vy);
             Solver.solve_with_solver(solverPetsc, V[x], V[y]);
-            //Particles.ghost_get<V>(SKIP_LABELLING);
+            Particles.ghost_get<0>(SKIP_LABELLING);
             div = -(Dx(V[x]) + Dy(V[y]));
-            /* auto Helmholtz = Dxx(H) + Dyy(H);
-             DCPSE_scheme<equations2d1, decltype(Particles)> SolverH(Particles);
-             SolverH.impose(Helmholtz, bulk, prop_id<19>());
-             SolverH.impose(H, boundary_without_corner, 0);
-             SolverH.impose(-Dx(H) + Dy(H), corner_ul, 0);
-             SolverH.impose(Dx(H) + Dy(H), corner_ur, 0);
-             SolverH.impose(-Dx(H) - Dy(H), corner_dl, 0);
-             SolverH.impose(Dx(H) - Dy(H), corner_dr, 0);
-             SolverH.solve_with_solver(solverPetsc2, H);*/
             P_bulk = P + div;
             sum = 0;
             sum1 = 0;
@@ -460,17 +451,8 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_subset_suite_tests)
             Solver.impose(V[x], boundary, RHS[0], vx);
             Solver.impose(V[y], boundary, RHS[1], vy);
             Solver.solve_with_solver(solverPetsc, V[x], V[y]);
-            //Particles.ghost_get<V>(SKIP_LABELLING);
+            Particles.ghost_get<0>(SKIP_LABELLING);
             div = -(Dx(V[x]) + Dy(V[y]));
-            /* auto Helmholtz = Dxx(H) + Dyy(H);
-             DCPSE_scheme<equations2d1, decltype(Particles)> SolverH(Particles);
-             SolverH.impose(Helmholtz, bulk, prop_id<19>());
-             SolverH.impose(H, boundary_without_corner, 0);
-             SolverH.impose(-Dx(H) + Dy(H), corner_ul, 0);
-             SolverH.impose(Dx(H) + Dy(H), corner_ur, 0);
-             SolverH.impose(-Dx(H) - Dy(H), corner_dl, 0);
-             SolverH.impose(Dx(H) - Dy(H), corner_dr, 0);
-             SolverH.solve_with_solver(solverPetsc2, H);*/
             P = P + div;
             for (int i = 0; i < no_border_subset.size(); i++) {
                 Particles_subset.getProp<0>(i) = Particles.template getProp<0>(no_border_subset.template get<0>(i));
