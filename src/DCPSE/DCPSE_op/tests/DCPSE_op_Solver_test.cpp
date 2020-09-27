@@ -1733,6 +1733,23 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
 
     }
 
+    BOOST_AUTO_TEST_CASE(convertFile)
+    {
+        double boxsize = 10;
+        Box<2, double> box({0, 0}, {boxsize, boxsize});
+        size_t bc[2] = {NON_PERIODIC, NON_PERIODIC};
+        Ghost<2, double> ghost(0);
+
+        vector_dist<2, double, aggregate<VectorS<2, double>, VectorS<2, double>, double[2][2], VectorS<2, double>, double, double[2][2], double[2][2], VectorS<2, double>, VectorS<2, double>, VectorS<2, double>, VectorS<2, double>, double, double, double, double, double, double, double, VectorS<2, double>, double, double, double[2], double[2], double[2], double[2], double[2], double[2], double, VectorS<2, double>, VectorS<2, double>, VectorS<2, double>, VectorS<2, double>, double, double, double>> Particles(
+                0, box, bc, ghost);
+
+        for(int i = 0 ; i < 100 ; i++)
+        {
+            Particles.load("Polar_" + std::to_string(i));
+            Particles.write("Polar_" + std::to_string(i));
+        }
+    }
+
     BOOST_AUTO_TEST_CASE(Active2DConv) {
         timer tt2;
         tt2.start();
@@ -2302,6 +2319,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
             //Particles.write_frame("Polar_withGhost_3e-3", ctr);
             Particles.deleteGhost();
             Particles.write_frame("Polar", ctr);
+            Particles.save("Polar_" + std::to_string(ctr));
             Particles.ghost_get<0>();
 
             ctr++;

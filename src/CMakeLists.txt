@@ -157,6 +157,28 @@ install(FILES Operators/Vector/vector_dist_operators_extensions.hpp
        install(FILES Operators/Vector/cuda/vector_dist_operators_cuda.cuh
 	      DESTINATION openfpm_numerics/include/Operators/Vector/cuda )
 
+install(FILES DCPSE/Dcpse.hpp
+		DCPSE/DcpseDiagonalScalingMatrix.hpp
+		DCPSE/DcpseRhs.hpp
+		DCPSE/Monomial.hpp
+		DCPSE/MonomialBasis.hpp
+		DCPSE/Support.hpp
+		DCPSE/SupportBuilder.hpp
+		DCPSE/Vandermonde.hpp
+		DCPSE/VandermondeRowBuilder.hpp
+		DESTINATION openfpm_numerics/include/DCPSE)
+install(FILES DMatrix/EMatrix.hpp
+		DESTINATION openfpm_numerics/include/DMatrix)		
+install(FILES MatrixAssembler/MatrixAssembler.hpp
+		DESTINATION openfpm_numerics/include/MatrixAssembler)
+install(FILES util/eq_solve_common.hpp
+		DESTINATION openfpm_numerics/include/util)		
+install(FILES DCPSE/DCPSE_op/DCPSE_op.hpp
+		DCPSE/DCPSE_op/DCPSE_Solver.hpp
+		DCPSE/DCPSE_op/EqnsStruct.hpp
+		DESTINATION openfpm_numerics/include/DCPSE/DCPSE_op)
+
+
 install(FILES Draw/DrawParticles.hpp 
       	      Draw/PointIterator.hpp 
       	      Draw/PointIteratorSkin.hpp

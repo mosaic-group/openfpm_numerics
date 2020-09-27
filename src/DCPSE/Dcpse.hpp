@@ -8,7 +8,7 @@
 
 #include "Vector/vector_dist.hpp"
 #include "MonomialBasis.hpp"
-#include "../../openfpm_numerics/src/DMatrix/EMatrix.hpp"
+#include "DMatrix/EMatrix.hpp"
 #include "SupportBuilder.hpp"
 #include "Support.hpp"
 #include "Vandermonde.hpp"
