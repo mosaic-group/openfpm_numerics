@@ -35,8 +35,10 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_subset_suite_tests)
         double spacing[2];
         spacing[0] = 1.0 / (sz[0] - 1);
         spacing[1] = 1.0 / (sz[1] - 1);
-        Ghost<2, double> ghost(spacing[0] * 3);
-        double rCut = 2.0 * spacing[0];
+        double rCut = 3.9 * spacing[0];
+        int ord = 2;
+        double sampling_factor = 4.0;
+        Ghost<2, double> ghost(rCut);
         BOOST_TEST_MESSAGE("Init vector_dist...");
         double sigma2 = spacing[0] * spacing[1] / (2 * 4);
 
@@ -89,23 +91,31 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_subset_suite_tests)
 
         auto P = getV<0>(Particles);
         auto Out = getV<1>(Particles);
+        auto Pb = getV<2>(Particles);
         auto P_bulk = getV<2>(Particles_bulk);
         auto Out_bulk = getV<1>(Particles_bulk);
 	    auto Out_V_bulk = getV<3>(Particles_bulk);
         Out=10;
         P_bulk = 5;
 
-        P_bulk=P+Out;
+        P_bulk=Pb+Out;
 //        Particles.write("Test_output_subset");
 
         // Create the subset
 
-        Derivative_x Dx(Particles, 2, rCut);
+       /* Derivative_x Dx(Particles, 2, rCut);
         Derivative_y Dy(Particles, 2, rCut);
         Derivative_x Dx_bulk(Particles_bulk, 2, rCut);
+*/
+
+        Derivative_x Dx(Particles, 2, rCut,sampling_factor, support_options::RADIUS);
+        Derivative_y Dy(Particles, 2, rCut,sampling_factor, support_options::RADIUS);
+        Derivative_x Dx_bulk(Particles_bulk, 2, rCut,sampling_factor, support_options::RADIUS);
+        Derivative_y Dy_bulk(Particles_bulk, 2, rCut,sampling_factor, support_options::RADIUS);
 
         Out_bulk = Dx_bulk(P);
 	    Out_V_bulk[0] = P + Dx_bulk(P);
+        Out_V_bulk[1] = Out_V_bulk[0] + Dx_bulk(P);
 
 	// Check
 	auto it2 = Particles_bulk.getDomainIterator();
@@ -116,8 +126,10 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_subset_suite_tests)
 		BOOST_REQUIRE_EQUAL(Particles_bulk.getProp<2>(p),15.0);
 		BOOST_REQUIRE(fabs(Particles_bulk.getProp<1>(p) - cos(Particles_bulk.getPos(p)[0])) < 0.005 );
 		BOOST_REQUIRE(fabs(Particles_bulk.getProp<3>(p)[0] - Particles_bulk.getProp<0>(p) - cos(Particles_bulk.getPos(p)[0])) < 0.001 );
+		BOOST_REQUIRE(fabs(Particles_bulk.getProp<3>(p)[1] - Particles_bulk.getProp<3>(p)[0] - cos(Particles_bulk.getPos(p)[0])) < 0.001 );
 
-		++it2;
+
+            ++it2;
 	}
 
 //        P_bulk = Dx_bulk(P_bulk);  <------------ Incorrect produce error message
@@ -234,7 +246,6 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_subset_suite_tests)
             Vreset = 0;
         }
         P=0;
-        P_bulk = 0;
         eq_id vx,vy;
         vx.setId(0);
         vy.setId(1);
