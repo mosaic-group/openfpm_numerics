@@ -92,6 +92,8 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_subset_suite_tests)
         auto P = getV<0>(Particles);
         auto Out = getV<1>(Particles);
         auto Pb = getV<2>(Particles);
+        auto Out_V = getV<3>(Particles);
+
         auto P_bulk = getV<2>(Particles_bulk);
         auto Out_bulk = getV<1>(Particles_bulk);
 	    auto Out_V_bulk = getV<3>(Particles_bulk);
@@ -115,7 +117,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_subset_suite_tests)
 
         Out_bulk = Dx_bulk(P);
 	    Out_V_bulk[0] = P + Dx_bulk(P);
-        Out_V_bulk[1] = Out_V_bulk[0] + Dx_bulk(P);
+        Out_V_bulk[1] = Out_V[0] +Dy_bulk(P);
 
 	// Check
 	auto it2 = Particles_bulk.getDomainIterator();
@@ -126,8 +128,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_subset_suite_tests)
 		BOOST_REQUIRE_EQUAL(Particles_bulk.getProp<2>(p),15.0);
 		BOOST_REQUIRE(fabs(Particles_bulk.getProp<1>(p) - cos(Particles_bulk.getPos(p)[0])) < 0.005 );
 		BOOST_REQUIRE(fabs(Particles_bulk.getProp<3>(p)[0] - Particles_bulk.getProp<0>(p) - cos(Particles_bulk.getPos(p)[0])) < 0.001 );
-		BOOST_REQUIRE(fabs(Particles_bulk.getProp<3>(p)[1] - Particles_bulk.getProp<3>(p)[0] - cos(Particles_bulk.getPos(p)[0])) < 0.001 );
-
+		BOOST_REQUIRE(fabs(Particles_bulk.getProp<3>(p)[1] - Particles_bulk.getProp<3>(p)[0] - cos(Particles_bulk.getPos(p)[1])) < 0.001 );
 
             ++it2;
 	}
@@ -166,9 +167,6 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_subset_suite_tests)
 
         //Init_DCPSE(Particles)
         BOOST_TEST_MESSAGE("Init Particles...");
-        std::mt19937 rng{6666666};
-
-        std::normal_distribution<> gaussian{0, sigma2};
 
         openfpm::vector<aggregate<int>> bulk;
         openfpm::vector<aggregate<int>> boundary;
@@ -181,13 +179,16 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_subset_suite_tests)
             Particles.add();
             auto key = it.get();
             mem_id k0 = key.get(0);
-            double x = k0 * spacing[0];
-            Particles.getLastPos()[0] = x;//+ gaussian(rng);
+            double xp0 = k0 * spacing[0];
+            Particles.getLastPos()[0] = xp0;
             mem_id k1 = key.get(1);
-            double y = k1 * spacing[1];
-            Particles.getLastPos()[1] = y;//+gaussian(rng);
+            double yp0 = k1 * spacing[1];
+            Particles.getLastPos()[1] = yp0;
             ++it;
         }
+        BOOST_TEST_MESSAGE("Sync Particles across processors...");
+        Particles.map();
+        Particles.ghost_get<0>();
 
         auto it2 = Particles.getDomainIterator();
         while (it2.isNext()) {
@@ -210,6 +211,9 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_subset_suite_tests)
 
             ++it2;
         }
+
+        vector_dist_subset<2, double, aggregate<double, VectorS<2, double>, VectorS<2, double>, VectorS<2, double>,double,VectorS<2, double>,VectorS<2, double>,double>> Particles_bulk(Particles,bulk);
+
         auto P = getV<0>(Particles);
         auto V = getV<1>(Particles);
         auto RHS = getV<2>(Particles);
@@ -217,17 +221,9 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_subset_suite_tests)
         auto div = getV<4>(Particles);
         auto V_star = getV<5>(Particles);
 
-        BOOST_TEST_MESSAGE("Sync Particles across processors...");
-        Particles.map();
-        Particles.ghost_get<0>();
-
-        vector_dist_subset<2, double, aggregate<double, VectorS<2, double>, VectorS<2, double>, VectorS<2, double>,double,VectorS<2, double>,VectorS<2, double>,double>> Particles_bulk(Particles,bulk);
-
 
         auto P_bulk = getV<0>(Particles_bulk);
         auto RHS_bulk =getV<2>(Particles_bulk);
-        auto div_bulk = getV<4>(Particles_bulk);
-
 
         P_bulk = 0;
 
@@ -238,7 +234,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_subset_suite_tests)
         Derivative_x Bulk_Dx(Particles_bulk, 2, rCut,sampling_factor, support_options::RADIUS);
         Derivative_y Bulk_Dy(Particles_bulk, 2, rCut,sampling_factor, support_options::RADIUS);
 
-        int n = 0, nmax = 300, ctr = 0, errctr=1, Vreset = 0;
+        int n = 0, nmax = 5, ctr = 0, errctr=1, Vreset = 0;
         double V_err=1;
         if (Vreset == 1) {
             P_bulk = 0;
@@ -258,6 +254,8 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_subset_suite_tests)
         //solverPetsc.setRestart(250);
         solverPetsc.setPreconditioner(PCJACOBI);
         V_star=0;
+        RHS[x] = dV[x];
+        RHS[y] = dV[y];
         while (V_err >= V_err_eps && n <= nmax) {
             RHS_bulk[x] = dV[x] + Bulk_Dx(P);
             RHS_bulk[y] = dV[y] + Bulk_Dy(P);
@@ -266,10 +264,14 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_subset_suite_tests)
             Solver.impose(Stokes2, bulk, RHS[1], vy);
             Solver.impose(V[x], boundary, RHS[0], vx);
             Solver.impose(V[y], boundary, RHS[1], vy);
+            /*auto A=Solver.getA(options_solver::STANDARD);
+            //A.getMatrixTriplets().save("Tripletes");
+            A.write("Mat_lid");*/
             Solver.solve_with_solver(solverPetsc, V[x], V[y]);
             Particles.ghost_get<0>(SKIP_LABELLING);
             div = -(Dx(V[x]) + Dy(V[y]));
             P_bulk = P + div;
+            Particles.write_frame("PC_subset_lid",n);
             //P_bulk = P_bulk + div_bulk;
             sum = 0;
             sum1 = 0;
@@ -334,8 +336,6 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_subset_suite_tests)
         BOOST_TEST_MESSAGE("Init vector_dist...");
         auto &v_cl = create_vcluster();
 
-        double sigma2 = spacing[0] * spacing[1] / (2 * 4);
-
         vector_dist<2, double, aggregate<double, VectorS<2, double>, VectorS<2, double>,VectorS<2, double>,double,VectorS<2, double>,VectorS<2, double>,double>> Particles(0, box,
                                                                                                                                                  bc,
                                                                                                                                                  ghost);
@@ -344,33 +344,28 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_subset_suite_tests)
 
         //Init_DCPSE(Particles)
         BOOST_TEST_MESSAGE("Init Particles...");
-        std::mt19937 rng{6666666};
-
-        std::normal_distribution<> gaussian{0, sigma2};
 
         openfpm::vector<aggregate<int>> bulk;
         openfpm::vector<aggregate<int>> boundary;
 
         auto it = Particles.getGridIterator(sz);
         size_t pointId = 0;
-        size_t counter = 0;
         double minNormOne = 999;
         while (it.isNext())
         {
             Particles.add();
             auto key = it.get();
             mem_id k0 = key.get(0);
-            double x = k0 * spacing[0];
-            Particles.getLastPos()[0] = x;//+ gaussian(rng);
+            double xp0 = k0 * spacing[0];
+            Particles.getLastPos()[0] = xp0;
             mem_id k1 = key.get(1);
-            double y = k1 * spacing[1];
-            Particles.getLastPos()[1] = y;//+gaussian(rng);
-            // Here fill the function value
-            Particles.template getLastProp<0>() = sin(Particles.getLastPos()[0]) + sin(Particles.getLastPos()[1]);
-
-            ++counter;
+            double yp0 = k1 * spacing[1];
+            Particles.getLastPos()[1] = yp0;
             ++it;
         }
+        BOOST_TEST_MESSAGE("Sync Particles across processors...");
+        Particles.map();
+        Particles.ghost_get<0>();
         auto it2 = Particles.getDomainIterator();
         while (it2.isNext()) {
             auto p = it2.get();
@@ -378,9 +373,13 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_subset_suite_tests)
             if (xp[0] != 0 && xp[1] != 0 && xp[0] != 1.0 && xp[1] != 1.0) {
                 bulk.add();
                 bulk.last().get<0>() = p.getKey();
+                Particles.getProp<3>(p)[x] = 3.0;
+                Particles.getProp<3>(p)[y] = 3.0;
             } else {
                 boundary.add();
                 boundary.last().get<0>() = p.getKey();
+                Particles.getProp<3>(p)[x] = xp[0]*xp[0]+xp[1]*xp[1];
+                Particles.getProp<3>(p)[y] = xp[0]*xp[0]-2*xp[0]*xp[1];
             }
             Particles.getProp<6>(p)[x] = xp[0]*xp[0]+xp[1]*xp[1];
             Particles.getProp<6>(p)[y] = xp[0]*xp[0]-2*xp[0]*xp[1];
@@ -397,21 +396,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_subset_suite_tests)
         Particles_subset.map();
         Particles_subset.ghost_get<0>();
 
-        BOOST_TEST_MESSAGE("Sync Particles across processors...");
-        Particles.map();
-        Particles.ghost_get<0>();
-        for (int j = 0; j < boundary.size(); j++) {
-            auto p = boundary.get<0>(j);
-            Point<2, double> xp = Particles.getPos(p);
-            Particles.getProp<3>(p)[x] = xp[0]*xp[0]+xp[1]*xp[1];
-            Particles.getProp<3>(p)[y] = xp[0]*xp[0]-2*xp[0]*xp[1];
-        }
-        for (int j = 0; j < bulk.size(); j++) {
-            auto p = bulk.get<0>(j);
-            Point<2, double> xp = Particles.getPos(p);
-            Particles.getProp<3>(p)[x] = 3.0;
-            Particles.getProp<3>(p)[y] = 3.0;
-        }
+
 
         auto P = getV<0>(Particles);
         auto V = getV<1>(Particles);
@@ -419,8 +404,6 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_subset_suite_tests)
         auto dV = getV<3>(Particles);
         auto div = getV<4>(Particles);
         auto V_star = getV<5>(Particles);
-        auto Ana_V = getV<6>(Particles);
-        auto Ana_P = getV<7>(Particles);
 
         auto P_bulk = getV<0>(Particles_subset);
         auto Grad_bulk= getV<2>(Particles_subset);
@@ -432,7 +415,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_subset_suite_tests)
         Derivative_yy Dyy(Particles, 2, rCut,sampling_factor, support_options::RADIUS);
         Derivative_y Dy(Particles, 2, rCut,sampling_factor, support_options::RADIUS),Bulk_Dy(Particles_subset, 2, rCut,sampling_factor, support_options::RADIUS);;
 
-        int n = 0, nmax = 300, ctr = 0, errctr=0, Vreset = 0;
+        int n = 0, nmax = 5, ctr = 0, errctr=0, Vreset = 0;
         double V_err=1;
         if (Vreset == 1) {
             P_bulk = 0;
@@ -440,7 +423,6 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_subset_suite_tests)
             Vreset = 0;
         }
         P=0;
-        P_bulk = 0;
         eq_id vx,vy;
         vx.setId(0);
         vy.setId(1);
@@ -453,7 +435,6 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_subset_suite_tests)
         //solverPetsc.setRestart(250);
         solverPetsc.setPreconditioner(PCJACOBI);
         V_star=0;
-        Particles.write("PC_subset_Init");
         while (V_err >= V_err_eps && n <= nmax) {
             RHS[x] = dV[x];
             RHS[y] = dV[y];
@@ -469,17 +450,18 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_subset_suite_tests)
             Solver.impose(Stokes2, bulk, RHS[1], vy);
             Solver.impose(V[x], boundary, RHS[0], vx);
             Solver.impose(V[y], boundary, RHS[1], vy);
+/*            auto A=Solver.getB(options_solver::STANDARD);
+            A.write("Mat_lid2");*/
             Solver.solve_with_solver(solverPetsc, V[x], V[y]);
+            //Particles.write_frame("PC_subset_lid2",n);
             Particles.ghost_get<0>(SKIP_LABELLING);
             div = -(Dx(V[x]) + Dy(V[y]));
             P = P + div;
             for (int i = 0; i < bulk.size(); i++) {
                 Particles_subset.getProp<0>(i) = Particles.template getProp<0>(bulk.template get<0>(i));
             }
-            for (int j = 0; j < boundary.size(); j++) {
-                auto p = boundary.get<0>(j);
-                Particles.getProp<0>(p) = 0;
-            }
+            Particles.write_frame("PC_subset_lid2",n);
+            Particles_subset.write_frame("PCSubset_lid2",n);
             sum = 0;
             sum1 = 0;
             for (int j = 0; j < bulk.size(); j++) {
@@ -497,7 +479,6 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_subset_suite_tests)
             v_cl.sum(sum);
             v_cl.sum(sum1);
             v_cl.execute();
-            V_star = V;
             V_err_old = V_err;
             V_err = sum / sum1;
             if (V_err > V_err_old || abs(V_err_old - V_err) < 1e-8) {
