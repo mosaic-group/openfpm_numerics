@@ -2166,7 +2166,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
                 }
                 Particles.ghost_get<10>(SKIP_LABELLING);
                 DCPSE_scheme<equations2d2, decltype(Particles)> Solver(Particles);
-//                Solver.reset(Particles);
+//              Solver.reset(Particles);
                 Solver.impose(Stokes1, bulk, RHS[0], vx);
                 Solver.impose(Stokes2, bulk, RHS[1], vy);
                 Solver.impose(V[x], up_p, 0, vx);
@@ -2181,10 +2181,11 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
                 //Solver.solve(V[x], V[y]);
                 Particles.ghost_get<Velocity>(SKIP_LABELLING);
                 div = -(Dx(V[x]) + Dy(V[y]));
-                auto Helmholtz = Dxx(H) + Dyy(H);
-                DCPSE_scheme<equations2d1, decltype(Particles)> SolverH(Particles);
-//                SolverH.reset(Particles);
-/*                SolverH.impose(Helmholtz, bulk, prop_id<19>());
+
+                //auto Helmholtz = Dxx(H) + Dyy(H);
+                //DCPSE_scheme<equations2d1, decltype(Particles)> SolverH(Particles);
+//              SolverH.reset(Particles);
+/*              SolverH.impose(Helmholtz, bulk, prop_id<19>());
                 SolverH.impose(H, up_p1, 0);
                 SolverH.impose(H, dw_p1, 0);
                 SolverH.impose(H, l_p1, 0);

@@ -267,6 +267,8 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_subset_suite_tests)
             /*auto A=Solver.getA(options_solver::STANDARD);
             //A.getMatrixTriplets().save("Tripletes");
             A.write("Mat_lid");*/
+
+
             Solver.solve_with_solver(solverPetsc, V[x], V[y]);
             Particles.ghost_get<0>(SKIP_LABELLING);
             div = -(Dx(V[x]) + Dy(V[y]));

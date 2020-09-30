@@ -909,7 +909,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests3)
     BOOST_AUTO_TEST_CASE(Active3dSimple) {
         timer tt2;
         tt2.start();
-        size_t grd_sz = 21;
+        size_t grd_sz = 41;
         double dt = 1e-3;
         double boxsize = 10;
         const size_t sz[3] = {grd_sz, grd_sz, grd_sz};
@@ -1139,52 +1139,52 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests3)
         auto py=Pol[y];
         auto pz=Pol[z];
 
-        auto dxpx=Dx(Pol[x]);
-        auto dxpy=Dx(Pol[y]);
-        auto dxpz=Dx(Pol[z]);
-        auto dypx=Dy(Pol[x]);
-        auto dypy=Dy(Pol[y]);
-        auto dypz=Dy(Pol[z]);
-        auto dzpx=Dz(Pol[x]);
-        auto dzpy=Dz(Pol[y]);
-        auto dzpz=Dz(Pol[z]);
-        auto dxxpx=Dxx(Pol[x]);
-        auto dxxpy=Dxx(Pol[y]);
-        auto dxxpz=Dxx(Pol[z]);
-        auto dyypx=Dyy(Pol[x]);
-        auto dyypy=Dyy(Pol[y]);
-        auto dyypz=Dyy(Pol[z]);
-        auto dzzpx=Dzz(Pol[x]);
-        auto dzzpy=Dzz(Pol[y]);
-        auto dzzpz=Dzz(Pol[z]);
-        auto dxypx=Dxy(Pol[x]);
-        auto dxypy=Dxy(Pol[y]);
-        auto dxypz=Dxy(Pol[z]);
-        auto dxzpx=Dxz(Pol[x]);
-        auto dxzpy=Dxz(Pol[y]);
-        auto dxzpz=Dxz(Pol[z]);
-        auto dyzpx=Dyz(Pol[x]);
-        auto dyzpy=Dyz(Pol[y]);
-        auto dyzpz=Dyz(Pol[z]);
-        auto dxhx=Dx(h[x]);
-        auto dxhy=Dx(h[y]);
-        auto dxhz=Dx(h[z]);
-        auto dyhx=Dy(h[x]);
-        auto dyhy=Dy(h[y]);
-        auto dyhz=Dy(h[z]);
-        auto dzhx=Dz(h[x]);
-        auto dzhy=Dz(h[y]);
-        auto dzhz=Dz(h[z]);
+        texp_v<double> dxpx=Dx(Pol[x]);
+        texp_v<double> dxpy=Dx(Pol[y]);
+        texp_v<double> dxpz=Dx(Pol[z]);
+        texp_v<double> dypx=Dy(Pol[x]);
+        texp_v<double> dypy=Dy(Pol[y]);
+        texp_v<double> dypz=Dy(Pol[z]);
+        texp_v<double> dzpx=Dz(Pol[x]);
+        texp_v<double> dzpy=Dz(Pol[y]);
+        texp_v<double> dzpz=Dz(Pol[z]);
+        texp_v<double> dxxpx=Dxx(Pol[x]);
+        texp_v<double> dxxpy=Dxx(Pol[y]);
+        texp_v<double> dxxpz=Dxx(Pol[z]);
+        texp_v<double> dyypx=Dyy(Pol[x]);
+        texp_v<double> dyypy=Dyy(Pol[y]);
+        texp_v<double> dyypz=Dyy(Pol[z]);
+        texp_v<double> dzzpx=Dzz(Pol[x]);
+        texp_v<double> dzzpy=Dzz(Pol[y]);
+        texp_v<double> dzzpz=Dzz(Pol[z]);
+        texp_v<double> dxypx=Dxy(Pol[x]);
+        texp_v<double> dxypy=Dxy(Pol[y]);
+        texp_v<double> dxypz=Dxy(Pol[z]);
+        texp_v<double> dxzpx=Dxz(Pol[x]);
+        texp_v<double> dxzpy=Dxz(Pol[y]);
+        texp_v<double> dxzpz=Dxz(Pol[z]);
+        texp_v<double> dyzpx=Dyz(Pol[x]);
+        texp_v<double> dyzpy=Dyz(Pol[y]);
+        texp_v<double> dyzpz=Dyz(Pol[z]);
+        texp_v<double> dxhx=Dx(h[x]);
+        texp_v<double> dxhy=Dx(h[y]);
+        texp_v<double> dxhz=Dx(h[z]);
+        texp_v<double> dyhx=Dy(h[x]);
+        texp_v<double> dyhy=Dy(h[y]);
+        texp_v<double> dyhz=Dy(h[z]);
+        texp_v<double> dzhx=Dz(h[x]);
+        texp_v<double> dzhy=Dz(h[y]);
+        texp_v<double> dzhz=Dz(h[z]);
 
-        auto dxqxx=Dx(Pol[x]*Pol[x]-1/3*(Pol[x]*Pol[x]+Pol[y]*Pol[y]+Pol[z]*Pol[z]));
-        auto dyqxy=Dy(Pol[x]*Pol[x]);
-        auto dzqxz=Dz(Pol[x]*Pol[z]);
-        auto dxqyx=Dx(Pol[y]*Pol[x]);
-        auto dyqyy=Dy(Pol[y]*Pol[y]-1/3*(Pol[x]*Pol[x]+Pol[y]*Pol[y]+Pol[z]*Pol[z]));
-        auto dzqyz=Dz(Pol[y]*Pol[z]);
-        auto dxqzx=Dx(Pol[z]*Pol[x]);
-        auto dyqzy=Dy(Pol[z]*Pol[y]);
-        auto dzqzz=Dz(Pol[z]*Pol[z]-1/3*(Pol[x]*Pol[x]+Pol[y]*Pol[y]+Pol[z]*Pol[z]));
+        texp_v<double> dxqxx=Dx(Pol[x]*Pol[x]-1/3*(Pol[x]*Pol[x]+Pol[y]*Pol[y]+Pol[z]*Pol[z]));
+        texp_v<double> dyqxy=Dy(Pol[x]*Pol[x]);
+        texp_v<double> dzqxz=Dz(Pol[x]*Pol[z]);
+        texp_v<double> dxqyx=Dx(Pol[y]*Pol[x]);
+        texp_v<double> dyqyy=Dy(Pol[y]*Pol[y]-1/3*(Pol[x]*Pol[x]+Pol[y]*Pol[y]+Pol[z]*Pol[z]));
+        texp_v<double> dzqyz=Dz(Pol[y]*Pol[z]);
+        texp_v<double> dxqzx=Dx(Pol[z]*Pol[x]);
+        texp_v<double> dyqzy=Dy(Pol[z]*Pol[y]);
+        texp_v<double> dzqzz=Dz(Pol[z]*Pol[z]-1/3*(Pol[x]*Pol[x]+Pol[y]*Pol[y]+Pol[z]*Pol[z]));
 
 
         eq_id vx, vy, vz;
@@ -1359,6 +1359,26 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests3)
                 Solver.impose(V[x], Boundary, 0, vx);
                 Solver.impose(V[y], Boundary, 0, vy);
                 Solver.impose(V[z], Boundary, 0, vx);
+               /* auto &A=Solver.getA(options_solver::STANDARD);
+                A.getMatrixTriplets().save("ATripletes" + std::to_string(n));
+                auto &B=Solver.getB(options_solver::STANDARD);
+                B.getVec().save("B"+ std::to_string(n));*/
+
+                PetscViewer viewer;
+                auto &VA=Solver.getA(options_solver::STANDARD).getMat();
+                auto &Vv=Solver.getB(options_solver::STANDARD).getVec();
+
+                char int_string[4];
+                sprintf(int_string, "%d", n);
+                char data_string[12] = "data_";
+                strcat(data_string, int_string);
+
+                PetscViewerBinaryOpen(MPI_COMM_WORLD, data_string, FILE_MODE_WRITE, &viewer);
+                /* Save matrix/vector */
+                MatView(VA, viewer); VecView(Vv, viewer);
+                PetscViewerDestroy(&viewer);
+                //MatDestroy(&VA); VecDestroy(&Vv);
+
                 Solver.solve_with_solver(solverPetsc, V[x], V[y], V[z]);
                 //Solver.solve(V[x], V[y]);
                 Particles.ghost_get<Velocity>(SKIP_LABELLING);
