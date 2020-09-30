@@ -14,6 +14,8 @@
 #include <petscvec.h>
 #include "util/petsc_util.hpp"
 #include <unordered_map>
+#include "VTKWriter/VTKWriter.hpp"
+#include "CSVWriter/CSVWriter.hpp"
 
 #define PETSC_RVAL 2
 
@@ -409,6 +411,62 @@ public:
 		{PETSC_SAFE_CALL(VecSetType(v,VECMPI));}
 
 		v_created = true;
+	}
+
+	/* Write vector on vtk
+	 *
+	 * \param out file to write into
+	 *
+	 */
+	bool write(std::string out, size_t opt = VTK_WRITER)
+	{
+		Vcluster<> & v_cl = create_vcluster();
+
+		openfpm::vector<Point<2, double>> row_col;
+		openfpm::vector<aggregate<double>> values;
+
+		row_col.resize(n_row_local);
+		values.resize(n_row_local);
+
+		int i = 0;
+		for (auto it = map.begin() ; it != map.end() ; it++, i++)
+		{
+			row_col.template get<0>(i)[1] = it->first;
+			row_col.template get<0>(i)[0] = 0.0;
+
+			values.template get<0>(i) = row_val.template get<1>(it->second);
+		}
+
+		if (opt == VTK_WRITER)
+		{
+			auto ft = file_type::ASCII;
+
+			// VTKWriter for a set of points
+			VTKWriter<boost::mpl::pair<openfpm::vector<Point<2, double>>,
+									   openfpm::vector<aggregate<double>>>,
+									   VECTOR_POINTS> vtk_writer;
+
+			vtk_writer.add(row_col,values,row_col.size());
+
+			std::string output = std::to_string(out + "_" + std::to_string(v_cl.getProcessUnitID()) + std::to_string(".vtk"));
+
+			openfpm::vector<std::string> prp_names;
+			prp_names.add("value");
+
+			// Write the VTK file
+			return vtk_writer.write(output,prp_names,"vector","",ft);
+		}
+		else
+		{
+			// CSVWriter test
+			CSVWriter<openfpm::vector<Point<2,double>>,
+			          openfpm::vector<aggregate<double>>> csv_writer;
+
+			std::string output = std::to_string(out + "_" + std::to_string(v_cl.getProcessUnitID()) + std::to_string(".csv"));
+
+			// Write the CSV
+			return csv_writer.write(output,row_col,values);
+		}
 	}
 };
 

@@ -259,22 +259,34 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_subset_suite_tests)
         while (V_err >= V_err_eps && n <= nmax) {
             RHS_bulk[x] = dV[x] + Bulk_Dx(P);
             RHS_bulk[y] = dV[y] + Bulk_Dy(P);
+
             DCPSE_scheme<equations2d2, decltype(Particles)> Solver(Particles);
             Solver.impose(Stokes1, bulk, RHS[0], vx);
             Solver.impose(Stokes2, bulk, RHS[1], vy);
             Solver.impose(V[x], boundary, RHS[0], vx);
             Solver.impose(V[y], boundary, RHS[1], vy);
-            /*auto A=Solver.getA(options_solver::STANDARD);
-            //A.getMatrixTriplets().save("Tripletes");
-            A.write("Mat_lid");*/
+            if (n == 0)
+            {
+            	auto & A=Solver.getA(options_solver::STANDARD);
+            	A.write("Mat_lid");
+            	auto & b = Solver.getB();
+            	b.write("vect_lid");
+            }
             Solver.solve_with_solver(solverPetsc, V[x], V[y]);
+
+            if (n == 0)
+            {
+            	Particles.write_frame("PC_subset_lid",n);
+            }
+
             Particles.ghost_get<0>(SKIP_LABELLING);
             div = -(Dx(V[x]) + Dy(V[y]));
             P_bulk = P + div;
-            Particles.write_frame("PC_subset_lid",n);
+            //Particles.write_frame("PC_subset_lid",n);
             //P_bulk = P_bulk + div_bulk;
             sum = 0;
             sum1 = 0;
+
             for (int j = 0; j < bulk.size(); j++) {
                 auto p = bulk.get<0>(j);
                 sum += (Particles.getProp<5>(p)[0] - Particles.getProp<1>(p)[0]) *
@@ -284,6 +296,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_subset_suite_tests)
                 sum1 += Particles.getProp<1>(p)[0] * Particles.getProp<1>(p)[0] +
                         Particles.getProp<1>(p)[1] * Particles.getProp<1>(p)[1];
             }
+
             sum = sqrt(sum);
             sum1 = sqrt(sum1);
             V_star = V;
@@ -410,7 +423,8 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_subset_suite_tests)
 
         P_bulk = 0;
 
-        Derivative_x Dx(Particles, 2, rCut,sampling_factor, support_options::RADIUS),Bulk_Dx(Particles_subset, 2, rCut,sampling_factor, support_options::RADIUS);;
+        Derivative_x Dx(Particles, 2, rCut,sampling_factor, support_options::RADIUS);
+        Derivative_x Bulk_Dx(Particles_subset, 2, rCut,sampling_factor, support_options::RADIUS);
         Derivative_xx Dxx(Particles, 2, rCut,sampling_factor, support_options::RADIUS);
         Derivative_yy Dyy(Particles, 2, rCut,sampling_factor, support_options::RADIUS);
         Derivative_y Dy(Particles, 2, rCut,sampling_factor, support_options::RADIUS),Bulk_Dy(Particles_subset, 2, rCut,sampling_factor, support_options::RADIUS);;
@@ -439,31 +453,30 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_subset_suite_tests)
             RHS[x] = dV[x];
             RHS[y] = dV[y];
             Particles_subset.ghost_get<0>(SKIP_LABELLING);
+
             Grad_bulk[x] = Bulk_Dx(P_bulk);
             Grad_bulk[y] = Bulk_Dy(P_bulk);
             for (int i = 0; i < bulk.size(); i++) {
                 Particles.template getProp<2>(bulk.template get<0>(i))[x] += Particles_subset.getProp<2>(i)[x];
                 Particles.template getProp<2>(bulk.template get<0>(i))[y] += Particles_subset.getProp<2>(i)[y];
             }
+
             DCPSE_scheme<equations2d2, decltype(Particles)> Solver(Particles);
             Solver.impose(Stokes1, bulk, RHS[0], vx);
             Solver.impose(Stokes2, bulk, RHS[1], vy);
             Solver.impose(V[x], boundary, RHS[0], vx);
             Solver.impose(V[y], boundary, RHS[1], vy);
-/*            auto A=Solver.getB(options_solver::STANDARD);
-            A.write("Mat_lid2");*/
             Solver.solve_with_solver(solverPetsc, V[x], V[y]);
-            //Particles.write_frame("PC_subset_lid2",n);
+
             Particles.ghost_get<0>(SKIP_LABELLING);
             div = -(Dx(V[x]) + Dy(V[y]));
             P = P + div;
             for (int i = 0; i < bulk.size(); i++) {
                 Particles_subset.getProp<0>(i) = Particles.template getProp<0>(bulk.template get<0>(i));
             }
-            Particles.write_frame("PC_subset_lid2",n);
-            Particles_subset.write_frame("PCSubset_lid2",n);
             sum = 0;
             sum1 = 0;
+
             for (int j = 0; j < bulk.size(); j++) {
                 auto p = bulk.get<0>(j);
                 sum += (Particles.getProp<5>(p)[0] - Particles.getProp<1>(p)[0]) *
@@ -473,6 +486,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_subset_suite_tests)
                 sum1 += Particles.getProp<1>(p)[0] * Particles.getProp<1>(p)[0] +
                         Particles.getProp<1>(p)[1] * Particles.getProp<1>(p)[1];
             }
+
             sum = sqrt(sum);
             sum1 = sqrt(sum1);
             V_star=V;
@@ -499,6 +513,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_subset_suite_tests)
             n++;
             //if (v_cl.rank() == 0) {
             std::cout << "Rel l2 cgs err in V = " << V_err << " at " << n << std::endl;
+
             //}
         }
 

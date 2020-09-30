@@ -111,6 +111,26 @@ public:
     }
 
     template<unsigned int prp>
+    void DrawKernelNN(vector_type &particles, int k)
+    {
+        EMatrix<T, Eigen::Dynamic, 1> &a = localCoefficients[k];
+        Support support = localSupports[k];
+        auto eps = localEps[k];
+        int DrawKernelKounter=0;
+        size_t xpK = k;
+        Point<dim, typename vector_type::stype> xp = particles.getPos(support.getReferencePointKey());
+        for (auto &xqK : support.getKeys())
+        {
+            Point<dim, T> xq = particles.getPos(xqK);
+            Point<dim, T> normalizedArg = (xp - xq) / eps;
+
+            particles.template getProp<prp>(xqK) = 1.0;
+            DrawKernelKounter++;
+        }
+//        std::cout<<"Number of Neighbours: "<<DrawKernelKounter<<std::endl;
+    }
+
+    template<unsigned int prp>
     void DrawKernel(vector_type &particles, int k, int i)
     {
         EMatrix<T, Eigen::Dynamic, 1> &a = localCoefficients[k];

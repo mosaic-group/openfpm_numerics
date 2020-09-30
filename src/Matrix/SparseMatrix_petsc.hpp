@@ -13,6 +13,7 @@
 #include <boost/mpl/int.hpp>
 #include <petscmat.h>
 #include "VTKWriter/VTKWriter.hpp"
+#include "CSVWriter/CSVWriter.hpp"
 
 #define PETSC_BASE 2
 
@@ -201,6 +202,12 @@ private:
 		m_created = true;
 	}
 
+	/*! \brief Disable copy constructor
+	 *
+	 *
+	 */
+	SparseMatrix(const SparseMatrix<T,id_t, PETSC_BASE> & spm)	{};
+
 
 public:
 
@@ -298,6 +305,14 @@ public:
 	 */
 	void resize(size_t row, size_t col, size_t l_row, size_t l_col)
 	{
+		if ((g_row != 0 && g_row != row) || (g_col != 0 && g_col != col) ||
+			(this->l_row != 0 && this->l_row != l_row) || (this->l_col != 0 && this->l_col != l_col))
+		{
+			std::cout << __FILE__ << ":" << __LINE__ << " error you are resizing a PETSC matrix " << std::endl;
+		}
+
+		if (g_row != 0 && g_col != 0)	{return;}
+
 		this->g_row = row;
 		this->g_col = col;
 
@@ -356,9 +371,10 @@ public:
 
 	/* Write matrix on vtk
 	 *
+	 * \param out file to write into
 	 *
 	 */
-	bool write(std::string out)
+	bool write(std::string out,size_t opt = VTK_WRITER)
 	{
 		Vcluster<> & v_cl = create_vcluster();
 
@@ -376,22 +392,36 @@ public:
 			values.template get<0>(i) = trpl.get(i).value();
 		}
 
-		auto ft = file_type::BINARY;
+		if (opt == VTK_WRITER)
+		{
+			auto ft = file_type::BINARY;
 
-		// VTKWriter for a set of points
-		VTKWriter<boost::mpl::pair<openfpm::vector<Point<2, double>>,
-								   openfpm::vector<aggregate<double>>>,
-		                           VECTOR_POINTS> vtk_writer;
+			// VTKWriter for a set of points
+			VTKWriter<boost::mpl::pair<openfpm::vector<Point<2, double>>,
+									   openfpm::vector<aggregate<double>>>,
+									   VECTOR_POINTS> vtk_writer;
 
-		vtk_writer.add(row_col,values,row_col.size());
+			vtk_writer.add(row_col,values,row_col.size());
 
-		std::string output = std::to_string(out + "_" + std::to_string(v_cl.getProcessUnitID()) + std::to_string(".vtk"));
+			std::string output = std::to_string(out + "_" + std::to_string(v_cl.getProcessUnitID()) + std::to_string(".vtk"));
 
-		openfpm::vector<std::string> prp_names;
-		prp_names.add("value");
+			openfpm::vector<std::string> prp_names;
+			prp_names.add("value");
 
-		// Write the VTK file
-		return vtk_writer.write(output,prp_names,"particles","",ft);
+			// Write the VTK file
+			return vtk_writer.write(output,prp_names,"matrix","",ft);
+		}
+		else
+		{
+			// CSVWriter test
+			CSVWriter<openfpm::vector<Point<2,double>>,
+				          openfpm::vector<aggregate<double>>> csv_writer;
+
+			std::string output = std::to_string(out + "_" + std::to_string(v_cl.getProcessUnitID()) + std::to_string(".csv"));
+
+			// Write the CSV
+			return csv_writer.write(output,row_col,values);
+		}
 	}
 };
 

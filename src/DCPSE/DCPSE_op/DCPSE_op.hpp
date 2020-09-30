@@ -745,6 +745,14 @@ public:
 
     }
 
+    template<unsigned int prp, typename particles_type>
+    void DrawKernelNN(particles_type &particles,int k)
+    {
+        auto dcpse_temp = (Dcpse<particles_type::dims,particles_type> *)dcpse;
+        dcpse_temp->template DrawKernelNN<prp>(particles,k);
+
+    }
+
     template<typename particles_type>
     void checkMomenta(particles_type &particles)
     {

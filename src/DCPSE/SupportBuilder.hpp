@@ -33,7 +33,30 @@ public:
 
     SupportBuilder(vector_type &domain, unsigned int differentialSignature[vector_type::dims], typename vector_type::stype rCut);
 
-    Support getSupport(vector_dist_iterator itPoint, unsigned int requiredSize, support_options opt);
+    template<typename iterator_type>
+    Support getSupport(iterator_type itPoint, unsigned int requiredSize, support_options opt)
+    {
+        // Get spatial position from point iterator
+        vect_dist_key_dx p = itPoint.get();
+        vect_dist_key_dx pOrig = itPoint.getOrig();
+        Point<vector_type::dims, typename vector_type::stype> pos = domain.getPos(p.getKey());
+
+        // Get cell containing current point and add it to the set of cell keys
+        grid_key_dx<vector_type::dims> curCellKey = cellList.getCellGrid(pos); // Here get the key of the cell where the current point is
+        std::set<grid_key_dx<vector_type::dims>> supportCells;
+        supportCells.insert(curCellKey);
+
+        // Make sure to consider a set of cells providing enough points for the support
+        enlargeSetOfCellsUntilSize(supportCells, requiredSize + 1); // NOTE: this +1 is because we then remove the point itself
+
+        // Now return all the points from the support into a vector
+
+        std::vector<size_t> supportKeys = getPointsInSetOfCells(supportCells,p,pOrig,requiredSize,opt);
+
+        auto p_o = domain.getOriginKey(p.getKey());
+        std::remove(supportKeys.begin(), supportKeys.end(), p_o.getKey());
+        return Support(p_o.getKey(), supportKeys);
+    }
 
 private:
     size_t getCellLinId(const grid_key_dx<vector_type::dims> &cellKey);
@@ -44,7 +67,7 @@ private:
 
     void enlargeSetOfCellsUntilSize(std::set<grid_key_dx<vector_type::dims>> &set, unsigned int requiredSize);
 
-    std::vector<size_t> getPointsInSetOfCells(std::set<grid_key_dx<vector_type::dims>> set, vect_dist_key_dx & p, size_t requiredSupportSize, support_options opt);
+    std::vector<size_t> getPointsInSetOfCells(std::set<grid_key_dx<vector_type::dims>> set, vect_dist_key_dx & p,  vect_dist_key_dx & pOrig, size_t requiredSupportSize, support_options opt);
 
     bool isCellKeyInBounds(grid_key_dx<vector_type::dims> key);
 };
@@ -61,30 +84,6 @@ SupportBuilder<vector_type>::SupportBuilder(vector_type &domain, const Point<vec
     cellList = domain.getCellList(rCut);
 }
 
-template<typename vector_type>
-Support SupportBuilder<vector_type>
-::getSupport(vector_dist_iterator itPoint, unsigned int requiredSize, support_options opt)
-{
-    // Get spatial position from point iterator
-    vect_dist_key_dx p = itPoint.get();
-    Point<vector_type::dims, typename vector_type::stype> pos = domain.getPos(p.getKey());
-
-    // Get cell containing current point and add it to the set of cell keys
-    grid_key_dx<vector_type::dims> curCellKey = cellList.getCellGrid(pos); // Here get the key of the cell where the current point is
-    std::set<grid_key_dx<vector_type::dims>> supportCells;
-    supportCells.insert(curCellKey);
-
-    // Make sure to consider a set of cells providing enough points for the support
-    enlargeSetOfCellsUntilSize(supportCells, requiredSize + 1); // NOTE: this +1 is because we then remove the point itself
-
-    // Now return all the points from the support into a vector
-
-    std::vector<size_t> supportKeys = getPointsInSetOfCells(supportCells,p,requiredSize,opt);
-
-    auto p_o = domain.getOriginKey(p.getKey());
-    std::remove(supportKeys.begin(), supportKeys.end(), p_o.getKey());
-    return Support(p_o.getKey(), supportKeys);
-}
 
 template<typename vector_type>
 size_t SupportBuilder<vector_type>::getNumElementsInCell(const grid_key_dx<vector_type::dims> &cellKey)
@@ -140,6 +139,7 @@ size_t SupportBuilder<vector_type>::getCellLinId(const grid_key_dx<vector_type::
 template<typename vector_type>
 std::vector<size_t> SupportBuilder<vector_type>::getPointsInSetOfCells(std::set<grid_key_dx<vector_type::dims>> set,
 																		vect_dist_key_dx & p,
+																		vect_dist_key_dx & pOrig,
 																		size_t requiredSupportSize,
 																		support_options opt)
 {
@@ -163,7 +163,7 @@ std::vector<size_t> SupportBuilder<vector_type>::getPointsInSetOfCells(std::set<
         {
             size_t el = cellList.get(cellLinId, k);
 
-            if (p.getKey() == el)   {continue;}
+            if (pOrig.getKey() == el)   {continue;}
 
             Point<vector_type::dims,typename vector_type::stype> xq = domain.getPosOrig(el);
             //points.push_back(el);
