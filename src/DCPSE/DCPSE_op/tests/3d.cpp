@@ -1139,7 +1139,8 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests3)
         auto py=Pol[y];
         auto pz=Pol[z];
 
-        texp_v<double> dxpx=Dx(Pol[x]);
+        texp_v<double> dxpx;
+        dxpx=Dx(Pol[x]);
         texp_v<double> dxpy=Dx(Pol[y]);
         texp_v<double> dxpz=Dx(Pol[z]);
         texp_v<double> dypx=Dy(Pol[x]);
