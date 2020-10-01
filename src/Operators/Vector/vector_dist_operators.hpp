@@ -1135,6 +1135,9 @@ public:
 		this->var_id = var_id;
 	}
 
+	vector_dist_expression()
+	{}
+
 	template<typename exp1, typename exp2, unsigned int op>
 	vector_dist_expression(const vector_dist_expression_op<exp1,exp2,op> & v_exp)
 	{
