@@ -265,6 +265,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_subset_suite_tests)
             Solver.impose(Stokes2, bulk, RHS[1], vy);
             Solver.impose(V[x], boundary, RHS[0], vx);
             Solver.impose(V[y], boundary, RHS[1], vy);
+<<<<<<< HEAD
             if (n == 0)
             {
             	auto & A=Solver.getA(options_solver::STANDARD);
@@ -272,6 +273,13 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_subset_suite_tests)
             	auto & b = Solver.getB();
             	b.write("vect_lid");
             }
+=======
+            /*auto A=Solver.getA(options_solver::STANDARD);
+            //A.getMatrixTriplets().save("Tripletes");
+            A.write("Mat_lid");*/
+
+
+>>>>>>> e4c97852d8aa1a5be1f02a508e645ff9c34124a2
             Solver.solve_with_solver(solverPetsc, V[x], V[y]);
 
             if (n == 0)
