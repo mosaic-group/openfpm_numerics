@@ -955,7 +955,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests3)
     BOOST_AUTO_TEST_CASE(Active3dSimple) {
         timer tt2;
         tt2.start();
-        size_t grd_sz = 21;
+        size_t grd_sz = 15;
         double dt = 1e-3;
         double boxsize = 10;
         const size_t sz[3] = {grd_sz, grd_sz, grd_sz};
@@ -1203,7 +1203,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests3)
         double V_err_eps = 5e-2;
         double V_err = 1, V_err_old;
         int n = 0;
-        int nmax = 300;
+        int nmax = 3;
         int ctr = 0, errctr, Vreset = 0;
         double tim = 0;
         double tf = 1.024;
@@ -1310,6 +1310,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests3)
 
             Particles.ghost_get<Stress>(SKIP_LABELLING);
             Particles.ghost_get<MolField>(SKIP_LABELLING);
+            dxhx=Dx(h[x]);
             dxhy=Dx(h[y]);
             dxhz=Dx(h[z]);
             dyhx=Dy(h[x]);
@@ -1686,8 +1687,10 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests3)
 
             Particles.ghost_get<0, ExtForce, 27>();
             indexUpdate(Particles,Boundary, bulk, up, down, left,right,front,back);
-            vector_dist_subset<3, double, aggregate<VectorS<3, double>, VectorS<3, double>, double[3][3], VectorS<3, double>, double, double[3][3], double[3][3], VectorS<3, double>, VectorS<3, double>, VectorS<3, double>, VectorS<3, double>, double, double, double, double, double, double, double, VectorS<3, double>, double, double, double[3], double[3], double[3], double[3], double[3], double[3], double, VectorS<3, double>, VectorS<3, double>, VectorS<3, double>, VectorS<3, double>, double, double, double, double[3][3],double[3][3]>> Particles_subset(
-                    Particles, bulk);
+//            vector_dist_subset<3, double, aggregate<VectorS<3, double>, VectorS<3, double>, double[3][3], VectorS<3, double>, double, double[3][3], double[3][3], VectorS<3, double>, VectorS<3, double>, VectorS<3, double>, VectorS<3, double>, double, double, double, double, double, double, double, VectorS<3, double>, double, double, double[3], double[3], double[3], double[3], double[3], double[3], double, VectorS<3, double>, VectorS<3, double>, VectorS<3, double>, VectorS<3, double>, double, double, double, double[3][3],double[3][3]>> Particles_subset(
+//                    Particles, bulk);
+
+            Particles_subset.update(bulk);
             auto Pol_bulk = getV<0>(Particles_subset);
             auto P_bulk = getV<Pressure>(Particles_subset);
             auto dPol_bulk = getV<8>(Particles_subset);
