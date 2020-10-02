@@ -36,7 +36,7 @@ BOOST_AUTO_TEST_SUITE(temporal_test_suite)
 		Ghost<3, double> ghost(rCut);
 		auto &v_cl = create_vcluster();
 
-		vector_dist<3, double, aggregate<double,double,double> > Particles(0, box, bc, ghost);
+		vector_dist<3, double, aggregate<double,VectorS<3, double>,double[3][3]> > Particles(0, box, bc, ghost);
 
 		auto it = Particles.getGridIterator(sz);
 		while (it.isNext())
@@ -60,22 +60,27 @@ BOOST_AUTO_TEST_SUITE(temporal_test_suite)
 		constexpr int z = 2;
 
 
-		constexpr int Polarization = 0;
-		constexpr int tmp1 = 1;
-		constexpr int tmp2 = 2;
+		constexpr int Scalar = 0;
+		constexpr int Vector = 1;
+		constexpr int Tensor = 2;
 		auto Pos = getV<PROP_POS>(Particles);
-		auto Pol = getV<Polarization>(Particles);
-		auto T1 = getV<tmp1>(Particles);
-		auto T2 = getV<tmp2>(Particles);
+		auto S = getV<Scalar>(Particles);
+		auto V = getV<Vector>(Particles);
+		auto T = getV<Tensor>(Particles);
 
 		//Particles_subset.write("Pars");
 		Derivative_x Dx(Particles, ord, rCut, sampling_factor, support_options::RADIUS), Bulk_Dx(Particles, ord,
 																								 rCut, sampling_factor,
 																								 support_options::RADIUS);
-
-		texp_v<double> dxpx=Dx(Pol[x]);
-		T1 = dxpx;
-		T2 = Dx(Pol[x]);
+        texp_v<double> TVx,TdxVx;
+		texp_v<VectorS<3, double>> TV;
+        texp_v<double[3][3]> TT;
+        TVx=S;
+		TVx=V[0];
+        TVx=T[0][0];
+        Tdxpx=Dx(V[x]);
+		TT = dxpx;
+		TT = Dx(V[x]);
 
 		auto it3 = Particles.getDomainIterator();
 
