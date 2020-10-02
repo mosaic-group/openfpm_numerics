@@ -36,7 +36,7 @@ BOOST_AUTO_TEST_SUITE(temporal_test_suite)
 		Ghost<3, double> ghost(rCut);
 		auto &v_cl = create_vcluster();
 
-		vector_dist<3, double, aggregate<double,VectorS<3, double>,double[3][3]> > Particles(0, box, bc, ghost);
+		vector_dist<3, double, aggregate<double,VectorS<3, double>,double[3][3],double,VectorS<3,double>,double[3][3]> > Particles(0, box, bc, ghost);
 
 		auto it = Particles.getGridIterator(sz);
 		while (it.isNext())
@@ -60,13 +60,19 @@ BOOST_AUTO_TEST_SUITE(temporal_test_suite)
 		constexpr int z = 2;
 
 
-		constexpr int Scalar = 0;
-		constexpr int Vector = 1;
-		constexpr int Tensor = 2;
+		constexpr int sScalar = 0;
+		constexpr int sVector = 1;
+		constexpr int sTensor = 2;
+		constexpr int dScalar = 0;
+		constexpr int dVector = 1;
+		constexpr int dTensor = 2;
 		auto Pos = getV<PROP_POS>(Particles);
-		auto S = getV<Scalar>(Particles);
-		auto V = getV<Vector>(Particles);
-		auto T = getV<Tensor>(Particles);
+		auto sS = getV<sScalar>(Particles);
+		auto sV = getV<sVector>(Particles);
+		auto sT = getV<sTensor>(Particles);
+		auto dS = getV<dScalar>(Particles);
+		auto dV = getV<dVector>(Particles);
+		auto dT = getV<dTensor>(Particles);
 
 		//Particles_subset.write("Pars");
 		Derivative_x Dx(Particles, ord, rCut, sampling_factor, support_options::RADIUS), Bulk_Dx(Particles, ord,
@@ -75,13 +81,28 @@ BOOST_AUTO_TEST_SUITE(temporal_test_suite)
         texp_v<double> TVx,TdxVx;
 		texp_v<VectorS<3, double>> TV;
         texp_v<double[3][3]> TT;
-        TVx=S;
-		TVx=V[0];
-        TVx=T[0][0];
-        Tdxpx=Dx(V[x]);
-		TT = dxpx;
-		TT = Dx(V[x]);
 
+
+		auto it3 = Particles.getDomainIterator();
+
+		sS = 5;
+		sV[0] = 1;
+		sV[1] = 2;
+		sV[2] = 3;
+		sT[0][0] = 1;
+		sT[0][1] = 2;
+		sT[0][2] = 3;
+		sT[1][0] = 4;
+		sT[1][1] = 5;
+		sT[1][2] = 6;
+		sT[2][0] = 7;
+		sT[2][1] = 8;
+		sT[2][2] = 9;
+
+        TVx=sS;
+        dS = TVx;
+
+        {
 		auto it3 = Particles.getDomainIterator();
 
 		bool match = true;
@@ -89,12 +110,53 @@ BOOST_AUTO_TEST_SUITE(temporal_test_suite)
 		{
 			auto key = it3.get();
 
-			match &= Particles.template getProp<tmp1>(key) == Particles.template getProp<tmp2>(key);
+			match &= Particles.template getProp<sScalar>(key) == Particles.template getProp<dScalar>(key);
 
 			++it3;
 		}
 
 		BOOST_REQUIRE_EQUAL(match,true);
+        }
+
+		TVx=sV[0];
+		dS = TVx;
+
+        {
+		auto it3 = Particles.getDomainIterator();
+
+		bool match = true;
+		while (it3.isNext())
+		{
+			auto key = it3.get();
+
+			match &= Particles.template getProp<sVector>(key)[0] == Particles.template getProp<dScalar>(key);
+
+			++it3;
+		}
+		BOOST_REQUIRE_EQUAL(match,true);
+        }
+
+        TVx=sT[0][0];
+        dS = TVx;
+        {
+		auto it3 = Particles.getDomainIterator();
+
+		bool match = true;
+		while (it3.isNext())
+		{
+			auto key = it3.get();
+
+			match &= Particles.template getProp<sVector>(key)[0] == Particles.template getProp<dScalar>(key);
+
+			++it3;
+		}
+		BOOST_REQUIRE_EQUAL(match,true);
+        }
+
+        TV=sV;
+        //TT=sT;
+        TdxVx=Dx(sV[x]);
+		TT[0][0] = Dx(sV[x]);
     }
 
 BOOST_AUTO_TEST_SUITE_END()

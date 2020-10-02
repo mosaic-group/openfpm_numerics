@@ -1128,6 +1128,9 @@ public:
 	//! NN_type
 	typedef void NN_type;
 
+	//! Property id of the point
+	static const unsigned int prop = 0;
+
 	int var_id = 0;
 
 	void setVarId(int var_id)
@@ -1206,7 +1209,7 @@ public:
 	 * \return itself
 	 *
 	 */
-	template<unsigned int prp2> vector & operator=(const vector_dist_expression<prp2,vector> & v_exp)
+	template<unsigned int prp2, typename vector2> vector & operator=(const vector_dist_expression<prp2,vector2> & v_exp)
 	{
         if (v_exp.getVector().isSubset() == true)
         {
