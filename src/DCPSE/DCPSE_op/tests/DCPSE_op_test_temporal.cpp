@@ -154,9 +154,50 @@ BOOST_AUTO_TEST_SUITE(temporal_test_suite)
         }
 
         TV=sV;
-        //TT=sT;
+
+        {
+            auto it3 = Particles.getDomainIterator();
+
+            bool match = true;
+            while (it3.isNext())
+            {
+                auto key = it3.get();
+
+                match &= Particles.template getProp<sVector>(key)[0] == Particles.template getProp<dVector>(key)[0];
+                match &= Particles.template getProp<sVector>(key)[1] == Particles.template getProp<dVector>(key)[1];
+                match &= Particles.template getProp<sVector>(key)[2] == Particles.template getProp<dVector>(key)[2];
+
+                ++it3;
+            }
+            BOOST_REQUIRE_EQUAL(match,true);
+        }
+
+        TV=0.5*sV+sV;
+        //Pol_bulk = dPol + (0.5 * dt) * k1;
+
+
+        {
+            auto it3 = Particles.getDomainIterator();
+
+            bool match = true;
+            while (it3.isNext())
+            {
+                auto key = it3.get();
+
+                match &= Particles.template getProp<sVector>(key)[0] == 2.5*Particles.template getProp<dVector>(key)[0];
+                match &= Particles.template getProp<sVector>(key)[1] == 2.5*Particles.template getProp<dVector>(key)[1];
+                match &= Particles.template getProp<sVector>(key)[2] == 2.5*Particles.template getProp<dVector>(key)[2];
+
+                ++it3;
+            }
+            BOOST_REQUIRE_EQUAL(match,true);
+        }
+
+
+
         TdxVx=Dx(sV[x]);
-		TT[0][0] = Dx(sV[x]);
+        TT[0][0] = Dx(sV[x]);
+
     }
 
 BOOST_AUTO_TEST_SUITE_END()
