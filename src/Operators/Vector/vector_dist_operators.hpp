@@ -1554,6 +1554,34 @@ public:
     	return v_exp;
     }
 
+    /*! \brief Fill the vector property with the evaluated expression
+	 *
+	 * \param v_exp expression to evaluate
+	 *
+	 * \return itself
+	 *
+	 */
+    template<typename T> vtype & operator=(const vector_dist_expression<0,openfpm::vector<aggregate<T>>> & v_exp)
+    {
+        v_exp.init();
+
+        auto & v = getVector();
+
+        auto it = v.getDomainIterator();
+
+        while (it.isNext())
+        {
+            auto key = it.get();
+            auto key_orig = v.getOriginKey(key);
+
+            get_vector_dist_expression_op<n,n == rank_gen<property_act>::type::value>::template assign<exp1::prop>(v_exp,v,key,key_orig,comp);
+
+            ++it;
+        }
+
+        return v;
+    }
+
 	/*! \brief Fill the vector property with the evaluated expression
 	 *
 	 * \param v_exp expression to evaluate

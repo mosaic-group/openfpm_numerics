@@ -332,13 +332,27 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests3)
                      px*(-dxpz*dypy + dypy*dzpx + dypx*(2*dypz - 3*dzpy) + dxpy*(-dypz + 2*dzpy) + (-2*dxypz + dxzpy + dyzpx)*py + (dxypy - dyypx)*pz));
 
 
+            u[x][x]=dxpx;
+            u[x][y]=dxpy;
+            u[x][z]=dxpz;
+            u[y][x]=dypx;
+            u[y][y]=dypy;
+            u[y][z]=dypz;
+            u[z][x]=dzpx;
+            u[z][y]=dzpy;
+            u[z][z]=dzpz;
+
             sigma[x][x] =
                     -dxpx*(dxpx + dypy + dzpz)*Ks -
                     dxpy*Kt*pz*(dypz*px - dzpy*px - dxpz*py + dzpx*py + dxpy*pz - dypx*pz) -
                     dxpz*Kt*py*(-dypz*px + dzpy*px + dxpz*py - dzpx*py - dxpy*pz + dypx*pz) -
                     0.5*dxpz*Kb*(2*px*(dxpz*px - dzpx*px + (dypz - dzpy)*py) + 2*pz*(dxpy*py - dypx*py + (dxpz - dzpx)*pz)) -
                     0.5*dxpy*Kb*(2*py*(dxpy*py - dypx*py + (dxpz - dzpx)*pz) + 2*px*(dxpy*px - dypx*px + (-dypz + dzpy)*pz));
-            sigma[x][y] =
+                Particles.deleteGhost();
+                Particles.write_frame("Polarinit", ctr,BINARY);
+                return;
+
+                sigma[x][y] =
                     -dxpy*(dxpx + dypy + dzpz)*Ks - dxpz*Kb*py*(dxpz*px - dzpx*px + (dypz - dzpy)*py) +
                     dxpx*Kt*pz*(dypz*px - dzpy*px - dxpz*py + dzpx*py + dxpy*pz - dypx*pz) +
                     dxpz*Kt*px*(-dypz*px + dzpy*px + dxpz*py - dzpx*py - dxpy*pz + dypx*pz) +
@@ -556,10 +570,11 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests3)
             W[z][z] = 0;
             if(ctr%5==0){
             Particles.deleteGhost();
-            Particles.write_frame("Polar3d", ctr,BINARY);
+            Particles.write_frame("PolarV", ctr,BINARY);
             Particles.ghost_get<0>();
             }
             ctr++;
+            return;
             auto lambda = -1/(3*gama)*(-3*h[x]*Pol[x]-3*h[y]*Pol[y]-3*h[z]*Pol[z]+
                                            gama*nu*(Pol[x]*Pol[x]*u[x][x]+Pol[y]*Pol[y]*u[y][y]+Pol[z]*Pol[z]*u[z][z]+
                                                 Pol[x]*(Pol[y]*(u[x][y]+u[y][x])+Pol[z]*(u[x][z]+u[z][x])) +Pol[y]*Pol[z]*(u[y][z]+u[z][y])))/(Pol[x]*Pol[x]+Pol[y]*Pol[y]+Pol[z]*Pol[z]);
