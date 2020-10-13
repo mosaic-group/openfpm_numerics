@@ -348,8 +348,14 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests3)
                     dxpz*Kt*py*(-dypz*px + dzpy*px + dxpz*py - dzpx*py - dxpy*pz + dypx*pz) -
                     0.5*dxpz*Kb*(2*px*(dxpz*px - dzpx*px + (dypz - dzpy)*py) + 2*pz*(dxpy*py - dypx*py + (dxpz - dzpx)*pz)) -
                     0.5*dxpy*Kb*(2*py*(dxpy*py - dypx*py + (dxpz - dzpx)*pz) + 2*px*(dxpy*px - dypx*px + (-dypz + dzpy)*pz));
+<<<<<<< HEAD
                 Particles.deleteGhost();
                 Particles.write_frame("Polarinit", ctr,BINARY);
+=======
+               // Particles.deleteGhost();
+               //Particles.write_frame("Polarinit", ctr,BINARY);
+                //return;
+>>>>>>> 87dffb529a34d75dd7a481fbe6b53f0306647a34
 
                 sigma[x][y] =
                     -dxpy*(dxpx + dypy + dzpz)*Ks - dxpz*Kb*py*(dxpz*px - dzpx*px + (dypz - dzpy)*py) +
@@ -456,6 +462,20 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests3)
             P = 0;
             V_t = 0;
             //Particles.save("PolarCrash_" + std::to_string(ctr));
+/*            timer imp_tt;
+            imp_tt.start();*/
+            DCPSE_scheme<equations3d3, decltype(Particles)> Solver(Particles);
+            Solver.impose(Stokes1, bulk, RHS[0], vx);
+            Solver.impose(Stokes2, bulk, RHS[1], vy);
+            Solver.impose(Stokes3, bulk, RHS[2], vz);
+            Solver.impose(V[x], Boundary, 0, vx);
+            Solver.impose(V[y], Boundary, 0, vy);
+            Solver.impose(V[z], Boundary, 0, vz);
+/*            imp_tt.stop();
+            if (v_cl.rank() == 0) {
+                std::cout << "Impose A and b took " << imp_tt.getwct() << " seconds"
+                          << std::endl;
+            }*/
             while (V_err >= V_err_eps && n <= nmax) {
                 Particles.ghost_get<4>(SKIP_LABELLING);
                 RHS_bulk[x] = -dV[x]+Bulk_Dx(P);
@@ -464,6 +484,19 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests3)
                 Particles.ghost_get<8>(SKIP_LABELLING);
 
                 DCPSE_scheme<equations3d3, decltype(Particles)> Solver(Particles);
+
+   /*             imp_tt.start();*/
+                Solver.impose_b(bulk, RHS[0], vx);
+                Solver.impose_b(bulk, RHS[1], vy);
+                Solver.impose_b(bulk, RHS[2], vz);
+                Solver.impose_b(Boundary, 0, vx);
+                Solver.impose_b(Boundary, 0, vy);
+                Solver.impose_b(Boundary, 0, vz);
+   /*             imp_tt.stop();
+                if (v_cl.rank() == 0) {
+                    std::cout << "Impose only b took " << imp_tt.getwct() << " seconds"
+                              << std::endl;
+                }*/
 
 /*                for (int i = 0 ; i < 300 ; i++)
                 {
@@ -486,18 +519,6 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests3)
                 }*/
 
                 ///////////MULTICORE BUG /////////////
-
-                timer t_impose;
-
-                t_impose.start();
-                Solver.impose(Stokes1, bulk, RHS[0], vx);
-                Solver.impose(Stokes2, bulk, RHS[1], vy);
-                Solver.impose(Stokes3, bulk, RHS[2], vz);
-                Solver.impose(V[x], Boundary, 0, vx);
-                Solver.impose(V[y], Boundary, 0, vy);
-                Solver.impose(V[z], Boundary, 0, vx);
-                t_impose.stop();
-                std::cout << "IMPOSE: " << t_impose.getwct() << std::endl;
 
                 /* auto &A=Solver.getA(options_solver::STANDARD);
                  A.getMatrixTriplets().save("ATripletes" + std::to_string(n));
@@ -608,7 +629,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests3)
             Particles.ghost_get<0>();
             }
             ctr++;
-            return;
+            //return;
             auto lambda = -1/(3*gama)*(-3*h[x]*Pol[x]-3*h[y]*Pol[y]-3*h[z]*Pol[z]+
                                            gama*nu*(Pol[x]*Pol[x]*u[x][x]+Pol[y]*Pol[y]*u[y][y]+Pol[z]*Pol[z]*u[z][z]+
                                                 Pol[x]*(Pol[y]*(u[x][y]+u[y][x])+Pol[z]*(u[x][z]+u[z][x])) +Pol[y]*Pol[z]*(u[y][z]+u[z][y])))/(Pol[x]*Pol[x]+Pol[y]*Pol[y]+Pol[z]*Pol[z]);
