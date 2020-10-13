@@ -56,7 +56,7 @@ private:
     //std::vector<EMatrix<T, Eigen::Dynamic, 1>> localCoefficients; // Each MPI rank has just access to the local ones
     std::vector<Support> localSupports; // Each MPI rank has just access to the local ones
     std::vector<T> localEps; // Each MPI rank has just access to the local ones
-    std::vector<T> localEpsPow; // Each MPI rank has just access to the local ones
+    std::vector<T> localEpsInvPow; // Each MPI rank has just access to the local ones
     std::vector<T> localSumA;
 
     openfpm::vector<size_t> kerOffsets;
@@ -230,9 +230,9 @@ public:
 
         auto it = particles.getDomainIterator();
         auto supportsIt = localSupports.begin();
-        auto epsItPow = localEpsPow.begin();
+        auto epsItInvPow = localEpsInvPow.begin();
         while (it.isNext()) {
-            double epsPow = *epsItPow;
+            double epsInvPow = *epsItInvPow;
 
             T Dfxp = 0;
             Support support = *supportsIt;
@@ -248,7 +248,7 @@ public:
 
                 Dfxp += (fxq + fxp) * calcKernels.get(kerOff+i);
             }
-            Dfxp /= epsPow;
+            Dfxp *= epsInvPow;
             //
             //T trueDfxp = particles.template getProp<2>(xpK);
             // Store Dfxp in the right position
@@ -256,7 +256,7 @@ public:
             //
             ++it;
             ++supportsIt;
-            ++epsItPow;
+            ++epsItInvPow;
         }
     }
 
@@ -306,9 +306,9 @@ public:
         return sign;
     }
 
-    T getEpsilonPrefactor(const vect_dist_key_dx &key)
+    T getEpsilonInvPrefactor(const vect_dist_key_dx &key)
     {
-        return localEpsPow[key.getKey()];
+        return localEpsInvPow[key.getKey()];
     }
 
     /**
@@ -332,7 +332,7 @@ public:
         }
 
         double eps = localEps[key.getKey()];
-        double epsPow = localEpsPow[key.getKey()];
+        double epsInvPow = localEpsInvPow[key.getKey()];
 
         auto &particles = o1.getVector();
 
@@ -349,7 +349,7 @@ public:
             expr_type fxq = o1.value(vect_dist_key_dx(xqK));
             Dfxp = Dfxp + (fxq + fxp) * calcKernels.get(kerOff+i);
         }
-        Dfxp = Dfxp / epsPow;
+        Dfxp = Dfxp * epsInvPow;
         //
         //T trueDfxp = particles.template getProp<2>(xpK);
         // Store Dfxp in the right position
@@ -381,7 +381,7 @@ public:
         }
 
         double eps = localEps[key.getKey()];
-        double epsPow = localEpsPow[key.getKey()];
+        double epsInvPow = localEpsInvPow[key.getKey()];
 
         auto &particles = o1.getVector();
 
@@ -398,7 +398,7 @@ public:
             expr_type fxq = o1.value(vect_dist_key_dx(xqK))[i];
             Dfxp = Dfxp + (fxq + fxp) * calcKernels.get(kerOff+i);
         }
-        Dfxp = Dfxp / epsPow;
+        Dfxp = Dfxp * epsInvPow;
         //
         //T trueDfxp = particles.template getProp<2>(xpK);
         // Store Dfxp in the right position
@@ -411,8 +411,8 @@ public:
         localSupports.resize(particles.size_local_orig());
         localEps.clear();
         localEps.resize(particles.size_local_orig());
-        localEpsPow.clear();
-        localEpsPow.resize(particles.size_local_orig());
+        localEpsInvPow.clear();
+        localEpsInvPow.resize(particles.size_local_orig());
         calcKernels.clear();
         kerOffsets.clear();
         kerOffsets.fill(-1);
@@ -438,7 +438,7 @@ public:
 
             localSupports[key_o.getKey()] = support;
             localEps[key_o.getKey()] = eps;
-            localEpsPow[key_o.getKey()] = std::pow(eps,differentialOrder);
+            localEpsInvPow[key_o.getKey()] = 1.0 / std::pow(eps,differentialOrder);
             // Compute the diagonal matrix E
             DcpseDiagonalScalingMatrix<dim> diagonalScalingMatrix(monomialBasis);
             EMatrix<T, Eigen::Dynamic, Eigen::Dynamic> E(support.size(), support.size());
@@ -484,7 +484,7 @@ private:
 
         localSupports.resize(particles.size_local_orig());
         localEps.resize(particles.size_local_orig());
-        localEpsPow.resize(particles.size_local_orig());
+        localEpsInvPow.resize(particles.size_local_orig());
         kerOffsets.resize(particles.size_local_orig());
         kerOffsets.fill(-1);
 
@@ -517,7 +517,7 @@ private:
             auto key_o = particles.getOriginKey(it.get());
             localSupports[key_o.getKey()] = support;
             localEps[key_o.getKey()] = eps;
-            localEpsPow[key_o.getKey()] = std::pow(eps,differentialOrder);
+            localEpsInvPow[key_o.getKey()] = 1.0 / std::pow(eps,differentialOrder);
             // Compute the diagonal matrix E
             DcpseDiagonalScalingMatrix<dim> diagonalScalingMatrix(monomialBasis);
             EMatrix<T, Eigen::Dynamic, Eigen::Dynamic> E(support.size(), support.size());
@@ -565,7 +565,7 @@ private:
 
         localSupports.resize(particles.size_local_orig());
         localEps.resize(particles.size_local_orig());
-        localEpsPow.resize(particles.size_local_orig());
+        localEpsInvPow.resize(particles.size_local_orig());
         kerOffsets.resize(particles.size_local_orig());
 
         auto it = particles.getDomainIterator();
@@ -585,7 +585,7 @@ private:
 
             localSupports[key_o.getKey()] = support;
             localEps[key_o.getKey()] = eps;
-            localEpsPow[key_o.getKey()] = std::pow(eps,differentialOrder);
+            localEpsInvPow[key_o.getKey()] = 1.0 / std::pow(eps,differentialOrder);
             // Compute the diagonal matrix E
             DcpseDiagonalScalingMatrix<dim> diagonalScalingMatrix(monomialBasis);
             EMatrix<T, Eigen::Dynamic, Eigen::Dynamic> E(support.size(), support.size());
