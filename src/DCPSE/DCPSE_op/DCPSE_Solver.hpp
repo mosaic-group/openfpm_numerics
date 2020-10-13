@@ -454,6 +454,17 @@ public:
         impose_git(op, vb, id.getId(), itd);
     }
 
+    template<typename index_type, unsigned int prp_id>
+    void impose_b(openfpm::vector<index_type> &subset,
+                const prop_id<prp_id> &num,
+                eq_id id = eq_id()) {
+        auto itd = subset.template getIteratorElements<0>();
+
+        variable_b<prp_id> vb(parts);
+
+        impose_git_b(vb, id.getId(), itd);
+    }
+
     /*! \brief Impose an operator
 *
 * This function impose an operator on a particular grid region to produce the system
@@ -476,6 +487,14 @@ public:
         auto itd = subset.template getIteratorElements<0>();
 
         impose_git(op, rhs, id.getId(), itd);
+    }
+
+    template<typename index_type, typename RHS_type, typename sfinae = typename std::enable_if<!std::is_fundamental<RHS_type>::type::value>::type>
+    void impose_b(openfpm::vector<index_type> &subset,
+                const RHS_type &rhs,
+                eq_id id = eq_id()) {
+        auto itd = subset.template getIteratorElements<0>();
+        impose_git_b(rhs, id.getId(), itd);
     }
 
     /*! \brief Impose an operator
@@ -503,6 +522,17 @@ public:
         constant_b b(num);
 
         impose_git(op, b, id.getId(), itd);
+    }
+
+    template< typename index_type>
+    void impose_b(openfpm::vector<index_type> &subset,
+                const typename Sys_eqs::stype num,
+                eq_id id = eq_id()) {
+        auto itd = subset.template getIteratorElements<0>();
+
+        constant_b b(num);
+
+        impose_git_b(b, id.getId(), itd);
     }
 
     /*! \brief produce the Matrix
@@ -616,6 +646,29 @@ public:
         return b;
     }
 
+
+    template<typename bop, typename iterator>
+    void impose_git_b(bop num,
+                      long int id,
+                      const iterator &it_d) {
+        auto it = it_d;
+        // iterate all particles points
+        while (it.isNext()) {
+            // get the particle
+            auto key = it.get();
+            // Calculate the non-zero colums
+            b(p_map.template getProp<0>(key) * Sys_eqs::nvar + id) = num.get(key);
+//       std::cout << "b=(" << p_map.template getProp<0>(key)*Sys_eqs::nvar + id << "," << num.get(key)<<")" <<"\n";
+
+            // if SE_CLASS1 is defined check the position
+#ifdef SE_CLASS1
+            //			T::position(key,gs,s_pos);
+#endif
+            ++row_b;
+            ++it;
+        }
+    }
+
     /*! \brief Impose an operator
      *
      * This function impose an operator on a particular grid region to produce the system
@@ -705,5 +758,7 @@ public:
     }
 
 };
+
+
 
 #endif //OPENFPM_PDATA_DCPSE_SOLVER_HPP
