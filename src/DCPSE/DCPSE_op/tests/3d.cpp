@@ -342,6 +342,10 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests3)
             u[z][y]=dzpy;
             u[z][z]=dzpz;
 
+                Particles.deleteGhost();
+                Particles.write_frame("Polarinit", ctr,BINARY);
+                return;
+
             sigma[x][x] =
                     -dxpx*(dxpx + dypy + dzpz)*Ks -
                     dxpy*Kt*pz*(dypz*px - dzpy*px - dxpz*py + dzpx*py + dxpy*pz - dypx*pz) -
@@ -349,9 +353,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests3)
                     0.5*dxpz*Kb*(2*px*(dxpz*px - dzpx*px + (dypz - dzpy)*py) + 2*pz*(dxpy*py - dypx*py + (dxpz - dzpx)*pz)) -
                     0.5*dxpy*Kb*(2*py*(dxpy*py - dypx*py + (dxpz - dzpx)*pz) + 2*px*(dxpy*px - dypx*px + (-dypz + dzpy)*pz));
 
-               // Particles.deleteGhost();
-               //Particles.write_frame("Polarinit", ctr,BINARY);
-                //return;
+
 
                 sigma[x][y] =
                     -dxpy*(dxpx + dypy + dzpz)*Ks - dxpz*Kb*py*(dxpz*px - dzpx*px + (dypz - dzpy)*py) +
@@ -540,9 +542,9 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests3)
                 Solver.solve_with_solver(solverPetsc, V[x], V[y], V[z]);
                 std::cout << "SOLVE: " << t_solve.getwct() << std::endl;
 
-                Particles.deleteGhost();
+/*                Particles.deleteGhost();
                 Particles.write("OUT_part");
-                return;
+                return;*/
 
                 //Solver.solve(V[x], V[y]);
                 Particles.ghost_get<Velocity>(SKIP_LABELLING);
@@ -892,6 +894,8 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests3)
             dxqzx=Dx(Pol[z]*Pol[x]);
             dyqzy=Dy(Pol[z]*Pol[y]);
             dzqzz=Dz(Pol[z]*Pol[z]-1/3*(Pol[x]*Pol[x]+Pol[y]*Pol[y]+Pol[z]*Pol[z]));
+
+            return;
 
         }
 

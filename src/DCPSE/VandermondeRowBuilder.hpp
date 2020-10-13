@@ -29,7 +29,7 @@ void VandermondeRowBuilder<dim, T>::buildRow(MatrixType &M, unsigned int row, Po
     {
         Monomial<dim> m = monomialBasis.getElement(col);
         M(row, col) = m.evaluate(x);
-        M(row, col) /= pow(eps, m.order());
+        M(row, col) /= openfpm::math::intpowlog(eps, m.order());
         ++col;
     }
 }

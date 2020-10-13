@@ -439,7 +439,7 @@ public:
 
             localSupports[key_o.getKey()] = support;
             localEps[key_o.getKey()] = eps;
-            localEpsInvPow[key_o.getKey()] = 1.0 / std::pow(eps,differentialOrder);
+            localEpsInvPow[key_o.getKey()] = 1.0 / openfpm::math::intpowlog(eps,differentialOrder);
             // Compute the diagonal matrix E
             DcpseDiagonalScalingMatrix<dim> diagonalScalingMatrix(monomialBasis);
             EMatrix<T, Eigen::Dynamic, Eigen::Dynamic> E(support.size(), support.size());
@@ -518,7 +518,7 @@ private:
             auto key_o = particles.getOriginKey(it.get());
             localSupports[key_o.getKey()] = support;
             localEps[key_o.getKey()] = eps;
-            localEpsInvPow[key_o.getKey()] = 1.0 / std::pow(eps,differentialOrder);
+            localEpsInvPow[key_o.getKey()] = 1.0 / openfpm::math::intpowlog(eps,differentialOrder);
             // Compute the diagonal matrix E
             DcpseDiagonalScalingMatrix<dim> diagonalScalingMatrix(monomialBasis);
             EMatrix<T, Eigen::Dynamic, Eigen::Dynamic> E(support.size(), support.size());
@@ -586,7 +586,7 @@ private:
 
             localSupports[key_o.getKey()] = support;
             localEps[key_o.getKey()] = eps;
-            localEpsInvPow[key_o.getKey()] = 1.0 / std::pow(eps,differentialOrder);
+            localEpsInvPow[key_o.getKey()] = 1.0 / openfpm::math::intpowlog(eps,differentialOrder);
             // Compute the diagonal matrix E
             DcpseDiagonalScalingMatrix<dim> diagonalScalingMatrix(monomialBasis);
             EMatrix<T, Eigen::Dynamic, Eigen::Dynamic> E(support.size(), support.size());

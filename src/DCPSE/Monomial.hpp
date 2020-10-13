@@ -149,7 +149,7 @@ T Monomial<dim>::evaluate(const Point<dim, T> x) const
     T res = scalar;
     for (unsigned int i = 0; i < dim; ++i)
     {
-        res *= std::pow(x.value(i), getExponent(i));
+        res *= openfpm::math::intpowlog(x.value(i), getExponent(i));
     }
     return res;
 }
