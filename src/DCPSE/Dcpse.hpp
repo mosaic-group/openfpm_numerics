@@ -415,6 +415,7 @@ public:
         localEpsInvPow.resize(particles.size_local_orig());
         calcKernels.clear();
         kerOffsets.clear();
+        kerOffsets.resize(particles.size_local_orig());
         kerOffsets.fill(-1);
 
         SupportBuilder<vector_type> supportBuilder(particles, differentialSignature, rCut);

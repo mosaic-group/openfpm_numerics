@@ -348,14 +348,10 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests3)
                     dxpz*Kt*py*(-dypz*px + dzpy*px + dxpz*py - dzpx*py - dxpy*pz + dypx*pz) -
                     0.5*dxpz*Kb*(2*px*(dxpz*px - dzpx*px + (dypz - dzpy)*py) + 2*pz*(dxpy*py - dypx*py + (dxpz - dzpx)*pz)) -
                     0.5*dxpy*Kb*(2*py*(dxpy*py - dypx*py + (dxpz - dzpx)*pz) + 2*px*(dxpy*px - dypx*px + (-dypz + dzpy)*pz));
-<<<<<<< HEAD
-                Particles.deleteGhost();
-                Particles.write_frame("Polarinit", ctr,BINARY);
-=======
+
                // Particles.deleteGhost();
                //Particles.write_frame("Polarinit", ctr,BINARY);
                 //return;
->>>>>>> 87dffb529a34d75dd7a481fbe6b53f0306647a34
 
                 sigma[x][y] =
                     -dxpy*(dxpx + dypy + dzpz)*Ks - dxpz*Kb*py*(dxpz*px - dzpx*px + (dypz - dzpy)*py) +
@@ -483,9 +479,8 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests3)
                 RHS_bulk[z] = -dV[z]+Bulk_Dz(P);
                 Particles.ghost_get<8>(SKIP_LABELLING);
 
-                DCPSE_scheme<equations3d3, decltype(Particles)> Solver(Particles);
-
    /*             imp_tt.start();*/
+                Solver.reset_b();
                 Solver.impose_b(bulk, RHS[0], vx);
                 Solver.impose_b(bulk, RHS[1], vy);
                 Solver.impose_b(bulk, RHS[2], vz);

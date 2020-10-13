@@ -206,7 +206,7 @@ class DCPSE_scheme : public MatrixAssembler {
         // A and B must have the same rows
         if (row != row_b) {
             std::cerr << "Error " << __FILE__ << ":" << __LINE__
-                      << " the term B and the Matrix A for Ax=B must contain the same number of rows\n";
+                      << " the term B and the Matrix A for Ax=B must contain the same number of rows " << row << "!=" << row_b << "\n";
             return;
         }
         if (row_b != p_map.size_local() * Sys_eqs::nvar) {
@@ -389,6 +389,11 @@ public:
 
         unsigned int comp = 0;
         copy_nested(x, comp, exps ...);
+    }
+
+    void reset_b()
+    {
+    	row_b = 0;
     }
 
     void reset(particles_type &part, options_solver opt = options_solver::STANDARD)
