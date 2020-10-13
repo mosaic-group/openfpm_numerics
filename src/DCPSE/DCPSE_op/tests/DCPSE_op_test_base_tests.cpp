@@ -89,7 +89,6 @@ BOOST_AUTO_TEST_CASE(dcpse_op_tests) {
         }
 
         domain.deleteGhost();
-        domain.write("v");
         BOOST_REQUIRE(worst < 0.03);
 
     }
@@ -166,7 +165,6 @@ BOOST_AUTO_TEST_CASE(dcpse_op_tests) {
         }
         errv=v-vv;
         domain.deleteGhost();
-        domain.write("v");
         BOOST_REQUIRE(worst < 0.03);
     }
 
@@ -256,7 +254,6 @@ BOOST_AUTO_TEST_CASE(dcpse_op_tests) {
         }
 
         domain.deleteGhost();
-        domain.write("v");
         BOOST_REQUIRE(worst1 < 0.03);
     }
 

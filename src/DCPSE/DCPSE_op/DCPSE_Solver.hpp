@@ -404,6 +404,14 @@ public:
     	construct_pmap(opt);
     }
 
+    void reset_nodec()
+    {
+    	row = 0;
+    	row_b = 0;
+
+    	A.getMatrixTriplets().clear();
+    }
+
     /*! \brief Constructor
      *
      * The periodicity is given by the grid b_g
@@ -640,7 +648,9 @@ public:
 
         auto it = it_d;
 
-        std::unordered_map<long int, typename particles_type::stype> cols;
+        //std::unordered_map<long int, typename particles_type::stype> cols;
+
+        tsl::hopscotch_map<long int, typename particles_type::stype> cols;
 
         // iterate all particles points
         while (it.isNext()) {

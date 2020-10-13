@@ -53,10 +53,14 @@ private:
     const Point<dim, unsigned int> differentialSignature;
     const unsigned int differentialOrder;
     const MonomialBasis<dim> monomialBasis;
-    std::vector<EMatrix<T, Eigen::Dynamic, 1>> localCoefficients; // Each MPI rank has just access to the local ones
+    //std::vector<EMatrix<T, Eigen::Dynamic, 1>> localCoefficients; // Each MPI rank has just access to the local ones
     std::vector<Support> localSupports; // Each MPI rank has just access to the local ones
     std::vector<T> localEps; // Each MPI rank has just access to the local ones
+    std::vector<T> localEpsPow; // Each MPI rank has just access to the local ones
     std::vector<T> localSumA;
+
+    openfpm::vector<size_t> kerOffsets;
+    openfpm::vector<T> calcKernels;
 
     vector_type & particles;
     double rCut;
@@ -93,58 +97,42 @@ public:
     template<unsigned int prp>
     void DrawKernel(vector_type &particles, int k)
     {
-        EMatrix<T, Eigen::Dynamic, 1> &a = localCoefficients[k];
         Support support = localSupports[k];
-        auto eps = localEps[k];
-        int DrawKernelKounter=0;
         size_t xpK = k;
-        Point<dim, typename vector_type::stype> xp = particles.getPos(support.getReferencePointKey());
-        for (auto &xqK : support.getKeys())
+        size_t kerOff = kerOffsets.get(k);
+        auto & keys = support.getKeys();
+        for (int i = 0 ; i < keys.size() ; i++)
         {
-            Point<dim, T> xq = particles.getPos(xqK);
-            Point<dim, T> normalizedArg = (xp - xq) / eps;
-
-            particles.template getProp<prp>(xqK) += computeKernel(normalizedArg, a);
-            DrawKernelKounter++;
+        	size_t xqK = keys[i];
+            particles.template getProp<prp>(xqK) += calcKernels.get(kerOff+i);
         }
-//        std::cout<<"Number of Neighbours: "<<DrawKernelKounter<<std::endl;
     }
 
     template<unsigned int prp>
     void DrawKernelNN(vector_type &particles, int k)
     {
-        EMatrix<T, Eigen::Dynamic, 1> &a = localCoefficients[k];
         Support support = localSupports[k];
-        auto eps = localEps[k];
-        int DrawKernelKounter=0;
         size_t xpK = k;
-        Point<dim, typename vector_type::stype> xp = particles.getPos(support.getReferencePointKey());
-        for (auto &xqK : support.getKeys())
+        size_t kerOff = kerOffsets.get(k);
+        auto & keys = support.getKeys();
+        for (int i = 0 ; i < keys.size() ; i++)
         {
-            Point<dim, T> xq = particles.getPos(xqK);
-            Point<dim, T> normalizedArg = (xp - xq) / eps;
-
+        	size_t xqK = keys[i];
             particles.template getProp<prp>(xqK) = 1.0;
-            DrawKernelKounter++;
         }
-//        std::cout<<"Number of Neighbours: "<<DrawKernelKounter<<std::endl;
     }
 
     template<unsigned int prp>
     void DrawKernel(vector_type &particles, int k, int i)
     {
-        EMatrix<T, Eigen::Dynamic, 1> &a = localCoefficients[k];
         Support support = localSupports[k];
-        auto eps = localEps[k];
-
         size_t xpK = k;
-        Point<dim, T> xp = particles.getPos(support.getReferencePointKey());
-        for (auto &xqK : support.getKeys())
+        size_t kerOff = kerOffsets.get(k);
+        auto & keys = support.getKeys();
+        for (int i = 0 ; i < keys.size() ; i++)
         {
-            Point<dim, T> xq = particles.getPos(xqK);
-            Point<dim, T> normalizedArg = (xp - xq) / eps;
-
-            particles.template getProp<prp>(xqK)[i] += computeKernel(normalizedArg, a);
+        	size_t xqK = keys[i];
+            particles.template getProp<prp>(xqK)[i] += calcKernels.get(kerOff+i);
         }
     }
 
@@ -163,7 +151,6 @@ public:
         }
 
         auto it = particles.getDomainIterator();
-        auto coefficientsIt = localCoefficients.begin();
         auto supportsIt = localSupports.begin();
         auto epsIt = localEps.begin();
         while (it.isNext())
@@ -178,11 +165,15 @@ public:
             Support support = *supportsIt;
             size_t xpK = support.getReferencePointKey();
             Point<dim, T> xp = particles.getPos(support.getReferencePointKey());
-            for (auto &xqK : support.getKeys())
+            size_t kerOff = kerOffsets.get(xpK);
+            auto & keys = support.getKeys();
+            for (int i = 0 ; i < keys.size() ; i++)
             {
-                Point<dim, T> xq = particles.getPos(xqK);
+            	size_t xqK = keys[i];
+                Point<dim, T> xq = particles.getPosOrig(xqK);
                 Point<dim, T> normalizedArg = (xp - xq) / eps;
-                EMatrix<T, Eigen::Dynamic, 1> &a = *coefficientsIt;
+
+                auto ker = calcKernels.get(kerOff+i);
 
                 int counter = 0;
                 for (const Monomial<dim> &m : monomialBasis.getElements())
@@ -190,7 +181,7 @@ public:
                     T mbValue = m.evaluate(normalizedArg);
 
 
-                    momenta_accu.template get<0>(counter) += mbValue * computeKernel(normalizedArg, a);
+                    momenta_accu.template get<0>(counter) += mbValue * ker;
 
                     ++counter;
                 }
@@ -212,7 +203,6 @@ public:
 
             //
             ++it;
-            ++coefficientsIt;
             ++supportsIt;
             ++epsIt;
         }
@@ -239,34 +229,34 @@ public:
         }
 
         auto it = particles.getDomainIterator();
-        auto coefficientsIt = localCoefficients.begin();
         auto supportsIt = localSupports.begin();
-        auto epsIt = localEps.begin();
+        auto epsItPow = localEpsPow.begin();
         while (it.isNext()) {
-            double eps = *epsIt;
+            double epsPow = *epsItPow;
 
             T Dfxp = 0;
             Support support = *supportsIt;
             size_t xpK = support.getReferencePointKey();
             Point<dim, typename vector_type::stype> xp = particles.getPos(support.getReferencePointKey());
             T fxp = sign * particles.template getProp<fValuePos>(xpK);
-            for (auto &xqK : support.getKeys()) {
-                Point<dim, T> xq = particles.getPos(xqK);
+            size_t kerOff = kerOffsets.get(xpK);
+            auto & keys = support.getKeys();
+            for (int i = 0 ; i < keys.size() ; i++)
+            {
+            	size_t xqK = keys[i];
                 T fxq = particles.template getProp<fValuePos>(xqK);
-                Point<dim, T> normalizedArg = (xp - xq) / eps;
-                EMatrix<T, Eigen::Dynamic, 1> &a = *coefficientsIt;
-                Dfxp += (fxq + fxp) * computeKernel(normalizedArg, a);
+
+                Dfxp += (fxq + fxp) * calcKernels.get(kerOff+i);
             }
-            Dfxp /= pow(eps, differentialOrder);
+            Dfxp /= epsPow;
             //
             //T trueDfxp = particles.template getProp<2>(xpK);
             // Store Dfxp in the right position
             particles.template getProp<DfValuePos>(xpK) = Dfxp;
             //
             ++it;
-            ++coefficientsIt;
             ++supportsIt;
-            ++epsIt;
+            ++epsItPow;
         }
     }
 
@@ -276,7 +266,7 @@ public:
      * \return the number of neighbours
      *
      */
-    int getNumNN(const vect_dist_key_dx &key)
+    inline int getNumNN(const vect_dist_key_dx &key)
     {
         return localSupports[key.getKey()].size();
     }
@@ -289,18 +279,10 @@ public:
      * \return the coefficent
      *
      */
-    T getCoeffNN(const vect_dist_key_dx &key, int j)
+    inline T getCoeffNN(const vect_dist_key_dx &key, int j)
     {
-        double eps = localEps[key.getKey()];
-
-        auto xqK = getIndexNN(key,j);
-
-        Point<dim, T> xp = particles.getPos(key);
-        Point<dim, T> xq = particles.getPos(xqK);
-        Point<dim, T> normalizedArg = (xp - xq) / eps;
-
-        EMatrix<T, Eigen::Dynamic, 1> &a = localCoefficients[key.getKey()];
-        return computeKernel(normalizedArg, a);
+    	size_t base = kerOffsets.get(key.getKey());
+        return calcKernels.get(base + j);
     }
 
     /*! \brief Get the number of neighbours
@@ -308,13 +290,13 @@ public:
  * \return the number of neighbours
  *
  */
-    size_t getIndexNN(const vect_dist_key_dx &key, int j)
+    inline size_t getIndexNN(const vect_dist_key_dx &key, int j)
     {
         return localSupports[key.getKey()].getKeys()[j];
     }
 
 
-    T getSign()
+    inline T getSign()
     {
         T sign = 1.0;
         if (differentialOrder % 2 == 0) {
@@ -326,9 +308,7 @@ public:
 
     T getEpsilonPrefactor(const vect_dist_key_dx &key)
     {
-        double eps = localEps[key.getKey()];
-
-        return pow(eps, differentialOrder);
+        return localEpsPow[key.getKey()];
     }
 
     /**
@@ -352,6 +332,7 @@ public:
         }
 
         double eps = localEps[key.getKey()];
+        double epsPow = localEpsPow[key.getKey()];
 
         auto &particles = o1.getVector();
 
@@ -360,14 +341,15 @@ public:
         size_t xpK = support.getReferencePointKey();
         Point<dim, T> xp = particles.getPos(xpK);
         expr_type fxp = sign * o1.value(key);
-        for (auto &xqK : support.getKeys()) {
-            Point<dim, T> xq = particles.getPos(xqK);
+        size_t kerOff = kerOffsets.get(xpK);
+        auto & keys = support.getKeys();
+        for (int i = 0 ; i < keys.size() ; i++)
+        {
+        	size_t xqK = keys[i];
             expr_type fxq = o1.value(vect_dist_key_dx(xqK));
-            Point<dim, T> normalizedArg = (xp - xq) / eps;
-            EMatrix<T, Eigen::Dynamic, 1> &a = localCoefficients[key.getKey()];
-            Dfxp = Dfxp + (fxq + fxp) * computeKernel(normalizedArg, a);
+            Dfxp = Dfxp + (fxq + fxp) * calcKernels.get(kerOff+i);
         }
-        Dfxp = Dfxp / pow(eps, differentialOrder);
+        Dfxp = Dfxp / epsPow;
         //
         //T trueDfxp = particles.template getProp<2>(xpK);
         // Store Dfxp in the right position
@@ -399,6 +381,7 @@ public:
         }
 
         double eps = localEps[key.getKey()];
+        double epsPow = localEpsPow[key.getKey()];
 
         auto &particles = o1.getVector();
 
@@ -407,14 +390,15 @@ public:
         size_t xpK = support.getReferencePointKey();
         Point<dim, T> xp = particles.getPos(xpK);
         expr_type fxp = sign * o1.value(key)[i];
-        for (auto &xqK : support.getKeys()) {
-            Point<dim, T> xq = particles.getPos(xqK);
+        size_t kerOff = kerOffsets.get(xpK);
+        auto & keys = support.getKeys();
+        for (int i = 0 ; i < keys.size() ; i++)
+        {
+        	size_t xqK = keys[i];
             expr_type fxq = o1.value(vect_dist_key_dx(xqK))[i];
-            Point<dim, T> normalizedArg = (xp - xq) / eps;
-            EMatrix<T, Eigen::Dynamic, 1> &a = localCoefficients[key.getKey()];
-            Dfxp = Dfxp + (fxq + fxp) * computeKernel(normalizedArg, a);
+            Dfxp = Dfxp + (fxq + fxp) * calcKernels.get(kerOff+i);
         }
-        Dfxp = Dfxp / pow(eps, differentialOrder);
+        Dfxp = Dfxp / epsPow;
         //
         //T trueDfxp = particles.template getProp<2>(xpK);
         // Store Dfxp in the right position
@@ -427,8 +411,11 @@ public:
         localSupports.resize(particles.size_local_orig());
         localEps.clear();
         localEps.resize(particles.size_local_orig());
-        localCoefficients.clear();
-        localCoefficients.resize(particles.size_local_orig());
+        localEpsPow.clear();
+        localEpsPow.resize(particles.size_local_orig());
+        calcKernels.clear();
+        kerOffsets.clear();
+        kerOffsets.fill(-1);
 
         SupportBuilder<vector_type> supportBuilder(particles, differentialSignature, rCut);
         unsigned int requiredSupportSize = monomialBasis.size() * supportSizeFactor;
@@ -451,6 +438,7 @@ public:
 
             localSupports[key_o.getKey()] = support;
             localEps[key_o.getKey()] = eps;
+            localEpsPow[key_o.getKey()] = std::pow(eps,differentialOrder);
             // Compute the diagonal matrix E
             DcpseDiagonalScalingMatrix<dim> diagonalScalingMatrix(monomialBasis);
             EMatrix<T, Eigen::Dynamic, Eigen::Dynamic> E(support.size(), support.size());
@@ -469,7 +457,17 @@ public:
             // ...solve the linear system...
             a = A.colPivHouseholderQr().solve(b);
             // ...and store the solution for later reuse
-            localCoefficients[key_o.getKey()] = a;
+            kerOffsets.get(key_o.getKey()) = calcKernels.size();
+
+            Point<dim, T> xp = particles.getPosOrig(key_o);
+
+            for (auto &xqK : support.getKeys())
+            {
+                Point<dim, T> xq = particles.getPosOrig(xqK);
+                Point<dim, T> normalizedArg = (xp - xq) / eps;
+
+                calcKernels.add(computeKernel(normalizedArg, a));
+            }
             //
             ++it;
         }
@@ -486,7 +484,9 @@ private:
 
         localSupports.resize(particles.size_local_orig());
         localEps.resize(particles.size_local_orig());
-        localCoefficients.resize(particles.size_local_orig());
+        localEpsPow.resize(particles.size_local_orig());
+        kerOffsets.resize(particles.size_local_orig());
+        kerOffsets.fill(-1);
 
         auto it = particles.getDomainIterator();
         while (it.isNext()) {
@@ -517,6 +517,7 @@ private:
             auto key_o = particles.getOriginKey(it.get());
             localSupports[key_o.getKey()] = support;
             localEps[key_o.getKey()] = eps;
+            localEpsPow[key_o.getKey()] = std::pow(eps,differentialOrder);
             // Compute the diagonal matrix E
             DcpseDiagonalScalingMatrix<dim> diagonalScalingMatrix(monomialBasis);
             EMatrix<T, Eigen::Dynamic, Eigen::Dynamic> E(support.size(), support.size());
@@ -534,7 +535,17 @@ private:
             // ...solve the linear system...
             a = A.colPivHouseholderQr().solve(b);
             // ...and store the solution for later reuse
-            localCoefficients[key_o.getKey()] = a;
+            kerOffsets.get(key_o.getKey()) = calcKernels.size();
+
+            Point<dim, T> xp = particles.getPosOrig(key_o);
+
+            for (auto &xqK : support.getKeys())
+            {
+                Point<dim, T> xq = particles.getPosOrig(xqK);
+                Point<dim, T> normalizedArg = (xp - xq) / eps;
+
+                calcKernels.add(computeKernel(normalizedArg, a));
+            }
             //
             ++it;
         }
@@ -554,7 +565,8 @@ private:
 
         localSupports.resize(particles.size_local_orig());
         localEps.resize(particles.size_local_orig());
-        localCoefficients.resize(particles.size_local_orig());
+        localEpsPow.resize(particles.size_local_orig());
+        kerOffsets.resize(particles.size_local_orig());
 
         auto it = particles.getDomainIterator();
         while (it.isNext()) {
@@ -573,6 +585,7 @@ private:
 
             localSupports[key_o.getKey()] = support;
             localEps[key_o.getKey()] = eps;
+            localEpsPow[key_o.getKey()] = std::pow(eps,differentialOrder);
             // Compute the diagonal matrix E
             DcpseDiagonalScalingMatrix<dim> diagonalScalingMatrix(monomialBasis);
             EMatrix<T, Eigen::Dynamic, Eigen::Dynamic> E(support.size(), support.size());
@@ -591,7 +604,17 @@ private:
             // ...solve the linear system...
             a = A.colPivHouseholderQr().solve(b);
             // ...and store the solution for later reuse
-            localCoefficients[key_o.getKey()] = a;
+            kerOffsets.get(key_o.getKey()) = calcKernels.size();
+
+            Point<dim, T> xp = particles.getPosOrig(key_o);
+
+            for (auto &xqK : support.getKeys())
+            {
+                Point<dim, T> xq = particles.getPosOrig(xqK);
+                Point<dim, T> normalizedArg = (xp - xq) / eps;
+
+                calcKernels.add(computeKernel(normalizedArg, a));
+            }
             //
             ++it;
         }
@@ -600,7 +623,7 @@ private:
 
 
 
-    T computeKernel(Point<dim, T> x, EMatrix<T, Eigen::Dynamic, 1> a) const {
+    T computeKernel(Point<dim, T> x, EMatrix<T, Eigen::Dynamic, 1> & a) const {
         T res = 0;
         unsigned int counter = 0;
         T expFactor = exp(-norm2(x));

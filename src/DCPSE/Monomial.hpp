@@ -149,7 +149,7 @@ T Monomial<dim>::evaluate(const Point<dim, T> x) const
     T res = scalar;
     for (unsigned int i = 0; i < dim; ++i)
     {
-        res *= pow(x.value(i), getExponent(i));
+        res *= std::pow(x.value(i), getExponent(i));
     }
     return res;
 }

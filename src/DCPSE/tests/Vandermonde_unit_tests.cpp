@@ -78,16 +78,38 @@ BOOST_AUTO_TEST_SUITE(Vandermonde_tests)
         std::vector<Point<2, double>> neighbours;
         EMatrix<double, Eigen::Dynamic, Eigen::Dynamic> V(mb.size(), mb.size());
         EMatrix<double, Eigen::Dynamic, Eigen::Dynamic> ExpectedV(mb.size(), mb.size());
+
+        vector_dist<2,double,aggregate<double>> parts;
+
         // Now push 4 points on diagonal as neighbours
-        neighbours.push_back({1, 1});
-        neighbours.push_back({-1, -1});
-        neighbours.push_back({1, -1});
-        neighbours.push_back({-1, 1});
-        neighbours.push_back({0, 1});
-        neighbours.push_back({0, -1});
+        parts.add();
+        parts.getLastPos()[0]=0;
+        parts.getLastPos()[1]=0;
+        parts.add();
+        parts.getLastPos()[0]=1;
+        parts.getLastPos()[1]=1;
+        parts.add();
+        parts.getLastPos()[0]=-1;
+        parts.getLastPos()[1]=-1;
+        parts.add();
+        parts.getLastPos()[0]=1;
+        parts.getLastPos()[1]=-1;
+        parts.add();
+        parts.getLastPos()[0]=-1;
+        parts.getLastPos()[1]=1;
+        parts.add();
+        parts.getLastPos()[0]=0;
+        parts.getLastPos()[1]=1;
+        parts.add();
+        parts.getLastPos()[0]=0;
+        parts.getLastPos()[1]=-1;
+
+        const std::vector<size_t> keys({1,2,3,4,5,6});
+
+        Support s(0,keys);
 
         // ...and get the matrix V
-        Vandermonde<2, double, EMatrix<double, Eigen::Dynamic, Eigen::Dynamic>> vandermonde(x, neighbours, mb);
+        Vandermonde<2, double, EMatrix<double, Eigen::Dynamic, Eigen::Dynamic>> vandermonde(s, mb, parts);
         vandermonde.getMatrix(V);
 
         // Now build the matrix of expected values
@@ -145,18 +167,41 @@ BOOST_AUTO_TEST_SUITE(Vandermonde_tests)
         MonomialBasis<2> mb({1, 0}, 2);
 //        std::cout << mb << std::endl; // Debug
         Point<2, double> x({1, 1});
-        std::vector<Point<2, double>> neighbours;
         EMatrix<double, Eigen::Dynamic, Eigen::Dynamic> V(mb.size(), mb.size());
         EMatrix<double, Eigen::Dynamic, Eigen::Dynamic> ExpectedV(mb.size(), mb.size());
         // Now push 4 points on diagonal as neighbours
-        neighbours.push_back({2, 2});
-        neighbours.push_back({0, 0});
-        neighbours.push_back({2, 0});
-        neighbours.push_back({0, 2});
-        neighbours.push_back({1, 2});
-        neighbours.push_back({1, 0});
+
+        vector_dist<2,double,aggregate<double>> parts;
+
+        // Now push 4 points on diagonal as neighbours
+        parts.add();
+        parts.getLastPos()[0]=1;
+        parts.getLastPos()[1]=1;
+        parts.add();
+        parts.getLastPos()[0]=2;
+        parts.getLastPos()[1]=2;
+        parts.add();
+        parts.getLastPos()[0]=0;
+        parts.getLastPos()[1]=0;
+        parts.add();
+        parts.getLastPos()[0]=2;
+        parts.getLastPos()[1]=0;
+        parts.add();
+        parts.getLastPos()[0]=0;
+        parts.getLastPos()[1]=2;
+        parts.add();
+        parts.getLastPos()[0]=1;
+        parts.getLastPos()[1]=2;
+        parts.add();
+        parts.getLastPos()[0]=1;
+        parts.getLastPos()[1]=0;
+
+        const std::vector<size_t> keys({1,2,3,4,5,6});
+
+        Support s(0,keys);
+
         // ...and get the matrix V
-        Vandermonde<2, double, EMatrix<double, Eigen::Dynamic, Eigen::Dynamic>> vandermonde(x, neighbours, mb);
+        Vandermonde<2, double, EMatrix<double, Eigen::Dynamic, Eigen::Dynamic>> vandermonde(s, mb, parts);
         vandermonde.getMatrix(V);
 
         // Now build the matrix of expected values

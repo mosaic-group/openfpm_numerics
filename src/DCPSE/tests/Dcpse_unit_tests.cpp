@@ -94,9 +94,11 @@ BOOST_AUTO_TEST_SUITE(Dcpse_tests)
         // Setup finished, actual test below...
 //        std::cout << "rCut = " << rCut << std::endl;
         BOOST_TEST_MESSAGE("DCPSE init & compute coefficients...");
-        Dcpse<2, double, double, double, double> dcpse(domain, Point<2, unsigned int>({1, 0}), 2, rCut);
+        Dcpse<2, vector_dist<2, double, aggregate<double, double, double>> > dcpse(domain, Point<2, unsigned int>({1, 0}), 2, rCut,2);
         BOOST_TEST_MESSAGE("DCPSE compute diff operator...");
         dcpse.template computeDifferentialOperator<0, 1>(domain);
+
+        domain.write("OUT_TEST");
 
         // Now check against the validation values
         BOOST_TEST_MESSAGE("Validating against ground truth...");
@@ -199,7 +201,7 @@ BOOST_AUTO_TEST_SUITE(Dcpse_tests)
         // Setup finished, actual test below...
 //        std::cout << "rCut = " << rCut << std::endl;
         BOOST_TEST_MESSAGE("DCPSE init & compute coefficients...");
-        Dcpse<2, double, double, double, double> dcpse(domain, Point<2, unsigned int>({1, 0}), 2, rCut, 2);
+        Dcpse<2, vector_dist<2, double, aggregate<double, double, double>> > dcpse(domain, Point<2, unsigned int>({1, 0}), 2, rCut, 2);
         BOOST_TEST_MESSAGE("DCPSE compute diff operator...");
         dcpse.template computeDifferentialOperator<0, 1>(domain);
 
@@ -296,7 +298,7 @@ BOOST_AUTO_TEST_SUITE(Dcpse_tests)
 
         // Setup finished, actual test below...
         BOOST_TEST_MESSAGE("DCPSE init & compute coefficients...");
-        Dcpse<DIM, double, double, double, double> dcpse(domain, Point<DIM, unsigned int>({0, 0, 1}), 2, rCut);
+        Dcpse<DIM, vector_dist<DIM, double, aggregate<double, double, double>>> dcpse(domain, Point<DIM, unsigned int>({0, 0, 1}), 2, rCut,2.5);
         BOOST_TEST_MESSAGE("DCPSE compute diff operator...");
         dcpse.template computeDifferentialOperator<0, 1>(domain);
 
@@ -388,7 +390,7 @@ BOOST_AUTO_TEST_SUITE(Dcpse_tests)
         // Setup finished, actual test below...
         unsigned int r = 2;
         BOOST_TEST_MESSAGE("DCPSE init & compute coefficients...");
-        Dcpse<DIM, double, double, double, double> dcpse(domain, Point<DIM, unsigned int>({2, 0, 2}), r, rCut);
+        Dcpse<DIM, vector_dist<DIM, double, aggregate<double, double, double>> > dcpse(domain, Point<DIM, unsigned int>({2, 0, 2}), r, rCut);
         BOOST_TEST_MESSAGE("DCPSE compute diff operator...");
         dcpse.template computeDifferentialOperator<0, 1>(domain);
 

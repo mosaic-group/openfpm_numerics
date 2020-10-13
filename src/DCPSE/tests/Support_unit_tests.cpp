@@ -59,8 +59,8 @@ BOOST_AUTO_TEST_SUITE(Support_tests)
 
         // Now that domain is built and populated, let's test SupportBuilder
         // We use (0,0) as initial point
-        SupportBuilder<2, double, aggregate<double>> supportBuilder(domain, {1,0}, 2*spacing[0]);
-        auto support = supportBuilder.getSupport(itPoint, 6);
+        SupportBuilder<vector_dist<2, double, aggregate<double>>> supportBuilder(domain, {1,0}, 2*spacing[0]);
+        auto support = supportBuilder.getSupport(itPoint, 6, support_options::N_PARTICLES);
 //        for (const auto &off : support.getOffsets())
 //        {
 //            std::cout << off.toString() << std::endl;
@@ -119,8 +119,8 @@ BOOST_AUTO_TEST_SUITE(Support_tests)
 
         // Now that domain is built and populated, let's test SupportBuilder
         // We use (0,0) as initial point
-        SupportBuilder<2, double, aggregate<double>> supportBuilder(domain, {2,2}, 2*spacing[0]);
-        auto supportPoints = supportBuilder.getSupport(itPoint, 20);
+        SupportBuilder<vector_dist<2, double, aggregate<double>>> supportBuilder(domain, {2,2}, 2*spacing[0]);
+        auto supportPoints = supportBuilder.getSupport(itPoint, 20, support_options::N_PARTICLES);
 //        for (const auto &k : supportPoints)
 //        {
 //            Point<2, double> pt = domain.getPos(k);

@@ -350,7 +350,6 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests3)
                     0.5*dxpy*Kb*(2*py*(dxpy*py - dypx*py + (dxpz - dzpx)*pz) + 2*px*(dxpy*px - dypx*px + (-dypz + dzpy)*pz));
                 Particles.deleteGhost();
                 Particles.write_frame("Polarinit", ctr,BINARY);
-                return;
 
                 sigma[x][y] =
                     -dxpy*(dxpx + dypy + dzpz)*Ks - dxpz*Kb*py*(dxpz*px - dzpx*px + (dypz - dzpy)*py) +
@@ -463,16 +462,43 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests3)
                 RHS_bulk[y] = -dV[y]+Bulk_Dy(P);
                 RHS_bulk[z] = -dV[z]+Bulk_Dz(P);
                 Particles.ghost_get<8>(SKIP_LABELLING);
+
                 DCPSE_scheme<equations3d3, decltype(Particles)> Solver(Particles);
 
+/*                for (int i = 0 ; i < 300 ; i++)
+                {
+
+                Solver.reset_nodec();
                 ///////////MULTICORE BUG /////////////
 
+                timer t_impose;
+
+                t_impose.start();
                 Solver.impose(Stokes1, bulk, RHS[0], vx);
                 Solver.impose(Stokes2, bulk, RHS[1], vy);
                 Solver.impose(Stokes3, bulk, RHS[2], vz);
                 Solver.impose(V[x], Boundary, 0, vx);
                 Solver.impose(V[y], Boundary, 0, vy);
                 Solver.impose(V[z], Boundary, 0, vx);
+                t_impose.stop();
+                std::cout << "IMPOSE: " << t_impose.getwct() << std::endl;
+
+                }*/
+
+                ///////////MULTICORE BUG /////////////
+
+                timer t_impose;
+
+                t_impose.start();
+                Solver.impose(Stokes1, bulk, RHS[0], vx);
+                Solver.impose(Stokes2, bulk, RHS[1], vy);
+                Solver.impose(Stokes3, bulk, RHS[2], vz);
+                Solver.impose(V[x], Boundary, 0, vx);
+                Solver.impose(V[y], Boundary, 0, vy);
+                Solver.impose(V[z], Boundary, 0, vx);
+                t_impose.stop();
+                std::cout << "IMPOSE: " << t_impose.getwct() << std::endl;
+
                 /* auto &A=Solver.getA(options_solver::STANDARD);
                  A.getMatrixTriplets().save("ATripletes" + std::to_string(n));
                  auto &B=Solver.getB(options_solver::STANDARD);
@@ -493,7 +519,15 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests3)
                 PetscViewerDestroy(&viewer);*/
                 //MatDestroy(&VA); VecDestroy(&Vv);
 
+                timer t_solve;
+                t_solve.start();
                 Solver.solve_with_solver(solverPetsc, V[x], V[y], V[z]);
+                std::cout << "SOLVE: " << t_solve.getwct() << std::endl;
+
+                Particles.deleteGhost();
+                Particles.write("OUT_part");
+                return;
+
                 //Solver.solve(V[x], V[y]);
                 Particles.ghost_get<Velocity>(SKIP_LABELLING);
                 div = -(Dx(V[x]) + Dy(V[y])+Dz(V[z]));
