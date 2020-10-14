@@ -257,9 +257,10 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_subset_suite_tests)
         RHS[x] = dV[x];
         RHS[y] = dV[y];
         while (V_err >= V_err_eps && n <= nmax) {
+            Particles.ghost_get<0>(SKIP_LABELLING);
             RHS_bulk[x] = dV[x] + Bulk_Dx(P);
             RHS_bulk[y] = dV[y] + Bulk_Dy(P);
-
+            Particles.ghost_get<2>(SKIP_LABELLING);
             DCPSE_scheme<equations2d2, decltype(Particles)> Solver(Particles);
             Solver.impose(Stokes1, bulk, RHS[0], vx);
             Solver.impose(Stokes2, bulk, RHS[1], vy);
