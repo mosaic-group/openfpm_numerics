@@ -80,7 +80,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests3)
         int ord2 = 2;
         double sampling_factor = 4.0;
         double sampling_factor2 = 2.4;
-        Ghost<3, double> ghost(rCut);
+        Ghost<3, double> ghost(rCut+spacing/2.0);
         auto &v_cl = create_vcluster();
         /*                                 pol                          V           vort              Ext           Press     strain       stress            Mfield,            RHS             FE     V_t                 dV                dPol     */
         /*                                 0                          1             2               3               4           5             6                7                8                 9     10               11                  12                13l */
@@ -288,10 +288,10 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests3)
         vy.setId(1);
         vz.setId(2);
         timer tt;
-        double V_err_eps = 5e-2;
+        double V_err_eps = 1e-3;
         double V_err = 1, V_err_old;
         int n = 0;
-        int nmax = 20;
+        int nmax = 50;
         int ctr = 0, errctr, Vreset = 0;
         double tim = 0;
         double tf = 1.024;
@@ -332,7 +332,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests3)
                      px*(-dxpz*dypy + dypy*dzpx + dypx*(2*dypz - 3*dzpy) + dxpy*(-dypz + 2*dzpy) + (-2*dxypz + dxzpy + dyzpx)*py + (dxypy - dyypx)*pz));
 
 
-            u[x][x]=dxpx;
+/*            u[x][x]=dxpx;
             u[x][y]=dxpy;
             u[x][z]=dxpz;
             u[y][x]=dypx;
@@ -344,7 +344,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests3)
 
                 Particles.deleteGhost();
                 Particles.write_frame("Polarinit", ctr,BINARY);
-                return;
+                return;*/
 
             sigma[x][x] =
                     -dxpx*(dxpx + dypy + dzpz)*Ks -
@@ -537,10 +537,10 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests3)
                 PetscViewerDestroy(&viewer);*/
                 //MatDestroy(&VA); VecDestroy(&Vv);
 
-                timer t_solve;
-                t_solve.start();
+//                timer t_solve;
+//                t_solve.start();
                 Solver.solve_with_solver(solverPetsc, V[x], V[y], V[z]);
-                std::cout << "SOLVE: " << t_solve.getwct() << std::endl;
+//                std::cout << "SOLVE: " << t_solve.getwct() << std::endl;
 
 /*                Particles.deleteGhost();
                 Particles.write("OUT_part");
@@ -894,9 +894,6 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests3)
             dxqzx=Dx(Pol[z]*Pol[x]);
             dyqzy=Dy(Pol[z]*Pol[y]);
             dzqzz=Dz(Pol[z]*Pol[z]-1/3*(Pol[x]*Pol[x]+Pol[y]*Pol[y]+Pol[z]*Pol[z]));
-
-            return;
-
         }
 
         Particles.deleteGhost();
