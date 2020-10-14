@@ -80,12 +80,12 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests3)
         int ord2 = 2;
         double sampling_factor = 4.0;
         double sampling_factor2 = 2.4;
-        Ghost<3, double> ghost(rCut+spacing/2.0);
+        Ghost<3, double> ghost(rCut+spacing/8.0);
         auto &v_cl = create_vcluster();
         /*                                 pol                          V           vort              Ext           Press     strain       stress            Mfield,            RHS             FE     V_t                 dV                dPol     */
         /*                                 0                          1             2               3               4           5             6                7                8                 9     10               11                  12                13l */
         vector_dist<3, double, aggregate<VectorS<3, double>, VectorS<3, double>, double[3][3], VectorS<3, double>, double, double[3][3], double[3][3], VectorS<3, double>, VectorS<3, double>, double,VectorS<3, double>,VectorS<3, double>,VectorS<3, double>,VectorS<3, double>,VectorS<3, double>,VectorS<3, double>,VectorS<3, double>,double,double>> Particles(0, box, bc, ghost);
-        Particles.setPropNames({"0-Polarization","1-Velocity","2-Vorticity","3-ExternalForce","4-Pressure","5-StrainRate","6-Stress","7-MolecularField","8-VelocityRHS","9-FranckEnergyDensity","10-V_t","11-dV","12-dPol","13-k1","14-k2","15-k3","16-k4","17-div","18-delmu"});
+        Particles.setPropNames({"00-Polarization","01-Velocity","02-Vorticity","03-ExternalForce","04-Pressure","05-StrainRate","06-Stress","07-MolecularField","08-VelocityRHS","09-FranckEnergyDensity","10-V_t","11-dV","12-dPol","13-k1","14-k2","15-k3","16-k4","17-div","18-delmu"});
         double x0, y0, z0, x1, y1, z1;
         x0 = box.getLow(0);
         y0 = box.getLow(1);
@@ -126,6 +126,8 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests3)
         constexpr int Strain_rate = 5;
         constexpr int Stress = 6;
         constexpr int MolField = 7;
+        constexpr int DELMU = 18;
+
         auto Pos = getV<PROP_POS>(Particles);
 
         auto Pol = getV<Polarization>(Particles);
@@ -342,9 +344,9 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests3)
             u[z][y]=dzpy;
             u[z][z]=dzpz;
 
-                Particles.deleteGhost();
-                Particles.write_frame("Polarinit", ctr,BINARY);
-                return;*/
+            Particles.deleteGhost();
+            Particles.write_frame("Polarinit", ctr,BINARY);
+            return;*/
 
             sigma[x][x] =
                     -dxpx*(dxpx + dypy + dzpz)*Ks -
@@ -445,6 +447,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests3)
 
             //Particles.write("PolarI");
             //Velocity Solution n iterations0
+            tt.stop();
             auto Stokes1 = eta * (2*Dxx(V[x]) + Dxy(V[y]) + Dyy(V[x]) + Dxz(V[z]) + Dzz(V[x]));
             auto Stokes2 = eta * (2*Dyy(V[y]) + Dxx(V[y]) + Dxy(V[x]) + Dyz(V[z]) + Dzz(V[y]));
             auto Stokes3 = eta * (2*Dzz(V[z]) + Dxx(V[z]) + Dxz(V[x]) + Dyy(V[z]) + Dyz(V[y]));
@@ -823,7 +826,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests3)
 
             Particles.map();
 
-            Particles.ghost_get<0, ExtForce>();
+            Particles.ghost_get<0, DELMU,ExtForce>();
             indexUpdate(Particles,Boundary, bulk, up, down, left,right,front,back);
             Particles_subset.update(bulk);
             auto Pol_bulk = getV<0>(Particles_subset);

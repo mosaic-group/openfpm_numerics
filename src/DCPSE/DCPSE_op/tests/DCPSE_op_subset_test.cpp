@@ -319,9 +319,9 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_subset_suite_tests)
                 }
             }
             n++;
-            //if (v_cl.rank() == 0) {
+            if (v_cl.rank() == 0) {
                 std::cout << "Rel l2 cgs err in V = " << V_err << " at " << n << std::endl;
-            //}
+            }
         }
 
         Particles.write("PC_subset_lid");
