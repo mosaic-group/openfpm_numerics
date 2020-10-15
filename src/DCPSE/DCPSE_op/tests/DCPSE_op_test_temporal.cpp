@@ -194,9 +194,9 @@ BOOST_AUTO_TEST_SUITE(temporal_test_suite)
         }
 
 
-
+/*
         TdxVx=Dx(sV[x]);
-        TT[0][0] = Dx(sV[x]);
+        TT[0][0] = Dx(sV[x]);*/
 
     }
 

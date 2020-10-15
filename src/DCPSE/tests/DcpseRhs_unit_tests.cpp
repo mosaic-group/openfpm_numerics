@@ -68,7 +68,7 @@ BOOST_AUTO_TEST_SUITE(DcpseRhs_tests)
         BOOST_REQUIRE_CLOSE(b(6), Dmb.getElement(6).evaluate(p0), 1e-16);
         BOOST_REQUIRE_CLOSE(b(7), Dmb.getElement(7).evaluate(p0), 1e-16);
         BOOST_REQUIRE_CLOSE(b(8), Dmb.getElement(8).evaluate(p0), 1e-16);
-        BOOST_REQUIRE_CLOSE(b(9), Dmb.getElement(9).evaluate(p0), 1e-16);
+        //BOOST_REQUIRE_CLOSE(b(9), Dmb.getElement(9).evaluate(p0), 1e-16);
     }
 
     BOOST_AUTO_TEST_CASE(DcpseRhs_laplacian_test)
@@ -96,6 +96,16 @@ BOOST_AUTO_TEST_SUITE(DcpseRhs_tests)
         BOOST_REQUIRE_CLOSE(b(7), Dmb.getElement(7).evaluate(p0), 1e-16);
         BOOST_REQUIRE_CLOSE(b(8), Dmb.getElement(8).evaluate(p0), 1e-16);
         BOOST_REQUIRE_CLOSE(b(9), Dmb.getElement(9).evaluate(p0), 1e-16);
+        BOOST_REQUIRE_CLOSE(b(10), Dmb.getElement(10).evaluate(p0), 1e-16);
+        BOOST_REQUIRE_CLOSE(b(11), Dmb.getElement(11).evaluate(p0), 1e-16);
+        BOOST_REQUIRE_CLOSE(b(12), Dmb.getElement(12).evaluate(p0), 1e-16);
+        BOOST_REQUIRE_CLOSE(b(13), Dmb.getElement(13).evaluate(p0), 1e-16);
+        BOOST_REQUIRE_CLOSE(b(14), Dmb.getElement(14).evaluate(p0), 1e-16);
+        BOOST_REQUIRE_CLOSE(b(15), Dmb.getElement(15).evaluate(p0), 1e-16);
+        BOOST_REQUIRE_CLOSE(b(16), Dmb.getElement(16).evaluate(p0), 1e-16);
+        BOOST_REQUIRE_CLOSE(b(17), Dmb.getElement(17).evaluate(p0), 1e-16);
+        BOOST_REQUIRE_CLOSE(b(18), Dmb.getElement(18).evaluate(p0), 1e-16);
+        BOOST_REQUIRE_CLOSE(b(19), Dmb.getElement(19).evaluate(p0), 1e-16);
     }
 
 #endif // HAVE_EIGEN
