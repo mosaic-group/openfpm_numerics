@@ -150,6 +150,14 @@ install(FILES interpolation/interpolation.hpp
       	      interpolation/z_spline.hpp
       	      DESTINATION openfpm_numerics/include/interpolation )
 
+install(FILES level_set/redistancing_Sussman/ComputeGradient.hpp
+	      level_set/redistancing_Sussman/GaussFilter.hpp
+	      level_set/redistancing_Sussman/HelpFunctions.hpp
+	      level_set/redistancing_Sussman/HelpFunctionsForGrid.hpp
+	      level_set/redistancing_Sussman/NarrowBand.hpp
+	      level_set/redistancing_Sussman/RedistancingSussman.hpp
+	      DESTINATION openfpm_numerics/include/level_set/redistancing_Sussman)
+
 install(FILES DMatrix/EMatrix.hpp
 	DESTINATION openfpm_numerics/include/DMatrix )
 
