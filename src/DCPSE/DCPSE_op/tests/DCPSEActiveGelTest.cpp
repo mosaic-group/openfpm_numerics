@@ -838,6 +838,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
             }
 
             tim += dt;
+            return;
         }
 
         Particles.deleteGhost();
@@ -1692,6 +1693,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
             }
 
             tim += dt;
+            return;
         }
 
         Particles.deleteGhost();
@@ -2525,6 +2527,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
             std::cout << "Time step " << ctr - 1 << " : " << tim << " over." << std::endl;
             tim += dt;
             std::cout << "----------------------------------------------------------" << std::endl;
+            return;
         }
         Particles.deleteGhost();
         tt2.stop();

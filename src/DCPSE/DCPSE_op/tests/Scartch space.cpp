@@ -1951,6 +1951,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
             std::cout << "----------------------------------------------------------" << std::endl;
             if (i % 10 == 0)
                 Particles.write_frame("Polar", i);
+            return;
         }
         Particles.deleteGhost();
         Particles.write_frame("Polar", n + 1);
@@ -2310,7 +2311,8 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
 
             std::cout << "Stokes Solved in " << tt.getwct() << " seconds." << std::endl;
             std::cout << "----------------------------------------------------------" << std::endl;
-            Particles.write("Polar_decouple");
+            //Particles.write("Polar_decouple");
+            return;
             tim += dt;
         }
 

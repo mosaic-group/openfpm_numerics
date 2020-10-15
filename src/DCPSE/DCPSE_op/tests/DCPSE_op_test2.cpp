@@ -244,6 +244,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests2)
             sum2=sqrt(sum2);
             V_t=V;
             std::cout << "Rel l2 cgs err at "<<i<<"= " <<sum/sum2<< std::endl;
+            return;
             if(i%5==0)
                 Particles.write_frame("Stokes",i);
         }
@@ -639,6 +640,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests2)
             sum2=sqrt(sum2);
             V_t=V;
             std::cout << "Rel l2 cgs err at "<<i<<"= " <<sum/sum2<< std::endl;
+            return;
             if(i%5==0)
             Particles.write_frame("Stokes",i);
         }
@@ -771,7 +773,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests2)
         Vtemp = V + (dV - dt*Grad(P));
         V = Vtemp;
         divV=Div(V);
-        Particles.write_frame("Re100-3e-3-Lid",0);
+        //Particles.write_frame("Re100-3e-3-Lid",0);
         for(int i=1; i<=n ;i++)
         {   dV=dt*(nu*Lap(V)-Adv(V,V));
             RHS=1/dt*Div(dV);
@@ -808,6 +810,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests2)
                 Particles.getProp<1>(p)[0] =  0;
                 Particles.getProp<1>(p)[1] =  0;
             }
+            return;
             //if (i%10==0)
             Particles.write_frame("Re100-3e-3-Lid",i);
             std::cout<<i<<std::endl;

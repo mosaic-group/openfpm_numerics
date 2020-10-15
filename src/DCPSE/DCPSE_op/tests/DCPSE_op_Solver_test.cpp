@@ -1507,7 +1507,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
             Solver.impose(D_x, r_p, 0);
             Solver.impose(P, ref_p, 0);
             Solver.solve(P);
-            std::cout<<"Poisson Solved"<<std::endl;
+            //std::cout<<"Poisson Solved"<<std::endl;
             Vtemp=dV-dt*Grad(P);
             V=Vtemp;
             for(int j=0;j<up_p.size();j++)
@@ -1544,10 +1544,11 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
             std::cout<<"Velocity updated"<<std::endl;
             Particles.write_frame("Re1000-1e-4-Lid",i);
             std::cout<<i<<std::endl;
+            return;
         }
     }
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    BOOST_AUTO_TEST_CASE(dcpse_Lid_sf) {
+/*    BOOST_AUTO_TEST_CASE(dcpse_Lid_sf) {
         const size_t sz[2] = {31,31};
         Box<2, double> box({0, 0}, {10,10});
         size_t bc[2] = {NON_PERIODIC, NON_PERIODIC};
@@ -1731,9 +1732,9 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
         }
 
 
-    }
+    }*/
 
-    BOOST_AUTO_TEST_CASE(convertFile)
+    /*BOOST_AUTO_TEST_CASE(convertFile)
     {
         double boxsize = 10;
         Box<2, double> box({0, 0}, {boxsize, boxsize});
@@ -1748,7 +1749,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
             Particles.load("Polar_" + std::to_string(i));
             Particles.write("Polar_" + std::to_string(i));
         }
-    }
+    }*/
 
     BOOST_AUTO_TEST_CASE(Active2DConv) {
         timer tt2;
