@@ -2587,6 +2587,8 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
             }
 
             tim += dt;
+
+            return;//Pipeline STOP
         }
 
         Particles.deleteGhost();
