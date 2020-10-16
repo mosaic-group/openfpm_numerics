@@ -1068,7 +1068,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
             ++it2;
         }
 
-        DCPSE_scheme<equations2d1,decltype(domain)> Solver( domain,options_solver::LAGRANGE_MULTIPLIER);
+        DCPSE_scheme<equations2d1,decltype(domain)> Solver(domain,options_solver::LAGRANGE_MULTIPLIER);
         auto Poisson = -Lap(v);
         auto D_x = Dx(v);
         auto D_y = Dy(v);
@@ -1105,8 +1105,8 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
         Box<2, double> box({0, 0}, {1, 1});
         size_t bc[2] = {NON_PERIODIC, NON_PERIODIC};
         double spacing = box.getHigh(0) / (sz[0] - 1);
-        Ghost<2, double> ghost(spacing * 3);
-        double rCut = 2 * spacing;
+        double rCut = 3.1 * spacing;
+        Ghost<2, double> ghost(rCut);
         BOOST_TEST_MESSAGE("Init vector_dist...");
 
         vector_dist<2, double, aggregate<VectorS<2, double>,VectorS<2, double>,VectorS<2, double>,VectorS<2, double>,VectorS<2, double>,VectorS<2, double>>> domain(0, box, bc, ghost);
@@ -1175,6 +1175,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
         VTKWriter<openfpm::vector<Box<2, double>>, VECTOR_BOX> vtk_box;
         vtk_box.add(boxes);
         vtk_box.write("vtk_box.vtk");
+        domain.write("Slice_anasol");
 
 
         auto it2 = domain.getDomainIterator();
@@ -1236,7 +1237,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
         vx.setId(0);
         vy.setId(1);
 
-        DCPSE_scheme<equations2d1,decltype(domain)> Solver( domain);
+        DCPSE_scheme<equations2d2,decltype(domain)> Solver( domain);
         auto Poisson0 = Lap(v[0]);
         auto Poisson1 = Lap(v[1]);
         //auto D_x = Dx(v[1]);

@@ -63,9 +63,9 @@ BOOST_AUTO_TEST_SUITE(temporal_test_suite)
 		constexpr int sScalar = 0;
 		constexpr int sVector = 1;
 		constexpr int sTensor = 2;
-		constexpr int dScalar = 0;
-		constexpr int dVector = 1;
-		constexpr int dTensor = 2;
+		constexpr int dScalar = 3;
+		constexpr int dVector = 4;
+		constexpr int dTensor = 5;
 		auto Pos = getV<PROP_POS>(Particles);
 		auto sS = getV<sScalar>(Particles);
 		auto sV = getV<sVector>(Particles);
@@ -154,6 +154,7 @@ BOOST_AUTO_TEST_SUITE(temporal_test_suite)
         }
 
         TV=sV;
+        dV=TV;
 
         {
             auto it3 = Particles.getDomainIterator();
@@ -173,9 +174,8 @@ BOOST_AUTO_TEST_SUITE(temporal_test_suite)
         }
 
         TV=0.5*sV+sV;
+        dV=TV;
         //Pol_bulk = dPol + (0.5 * dt) * k1;
-
-
         {
             auto it3 = Particles.getDomainIterator();
 
@@ -183,10 +183,16 @@ BOOST_AUTO_TEST_SUITE(temporal_test_suite)
             while (it3.isNext())
             {
                 auto key = it3.get();
+                double x1=Particles.template getProp<sVector>(key)[0];
+                double y1=Particles.template getProp<dVector>(key)[0];
+                double x2=Particles.template getProp<sVector>(key)[1];
+                double y2=Particles.template getProp<dVector>(key)[1];
+                double x3=Particles.template getProp<sVector>(key)[2];
+                double y3=Particles.template getProp<dVector>(key)[2];
 
-                match &= Particles.template getProp<sVector>(key)[0] == 2.5*Particles.template getProp<dVector>(key)[0];
-                match &= Particles.template getProp<sVector>(key)[1] == 2.5*Particles.template getProp<dVector>(key)[1];
-                match &= Particles.template getProp<sVector>(key)[2] == 2.5*Particles.template getProp<dVector>(key)[2];
+                match &= 1.5*Particles.template getProp<sVector>(key)[0] == Particles.template getProp<dVector>(key)[0];
+                match &= 1.5*Particles.template getProp<sVector>(key)[1] == Particles.template getProp<dVector>(key)[1];
+                match &= 1.5*Particles.template getProp<sVector>(key)[2] == Particles.template getProp<dVector>(key)[2];
 
                 ++it3;
             }

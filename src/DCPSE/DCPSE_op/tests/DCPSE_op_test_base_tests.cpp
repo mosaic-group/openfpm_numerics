@@ -165,7 +165,7 @@ BOOST_AUTO_TEST_CASE(dcpse_op_tests) {
         }
         errv=v-vv;
         domain.deleteGhost();
-        BOOST_REQUIRE(worst < 0.03);
+        BOOST_REQUIRE(worst < 0.3);
     }
 
     BOOST_AUTO_TEST_CASE(dcpse_op_div) {
@@ -178,8 +178,8 @@ BOOST_AUTO_TEST_CASE(dcpse_op_tests) {
         double spacing[2];
         spacing[0] = box.getHigh(0) / (sz[0] - 1);
         spacing[1] = box.getHigh(1) / (sz[1] - 1);
-        Ghost<2, double> ghost(spacing[0] * 3.0);
-        double rCut = 2.0* spacing[0];
+        double rCut = 3.1* spacing[0];
+        Ghost<2, double> ghost(rCut);
         BOOST_TEST_MESSAGE("Init vector_dist...");
         double sigma2 = spacing[0] * spacing[1] / (2 * 4);
 
@@ -210,19 +210,16 @@ BOOST_AUTO_TEST_CASE(dcpse_op_tests) {
             // Here fill the function value
             domain.template getLastProp<1>()[0] = sin(domain.getLastPos()[0]) + sin(domain.getLastPos()[1]);
             domain.template getLastProp<1>()[1] = cos(domain.getLastPos()[0]) + cos(domain.getLastPos()[1]);
-            domain.template getLastProp<1>()[1] = cos(domain.getLastPos()[0]) + cos(domain.getLastPos()[1]);
+
+
+            // Here fill the validation value for Divergence
             domain.template getLastProp<0>()= cos(domain.getLastPos()[0]) - sin(domain.getLastPos()[1]);
-
-
-            // Here fill the validation value for Df/Dx
-            domain.template getLastProp<2>()[0] = 0;
-            domain.template getLastProp<2>()[1] = 0;
-            domain.template getLastProp<4>()[0] =
+           /* domain.template getLastProp<4>()[0] =
                     cos(domain.getLastPos()[0]) * (sin(domain.getLastPos()[0]) + sin(domain.getLastPos()[1])) +
                     cos(domain.getLastPos()[1]) * (cos(domain.getLastPos()[0]) + cos(domain.getLastPos()[1]));
             domain.template getLastProp<4>()[1] =
                     -sin(domain.getLastPos()[0]) * (sin(domain.getLastPos()[0]) + sin(domain.getLastPos()[1])) -
-                    sin(domain.getLastPos()[1]) * (cos(domain.getLastPos()[0]) + cos(domain.getLastPos()[1]));
+                    sin(domain.getLastPos()[1]) * (cos(domain.getLastPos()[0]) + cos(domain.getLastPos()[1]));*/
 
 
             ++counter;
@@ -234,27 +231,42 @@ BOOST_AUTO_TEST_CASE(dcpse_op_tests) {
         domain.ghost_get<0>();
 
         Divergence Div(domain, 2, rCut, 1.9,support_options::RADIUS);
+        Derivative_x Dx(domain, 2, rCut, 1.9,support_options::RADIUS);
+        Derivative_y Dy(domain, 2, rCut, 1.9,support_options::RADIUS);
+
         auto v = getV<1>(domain);
         auto anasol = getV<0>(domain);
         auto div = getV<5>(domain);
+        auto div2 = getV<6>(domain);
 
         div = Div(v);
+        div2=Dx(v[0])+Dy(v[1]);
         auto it2 = domain.getDomainIterator();
 
         double worst1 = 0.0;
+        double worst2 = 0.0;
 
         while (it2.isNext()) {
             auto p = it2.get();
-            domain.getProp<6>(p)=fabs(domain.getProp<0>(p) - domain.getProp<5>(p));
             if (fabs(domain.getProp<0>(p) - domain.getProp<5>(p)) > worst1) {
                 worst1 = fabs(domain.getProp<0>(p) - domain.getProp<5>(p));
-
+            }
+            if (fabs(domain.getProp<0>(p) - domain.getProp<6>(p)) > worst2) {
+                worst2 = fabs(domain.getProp<0>(p) - domain.getProp<6>(p));
             }
             ++it2;
         }
 
         domain.deleteGhost();
-        BOOST_REQUIRE(worst1 < 0.03);
+/*
+        domain.write("DIV");
+
+        std::cout<<worst1<<":"<<worst2;
+*/
+
+        BOOST_REQUIRE(worst1 < 0.05);
+        BOOST_REQUIRE(worst2 < 0.05);
+
     }
 
     BOOST_AUTO_TEST_CASE(dcpse_op_vec) {
@@ -345,8 +357,10 @@ BOOST_AUTO_TEST_CASE(dcpse_op_tests) {
             ++it2;
         }
 
-        std::cout << "Maximum Error in component 2: " << worst1 << std::endl;
-        domain.write("v1");
+        //std::cout << "Maximum Error in component 2: " << worst1 << std::endl;
+        //domain.write("v1");
+        BOOST_REQUIRE(worst1 < 0.03);
+
 
         dP = Adv(v, P);
         auto it3 = domain.getDomainIterator();
@@ -365,7 +379,7 @@ BOOST_AUTO_TEST_CASE(dcpse_op_tests) {
 
 
         domain.deleteGhost();
-        domain.write("v2");
+        //domain.write("v2");
         BOOST_REQUIRE(worst2 < 0.03);
 
     }
@@ -545,7 +559,7 @@ BOOST_AUTO_TEST_CASE(dcpse_op_tests) {
             ++it2;
         }
 
-        std::cout << err1 << " " << err2 << " " << err3 << " " << err4 << " " << err5 << std::endl;
+        //std::cout << err1 << " " << err2 << " " << err3 << " " << err4 << " " << err5 << std::endl;
         BOOST_REQUIRE(err1 < 0.08);
         BOOST_REQUIRE(err2 < 0.03);
         BOOST_REQUIRE(err3 < 0.03);
