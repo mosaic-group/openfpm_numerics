@@ -442,6 +442,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests2)
             sum2=sqrt(sum2);
             V_t=V;
             std::cout << "eps RMS=" <<sum1/sum2<< std::endl;
+            return;
             Particles.write_frame("Stokes",i);
 
         }
