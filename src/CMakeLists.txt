@@ -143,6 +143,8 @@ install(FILES Operators/Vector/vector_dist_operators_extensions.hpp
 install(FILES Draw/DrawParticles.hpp 
       	      Draw/PointIterator.hpp 
       	      Draw/PointIteratorSkin.hpp
+	      Draw/DrawCircle.hpp
+	      Draw/DrawSphere.hpp
       	      DESTINATION openfpm_numerics/include/Draw )
 
 install(FILES interpolation/interpolation.hpp 
