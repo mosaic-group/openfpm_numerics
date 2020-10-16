@@ -348,9 +348,10 @@ BOOST_AUTO_TEST_SUITE(Dcpse_tests)
         spacing[0] = 1.0 / (sz[0] - 1);
         spacing[1] = 1.0 / (sz[1] - 1);
         spacing[2] = 1.0 / (sz[2] - 1);
-        Ghost<DIM, double> ghost(0.1);
 
         double rCut = 2 * spacing[0];
+        Ghost<DIM, double> ghost(rCut);
+
 
         BOOST_TEST_MESSAGE("Init vector_dist...");
         vector_dist<DIM, double, aggregate<double, double, double>> domain(0, box, bc, ghost);
@@ -378,7 +379,7 @@ BOOST_AUTO_TEST_SUITE(Dcpse_tests)
                 // Here fill the function value
                 domain.template getLastProp<0>() = x * x * sin(z);
                 // Here fill the validation value for Df/Dx
-                domain.template getLastProp<2>() = -2 * sin(z);
+                domain.template getLastProp<2>() = -2*sin(z);
 
                 ++counter;
                 ++it;
@@ -390,7 +391,7 @@ BOOST_AUTO_TEST_SUITE(Dcpse_tests)
         // Setup finished, actual test below...
         unsigned int r = 2;
         BOOST_TEST_MESSAGE("DCPSE init & compute coefficients...");
-        Dcpse<DIM, vector_dist<DIM, double, aggregate<double, double, double>> > dcpse(domain, Point<DIM, unsigned int>({2, 0, 2}), r, rCut);
+        Dcpse<DIM, vector_dist<DIM, double, aggregate<double, double, double>> > dcpse(domain, Point<DIM, unsigned int>({2, 0, 2}), r, rCut,2.5);
         BOOST_TEST_MESSAGE("DCPSE compute diff operator...");
         dcpse.template computeDifferentialOperator<0, 1>(domain);
 
