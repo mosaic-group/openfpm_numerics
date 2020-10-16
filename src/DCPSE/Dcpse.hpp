@@ -392,11 +392,11 @@ public:
         expr_type fxp = sign * o1.value(key)[i];
         size_t kerOff = kerOffsets.get(xpK);
         auto & keys = support.getKeys();
-        for (int i = 0 ; i < keys.size() ; i++)
+        for (int j = 0 ; j < keys.size() ; j++)
         {
-        	size_t xqK = keys[i];
+        	size_t xqK = keys[j];
             expr_type fxq = o1.value(vect_dist_key_dx(xqK))[i];
-            Dfxp = Dfxp + (fxq + fxp) * calcKernels.get(kerOff+i);
+            Dfxp = Dfxp + (fxq + fxp) * calcKernels.get(kerOff+j);
         }
         Dfxp = Dfxp * epsInvPow;
         //
