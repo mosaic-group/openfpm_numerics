@@ -146,7 +146,6 @@ BOOST_AUTO_TEST_SUITE(Dcpse_tests)
         double spacing[2];
         spacing[0] = 1.0 / (sz[0] - 1);
         spacing[1] = 1.0 / (sz[1] - 1);
-        Ghost<2, double> ghost(0.1);
 
         double sigma2 = spacing[0] * spacing[1] / (2 * 4);
         std::cout
@@ -154,6 +153,8 @@ BOOST_AUTO_TEST_SUITE(Dcpse_tests)
                 << ", spacing[0] = " << spacing[0]
                 << std::endl;
         double rCut = 2 * (spacing[0] + sqrt(sigma2));
+        Ghost<2, double> ghost(rCut);
+
 
         BOOST_TEST_MESSAGE("Init vector_dist...");
         vector_dist<2, double, aggregate<double, double, double>> domain(0, box, bc, ghost);
@@ -182,11 +183,11 @@ BOOST_AUTO_TEST_SUITE(Dcpse_tests)
                 double y = k1 * spacing[1];
                 domain.getLastPos()[1] = y + gaussian(rng);
                 // Here fill the function value
-                domain.template getLastProp<0>() = sin(x);
+                domain.template getLastProp<0>() = sin(domain.getLastPos()[0]);
 //            domain.template getLastProp<0>() = x * x;
 //            domain.template getLastProp<0>() = x;
                 // Here fill the validation value for Df/Dx
-                domain.template getLastProp<2>() = cos(x);
+                domain.template getLastProp<2>() = cos(domain.getLastPos()[0]);
 //            domain.template getLastProp<2>() = 2 * x;
 //            domain.template getLastProp<2>() = 1;
 
