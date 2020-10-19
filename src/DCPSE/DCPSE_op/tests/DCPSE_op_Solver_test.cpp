@@ -854,7 +854,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
         Derivative_y Dy(domain, 2, rCut,2);
         Laplacian Lap(domain, 2, rCut, 3);
 
-        DCPSE_scheme<equations2d1,decltype(domain)> Solver( domain);
+        DCPSE_scheme<equations2d1,decltype(domain)> Solver(domain);
 
         openfpm::vector<aggregate<int>> bulk;
         openfpm::vector<aggregate<int>> up_p;
