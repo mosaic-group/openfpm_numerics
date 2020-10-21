@@ -21,6 +21,8 @@
 //template<typename T>
 //struct Debug;
 
+
+
 BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests3)
     BOOST_AUTO_TEST_CASE(dcpse_op_vec3d) {
 //  int rank;
@@ -99,6 +101,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests3)
 //        typedef boost::mpl::int_<std::is_fundamental<point_expression_op<Point<2U, double>, point_expression<double>, Point<2U, double>, 3>>::value>::blabla blabla;
 //        std::is_fundamental<decltype(o1.value(key))>
 
+        domain.ghost_get<1>();
         dv = Adv(v, v);
         auto it2 = domain.getDomainIterator();
 
@@ -142,7 +145,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests3)
 
     }
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    BOOST_AUTO_TEST_CASE(dcpse_poisson_Robin_anal3d) {
+/*    BOOST_AUTO_TEST_CASE(dcpse_poisson_Robin_anal3d) {
 //  int rank;
 //  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
@@ -285,9 +288,9 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests3)
 
 
 
-    }
+    }*/
 
-    BOOST_AUTO_TEST_CASE(stokes_3d_petscP) {
+/*    BOOST_AUTO_TEST_CASE(stokes_3d_petscP) {
         size_t grd_sz=21;
         const size_t sz[3] = {grd_sz,grd_sz,grd_sz};
         Box<3, double> box({0, 0,0}, {1,1,1});
@@ -578,10 +581,10 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests3)
             return;
             Particles.write_frame("Stokes3d",i);
         }
-    }
+    }*/
 
 
-    BOOST_AUTO_TEST_CASE(stokes_3d_petsc) {
+/*    BOOST_AUTO_TEST_CASE(stokes_3d_petsc) {
         size_t grd_sz=21;
         const size_t sz[3] = {grd_sz,grd_sz,grd_sz};
         Box<3, double> box({0, 0,0}, {1,1,1});
@@ -1101,7 +1104,9 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests3)
             Particles.write_frame("Stokes3d",i);
 
         }
-    }
+    }*/
+
+#if 0
 
     BOOST_AUTO_TEST_CASE(stokes_3d_anal_petsc) {
         /*
@@ -1376,6 +1381,8 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests3)
             Particles.write_frame("Stokes3d",i);
         }
     }
+
+#endif
 
 BOOST_AUTO_TEST_SUITE_END()
 

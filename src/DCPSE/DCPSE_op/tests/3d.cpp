@@ -58,9 +58,10 @@ void indexUpdate(
 
 }
 
-
-
 BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests3)
+
+#if 0
+
     BOOST_AUTO_TEST_CASE(Active3dSimple) {
         timer tt2;
         tt2.start();
@@ -926,6 +927,6 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests3)
         }
     }
 
-
+#endif
 
 BOOST_AUTO_TEST_SUITE_END()
