@@ -934,6 +934,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
         Solver.impose(v, l_p, 0);
         Solver.impose(v, r_p, 0);
         Solver.solve(sol);
+        domain.ghost_get<2>();
         anasol=Lap(sol);
         double worst1 = 0.0;
 
