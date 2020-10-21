@@ -159,6 +159,7 @@ BOOST_AUTO_TEST_CASE(solver_check_diagonal)
         A.write("Lap_Matrix");*/
 
         Solver.solve(sol);
+
         auto l2error = L2Error(v, sol);
         auto linferror = LInfError(v, sol);
 
