@@ -37,7 +37,6 @@ add_executable(numerics ${OPENFPM_INIT_FILE} ${CUDA_SOURCES}
 						../../openfpm_devices/src/memory/CudaMemory.cu  
 						../../openfpm_devices/src/memory/HeapMemory.cpp 
 						../../openfpm_devices/src/memory/PtrMemory.cpp 
-						../../openfpm_devices/src/Memleak_check.cpp
 						../../src/lib/pdata.cpp)
 
 ###########################
@@ -188,12 +187,22 @@ install(FILES DCPSE/DCPSE_op/DCPSE_op.hpp
 install(FILES Draw/DrawParticles.hpp 
       	      Draw/PointIterator.hpp 
       	      Draw/PointIteratorSkin.hpp
+	      Draw/DrawCircle.hpp
+	      Draw/DrawSphere.hpp
       	      DESTINATION openfpm_numerics/include/Draw )
 
 install(FILES interpolation/interpolation.hpp 
       	      interpolation/mp4_kernel.hpp 
       	      interpolation/z_spline.hpp
       	      DESTINATION openfpm_numerics/include/interpolation )
+
+install(FILES level_set/redistancing_Sussman/ComputeGradient.hpp
+	      level_set/redistancing_Sussman/GaussFilter.hpp
+	      level_set/redistancing_Sussman/HelpFunctions.hpp
+	      level_set/redistancing_Sussman/HelpFunctionsForGrid.hpp
+	      level_set/redistancing_Sussman/NarrowBand.hpp
+	      level_set/redistancing_Sussman/RedistancingSussman.hpp
+	      DESTINATION openfpm_numerics/include/level_set/redistancing_Sussman)
 
 install(FILES DMatrix/EMatrix.hpp
 	DESTINATION openfpm_numerics/include/DMatrix )
