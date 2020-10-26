@@ -736,29 +736,19 @@ public:
                 trpl.last().row() = p_map.template getProp<0>(key) * Sys_eqs::nvar + id;
                 trpl.last().col() = it->first;
                 trpl.last().value() = it->second;
-
                 if (trpl.last().row() == trpl.last().col())
-                    is_diag = true;
-
-/*                if (trpl.last().col() == 1323)
-                {
-                    int debug = 0;
-                    debug++;
-                }*/
-
-//				std::cout << "(" << trpl.last().row() << "," << trpl.last().col() << "," << trpl.last().value() << ")" << "\n";
+                {is_diag = true;}
             }
 
             // If does not have a diagonal entry put it to zero
-            if (is_diag == false) {
+            if (is_diag == false)
+            {
                 trpl.add();
                 trpl.last().row() = p_map.template getProp<0>(key) * Sys_eqs::nvar + id;
                 trpl.last().col() = p_map.template getProp<0>(key) * Sys_eqs::nvar + id;
                 trpl.last().value() = 0.0;
             }
             b(p_map.template getProp<0>(key) * Sys_eqs::nvar + id) = num.get(key);
-//            std::cout << "b=(" << p_map.template getProp<0>(key)*Sys_eqs::nvar + id << "," << num.get(key)<<")" <<"\n";
-
             cols.clear();
 
             // if SE_CLASS1 is defined check the position
