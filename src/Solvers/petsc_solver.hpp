@@ -416,6 +416,7 @@ class petsc_solver<double>
 		}
 	}
 
+
 	/*! \brief It convert the KSP type into a human read-able string
 	 *
 	 * \param solv solver (short form)
@@ -821,6 +822,27 @@ public:
 //		solvs.add(std::string(KSPGCR));
 
 		setSolver(KSPGMRES);
+	}
+
+	/*! \brief Print the preconditioner used by the solver
+	 *
+	 *
+	 */
+	void print_preconditioner()
+	{
+		auto & v_cl = create_vcluster();
+
+		if (v_cl.getProcessUnitID() == 0)
+		{
+			PC pc;
+			PCType type_pc;
+
+			// We set the pre-conditioner
+			PETSC_SAFE_CALL(KSPGetPC(ksp,&pc));
+			PETSC_SAFE_CALL(PCGetType(pc,&type_pc));
+
+			std::cout << "The precoditioner is: " << type_pc << std::endl;
+		}
 	}
 
 	/*! \brief Add a test solver

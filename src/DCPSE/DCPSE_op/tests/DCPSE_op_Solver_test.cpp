@@ -479,11 +479,12 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
 
         petsc_solver<double> solver;
 
-
-
+        //solver.setPreconditioner(PCBJACOBI);
         solver.setRestart(500);
 
         Solver.solve_with_solver(solver,sol);
+
+        solver.print_preconditioner();
 
         domain.ghost_get<2>();
 
@@ -925,6 +926,8 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
             ++it2;
         }
 
+        petsc_solver<double> pet_sol;
+        pet_sol.setPreconditioner(PCNONE);
 
         auto Poisson = Lap(v);
         auto D_y = Dy(v);
@@ -933,7 +936,8 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
         Solver.impose(-D_y, dw_p, prop_id<1>());
         Solver.impose(v, l_p, 0);
         Solver.impose(v, r_p, 0);
-        Solver.solve(sol);
+        Solver.solve_with_solver(pet_sol,sol);
+
         anasol=Lap(sol);
         double worst1 = 0.0;
 
@@ -947,6 +951,8 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
         }
         //Auto Error
         BOOST_REQUIRE(worst1 < 1.0);
+
+        std::cout << "WORST: " << worst1 << std::endl;
 
         domain.write("Mixed");
     }
