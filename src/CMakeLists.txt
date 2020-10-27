@@ -37,7 +37,6 @@ add_executable(numerics ${OPENFPM_INIT_FILE} ${CUDA_SOURCES}
 						../../openfpm_devices/src/memory/CudaMemory.cu  
 						../../openfpm_devices/src/memory/HeapMemory.cpp 
 						../../openfpm_devices/src/memory/PtrMemory.cpp 
-						../../openfpm_devices/src/Memleak_check.cpp
 						../../src/lib/pdata.cpp)
 
 ###########################
