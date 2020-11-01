@@ -209,7 +209,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests_paper)
         Derivative_y Bulk_Dy(Particles_bulk, 2, rCut,sampling_factor, support_options::RADIUS);
         Laplacian Bulk_Lap(Particles_bulk, 2, rCut,sampling_factor, support_options::RADIUS);
 
-        int n = 0, nmax = 50, ctr = 0, errctr=1, Vreset = 0;
+        int n = 0, nmax = 300, ctr = 0, errctr=1, Vreset = 0;
         double V_err=1;
         if (Vreset == 1) {
             P_bulk = 0;
@@ -221,7 +221,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests_paper)
         vx.setId(0);
         vy.setId(1);
         double Re=100;
-        double sum, sum1, sum_k,V_err_eps=1e-3,V_err_old;
+        double sum, sum1, sum_k,V_err_eps=1e-5,V_err_old;
         auto StokesX=V[x]*Dx(V_star[x])-(1.0/Re)*(Dxx(V_star[x])+Dyy(V_star[x]));
         auto StokesY=V[y]*Dy(V_star[y])-(1.0/Re)*(Dxx(V_star[y])+Dyy(V_star[y]));
 /*
