@@ -45,7 +45,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests_paper)
         0.0000,0.00000*/
         constexpr int x = 0;
         constexpr int y = 1;
-        size_t gd_sz = 256;
+        size_t gd_sz = 161;
         const size_t sz[2] = {gd_sz,gd_sz};
         Box<2, double> box({0, 0}, {1,1});
         size_t bc[2] = {NON_PERIODIC, NON_PERIODIC};
@@ -269,14 +269,14 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests_paper)
             SolverH.impose(H, l_p,0);
             SolverH.impose(H, r_p,0);
             SolverH.impose(H, dw_p,0);*/
-            SolverH.impose(Dy(H), up_p1,0);
-             SolverH.impose(Dx(H), l_p1,0);
-             SolverH.impose(Dx(H), r_p1,0);
-             SolverH.impose(Dy(H), dw_p1,0);
-             SolverH.impose(-Dx(H) + Dy(H), corner_ul, 0);
+            SolverH.impose(Dy(H), up_p,0);
+             SolverH.impose(Dx(H), l_p,0);
+             SolverH.impose(Dx(H), r_p,0);
+             SolverH.impose(Dy(H), dw_p,0);
+             /*SolverH.impose(-Dx(H) + Dy(H), corner_ul, 0);
              SolverH.impose(Dx(H) + Dy(H), corner_ur, 0);
              SolverH.impose(-Dx(H) - Dy(H), corner_dl, 0);
-             SolverH.impose(Dx(H) - Dy(H), corner_dr, 0);
+             SolverH.impose(Dx(H) - Dy(H), corner_dr, 0);*/
             //SolverH.solve_with_solver(solverPetsc2,H);
             SolverH.solve(H);
             Particles.ghost_get<6>(SKIP_LABELLING);
@@ -307,7 +307,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests_paper)
             v_cl.execute();
             V_err_old = V_err;
             V_err = sum / sum1;
-/*            if (V_err > V_err_old || abs(V_err_old - V_err) < 1e-8) {
+            if (V_err > V_err_old || abs(V_err_old - V_err) < 1e-8) {
                 errctr++;
                 //alpha_P -= 0.1;
             } else {
@@ -321,7 +321,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests_paper)
                 } else {
                     Vreset = 0;
                 }
-            }*/
+            }
             n++;
             if (v_cl.rank() == 0) {
                 std::cout << "Rel l2 cgs err in V = " << V_err << " at " << n << std::endl;
