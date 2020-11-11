@@ -1194,7 +1194,7 @@ public:
         p.get(0) = 1;
         p.get(1) = 1;
 
-        dcpse = new Dcpse<particles_type::dims,particles_type>(parts,p, ord, rCut,dcpse_oversampling_factor, opt);
+        dcpse = new Dcpse<particles_type::dims,particles_type>(parts,p, ord, rCut,oversampling_factor, opt);
 
         Dcpse<particles_type::dims,particles_type> * dcpse_ptr = (Dcpse<particles_type::dims,particles_type> *)dcpse;
 
@@ -1258,7 +1258,7 @@ public:
         p.get(1) = 1;
         p.get(2) = 1;
 
-        dcpse = new Dcpse<particles_type::dims,particles_type>(parts,p, ord, rCut,dcpse_oversampling_factor, opt);
+        dcpse = new Dcpse<particles_type::dims,particles_type>(parts,p, ord, rCut,oversampling_factor, opt);
 
         Dcpse<particles_type::dims,particles_type> * dcpse_ptr = (Dcpse<particles_type::dims,particles_type> *)dcpse;
 
@@ -1322,7 +1322,7 @@ public:
         p.get(0) = 1;
         p.get(2) = 1;
 
-        dcpse = new Dcpse<particles_type::dims,particles_type>(parts,p, ord, rCut,dcpse_oversampling_factor, opt);
+        dcpse = new Dcpse<particles_type::dims,particles_type>(parts,p, ord, rCut,oversampling_factor, opt);
 
         Dcpse<particles_type::dims,particles_type> * dcpse_ptr = (Dcpse<particles_type::dims,particles_type> *)dcpse;
 
@@ -1387,7 +1387,7 @@ public:
         p.get(0) = 2;
         p.get(1) = 0;
 
-        dcpse = new Dcpse<particles_type::dims,particles_type>(parts,p, ord, rCut,dcpse_oversampling_factor, opt);
+        dcpse = new Dcpse<particles_type::dims,particles_type>(parts,p, ord, rCut,oversampling_factor, opt);
     }
 
     template<typename particles_type>
@@ -1445,7 +1445,7 @@ public:
         p.get(0) = 0;
         p.get(1) = 2;
 
-        dcpse = new Dcpse<particles_type::dims,particles_type>(parts,p, ord, rCut,dcpse_oversampling_factor, opt);
+        dcpse = new Dcpse<particles_type::dims,particles_type>(parts,p, ord, rCut,oversampling_factor, opt);
     }
 
     template<typename particles_type>
@@ -1501,7 +1501,7 @@ public:
         p.zero();
         p.get(2) = 2;
 
-        dcpse = new Dcpse<particles_type::dims,particles_type>(parts,p, ord, rCut,dcpse_oversampling_factor, opt);
+        dcpse = new Dcpse<particles_type::dims,particles_type>(parts,p, ord, rCut,oversampling_factor, opt);
     }
 
     template<typename particles_type>
@@ -1559,7 +1559,7 @@ public:
         p.get(0) = 3;
         p.get(1) = 0;
 
-        dcpse = new Dcpse<particles_type::dims,particles_type>(parts,p, ord, rCut,dcpse_oversampling_factor, opt);
+        dcpse = new Dcpse<particles_type::dims,particles_type>(parts,p, ord, rCut,oversampling_factor, opt);
     }
 
     template<typename operand_type>
@@ -1612,7 +1612,7 @@ public:
         p.get(0) = 2;
         p.get(1) = 1;
 
-        dcpse = new Dcpse<particles_type::dims,particles_type>(parts,p, ord, rCut,dcpse_oversampling_factor, opt);
+        dcpse = new Dcpse<particles_type::dims,particles_type>(parts,p, ord, rCut,oversampling_factor, opt);
     }
 
     template<typename operand_type>
@@ -1665,7 +1665,7 @@ public:
         p.get(0) = 1;
         p.get(1) = 2;
 
-        dcpse = new Dcpse<particles_type::dims,particles_type>(parts,p, ord, rCut,dcpse_oversampling_factor, opt);
+        dcpse = new Dcpse<particles_type::dims,particles_type>(parts,p, ord, rCut,oversampling_factor, opt);
     }
 
     template<typename operand_type>
@@ -1718,7 +1718,7 @@ public:
         p.get(0) = 0;
         p.get(1) = 3;
 
-        dcpse = new Dcpse<particles_type::dims,particles_type>(parts,p, ord, rCut,dcpse_oversampling_factor, opt);
+        dcpse = new Dcpse<particles_type::dims,particles_type>(parts,p, ord, rCut,oversampling_factor, opt);
     }
 
     template<typename operand_type>
