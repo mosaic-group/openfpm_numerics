@@ -479,7 +479,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
 
         petsc_solver<double> solver;
 
-        //solver.setPreconditioner(PCBJACOBI);
+        solver.setPreconditioner(PCBJACOBI);
         solver.setRestart(500);
 
         Solver.solve_with_solver(solver,sol);
