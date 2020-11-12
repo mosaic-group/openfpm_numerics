@@ -6,7 +6,7 @@ hostname=$2
 nproc=$3
 ntask_per_node=$5
 nodes=$4
-branch=$(git ls-remote --heads origin | grep $(git rev-parse HEAD) | cut -d / -f 3)
+branch=$6
 
 echo "Directory: $workspace"
 echo "Machine: $hostname"
