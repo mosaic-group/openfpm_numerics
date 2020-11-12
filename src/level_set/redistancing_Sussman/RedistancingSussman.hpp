@@ -40,11 +40,9 @@
 #include "Grid/grid_dist_id.hpp"
 #include "data_type/aggregate.hpp"
 #include "Decomposition/CartDecomposition.hpp"
-
-// Include self-written header files
+// Include other header files
 #include "HelpFunctions.hpp"
 #include "HelpFunctionsForGrid.hpp"
-#include "GaussFilter.hpp"
 #include "ComputeGradient.hpp"
 
 /** @brief Optional convergence criterium checking the total change.
@@ -85,11 +83,6 @@ struct Conv_tol_residual
  * @details For the redistancing, we can choose some options. These options will then be passed bundled as a structure to
  * the redistancing function. Setting these options is optional, since they all have a Default value as well.
  *
- * @param sigma: Sigma of the gaussian kernel, which is used for gaussian smooting Phi_0. If the
- * initial gradient of
- *             phi_0 at the interface is too large and no sigma is chosen or chosen too small, gauss smoothing will
- *             automatically be applied until phi gradient magnitude <= 12, regardless of which sigma is chosen by
- *             the user. Default = 0.
  * @param min_iter: Minimum number of iterations before steady state in narrow band will be checked (Default: 100).
  * @param max_iter: Maximum number of iterations you want to run the redistancing, even if steady state might not yet
  *                have been reached (Default: 1e6).
@@ -115,8 +108,6 @@ struct Conv_tol_residual
  */
 struct Redist_options
 {
-	size_t sigma = 0;    // if you want to apply Gaussian smoothing prior to the redistancing. Smoothing is applied
-	// automatically if h_min <= 1e-6 (otherwise gradient at interface too big)
 	size_t min_iter = 1000;
 	size_t max_iter = 1e6;
 	
@@ -205,23 +196,16 @@ public:
 	/**@brief Runs the Sussman-redistancing.
 	 *
 	 * @details Copies Phi_0 from input grid to an internal temporary grid which allows
-	 * having more properties. Computes the gradients. Applies gauss smoothing if sigma set in redistOptions or if
-	 * initial gradients to steep. Runs the redistancing on the internal tenporary grid. Copies resulting signed
-	 * distance function to the Phi_SDF_out property of the input grid.
+	 * having more properties. Computes the gradients. Runs the redistancing on the internal temporary grid. Copies
+	 * resulting signed distance function to the Phi_SDF_out property of the input grid.
 	 */
 	template<size_t Phi_0_in, size_t Phi_SDF_out> void run_redistancing()
 	{
 		init_temp_grid<Phi_0_in>();
-		if (redistOptions.sigma > 0)
-		{
-			run_gauss_filter(redistOptions.sigma);
-		}
 		init_sign_prop<Phi_0_temp, Phi_0_sign_temp>(
 				g_temp); // initialize Phi_0_sign_temp with the sign of the initial (pre-redistancing) Phi_0
 		get_upwind_gradient<Phi_0_temp, Phi_0_sign_temp, Phi_grad_temp>(g_temp);     // Get initial gradients
 		get_gradient_magnitude<Phi_grad_temp, Phi_magnOfGrad_temp>(g_temp);     // Get initial magnitude of gradients
-		
-		smoothing_if_grad_steep();
 		
 		iterative_redistancing(
 				g_temp);                                         // Do the redistancing on the temporary grid
@@ -298,48 +282,6 @@ private:
 		{
 			redistOptions.width_NB_in_grid_points = 4;
 		} // overwrite kappa if set too small by user
-	}
-	
-	/** @brief Convolves with a Gauss kernel if initial gradient at the interface too steep.
-	 */
-	void smoothing_if_grad_steep()
-	{
-		double max_grad = get_max_val<Phi_magnOfGrad_temp>(g_temp);
-		while (max_grad > 12)
-		{
-			run_gauss_filter(1);
-			// Update gradient
-			get_upwind_gradient<Phi_0_temp, Phi_0_sign_temp, Phi_grad_temp>(g_temp);
-			get_gradient_magnitude<Phi_grad_temp, Phi_magnOfGrad_temp>(g_temp);
-			// Update steepest gradient
-			max_grad = get_max_val<Phi_magnOfGrad_temp>(g_temp);
-		}
-	}
-	/** @brief Finds number of iterations a gauss kernel of sigma=1 has to be applied for getting an equivalent to
-	 * convolution with a sigma=input sigma.
-	 *
-	 * @param sigma Sigma of gauss kernel with which grid should be smoothed prior to re-distancing.
-	 *
-	 * @return Number of iterations required with gauss of sigma = 1.
-	 *
-	 */
-	inline size_t count_gauss_repitition(const size_t sigma)
-	{
-		return sigma * sigma;
-	}
-	
-	/** @brief Convolves the grid with a gauss filter.
-	 *
-	 * @param sigma Sigma of gauss kernel with which grid should be smoothed prior to re-distancing.
-	 */
-	void run_gauss_filter(const size_t sigma)
-	{
-		size_t n = count_gauss_repitition(sigma);
-		for (size_t i = 0; i < n; i++)
-		{
-			gauss_filter<Phi_0_temp, Phi_nplus1_temp>(g_temp);
-			copy_gridTogrid<Phi_nplus1_temp, Phi_0_temp>(g_temp, g_temp);
-		}
 	}
 	
 	/** @brief Run one timestep of re-distancing and compute Phi_n+1.
