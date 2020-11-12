@@ -139,6 +139,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_subset_suite_tests)
         Particles.write("Out");
     }
 
+#if 0
 
     BOOST_AUTO_TEST_CASE(dcpse_op_subset_PC_lid) {
 //  int rank;
@@ -519,5 +520,6 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_subset_suite_tests)
         Particles.write("PC_subset_lid2");
     }
 
+#endif
 
 BOOST_AUTO_TEST_SUITE_END()

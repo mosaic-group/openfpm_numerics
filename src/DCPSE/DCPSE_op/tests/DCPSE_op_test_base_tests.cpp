@@ -239,6 +239,7 @@ BOOST_AUTO_TEST_CASE(dcpse_op_tests) {
         auto div = getV<5>(domain);
         auto div2 = getV<6>(domain);
 
+        domain.ghost_get<1>();
         div = Div(v);
         div2=Dx(v[0])+Dy(v[1]);
         auto it2 = domain.getDomainIterator();
@@ -341,6 +342,7 @@ BOOST_AUTO_TEST_CASE(dcpse_op_tests) {
         auto dP = getV<6>(domain);
 
 
+        domain.ghost_get<1>();
         dv = Adv(v, v);
         auto it2 = domain.getDomainIterator();
 
@@ -411,7 +413,7 @@ BOOST_AUTO_TEST_CASE(dcpse_op_tests) {
         }
 
         Particles.map();
-        Particles.ghost_get<0>();
+        Particles.ghost_get<0,1>();
 
 
         auto P = getV<0>(Particles);
@@ -454,7 +456,7 @@ BOOST_AUTO_TEST_CASE(dcpse_op_tests) {
 
             if (fabs(Particles.getProp<3>(p)[1][0] - Particles.getProp<1>(p)[1]) >= err )
             {
-                err = fabs(Particles.getProp<3>(p)[0][1] - Particles.getProp<1>(p)[1]);
+                err = fabs(Particles.getProp<3>(p)[1][0] - Particles.getProp<1>(p)[1]);
             }
 
             if (fabs(Particles.getProp<3>(p)[2][2] - 5.0) >= err )
@@ -466,6 +468,7 @@ BOOST_AUTO_TEST_CASE(dcpse_op_tests) {
         }
 
         Particles.write("test_out");
+        std::cout << "Error: " << err << "   " << create_vcluster().rank() << std::endl;
         BOOST_REQUIRE(err < 0.03);
 
     }
@@ -499,7 +502,7 @@ BOOST_AUTO_TEST_CASE(dcpse_op_tests) {
         }
 
         Particles.map();
-        Particles.ghost_get<0>();
+        Particles.ghost_get<0,1>();
 
 
         auto P = getV<0>(Particles);

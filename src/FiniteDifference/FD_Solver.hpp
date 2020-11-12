@@ -777,7 +777,7 @@ private:
             auto gp = it_map.get();
 
             size_t pn = g_map.template get<0>(gp);
-            exp.value_ref(p,c_where) = x(pn*Sys_eqs::nvar + comp + s_pnt*Sys_eqs::nvar);
+            exp.value_ref(p,c_where) = x(pn*Sys_eqs::nvar + comp);
 
             ++it;
             ++it_map;
