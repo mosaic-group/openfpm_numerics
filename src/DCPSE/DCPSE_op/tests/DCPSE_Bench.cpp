@@ -631,7 +631,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests_paper)
         Box<3, double> box({-1.0, -1.0,-1.0}, {1.0,1.0,1.0});
         size_t bc[3] = {NON_PERIODIC, NON_PERIODIC, NON_PERIODIC};
         double spacing = 2.0 / (sz[0] - 1);
-        double rCut = 3.9 * spacing;
+        double rCut = 4.1*spacing;
         double R=1.0;
         Ghost<3, double> ghost(rCut);
         //                                  P        V                 v_B           RHS            V_t         P_anal              RHS2            Polar cord
@@ -661,7 +661,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests_paper)
                 Particles.getLastProp<8>()[1] = 0.0;
                 }
                 else{
-                    Particles.getLastProp<8>()[1] = acos(z/sqrt(r));
+                    Particles.getLastProp<8>()[1] = acos(z/r);
                 }
                 Particles.getLastProp<8>()[2] = std::atan2(y,x);
             }
@@ -737,12 +737,12 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests_paper)
         Vr[std::make_tuple(1,1)]=0.0;
 
         V1[std::make_tuple(0,0)]=0.0;
-        V1[std::make_tuple(1,0)]=0.0;
+        V1[std::make_tuple(1,0)]=1.0;
         V1[std::make_tuple(1,-1)]=0.0;
         V1[std::make_tuple(1,1)]=0.0;
 
         V2[std::make_tuple(0,0)]=0.0;
-        V2[std::make_tuple(1,0)]=1.0;
+        V2[std::make_tuple(1,0)]=0.0;
 
         V2[std::make_tuple(1,-1)]=0.0;
         V2[std::make_tuple(1,1)]=0.0;
@@ -854,9 +854,9 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests_paper)
         vy.setId(1);
         vz.setId(2);
 
-        double sampling=1.9;
-        double sampling2=1.9;
-        double rCut2=3.1*spacing;
+        double sampling=2.9;
+        double sampling2=2.9;
+        double rCut2=4.1*spacing;
 
         Derivative_x Dx(Particles, 2, rCut,sampling, support_options::RADIUS),B_Dx(Particles_bulk, 2, rCut,sampling, support_options::RADIUS);
         Derivative_y Dy(Particles, 2, rCut,sampling, support_options::RADIUS),B_Dy(Particles_bulk, 2, rCut,sampling, support_options::RADIUS);
@@ -865,9 +865,9 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests_paper)
         Derivative_y Dy(Particles, 2, rCut,sampling),B_Dy(Particles_bulk, 2, rCut,sampling);
         Derivative_z Dz(Particles, 2, rCut,sampling),B_Dz(Particles_bulk, 2, rCut,sampling);*/
         //Laplacian Lap(Particles, 2, rCut2,sampling2);//, support_options::RADIUS);
-        Derivative_xx Dxx(Particles, 2, rCut2,sampling2);//,support_options::RADIUS);
-        Derivative_yy Dyy(Particles, 2, rCut2,sampling2);//,support_options::RADIUS);
-        Derivative_zz Dzz(Particles, 2, rCut2,sampling2);//,support_options::RADIUS);
+        Derivative_xx Dxx(Particles, 2, rCut2,sampling2,support_options::RADIUS);
+        Derivative_yy Dyy(Particles, 2, rCut2,sampling2,support_options::RADIUS);
+        Derivative_zz Dzz(Particles, 2, rCut2,sampling2,support_options::RADIUS);
 
 /*        std::cout << "Dx" << std::endl;
         Dx.checkMomenta(Particles);
@@ -897,7 +897,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests_paper)
         n = 0;
         tt.start();
         while (V_err >= V_err_eps && n <= nmax) {
-            Particles.write_frame("StokesSphere",n);
+            //Particles.write_frame("StokesSphere",n);
             Particles.ghost_get<0>(SKIP_LABELLING);
             RHS_bulk[0] = B_Dx(P);
             RHS_bulk[1] = B_Dy(P);
@@ -960,7 +960,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests_paper)
             if (v_cl.rank() == 0) {
                 std::cout << "Rel l2 cgs err in V = " << V_err << " at " << n << std::endl;
             }
-            double worst=0;
+/*            double worst=0;
             double L2=0;
             for (int j = 0; j < bulk.size(); j++) {
                 auto p = bulk.get<0>(j);
@@ -980,6 +980,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests_paper)
                           << std::endl;
                 std::cout << "L_inf: " << worst
                           << std::endl;
+                          */
 
         }
         tt.stop();
@@ -987,18 +988,27 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests_paper)
             std::cout << "Rel l2 cgs err in V = " << V_err << " and took " << tt.getwct() << " seconds."
                       << std::endl;
         }
-        Particles.write("StokesSphere");
+
+        V_t=0;
 
         double worst=0;
         double L2=0;
         for (int j = 0; j < bulk.size(); j++) {
             auto p = bulk.get<0>(j);
             double dx=Particles.getProp<2>(p)[0] - Particles.getProp<1>(p)[0];
-            double dy=Particles.getProp<2>(p)[1] - Particles.getProp<1>(p)[1];
-            double dz=Particles.getProp<2>(p)[2] - Particles.getProp<1>(p)[2];
-            L2 += dx*dx+dy*dy+dz*dz;
-            if (fabs(dx*dx+dy*dy+dz*dz) > worst) {
-                worst = fabs(dx*dx+dy*dy+dz*dz);
+            Particles.getProp<4>(p)[0]=fabs(dx);
+            Particles.getProp<4>(p)[1]=0;
+            Particles.getProp<4>(p)[2]=0;
+            L2 += dx*dx;
+            if (fabs(dx) > worst) {
+                worst = fabs(dx);
+              /* std::cout << "Worst at: " <<p<<"("<<Particles.getPos(p)[0]<<","<<Particles.getPos(p)[1]<<","<<Particles.getPos(p)[2]<<")" <<","<<worst
+                          << std::endl;
+
+                std::cout << "Worst at: " <<p<<"("<<Particles.getProp<8>(p)[0]<<","<<Particles.getProp<8>(p)[1]<<","<<Particles.getProp<8>(p)[2]<<")" <<","<<worst
+                          << std::endl;
+               *//* std::cout << "Worst at: " <<p<<"("<<Particles.getProp<8>(p)[0]<<")" <<","<<worst
+                          << std::endl;*/
             }
         }
 
@@ -1009,12 +1019,14 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests_paper)
         std::cout.precision(17);
 
         if (v_cl.rank() == 0) {
-            std::cout<<"Bulk Size: "<<grd_sz<<","<<bulk.size()<<std::endl;
-        std::cout << "L2_Final: " << sqrt(L2/bulk.size())
+            std::cout<<"Gd,Surf,Bulk Size: "<<grd_sz<<","<<Surface.size()<<","<<bulk.size()<<std::endl;
+        std::cout << "L2_Final: " <<sqrt(L2)<<","<<sqrt(L2)/(bulk.size()+Surface.size())
                   << std::endl;
         std::cout << "L_inf_Final: " << worst
                   << std::endl;
             }
+        Particles.write("StokesSphere");
+
 
     }
 

@@ -16,7 +16,7 @@
 /*template <class T1, class T2>
 double spherical_harmonic_r(unsigned n, int m, T1 theta, T2 phi);*/
 
-typedef std::tuple <unsigned int, int> lm;
+typedef std::tuple <int, int> lm;
 
 struct key_hash : public std::unary_function<lm, std::size_t>
 {
@@ -81,7 +81,7 @@ namespace boost {
                 }
                 // Get the value and adjust sign as required:
                 T prefix = spherical_harmonic_prefix_raw(n, m, theta, pol);
-                T sin_theta = sin(theta);
+                //T sin_theta = sin(theta);
                 T x = cos(theta);
                 T leg = legendre_p(n, m, x, pol);
                 if (m != 0)
@@ -110,7 +110,7 @@ namespace boost {
                 }
                 // Get the value and adjust sign as required:
                 T prefix = spherical_harmonic_prefix_raw(n, m, theta, pol);
-                T sin_theta = sin(theta);
+                //T sin_theta = sin(theta);
                 T x = cos(theta);
                 T leg2,leg1 = legendre_p(n, m + 1, x, pol);
                 if(n+m==0||n-m==-1){
@@ -206,19 +206,19 @@ namespace boost {
         return boost::math::DYdPhi(n, m, theta, phi, policies::policy<>());
     }
 
-    double sph_A1(unsigned l, unsigned m,double v1, double vr) {
+    double sph_A1(int l,int  m,double v1, double vr) {
         return 0.5 * (1 + l) * (l * v1 - vr);
     }
 
-    double sph_A2(unsigned l, unsigned m,double v1, double vr) {
+    double sph_A2(int l,int  m,double v1, double vr) {
         return 0.5 * ((1 + l) * (-l) * v1 + (l + 3) * vr);
     }
 
-    double sph_B(unsigned l, unsigned m,double v2) {
+    double sph_B(int l, int m,double v2) {
         return v2;
     }
 
-    double sph_A3(unsigned l, unsigned m,double v1, double vr) {
+    double sph_A3(int l,int m,double v1, double vr) {
         if (m == 1){
             return 0.5 *l* ((1 + l)*v1 - vr)-1.5*sph_A2(l,m,v1,vr);
         }
@@ -227,7 +227,7 @@ namespace boost {
         }
     }
 
-    double sph_A4(unsigned l, unsigned m,double v1, double vr) {
+    double sph_A4(int l,int m,double v1, double vr) {
         if (m == 1){
             return 0.5* (-l*(1 + l)*v1 + (2-l)*vr)+0.5*sph_A2(l,m,v1,vr);
         }
@@ -236,15 +236,17 @@ namespace boost {
         }
     }
 
-    std::vector<double> sph_anasol_u(double nu,unsigned int l,int m,double vr,double v1,double v2,double r) {
+    std::vector<double> sph_anasol_u(double nu,int l,int m,double vr,double v1,double v2,double r) {
          if(l==0 || r==0)
              return {0,0,0,0};
          BOOST_MATH_STD_USING
          double ur,u1,u2,p;
-         ur=sph_A1(l,m,v1,vr)*pow(r,l+1)+sph_A2(l,m,v1,vr)*pow(r,l-1)+sph_A3(l,m,v1,vr)*pow(r,-l)+sph_A4(l,m,v1,vr)*pow(r,-l-2);
-         u1=1/(l*(l+1))*(l+3)*sph_A1(l,m,v1,vr)*pow(r,l+1)+(l+1)*sph_A2(l,m,v1,vr)*pow(r,l-1)-(l-2)*sph_A3(l,m,v1,vr)*pow(r,-l)-l*sph_A4(l,m,v1,vr)*pow(r,-l-2);
-         u2=sph_B(l,m,v2)*(pow(r,l)+pow(r,-l-1));
-         p= nu*((4*l+6)/l*sph_A1(l,m,v1,vr)*pow(r,l)+(4*l-2)/(l+1)*sph_A3(l,m,v1,vr)*pow(r,-l-1));
+         ur=sph_A1(l,m,v1,vr)*pow(r,l+1)+sph_A2(l,m,v1,vr)*pow(r,l-1);//+sph_A3(l,m,v1,vr)*pow(r,-l)+sph_A4(l,m,v1,vr)*pow(r,-l-2);
+         //std::cout<<sph_A1(l,m,v1,vr)<<":"<<sph_A2(l,m,v1,vr)<<":"<<sph_A3(l,m,v1,vr)<<":"<<sph_A4(l,m,v1,vr)<<std::endl;
+         //std::cout<<pow(r,l+1)<<":"<<pow(r,l-1)<<":"<<pow(r,-l)<<":"<<pow(r,-l-2)<<std::endl;
+         u1=1/(l*(l+1))*((l+3)*sph_A1(l,m,v1,vr)*pow(r,l+1)+(l+1)*sph_A2(l,m,v1,vr)*pow(r,l-1));//-(l-2)*sph_A3(l,m,v1,vr)*pow(r,-l)-l*sph_A4(l,m,v1,vr)*pow(r,-l-2);
+         u2=sph_B(l,m,v2)*(pow(r,l));//+pow(r,-l-1));
+         p= nu*((4*l+6)/l*sph_A1(l,m,v1,vr)*pow(r,l)+(4*l-2)/(l+1));//*sph_A3(l,m,v1,vr)*pow(r,-l-1));
          return {ur,u1,u2,p};
         }
 
@@ -264,13 +266,18 @@ namespace boost {
                 if (DYdPhi==0 ||E2->second==0){
                     Sum2 += E1->second * DYdTheta;
                 }
-            else{
-                    Sum2 += E1->second * DYdTheta -
-                            E2->second / sin(theta) * DYdPhi;
-            }
+                else{
+                        Sum2 += E1->second * DYdTheta -
+                                E2->second / sin(theta) * DYdPhi;
+                }
+                if (DYdPhi==0 ||E1->second==0){
+                        Sum3 += E2->second * DYdTheta;
+                    }
+                else{
+                    Sum3 += E2->second * DYdTheta +
+                            E1->second/sin(theta) * DYdPhi;
+                }
 
-                Sum3 += E2->second *sin(theta) * DYdTheta +
-                        E1->second * DYdPhi;
             }
         }
         double x=Sum2*cos(theta)*cos(phi)-Sum3*sin(phi)+Sum1*cos(phi)*sin(theta);
