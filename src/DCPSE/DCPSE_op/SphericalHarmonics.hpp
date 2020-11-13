@@ -237,14 +237,20 @@ namespace boost {
     }
 
     std::vector<double> sph_anasol_u(double nu,int l,int m,double vr,double v1,double v2,double r) {
-         if(l==0 || r==0)
+         if(r==0)
              return {0,0,0,0};
-         BOOST_MATH_STD_USING
          double ur,u1,u2,p;
+         if(l==0)
+             {ur=sph_A1(l,m,v1,vr)*r+sph_A2(l,m,v1,vr)/r;
+             u2=sph_B(l,m,v2);
+             return {ur,0,u2,0};
+             }
+         BOOST_MATH_STD_USING
+         //double ur,u1,u2,p;
          ur=sph_A1(l,m,v1,vr)*pow(r,l+1)+sph_A2(l,m,v1,vr)*pow(r,l-1);//+sph_A3(l,m,v1,vr)*pow(r,-l)+sph_A4(l,m,v1,vr)*pow(r,-l-2);
          //std::cout<<sph_A1(l,m,v1,vr)<<":"<<sph_A2(l,m,v1,vr)<<":"<<sph_A3(l,m,v1,vr)<<":"<<sph_A4(l,m,v1,vr)<<std::endl;
          //std::cout<<pow(r,l+1)<<":"<<pow(r,l-1)<<":"<<pow(r,-l)<<":"<<pow(r,-l-2)<<std::endl;
-         u1=1/(l*(l+1))*((l+3)*sph_A1(l,m,v1,vr)*pow(r,l+1)+(l+1)*sph_A2(l,m,v1,vr)*pow(r,l-1));//-(l-2)*sph_A3(l,m,v1,vr)*pow(r,-l)-l*sph_A4(l,m,v1,vr)*pow(r,-l-2);
+         u1=1.0/double(l*(l+1))*((l+3)*sph_A1(l,m,v1,vr)*pow(r,l+1)+(l+1)*sph_A2(l,m,v1,vr)*pow(r,l-1));//-(l-2)*sph_A3(l,m,v1,vr)*pow(r,-l)-l*sph_A4(l,m,v1,vr)*pow(r,-l-2);
          u2=sph_B(l,m,v2)*(pow(r,l));//+pow(r,-l-1));
          p= nu*((4*l+6)/l*sph_A1(l,m,v1,vr)*pow(r,l)+(4*l-2)/(l+1));//*sph_A3(l,m,v1,vr)*pow(r,-l-1));
          return {ur,u1,u2,p};

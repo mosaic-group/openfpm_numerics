@@ -631,7 +631,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests_paper)
         Box<3, double> box({-1.0, -1.0,-1.0}, {1.0,1.0,1.0});
         size_t bc[3] = {NON_PERIODIC, NON_PERIODIC, NON_PERIODIC};
         double spacing = 2.0 / (sz[0] - 1);
-        double rCut = 4.1*spacing;
+        double rCut = 3.9*spacing;
         double R=1.0;
         Ghost<3, double> ghost(rCut);
         //                                  P        V                 v_B           RHS            V_t         P_anal              RHS2            Polar cord
@@ -651,7 +651,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests_paper)
             double y = -1.0+key.get(1) * it.getSpacing(1);
             double z = -1.0+key.get(2) * it.getSpacing(2);
             double r=sqrt(x*x+y*y+z*z);
-            if (r<R) {
+            if (r<R-spacing/2.0) {
                 Particles.add();
                 Particles.getLastPos()[0] = x;
                 Particles.getLastPos()[1] = y;
@@ -854,9 +854,9 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests_paper)
         vy.setId(1);
         vz.setId(2);
 
-        double sampling=2.9;
-        double sampling2=2.9;
-        double rCut2=4.1*spacing;
+        double sampling=3.1;
+        double sampling2=1.9;
+        double rCut2=3.9*spacing;
 
         Derivative_x Dx(Particles, 2, rCut,sampling, support_options::RADIUS),B_Dx(Particles_bulk, 2, rCut,sampling, support_options::RADIUS);
         Derivative_y Dy(Particles, 2, rCut,sampling, support_options::RADIUS),B_Dy(Particles_bulk, 2, rCut,sampling, support_options::RADIUS);
@@ -1007,8 +1007,9 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests_paper)
 
                 std::cout << "Worst at: " <<p<<"("<<Particles.getProp<8>(p)[0]<<","<<Particles.getProp<8>(p)[1]<<","<<Particles.getProp<8>(p)[2]<<")" <<","<<worst
                           << std::endl;
-               *//* std::cout << "Worst at: " <<p<<"("<<Particles.getProp<8>(p)[0]<<")" <<","<<worst
-                          << std::endl;*/
+               */
+               std::cout << "Worst at: " <<p<<"("<<Particles.getProp<8>(p)[0]<<")" <<","<<worst
+                          << std::endl;
             }
         }
 
