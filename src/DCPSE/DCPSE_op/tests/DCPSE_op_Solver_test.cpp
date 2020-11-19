@@ -684,6 +684,8 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
             domain.getProp<4>(p) = fabs(domain.getProp<3>(p) - domain.getProp<2>(p));
 
         }
+        std::cout << "Maximum Analytic Error: " << worst1 << std::endl;
+
         BOOST_REQUIRE(worst1 < 0.03);
 
         domain.write("Dirichlet_anasol");

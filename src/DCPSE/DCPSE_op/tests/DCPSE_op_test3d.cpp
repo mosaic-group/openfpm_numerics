@@ -145,12 +145,12 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests3)
 
     }
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-/*    BOOST_AUTO_TEST_CASE(dcpse_poisson_Robin_anal3d) {
+    BOOST_AUTO_TEST_CASE(dcpse_poisson_dirichlet_anal3d) {
 //  int rank;
 //  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-
-        const size_t sz[3] = {41,41,41};
-        Box<3, double> box({0, 0,0}, {0.5, 0.5,0.5});
+        size_t grd_sz=41;
+        const size_t sz[3] = {grd_sz,grd_sz,grd_sz};
+        Box<3, double> box({0, 0,0}, {1.0, 1.0,1.0});
         size_t bc[3] = {NON_PERIODIC, NON_PERIODIC,NON_PERIODIC};
         double spacing = box.getHigh(0) / (sz[0] - 1);
         Ghost<3, double> ghost(spacing * 3.1);
@@ -181,8 +181,8 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests3)
         domain.map();
         domain.ghost_get<0>();
 
-        Derivative_x Dx(domain, 2, rCut,1.9,support_options::RADIUS);
-        Derivative_y Dy(domain, 2, rCut,1.9,support_options::RADIUS);
+        Derivative_x Dx(domain, 2, rCut,3.1,support_options::RADIUS);
+        Derivative_y Dy(domain, 2, rCut,3.1,support_options::RADIUS);
         Laplacian Lap(domain, 2, rCut,1.9,support_options::RADIUS);
 
         openfpm::vector<aggregate<int>> bulk;
@@ -240,6 +240,8 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests3)
         while (it2.isNext()) {
             auto p = it2.get();
             Point<3, double> xp = Particles.getPos(p);
+            domain.getProp<1>(p) = -3.0*M_PI*M_PI*sin(M_PI*xp.get(0))*sin(M_PI*xp.get(1))*sin(M_PI*xp.get(2));
+            domain.getProp<3>(p) = sin(M_PI*xp.get(0))*sin(M_PI*xp.get(1))*sin(M_PI*xp.get(2));
             if (front.isInside(xp) == true) {
                 front_p.add();
                 front_p.last().get<0>() = p.getKey();
@@ -266,29 +268,42 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests3)
         }
 
 
-        //TEST NEEDS DEVELOPMENT
+        DCPSE_scheme<equations3d1,decltype(domain)> Solver( domain);
+        auto Poisson = Lap(v);
+        auto D_x = Dx(v);
+        auto D_y = Dy(v);
+        Solver.impose(Poisson, bulk, prop_id<1>());
+        Solver.impose(v, up_p, prop_id<1>());
+        Solver.impose(v, right_p, prop_id<1>());
+        Solver.impose(v, down_p, prop_id<1>());
+        Solver.impose(v, left_p, prop_id<1>());
+        Solver.impose(v, front_p, prop_id<1>());
+        Solver.impose(v, back_p, prop_id<1>());
+        Solver.solve(sol);
+        DCPSE_sol=Lap(sol);
 
-
-
-        v=abs(DCPSE_sol-RHS);
         double worst1 = 0.0;
 
-        it2 = domain.getDomainIterator();
+        v=abs(DCPSE_sol-RHS);
 
-        while (it2.isNext()) {
-            auto p = it2.get();
-            if (fabs(domain.getProp<1>(p) - domain.getProp<5>(p)) >= worst1) {
-                worst1 = fabs(domain.getProp<1>(p) - domain.getProp<5>(p));
+        for(int j=0;j<bulk.size();j++)
+        {   auto p=bulk.get<0>(j);
+            if (fabs(domain.getProp<3>(p) - domain.getProp<2>(p)) >= worst1) {
+                worst1 = fabs(domain.getProp<3>(p) - domain.getProp<2>(p));
             }
-            ++it2;
+            domain.getProp<4>(p) = fabs(domain.getProp<3>(p) - domain.getProp<2>(p));
+
         }
+        std::cout << "Maximum Analytic Error: " << worst1 << std::endl;
 
-        //BOOST_REQUIRE(worst1 < 0.03);
+        BOOST_REQUIRE(worst1 < 0.03);
+
+        domain.write("Dirichlet_anasol_3d");
 
 
 
 
-    }*/
+    }
 
 /*    BOOST_AUTO_TEST_CASE(stokes_3d_petscP) {
         size_t grd_sz=21;

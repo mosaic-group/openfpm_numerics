@@ -38,6 +38,8 @@ struct key_equal : public std::binary_function<lm, lm, bool>
 };
 
 
+
+
 namespace boost {
     namespace math {
 
@@ -150,7 +152,7 @@ namespace boost {
                 T prefix = spherical_harmonic_prefix_raw(n, m, theta, pol);
                 T sin_theta = sin(theta);
                 T x = cos(theta);
-                T leg = legendre_p(n, m + 1, x, pol);
+                T leg = legendre_p(n, m, x, pol);
                 prefix *= sqrt(2) * leg;
                 return sign ? m * prefix * cos(m * phi) : -m * prefix * sin(m * phi);
             }
@@ -237,11 +239,14 @@ namespace boost {
     }
 
     std::vector<double> sph_anasol_u(double nu,int l,int m,double vr,double v1,double v2,double r) {
-         if(r==0)
-             return {0,0,0,0};
          double ur,u1,u2,p;
          if(l==0)
-             {ur=sph_A1(l,m,v1,vr)*r+sph_A2(l,m,v1,vr)/r;
+             {
+             if(r==0){
+                 u2=sph_B(l,m,v2);
+                 return {0,0,u2,0.0};
+             }
+             ur=sph_A1(l,m,v1,vr)*r+sph_A2(l,m,v1,vr)/r;
              u2=sph_B(l,m,v2);
              return {ur,0,u2,0};
              }
@@ -250,9 +255,9 @@ namespace boost {
          ur=sph_A1(l,m,v1,vr)*pow(r,l+1)+sph_A2(l,m,v1,vr)*pow(r,l-1);//+sph_A3(l,m,v1,vr)*pow(r,-l)+sph_A4(l,m,v1,vr)*pow(r,-l-2);
          //std::cout<<sph_A1(l,m,v1,vr)<<":"<<sph_A2(l,m,v1,vr)<<":"<<sph_A3(l,m,v1,vr)<<":"<<sph_A4(l,m,v1,vr)<<std::endl;
          //std::cout<<pow(r,l+1)<<":"<<pow(r,l-1)<<":"<<pow(r,-l)<<":"<<pow(r,-l-2)<<std::endl;
-         u1=1.0/double(l*(l+1))*((l+3)*sph_A1(l,m,v1,vr)*pow(r,l+1)+(l+1)*sph_A2(l,m,v1,vr)*pow(r,l-1));//-(l-2)*sph_A3(l,m,v1,vr)*pow(r,-l)-l*sph_A4(l,m,v1,vr)*pow(r,-l-2);
+         u1=1.0/double(l*(l+1))*((l+3.0)*sph_A1(l,m,v1,vr)*pow(r,l+1)+(l+1)*sph_A2(l,m,v1,vr)*pow(r,l-1));//-(l-2)*sph_A3(l,m,v1,vr)*pow(r,-l)-l*sph_A4(l,m,v1,vr)*pow(r,-l-2);
          u2=sph_B(l,m,v2)*(pow(r,l));//+pow(r,-l-1));
-         p= nu*((4*l+6)/l*sph_A1(l,m,v1,vr)*pow(r,l)+(4*l-2)/(l+1));//*sph_A3(l,m,v1,vr)*pow(r,-l-1));
+         p= nu*((4.0*l+6.0)/double(l)*sph_A1(l,m,v1,vr)*pow(r,l));//(4.0*l-2.0)/double(l+1)*sph_A3(l,m,v1,vr)*pow(r,-l-1));
          return {ur,u1,u2,p};
         }
 
@@ -269,20 +274,27 @@ namespace boost {
                 Sum1 += Er->second * boost::math::Y(l, m, theta, phi);
                 double DYdPhi=boost::math::DYdPhi(l, m, theta, phi);
                 double DYdTheta=boost::math::DYdTheta(l, m, theta, phi);
-                if (DYdPhi==0 ||E2->second==0){
+                /*if (DYdPhi==0 ||E2->second==0){
                     Sum2 += E1->second * DYdTheta;
                 }
-                else{
-                        Sum2 += E1->second * DYdTheta -
+                else{*/
+                //assert(theta!=0);
+                Sum2 += E1->second * DYdTheta -
                                 E2->second / sin(theta) * DYdPhi;
-                }
-                if (DYdPhi==0 ||E1->second==0){
+                /*}*/
+                Sum3 += E2->second * DYdTheta +
+                        E1->second/sin(theta) * DYdPhi;
+
+           /*     Sum3 += E2->second *sin(theta)* DYdTheta +
+                        E1->second * DYdPhi;*/
+
+               /*if (DYdPhi==0 ||E1->second==0){
                         Sum3 += E2->second * DYdTheta;
                     }
                 else{
                     Sum3 += E2->second * DYdTheta +
                             E1->second/sin(theta) * DYdPhi;
-                }
+                }*/
 
             }
         }
@@ -303,11 +315,11 @@ namespace boost {
                     Sum1 += Er->second * boost::math::Y(l, m, theta, phi);
                 }
             }
-            return Sum1*cos(phi)*sin(theta);
+            return Sum1;
 
         }
 
-        double PsiTheta(unsigned l, int m, double theta, double phi) {
+/*        double PsiTheta(unsigned l, int m, double theta, double phi) {
             return DYdTheta(l, m, theta, phi);
         }
 
@@ -319,7 +331,7 @@ namespace boost {
         }
         double PhiPhi(unsigned l, int m, double theta, double phi) {
             return sin(theta)*DYdTheta(l, m, theta, phi);
-        }
+        }*/
 
 
 }

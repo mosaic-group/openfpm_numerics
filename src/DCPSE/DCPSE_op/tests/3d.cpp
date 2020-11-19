@@ -432,19 +432,19 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests3)
 
             dV[x] = 0.5*(-dypy*h[x] + dypx*h[y] + dyhy*px - dyhx*py) + 0.5*(-dzpz*h[x] + dzpx*h[z] + dzhz*px - dzhx*pz) +
                     zeta*delmu*(dxqxx + dyqxy + dzqxz)  +
-                    nu*(1/2*(-dypy*h[x] + dypx*h[y] + dyhy*px - dyhx*py) - 1/3*(-dxpx*h[x] - dxpy*h[y] - dxpz*h[z] - dxhx*px - dxhy*py -dxhz*pz) + 1/2*(-dzpz*h[x] + dzpx*h[z] + dzhz*px - dzhx*pz))+
-                    Dx(sigma[x][x])+Dy(sigma[x][y])+Dz(sigma[x][z]);
+                    nu*(1/2*(-dypy*h[x] + dypx*h[y] + dyhy*px - dyhx*py) - 1/3*(-dxpx*h[x] - dxpy*h[y] - dxpz*h[z] - dxhx*px - dxhy*py -dxhz*pz) + 1/2*(-dzpz*h[x] + dzpx*h[z] + dzhz*px - dzhx*pz))-
+                    Dx(sigma[x][x])-Dy(sigma[x][y])-Dz(sigma[x][z]);
 
 
             dV[y] = 0.5*(dxpy*h[x] - dxpx*h[y] - dxhy*px + dxhx*py) + 0.5*(-dzpz*h[y] + dzpy*h[z] + dzhz*py - dzhy*pz) +
                     zeta*delmu*(dxqyx + dyqyy + dzqyz) +
-                    nu*(1/2*(dxpy*h[x] - dxpx*h[y] - dxhy*px + dxhx*py) - 1/3*(-dypx*h[x] - dypy*h[y] - dypz*h[z] - dyhx*px - dyhy*py - dyhz*pz) + 1/2*(-dzpz*h[y] + dzpy*h[z] + dzhz*py - dzhy*pz))+
-                    Dx(sigma[y][x])+Dy(sigma[y][y])+Dz(sigma[y][z]);
+                    nu*(1/2*(dxpy*h[x] - dxpx*h[y] - dxhy*px + dxhx*py) - 1/3*(-dypx*h[x] - dypy*h[y] - dypz*h[z] - dyhx*px - dyhy*py - dyhz*pz) + 1/2*(-dzpz*h[y] + dzpy*h[z] + dzhz*py - dzhy*pz))-
+                    Dx(sigma[y][x])-Dy(sigma[y][y])-Dz(sigma[y][z]);
 
             dV[z]=0.5*(dxpz*h[x] - dxpx*h[z] - dxhz*px + dxhx*pz) + 0.5*(dypz*h[y] - dypy*h[z] - dyhz*py + dyhy*pz) +
                   zeta*delmu*(dxqzx + dyqzy +dzqzz)  +
-                  nu*(1/2*(dxpz*h[x] - dxpx*h[z] - dxhz*px + dxhx*pz)+ 1/2*(dypz*h[y] - dypy*h[z] - dyhz*py + dyhy*pz) - 1/3*(-dzpx*h[x] - dzpy*h[y] - dzpz*h[z] - dzhx*px - dzhy*py -dzhz*pz))+
-                  Dx(sigma[z][x])+Dy(sigma[z][y])+Dz(sigma[z][z]);
+                  nu*(1/2*(dxpz*h[x] - dxpx*h[z] - dxhz*px + dxhx*pz)+ 1/2*(dypz*h[y] - dypy*h[z] - dyhz*py + dyhy*pz) - 1/3*(-dzpx*h[x] - dzpy*h[y] - dzpz*h[z] - dzhx*px - dzhy*py -dzhz*pz))-
+                  Dx(sigma[z][x])-Dy(sigma[z][y])-Dz(sigma[z][z]);
 
             Particles.ghost_get<11>(SKIP_LABELLING);
 

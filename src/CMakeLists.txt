@@ -10,6 +10,7 @@ endif()
 
 add_executable(numerics ${OPENFPM_INIT_FILE} ${CUDA_SOURCES}
 		DCPSE/DCPSE_op/tests/DCPSE_Bench.cpp
+        DCPSE/DCPSE_op/SphericalHarmonics.hpp
 		DCPSE/DCPSE_op/tests/3d.cpp
 		DCPSE/DCPSE_op/tests/DCPSE_op_subset_test.cpp
 		DCPSE/DCPSE_op/tests/DCPSE_op_test_base_tests

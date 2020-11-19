@@ -427,11 +427,14 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
         Derivative_yy Dyy(Particles, ord, rCut2, sampling_factor2,
                           support_options::RADIUS);
 
+        Sf.set_var_id=0;
+        W.set_var_id=1;
         eq_id vx, vy;
-        timer tt;
-        timer tt3;
         vx.setId(0);
         vy.setId(1);
+        timer tt;
+        timer tt3;
+
         double V_err = 1, V_err_old;
 
         int n = 0;
