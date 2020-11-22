@@ -116,6 +116,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_subset_suite_tests)
         Derivative_y Dy_bulk(Particles_bulk, 2, rCut,sampling_factor, support_options::RADIUS);
 
         Out_bulk = Dx_bulk(P);
+        Out_bulk = Dx(P);
 	    Out_V_bulk[0] = P + Dx_bulk(P);
         Out_V_bulk[1] = Out_V[0] +Dy_bulk(P);
 

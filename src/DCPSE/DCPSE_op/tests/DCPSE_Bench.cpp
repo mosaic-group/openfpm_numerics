@@ -2,8 +2,8 @@
 // Created by Abhinav Singh on 27.10.20.
 //
 
-#define BOOST_MPL_CFG_NO_PREPROCESSED_HEADERS
-#define BOOST_MPL_LIMIT_VECTOR_SIZE 40
+//#define BOOST_MPL_CFG_NO_PREPROCESSED_HEADERS
+//#define BOOST_MPL_LIMIT_VECTOR_SIZE 40
 
 #include "config.h"
 
@@ -417,6 +417,9 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests_paper)
         x1=1.0/(1+exp(0.8*(-0.5)));
         y1=1.0/(1+exp(0.8*(-0.5)));*/
 
+
+        //std::normal_distribution<0.0,1.0> norm;
+
         auto it = Particles.getGridIterator(sz);
         while (it.isNext()) {
             Particles.add();
@@ -427,25 +430,25 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests_paper)
             {
                 Particles.getLastPos()[0] = x;
             }
-            else if (x>0.5)
+/*            else if (x>0.5)
             {
                 //Particles.getLastPos()[0] = 1.0-2*(x-0.5)/(1+exp(sqrt((0.5-(x-0.5))*(0.5-(x-0.5)))));
-            }
+            }*/
             else
             {
-                Particles.getLastPos()[0] = 2*x/(1.0+exp(sqrt((0.5-x)*(0.5-x))));
+                //Particles.getLastPos()[0] = 2*x/pdf(norm,x);
             }
 
             if(y==0.0 || y==1.0)
             {
                 Particles.getLastPos()[1] = y;
             }
-            else if (y>0.5)
+ /*           else if (y>0.5)
             {
                 //Particles.getLastPos()[0] = 1.0-2*(y-0.5)/(1.0+exp(sqrt((0.5-(y-0.5))*(0.5-(y-0.5)))));
-            }
+            }*/
             else {
-                Particles.getLastPos()[1] = 2*y/(1+exp(sqrt((0.5-y)*(0.5-y))));
+                //Particles.getLastPos()[1] = 2*y/pdf(norm,y);
             }
             ++it;
         }
@@ -993,7 +996,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests_paper)
     double a=boost::math::legendre_p(0,-1,1);
     std::cout<<a<<std::endl;
         double nu=1.0;
-        size_t grd_sz=21;
+        size_t grd_sz=41;
         const size_t sz[3] = {grd_sz,grd_sz,grd_sz};
         Box<3, double> box({-1.0, -1.0,-1.0}, {1.0,1.0,1.0});
         size_t bc[3] = {NON_PERIODIC, NON_PERIODIC, NON_PERIODIC};
@@ -1135,7 +1138,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests_paper)
         V2[std::make_tuple(2,0)]=0.0;
         V2[std::make_tuple(2,1)]=0.0;
         V2[std::make_tuple(2,2)]=0.0;
-        constexpr int K = 1;
+        constexpr int K = 2;
 
         //Particles.ghost_get<0,1,2,3,4,5>();
         auto it2 = Particles.getDomainIterator();

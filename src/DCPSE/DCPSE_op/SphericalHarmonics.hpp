@@ -2,15 +2,15 @@
 // Created by Abhinav Singh on 03.11.20.
 //
 
-#define BOOST_MPL_CFG_NO_PREPROCESSED_HEADERS
-#define BOOST_MPL_LIMIT_VECTOR_SIZE 40
+//#define BOOST_MPL_CFG_NO_PREPROCESSED_HEADERS
+//#define BOOST_MPL_LIMIT_VECTOR_SIZE 40
 
-#include "config.h"
+//#include "config.h"
 
-#define BOOST_TEST_DYN_LINK
+//#define BOOST_TEST_DYN_LINK
 
 
-#include "util/util_debug.hpp"
+//#include "util/util_debug.hpp"
 #include <boost/math/special_functions/spherical_harmonic.hpp>
 
 /*template <class T1, class T2>
@@ -73,14 +73,14 @@ namespace boost {
                     sign = m & 1;
                     m = abs(m);
                 }
-                if (m & 1) {
+               /* if (m & 1) {
                     // Check phase if theta is outside [0, PI]:
                     T mod = boost::math::tools::fmod_workaround(theta, T(2 * constants::pi<T>()));
                     if (mod < 0)
                         mod += 2 * constants::pi<T>();
                     if (mod > constants::pi<T>())
                         sign = !sign;
-                }
+                }*/
                 // Get the value and adjust sign as required:
                 T prefix = spherical_harmonic_prefix_raw(n, m, theta, pol);
                 //T sin_theta = sin(theta);
@@ -102,14 +102,14 @@ namespace boost {
                     sign = m & 1;
                     m = abs(m);
                 }
-                if (m & 1) {
+/*                if (m & 1) {
                     // Check phase if theta is outside [0, PI]:
                     T mod = boost::math::tools::fmod_workaround(theta, T(2 * constants::pi<T>()));
                     if (mod < 0)
                         mod += 2 * constants::pi<T>();
                     if (mod > constants::pi<T>())
                         sign = !sign;
-                }
+                }*/
                 // Get the value and adjust sign as required:
                 T prefix = spherical_harmonic_prefix_raw(n, m, theta, pol);
                 //T sin_theta = sin(theta);
@@ -140,14 +140,14 @@ namespace boost {
                     sign = m & 1;
                     m = abs(m);
                 }
-                if (m & 1) {
+               /* if (m & 1) {
                     // Check phase if theta is outside [0, PI]:
                     T mod = boost::math::tools::fmod_workaround(theta, T(2 * constants::pi<T>()));
                     if (mod < 0)
                         mod += 2 * constants::pi<T>();
                     if (mod > constants::pi<T>())
                         sign = !sign;
-                }
+                }*/
                 // Get the value and adjust sign as required:
                 T prefix = spherical_harmonic_prefix_raw(n, m, theta, pol);
                 T sin_theta = sin(theta);
