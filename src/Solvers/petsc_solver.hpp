@@ -1039,7 +1039,9 @@ public:
 
 		    PETSC_SAFE_CALL(PCFactorSetShiftType(pc, MAT_SHIFT_NONZERO));
 		    PETSC_SAFE_CALL(PCFactorSetShiftAmount(pc, PETSC_DECIDE));
+#ifdef PETSC_HAVE_HYPRE
 		    PETSC_SAFE_CALL(PCHYPRESetType(pc, "boomeramg"));
+#endif
 		    atype = HYPRE_AMG;
 		}
 		else
