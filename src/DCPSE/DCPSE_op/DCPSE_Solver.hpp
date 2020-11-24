@@ -23,7 +23,17 @@
 };*/
 
 //template<unsigned int prp_id> using prop_id = boost::mpl::int_<prp_id>;
-
+   /*! \brief Create a Matrix System for Ax=b
+    *
+    * This Class is for creating a placeholder for the matrix system
+    *
+    * Ax = b
+    *
+    *
+    * \param Sys_eqs Equation Structure which has information about the system. Refer to EqnStruct.cpp for examples
+    * \param parts Particle set
+    *
+    */
 template<typename Sys_eqs, typename particles_type>
 class DCPSE_scheme : public MatrixAssembler {
 
@@ -351,6 +361,7 @@ public:
      *
      *  \warning exp must be a scalar type
      *
+     * \param Solver Manually created Solver instead from the Equation structure
      * \param exp where to store the result
      *
      */
@@ -417,14 +428,11 @@ public:
     	A.getMatrixTriplets().clear();
     }
 
-    /*! \brief Constructor
+    /*! \brief Constructor for the solver
      *
-     * The periodicity is given by the grid b_g
      *
-     * \param pd Padding, how many points out of boundary are present
-     * \param stencil maximum extension of the stencil on each directions
-     * \param domain the domain
-     * \param b_g object grid that will store the solution
+     * \param parts Particle set
+     * \param option_solver opt=options_solver::LAGRANGE_MULTIPLIER can be used for purely Neumann system
      *
      */
     DCPSE_scheme(particles_type &part, options_solver opt = options_solver::STANDARD)
@@ -434,28 +442,26 @@ public:
         construct_pmap(opt);
     }
 
-/*    DCPSE_scheme(particles_type &part, int option_num)
+    /*DCPSE_scheme(particles_type &part, int option_num)
             : parts(part), p_map(part.getDecomposition(), 0), row(0), row_b(0),opt(options_solver::CUSTOM),offset(option_num) {
         p_map.resize(part.size_local());
         construct_pmap(option_num);
     }*/
 
 
-    /*! \brief Impose an operator
-*
-* This function impose an operator on a particular grid region to produce the system
-*
-* Ax = b
-*
-* ## Stokes equation 2D, lid driven cavity with one splipping wall
-* \snippet eq_unit_test.hpp Copy the solution to grid
-*
-* \param op Operator to impose (A term)
-* \param num right hand side of the term (b term)
-* \param id Equation id in the system that we are imposing
-* \param it_d iterator that define where you want to impose
-*
-*/
+    /*! \brief Impose an operator in the Matrix System
+    *
+    * This function impose an operator on a particular particle region to produce the system
+    *
+    * Ax = b
+    *
+    *
+    * \param op Operator to impose (A term)
+    * \param subset Vector with indices of particles where the operator has to be imposed
+    * \param prp_id<>() Property number in the aggregate (Scalar only) for imposing on the RHS b.
+    * \param id Equation id in the system that we are imposing given by ed_id type
+    *
+    */
     template<typename T, typename index_type, unsigned int prp_id>
     void impose(const T &op, openfpm::vector<index_type> &subset,
                 const prop_id<prp_id> &num,
@@ -467,6 +473,16 @@ public:
         impose_git(op, vb, id.getId(), itd);
     }
 
+    /*! \brief Impose b part only in the Matrix System Ax=b
+    *
+    * This function impose RHS of an existing Ax=b system.
+    *
+    *
+    * \param subset Vector with indices of particles where the operator has to be imposed
+    * \param num right hand side of the term (b term) Constant in this case
+    * \param id Equation id in the system that we are imposing given by ed_id type
+    *
+    */
     template<typename index_type, unsigned int prp_id>
     void impose_b(openfpm::vector<index_type> &subset,
                 const prop_id<prp_id> &num,
@@ -478,21 +494,19 @@ public:
         impose_git_b(vb, id.getId(), itd);
     }
 
-    /*! \brief Impose an operator
-*
-* This function impose an operator on a particular grid region to produce the system
-*
-* Ax = b
-*
-* ## Stokes equation 2D, lid driven cavity with one splipping wall
-* \snippet eq_unit_test.hpp Copy the solution to grid
-*
-* \param op Operator to impose (A term)
-* \param num right hand side of the term (b term)
-* \param id Equation id in the system that we are imposing
-* \param it_d iterator that define where you want to impose
-*
-*/
+    /*! \brief Impose an operator in the Matrix System
+     *
+     * This function impose an operator on a particular particle region to produce the system
+     *
+     * Ax = b
+     *
+     *
+     * \param op Operator to impose (A term)
+     * \param subset Vector with indices of particles where the operator has to be imposed
+     * \param RHS Expression of the Vector to be imposed
+     * \param id Equation id in the system that we are imposing given by ed_id type
+     *
+     */
     template<typename T, typename index_type, typename RHS_type, typename sfinae = typename std::enable_if<!std::is_fundamental<RHS_type>::type::value>::type>
     void impose(const T &op, openfpm::vector<index_type> &subset,
                 const RHS_type &rhs,
@@ -501,7 +515,17 @@ public:
 
         impose_git(op, rhs, id.getId(), itd);
     }
-
+    /*! \brief Impose b part only in the Matrix System Ax=b
+    *
+    * This function impose RHS of an existing Ax=b system.
+    *
+    *
+    *
+    * \param subset Vector with indices of particles where the operator has to be imposed
+    * \param Expression of the Vector to be imposed
+    * \param id Equation id in the system that we are imposing given by ed_id type
+    *
+    */
     template<typename index_type, typename RHS_type, typename sfinae = typename std::enable_if<!std::is_fundamental<RHS_type>::type::value>::type>
     void impose_b(openfpm::vector<index_type> &subset,
                 const RHS_type &rhs,
@@ -510,21 +534,19 @@ public:
         impose_git_b(rhs, id.getId(), itd);
     }
 
-    /*! \brief Impose an operator
- *
- * This function impose an operator on a particular grid region to produce the system
- *
- * Ax = b
- *
- * ## Stokes equation 2D, lid driven cavity with one splipping wall
- * \snippet eq_unit_test.hpp Copy the solution to grid
- *
- * \param op Operator to impose (A term)
- * \param num right hand side of the term (b term)
- * \param id Equation id in the system that we are imposing
- * \param it_d iterator that define where you want to impose
- *
- */
+    /*! \brief Impose an operator in the Matrix System
+     *
+     * This function impose an operator on a particular particle region to produce the system
+     *
+     * Ax = b
+     *
+     *
+     * \param op Operator to impose (A term)
+     * \param subset Vector with indices of particles where the operator has to be imposed
+     * \param num Constant for all the particles
+     * \param id Equation id in the system that we are imposing given by ed_id type
+     *
+     */
     template<typename T, typename index_type>
     void impose(const T &op,
                 openfpm::vector<index_type> &subset,
@@ -536,7 +558,17 @@ public:
 
         impose_git(op, b, id.getId(), itd);
     }
-
+    /*! \brief Impose b part only in the Matrix System Ax=b
+    *
+    * This function impose RHS of an existing Ax=b system.
+    *
+    *
+    *
+    * \param subset Vector with indices of particles where the operator has to be imposed
+    * \param num Constant for all the particles
+    * \param id Equation id in the system that we are imposing given by ed_id type
+    *
+    */
     template< typename index_type>
     void impose_b(openfpm::vector<index_type> &subset,
                 const typename Sys_eqs::stype num,
