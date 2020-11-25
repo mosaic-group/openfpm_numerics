@@ -53,7 +53,7 @@ BOOST_AUTO_TEST_SUITE(Support_tests)
         // Get spatial position from point iterator
         vect_dist_key_dx p = itPoint.get();
         const auto pos = domain.getPos(p.getKey());
-        std::cout << "p=(" << pos[0] << "," << pos[1] << ")" << std::endl;
+        //std::cout << "p=(" << pos[0] << "," << pos[1] << ")" << std::endl;
 //        BOOST_REQUIRE_CLOSE(pos[0], 0, 1e-16);
 //        BOOST_REQUIRE_CLOSE(pos[1], 0, 1e-16);
 
@@ -113,7 +113,7 @@ BOOST_AUTO_TEST_SUITE(Support_tests)
         // Get spatial position from point iterator
         vect_dist_key_dx p = itPoint.get();
         const auto pos = domain.getPos(p.getKey());
-        std::cout << "p=(" << pos[0] << "," << pos[1] << ")" << std::endl;
+        //std::cout << "p=(" << pos[0] << "," << pos[1] << ")" << std::endl;
 //        BOOST_REQUIRE_CLOSE(pos[0], 0, 1e-16);
 //        BOOST_REQUIRE_CLOSE(pos[1], 0, 1e-16);
 

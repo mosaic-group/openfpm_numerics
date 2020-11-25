@@ -334,7 +334,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
         // Create a writer and write
         VTKWriter<openfpm::vector<Box<2, double>>, VECTOR_BOX> vtk_box;
         vtk_box.add(boxes);
-        vtk_box.write("vtk_box.vtk");
+        //vtk_box.write("vtk_box.vtk");
 
 
         auto it2 = domain.getDomainIterator();
@@ -393,7 +393,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
 
         Solver.solve_with_solver(solver,sol);
 
-        solver.print_preconditioner();
+        //solver.print_preconditioner();
 
         domain.ghost_get<2>();
 
@@ -412,10 +412,10 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
             domain.getProp<4>(p) = fabs(domain.getProp<3>(p) - domain.getProp<2>(p));
 
         }
-        std::cout << "Maximum Analytic Error: " << worst1 << std::endl;
+        //std::cout << "Maximum Analytic Error: " << worst1 << std::endl;
 
-        domain.ghost_get<4>();
-        domain.write("Robin_anasol");
+        //domain.ghost_get<4>();
+        //domain.write("Robin_anasol");
         BOOST_REQUIRE(worst1 < 0.03);
 
     }
@@ -502,7 +502,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
         // Create a writer and write
         VTKWriter<openfpm::vector<Box<2, double>>, VECTOR_BOX> vtk_box;
         vtk_box.add(boxes);
-        vtk_box.write("vtk_box.vtk");
+        //vtk_box.write("vtk_box.vtk");
 
 
         auto it2 = domain.getDomainIterator();
@@ -593,11 +593,11 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
             domain.getProp<4>(p) = fabs(domain.getProp<3>(p) - domain.getProp<2>(p));
 
         }
-        std::cout << "Maximum Analytic Error: " << worst1 << std::endl;
+       // std::cout << "Maximum Analytic Error: " << worst1 << std::endl;
 
         BOOST_REQUIRE(worst1 < 0.03);
 
-        domain.write("Dirichlet_anasol");
+       // domain.write("Dirichlet_anasol");
     }
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -676,7 +676,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
         // Create a writer and write
         VTKWriter<openfpm::vector<Box<2, double>>, VECTOR_BOX> vtk_box;
         vtk_box.add(boxes);
-        vtk_box.write("vtk_box.vtk");
+        //vtk_box.write("vtk_box.vtk");
 
 
         auto it2 = domain.getDomainIterator();
@@ -724,7 +724,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
         //Auto Error
         BOOST_REQUIRE(worst1 < 1.0);
 
-        domain.write("Poisson_Periodic");
+        //domain.write("Poisson_Periodic");
     }
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -803,7 +803,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
         // Create a writer and write
         VTKWriter<openfpm::vector<Box<2, double>>, VECTOR_BOX> vtk_box;
         vtk_box.add(boxes);
-        vtk_box.write("vtk_box.vtk");
+        //vtk_box.write("vtk_box.vtk");
 
 
         auto it2 = domain.getDomainIterator();
@@ -865,9 +865,9 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
         //Auto Error
         BOOST_REQUIRE(worst1 < 1.0);
 
-        std::cout << "WORST: " << worst1 << std::endl;
+        //std::cout << "WORST: " << worst1 << std::endl;
 
-        domain.write("Mixed");
+        //domain.write("Mixed");
     }
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -953,7 +953,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
         // Create a writer and write
         VTKWriter<openfpm::vector<Box<2, double>>, VECTOR_BOX> vtk_box;
         vtk_box.add(boxes);
-        vtk_box.write("vtk_box.vtk");
+        //vtk_box.write("vtk_box.vtk");
 
 
         auto it2 = domain.getDomainIterator();
@@ -1014,7 +1014,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
         //Auto Error
         BOOST_REQUIRE(worst1 < 1.0);
 
-        domain.write("Neumann");
+        //domain.write("Neumann");
     }
 
 
@@ -1094,8 +1094,8 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
         // Create a writer and write
         VTKWriter<openfpm::vector<Box<2, double>>, VECTOR_BOX> vtk_box;
         vtk_box.add(boxes);
-        vtk_box.write("vtk_box.vtk");
-        domain.write("Slice_anasol");
+        //vtk_box.write("vtk_box.vtk");
+       // domain.write("Slice_anasol");
 
 
         auto it2 = domain.getDomainIterator();
@@ -1198,7 +1198,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
         }
         //std::cout << "Maximum Analytic Error in slice x: " << worst1 << std::endl;
         //std::cout << "Maximum Analytic Error in slice y: " << worst2 << std::endl;
-        domain.write("Slice_anasol");
+        //domain.write("Slice_anasol");
         BOOST_REQUIRE(worst1 < 0.03);
         BOOST_REQUIRE(worst2 < 0.03);
 

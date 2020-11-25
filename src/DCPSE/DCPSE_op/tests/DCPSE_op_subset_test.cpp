@@ -137,7 +137,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_subset_suite_tests)
 //        P_bulk = Dx_bulk(P_bulk);  <------------ Incorrect produce error message
 //        P = Dx_bulk(P);   <------- Incorrect produce overflow
 
-        Particles.write("Out");
+        //Particles.write("Out");
     }
 
     BOOST_AUTO_TEST_CASE(dcpse_op_subset_PC_lid) {
