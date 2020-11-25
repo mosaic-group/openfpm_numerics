@@ -98,7 +98,7 @@ BOOST_AUTO_TEST_SUITE(Dcpse_tests)
         BOOST_TEST_MESSAGE("DCPSE compute diff operator...");
         dcpse.template computeDifferentialOperator<0, 1>(domain);
 
-        domain.write("OUT_TEST");
+        //domain.write("OUT_TEST");
 
         // Now check against the validation values
         BOOST_TEST_MESSAGE("Validating against ground truth...");
@@ -148,10 +148,10 @@ BOOST_AUTO_TEST_SUITE(Dcpse_tests)
         spacing[1] = 1.0 / (sz[1] - 1);
 
         double sigma2 = spacing[0] * spacing[1] / (2 * 4);
-        std::cout
-                << "sigma2 = " << sigma2
-                << ", spacing[0] = " << spacing[0]
-                << std::endl;
+        //std::cout
+        //        << "sigma2 = " << sigma2
+        //        << ", spacing[0] = " << spacing[0]
+        //       << std::endl;
         double rCut = 2 * (spacing[0] + sqrt(sigma2));
         Ghost<2, double> ghost(rCut);
 

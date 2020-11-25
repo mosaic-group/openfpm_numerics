@@ -58,7 +58,7 @@ BOOST_AUTO_TEST_SUITE(fd_op_suite_tests)
         spacing[1] = 2 * M_PI / (sz[1] - 1);
         Ghost<2, long int> ghost(1);
 
-        std::cout << "Spacing: " << spacing[0] << " " << spacing[1] << std::endl;
+        //std::cout << "Spacing: " << spacing[0] << " " << spacing[1] << std::endl;
 
         grid_dist_id<2, double, aggregate<double, double, double>> domain(sz, box,ghost,bc);
 
@@ -106,7 +106,7 @@ BOOST_AUTO_TEST_SUITE(fd_op_suite_tests)
             ++it2;
         }
 
-        std::cout << "Maximum Error: " << worst << std::endl;
+        //std::cout << "Maximum Error: " << worst << std::endl;
 
         domain.write("g");
 
@@ -124,7 +124,7 @@ BOOST_AUTO_TEST_SUITE(fd_op_suite_tests)
         spacing[1] = 2 * M_PI / (sz[1] - 1);
         Ghost<2, long int> ghost(1);
 
-        std::cout << "Spacing: " << spacing[0] << " " << spacing[1] << std::endl;
+        //std::cout << "Spacing: " << spacing[0] << " " << spacing[1] << std::endl;
 
         grid_dist_id<2, double, aggregate<double, double, double>> domain(sz, box,ghost,bc);
 
@@ -173,9 +173,9 @@ BOOST_AUTO_TEST_SUITE(fd_op_suite_tests)
             ++it2;
         }
 
-        std::cout << "Maximum Error: " << worst << std::endl;
+        //std::cout << "Maximum Error: " << worst << std::endl;
 
-        domain.write("g");
+        //domain.write("g");
 
         BOOST_REQUIRE(worst < 0.003);
     }
@@ -194,7 +194,7 @@ BOOST_AUTO_TEST_SUITE(fd_op_suite_tests)
         spacing[1] = 2 * M_PI / (sz[1] - 1);
         Ghost<2, long int> ghost(1);
 
-        std::cout << "Spacing: " << spacing[0] << " " << spacing[1] << std::endl;
+        //std::cout << "Spacing: " << spacing[0] << " " << spacing[1] << std::endl;
 
         staggered_grid_dist<2, double, aggregate<double, double>> domain(sz, box,ghost,bc);
 
@@ -267,7 +267,7 @@ BOOST_AUTO_TEST_SUITE(fd_op_suite_tests)
         spacing[1] = 2 * M_PI / (sz[1] - 1);
         Ghost<2, long int> ghost(1);
 
-        std::cout << "Spacing: " << spacing[0] << " " << spacing[1] << std::endl;
+        //std::cout << "Spacing: " << spacing[0] << " " << spacing[1] << std::endl;
 
         staggered_grid_dist<2, double, aggregate<double, double>> domain(sz, box,ghost,bc);
 

@@ -467,8 +467,8 @@ BOOST_AUTO_TEST_CASE(dcpse_op_tests) {
             ++it2;
         }
 
-        Particles.write("test_out");
-        std::cout << "Error: " << err << "   " << create_vcluster().rank() << std::endl;
+        //Particles.write("test_out");
+        //std::cout << "Error: " << err << "   " << create_vcluster().rank() << std::endl;
         BOOST_REQUIRE(err < 0.03);
 
     }

@@ -5,6 +5,9 @@
 #ifndef OPENFPM_PDATA_EQNSSTRUCT_HPP
 #define OPENFPM_PDATA_EQNSSTRUCT_HPP
 
+#include "Solvers/umfpack_solver.hpp"
+#include "Solvers/petsc_solver.hpp"
+
 //! Specify the general characteristic of system to solve
 struct equations2d1 {
 

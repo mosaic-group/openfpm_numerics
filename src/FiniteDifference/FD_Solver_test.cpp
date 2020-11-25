@@ -93,18 +93,26 @@ BOOST_AUTO_TEST_CASE(solver_check_diagonal)
     }
 
     domain.ghost_get<0>();
+    petsc_solver<double> pet_sol;
+    pet_sol.setPreconditioner(PCNONE);
 
     auto v =  FD::getV<0>(domain);
     auto RHS= FD::getV<1>(domain);
     auto sol= FD::getV<2>(domain);
-
+    FD::LInfError LInfError;
     FD_scheme<equations2d1,decltype(domain)> Solver(ghost,domain);
-
     Solver.impose(5.0*v,{0,0},{80,80}, prop_id<1>());
-    Solver.solve(sol);
+    Solver.solve_with_solver(pet_sol,sol);
+    v=1/5.0*RHS;
+    auto linferror = LInfError(v, sol);
 
+   /*    std::cout << "L2 error: " << l2error << std::endl;
+    std::cout << "L∞ Error: " << linferror << std::endl;*/
+   BOOST_REQUIRE(linferror < 1e-5);
 
-    domain.write("basic_test");
+    //domain.write("FDSOLVER_Lap_test");
+
+    //domain.write("basic_test");
 }
 
 
@@ -140,7 +148,6 @@ BOOST_AUTO_TEST_CASE(solver_check_diagonal)
 
         FD_scheme<equations2d1,decltype(domain)> Solver(ghost,domain);
         FD::Lap Lap;
-        FD::L2Error L2Error;
         FD::LInfError LInfError;
 
 /*        Solver.impose(Lap(v),{1,1},{79,79}, prop_id<1>());
@@ -157,16 +164,15 @@ BOOST_AUTO_TEST_CASE(solver_check_diagonal)
         Solver.impose(v,{81,1},{81,80}, prop_id<0>());
         /*auto A=Solver.getA();
         A.write("Lap_Matrix");*/
+        petsc_solver<double> pet_sol;
+        pet_sol.setPreconditioner(PCNONE);
+        Solver.solve_with_solver(pet_sol,sol);
 
-        Solver.solve(sol);
-
-        auto l2error = L2Error(v, sol);
         auto linferror = LInfError(v, sol);
+        BOOST_REQUIRE(linferror < 1e-3);
+        //std::cout << "L∞ Error: " << linferror << std::endl;
 
-        std::cout << "L2 error: " << l2error << std::endl;
-        std::cout << "L∞ Error: " << linferror << std::endl;
-
-        domain.write("FDSOLVER_Lap_test");
+        //domain.write("FDSOLVER_Lap_test");
     }
 
     BOOST_AUTO_TEST_CASE(solver_Lap_stag)
@@ -230,9 +236,9 @@ BOOST_AUTO_TEST_CASE(solver_check_diagonal)
 
             ++it2;
         }
-
-        std::cout << "Maximum Error: " << worst << std::endl;
-        domain.write("FDSOLVER_Lap_test");
+        BOOST_REQUIRE(worst < 1e-3);
+        //std::cout << "Maximum Error: " << worst << std::endl;
+        //domain.write("FDSOLVER_Lap_test");
     }
 
     /*
@@ -466,7 +472,7 @@ f_x = f_y = f_z = 3
             ++it2;
     	}
 
-    	g_dist_normal.write("out_test");
+    	//g_dist_normal.write("out_test");
 
     	//! [Copy the solution to grid]
 
@@ -529,7 +535,8 @@ f_x = f_y = f_z = 3
      \Delta u - \nabla p  = +f
      \nabla \cdot u           = 2x - 2x                    = 0
     */
-
+#if 0
+    //These tests need development and checks
     BOOST_AUTO_TEST_CASE(solver_ana_stag)
     {
         Vcluster<> & v_cl = create_vcluster();
@@ -679,6 +686,8 @@ f_x = f_y = f_z = 3
 
         //g_dist.write("ana_stokes")
     }
+
+#endif
 
 
 BOOST_AUTO_TEST_SUITE_END()

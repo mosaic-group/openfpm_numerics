@@ -17,6 +17,8 @@
 #include "Operators/Vector/vector_dist_operators.hpp"
 #include "Vector/vector_dist_subset.hpp"
 #include "../EqnsStruct.hpp"
+#include "util/SphericalHarmonics.hpp"
+
 
 //template<typename T>
 //struct Debug;
@@ -145,12 +147,12 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests3)
 
     }
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-/*    BOOST_AUTO_TEST_CASE(dcpse_poisson_Robin_anal3d) {
+    BOOST_AUTO_TEST_CASE(dcpse_poisson_dirichlet_anal3d) {
 //  int rank;
 //  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-
-        const size_t sz[3] = {41,41,41};
-        Box<3, double> box({0, 0,0}, {0.5, 0.5,0.5});
+        size_t grd_sz=21;
+        const size_t sz[3] = {grd_sz,grd_sz,grd_sz};
+        Box<3, double> box({0, 0,0}, {1.0, 1.0,1.0});
         size_t bc[3] = {NON_PERIODIC, NON_PERIODIC,NON_PERIODIC};
         double spacing = box.getHigh(0) / (sz[0] - 1);
         Ghost<3, double> ghost(spacing * 3.1);
@@ -181,8 +183,8 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests3)
         domain.map();
         domain.ghost_get<0>();
 
-        Derivative_x Dx(domain, 2, rCut,1.9,support_options::RADIUS);
-        Derivative_y Dy(domain, 2, rCut,1.9,support_options::RADIUS);
+        Derivative_x Dx(domain, 2, rCut,3.1,support_options::RADIUS);
+        Derivative_y Dy(domain, 2, rCut,3.1,support_options::RADIUS);
         Laplacian Lap(domain, 2, rCut,1.9,support_options::RADIUS);
 
         openfpm::vector<aggregate<int>> bulk;
@@ -240,6 +242,8 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests3)
         while (it2.isNext()) {
             auto p = it2.get();
             Point<3, double> xp = Particles.getPos(p);
+            domain.getProp<1>(p) = -3.0*M_PI*M_PI*sin(M_PI*xp.get(0))*sin(M_PI*xp.get(1))*sin(M_PI*xp.get(2));
+            domain.getProp<3>(p) = sin(M_PI*xp.get(0))*sin(M_PI*xp.get(1))*sin(M_PI*xp.get(2));
             if (front.isInside(xp) == true) {
                 front_p.add();
                 front_p.last().get<0>() = p.getKey();
@@ -266,1123 +270,352 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests3)
         }
 
 
-        //TEST NEEDS DEVELOPMENT
+        DCPSE_scheme<equations3d1,decltype(domain)> Solver( domain);
+        auto Poisson = Lap(v);
+        auto D_x = Dx(v);
+        auto D_y = Dy(v);
+        Solver.impose(Poisson, bulk, prop_id<1>());
+        Solver.impose(v, up_p, prop_id<1>());
+        Solver.impose(v, right_p, prop_id<1>());
+        Solver.impose(v, down_p, prop_id<1>());
+        Solver.impose(v, left_p, prop_id<1>());
+        Solver.impose(v, front_p, prop_id<1>());
+        Solver.impose(v, back_p, prop_id<1>());
+        Solver.solve(sol);
+        DCPSE_sol=Lap(sol);
 
-
-
-        v=abs(DCPSE_sol-RHS);
         double worst1 = 0.0;
 
-        it2 = domain.getDomainIterator();
+        v=abs(DCPSE_sol-RHS);
 
-        while (it2.isNext()) {
-            auto p = it2.get();
-            if (fabs(domain.getProp<1>(p) - domain.getProp<5>(p)) >= worst1) {
-                worst1 = fabs(domain.getProp<1>(p) - domain.getProp<5>(p));
+        for(int j=0;j<bulk.size();j++)
+        {   auto p=bulk.get<0>(j);
+            if (fabs(domain.getProp<3>(p) - domain.getProp<2>(p)) >= worst1) {
+                worst1 = fabs(domain.getProp<3>(p) - domain.getProp<2>(p));
             }
-            ++it2;
+            domain.getProp<4>(p) = fabs(domain.getProp<3>(p) - domain.getProp<2>(p));
+
         }
+        //std::cout << "Maximum Analytic Error: " << worst1 << std::endl;
 
-        //BOOST_REQUIRE(worst1 < 0.03);
+        BOOST_REQUIRE(worst1 < 0.03);
+
+        //domain.write("Dirichlet_anasol_3d");
+    }
 
 
-
-
-    }*/
-
-/*    BOOST_AUTO_TEST_CASE(stokes_3d_petscP) {
-        size_t grd_sz=21;
+    BOOST_AUTO_TEST_CASE(Sph_harm) {
+        BOOST_REQUIRE(openfpm::math::Y(2,1,0.5,0)+0.459674<0.00001);
+        //These would be a requirement once Boost releases their fix
+        //
+        //BOOST_REQUIRE(boost::math::legendre_p(0,-1,1)=?);
+        double nu=1.0;
+        size_t grd_sz=20;
         const size_t sz[3] = {grd_sz,grd_sz,grd_sz};
-        Box<3, double> box({0, 0,0}, {1,1,1});
+        Box<3, double> box({-1.0, -1.0,-1.0}, {1.0,1.0,1.0});
         size_t bc[3] = {NON_PERIODIC, NON_PERIODIC, NON_PERIODIC};
-        double spacing = box.getHigh(0) / (sz[0] - 1);
-        double rCut = 3.1 * spacing;
+        double spacing = 2.0 / (sz[0] - 1);
+        double rCut = 3.9*spacing;
+        double R=1.0;
         Ghost<3, double> ghost(rCut);
-        //                                  P        V                 v_star           RHS            V_t   Helmholtz
-        vector_dist<3, double, aggregate<double,VectorS<3, double>,VectorS<3, double>,double,VectorS<3, double>,double,    double,VectorS<3, double>>> Particles(0, box, bc, ghost);
-        vector_dist<3, double, aggregate<double,double,VectorS<3, double>>> Particles_subset(0, box, bc, ghost);
+        //                                  P        V                 v_B           RHS            V_t         P_anal              RHS2            Polar cord
+        vector_dist<3, double, aggregate<double,VectorS<3, double>,VectorS<3, double>,double,VectorS<3, double>,double,double,VectorS<3, double>,VectorS<3, double>,VectorS<3, double>>> Particles(0, box, bc, ghost);
+
+
+        auto &v_cl = create_vcluster();
+
+        openfpm::vector<aggregate<int>> bulk;
+        openfpm::vector<aggregate<int>> Surface;
 
         auto it = Particles.getGridIterator(sz);
         while (it.isNext()) {
-            Particles.add();
             auto key = it.get();
-            double x = key.get(0) * it.getSpacing(0);
-            Particles.getLastPos()[0] = x;
-            double y = key.get(1) * it.getSpacing(1);
-            Particles.getLastPos()[1] = y;
-            double z = key.get(2) * it.getSpacing(1);
-            Particles.getLastPos()[2] = z;
+            double x = -1.0+key.get(0) * it.getSpacing(0);
+            double y = -1.0+key.get(1) * it.getSpacing(1);
+            double z = -1.0+key.get(2) * it.getSpacing(2);
+            double r=sqrt(x*x+y*y+z*z);
+            if (r<R-spacing/2.0) {
+                Particles.add();
+                Particles.getLastPos()[0] = x;
+                Particles.getLastPos()[1] = y;
+                Particles.getLastPos()[2] = z;
+                Particles.getLastProp<8>()[0] = r;
+                if (r==0){
+                    Particles.getLastProp<8>()[1] = 0.0;
+                }
+                else{
+                    Particles.getLastProp<8>()[1] = std::atan2(sqrt(x*x+y*y),z);
+                }
+                Particles.getLastProp<8>()[2] = std::atan2(y,x);
+            }
             ++it;
         }
 
-        Particles.map();
-        Particles.ghost_get<0>();
+        int n_sp=int(grd_sz)*int(grd_sz)*3;
 
-        openfpm::vector<aggregate<int>> bulk;
-        openfpm::vector<aggregate<int>> up_p;
-        openfpm::vector<aggregate<int>> dw_p;
-        openfpm::vector<aggregate<int>> l_p;
-        openfpm::vector<aggregate<int>> r_p;
-        openfpm::vector<aggregate<int>> f_p;
-        openfpm::vector<aggregate<int>> b_p;
+        double Golden_angle=M_PI * (3.0 - sqrt(5.0));
 
-
-        auto P = getV<0>(Particles);
-        auto V = getV<1>(Particles);
-        auto V_star = getV<2>(Particles);
-        V.setVarId(0);
-        auto RHS = getV<3>(Particles);
-        auto V_t = getV<4>(Particles);
-        auto H = getV<5>(Particles);
-        H.setVarId(0);
-        auto temp=getV<6>(Particles);
-        auto RHS2 = getV<7>(Particles);
-        auto P_bulk = getV<0>(Particles_subset);
-        auto H_bulk = getV<1>(Particles_subset); //Pressure only on inside
-        auto Grad_bulk = getV<2>(Particles_subset);
-
-        // Here fill up the boxes for particle detection.
-
-        Box<3, double> up({box.getLow(0) + spacing / 2.0, box.getHigh(1)- spacing / 2.0,box.getLow(2)+ spacing / 2.0},
-                          {box.getHigh(0) - spacing / 2.0, box.getHigh(1) + spacing / 2.0,box.getHigh(2)- spacing / 2.0});
-
-        Box<3, double> down({box.getLow(0) + spacing / 2.0, box.getLow(1) - spacing / 2.0,box.getLow(2)+ spacing / 2.0},
-                            {box.getHigh(0) - spacing / 2.0, box.getLow(1) + spacing / 2.0,box.getHigh(2)- spacing / 2.0});
-
-        Box<3, double> left({box.getLow(0) - spacing / 2.0, box.getLow(1) - spacing / 2.0,box.getLow(2) - spacing / 2.0},
-                            {box.getLow(0) + spacing / 2.0, box.getHigh(1) + spacing / 2.0,box.getHigh(2) + spacing / 2.0});
-
-        Box<3, double> right({box.getHigh(0) - spacing / 2.0, box.getLow(1) - spacing / 2.0,box.getLow(2)- spacing / 2.0},
-                             {box.getHigh(0) + spacing / 2.0, box.getHigh(1) + spacing / 2.0,box.getHigh(2)+ spacing / 2.0});
-
-        Box<3, double> front({box.getLow(0) + spacing / 2.0, box.getLow(1) - spacing / 2.0,box.getLow(2) - spacing / 2.0},
-                             {box.getHigh(0) - spacing / 2.0, box.getHigh(1) + spacing / 2.0,box.getLow(2) + spacing / 2.0});
-
-        Box<3, double> back({box.getLow(0) + spacing / 2.0, box.getLow(1) - spacing / 2.0,box.getHigh(2) - spacing / 2.0},
-                            {box.getHigh(0) - spacing / 2.0, box.getHigh(1) + spacing / 2.0,box.getHigh(2) + spacing / 2.0});
-
-        openfpm::vector<Box<3, double>> boxes;
-        boxes.add(up);
-        boxes.add(down);
-        boxes.add(left);
-        boxes.add(right);
-        boxes.add(front);
-        boxes.add(back);
-        VTKWriter<openfpm::vector<Box<3, double>>, VECTOR_BOX> vtk_box;
-        vtk_box.add(boxes);
-        vtk_box.write("boxes_3d.vtk");
-        auto it2 = Particles.getDomainIterator();
-        Particles.ghost_get<0,1,2,3,4,5>();
-        while (it2.isNext()) {
-            auto p = it2.get();
-            Point<3, double> xp = Particles.getPos(p);
-            Particles.getProp<0>(p) =0;
-            if (up.isInside(xp) == true) {
-                up_p.add();
-                up_p.last().get<0>() = p.getKey();
-                Particles.getProp<1>(p)[0] =  1;
-                Particles.getProp<1>(p)[1] =  0;
-                Particles.getProp<1>(p)[2] =  0;
-
-            }
-            else if (down.isInside(xp) == true) {
-                dw_p.add();
-                dw_p.last().get<0>() = p.getKey();
-                Particles.getProp<1>(p)[0] =  0;
-                Particles.getProp<1>(p)[1] =  0;
-                Particles.getProp<1>(p)[2] =  0;
-            }
-            else if (left.isInside(xp) == true) {
-                l_p.add();
-                l_p.last().get<0>() = p.getKey();
-                Particles.getProp<1>(p)[0] =  0;
-                Particles.getProp<1>(p)[1] =  0;
-                Particles.getProp<1>(p)[2] =  0;
-            }
-            else if (right.isInside(xp) == true) {
-                r_p.add();
-                r_p.last().get<0>() = p.getKey();
-                Particles.getProp<1>(p)[0] =  0;
-                Particles.getProp<1>(p)[1] =  0;
-                Particles.getProp<1>(p)[2] =  0;
-            }
-            else if (front.isInside(xp) == true) {
-                f_p.add();
-                f_p.last().get<0>() = p.getKey();
-                Particles.getProp<1>(p)[0] =  0;
-                Particles.getProp<1>(p)[1] =  0;
-                Particles.getProp<1>(p)[2] =  0;
-            }
-            else if (back.isInside(xp) == true) {
-                b_p.add();
-                b_p.last().get<0>() = p.getKey();
-                Particles.getProp<1>(p)[0] =  0;
-                Particles.getProp<1>(p)[1] =  0;
-                Particles.getProp<1>(p)[2] =  0;
-            }
-            else {
-                bulk.add();
-                bulk.last().get<0>() = p.getKey();
-                Particles.getProp<1>(p)[0] =  0;
-                Particles.getProp<1>(p)[1] =  0;
-                Particles.getProp<1>(p)[2] =  0;
-            }
-            ++it2;
-        }
-
-        for (int i = 0 ; i < bulk.size() ; i++) {
-            Particles_subset.add();
-            Particles_subset.getLastPos()[0] = Particles.getPos(bulk.template get<0>(i))[0];
-            Particles_subset.getLastPos()[1] = Particles.getPos(bulk.template get<0>(i))[1];
-            Particles_subset.getLastPos()[2] = Particles.getPos(bulk.template get<0>(i))[2];
-        }
-        V_t=V;
-
-
-        eq_id vx,vy,vz;
-
-        vx.setId(0);
-        vy.setId(1);
-        vz.setId(2);
-
-        Derivative_x Dx(Particles, 2, rCut,1.9,support_options::RADIUS),B_Dx(Particles_subset, 2, rCut,1.9,support_options::RADIUS);
-        Derivative_y Dy(Particles, 2, rCut,1.9,support_options::RADIUS),B_Dy(Particles_subset, 2, rCut,1.9,support_options::RADIUS);
-        Derivative_z Dz(Particles, 2, rCut,1.9,support_options::RADIUS),B_Dz(Particles_subset, 2, rCut,1.9,support_options::RADIUS);
-        Gradient Grad(Particles, 2, rCut,1.9,support_options::RADIUS);
-        Laplacian Lap(Particles, 2, rCut,1.9,support_options::RADIUS),B_Lap(Particles_subset, 2, rCut,1.9,support_options::RADIUS);
-        Advection Adv(Particles, 2, rCut,1.9,support_options::RADIUS);
-        Divergence Div(Particles, 2, rCut,1.9,support_options::RADIUS);
-
-
-        petsc_solver<double> solverPetsc;
-        solverPetsc.setRestart(250);
-        petsc_solver<double> solverPetsc2;
-        solverPetsc2.setRestart(250);
-
-
-        double nu=1e-2;
-        Particles.ghost_get<0,1,2,3,4,5,6,7>();
-        double sum=0,sum2=0;
-        int n=50;
-        //Particles.write_frame("Stokes3d",0);
-        V_t=V;
-        for(int i=1; i<=n ;i++)
+        for(int i=1;i<=n_sp;i++)
         {
-            Grad_bulk[0]=-B_Dx(P_bulk);
-            Grad_bulk[1]=-B_Dy(P_bulk);
-            for (int i = 0 ; i < bulk.size() ; i++) {
-                Particles.template getProp<7>(bulk.template get<0>(i))[0] = Particles_subset.getProp<2>(i)[0];
-                Particles.template getProp<7>(bulk.template get<0>(i))[1] = Particles_subset.getProp<2>(i)[1];
-                Particles.template getProp<7>(bulk.template get<0>(i))[2] = Particles_subset.getProp<2>(i)[2];
-            }
-            DCPSE_scheme<equations3d3,decltype(Particles)> Solver(Particles);
-            auto Stokes1 = Adv(V[0],V_star[0])-nu*Lap(V_star[0]);
-            auto Stokes2 = Adv(V[1],V_star[1])-nu*Lap(V_star[1]);
-            auto Stokes3 = Adv(V[2],V_star[2])-nu*Lap(V_star[2]);
-            Solver.impose(Stokes1,bulk,RHS2[0],vx);
-            Solver.impose(Stokes2,bulk,RHS2[1],vy);
-            Solver.impose(Stokes3,bulk,RHS2[2],vz);
-            Solver.impose(V_star[0], up_p,1.0,vx);
-            Solver.impose(V_star[1], up_p,0,vy);
-            Solver.impose(V_star[2], up_p,0,vz);
-            Solver.impose(V_star[0], r_p, 0,vx);
-            Solver.impose(V_star[1], r_p, 0,vy);
-            Solver.impose(V_star[2], r_p, 0,vz);
-            Solver.impose(V_star[0], dw_p,0,vx);
-            Solver.impose(V_star[1], dw_p,0,vy);
-            Solver.impose(V_star[2], dw_p,0,vz);
-            Solver.impose(V_star[0], l_p, 0,vx);
-            Solver.impose(V_star[1], l_p, 0,vy);
-            Solver.impose(V_star[2], l_p, 0,vz);
-            Solver.impose(V_star[0], f_p, 0,vx);
-            Solver.impose(V_star[1], f_p, 0,vy);
-            Solver.impose(V_star[2], f_p, 0,vz);
-            Solver.impose(V_star[0], b_p, 0,vx);
-            Solver.impose(V_star[1], b_p, 0,vy);
-            Solver.impose(V_star[2], b_p, 0,vz);
+            double y = 1.0 - (i /double(n_sp - 1.0)) * 2.0;
+            double radius = sqrt(1 - y * y);
+            double Golden_theta = Golden_angle * i;
+            double x = cos(Golden_theta) * radius;
+            double z = sin(Golden_theta) * radius;
 
-            Solver.solve_with_solver(solverPetsc,V_star[0],V_star[1],V_star[2]);
-            //std::cout << "Stokes Solved" << std::endl;
-            Particles.ghost_get<2>();
-            RHS=-Div(V_star);
-            DCPSE_scheme<equations3d1,decltype(Particles)> SolverH(Particles);
-            auto Helmholtz = Lap(H);
-            auto D_x=Dx(H);
-            auto D_y=Dy(H);
-            auto D_z=Dz(H);
-            SolverH.impose(Helmholtz,bulk,prop_id<3>());
-            SolverH.impose(H, up_p,0);
-            SolverH.impose(H, r_p, 0);
-            SolverH.impose(H, dw_p,0);
-            SolverH.impose(H, l_p,0);
-            SolverH.impose(H, f_p,0);
-            SolverH.impose(H, b_p,0);
+            if (acos(z)==0 || acos(z)==M_PI){
+                std::cout<<"Theta 0/Pi "<<std::endl;
+                continue;
+            }
 
-            SolverH.solve_with_solver(solverPetsc2,H);
-            Particles.ghost_get<5>();
-            for (int i = 0 ; i < bulk.size() ; i++) {
-                Particles_subset.getProp<1>(i) = Particles.template getProp<5>(bulk.template get<0>(i));
-            }
-            //std::cout << "Helmholtz Solved" << std::endl;
-            V=V_star+Grad(H);
-            for(int j=0;j<up_p.size();j++)
-            {   auto p=up_p.get<0>(j);
-                Particles.getProp<1>(p)[0] =  1;
-                Particles.getProp<1>(p)[1] =  0;
-                Particles.getProp<1>(p)[2] =  0;
-            }
-            for(int j=0;j<l_p.size();j++)
-            {   auto p=l_p.get<0>(j);
-                Particles.getProp<1>(p)[0] =  0;
-                Particles.getProp<1>(p)[1] =  0;
-                Particles.getProp<1>(p)[2] =  0;
-            }
-            for(int j=0;j<r_p.size();j++)
-            {   auto p=r_p.get<0>(j);
-                Particles.getProp<1>(p)[0] =  0;
-                Particles.getProp<1>(p)[1] =  0;
-                Particles.getProp<1>(p)[2] =  0;
-            }
-            for(int j=0;j<dw_p.size();j++)
-            {   auto p=dw_p.get<0>(j);
-                Particles.getProp<1>(p)[0] =  0;
-                Particles.getProp<1>(p)[1] =  0;
-                Particles.getProp<1>(p)[2] =  0;
-            }
-            for(int j=0;j<f_p.size();j++)
-            {   auto p=f_p.get<0>(j);
-                Particles.getProp<1>(p)[0] =  0;
-                Particles.getProp<1>(p)[1] =  0;
-                Particles.getProp<1>(p)[2] =  0;
-            }
-            for(int j=0;j<b_p.size();j++)
-            {   auto p=b_p.get<0>(j);
-                Particles.getProp<1>(p)[0] =  0;
-                Particles.getProp<1>(p)[1] =  0;
-                Particles.getProp<1>(p)[2] =  0;
-            }
-            P_bulk=P_bulk+B_Lap(H_bulk);//-0.5*B_Adv(V_t,H);
-            for (int i = 0 ; i < bulk.size() ; i++) {
-
-                Particles.template getProp<0>(bulk.template get<0>(i)) = Particles_subset.getProp<0>(i);
-            }
-            Particles.ghost_get<0,1>();
-            //std::cout << "V,P Corrected" << std::endl;
-            sum=0;
-            for(int j=0;j<bulk.size();j++)
-            {   auto p=bulk.get<0>(j);
-                sum+=(Particles.getProp<4>(p)[0]-Particles.getProp<1>(p)[0])*(Particles.getProp<4>(p)[0]- Particles.getProp<1>(p)[0])+(Particles.getProp<4>(p)[1]- Particles.getProp<1>(p)[1])*(Particles.getProp<4>(p)[1]- Particles.getProp<1>(p)[1])+(Particles.getProp<4>(p)[2]- Particles.getProp<1>(p)[2])*(Particles.getProp<4>(p)[2]- Particles.getProp<1>(p)[2]);
-                sum2+= Particles.getProp<1>(p)[0]*Particles.getProp<1>(p)[0]+Particles.getProp<1>(p)[1]*Particles.getProp<1>(p)[1]+Particles.getProp<1>(p)[2]*Particles.getProp<1>(p)[2];
-            }
-            sum=sqrt(sum);
-            sum2=sqrt(sum2);
-            V_t=V;
-            //std::cout << "Relative l2 convergence error = " <<sum/sum2<< std::endl;
-            return;
-            Particles.write_frame("Stokes3d",i);
-        }
-    }*/
-
-
-/*    BOOST_AUTO_TEST_CASE(stokes_3d_petsc) {
-        size_t grd_sz=21;
-        const size_t sz[3] = {grd_sz,grd_sz,grd_sz};
-        Box<3, double> box({0, 0,0}, {1,1,1});
-        size_t bc[3] = {NON_PERIODIC, NON_PERIODIC, NON_PERIODIC};
-        double spacing = box.getHigh(0) / (sz[0] - 1);
-        double rCut = 3.1 * spacing;
-        Ghost<3, double> ghost(rCut);
-        //                                  P        V                 v_star           RHS            V_t   Helmholtz
-        vector_dist<3, double, aggregate<double,VectorS<3, double>,VectorS<3, double>,double,VectorS<3, double>,double,    double,VectorS<3, double>>> Particles(0, box, bc, ghost);
-        auto it = Particles.getGridIterator(sz);
-        while (it.isNext()) {
             Particles.add();
-            auto key = it.get();
-            double x = key.get(0) * it.getSpacing(0);
             Particles.getLastPos()[0] = x;
-            double y = key.get(1) * it.getSpacing(1);
             Particles.getLastPos()[1] = y;
-            double z = key.get(2) * it.getSpacing(1);
             Particles.getLastPos()[2] = z;
-            ++it;
+            Particles.getLastProp<8>()[0] = 1.0 ;
+            Particles.getLastProp<8>()[1] = std::atan2(sqrt(x*x+y*y),z);
+            Particles.getLastProp<8>()[2] = std::atan2(y,x);
         }
-
         Particles.map();
         Particles.ghost_get<0>();
 
-        openfpm::vector<aggregate<int>> bulk;
-        openfpm::vector<aggregate<int>> up_p;
-        openfpm::vector<aggregate<int>> dw_p;
-        openfpm::vector<aggregate<int>> l_p;
-        openfpm::vector<aggregate<int>> r_p;
-        openfpm::vector<aggregate<int>> f_p;
-        openfpm::vector<aggregate<int>> b_p;
+
+        std::unordered_map<const lm,double,key_hash,key_equal> Vr;
+        std::unordered_map<const lm,double,key_hash,key_equal> V1;
+        std::unordered_map<const lm,double,key_hash,key_equal> V2;
+        //Setting max mode l_max
+        constexpr int K = 2;
+        //Setting amplitudes to 0
+        for(int l=0;l<=K;l++){
+            for(int m=-l;m<=l;m++){
+                Vr[std::make_tuple(l,m)]=0.0;
+                V1[std::make_tuple(l,m)]=0.0;
+                V2[std::make_tuple(l,m)]=0.0;
+            }
 
 
+        }
+        //Setting some amplitude for boundary velocity
+        V1[std::make_tuple(1,0)]=1.0;
+
+        auto it2 = Particles.getDomainIterator();
+        while (it2.isNext()) {
+            auto p = it2.get();
+            Point<3, double> xp = Particles.getPos(p);
+            Point<3, double> xP = Particles.getProp<8>(p);
+            Particles.getProp<0>(p) =0;
+            if (xP[0]==1.0) {
+                Surface.add();
+                Surface.last().get<0>() = p.getKey();
+                Particles.getProp<0>(p) =  0;
+                std::vector<double> SVel;
+                SVel=openfpm::math::sumY<K>(xP[0],xP[1],xP[2],Vr,V1,V2);
+                double SP=openfpm::math::sumY_Scalar<K>(xP[0],xP[1],xP[2],Vr);
+                Particles.getProp<2>(p)[0] = SVel[0];
+                Particles.getProp<2>(p)[1] = SVel[1];
+                Particles.getProp<2>(p)[2] = SVel[2];
+                Particles.getProp<9>(p)[0] = SVel[0];
+                Particles.getProp<9>(p)[1] = SVel[1];
+                Particles.getProp<9>(p)[2] = SVel[2];
+                Particles.getProp<5>(p) = SP;
+
+
+            }
+            else {
+                bulk.add();
+                bulk.last().get<0>() = p.getKey();
+                Particles.getProp<0>(p) =  0;
+                Particles.getProp<1>(p)[0] =  0;
+                Particles.getProp<1>(p)[1] =  0;
+                Particles.getProp<1>(p)[2] =  0;
+            }
+            ++it2;
+        }
+
+        for (int j = 0; j < bulk.size(); j++) {
+            auto p = bulk.get<0>(j);
+            Point<3, double> xp = Particles.getPos(p);
+            Point<3, double> xP = Particles.getProp<8>(p);
+
+            std::unordered_map<const lm,double,key_hash,key_equal> Ur;
+            std::unordered_map<const lm,double,key_hash,key_equal> U2;
+            std::unordered_map<const lm,double,key_hash,key_equal> U1;
+            std::unordered_map<const lm,double,key_hash,key_equal> Plm;
+
+            for (int l = 0; l <= K; l++) {
+                for (int m = -l; m <= l; m++) {
+                    auto Er= Vr.find(std::make_tuple(l,m));
+                    auto E1= V1.find(std::make_tuple(l,m));
+                    auto E2= V2.find(std::make_tuple(l,m));
+                    std::vector<double> Sol=openfpm::math::sph_anasol_u(nu,l,m,Er->second,E1->second,E2->second,xP[0]);
+                    Ur[std::make_tuple(l,m)]=Sol[0];
+                    U1[std::make_tuple(l,m)]=Sol[1];
+                    U2[std::make_tuple(l,m)]=Sol[2];
+                    Plm[std::make_tuple(l,m)]=Sol[3];
+                }
+
+            }
+
+            if(fabs(xP[0])>=1e-5 && xP[1]>1e-5 && (M_PI-xP[1])>=1e-5)
+            {
+                std::vector<double> SVel = openfpm::math::sumY<K>(xP[0], xP[1], xP[2], Ur, U1, U2);
+                Particles.getProp<9>(p)[0] = SVel[0];
+                Particles.getProp<9>(p)[1] = SVel[1];
+                Particles.getProp<9>(p)[2] = SVel[2];
+                Particles.getProp<5>(p) = openfpm::math::sumY_Scalar<K>(xP[0], xP[1], xP[2], Plm);
+            }
+        }
+
+        vector_dist_subset<3, double, aggregate<double,VectorS<3, double>,VectorS<3, double>,double,VectorS<3, double>,double,double,VectorS<3, double>,VectorS<3, double>,VectorS<3, double>>> Particles_bulk(Particles,bulk);
         auto P = getV<0>(Particles);
         auto V = getV<1>(Particles);
-        auto V_star = getV<2>(Particles);
+        auto V_B = getV<2>(Particles);
         V.setVarId(0);
-        auto RHS = getV<3>(Particles);
+        auto DIV = getV<3>(Particles);
         auto V_t = getV<4>(Particles);
-        auto H = getV<5>(Particles);
-        H.setVarId(0);
+        auto P_anal = getV<5>(Particles);
         auto temp=getV<6>(Particles);
-        auto RHS2 = getV<7>(Particles);
+        auto RHS = getV<7>(Particles);
+        auto P_bulk = getV<0>(Particles_bulk);
+        auto RHS_bulk = getV<7>(Particles_bulk);
+        auto V_anal = getV<9>(Particles);
 
-        // Here fill up the boxes for particle detection.
-
-        Box<3, double> up({box.getLow(0) + spacing / 2.0, box.getHigh(1)- spacing / 2.0,box.getLow(2)+ spacing / 2.0},
-                          {box.getHigh(0) - spacing / 2.0, box.getHigh(1) + spacing / 2.0,box.getHigh(2)- spacing / 2.0});
-
-        Box<3, double> down({box.getLow(0) + spacing / 2.0, box.getLow(1) - spacing / 2.0,box.getLow(2)+ spacing / 2.0},
-                            {box.getHigh(0) - spacing / 2.0, box.getLow(1) + spacing / 2.0,box.getHigh(2)- spacing / 2.0});
-
-        Box<3, double> left({box.getLow(0) - spacing / 2.0, box.getLow(1) - spacing / 2.0,box.getLow(2) - spacing / 2.0},
-                            {box.getLow(0) + spacing / 2.0, box.getHigh(1) + spacing / 2.0,box.getHigh(2) + spacing / 2.0});
-
-        Box<3, double> right({box.getHigh(0) - spacing / 2.0, box.getLow(1) - spacing / 2.0,box.getLow(2)- spacing / 2.0},
-                             {box.getHigh(0) + spacing / 2.0, box.getHigh(1) + spacing / 2.0,box.getHigh(2)+ spacing / 2.0});
-
-        Box<3, double> front({box.getLow(0) + spacing / 2.0, box.getLow(1) - spacing / 2.0,box.getLow(2) - spacing / 2.0},
-                             {box.getHigh(0) - spacing / 2.0, box.getHigh(1) + spacing / 2.0,box.getLow(2) + spacing / 2.0});
-
-        Box<3, double> back({box.getLow(0) + spacing / 2.0, box.getLow(1) - spacing / 2.0,box.getHigh(2) - spacing / 2.0},
-                            {box.getHigh(0) - spacing / 2.0, box.getHigh(1) + spacing / 2.0,box.getHigh(2) + spacing / 2.0});
-
-        openfpm::vector<Box<3, double>> boxes;
-        boxes.add(up);
-        boxes.add(down);
-        boxes.add(left);
-        boxes.add(right);
-        boxes.add(front);
-        boxes.add(back);
-        VTKWriter<openfpm::vector<Box<3, double>>, VECTOR_BOX> vtk_box;
-        vtk_box.add(boxes);
-        vtk_box.write("boxes_3d.vtk");
-        auto it2 = Particles.getDomainIterator();
-        Particles.ghost_get<0,1,2,3,4,5>();
-        while (it2.isNext()) {
-            auto p = it2.get();
-            Point<3, double> xp = Particles.getPos(p);
-            Particles.getProp<0>(p) =0;
-            if (up.isInside(xp) == true) {
-                up_p.add();
-                up_p.last().get<0>() = p.getKey();
-                Particles.getProp<1>(p)[0] =  1;
-                Particles.getProp<1>(p)[1] =  0;
-                Particles.getProp<1>(p)[2] =  0;
-
-            }
-            else if (down.isInside(xp) == true) {
-                dw_p.add();
-                dw_p.last().get<0>() = p.getKey();
-                Particles.getProp<1>(p)[0] =  0;
-                Particles.getProp<1>(p)[1] =  0;
-                Particles.getProp<1>(p)[2] =  0;
-            }
-            else if (left.isInside(xp) == true) {
-                l_p.add();
-                l_p.last().get<0>() = p.getKey();
-                Particles.getProp<1>(p)[0] =  0;
-                Particles.getProp<1>(p)[1] =  0;
-                Particles.getProp<1>(p)[2] =  0;
-            }
-            else if (right.isInside(xp) == true) {
-                r_p.add();
-                r_p.last().get<0>() = p.getKey();
-                Particles.getProp<1>(p)[0] =  0;
-                Particles.getProp<1>(p)[1] =  0;
-                Particles.getProp<1>(p)[2] =  0;
-            }
-            else if (front.isInside(xp) == true) {
-                f_p.add();
-                f_p.last().get<0>() = p.getKey();
-                Particles.getProp<1>(p)[0] =  0;
-                Particles.getProp<1>(p)[1] =  0;
-                Particles.getProp<1>(p)[2] =  0;
-            }
-            else if (back.isInside(xp) == true) {
-                b_p.add();
-                b_p.last().get<0>() = p.getKey();
-                Particles.getProp<1>(p)[0] =  0;
-                Particles.getProp<1>(p)[1] =  0;
-                Particles.getProp<1>(p)[2] =  0;
-            }
-            else {
-                bulk.add();
-                bulk.last().get<0>() = p.getKey();
-                Particles.getProp<1>(p)[0] =  0;
-                Particles.getProp<1>(p)[1] =  0;
-                Particles.getProp<1>(p)[2] =  0;
-            }
-            ++it2;
-        }
         V_t=V;
-
-
+        P=0;
+        P_bulk=0;
         eq_id vx,vy,vz;
 
         vx.setId(0);
         vy.setId(1);
         vz.setId(2);
 
-        Derivative_x Dx(Particles, 2, rCut,1.9,support_options::RADIUS );
-        Derivative_y Dy(Particles, 2, rCut,1.9,support_options::RADIUS);
-        Derivative_z Dz(Particles, 2, rCut,1.9,support_options::RADIUS);
-        Gradient Grad(Particles, 2, rCut,1.9,support_options::RADIUS );
-        Laplacian Lap(Particles, 2, rCut,1.9,support_options::RADIUS);
-        Advection Adv(Particles, 2, rCut,1.9,support_options::RADIUS);
-        Divergence Div(Particles, 2, rCut,1.9,support_options::RADIUS);
+        double sampling=3.1;
+        double sampling2=1.9;
+        double rCut2=3.9*spacing;
 
+        Derivative_x Dx(Particles, 2, rCut,sampling, support_options::RADIUS),B_Dx(Particles_bulk, 2, rCut,sampling, support_options::RADIUS);
+        Derivative_y Dy(Particles, 2, rCut,sampling, support_options::RADIUS),B_Dy(Particles_bulk, 2, rCut,sampling, support_options::RADIUS);
+        Derivative_z Dz(Particles, 2, rCut,sampling, support_options::RADIUS),B_Dz(Particles_bulk, 2, rCut,sampling, support_options::RADIUS);
+        Derivative_xx Dxx(Particles, 2, rCut2,sampling2,support_options::RADIUS);
+        Derivative_yy Dyy(Particles, 2, rCut2,sampling2,support_options::RADIUS);
+        Derivative_zz Dzz(Particles, 2, rCut2,sampling2,support_options::RADIUS);
 
+        //std::cout << "DCPSE KERNELS DONE" << std::endl;
         petsc_solver<double> solverPetsc;
-        solverPetsc.setRestart(250);
-        petsc_solver<double> solverPetsc2;
-        solverPetsc2.setRestart(250);
-
-
-        double nu=1e-2;
-        Particles.ghost_get<0,1,2,3,4,5,6,7>();
-        double sum=0,sum2=0;
-        int n=50;
-        //Particles.write_frame("Stokes3d",0);
+        solverPetsc.setPreconditioner(PCNONE);
+        timer tt;
+        double sum=0,sum1=0;
         V_t=V;
-        for(int i=1; i<=n ;i++)
-        {   RHS2=-Grad(P);
-            DCPSE_scheme<equations3d3,decltype(Particles)> Solver(Particles);
-            auto Stokes1 = Adv(V[0],V_star[0])-nu*Lap(V_star[0]);
-            auto Stokes2 = Adv(V[1],V_star[1])-nu*Lap(V_star[1]);
-            auto Stokes3 = Adv(V[2],V_star[2])-nu*Lap(V_star[2]);
-            Solver.impose(Stokes1,bulk,RHS2[0],vx);
-            Solver.impose(Stokes2,bulk,RHS2[1],vy);
-            Solver.impose(Stokes3,bulk,RHS2[2],vz);
-            Solver.impose(V_star[0], up_p,1.0,vx);
-            Solver.impose(V_star[1], up_p,0,vy);
-            Solver.impose(V_star[2], up_p,0,vz);
-            Solver.impose(V_star[0], r_p, 0,vx);
-            Solver.impose(V_star[1], r_p, 0,vy);
-            Solver.impose(V_star[2], r_p, 0,vz);
-            Solver.impose(V_star[0], dw_p,0,vx);
-            Solver.impose(V_star[1], dw_p,0,vy);
-            Solver.impose(V_star[2], dw_p,0,vz);
-            Solver.impose(V_star[0], l_p, 0,vx);
-            Solver.impose(V_star[1], l_p, 0,vy);
-            Solver.impose(V_star[2], l_p, 0,vz);
-            Solver.impose(V_star[0], f_p, 0,vx);
-            Solver.impose(V_star[1], f_p, 0,vy);
-            Solver.impose(V_star[2], f_p, 0,vz);
-            Solver.impose(V_star[0], b_p, 0,vx);
-            Solver.impose(V_star[1], b_p, 0,vy);
-            Solver.impose(V_star[2], b_p, 0,vz);
+        double V_err_eps = 1e-5;
 
-            Solver.solve_with_solver(solverPetsc,V_star[0],V_star[1],V_star[2]);
+        double V_err = 1, V_err_old;
+        int n = 0;
+        int nmax = 30;
+        int ctr = 0, errctr, Vreset = 0;
+        V_err = 1;
+        n = 0;
+        tt.start();
+        while (V_err >= V_err_eps && n <= nmax) {
+            //Particles.write_frame("StokesSphere",n);
+            Particles.ghost_get<0>(SKIP_LABELLING);
+            RHS_bulk[0] = B_Dx(P);
+            RHS_bulk[1] = B_Dy(P);
+            RHS_bulk[2] = B_Dz(P);
+            DCPSE_scheme<equations3d3, decltype(Particles)> Solver(Particles);
+            auto Stokes1 = nu * (Dxx(V[0])+Dyy(V[0])+Dzz(V[0]));
+            auto Stokes2 = nu * (Dxx(V[1])+Dyy(V[1])+Dzz(V[1]));
+            auto Stokes3 = nu * (Dxx(V[2])+Dyy(V[2])+Dzz(V[2]));
+            Solver.impose(Stokes1, bulk, RHS[0], vx);
+            Solver.impose(Stokes2, bulk, RHS[1], vy);
+            Solver.impose(Stokes3, bulk, RHS[2], vz);
+            Solver.impose(V[0], Surface, V_B[0], vx);
+            Solver.impose(V[1], Surface, V_B[1], vy);
+            Solver.impose(V[2], Surface, V_B[2], vz);
+            Solver.solve_with_solver(solverPetsc, V[0], V[1], V[2]);
+            //Solver.solve(V[0],V[1],V[2]);
             //std::cout << "Stokes Solved" << std::endl;
-            Particles.ghost_get<2>();
-            RHS=-Div(V_star);
-            DCPSE_scheme<equations3d1,decltype(Particles)> SolverH(Particles);
-            auto Helmholtz = Lap(H);
-            auto D_x=Dx(H);
-            auto D_y=Dy(H);
-            auto D_z=Dz(H);
-            SolverH.impose(Helmholtz,bulk,prop_id<3>());
-            SolverH.impose(H, up_p,0);
-            SolverH.impose(H, r_p, 0);
-            SolverH.impose(H, dw_p,0);
-            SolverH.impose(H, l_p,0);
-            SolverH.impose(H, f_p,0);
-            SolverH.impose(H, b_p,0);
+            Particles.ghost_get<1>();
+            DIV = -(Dx(V[0])+Dy(V[1])+Dz(V[2]));
+            P_bulk = P + DIV;
+            sum = 0;
+            sum1 = 0;
+            for (int j = 0; j < bulk.size(); j++) {
+                auto p = bulk.get<0>(j);
+                sum += (Particles.getProp<4>(p)[0] - Particles.getProp<1>(p)[0]) *
+                       (Particles.getProp<4>(p)[0] - Particles.getProp<1>(p)[0]) +
+                       (Particles.getProp<4>(p)[1] - Particles.getProp<1>(p)[1]) *
+                       (Particles.getProp<4>(p)[1] - Particles.getProp<1>(p)[1]) +
+                       (Particles.getProp<4>(p)[2] - Particles.getProp<1>(p)[2]) *
+                       (Particles.getProp<4>(p)[2] - Particles.getProp<1>(p)[2]);
+                sum1 += Particles.getProp<1>(p)[0] * Particles.getProp<1>(p)[0] +
+                        Particles.getProp<1>(p)[1] * Particles.getProp<1>(p)[1] +
+                        Particles.getProp<1>(p)[2] * Particles.getProp<1>(p)[2];
+            }
+            sum = sqrt(sum);
+            sum1 = sqrt(sum1);
+            v_cl.sum(sum);
+            v_cl.sum(sum1);
+            v_cl.execute();
+            V_t = V;
+            Particles.ghost_get<1>(SKIP_LABELLING);
+            V_err_old = V_err;
+            V_err = sum / sum1;
+            if (V_err > V_err_old || abs(V_err_old - V_err) < 1e-14) {
+                errctr++;
+            } else {
+                errctr = 0;
+            }
+            if (n > 3) {
+                if (errctr > 1) {
+                    std::cout << "CONVERGENCE LOOP BROKEN DUE TO INCREASE/VERY SLOW DECREASE IN ERROR" << std::endl;
+                    Vreset = 1;
+                    break;
+                } else {
+                    Vreset = 0;
+                }
+            }
+            n++;
 
-            SolverH.solve_with_solver(solverPetsc2,H);
-            Particles.ghost_get<5>();
-            //std::cout << "Helmholtz Solved" << std::endl;
-            V=V_star+Grad(H);
-            for(int j=0;j<up_p.size();j++)
-            {   auto p=up_p.get<0>(j);
-                Particles.getProp<1>(p)[0] =  1;
-                Particles.getProp<1>(p)[1] =  0;
-                Particles.getProp<1>(p)[2] =  0;
-            }
-            for(int j=0;j<l_p.size();j++)
-            {   auto p=l_p.get<0>(j);
-                Particles.getProp<1>(p)[0] =  0;
-                Particles.getProp<1>(p)[1] =  0;
-                Particles.getProp<1>(p)[2] =  0;
-            }
-            for(int j=0;j<r_p.size();j++)
-            {   auto p=r_p.get<0>(j);
-                Particles.getProp<1>(p)[0] =  0;
-                Particles.getProp<1>(p)[1] =  0;
-                Particles.getProp<1>(p)[2] =  0;
-            }
-            for(int j=0;j<dw_p.size();j++)
-            {   auto p=dw_p.get<0>(j);
-                Particles.getProp<1>(p)[0] =  0;
-                Particles.getProp<1>(p)[1] =  0;
-                Particles.getProp<1>(p)[2] =  0;
-            }
-            for(int j=0;j<f_p.size();j++)
-            {   auto p=f_p.get<0>(j);
-                Particles.getProp<1>(p)[0] =  0;
-                Particles.getProp<1>(p)[1] =  0;
-                Particles.getProp<1>(p)[2] =  0;
-            }
-            for(int j=0;j<b_p.size();j++)
-            {   auto p=b_p.get<0>(j);
-                Particles.getProp<1>(p)[0] =  0;
-                Particles.getProp<1>(p)[1] =  0;
-                Particles.getProp<1>(p)[2] =  0;
-            }
-            P=P+Lap(H)-0.5*Adv(V_t,H);
-            Particles.ghost_get<0,1>();
-            //std::cout << "V,P Corrected" << std::endl;
-            sum=0;
-            for(int j=0;j<bulk.size();j++)
-            {   auto p=bulk.get<0>(j);
-                sum+=(Particles.getProp<4>(p)[0]-Particles.getProp<1>(p)[0])*(Particles.getProp<4>(p)[0]- Particles.getProp<1>(p)[0])+(Particles.getProp<4>(p)[1]- Particles.getProp<1>(p)[1])*(Particles.getProp<4>(p)[1]- Particles.getProp<1>(p)[1])+(Particles.getProp<4>(p)[2]- Particles.getProp<1>(p)[2])*(Particles.getProp<4>(p)[2]- Particles.getProp<1>(p)[2]);
-                sum2+= Particles.getProp<1>(p)[0]*Particles.getProp<1>(p)[0]+Particles.getProp<1>(p)[1]*Particles.getProp<1>(p)[1]+Particles.getProp<1>(p)[2]*Particles.getProp<1>(p)[2];
-            }
-            sum=sqrt(sum);
-            sum2=sqrt(sum2);
-            V_t=V;
-            //std::cout << "Relative l2 convergence error = " <<sum/sum2<< std::endl;
-            return;
-            Particles.write_frame("Stokes3d",i);
         }
+
+        V_t=0;
+
+        double worst=0;
+        double L2=0;
+        for (int j = 0; j < bulk.size(); j++) {
+            auto p = bulk.get<0>(j);
+            Point<3,double> xP=Particles.getProp<8>(p);
+            if(xP[0]>=1e-5 && xP[1]>1e-5 && (M_PI-xP[1])>=1e-5)
+            {
+                double dx=Particles.getProp<9>(p)[0] - Particles.getProp<1>(p)[0];
+                double dy=Particles.getProp<9>(p)[1] - Particles.getProp<1>(p)[1];
+                double dz=Particles.getProp<9>(p)[2] - Particles.getProp<1>(p)[2];
+                Particles.getProp<4>(p)[0]=fabs(dx);
+                Particles.getProp<4>(p)[1]=fabs(dy);
+                Particles.getProp<4>(p)[2]=fabs(dz);
+                L2 += dx*dx+dy*dy+dz*dz;
+                if (std::max({fabs(dx),fabs(dy),fabs(dz)}) > worst) {
+                    worst = std::max({fabs(dx),fabs(dy),fabs(dz)});
+                }
+
+            }
+        }
+
+        v_cl.sum(worst);
+        v_cl.sum(L2);
+        v_cl.execute();
+/*        if (v_cl.rank() == 0) {
+            std::cout<<"Gd,Surf,Bulk Size: "<<grd_sz<<","<<Surface.size()<<","<<bulk.size()<<std::endl;
+            std::cout << "L2_Final: " <<sqrt(L2)<<","<<sqrt(L2/(bulk.size()+Surface.size()))
+                      << std::endl;
+            std::cout << "L_inf_Final: " << worst
+                      << std::endl;
+        }*/
+
+        //Particles.write("StokesSphere");
+        BOOST_REQUIRE(worst<1e-4);
+
     }
-
-    BOOST_AUTO_TEST_CASE(stokes_3d) {
-        size_t grd_sz=21;
-        const size_t sz[3] = {grd_sz,grd_sz,grd_sz};
-        Box<3, double> box({0, 0,0}, {1,1,1});
-        size_t bc[3] = {NON_PERIODIC, NON_PERIODIC, NON_PERIODIC};
-        double spacing = box.getHigh(0) / (sz[0] - 1);
-        double rCut = 3.1 * spacing;
-        Ghost<3, double> ghost(rCut);
-        //                                  P        V                 v_star           RHS            V_t   Helmholtz
-        vector_dist<3, double, aggregate<double,VectorS<3, double>,VectorS<3, double>,double,VectorS<3, double>,double,    double,VectorS<3, double>>> Particles(0, box, bc, ghost);
-        auto it = Particles.getGridIterator(sz);
-        while (it.isNext()) {
-            Particles.add();
-            auto key = it.get();
-            double x = key.get(0) * it.getSpacing(0);
-            Particles.getLastPos()[0] = x;
-            double y = key.get(1) * it.getSpacing(1);
-            Particles.getLastPos()[1] = y;
-            double z = key.get(2) * it.getSpacing(1);
-            Particles.getLastPos()[2] = z;
-            ++it;
-        }
-
-        Particles.map();
-        Particles.ghost_get<0>();
-
-        openfpm::vector<aggregate<int>> bulk;
-        openfpm::vector<aggregate<int>> up_p;
-        openfpm::vector<aggregate<int>> dw_p;
-        openfpm::vector<aggregate<int>> l_p;
-        openfpm::vector<aggregate<int>> r_p;
-        openfpm::vector<aggregate<int>> f_p;
-        openfpm::vector<aggregate<int>> b_p;
-
-
-        auto P = getV<0>(Particles);
-        auto V = getV<1>(Particles);
-        auto V_star = getV<2>(Particles);
-        auto RHS = getV<3>(Particles);
-        auto V_t = getV<4>(Particles);
-        auto H = getV<5>(Particles);
-        auto temp=getV<6>(Particles);
-        auto RHS2 = getV<7>(Particles);
-
-        // Here fill up the boxes for particle detection.
-
-        Box<3, double> up({box.getLow(0) + spacing / 2.0, box.getHigh(1)- spacing / 2.0,box.getLow(2)+ spacing / 2.0},
-                          {box.getHigh(0) - spacing / 2.0, box.getHigh(1) + spacing / 2.0,box.getHigh(2)- spacing / 2.0});
-
-        Box<3, double> down({box.getLow(0) + spacing / 2.0, box.getLow(1) - spacing / 2.0,box.getLow(2)+ spacing / 2.0},
-                            {box.getHigh(0) - spacing / 2.0, box.getLow(1) + spacing / 2.0,box.getHigh(2)- spacing / 2.0});
-
-        Box<3, double> left({box.getLow(0) - spacing / 2.0, box.getLow(1) - spacing / 2.0,box.getLow(2) - spacing / 2.0},
-                            {box.getLow(0) + spacing / 2.0, box.getHigh(1) + spacing / 2.0,box.getHigh(2) + spacing / 2.0});
-
-        Box<3, double> right({box.getHigh(0) - spacing / 2.0, box.getLow(1) - spacing / 2.0,box.getLow(2)- spacing / 2.0},
-                             {box.getHigh(0) + spacing / 2.0, box.getHigh(1) + spacing / 2.0,box.getHigh(2)+ spacing / 2.0});
-
-        Box<3, double> front({box.getLow(0) + spacing / 2.0, box.getLow(1) - spacing / 2.0,box.getLow(2) - spacing / 2.0},
-                            {box.getHigh(0) - spacing / 2.0, box.getHigh(1) + spacing / 2.0,box.getLow(2) + spacing / 2.0});
-
-        Box<3, double> back({box.getLow(0) + spacing / 2.0, box.getLow(1) - spacing / 2.0,box.getHigh(2) - spacing / 2.0},
-                             {box.getHigh(0) - spacing / 2.0, box.getHigh(1) + spacing / 2.0,box.getHigh(2) + spacing / 2.0});
-
-        openfpm::vector<Box<3, double>> boxes;
-        boxes.add(up);
-        boxes.add(down);
-        boxes.add(left);
-        boxes.add(right);
-        boxes.add(front);
-        boxes.add(back);
-        VTKWriter<openfpm::vector<Box<3, double>>, VECTOR_BOX> vtk_box;
-        vtk_box.add(boxes);
-        vtk_box.write("boxes_3d.vtk");
-        auto it2 = Particles.getDomainIterator();
-
-        while (it2.isNext()) {
-            auto p = it2.get();
-            Point<3, double> xp = Particles.getPos(p);
-            Particles.getProp<0>(p) =0;
-            if (up.isInside(xp) == true) {
-                up_p.add();
-                up_p.last().get<0>() = p.getKey();
-                Particles.getProp<1>(p)[0] =  1;
-                Particles.getProp<1>(p)[1] =  0;
-                Particles.getProp<1>(p)[2] =  0;
-
-            }
-            else if (down.isInside(xp) == true) {
-                dw_p.add();
-                dw_p.last().get<0>() = p.getKey();
-                Particles.getProp<1>(p)[0] =  0;
-                Particles.getProp<1>(p)[1] =  0;
-                Particles.getProp<1>(p)[2] =  0;
-            }
-            else if (left.isInside(xp) == true) {
-                l_p.add();
-                l_p.last().get<0>() = p.getKey();
-                Particles.getProp<1>(p)[0] =  0;
-                Particles.getProp<1>(p)[1] =  0;
-                Particles.getProp<1>(p)[2] =  0;
-            }
-            else if (right.isInside(xp) == true) {
-                r_p.add();
-                r_p.last().get<0>() = p.getKey();
-                Particles.getProp<1>(p)[0] =  0;
-                Particles.getProp<1>(p)[1] =  0;
-                Particles.getProp<1>(p)[2] =  0;
-            }
-            else if (front.isInside(xp) == true) {
-                f_p.add();
-                f_p.last().get<0>() = p.getKey();
-                Particles.getProp<1>(p)[0] =  0;
-                Particles.getProp<1>(p)[1] =  0;
-                Particles.getProp<1>(p)[2] =  0;
-            }
-            else if (back.isInside(xp) == true) {
-                b_p.add();
-                b_p.last().get<0>() = p.getKey();
-                Particles.getProp<1>(p)[0] =  0;
-                Particles.getProp<1>(p)[1] =  0;
-                Particles.getProp<1>(p)[2] =  0;
-            }
-            else {
-                bulk.add();
-                bulk.last().get<0>() = p.getKey();
-                Particles.getProp<1>(p)[0] =  0;
-                Particles.getProp<1>(p)[1] =  0;
-                Particles.getProp<1>(p)[2] =  0;
-            }
-            ++it2;
-        }
-        V_t=V;
-
-
-        eq_id vx,vy,vz;
-
-        vx.setId(0);
-        vy.setId(1);
-        vz.setId(2);
-
-        Derivative_x Dx(Particles, 2, rCut,1.9,support_options::RADIUS );
-        Derivative_y Dy(Particles, 2, rCut,1.9,support_options::RADIUS);
-        Derivative_z Dz(Particles, 2, rCut,1.9,support_options::RADIUS);
-        Gradient Grad(Particles, 2, rCut,1.9,support_options::RADIUS );
-        Laplacian Lap(Particles, 2, rCut,1.9,support_options::RADIUS);
-        Advection Adv(Particles, 2, rCut,1.9,support_options::RADIUS);
-        Divergence Div(Particles, 2, rCut,1.9,support_options::RADIUS);
-
-        double nu=1e-2;
-
-        double sum=0,sum2=0;
-        int n=50;
-        //Particles.write_frame("Stokes3d",0);
-        V_t=V;
-        for(int i=1; i<=n ;i++)
-        {   RHS2=-Grad(P);
-            DCPSE_scheme<equations3d3,decltype(Particles)> Solver(Particles);
-            auto Stokes1 = Adv(V[0],V_star[0])-nu*Lap(V_star[0]);
-            auto Stokes2 = Adv(V[1],V_star[1])-nu*Lap(V_star[1]);
-            auto Stokes3 = Adv(V[2],V_star[2])-nu*Lap(V_star[2]);
-            Solver.impose(Stokes1,bulk,RHS2[0],vx);
-            Solver.impose(Stokes2,bulk,RHS2[1],vy);
-            Solver.impose(Stokes3,bulk,RHS2[2],vz);
-            Solver.impose(V_star[0], up_p,1.0,vx);
-            Solver.impose(V_star[1], up_p,0,vy);
-            Solver.impose(V_star[2], up_p,0,vz);
-            Solver.impose(V_star[0], r_p, 0,vx);
-            Solver.impose(V_star[1], r_p, 0,vy);
-            Solver.impose(V_star[2], r_p, 0,vz);
-            Solver.impose(V_star[0], dw_p,0,vx);
-            Solver.impose(V_star[1], dw_p,0,vy);
-            Solver.impose(V_star[2], dw_p,0,vz);
-            Solver.impose(V_star[0], l_p, 0,vx);
-            Solver.impose(V_star[1], l_p, 0,vy);
-            Solver.impose(V_star[2], l_p, 0,vz);
-            Solver.impose(V_star[0], f_p, 0,vx);
-            Solver.impose(V_star[1], f_p, 0,vy);
-            Solver.impose(V_star[2], f_p, 0,vz);
-            Solver.impose(V_star[0], b_p, 0,vx);
-            Solver.impose(V_star[1], b_p, 0,vy);
-            Solver.impose(V_star[2], b_p, 0,vz);
-            Solver.solve(V_star[0],V_star[1],V_star[2]);
-            //std::cout << "Stokes Solved" << std::endl;
-            RHS=-Div(V_star);
-            DCPSE_scheme<equations3d1,decltype(Particles)> SolverH(Particles,options_solver::LAGRANGE_MULTIPLIER);
-            auto Helmholtz = Lap(H);
-            auto D_x=Dx(H);
-            auto D_y=Dy(H);
-            auto D_z=Dz(H);
-            SolverH.impose(Helmholtz,bulk,prop_id<3>());
-            SolverH.impose(H, up_p,0);
-            SolverH.impose(H, r_p, 0);
-            SolverH.impose(H, dw_p,0);
-            SolverH.impose(H, l_p,0);
-            SolverH.impose(H, f_p,0);
-            SolverH.impose(H, b_p,0);
-            SolverH.solve(H);
-            //std::cout << "Helmholtz Solved" << std::endl;
-            Particles.ghost_get<5>();
-            V=V_star+Grad(H);
-            for(int j=0;j<up_p.size();j++)
-            {   auto p=up_p.get<0>(j);
-                Particles.getProp<1>(p)[0] =  1;
-                Particles.getProp<1>(p)[1] =  0;
-                Particles.getProp<1>(p)[2] =  0;
-            }
-            for(int j=0;j<l_p.size();j++)
-            {   auto p=l_p.get<0>(j);
-                Particles.getProp<1>(p)[0] =  0;
-                Particles.getProp<1>(p)[1] =  0;
-                Particles.getProp<1>(p)[2] =  0;
-            }
-            for(int j=0;j<r_p.size();j++)
-            {   auto p=r_p.get<0>(j);
-                Particles.getProp<1>(p)[0] =  0;
-                Particles.getProp<1>(p)[1] =  0;
-                Particles.getProp<1>(p)[2] =  0;
-            }
-            for(int j=0;j<dw_p.size();j++)
-            {   auto p=dw_p.get<0>(j);
-                Particles.getProp<1>(p)[0] =  0;
-                Particles.getProp<1>(p)[1] =  0;
-                Particles.getProp<1>(p)[2] =  0;
-            }
-            for(int j=0;j<f_p.size();j++)
-            {   auto p=f_p.get<0>(j);
-                Particles.getProp<1>(p)[0] =  0;
-                Particles.getProp<1>(p)[1] =  0;
-                Particles.getProp<1>(p)[2] =  0;
-            }
-            for(int j=0;j<b_p.size();j++)
-            {   auto p=b_p.get<0>(j);
-                Particles.getProp<1>(p)[0] =  0;
-                Particles.getProp<1>(p)[1] =  0;
-                Particles.getProp<1>(p)[2] =  0;
-            }
-            P=P+Lap(H)-0.5*Adv(V_t,H);
-            //std::cout << "V,P Corrected" << std::endl;
-            sum=0;
-            for(int j=0;j<bulk.size();j++)
-            {   auto p=bulk.get<0>(j);
-                sum+=(Particles.getProp<4>(p)[0]-Particles.getProp<1>(p)[0])*(Particles.getProp<4>(p)[0]- Particles.getProp<1>(p)[0])+(Particles.getProp<4>(p)[1]- Particles.getProp<1>(p)[1])*(Particles.getProp<4>(p)[1]- Particles.getProp<1>(p)[1])+(Particles.getProp<4>(p)[2]- Particles.getProp<1>(p)[2])*(Particles.getProp<4>(p)[2]- Particles.getProp<1>(p)[2]);
-                sum2+= Particles.getProp<1>(p)[0]*Particles.getProp<1>(p)[0]+Particles.getProp<1>(p)[1]*Particles.getProp<1>(p)[1]+Particles.getProp<1>(p)[2]*Particles.getProp<1>(p)[2];
-            }
-            sum=sqrt(sum);
-            sum2=sqrt(sum2);
-            V_t=V;
-            //std::cout << "Relative l2 convergence error = " <<sum/sum2<< std::endl;
-            return;
-            Particles.write_frame("Stokes3d",i);
-
-        }
-    }*/
-
-#if 0
-
-    BOOST_AUTO_TEST_CASE(stokes_3d_anal_petsc) {
-        /*
-      In 3D we use exact solution:
-
-       u = x^2 + y^2
-       v = y^2 + z^2
-       w = x^2 + y^2 - 2(x+y)z
-       p = x + y + z - 3/2
-       f_x = f_y = f_z = 3
-
-      -\Delta u + \nabla p + f = <-4, -4, -4> + <1, 1, 1> + <3, 3, 3> = 0
-    \nabla \cdot u           = 2x + 2y - 2(x + y)                   = 0
-
-
-    */
-        size_t grd_sz=21;
-        const size_t sz[3] = {grd_sz,grd_sz,grd_sz};
-        Box<3, double> box({0, 0,0}, {1,1,1});
-        size_t bc[3] = {NON_PERIODIC, NON_PERIODIC, NON_PERIODIC};
-        double spacing = box.getHigh(0) / (sz[0] - 1);
-        double rCut = 3.1 * spacing;
-        Ghost<3, double> ghost(rCut);
-        //                                  P        V                 v_star           RHS            V_t   Helmholtz
-        vector_dist<3, double, aggregate<double,VectorS<3, double>,VectorS<3, double>,double,VectorS<3, double>,double,    double,VectorS<3, double>>> Particles(0, box, bc, ghost);
-        auto it = Particles.getGridIterator(sz);
-        while (it.isNext()) {
-            Particles.add();
-            auto key = it.get();
-            double x = key.get(0) * it.getSpacing(0);
-            Particles.getLastPos()[0] = x;
-            double y = key.get(1) * it.getSpacing(1);
-            Particles.getLastPos()[1] = y;
-            double z = key.get(2) * it.getSpacing(1);
-            Particles.getLastPos()[2] = z;
-            ++it;
-        }
-
-        Particles.map();
-        Particles.ghost_get<0>();
-
-        openfpm::vector<aggregate<int>> bulk;
-        openfpm::vector<aggregate<int>> up_p;
-        openfpm::vector<aggregate<int>> dw_p;
-        openfpm::vector<aggregate<int>> l_p;
-        openfpm::vector<aggregate<int>> r_p;
-        openfpm::vector<aggregate<int>> f_p;
-        openfpm::vector<aggregate<int>> b_p;
-
-
-        auto P = getV<0>(Particles);
-        auto V = getV<1>(Particles);
-        auto V_star = getV<2>(Particles);
-        auto RHS = getV<3>(Particles);
-        auto V_t = getV<4>(Particles);
-        auto H = getV<5>(Particles);
-        auto temp=getV<6>(Particles);
-        auto RHS2 = getV<7>(Particles);
-
-        // Here fill up the boxes for particle detection.
-
-        Box<3, double> up({box.getLow(0) + spacing / 2.0, box.getHigh(1)- spacing / 2.0,box.getLow(2)+ spacing / 2.0},
-                          {box.getHigh(0) - spacing / 2.0, box.getHigh(1) + spacing / 2.0,box.getHigh(2)- spacing / 2.0});
-
-        Box<3, double> down({box.getLow(0) + spacing / 2.0, box.getLow(1) - spacing / 2.0,box.getLow(2)+ spacing / 2.0},
-                            {box.getHigh(0) - spacing / 2.0, box.getLow(1) + spacing / 2.0,box.getHigh(2)- spacing / 2.0});
-
-        Box<3, double> left({box.getLow(0) - spacing / 2.0, box.getLow(1) - spacing / 2.0,box.getLow(2) - spacing / 2.0},
-                            {box.getLow(0) + spacing / 2.0, box.getHigh(1) + spacing / 2.0,box.getHigh(2) + spacing / 2.0});
-
-        Box<3, double> right({box.getHigh(0) - spacing / 2.0, box.getLow(1) - spacing / 2.0,box.getLow(2)- spacing / 2.0},
-                             {box.getHigh(0) + spacing / 2.0, box.getHigh(1) + spacing / 2.0,box.getHigh(2)+ spacing / 2.0});
-
-        Box<3, double> front({box.getLow(0) + spacing / 2.0, box.getLow(1) - spacing / 2.0,box.getLow(2) - spacing / 2.0},
-                             {box.getHigh(0) - spacing / 2.0, box.getHigh(1) + spacing / 2.0,box.getLow(2) + spacing / 2.0});
-
-        Box<3, double> back({box.getLow(0) + spacing / 2.0, box.getLow(1) - spacing / 2.0,box.getHigh(2) - spacing / 2.0},
-                            {box.getHigh(0) - spacing / 2.0, box.getHigh(1) + spacing / 2.0,box.getHigh(2) + spacing / 2.0});
-
-        openfpm::vector<Box<3, double>> boxes;
-        boxes.add(up);
-        boxes.add(down);
-        boxes.add(left);
-        boxes.add(right);
-        boxes.add(front);
-        boxes.add(back);
-        VTKWriter<openfpm::vector<Box<3, double>>, VECTOR_BOX> vtk_box;
-        vtk_box.add(boxes);
-        vtk_box.write("boxes_3d.vtk");
-        auto it2 = Particles.getDomainIterator();
-        Particles.ghost_get<0,1,2,3,4,5>();
-        while (it2.isNext()) {
-            auto p = it2.get();
-            Point<3, double> xp = Particles.getPos(p);
-            Particles.getProp<0>(p) =0;
-            if (up.isInside(xp) == true) {
-                up_p.add();
-                up_p.last().get<0>() = p.getKey();
-                Particles.getProp<1>(p)[0] =  1;
-                Particles.getProp<1>(p)[1] =  0;
-                Particles.getProp<1>(p)[2] =  0;
-
-            }
-            else if (down.isInside(xp) == true) {
-                dw_p.add();
-                dw_p.last().get<0>() = p.getKey();
-                Particles.getProp<1>(p)[0] =  0;
-                Particles.getProp<1>(p)[1] =  0;
-                Particles.getProp<1>(p)[2] =  0;
-            }
-            else if (left.isInside(xp) == true) {
-                l_p.add();
-                l_p.last().get<0>() = p.getKey();
-                Particles.getProp<1>(p)[0] =  0;
-                Particles.getProp<1>(p)[1] =  0;
-                Particles.getProp<1>(p)[2] =  0;
-            }
-            else if (right.isInside(xp) == true) {
-                r_p.add();
-                r_p.last().get<0>() = p.getKey();
-                Particles.getProp<1>(p)[0] =  0;
-                Particles.getProp<1>(p)[1] =  0;
-                Particles.getProp<1>(p)[2] =  0;
-            }
-            else if (front.isInside(xp) == true) {
-                f_p.add();
-                f_p.last().get<0>() = p.getKey();
-                Particles.getProp<1>(p)[0] =  0;
-                Particles.getProp<1>(p)[1] =  0;
-                Particles.getProp<1>(p)[2] =  0;
-            }
-            else if (back.isInside(xp) == true) {
-                b_p.add();
-                b_p.last().get<0>() = p.getKey();
-                Particles.getProp<1>(p)[0] =  0;
-                Particles.getProp<1>(p)[1] =  0;
-                Particles.getProp<1>(p)[2] =  0;
-            }
-            else {
-                bulk.add();
-                bulk.last().get<0>() = p.getKey();
-                Particles.getProp<1>(p)[0] =  0;
-                Particles.getProp<1>(p)[1] =  0;
-                Particles.getProp<1>(p)[2] =  0;
-            }
-            ++it2;
-        }
-        V_t=V;
-
-
-        eq_id vx,vy,vz;
-
-        vx.setId(0);
-        vy.setId(1);
-        vz.setId(2);
-
-        Derivative_x Dx(Particles, 2, rCut,1.9,support_options::RADIUS );
-        Derivative_y Dy(Particles, 2, rCut,1.9,support_options::RADIUS);
-        Derivative_z Dz(Particles, 2, rCut,1.9,support_options::RADIUS);
-        Gradient Grad(Particles, 2, rCut,1.9,support_options::RADIUS );
-        Laplacian Lap(Particles, 2, rCut,1.9,support_options::RADIUS);
-        Advection Adv(Particles, 2, rCut,1.9,support_options::RADIUS);
-        Divergence Div(Particles, 2, rCut,1.9,support_options::RADIUS);
-
-        double nu=1e-2;
-        Particles.ghost_get<0,1,2,3,4,5,6,7>();
-        double sum=0,sum2=0;
-        int n=50;
-        Particles.write_frame("Stokes3d",0);
-        V_t=V;
-        for(int i=1; i<=n ;i++)
-        {   RHS2=-Grad(P);
-            DCPSE_scheme<equations3d3,decltype(Particles)> Solver(Particles);
-            auto Stokes1 = Adv(V[0],V_star[0])-nu*Lap(V_star[0]);
-            auto Stokes2 = Adv(V[1],V_star[1])-nu*Lap(V_star[1]);
-            auto Stokes3 = Adv(V[2],V_star[2])-nu*Lap(V_star[2]);
-            Solver.impose(Stokes1,bulk,RHS2[0],vx);
-            Solver.impose(Stokes2,bulk,RHS2[1],vy);
-            Solver.impose(Stokes3,bulk,RHS2[2],vz);
-            Solver.impose(V_star[0], up_p,1.0,vx);
-            Solver.impose(V_star[1], up_p,0,vy);
-            Solver.impose(V_star[2], up_p,0,vz);
-            Solver.impose(V_star[0], r_p, 0,vx);
-            Solver.impose(V_star[1], r_p, 0,vy);
-            Solver.impose(V_star[2], r_p, 0,vz);
-            Solver.impose(V_star[0], dw_p,0,vx);
-            Solver.impose(V_star[1], dw_p,0,vy);
-            Solver.impose(V_star[2], dw_p,0,vz);
-            Solver.impose(V_star[0], l_p, 0,vx);
-            Solver.impose(V_star[1], l_p, 0,vy);
-            Solver.impose(V_star[2], l_p, 0,vz);
-            Solver.impose(V_star[0], f_p, 0,vx);
-            Solver.impose(V_star[1], f_p, 0,vy);
-            Solver.impose(V_star[2], f_p, 0,vz);
-            Solver.impose(V_star[0], b_p, 0,vx);
-            Solver.impose(V_star[1], b_p, 0,vy);
-            Solver.impose(V_star[2], b_p, 0,vz);
-            petsc_solver<double> solverPetsc;
-            solverPetsc.setRestart(500);
-            Solver.solve_with_solver(solverPetsc,V_star[0],V_star[1],V_star[2]);
-            //std::cout << "Stokes Solved" << std::endl;
-            Particles.ghost_get<2>();
-            RHS=-Div(V_star);
-            DCPSE_scheme<equations3d1,decltype(Particles)> SolverH(Particles);
-            auto Helmholtz = Lap(H);
-            auto D_x=Dx(H);
-            auto D_y=Dy(H);
-            auto D_z=Dz(H);
-            SolverH.impose(Helmholtz,bulk,prop_id<3>());
-            SolverH.impose(H, up_p,0);
-            SolverH.impose(H, r_p, 0);
-            SolverH.impose(H, dw_p,0);
-            SolverH.impose(H, l_p,0);
-            SolverH.impose(H, f_p,0);
-            SolverH.impose(H, b_p,0);
-            petsc_solver<double> solverPetsc2;
-            solverPetsc2.setRestart(500);
-            SolverH.solve_with_solver(solverPetsc2,H);
-            Particles.ghost_get<5>();
-            //std::cout << "Helmholtz Solved" << std::endl;
-            V=V_star+Grad(H);
-            for(int j=0;j<up_p.size();j++)
-            {   auto p=up_p.get<0>(j);
-                Particles.getProp<1>(p)[0] =  1;
-                Particles.getProp<1>(p)[1] =  0;
-                Particles.getProp<1>(p)[2] =  0;
-            }
-            for(int j=0;j<l_p.size();j++)
-            {   auto p=l_p.get<0>(j);
-                Particles.getProp<1>(p)[0] =  0;
-                Particles.getProp<1>(p)[1] =  0;
-                Particles.getProp<1>(p)[2] =  0;
-            }
-            for(int j=0;j<r_p.size();j++)
-            {   auto p=r_p.get<0>(j);
-                Particles.getProp<1>(p)[0] =  0;
-                Particles.getProp<1>(p)[1] =  0;
-                Particles.getProp<1>(p)[2] =  0;
-            }
-            for(int j=0;j<dw_p.size();j++)
-            {   auto p=dw_p.get<0>(j);
-                Particles.getProp<1>(p)[0] =  0;
-                Particles.getProp<1>(p)[1] =  0;
-                Particles.getProp<1>(p)[2] =  0;
-            }
-            for(int j=0;j<f_p.size();j++)
-            {   auto p=f_p.get<0>(j);
-                Particles.getProp<1>(p)[0] =  0;
-                Particles.getProp<1>(p)[1] =  0;
-                Particles.getProp<1>(p)[2] =  0;
-            }
-            for(int j=0;j<b_p.size();j++)
-            {   auto p=b_p.get<0>(j);
-                Particles.getProp<1>(p)[0] =  0;
-                Particles.getProp<1>(p)[1] =  0;
-                Particles.getProp<1>(p)[2] =  0;
-            }
-            P=P+Lap(H)-0.5*Adv(V_t,H);
-            Particles.ghost_get<0,1>();
-            //std::cout << "V,P Corrected" << std::endl;
-            sum=0;
-            for(int j=0;j<bulk.size();j++)
-            {   auto p=bulk.get<0>(j);
-                sum+=(Particles.getProp<4>(p)[0]-Particles.getProp<1>(p)[0])*(Particles.getProp<4>(p)[0]- Particles.getProp<1>(p)[0])+(Particles.getProp<4>(p)[1]- Particles.getProp<1>(p)[1])*(Particles.getProp<4>(p)[1]- Particles.getProp<1>(p)[1])+(Particles.getProp<4>(p)[2]- Particles.getProp<1>(p)[2])*(Particles.getProp<4>(p)[2]- Particles.getProp<1>(p)[2]);
-                sum2+= Particles.getProp<1>(p)[0]*Particles.getProp<1>(p)[0]+Particles.getProp<1>(p)[1]*Particles.getProp<1>(p)[1]+Particles.getProp<1>(p)[2]*Particles.getProp<1>(p)[2];
-            }
-            sum=sqrt(sum);
-            sum2=sqrt(sum2);
-            V_t=V;
-            //std::cout << "Relative l2 convergence error = " <<sum/sum2<< std::endl;
-            return;
-            Particles.write_frame("Stokes3d",i);
-        }
-    }
-
-#endif
 
 BOOST_AUTO_TEST_SUITE_END()
 

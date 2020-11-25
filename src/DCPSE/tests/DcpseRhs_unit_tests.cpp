@@ -18,19 +18,19 @@ BOOST_AUTO_TEST_SUITE(DcpseRhs_tests)
         unsigned int r = 2;
         Point<2, unsigned int> m({1,0});
         MonomialBasis<2> mb(m.asArray(), r);
-        std::cout << mb << std::endl;
+        //std::cout << mb << std::endl;
         EMatrix<double, Eigen::Dynamic, 1> b(mb.size());
 
         DcpseRhs<2> rhs(mb, m);
         rhs.getVector<double>(b);
 //        for (unsigned int i = 0; i < mb.size(); ++i)
 //        {
-//            std::cout << b(i) << std::endl;
+//            //std::cout << b(i) << std::endl;
 //        }
 
         // Validation
         const MonomialBasis<2> &Dmb = mb.getDerivative(m);
-        std::cout << Dmb << std::endl;
+        //std::cout << Dmb << std::endl;
         auto p0 = Point<2, double>({0,0});
         BOOST_REQUIRE_CLOSE(b(0), -Dmb.getElement(0).evaluate(p0), 1e-16);
         BOOST_REQUIRE_CLOSE(b(1), -Dmb.getElement(1).evaluate(p0), 1e-16);
@@ -45,19 +45,19 @@ BOOST_AUTO_TEST_SUITE(DcpseRhs_tests)
         unsigned int r = 2;
         Point<2, unsigned int> m({1,1});
         MonomialBasis<2> mb(m.asArray(), r);
-        std::cout << mb << std::endl;
+        ////std::cout << mb << std::endl;
         EMatrix<double, Eigen::Dynamic, Eigen::Dynamic> b(mb.size(), 1);
 
         DcpseRhs<2> rhs(mb, m);
         rhs.getVector<double>(b);
 //        for (unsigned int i = 0; i < mb.size(); ++i)
 //        {
-//            std::cout << b(i) << std::endl;
+//            //std::cout << b(i) << std::endl;
 //        }
 
         // Validation
         const MonomialBasis<2> &Dmb = mb.getDerivative(m);
-        std::cout << Dmb << std::endl;
+        ////std::cout << Dmb << std::endl;
         auto p0 = Point<2, double>({0,0});
         BOOST_REQUIRE_CLOSE(b(0), Dmb.getElement(0).evaluate(p0), 1e-16);
         BOOST_REQUIRE_CLOSE(b(1), Dmb.getElement(1).evaluate(p0), 1e-16);
@@ -76,7 +76,7 @@ BOOST_AUTO_TEST_SUITE(DcpseRhs_tests)
         unsigned int r = 2;
         Point<2, unsigned int> m({2,2});
         MonomialBasis<2> mb(m.asArray(), r);
-        std::cout << mb << std::endl;
+        ////std::cout << mb << std::endl;
         EMatrix<double, Eigen::Dynamic, Eigen::Dynamic> b(mb.size(), 1);
 
         DcpseRhs<2> rhs(mb, m);
@@ -84,7 +84,7 @@ BOOST_AUTO_TEST_SUITE(DcpseRhs_tests)
 
         // Validation
         const MonomialBasis<2> &Dmb = mb.getDerivative(m);
-        std::cout << Dmb << std::endl;
+        ////std::cout << Dmb << std::endl;
         auto p0 = Point<2, double>({0,0});
         BOOST_REQUIRE_CLOSE(b(0), Dmb.getElement(0).evaluate(p0), 1e-16);
         BOOST_REQUIRE_CLOSE(b(1), Dmb.getElement(1).evaluate(p0), 1e-16);

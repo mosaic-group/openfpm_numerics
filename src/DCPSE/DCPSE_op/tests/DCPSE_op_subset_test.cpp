@@ -116,6 +116,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_subset_suite_tests)
         Derivative_y Dy_bulk(Particles_bulk, 2, rCut,sampling_factor, support_options::RADIUS);
 
         Out_bulk = Dx_bulk(P);
+        Out_bulk = Dx(P);
 	    Out_V_bulk[0] = P + Dx_bulk(P);
         Out_V_bulk[1] = Out_V[0] +Dy_bulk(P);
 
@@ -136,10 +137,8 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_subset_suite_tests)
 //        P_bulk = Dx_bulk(P_bulk);  <------------ Incorrect produce error message
 //        P = Dx_bulk(P);   <------- Incorrect produce overflow
 
-        Particles.write("Out");
+        //Particles.write("Out");
     }
-
-#if 0
 
     BOOST_AUTO_TEST_CASE(dcpse_op_subset_PC_lid) {
 //  int rank;
@@ -173,8 +172,6 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_subset_suite_tests)
         openfpm::vector<aggregate<int>> boundary;
 
         auto it = Particles.getGridIterator(sz);
-        size_t pointId = 0;
-        double minNormOne = 999;
         while (it.isNext())
         {
             Particles.add();
@@ -261,7 +258,6 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_subset_suite_tests)
             Particles.ghost_get<0>(SKIP_LABELLING);
             RHS_bulk[x] = dV[x] + Bulk_Dx(P);
             RHS_bulk[y] = dV[y] + Bulk_Dy(P);
-            Particles.ghost_get<2>(SKIP_LABELLING);
             DCPSE_scheme<equations2d2, decltype(Particles)> Solver(Particles);
             Solver.impose(Stokes1, bulk, RHS[0], vx);
             Solver.impose(Stokes2, bulk, RHS[1], vy);
@@ -273,17 +269,9 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_subset_suite_tests)
             A.write("Mat_lid");*/
 
             Solver.solve_with_solver(solverPetsc, V[x], V[y]);
-
-            if (n == 0)
-            {
-            	Particles.write_frame("PC_subset_lid",n);
-            }
-
-            Particles.ghost_get<0>(SKIP_LABELLING);
+            Particles.ghost_get<1>(SKIP_LABELLING);
             div = -(Dx(V[x]) + Dy(V[y]));
             P_bulk = P + div;
-            //Particles.write_frame("PC_subset_lid",n);
-            //P_bulk = P_bulk + div_bulk;
             sum = 0;
             sum1 = 0;
 
@@ -321,12 +309,32 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_subset_suite_tests)
                 }
             }
             n++;
-            if (v_cl.rank() == 0) {
+            /*if (v_cl.rank() == 0) {
                 std::cout << "Rel l2 cgs err in V = " << V_err << " at " << n << std::endl;
+            }*/
+        }
+        double worst1 = 0.0;
+        double worst2 = 0.0;
+
+        for(int j=0;j<bulk.size();j++)
+        {   auto p=bulk.get<0>(j);
+            if (fabs(Particles.getProp<6>(p)[0] - Particles.getProp<1>(p)[0]) >= worst1) {
+                worst1 = fabs(Particles.getProp<6>(p)[0] - Particles.getProp<1>(p)[0]);
             }
         }
+        for(int j=0;j<bulk.size();j++)
+        {   auto p=bulk.get<0>(j);
+            if (fabs(Particles.getProp<6>(p)[1] - Particles.getProp<1>(p)[1]) >= worst2) {
+                worst2 = fabs(Particles.getProp<6>(p)[1] - Particles.getProp<1>(p)[1]);
+            }
+        }
+        //Particles.deleteGhost();
+        //Particles.write("PC_subset_lid");
+        //std::cout << "Maximum Analytic Error in Vx: " << worst1 << std::endl;
+        //std::cout << "Maximum Analytic Error in Vy: " << worst2 << std::endl;
+        BOOST_REQUIRE(worst1 < 0.03);
+        BOOST_REQUIRE(worst2 < 0.03);
 
-        Particles.write("PC_subset_lid");
     }
 
 
@@ -467,8 +475,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_subset_suite_tests)
             Solver.impose(V[x], boundary, RHS[0], vx);
             Solver.impose(V[y], boundary, RHS[1], vy);
             Solver.solve_with_solver(solverPetsc, V[x], V[y]);
-
-            Particles.ghost_get<0>(SKIP_LABELLING);
+            Particles.ghost_get<1>(SKIP_LABELLING);
             div = -(Dx(V[x]) + Dy(V[y]));
             P = P + div;
             for (int i = 0; i < bulk.size(); i++) {
@@ -512,14 +519,31 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_subset_suite_tests)
             }
             n++;
             //if (v_cl.rank() == 0) {
-            std::cout << "Rel l2 cgs err in V = " << V_err << " at " << n << std::endl;
+           // std::cout << "Rel l2 cgs err in V = " << V_err << " at " << n << std::endl;
 
             //}
         }
+        double worst1 = 0.0;
+        double worst2 = 0.0;
 
-        Particles.write("PC_subset_lid2");
+        for(int j=0;j<bulk.size();j++)
+        {   auto p=bulk.get<0>(j);
+            if (fabs(Particles.getProp<6>(p)[0] - Particles.getProp<1>(p)[0]) >= worst1) {
+                worst1 = fabs(Particles.getProp<6>(p)[0] - Particles.getProp<1>(p)[0]);
+            }
+        }
+        for(int j=0;j<bulk.size();j++)
+        {   auto p=bulk.get<0>(j);
+            if (fabs(Particles.getProp<6>(p)[1] - Particles.getProp<1>(p)[1]) >= worst2) {
+                worst2 = fabs(Particles.getProp<6>(p)[1] - Particles.getProp<1>(p)[1]);
+            }
+        }
+
+        //std::cout << "Maximum Analytic Error in slice x: " << worst1 << std::endl;
+        //std::cout << "Maximum Analytic Error in slice y: " << worst2 << std::endl;
+        BOOST_REQUIRE(worst1 < 0.03);
+        BOOST_REQUIRE(worst2 < 0.03);
+
+        //Particles.write("PC_subset_lid2");
     }
-
-#endif
-
 BOOST_AUTO_TEST_SUITE_END()
