@@ -6,7 +6,6 @@
 #define OPENFPM_PDATA_DCPSE_SOLVER_HPP
 
 #include "DCPSE_op.hpp"
-#include "MatrixAssembler/MatrixAssembler.hpp"
 #include "Matrix/SparseMatrix.hpp"
 #include "Vector/Vector.hpp"
 #include "NN/CellList/CellDecomposer.hpp"
@@ -23,19 +22,19 @@
 };*/
 
 //template<unsigned int prp_id> using prop_id = boost::mpl::int_<prp_id>;
-   /*! \brief Create a Matrix System for Ax=b
-    *
-    * This Class is for creating a placeholder for the matrix system
-    *
-    * Ax = b
-    *
-    *
-    * \param Sys_eqs Equation Structure which has information about the system. Refer to EqnStruct.cpp for examples
-    * \param parts Particle set
-    *
-    */
+/*! \brief Create a Matrix System for Ax=b
+ *
+ * This Class is for creating a placeholder for the matrix system
+ *
+ * Ax = b
+ *
+ *
+ * \param Sys_eqs Equation Structure which has information about the system. Refer to EqnStruct.cpp for examples
+ * \param parts Particle set
+ *
+ */
 template<typename Sys_eqs, typename particles_type>
-class DCPSE_scheme : public MatrixAssembler {
+class DCPSE_scheme {
 
     //! type of the sparse matrix
     typename Sys_eqs::SparseMatrix_type A;
@@ -268,12 +267,12 @@ class DCPSE_scheme : public MatrixAssembler {
     }
 
     /*! \brief Solve an equation
-     *
-     *  \warning exp must be a scalar type
-     *
-     * \param exp where to store the result
-     *
-     */
+    *
+    *  \warning exp must be a scalar type
+    *
+    * \param exp where to store the result
+    *
+    */
     template<typename solType, typename expr_type>
     void copy_impl(solType & x, expr_type exp, unsigned int comp)
     {

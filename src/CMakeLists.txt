@@ -9,15 +9,11 @@ if (CUDA_FOUND)
 endif()
 
 add_executable(numerics ${OPENFPM_INIT_FILE} ${CUDA_SOURCES}
-		DCPSE/DCPSE_op/tests/DCPSE_Bench.cpp
-        DCPSE/DCPSE_op/SphericalHarmonics.hpp
-		DCPSE/DCPSE_op/tests/3d.cpp
 		DCPSE/DCPSE_op/tests/DCPSE_op_subset_test.cpp
 		DCPSE/DCPSE_op/tests/DCPSE_op_test_base_tests
 		FiniteDifference/FD_Solver_test.cpp
 		FiniteDifference/FD_op_Tests.cpp
 		DCPSE/DCPSE_op/tests/DCPSE_op_test3d.cpp
-		DCPSE/DCPSE_op/tests/DCPSE_op_test2.cpp
         DCPSE/DCPSE_op/tests/DCPSE_op_Solver_test.cpp
         DCPSE/DCPSE_op/tests/DCPSE_op_test_temporal.cpp
         DCPSE/tests/Dcpse_unit_tests.cpp
@@ -133,7 +129,8 @@ install(FILES util/petsc_util.hpp
 	      util/linalgebra_lib.hpp 
 	      util/util_num.hpp 
 	      util/grid_dist_testing.hpp
-	      DESTINATION openfpm_numerics/include/util )
+		  util/SphericalHarmonics.hpp
+		DESTINATION openfpm_numerics/include/util )
 
 install(FILES FiniteDifference/Average.hpp 
       	      FiniteDifference/Derivative.hpp 
@@ -175,9 +172,7 @@ install(FILES DCPSE/Dcpse.hpp
 		DCPSE/VandermondeRowBuilder.hpp
 		DESTINATION openfpm_numerics/include/DCPSE)
 install(FILES DMatrix/EMatrix.hpp
-		DESTINATION openfpm_numerics/include/DMatrix)		
-install(FILES MatrixAssembler/MatrixAssembler.hpp
-		DESTINATION openfpm_numerics/include/MatrixAssembler)
+		DESTINATION openfpm_numerics/include/DMatrix)
 install(FILES util/eq_solve_common.hpp
 		DESTINATION openfpm_numerics/include/util)		
 install(FILES DCPSE/DCPSE_op/DCPSE_op.hpp

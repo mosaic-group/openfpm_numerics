@@ -2,19 +2,9 @@
 // Created by Abhinav Singh on 03.11.20.
 //
 
-//#define BOOST_MPL_CFG_NO_PREPROCESSED_HEADERS
-//#define BOOST_MPL_LIMIT_VECTOR_SIZE 40
-
-//#include "config.h"
-
-//#define BOOST_TEST_DYN_LINK
-
 
 //#include "util/util_debug.hpp"
 #include <boost/math/special_functions/spherical_harmonic.hpp>
-
-/*template <class T1, class T2>
-double spherical_harmonic_r(unsigned n, int m, T1 theta, T2 phi);*/
 
 typedef std::tuple <int, int> lm;
 
@@ -40,7 +30,7 @@ struct key_equal : public std::binary_function<lm, lm, bool>
 
 
 
-namespace boost {
+namespace openfpm {
     namespace math {
 
         namespace detail {

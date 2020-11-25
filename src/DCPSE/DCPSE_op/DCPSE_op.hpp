@@ -644,13 +644,23 @@ public:
         {}
     };
     */
-
+/*! \brief Class for Creating the DCPSE Operator Dx and objects and computes DCPSE Kernels.
+ *
+ *
+ * \param parts particle set
+ * \param ord order of convergence of the operator
+ * \param rCut Argument for cell list construction
+ * \param oversampling_factor multiplier to the minimum no. of particles required by the operator in support
+ * \param support_options default:N_particles, Radius can be used to select all particles inside rCut. Overrides oversampling.
+ *
+ * \return Operator Dx which is a function on Vector_dist_Expressions
+ *
+ */
 class Derivative_x {
 
     void *dcpse;
 
 public:
-
     /*! \brief Constructor for Creating the DCPSE Operator Dx and objects and computes DCPSE Kernels.
      *
      *
@@ -723,7 +733,18 @@ public:
 
 };
 
-
+/*! \brief Class for Creating the DCPSE Operator Dy and objects and computes DCPSE Kernels.
+ *
+ *
+ * \param parts particle set
+ * \param ord order of convergence of the operator
+ * \param rCut Argument for cell list construction
+ * \param oversampling_factor multiplier to the minimum no. of particles required by the operator in support
+ * \param support_options default:N_particles, Radius can be used to select all particles inside rCut. Overrides oversampling.
+ *
+ * \return Operator Dy which is a function on Vector_dist_Expressions
+ *
+ */
 class Derivative_y {
 
     void *dcpse;
@@ -800,7 +821,18 @@ public:
     }
 };
 
-
+/*! \brief Class for Creating the DCPSE Operator Dz and objects and computes DCPSE Kernels.
+ *
+ *
+ * \param parts particle set
+ * \param ord order of convergence of the operator
+ * \param rCut Argument for cell list construction
+ * \param oversampling_factor multiplier to the minimum no. of particles required by the operator in support
+ * \param support_options default:N_particles, Radius can be used to select all particles inside rCut. Overrides oversampling.
+ *
+ * \return Operator Dz which is a function on Vector_dist_Expressions
+ *
+ */
 class Derivative_z {
 
     void *dcpse;
@@ -863,7 +895,20 @@ public:
 
 };
 
-
+/*! \brief Class for Creating the Gradient Operator
+     *
+     *  Creates object which work on any dimension and computes DCPSE Kernels for Dx_i in each dimension.
+     *
+     *
+     * \param parts particle set
+     * \param ord order of convergence of the operator
+     * \param rCut Argument for cell list construction
+     * \param oversampling_factor multiplier to the minimum no. of particles required by the operator in support
+     * \param support_options default:N_particles, Radius can be used to select all particles inside rCut. Overrides oversampling.
+     *
+     * \return Operator Grad which is a function on Vector_dist_Expressions
+     *
+     */
 class Gradient {
 
     void *dcpse;
@@ -944,7 +989,20 @@ public:
 
 
 };
-
+/*! \brief Class for Creating the DCPSE 2D Curl Operator
+     *
+     *  Creates object which work in 2 dimension and computes DCPSE Kernels for Dx_i as required.
+     *
+     *
+     * \param parts particle set
+     * \param ord order of convergence of the operator
+     * \param rCut Argument for cell list construction
+     * \param oversampling_factor multiplier to the minimum no. of particles required by the operator in support
+     * \param support_options default:N_particles, Radius can be used to select all particles inside rCut. Overrides oversampling.
+     *
+     * \return Operator which is a function on Vector_dist_Expressions
+     *
+     */
 class Curl2D {
 
     void *dcpse;
@@ -992,7 +1050,20 @@ public:
                                                                                         *(dcpse_type(*)[operand_type::vtype::dims]) dcpse);
     }
 };
-
+/*! \brief Class for Creating the DCPSE Laplacian Operator
+     *
+     *  Creates object which work on any dimension and computes DCPSE Kernels for Dx_i in each dimension.
+     *
+     *
+     * \param parts particle set
+     * \param ord order of convergence of the operator
+     * \param rCut Argument for cell list construction
+     * \param oversampling_factor multiplier to the minimum no. of particles required by the operator in support
+     * \param support_options default:N_particles, Radius can be used to select all particles inside rCut. Overrides oversampling.
+     *
+     * \return Operator which is a function on Vector_dist_Expressions
+     *
+     */
 class Laplacian {
 
     void *dcpse;
@@ -1078,7 +1149,20 @@ public:
 
 };
 
-
+/*! \brief Class for Creating the DCPSE Divergence Operator
+     *
+     *  Creates object which work on any dimension and computes DCPSE Kernels for Dx_i in each dimension.
+     *
+     *
+     * \param parts particle set
+     * \param ord order of convergence of the operator
+     * \param rCut Argument for cell list construction
+     * \param oversampling_factor multiplier to the minimum no. of particles required by the operator in support
+     * \param support_options default:N_particles, Radius can be used to select all particles inside rCut. Overrides oversampling.
+     *
+     * \return Operator which is a function on Vector_dist_Expressions. Computes Divergence of Vectors
+     *
+     */
 class Divergence {
 
     void *dcpse;
@@ -1142,7 +1226,20 @@ public:
 
 };
 
-
+/*! \brief Class for Creating the DCPSE Advection Operator
+     *
+     *  Creates object which work on any dimension and computes DCPSE Kernels for Dx_i in each dimension.
+     *
+     *
+     * \param parts particle set
+     * \param ord order of convergence of the operator
+     * \param rCut Argument for cell list construction
+     * \param oversampling_factor multiplier to the minimum no. of particles required by the operator in support
+     * \param support_options default:N_particles, Radius can be used to select all particles inside rCut. Overrides oversampling.
+     *
+     * \return Operator which is a function on Vector_dist_Expressions. Computes Advection of Vectors Adv(v,u) = v.Grad(u)
+     *
+     */
 class Advection {
 
     void *dcpse;
@@ -1230,7 +1327,18 @@ public:
 
 };
 
-
+/*! \brief Class for Creating the DCPSE Operator Dxy and objects and computes DCPSE Kernels.
+     *
+     *
+     * \param parts particle set
+     * \param ord order of convergence of the operator
+     * \param rCut Argument for cell list construction
+     * \param oversampling_factor multiplier to the minimum no. of particles required by the operator in support
+     * \param support_options default:N_particles, Radius can be used to select all particles inside rCut. Overrides oversampling.
+     *
+     * \return Operator Dxy which is a function on Vector_dist_Expressions
+     *
+     */
 class Derivative_xy {
 
     void *dcpse;
@@ -1306,7 +1414,18 @@ public:
 
     }
 };
-
+/*! \brief Class for Creating the DCPSE Operator Dyz and objects and computes DCPSE Kernels.
+     *
+     *
+     * \param parts particle set
+     * \param ord order of convergence of the operator
+     * \param rCut Argument for cell list construction
+     * \param oversampling_factor multiplier to the minimum no. of particles required by the operator in support
+     * \param support_options default:N_particles, Radius can be used to select all particles inside rCut. Overrides oversampling.
+     *
+     * \return Operator Dyz which is a function on Vector_dist_Expressions
+     *
+     */
 class Derivative_yz {
 
     void *dcpse;
@@ -1382,7 +1501,18 @@ public:
 
     }
 };
-
+/*! \brief Class for Creating the DCPSE Operator Dxz and objects and computes DCPSE Kernels.
+     *
+     *
+     * \param parts particle set
+     * \param ord order of convergence of the operator
+     * \param rCut Argument for cell list construction
+     * \param oversampling_factor multiplier to the minimum no. of particles required by the operator in support
+     * \param support_options default:N_particles, Radius can be used to select all particles inside rCut. Overrides oversampling.
+     *
+     * \return Operator Dxz which is a function on Vector_dist_Expressions
+     *
+     */
 class Derivative_xz {
 
     void *dcpse;
@@ -1459,13 +1589,24 @@ public:
     }
 };
 
-
+/*! \brief Constructor for Creating the DCPSE Operator Dxx and objects and computes DCPSE Kernels.
+     *
+     *
+     * \param parts particle set
+     * \param ord order of convergence of the operator
+     * \param rCut Argument for cell list construction
+     * \param oversampling_factor multiplier to the minimum no. of particles required by the operator in support
+     * \param support_options default:N_particles, Radius can be used to select all particles inside rCut. Overrides oversampling.
+     *
+     * \return Operator Dxx which is a function on Vector_dist_Expressions
+     *
+     */
 class Derivative_xx {
 
     void *dcpse;
 
 public:
-    /*! \brief Constructor for Creating the DCPSE Operator Dxx and objects and computes DCPSE Kernels.
+    /*! \brief Class for Creating the DCPSE Operator Dxx and objects and computes DCPSE Kernels.
      *
      *
      * \param parts particle set
@@ -1529,7 +1670,18 @@ public:
     }
 };
 
-
+/*! \brief Class for Creating the DCPSE Operator Dyy and objects and computes DCPSE Kernels.
+ *
+ *
+ * \param parts particle set
+ * \param ord order of convergence of the operator
+ * \param rCut Argument for cell list construction
+ * \param oversampling_factor multiplier to the minimum no. of particles required by the operator in support
+ * \param support_options default:N_particles, Radius can be used to select all particles inside rCut. Overrides oversampling.
+ *
+ * \return Operator Dyy which is a function on Vector_dist_Expressions
+ *
+ */
 class Derivative_yy {
 
     void *dcpse;
@@ -1598,7 +1750,18 @@ public:
 
     }
 };
-
+/*! \brief Class for Creating the DCPSE Operator Dzz and objects and computes DCPSE Kernels.
+     *
+     *
+     * \param parts particle set
+     * \param ord order of convergence of the operator
+     * \param rCut Argument for cell list construction
+     * \param oversampling_factor multiplier to the minimum no. of particles required by the operator in support
+     * \param support_options default:N_particles, Radius can be used to select all particles inside rCut. Overrides oversampling.
+     *
+     * \return Operator Dzz which is a function on Vector_dist_Expressions
+     *
+     */
 class Derivative_zz {
 
     void *dcpse;
