@@ -6,8 +6,12 @@
 //#include "util/util_debug.hpp"
 #include <boost/math/special_functions/spherical_harmonic.hpp>
 
+//type used for dictionary arguments of a spherical harmonic coordinates
 typedef std::tuple <int, int> lm;
 
+/*! \brief Structure required for the Sph Harmonic amplitude dictionary arguments
+ *
+ */
 struct key_hash : public std::unary_function<lm, std::size_t>
 {
     std::size_t operator()(const lm& k) const
@@ -16,6 +20,9 @@ struct key_hash : public std::unary_function<lm, std::size_t>
     }
 };
 
+/*! \brief Structure required for the Sph Harmonic amplitude dictionary arguments
+ *
+ */
 struct key_equal : public std::binary_function<lm, lm, bool>
 {
     bool operator()(const lm& v0, const lm& v1) const
@@ -34,7 +41,6 @@ namespace openfpm {
     namespace math {
 
         namespace detail {
-
             template<class T, class Policy>
             inline T spherical_harmonic_prefix_raw(unsigned n, unsigned m, T theta, const Policy &pol) {
                 BOOST_MATH_STD_USING
@@ -48,7 +54,7 @@ namespace openfpm {
                 else{
                     prefix = boost::math::tgamma_delta_ratio(static_cast<T>(n - m + 1), static_cast<T>(2 * m), pol);
                 }
-                prefix *= (2 * n + 1) / (4 * constants::pi<T>());
+                prefix *= (2 * n + 1) / (4 * boost::math::constants::pi<T>());
                 prefix = sqrt(prefix);
                 return prefix;
             }
@@ -75,7 +81,7 @@ namespace openfpm {
                 T prefix = spherical_harmonic_prefix_raw(n, m, theta, pol);
                 //T sin_theta = sin(theta);
                 T x = cos(theta);
-                T leg = legendre_p(n, m, x, pol);
+                T leg = boost::math::legendre_p(n, m, x, pol);
                 if (m != 0)
                     prefix *= sqrt(2);
                 prefix *= leg;
@@ -104,12 +110,12 @@ namespace openfpm {
                 T prefix = spherical_harmonic_prefix_raw(n, m, theta, pol);
                 //T sin_theta = sin(theta);
                 T x = cos(theta);
-                T leg2,leg1 = legendre_p(n, m + 1, x, pol);
+                T leg2,leg1 = boost::math::legendre_p(n, m + 1, x, pol);
                 if(n+m==0||n-m==-1){
                     leg2=0.0;
                 }
                 else{
-                leg2 = legendre_p(n, m - 1, x, pol);
+                leg2 = boost::math::legendre_p(n, m - 1, x, pol);
                 }
                 if (m != 0)
                     prefix *= sqrt(2);
@@ -142,7 +148,7 @@ namespace openfpm {
                 T prefix = spherical_harmonic_prefix_raw(n, m, theta, pol);
                 T sin_theta = sin(theta);
                 T x = cos(theta);
-                T leg = legendre_p(n, m, x, pol);
+                T leg = boost::math::legendre_p(n, m, x, pol);
                 prefix *= sqrt(2) * leg;
                 return sign ? m * prefix * cos(m * phi) : -m * prefix * sin(m * phi);
             }
@@ -150,52 +156,52 @@ namespace openfpm {
         }
 
     template<class T1, class T2, class Policy>
-    inline typename tools::promote_args<T1, T2>::type
+    inline typename boost::math::tools::promote_args<T1, T2>::type
     Y(unsigned n, int m, T1 theta, T2 phi, const Policy &pol) {
-        typedef typename tools::promote_args<T1, T2>::type result_type;
-        typedef typename policies::evaluation<result_type, Policy>::type value_type;
-        return policies::checked_narrowing_cast<result_type, Policy>(
+        typedef typename boost::math::tools::promote_args<T1, T2>::type result_type;
+        typedef typename boost::math::policies::evaluation<result_type, Policy>::type value_type;
+        return boost::math::policies::checked_narrowing_cast<result_type, Policy>(
                 detail::Y(n, m, static_cast<value_type>(theta), static_cast<value_type>(phi), pol),
-                "bost::math::Y<%1%>(unsigned, int, %1%, %1%)");
+                "openfpm::math::Y<%1%>(unsigned, int, %1%, %1%)");
     }
 
     template<class T1, class T2>
-    inline typename tools::promote_args<T1, T2>::type
+    inline typename boost::math::tools::promote_args<T1, T2>::type
     Y(unsigned n, int m, T1 theta, T2 phi) {
-        return boost::math::Y(n, m, theta, phi, policies::policy<>());
+        return openfpm::math::Y(n, m, theta, phi, boost::math::policies::policy<>());
     }
 
 
     template<class T1, class T2, class Policy>
-    inline typename tools::promote_args<T1, T2>::type
+    inline typename boost::math::tools::promote_args<T1, T2>::type
     DYdTheta(unsigned n, int m, T1 theta, T2 phi, const Policy &pol) {
-        typedef typename tools::promote_args<T1, T2>::type result_type;
-        typedef typename policies::evaluation<result_type, Policy>::type value_type;
-        return policies::checked_narrowing_cast<result_type, Policy>(
+        typedef typename boost::math::tools::promote_args<T1, T2>::type result_type;
+        typedef typename boost::math::policies::evaluation<result_type, Policy>::type value_type;
+        return boost::math::policies::checked_narrowing_cast<result_type, Policy>(
                 detail::DYdTheta(n, m, static_cast<value_type>(theta), static_cast<value_type>(phi), pol),
-                "bost::math::DYdTheta<%1%>(unsigned, int, %1%, %1%)");
+                "openfpm::math::DYdTheta<%1%>(unsigned, int, %1%, %1%)");
     }
 
     template<class T1, class T2>
-    inline typename tools::promote_args<T1, T2>::type
+    inline typename boost::math::tools::promote_args<T1, T2>::type
     DYdTheta(unsigned n, int m, T1 theta, T2 phi) {
-        return boost::math::DYdTheta(n, m, theta, phi, policies::policy<>());
+        return openfpm::math::DYdTheta(n, m, theta, phi, boost::math::policies::policy<>());
     }
 
     template<class T1, class T2, class Policy>
-    inline typename tools::promote_args<T1, T2>::type
+    inline typename boost::math::tools::promote_args<T1, T2>::type
     DYdPhi(unsigned n, int m, T1 theta, T2 phi, const Policy &pol) {
-        typedef typename tools::promote_args<T1, T2>::type result_type;
-        typedef typename policies::evaluation<result_type, Policy>::type value_type;
-        return policies::checked_narrowing_cast<result_type, Policy>(
+        typedef typename boost::math::tools::promote_args<T1, T2>::type result_type;
+        typedef typename boost::math::policies::evaluation<result_type, Policy>::type value_type;
+        return boost::math::policies::checked_narrowing_cast<result_type, Policy>(
                 detail::DYdPhi(n, m, static_cast<value_type>(theta), static_cast<value_type>(phi), pol),
-                "bost::math::DYdPhi<%1%>(unsigned, int, %1%, %1%)");
+                "openfpm::math::DYdPhi<%1%>(unsigned, int, %1%, %1%)");
     }
 
     template<class T1, class T2>
-    inline typename tools::promote_args<T1, T2>::type
+    inline typename boost::math::tools::promote_args<T1, T2>::type
     DYdPhi(unsigned n, int m, T1 theta, T2 phi) {
-        return boost::math::DYdPhi(n, m, theta, phi, policies::policy<>());
+        return openfpm::math::DYdPhi(n, m, theta, phi, boost::math::policies::policy<>());
     }
 
     double sph_A1(int l,int  m,double v1, double vr) {
@@ -228,6 +234,18 @@ namespace openfpm {
         }
     }
 
+    /*! \brief Returns Stokes Solution Amplitudes for Spherical Harmonics modes l,m
+     *
+     *  \param nu viscosity for nu*Lap(v)=Grad(P)
+     *  \param l Spherical harmonic mode l
+     *  \param m Spherical harmonic mode m
+     *  \param vr Amplitude of Y^hat corresponding to the boundary
+     *  \param v1 Amplitude of Psi^hat corresponding to the boundary
+     *  \param v2 Amplitude of Phi^hat corresponding to the boundary
+     *
+     *  \return std::vector containing the spherical harmonic amplitudes (ur,u1,u2,p) for the solution at r for mode l,m.
+     *
+     */
     std::vector<double> sph_anasol_u(double nu,int l,int m,double vr,double v1,double v2,double r) {
          double ur,u1,u2,p;
          if(l==0)
@@ -251,6 +269,17 @@ namespace openfpm {
          return {ur,u1,u2,p};
         }
 
+        /*! \brief Conversion from Vector spherical Harmonic basis to Cartesian basis
+         *
+         *  \param r Polar coordinate radius
+         *  \param theta Polar coordinate theta between 0 and Pi
+         *  \param phi Polar coordinate phi between -Pi and Pi
+         *  \param Vr Dictionary of amplitudes of Y^hat with arguments l,m
+         *  \param V1 Dictionary of amplitudes of Psi^hat with arguments l,m
+         *  \param V2 Dictionary of amplitudes of Phi^hat with arguments l,m
+         *  \return std::vector containing the cartesian coordinates corresponding to vector basis summation.
+         *
+         */
         template<unsigned int k>
         std::vector<double> sumY(double r, double theta, double phi,const std::unordered_map<const lm,double,key_hash,key_equal> &Vr,const std::unordered_map<const lm,double,key_hash,key_equal> &V1,const std::unordered_map<const lm,double,key_hash,key_equal> &V2) {
         double Sum1 = 0.0;
@@ -261,9 +290,9 @@ namespace openfpm {
                 auto Er= Vr.find(std::make_tuple(l,m));
                 auto E1= V1.find(std::make_tuple(l,m));
                 auto E2= V2.find(std::make_tuple(l,m));
-                Sum1 += Er->second * boost::math::Y(l, m, theta, phi);
-                double DYdPhi=boost::math::DYdPhi(l, m, theta, phi);
-                double DYdTheta=boost::math::DYdTheta(l, m, theta, phi);
+                Sum1 += Er->second * openfpm::math::Y(l, m, theta, phi);
+                double DYdPhi=openfpm::math::DYdPhi(l, m, theta, phi);
+                double DYdTheta=openfpm::math::DYdTheta(l, m, theta, phi);
                 /*if (DYdPhi==0 ||E2->second==0){
                     Sum2 += E1->second * DYdTheta;
                 }
@@ -295,14 +324,22 @@ namespace openfpm {
         return {x,y,z};
 
     }
-
+        /*! \brief Conversion from Scalar spherical Harmonic basis to Cartesian basis
+         *
+         *  \param r viscosity for nu*Lap(v)=Grad(P)
+         *  \param theta Spherical harmonic mode l
+         *  \param phi Spherical harmonic mode m
+         *  \param Vr Dictionary of amplitudes of Y^hat with arguments l,m
+         *  \return double containing the cartesian coordinate corresponding to scalar basis summation.
+         *
+         */
         template<unsigned int k>
         double sumY_Scalar(double r, double theta, double phi,const std::unordered_map<const lm,double,key_hash,key_equal> &Vr) {
             double Sum1 = 0.0;
             for (int l = 0; l <= k; l++) {
                 for (int m = -l; m <= l; m++) {
                     auto Er= Vr.find(std::make_tuple(l,m));
-                    Sum1 += Er->second * boost::math::Y(l, m, theta, phi);
+                    Sum1 += Er->second * openfpm::math::Y(l, m, theta, phi);
                 }
             }
             return Sum1;
