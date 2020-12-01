@@ -42,7 +42,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_subset_suite_tests)
         BOOST_TEST_MESSAGE("Init vector_dist...");
         double sigma2 = spacing[0] * spacing[1] / (2 * 4);
 
-        vector_dist<2, double, aggregate<double, double, double, VectorS<2, double>, VectorS<2, double>,VectorS<2, double>,double>> Particles(0, box,
+        vector_dist_ws<2, double, aggregate<double, double, double, VectorS<2, double>, VectorS<2, double>,VectorS<2, double>,double>> Particles(0, box,
                                                                                                                  bc,
                                                                                                                  ghost);
 
@@ -52,7 +52,8 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_subset_suite_tests)
 
         std::normal_distribution<> gaussian{0, sigma2};
 
-        openfpm::vector<aggregate<int>> bulk;
+//        openfpm::vector<aggregate<int>> bulk;
+//        openfpm::vector<aggregate<int>> boundary;
 
         auto it = Particles.getGridIterator(sz);
         size_t pointId = 0;
@@ -73,9 +74,18 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_subset_suite_tests)
 
             if (k0 != 0 && k1 != 0 && k0 != sz[0] -1 && k1 != sz[1] - 1)
             {
-            	bulk.add();
-            	bulk.template get<0>(bulk.size()-1) = Particles.size_local() - 1;
+//            	bulk.add();
+//            	bulk.template get<0>(bulk.size()-1) = Particles.size_local() - 1;
+
+                Particles.getLastSubset(0);
             }
+            else
+            {
+//                boundary.add();
+//            	  boundary.template get<0>(boundary.size()-1) = Particles.size_local() - 1;
+                Particles.getLastSubset(1);
+            }
+            
 
             ++counter;
             ++it;
@@ -85,14 +95,27 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_subset_suite_tests)
         Particles.map();
         Particles.ghost_get<0>();
 
-        vector_dist_subset<2, double, aggregate<double, double, double, VectorS<2, double>, VectorS<2, double>,VectorS<2, double>,double>> Particles_bulk(Particles,bulk);
+        auto git = Particles.getGhostIterator();
+
+        while (git.isNext())
+        {
+            auto p = git.get();
+
+            Particles.template getProp<0>(p) = std::numeric_limits<double>::quiet_NaN();
+
+            ++git;
+        }
+
+        vector_dist_subset<2, double, aggregate<double, double, double, VectorS<2, double>, VectorS<2, double>,VectorS<2, double>,double>> Particles_bulk(Particles,0);
+        vector_dist_subset<2, double, aggregate<double, double, double, VectorS<2, double>, VectorS<2, double>,VectorS<2, double>,double>> Particles_boundary(Particles,1);
+        auto & boundary = Particles_boundary.getIds();
 
         // move particles
-
         auto P = getV<0>(Particles);
         auto Out = getV<1>(Particles);
         auto Pb = getV<2>(Particles);
         auto Out_V = getV<3>(Particles);
+
 
         auto P_bulk = getV<2>(Particles_bulk);
         auto Out_bulk = getV<1>(Particles_bulk);
@@ -109,35 +132,69 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_subset_suite_tests)
         Derivative_y Dy(Particles, 2, rCut);
         Derivative_x Dx_bulk(Particles_bulk, 2, rCut);
 */
-
-        Derivative_x Dx(Particles, 2, rCut,sampling_factor, support_options::RADIUS);
-        Derivative_y Dy(Particles, 2, rCut,sampling_factor, support_options::RADIUS);
         Derivative_x Dx_bulk(Particles_bulk, 2, rCut,sampling_factor, support_options::RADIUS);
         Derivative_y Dy_bulk(Particles_bulk, 2, rCut,sampling_factor, support_options::RADIUS);
 
         Out_bulk = Dx_bulk(P);
-        Out_bulk = Dx(P);
 	    Out_V_bulk[0] = P + Dx_bulk(P);
         Out_V_bulk[1] = Out_V[0] +Dy_bulk(P);
 
 	// Check
-	auto it2 = Particles_bulk.getDomainIterator();
-        while (it2.isNext())
+        bool is_nan = false;
+
+        auto & v_cl = create_vcluster();
+        if (v_cl.size() > 1)
         {
-		auto p = it2.get();
+            auto it2 = Particles_bulk.getDomainIterator();
+            while (it2.isNext())
+            {
+            auto p = it2.get();
 
-		BOOST_REQUIRE_EQUAL(Particles_bulk.getProp<2>(p),15.0);
-		BOOST_REQUIRE(fabs(Particles_bulk.getProp<1>(p) - cos(Particles_bulk.getPos(p)[0])) < 0.005 );
-		BOOST_REQUIRE(fabs(Particles_bulk.getProp<3>(p)[0] - Particles_bulk.getProp<0>(p) - cos(Particles_bulk.getPos(p)[0])) < 0.001 );
-		BOOST_REQUIRE(fabs(Particles_bulk.getProp<3>(p)[1] - Particles_bulk.getProp<3>(p)[0] - cos(Particles_bulk.getPos(p)[1])) < 0.001 );
+    /*		BOOST_REQUIRE_EQUAL(Particles_bulk.getProp<2>(p),15.0);
+            BOOST_REQUIRE(fabs(Particles_bulk.getProp<1>(p) - cos(Particles_bulk.getPos(p)[0])) < 0.005 );
+            BOOST_REQUIRE(fabs(Particles_bulk.getProp<3>(p)[0] - Particles_bulk.getProp<0>(p) - cos(Particles_bulk.getPos(p)[0])) < 0.001 );
+            BOOST_REQUIRE(fabs(Particles_bulk.getProp<3>(p)[1] - Particles_bulk.getProp<3>(p)[0] - cos(Particles_bulk.getPos(p)[1])) < 0.001 );*/
 
-            ++it2;
-	}
+                is_nan |= std::isnan(Particles_bulk.template getProp<1>(p));
+
+    //        Particles_bulk.template getProp<0>(p) = fabs(Particles_bulk.getProp<1>(p) - cos(Particles_bulk.getPos(p)[0]));
+
+                ++it2;
+            }
+
+            BOOST_REQUIRE_EQUAL(is_nan,true);
+        }
 
 //        P_bulk = Dx_bulk(P_bulk);  <------------ Incorrect produce error message
 //        P = Dx_bulk(P);   <------- Incorrect produce overflow
 
-        //Particles.write("Out");
+        Particles.ghost_get<0>();
+
+        for (int i = 0 ; i < boundary.size() ; i++)
+        {
+            Particles.template getProp<0>(boundary.template get<0>(i)) = std::numeric_limits<double>::quiet_NaN();
+        }
+
+        Particles.ghost_get<0>();
+
+        Out_bulk = Dx_bulk(P);
+	    Out_V_bulk[0] = P + Dx_bulk(P);
+        Out_V_bulk[1] = Out_V[0] +Dy_bulk(P);
+
+	    auto it2 = Particles_bulk.getDomainIterator();
+        while (it2.isNext())
+        {
+		    auto p = it2.get();
+
+		    BOOST_REQUIRE_EQUAL(Particles_bulk.getProp<2>(p),15.0);
+		    BOOST_REQUIRE(fabs(Particles_bulk.getProp<1>(p) - cos(Particles_bulk.getPos(p)[0])) < 0.005 );
+		    BOOST_REQUIRE(fabs(Particles_bulk.getProp<3>(p)[0] - Particles_bulk.getProp<0>(p) - cos(Particles_bulk.getPos(p)[0])) < 0.001 );
+		    BOOST_REQUIRE(fabs(Particles_bulk.getProp<3>(p)[1] - Particles_bulk.getProp<3>(p)[0] - cos(Particles_bulk.getPos(p)[1])) < 0.001 );
+
+            ++it2;
+	    }
+
+
     }
 
     BOOST_AUTO_TEST_CASE(dcpse_op_subset_PC_lid) {
@@ -160,16 +217,17 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_subset_suite_tests)
         double sigma2 = spacing[0] * spacing[1] / (2 * 4);
         auto &v_cl = create_vcluster();
 
+        typedef  aggregate<double, VectorS<2, double>, VectorS<2, double>,VectorS<2, double>,double,VectorS<2, double>,VectorS<2, double>,double> particle_type;
 
-        vector_dist<2, double, aggregate<double, VectorS<2, double>, VectorS<2, double>,VectorS<2, double>,double,VectorS<2, double>,VectorS<2, double>,double>> Particles(0, box,
+        vector_dist_ws<2, double, particle_type> Particles(0, box,
                                                                                                                  bc,
                                                                                                                  ghost);
 
         //Init_DCPSE(Particles)
         BOOST_TEST_MESSAGE("Init Particles...");
 
-        openfpm::vector<aggregate<int>> bulk;
-        openfpm::vector<aggregate<int>> boundary;
+//        openfpm::vector<aggregate<int>> bulk;
+//        openfpm::vector<aggregate<int>> boundary;
 
         auto it = Particles.getGridIterator(sz);
         while (it.isNext())
@@ -193,13 +251,15 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_subset_suite_tests)
             auto p = it2.get();
             Point<2, double> xp = Particles.getPos(p);
             if (xp[0] != 0 && xp[1] != 0 && xp[0] != 1.0 && xp[1] != 1.0) {
-                bulk.add();
-                bulk.last().get<0>() = p.getKey();
+//                bulk.add();
+//                bulk.last().get<0>() = p.getKey();
+                Particles.setSubset(p,0);
                 Particles.getProp<3>(p)[x] = 3.0;
                 Particles.getProp<3>(p)[y] = 3.0;
             } else {
-                boundary.add();
-                boundary.last().get<0>() = p.getKey();
+//                boundary.add();
+//                boundary.last().get<0>() = p.getKey();
+                Particles.setSubset(p,1);
                 Particles.getProp<3>(p)[x] = xp[0]*xp[0]+xp[1]*xp[1];
                 Particles.getProp<3>(p)[y] = xp[0]*xp[0]-2*xp[0]*xp[1];
             }
@@ -210,7 +270,10 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_subset_suite_tests)
             ++it2;
         }
 
-        vector_dist_subset<2, double, aggregate<double, VectorS<2, double>, VectorS<2, double>, VectorS<2, double>,double,VectorS<2, double>,VectorS<2, double>,double>> Particles_bulk(Particles,bulk);
+        vector_dist_subset<2, double, particle_type> Particles_bulk(Particles,0);
+        vector_dist_subset<2, double, particle_type> Particles_boundary(Particles,1);
+        auto & bulk = Particles_bulk.getIds();
+        auto & boundary = Particles_boundary.getIds();
 
         auto P = getV<0>(Particles);
         auto V = getV<1>(Particles);

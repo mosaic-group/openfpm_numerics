@@ -84,10 +84,15 @@ public:
             differentialOrder(Monomial<dim>(differentialSignature).order()),
             monomialBasis(differentialSignature.asArray(), convergenceOrder),
             opt(opt)
-            {
-        if (supportSizeFactor < 1) {
+    {
+        // This 
+        particles.ghost_get_subset();
+        if (supportSizeFactor < 1) 
+        {
             initializeAdaptive(particles, convergenceOrder, rCut);
-        } else {
+        } 
+        else 
+        {
             initializeStaticSize(particles, convergenceOrder, rCut, supportSizeFactor);
         }
     }
