@@ -29,6 +29,8 @@
 #include "Decomposition/CartDecomposition.hpp"
 
 // Include level-set-method related header files
+#include "HelpFunctions.hpp"
+#include "HelpFunctionsForGrid.hpp"
 #include "ComputeGradient.hpp"
 
 /**@brief Class for getting the narrow band around the interface
