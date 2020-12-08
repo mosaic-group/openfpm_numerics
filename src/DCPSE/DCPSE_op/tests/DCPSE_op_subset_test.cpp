@@ -219,9 +219,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_subset_suite_tests)
 
         typedef  aggregate<double, VectorS<2, double>, VectorS<2, double>,VectorS<2, double>,double,VectorS<2, double>,VectorS<2, double>,double> particle_type;
 
-        vector_dist_ws<2, double, particle_type> Particles(0, box,
-                                                                                                                 bc,
-                                                                                                                 ghost);
+        vector_dist_ws<2, double, particle_type> Particles(0, box,bc,ghost);
 
         //Init_DCPSE(Particles)
         BOOST_TEST_MESSAGE("Init Particles...");
@@ -311,9 +309,9 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_subset_suite_tests)
         auto Stokes2=Dxx(V[y])+Dyy(V[y]);
 
         petsc_solver<double> solverPetsc;
-        solverPetsc.setSolver(KSPGMRES);
+        //solverPetsc.setSolver(KSPGMRES);
         //solverPetsc.setRestart(250);
-        solverPetsc.setPreconditioner(PCJACOBI);
+        //solverPetsc.setPreconditioner(PCJACOBI);
         V_star=0;
         RHS[x] = dV[x];
         RHS[y] = dV[y];
@@ -372,9 +370,9 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_subset_suite_tests)
                 }
             }
             n++;
-            /*if (v_cl.rank() == 0) {
+            if (v_cl.rank() == 0) {
                 std::cout << "Rel l2 cgs err in V = " << V_err << " at " << n << std::endl;
-            }*/
+            }
         }
         double worst1 = 0.0;
         double worst2 = 0.0;
@@ -393,8 +391,8 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_subset_suite_tests)
         }
         //Particles.deleteGhost();
         //Particles.write("PC_subset_lid");
-        //std::cout << "Maximum Analytic Error in Vx: " << worst1 << std::endl;
-        //std::cout << "Maximum Analytic Error in Vy: " << worst2 << std::endl;
+        std::cout << "Maximum Analytic Error in Vx: " << worst1 << std::endl;
+        std::cout << "Maximum Analytic Error in Vy: " << worst2 << std::endl;
         BOOST_REQUIRE(worst1 < 0.03);
         BOOST_REQUIRE(worst2 < 0.03);
 
@@ -516,9 +514,9 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_subset_suite_tests)
         auto Stokes2=Dxx(V[y])+Dyy(V[y]);
 
         petsc_solver<double> solverPetsc;
-        solverPetsc.setSolver(KSPGMRES);
+        //solverPetsc.setSolver(KSPGMRES);
         //solverPetsc.setRestart(250);
-        solverPetsc.setPreconditioner(PCJACOBI);
+        //solverPetsc.setPreconditioner(PCJACOBI);
         V_star=0;
         while (V_err >= V_err_eps && n <= nmax) {
             RHS[x] = dV[x];
@@ -581,10 +579,10 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_subset_suite_tests)
                 }
             }
             n++;
-            //if (v_cl.rank() == 0) {
-           // std::cout << "Rel l2 cgs err in V = " << V_err << " at " << n << std::endl;
+            if (v_cl.rank() == 0) {
+            std::cout << "Rel l2 cgs err in V = " << V_err << " at " << n << std::endl;
 
-            //}
+            }
         }
         double worst1 = 0.0;
         double worst2 = 0.0;
@@ -602,8 +600,8 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_subset_suite_tests)
             }
         }
 
-        //std::cout << "Maximum Analytic Error in slice x: " << worst1 << std::endl;
-        //std::cout << "Maximum Analytic Error in slice y: " << worst2 << std::endl;
+        std::cout << "Maximum Analytic Error in slice x: " << worst1 << std::endl;
+        std::cout << "Maximum Analytic Error in slice y: " << worst2 << std::endl;
         BOOST_REQUIRE(worst1 < 0.03);
         BOOST_REQUIRE(worst2 < 0.03);
 
