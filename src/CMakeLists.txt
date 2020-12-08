@@ -9,6 +9,8 @@ if (CUDA_FOUND)
 endif()
 
 add_executable(numerics ${OPENFPM_INIT_FILE} ${CUDA_SOURCES}
+		OdeIntegrators/tests/OdeIntegratores_base_tests.cpp
+		DCPSE/DCPSE_op/tests/DCPCE_Kernel_test.cpp
 		DCPSE/DCPSE_op/tests/DCPSE_op_subset_test.cpp
 		DCPSE/DCPSE_op/tests/DCPSE_op_test_base_tests
 		FiniteDifference/FD_Solver_test.cpp
@@ -180,6 +182,7 @@ install(FILES DCPSE/DCPSE_op/DCPSE_op.hpp
 		DCPSE/DCPSE_op/EqnsStruct.hpp
 		DESTINATION openfpm_numerics/include/DCPSE/DCPSE_op)
 
+install(FILES OdeIntegrators/OdeIntegrators.hpp)
 
 install(FILES Draw/DrawParticles.hpp 
       	      Draw/PointIterator.hpp 
