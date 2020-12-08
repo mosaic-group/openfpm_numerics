@@ -182,7 +182,8 @@ install(FILES DCPSE/DCPSE_op/DCPSE_op.hpp
 		DCPSE/DCPSE_op/EqnsStruct.hpp
 		DESTINATION openfpm_numerics/include/DCPSE/DCPSE_op)
 
-install(FILES OdeIntegrators/OdeIntegrators.hpp)
+install(FILES OdeIntegrators/OdeIntegrators.hpp
+		DESTINATION openfpm_numerics/include/OdeIntegrators)
 
 install(FILES Draw/DrawParticles.hpp 
       	      Draw/PointIterator.hpp 
