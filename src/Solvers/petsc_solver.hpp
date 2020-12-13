@@ -821,7 +821,7 @@ public:
 //		solvs.add(std::string(KSPPGMRES)); <--- Take forever
 //		solvs.add(std::string(KSPGCR));
 
-		setSolver(KSPGMRES);
+		//setSolver(KSPGMRES);
 	}
 
 	/*! \brief Print the preconditioner used by the solver
@@ -844,6 +844,25 @@ public:
 			std::cout << "The precoditioner is: " << type_pc << std::endl;
 		}
 	}
+
+    /*! \brief Print the ksp_type used by the solver
+     *
+     *
+     */
+    void print_ksptype()
+    {
+        auto & v_cl = create_vcluster();
+
+        if (v_cl.getProcessUnitID() == 0)
+        {
+            KSPType type_ksp;
+
+            // We get the KSP_type
+            PETSC_SAFE_CALL(KSPGetType(ksp,&type_ksp));
+
+            std::cout << "The ksp_type is: " << type_ksp << std::endl;
+        }
+    }
 
 	/*! \brief Add a test solver
 	 *
