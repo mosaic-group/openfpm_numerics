@@ -1154,10 +1154,10 @@ public:
     { return &v.template get<0>(0); }
 
     iterator end()
-    { return &v.template get<0>(v.size()); }
+    { return &v.template get<0>(v.size()-1)+1; }
 
     const_iterator end() const
-    { return &v.template get<0>(v.size()); }
+    { return &v.template get<0>(v.size()-1)+1; }
 
 
     size_t size() const
