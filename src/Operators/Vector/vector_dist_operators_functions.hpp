@@ -9,7 +9,6 @@
 #define OPENFPM_NUMERICS_SRC_OPERATORS_VECTOR_VECTOR_DIST_OPERATORS_FUNCTIONS_HPP_
 
 #ifdef __NVCC__
-#include "util/cuda/moderngpu/kernel_reduce.hxx"
 #include "cuda/vector_dist_operators_cuda.cuh"
 #endif
 

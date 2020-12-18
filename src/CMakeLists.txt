@@ -2,10 +2,15 @@ cmake_minimum_required(VERSION 3.8 FATAL_ERROR)
 
 ########################### Executables
 
+if (CUDA_ON_CPU)
+	add_definitions(-DCUDA_ON_CPU)
+endif()
 
 if (CUDA_FOUND)
 	set(CUDA_SOURCES Operators/Vector/vector_dist_operators_unit_tests.cu
 					 Operators/Vector/vector_dist_operators_apply_kernel_unit_tests.cu)
+else()
+	set(CUDA_SOURCES ../../openfpm_devices/src/util/cudify_vars.cpp)
 endif()
 
 add_executable(numerics ${OPENFPM_INIT_FILE} ${CUDA_SOURCES}
@@ -55,6 +60,7 @@ target_include_directories (numerics PUBLIC ${HDF5_ROOT}/include)
 target_include_directories (numerics PUBLIC ${LIBHILBERT_INCLUDE_DIRS})
 target_include_directories (numerics PUBLIC ${Boost_INCLUDE_DIRS})
 target_include_directories (numerics PUBLIC ${Vc_INCLUDE_DIR})
+target_include_directories (numerics PUBLIC ${ALPAKA_ROOT}/include)
 if(EIGEN3_FOUND)
 	target_include_directories (numerics PUBLIC ${EIGEN3_INCLUDE_DIR})
 endif()
