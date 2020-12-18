@@ -170,6 +170,10 @@ public:\
 	{\
 		return vector_result<typename exp1::vtype,typename exp2::vtype>::getVector(o1,o2);\
 	}\
+	const vtype & getVector() const\
+	{\
+		return vector_result<typename exp1::vtype,typename exp2::vtype>::getVector(o1,o2);\
+	}\
 \
 \
 	vector_dist_expression_op(const exp1 & o1, const exp2 & o2)\
