@@ -1,0 +1,1 @@
+-Wl,-rpath -Wl,/home/stephan/MPI/lib -Wl,--enable-new-dtags -pthread /home/stephan/MPI/lib/libmpi.so
