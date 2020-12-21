@@ -92,8 +92,8 @@ Monomial<dim>::Monomial(const unsigned int other[dim])
 
 template<unsigned int dim>
 Monomial<dim>::Monomial(const Monomial<dim> &other)
-        : exponents(other.exponents),
-          sum(other.sum),
+        : sum(other.sum),
+          exponents(other.exponents),
           scalar(other.scalar) {}
 
 template<unsigned int dim>

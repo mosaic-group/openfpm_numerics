@@ -1,6 +1,6 @@
 //
 // Created by tommaso on 29/03/19.
-// Modified by Abhinav and Pietro
+// Modified by Abhinav, Pietro and Stephan
 #ifndef OPENFPM_PDATA_DCPSE_HPP
 #define OPENFPM_PDATA_DCPSE_HPP
 
@@ -14,6 +14,13 @@
 #include "Vandermonde.hpp"
 #include "DcpseDiagonalScalingMatrix.hpp"
 #include "DcpseRhs.hpp"
+
+enum class Formula_options
+{
+    CANCELLATION = 0,
+    STANDARD,
+    NONE
+};
 
 template<bool cond>
 struct is_scalar {
@@ -38,7 +45,6 @@ struct is_scalar<false> {
 template<unsigned int dim, typename vector_type>
 class Dcpse {
 public:
-
     typedef typename vector_type::stype T;
     typedef typename vector_type::value_type part_type;
     typedef vector_type vtype;
@@ -68,9 +74,9 @@ private:
     double supportSizeFactor;
 
     support_options opt;
+    Formula_options optf;
 
-public:
-
+public:    
     // Here we require the first element of the aggregate to be:
     // 1) the value of the function f on the point
     Dcpse(vector_type &particles,
@@ -78,22 +84,34 @@ public:
           unsigned int convergenceOrder,
           T rCut,
           T supportSizeFactor = 1,
-          support_options opt = support_options::N_PARTICLES)
-		:particles(particles),
-            differentialSignature(differentialSignature),
+          support_options opt = support_options::N_PARTICLES,
+          Formula_options optf = Formula_options::NONE)
+		:differentialSignature(differentialSignature),
             differentialOrder(Monomial<dim>(differentialSignature).order()),
             monomialBasis(differentialSignature.asArray(), convergenceOrder),
-            opt(opt)
+            particles(particles),
+            rCut(rCut),
+            convergenceOrder(convergenceOrder),
+            supportSizeFactor(supportSizeFactor),
+            opt(opt),
+            optf(optf == Formula_options::NONE?
+//                 (differentialOrder >= 5 ?
+                Formula_options::CANCELLATION
+//                     :
+//                     Formula_options::STANDARD
+//             )
+                : optf)
     {
         // This 
         particles.ghost_get_subset();
-        if (supportSizeFactor < 1) 
+        if (supportSizeFactor < 1)
         {
-            initializeAdaptive(particles, convergenceOrder, rCut);
-        } 
-        else 
+            bool adaptive = true;
+            initializeUpdate(particles, adaptive);
+        }
+        else
         {
-            initializeStaticSize(particles, convergenceOrder, rCut, supportSizeFactor);
+            initializeUpdate(particles);
         }
     }
 
@@ -327,12 +345,14 @@ public:
     template<typename op_type>
     auto computeDifferentialOperator(const vect_dist_key_dx &key,
                                      op_type &o1) -> decltype(is_scalar<std::is_fundamental<decltype(o1.value(
-            key))>::value>::analyze(key, o1)) {
+            key))>::value>::analyze(key, o1))
+    {
 
         typedef decltype(is_scalar<std::is_fundamental<decltype(o1.value(key))>::value>::analyze(key, o1)) expr_type;
 
         T sign = 1.0;
-        if (differentialOrder % 2 == 0) {
+        if (differentialOrder % 2 == 0)
+        {
             sign = -1;
         }
 
@@ -374,14 +394,16 @@ public:
     auto computeDifferentialOperator(const vect_dist_key_dx &key,
                                      op_type &o1,
                                      int i) -> typename decltype(is_scalar<std::is_fundamental<decltype(o1.value(
-            key))>::value>::analyze(key, o1))::coord_type {
+            key))>::value>::analyze(key, o1))::coord_type
+    {
 
         typedef typename decltype(is_scalar<std::is_fundamental<decltype(o1.value(key))>::value>::analyze(key, o1))::coord_type expr_type;
 
         //typedef typename decltype(o1.value(key))::blabla blabla;
 
         T sign = 1.0;
-        if (differentialOrder % 2 == 0) {
+        if (differentialOrder % 2 == 0)
+        {
             sign = -1;
         }
 
@@ -410,7 +432,7 @@ public:
         return Dfxp;
     }
 
-    void initializeUpdate(vector_type &particles)
+    void initializeUpdate(vector_type &particles, bool adaptive = false)
     {
         localSupports.clear();
         localSupports.resize(particles.size_local_orig());
@@ -427,207 +449,99 @@ public:
         unsigned int requiredSupportSize = monomialBasis.size() * supportSizeFactor;
 
         auto it = particles.getDomainIterator();
-        while (it.isNext()) {
+        while (it.isNext())
+        {
             // Get the points in the support of the DCPSE kernel and store the support for reuse
             //Support<vector_type> support = supportBuilder.getSupport(it, requiredSupportSize,opt);
             Support support = supportBuilder.getSupport(it, requiredSupportSize,opt);
             EMatrix<T, Eigen::Dynamic, Eigen::Dynamic> V(support.size(), monomialBasis.size());
-
-            auto key_o = particles.getOriginKey(it.get());
-
+            
             // Vandermonde matrix computation
             Vandermonde<dim, T, EMatrix<T, Eigen::Dynamic, Eigen::Dynamic>>
-                    vandermonde(support, monomialBasis,particles);
+            vandermonde(support, monomialBasis,particles);
             vandermonde.getMatrix(V);
-
             T eps = vandermonde.getEps();
-
+            
+            if (adaptive) //FIXME: So if the current condition number is bad the following support size doubles? Shouldn't we recalculate the current support and V with the bigger size?
+            {
+                const T condVTOL = 1e2;
+                T condV = conditionNumber(V, condVTOL);
+                
+                if (condV > condVTOL)
+                {
+                    requiredSupportSize *= 2;
+                    std::cout
+                    << "INFO: Increasing, requiredSupportSize = " << requiredSupportSize
+                    << std::endl; // debug
+                    continue;
+                } else {
+                    requiredSupportSize = monomialBasis.size();
+                }
+            }
+            
+            auto key_o = particles.getOriginKey(it.get());
             localSupports[key_o.getKey()] = support;
             localEps[key_o.getKey()] = eps;
             localEpsInvPow[key_o.getKey()] = 1.0 / openfpm::math::intpowlog(eps,differentialOrder);
-            // Compute the diagonal matrix E
-            DcpseDiagonalScalingMatrix<dim> diagonalScalingMatrix(monomialBasis);
-            EMatrix<T, Eigen::Dynamic, Eigen::Dynamic> E(support.size(), support.size());
-            diagonalScalingMatrix.buildMatrix(E, support, eps, particles);
-            // Compute intermediate matrix B
-            EMatrix<T, Eigen::Dynamic, Eigen::Dynamic> B = E * V;
-            // Compute matrix A
-            EMatrix<T, Eigen::Dynamic, Eigen::Dynamic> A = B.transpose() * B;
-
+            
+            EMatrix<T, Eigen::Dynamic, Eigen::Dynamic> A;
+            if(optf == Formula_options::CANCELLATION)
+                A = V.transpose();
+            else
+            {
+                // Compute the diagonal matrix E
+                DcpseDiagonalScalingMatrix<dim> diagonalScalingMatrix(monomialBasis);
+                EMatrix<T, Eigen::Dynamic, Eigen::Dynamic> E(support.size(), support.size());
+                diagonalScalingMatrix.buildMatrix(E, support, eps, particles);
+                // Compute intermediate matrix B
+                EMatrix<T, Eigen::Dynamic, Eigen::Dynamic> B = E * V;
+                // Compute matrix A
+                A = B.transpose() * B;
+            }
+            
+            kerOffsets.get(key_o.getKey()) = calcKernels.size();
+            
             // Compute RHS vector b
             DcpseRhs<dim> rhs(monomialBasis, differentialSignature);
             EMatrix<T, Eigen::Dynamic, 1> b(monomialBasis.size(), 1);
             rhs.template getVector<T>(b);
             // Get the vector where to store the coefficients...
             EMatrix<T, Eigen::Dynamic, 1> a(monomialBasis.size(), 1);
-            // ...solve the linear system...
-            a = A.colPivHouseholderQr().solve(b);
-            // ...and store the solution for later reuse
-            kerOffsets.get(key_o.getKey()) = calcKernels.size();
-
-            Point<dim, T> xp = particles.getPosOrig(key_o);
-
-            for (auto &xqK : support.getKeys())
+            
+            // ...solve the linear system and store the solution for later reuse
+            if(optf == Formula_options::CANCELLATION)
             {
-                Point<dim, T> xq = particles.getPosOrig(xqK);
-                Point<dim, T> normalizedArg = (xp - xq) / eps;
-
-                calcKernels.add(computeKernel(normalizedArg, a));
+                
+//                 a = A.jacobiSvd(Eigen::ComputeThinU | Eigen::ComputeThinV).solve(b); //Maximum Analytic Error in Vx: 0.00671129
+                a = A.completeOrthogonalDecomposition().solve(b); //Maximum Analytic Error in Vx: 0.00671129
+//                 a = A.bdcSvd(Eigen::ComputeThinU | Eigen::ComputeThinV).solve(b); //Maximum Analytic Error in Vx: 0.00671129
+//                 a = A.bdcSvd(Eigen::ComputeFullU | Eigen::ComputeFullV).solve(b); //Maximum Analytic Error in Vx: 0.00671129
+//                 a = A.colPivHouseholderQr().solve(b); //Maximum Analytic Error in Vx: 0.00807258
+//                 a = A.fullPivHouseholderQr().solve(b); //Maximum Analytic Error in Vx: 1.83949
+//                 a = A.fullPivLu().solve(b); //Maximum Analytic Error in Vx: 1.22872e+15
+//                 a = A.householderQr().solve(b); //Maximum Analytic Error in Vx: 1.90125
+                for (int i=0; i<support.size() ;++i)
+                    calcKernels.add(a(i));
             }
-            //
+            else
+            {
+                a = A.colPivHouseholderQr().solve(b);
+                Point<dim, T> xp = particles.getPosOrig(key_o);
+                
+                for (auto &xqK : support.getKeys())
+                {
+                    Point<dim, T> xq = particles.getPosOrig(xqK);
+                    Point<dim, T> normalizedArg = (xp - xq) / eps;
+                    
+                    calcKernels.add(computeKernel(normalizedArg, a));
+                }
+                //
+            }
             ++it;
         }
     }
 
 private:
-
-    void initializeAdaptive(vector_type &particles,
-                            unsigned int convergenceOrder,
-                            T rCut) {
-        SupportBuilder<vector_type>
-                supportBuilder(particles, differentialSignature, rCut);
-        unsigned int requiredSupportSize = monomialBasis.size();
-
-        localSupports.resize(particles.size_local_orig());
-        localEps.resize(particles.size_local_orig());
-        localEpsInvPow.resize(particles.size_local_orig());
-        kerOffsets.resize(particles.size_local_orig());
-        kerOffsets.fill(-1);
-
-        auto it = particles.getDomainIterator();
-        while (it.isNext()) {
-            const T condVTOL = 1e2;
-
-            // Get the points in the support of the DCPSE kernel and store the support for reuse
-            Support support = supportBuilder.getSupport(it, requiredSupportSize,opt);
-            EMatrix<T, Eigen::Dynamic, Eigen::Dynamic> V(support.size(), monomialBasis.size());
-
-            // Vandermonde matrix computation
-            Vandermonde<dim, T, EMatrix<T, Eigen::Dynamic, Eigen::Dynamic>>
-                    vandermonde(support, monomialBasis, particles);
-            vandermonde.getMatrix(V);
-
-            T condV = conditionNumber(V, condVTOL);
-            T eps = vandermonde.getEps();
-
-            if (condV > condVTOL) {
-                requiredSupportSize *= 2;
-                std::cout
-                        << "INFO: Increasing, requiredSupportSize = " << requiredSupportSize
-                        << std::endl; // debug
-                continue;
-            } else {
-                requiredSupportSize = monomialBasis.size();
-            }
-
-            auto key_o = particles.getOriginKey(it.get());
-            localSupports[key_o.getKey()] = support;
-            localEps[key_o.getKey()] = eps;
-            localEpsInvPow[key_o.getKey()] = 1.0 / openfpm::math::intpowlog(eps,differentialOrder);
-            // Compute the diagonal matrix E
-            DcpseDiagonalScalingMatrix<dim> diagonalScalingMatrix(monomialBasis);
-            EMatrix<T, Eigen::Dynamic, Eigen::Dynamic> E(support.size(), support.size());
-            diagonalScalingMatrix.buildMatrix(E, support, eps,particles);
-            // Compute intermediate matrix B
-            EMatrix<T, Eigen::Dynamic, Eigen::Dynamic> B = E * V;
-            // Compute matrix A
-            EMatrix<T, Eigen::Dynamic, Eigen::Dynamic> A = B.transpose() * B;
-            // Compute RHS vector b
-            DcpseRhs<dim> rhs(monomialBasis, differentialSignature);
-            EMatrix<T, Eigen::Dynamic, 1> b(monomialBasis.size(), 1);
-            rhs.template getVector<T>(b);
-            // Get the vector where to store the coefficients...
-            EMatrix<T, Eigen::Dynamic, 1> a(monomialBasis.size(), 1);
-            // ...solve the linear system...
-            a = A.colPivHouseholderQr().solve(b);
-            // ...and store the solution for later reuse
-            kerOffsets.get(key_o.getKey()) = calcKernels.size();
-
-            Point<dim, T> xp = particles.getPosOrig(key_o);
-
-            for (auto &xqK : support.getKeys())
-            {
-                Point<dim, T> xq = particles.getPosOrig(xqK);
-                Point<dim, T> normalizedArg = (xp - xq) / eps;
-
-                calcKernels.add(computeKernel(normalizedArg, a));
-            }
-            //
-            ++it;
-        }
-    }
-
-
-    void initializeStaticSize(vector_type &particles,
-                              unsigned int convergenceOrder,
-                              T rCut,
-                              T supportSizeFactor) {
-        this->rCut=rCut;
-        this->supportSizeFactor=supportSizeFactor;
-        this->convergenceOrder=convergenceOrder;
-        SupportBuilder<vector_type>
-                supportBuilder(particles, differentialSignature, rCut);
-        unsigned int requiredSupportSize = monomialBasis.size() * supportSizeFactor;
-
-        localSupports.resize(particles.size_local_orig());
-        localEps.resize(particles.size_local_orig());
-        localEpsInvPow.resize(particles.size_local_orig());
-        kerOffsets.resize(particles.size_local_orig());
-
-        auto it = particles.getDomainIterator();
-        while (it.isNext()) {
-            // Get the points in the support of the DCPSE kernel and store the support for reuse
-            Support support = supportBuilder.getSupport(it, requiredSupportSize,opt);
-            EMatrix<T, Eigen::Dynamic, Eigen::Dynamic> V(support.size(), monomialBasis.size());
-
-            auto key_o = particles.getOriginKey(it.get());
-
-            // Vandermonde matrix computation
-            Vandermonde<dim, T, EMatrix<T, Eigen::Dynamic, Eigen::Dynamic>>
-                    vandermonde(support, monomialBasis,particles);
-            vandermonde.getMatrix(V);
-
-            T eps = vandermonde.getEps();
-
-            localSupports[key_o.getKey()] = support;
-            localEps[key_o.getKey()] = eps;
-            localEpsInvPow[key_o.getKey()] = 1.0 / openfpm::math::intpowlog(eps,differentialOrder);
-            // Compute the diagonal matrix E
-            DcpseDiagonalScalingMatrix<dim> diagonalScalingMatrix(monomialBasis);
-            EMatrix<T, Eigen::Dynamic, Eigen::Dynamic> E(support.size(), support.size());
-            diagonalScalingMatrix.buildMatrix(E, support, eps, particles);
-            // Compute intermediate matrix B
-            EMatrix<T, Eigen::Dynamic, Eigen::Dynamic> B = E * V;
-            // Compute matrix A
-            EMatrix<T, Eigen::Dynamic, Eigen::Dynamic> A = B.transpose() * B;
-
-            // Compute RHS vector b
-            DcpseRhs<dim> rhs(monomialBasis, differentialSignature);
-            EMatrix<T, Eigen::Dynamic, 1> b(monomialBasis.size(), 1);
-            rhs.template getVector<T>(b);
-            // Get the vector where to store the coefficients...
-            EMatrix<T, Eigen::Dynamic, 1> a(monomialBasis.size(), 1);
-            // ...solve the linear system...
-            a = A.colPivHouseholderQr().solve(b);
-            // ...and store the solution for later reuse
-            kerOffsets.get(key_o.getKey()) = calcKernels.size();
-
-            Point<dim, T> xp = particles.getPosOrig(key_o);
-
-            for (auto &xqK : support.getKeys())
-            {
-                Point<dim, T> xq = particles.getPosOrig(xqK);
-                Point<dim, T> normalizedArg = (xp - xq) / eps;
-
-                calcKernels.add(computeKernel(normalizedArg, a));
-            }
-            //
-            ++it;
-        }
-    }
-
-
-
 
     T computeKernel(Point<dim, T> x, EMatrix<T, Eigen::Dynamic, 1> & a) const {
         T res = 0;
@@ -660,6 +574,6 @@ private:
 };
 
 
-#endif
+#endif //HAVE_EIGEN
 #endif //OPENFPM_PDATA_DCPSE_HPP
 

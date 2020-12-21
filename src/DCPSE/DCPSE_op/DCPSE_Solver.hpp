@@ -47,15 +47,15 @@ class DCPSE_scheme {
 
     //! Distributed grid map
     typedef vector_dist<Sys_eqs::dims, typename Sys_eqs::stype, aggregate<size_t>> p_map_type;
+    
+    //! Particles used to impose the system
+    particles_type &parts;
 
     //! mapping grid
     p_map_type p_map;
 
     //! Grid points that has each processor
     openfpm::vector<size_t> pnt;
-
-    //! Particles used to impose the system
-    particles_type &parts;
 
     //! colums shift map
     //int col_sm[Sys_eqs::nvar];
