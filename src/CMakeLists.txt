@@ -2,15 +2,19 @@ cmake_minimum_required(VERSION 3.8 FATAL_ERROR)
 
 ########################### Executables
 
+
 if (CUDA_ON_CPU)
-	add_definitions(-DCUDA_ON_CPU)
+        add_definitions(-DCUDA_ON_CPU)
+        set_source_files_properties(${CUDA_SOURCES} PROPERTIES LANGUAGE CXX)
+        set_source_files_properties(${CUDA_SOURCES} PROPERTIES COMPILE_FLAGS "-D__NVCC__ -DCUDA_GPU -DCUDART_VERSION=11000")
+        if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+                add_definitions("-x c++")
+        endif()
 endif()
 
 if (CUDA_FOUND)
 	set(CUDA_SOURCES Operators/Vector/vector_dist_operators_unit_tests.cu
 					 Operators/Vector/vector_dist_operators_apply_kernel_unit_tests.cu)
-else()
-	set(CUDA_SOURCES ../../openfpm_devices/src/util/cudify_vars.cpp)
 endif()
 
 add_executable(numerics ${OPENFPM_INIT_FILE} ${CUDA_SOURCES}
@@ -24,11 +28,10 @@ add_executable(numerics ${OPENFPM_INIT_FILE} ${CUDA_SOURCES}
 						FiniteDifference/eq_unit_test.cpp  
 						Operators/Vector/vector_dist_operators_unit_tests.cpp 
 						Operators/Vector/vector_dist_operators_apply_kernel_unit_tests.cpp
-						../../openfpm_vcluster/src/VCluster/VCluster.cpp 
-						../../openfpm_devices/src/memory/CudaMemory.cu  
-						../../openfpm_devices/src/memory/HeapMemory.cpp 
-						../../openfpm_devices/src/memory/PtrMemory.cpp 
 						../../src/lib/pdata.cpp)
+
+add_dependencies(numerics ofpmmemory)
+add_dependencies(numerics vcluster)
 
 ###########################
 
@@ -75,6 +78,8 @@ if(PETSC_FOUND)
 	target_include_directories (numerics PUBLIC ${PETSC_INCLUDES})
 	target_link_libraries(numerics ${PETSC_LIBRARIES})
 endif()
+target_link_libraries(numerics vcluster)
+target_link_libraries(numerics ofpmmemory)
 
 if(SuiteSparse_FOUND)
 	target_include_directories (numerics PUBLIC ${SuiteSparse_INCLUDE_DIRS})
