@@ -12,6 +12,7 @@
 #include "cuda/vector_dist_operators_cuda.cuh"
 #endif
 
+
 /*! A macro to define single value function specialization that apply the function component-wise
  *
  * \param fun function name
@@ -277,7 +278,7 @@ struct point_scalar_process
 
 		auto & v_cl = create_vcluster<CudaMemory>();
 
-		mgpu::reduce((val_type *)ve.template getDeviceBuffer<0>(), ve.size(), (val_type *)(exp_tmp2[0].getDevicePointer()), mgpu::plus_t<val_type>(), v_cl.getmgpuContext());
+		openfpm::reduce((val_type *)ve.template getDeviceBuffer<0>(), ve.size(), (val_type *)(exp_tmp2[0].getDevicePointer()), mgpu::plus_t<val_type>(), v_cl.getmgpuContext());
 
 		exp_tmp2[0].deviceToHost();
 
@@ -313,7 +314,7 @@ struct point_scalar_process<val_type,is_sort,true>
 
 		for (size_t i = 0 ; i < val_type::dims ; i++)
 		{
-			mgpu::reduce(&((typename val_type::coord_type *)ve.template getDeviceBuffer<0>())[offset],
+			openfpm::reduce(&((typename val_type::coord_type *)ve.template getDeviceBuffer<0>())[offset],
 						 ve.size(),
 						 (typename val_type::coord_type *)(exp_tmp2[0].getDevicePointer()),
 						 mgpu::plus_t<typename val_type::coord_type>(),
