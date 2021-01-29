@@ -463,6 +463,7 @@ namespace FD
 
 			return v_exp;
 		}
+
 	};
 
 	/*! \brief Main class that encapsulate a double constant
@@ -925,9 +926,9 @@ namespace FD
 		}
 
 		template<unsigned int prop,typename exp_type, typename grid_type>
-		inline static void assign(exp_type & o1, grid_type & g, const grid_dist_key_dx<exp_type::gtype::dims> & key, const int (& comp)[1])
+		inline static void assign(exp_type & o1, grid_type & g, grid_dist_key_dx<exp_type::gtype::dims> & key,comb<exp_type::gtype::dims> & c_where, const int (& comp)[1])
 		{
-			pos_or_propL<grid_type,prop>::value(g,key)[comp[0]] = o1.value(key);
+			pos_or_propL<grid_type,prop>::value(g,key)[comp[0]] = o1.value(key,c_where);
 		}
 
 		template<unsigned int prop, typename grid_type>
@@ -1153,11 +1154,14 @@ namespace FD
 
 			auto it = g.getDomainIterator();
 
+            comb<gtype::dims> c_where;
+            c_where.zero();
+
 			while (it.isNext())
 			{
 				auto key = it.get();
 
-				get_grid_dist_expression_op<n,n == rank_gen<property_act>::type::value>::template assign<exp1::prop>(v_exp,g,key,comp);
+				get_grid_dist_expression_op<n,n == rank_gen<property_act>::type::value>::template assign<exp1::prop>(v_exp,g,key,c_where,comp);
 
 				++it;
 			}
