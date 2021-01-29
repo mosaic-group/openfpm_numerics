@@ -419,8 +419,8 @@ BOOST_AUTO_TEST_CASE(solver_check_diagonal)
             Solver.impose(V_star[y], {sz[0]-1,1},{sz[0]-1,sz[1]-2}, 0.0, vy);
             Solver.impose(V_star[x], {0,0},{sz[0]-1,0}, 0.0, vx);
             Solver.impose(V_star[y], {0,0},{sz[0]-1,0}, 0.0, vy);
-            auto A=Solver.getA();
-            A.write("Matrix");
+            //auto A=Solver.getA();
+            //A.write("Matrix");
             Solver.solve(V_star[x], V_star[y]);
             //return;
             //Solver.solve_with_solver(solverPetsc,V_star[x], V_star[y]);
