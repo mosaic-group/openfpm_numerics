@@ -35,8 +35,7 @@ add_executable(numerics ${OPENFPM_INIT_FILE} ${CUDA_SOURCES}
 						../../openfpm_vcluster/src/VCluster/VCluster.cpp 
 						../../openfpm_devices/src/memory/CudaMemory.cu  
 						../../openfpm_devices/src/memory/HeapMemory.cpp 
-						../../openfpm_devices/src/memory/PtrMemory.cpp 
-						../../src/lib/pdata.cpp)
+						../../openfpm_devices/src/memory/PtrMemory.cpp)
 
 ###########################
 if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
