@@ -1094,7 +1094,7 @@ public:
  * \param skip_first skip the first point
  *
  */
- /*   template<typename T, typename RHS_type, typename sfinae = typename std::enable_if<!std::is_fundamental<RHS_type>::type::value>::type>
+    template<typename T, typename RHS_type, typename sfinae = typename std::enable_if<!std::is_fundamental<RHS_type>::type::value>::type>
     void impose(const T & op,const grid_key_dx<Sys_eqs::dims> start_k,
                                                           const grid_key_dx<Sys_eqs::dims> stop_k,
                                                           const RHS_type &rhs,
@@ -1122,7 +1122,7 @@ public:
 
         impose_git(op,rhs,id.getId(),it,c_zero);
 
-    }*/
+    }
 
     /*! \brief Impose an operator
      *
