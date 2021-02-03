@@ -69,6 +69,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
         openfpm::vector<aggregate<int>> r_p;
 
         auto v = getV<0>(domain);
+        auto RHS = getV<1>(domain);
         auto sol = getV<2>(domain);
         auto anasol = getV<3>(domain);
 
@@ -149,8 +150,8 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
         auto eq1 = Lap(v);
 
         Solver.impose(eq1, bulk, 6);
-        Solver.impose(v, up_p, prop_id<1>());
-        Solver.impose(v, dw_p, prop_id<1>());
+        Solver.impose(v, up_p, RHS);
+        Solver.impose(v, dw_p, RHS);
         Solver.impose(v, l_p, prop_id<1>());
         Solver.impose(v, r_p, prop_id<1>());
         Solver.solve(v);

@@ -971,6 +971,11 @@ public:
 		return pos_or_propR<vector,prp>::value(v.v,k);
 	}
 
+    inline auto get(const vect_dist_key_dx & key) const -> decltype(value(key))
+    {
+        return this->value(key);
+    }
+
 	/*! \brief Fill the vector property with the evaluated expression
 	 *
 	 * \param v_exp expression to evaluate
