@@ -9,142 +9,8 @@
 #include "FD_expressions.hpp"
 #include "FD_op.hpp"
 #include "Grid/staggered_dist_grid.hpp"
+#include "util/EqnsStructFD.hpp"
 
-
-//! Specify the general characteristic of system to solve
-struct equations2d1 {
-
-    //! dimensionaly of the equation ( 3D problem ...)
-    static const unsigned int dims=2;
-    //! number of fields in the system
-    static const unsigned int nvar=1;
-
-    //! boundary at X and Y
-    static const bool boundary[];
-
-    //! type of space float, double, ...
-    typedef double stype;
-
-    //! type of base particles
-    typedef grid_dist_id<dims, double, aggregate<double,double,double>> b_part;
-
-    //! type of SparseMatrix for the linear solver
-    typedef SparseMatrix<double, int, PETSC_BASE> SparseMatrix_type;
-
-    //! type of Vector for the linear solver
-    typedef Vector<double, PETSC_BASE> Vector_type;
-
-    typedef petsc_solver<double> solver_type;
-};
-//! Specify the general characteristic of system to solve
-struct equations2d1e {
-
-    //! dimensionaly of the equation ( 3D problem ...)
-    static const unsigned int dims=2;
-    //! number of fields in the system
-    static const unsigned int nvar=1;
-
-    //! boundary at X and Y
-    static const bool boundary[];
-
-    //! type of space float, double, ...
-    typedef double stype;
-
-    //! type of base particles
-    typedef grid_dist_id<dims, double, aggregate<double,double,double>> b_part;
-
-    //! type of SparseMatrix for the linear solver
-    typedef SparseMatrix<double, int, EIGEN_BASE> SparseMatrix_type;
-
-    //! type of Vector for the linear solver
-    typedef Vector<double, EIGEN_BASE> Vector_type;
-
-    typedef umfpack_solver<double> solver_type;
-};
-//! Specify the general characteristic of system to solve
-struct equations2d2 {
-
-    //! dimensionaly of the equation ( 3D problem ...)
-    static const unsigned int dims=2;
-    //! number of fields in the system
-    static const unsigned int nvar=2;
-
-    //! boundary at X and Y
-    static const bool boundary[];
-
-    //! type of space float, double, ...
-    typedef double stype;
-
-    //! type of base particles
-    typedef grid_dist_id<dims, double, aggregate<double,double,double>> b_part;
-
-    //! type of SparseMatrix for the linear solver
-    typedef SparseMatrix<double, int, PETSC_BASE> SparseMatrix_type;
-
-    //! type of Vector for the linear solver
-    typedef Vector<double, PETSC_BASE> Vector_type;
-
-    typedef petsc_solver<double> solver_type;
-};
-
-struct equations2d2e {
-
-    //! dimensionaly of the equation ( 3D problem ...)
-    static const unsigned int dims=2;
-    //! number of fields in the system
-    static const unsigned int nvar=2;
-
-    //! boundary at X and Y
-    static const bool boundary[];
-
-    //! type of space float, double, ...
-    typedef double stype;
-
-    //! type of base particles
-    typedef grid_dist_id<dims, double, aggregate<double,double,double>> b_part;
-
-    //! type of SparseMatrix for the linear solver
-    typedef SparseMatrix<double, int, EIGEN_BASE> SparseMatrix_type;
-
-    //! type of Vector for the linear solver
-    typedef Vector<double, EIGEN_BASE> Vector_type;
-
-    typedef umfpack_solver<double> solver_type;
-};
-
-const bool equations2d1::boundary[] = {NON_PERIODIC,NON_PERIODIC};
-const bool equations2d1e::boundary[] = {NON_PERIODIC,NON_PERIODIC};
-const bool equations2d2::boundary[] = {NON_PERIODIC,NON_PERIODIC};
-const bool equations2d2e::boundary[] = {NON_PERIODIC,NON_PERIODIC};
-
-
-//! Specify the general characteristic of system to solve
-struct equations2d1_stag {
-
-    //! dimensionaly of the equation ( 3D problem ...)
-    static const unsigned int dims=2;
-    //! number of fields in the system
-    static const unsigned int nvar=1;
-
-    //! boundary at X and Y
-    static const bool boundary[];
-
-    //! type of space float, double, ...
-    typedef double stype;
-
-    //! type of base particles
-    typedef staggered_grid_dist<dims, double, aggregate<double,double,double>> b_part;
-
-    //! type of SparseMatrix for the linear solver
-    typedef SparseMatrix<double, int, PETSC_BASE> SparseMatrix_type;
-
-    //! type of Vector for the linear solver
-    typedef Vector<double, PETSC_BASE> Vector_type;
-
-    typedef petsc_solver<double> solver_type;
-};
-
-const bool equations2d1_stag::boundary[] = {NON_PERIODIC,NON_PERIODIC};
 
 BOOST_AUTO_TEST_SUITE( FD_Solver_test )
 
@@ -319,7 +185,7 @@ BOOST_AUTO_TEST_CASE(solver_check_diagonal)
         //std::cout << "Maximum Error: " << worst << std::endl;
         //domain.write("FDSOLVER_Lap_test");
     }
-    /* Test failing for cores>=3
+    // Test failing for cores>=3
     BOOST_AUTO_TEST_CASE(Lid_driven_PC)
     {using namespace FD;
         timer tt2;
@@ -376,13 +242,12 @@ BOOST_AUTO_TEST_CASE(solver_check_diagonal)
         auto dP = getV<7>(domain);
 
         //0 doesnt work
-        P = 0.0*V[x];
+        P = 0.0;
         int n = 0, nmax = 50, ctr = 0, errctr=1, Vreset = 0;
         double V_err=1;
         if (Vreset == 1) {
             Vreset = 0;
         }
-        P=0*V[x];
         eq_id vx,vy;
         vx.setId(0);
         vy.setId(1);
@@ -393,10 +258,8 @@ BOOST_AUTO_TEST_CASE(solver_check_diagonal)
         petsc_solver<double> solverPetsc;
         solverPetsc.setSolver(KSPGMRES);
 
-        RHS[x] = 0.0;
-        RHS[y] = 0.0;
-        dV[x]=0;
-        dV[y]=0;
+        RHS=0;
+        dV=0;
 
         timer tt;
         while (V_err >= V_err_eps && n <= nmax) {
@@ -407,13 +270,11 @@ BOOST_AUTO_TEST_CASE(solver_check_diagonal)
             }
             tt.start();
             domain.ghost_get<0>(SKIP_LABELLING);
-            RHS[x] = Dx(P);
-            RHS[y] = Dy(P);
-            div=-1.0*RHS[x];
+            RHS[x] = -Dx(P);
+            RHS[y] = -Dy(P);
             FD_scheme<equations2d2,decltype(domain)> Solver(ghost,domain);
-            Solver.impose(StokesX, {1,1},{sz[0]-2,sz[1]-2}, prop_id<4>(), vx);
-            div=-1.0*RHS[y];
-            Solver.impose(StokesY, {1,1},{sz[0]-2,sz[1]-2}, prop_id<4>(), vy);
+            Solver.impose(StokesX, {1,1},{sz[0]-2,sz[1]-2}, RHS[x], vx);
+            Solver.impose(StokesY, {1,1},{sz[0]-2,sz[1]-2}, RHS[y], vy);
             Solver.impose(V_star[x], {0,sz[1]-1},{sz[0]-1,sz[1]-1}, 1.0, vx);
             Solver.impose(V_star[y], {0,sz[1]-1},{sz[0]-1,sz[1]-1}, 0.0, vy);
             Solver.impose(V_star[x], {0,1},{0,sz[1]-2}, 0.0, vx);
@@ -431,9 +292,9 @@ BOOST_AUTO_TEST_CASE(solver_check_diagonal)
             domain.ghost_get<5>(SKIP_LABELLING);
             div = (Dx(V_star[x]) + Dy(V_star[y]));
 
-            FD_scheme<equations2d1e,decltype(domain)> SolverH(ghost,domain);
+            FD_scheme<equations2d1E,decltype(domain)> SolverH(ghost,domain);
             auto Helmholtz = Dxx(H)+Dyy(H);
-            SolverH.impose(Helmholtz,{1,1},{sz[0]-2,sz[1]-2},prop_id<4>());
+            SolverH.impose(Helmholtz,{1,1},{sz[0]-2,sz[1]-2},div);
             SolverH.impose(Dy(H), {0,sz[0]-1},{sz[0]-1,sz[1]-1},0);
             SolverH.impose(Dx(H), {sz[0]-1,1},{sz[0]-1,sz[1]-2},0);
             SolverH.impose(Dx(H), {0,0},{sz[0]-1,0},0,vx,true);
@@ -504,7 +365,7 @@ BOOST_AUTO_TEST_CASE(solver_check_diagonal)
             std::cout << "The simulation took " << tt2.getcputime() << "(CPU) ------ " << tt2.getwct()
                       << "(Wall) Seconds.";
         }
-    }    */
+    }
 
 
 

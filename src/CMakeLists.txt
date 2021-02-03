@@ -146,6 +146,7 @@ install(FILES FiniteDifference/Average.hpp
       	      DESTINATION openfpm_numerics/include/FiniteDifference )
 	      
 install(FILES FiniteDifference/util/common.hpp
+		      FiniteDifference/util/EqnsStructFD.hpp
       	      DESTINATION openfpm_numerics/include/FiniteDifference/util )
 
 install(FILES PSE/Kernels.hpp PSE/Kernels_test_util.hpp 
