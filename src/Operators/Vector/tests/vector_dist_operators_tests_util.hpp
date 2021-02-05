@@ -790,9 +790,9 @@ void fill_values(vector & v)
 	{
 		auto p = it.get();
 
-		v.getPos(p)[0] = (float)rand() / RAND_MAX;
-		v.getPos(p)[1] = (float)rand() / RAND_MAX;
-		v.getPos(p)[2] = (float)rand() / RAND_MAX;
+		v.getPos(p)[0] = (float)rand() / (float)RAND_MAX;
+		v.getPos(p)[1] = (float)rand() / (float)RAND_MAX;
+		v.getPos(p)[2] = (float)rand() / (float)RAND_MAX;
 
 		v.template getProp<A>(p) = fabs(sin(p.getKey()+1.0));
 		v.template getProp<B>(p) = fabs(sin(2.0*p.getKey()+3.0));

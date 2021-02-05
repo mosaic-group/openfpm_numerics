@@ -57,7 +57,7 @@ template<typename rtype>
 struct set_zero
 {
 	//! return 0
-	static rtype create()
+	__device__ __host__ static rtype create()
 	{
 		return 0.0;
 	}
@@ -68,7 +68,7 @@ template<unsigned int dim, typename T>
 struct set_zero<Point<dim,T>>
 {
 	//! return a point with all the coordinates set to zero
-	static Point<dim,T> create()
+	__device__ __host__ static Point<dim,T> create()
 	{
 		Point<dim,T> ret;
 
@@ -118,7 +118,7 @@ struct apply_kernel_is_number_or_expression
 	 * \return the result of apply the kernel on the particle key
 	 *
 	 */
-	__host__ __device__ inline static typename std::remove_reference<rtype>::type apply(const vector & vd, NN_type & cl, const exp & v_exp, const vect_dist_key_dx & key, Kernel & lker)
+	inline __host__ __device__ static typename std::remove_reference<rtype>::type apply(const vector & vd, NN_type & cl, const exp & v_exp, const vect_dist_key_dx & key, Kernel & lker)
 	{
 	    // accumulator
 		typename std::remove_reference<rtype>::type pse = set_zero<typename std::remove_reference<rtype>::type>::create();
