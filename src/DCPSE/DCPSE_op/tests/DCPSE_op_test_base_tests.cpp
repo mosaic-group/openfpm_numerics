@@ -570,6 +570,137 @@ BOOST_AUTO_TEST_CASE(dcpse_op_tests) {
         BOOST_REQUIRE(err5 < 0.03);
     }
 
+    BOOST_AUTO_TEST_CASE(dcpse_op_convection) {
+        size_t edgeSemiSize = 20;
+        const size_t sz[2] = {2 * edgeSemiSize+1, 2 * edgeSemiSize+1};
+        Box<2, double> box({-1, -1}, {1.0, 1.0});
+        size_t bc[2] = {NON_PERIODIC, NON_PERIODIC};
+        double spacing[2];
+        spacing[0] = 2.0/ (sz[0] - 1);
+        spacing[1] = 2.0 / (sz[1] - 1);
+        double rCut = 3.1 * spacing[0];
+        Ghost<2, double> ghost(rCut);
+
+        BOOST_TEST_MESSAGE("Init vector_dist...");
+
+        vector_dist<2, double, aggregate<double, double, double, VectorS<2, double>>> domain(0, box,bc,
+                                                                                                                 ghost);
+        domain.setPropNames({"Concentration","Concentration_temp","Temp","Velocity"});
+
+        //Init_DCPSE(domain)
+        BOOST_TEST_MESSAGE("Init domain...");
+
+        auto it = domain.getGridIterator(sz);
+        while (it.isNext()) {
+            domain.add();
+            auto key = it.get();
+            mem_id k0 = key.get(0);
+            double x = -1.0+k0 * spacing[0];
+            domain.getLastPos()[0] = x;//+ gaussian(rng);
+            mem_id k1 = key.get(1);
+            double y = -1.0+k1 * spacing[1];
+            domain.getLastPos()[1] = y;//+gaussian(rng);
+            // Here fill the function value
+            if (x>-1 && y>-1 && x<1 && y<1)
+            {
+            domain.template getLastProp<3>()[0] = (-y)*exp(-10*((x)*(x)+(y)*(y)));;
+            domain.template getLastProp<3>()[1] = (x)*exp(-10*((x)*(x)+(y)*(y)));;
+            }
+            else{
+                domain.template getLastProp<3>()[0] = 0.0;
+                domain.template getLastProp<3>()[1] = 0.0;
+            }
+            if (x==0.0 && y>-0.5 && y<0.5)
+            {
+                domain.template getLastProp<0>() = 1.0;
+            }
+            else
+            {
+                domain.template getLastProp<0>() = 0.0;
+            }
+            ++it;
+        }
+        BOOST_TEST_MESSAGE("Sync domain across processors...");
+
+        domain.map();
+        domain.ghost_get<0>();
+
+        //Derivative_x Dx(domain, 2, rCut);
+        Derivative_xx Dxx(domain, 2, rCut);
+        //Derivative_y Dy(domain, 2, rCut);
+        Derivative_yy Dyy(domain, 2, rCut);
+        auto C = getV<0>(domain);
+        auto V = getV<3>(domain);
+        auto Cnew = getV<1>(domain);
+        auto Pos = getV<PROP_POS>(domain);
+        timer tt;
+        //domain.write_frame("Convection_init",0);
+        int ctr=0;
+        double t=0,tf=1,dt=1e-2;
+        while(t<tf)
+        {
+            domain.write_frame("Convection",ctr);
+            domain.ghost_get<0>();
+            Cnew=C+dt*0.01*(Dxx(C)+Dyy(C));
+            C=Cnew;
+            Pos=Pos+dt*V;
+            domain.map();
+            domain.ghost_get<0>();
+            auto it2 = domain.getDomainIterator();
+            while (it2.isNext()) {
+                auto p = it2.get();
+                Point<2, double> xp = domain.getPos(p);
+                double x=xp[0],y=xp[1];
+                if (x>-1 && y>-1 && x<1 && y<1)
+                {
+                    domain.template getProp<3>(p)[0] = (-y)*exp(-10*((x)*(x)+(y)*(y)));
+                    domain.template getProp<3>(p)[1] = (x)*exp(-10*((x)*(x)+(y)*(y)));;
+                }
+                else{
+                    domain.template getProp<3>(p)[0] = 0.0;
+                    domain.template getProp<3>(p)[1] = 0.0;
+                }
+                ++it2;
+            }
+            tt.start();
+            Dxx.update(domain);
+            Dyy.update(domain);
+            tt.stop();
+            //std::cout<tt.getwct()<<""
+            ctr++;
+            t+=dt;
+        }
+
+        Dxx.deallocate(domain);
+        Dyy.deallocate(domain);
+
+       /*         std::cout<<"Dx"<<std::endl;
+        Dx.checkMomenta(domain);
+        std::cout<<"Dy"<<std::endl;
+        Dy.checkMomenta(domain);
+        std::cout<<"Dxx"<<std::endl;
+        Dxx.checkMomenta(domain);
+        int ctr=0;
+        P=0;
+        v=0;
+        K1=0;
+        auto its2 = domain.getDomainIterator();
+        while (its2.isNext()) {
+            auto p = its2.get();
+            Dx.DrawKernel<0>(domain, p.getKey());
+            Dy.DrawKernel<1>(domain, p.getKey());
+            Dxx.DrawKernel<2>(domain, p.getKey());
+            domain.write_frame("Kernels",ctr);
+            P=0;
+            v=0;
+            K1=0;
+            ++its2;
+            ctr++;
+        }*/
+
+    }
+
+
 
 BOOST_AUTO_TEST_SUITE_END()
 

@@ -71,6 +71,7 @@
 #define VECT_SUB_UNI 92
 #define VECT_SUM_REDUCE 93
 #define VECT_COMP 94
+#define VECT_NORM_INF 95
 
 
 #define VECT_DCPSE 100
@@ -84,6 +85,7 @@
 #define VECT_COPY_N_TO_1 302
 #define VECT_PMUL 91
 #define VECT_SUB_UNI 92
+
 
 
 
@@ -969,6 +971,11 @@ public:
 		return pos_or_propR<vector,prp>::value(v.v,k);
 	}
 
+    inline auto get(const vect_dist_key_dx & key) const -> decltype(value(key))
+    {
+        return this->value(key);
+    }
+
 	/*! \brief Fill the vector property with the evaluated expression
 	 *
 	 * \param v_exp expression to evaluate
@@ -1101,7 +1108,7 @@ public:
 };
 
 /*! \brief Main class that encapsulate a vector properties operand to be used for expressions construction
- *
+ *  Temporal Expressions
  * \tparam prp property involved
  * \tparam vector involved
  *
@@ -1117,12 +1124,18 @@ class vector_dist_expression<0,openfpm::vector<aggregate<T>> >
 
 public:
 
+    typedef T * iterator;
+    typedef const  T * const_iterator;
+
 	typedef typename has_vector_kernel<vector>::type is_ker;
 
 	//! The type of the internal vector
 	typedef vector vtype;
 
-	//! result for is sort
+    //! The type of the internal value
+    typedef T value_type;
+
+    //! result for is sort
 	typedef boost::mpl::bool_<false> is_sort;
 
 	//! NN_type
@@ -1137,6 +1150,49 @@ public:
 	{
 		this->var_id = var_id;
 	}
+
+	///////// BOOST ODEINT interface
+    iterator begin()
+    { return &v.template get<0>(0); }
+
+    const_iterator begin() const
+    { return &v.template get<0>(0); }
+
+    iterator end()
+    { return &v.template get<0>(v.size()-1)+1; }
+
+    const_iterator end() const
+    { return &v.template get<0>(v.size()-1)+1; }
+
+
+    size_t size() const
+    { return v.size(); }
+
+	void resize(size_t n)
+    {
+	    // Here
+
+	    v.resize(n);
+    }
+
+/*	T * begin() {
+        return &v.template get<0>(0);
+    }
+
+    T * end() {
+	    return &v.template get<0>(v.size()-1);
+	}*/
+
+    // ... [ implement container interface ]
+//]
+    //const double & operator[]( const size_t n ) const
+    //{ return m_v[n]; }
+
+    //double & operator[]( const size_t n )
+    //{ return m_v[n]; }
+
+
+	////////////////////////////////////
 
 	vector_dist_expression()
 	{}
@@ -1235,6 +1291,7 @@ public:
 		return v;
 	}
 
+
 	/*! \brief Fill the vector property with the evaluated expression
 	 *
 	 * \param v_exp expression to evaluate
@@ -1303,6 +1360,7 @@ public:
         return v_exp;
     }
 };
+
 
 template<typename T> using texp_v = vector_dist_expression<0,openfpm::vector<aggregate<T>> >;
 

@@ -9,6 +9,7 @@ if (CUDA_FOUND)
 endif()
 
 add_executable(numerics ${OPENFPM_INIT_FILE} ${CUDA_SOURCES}
+		OdeIntegrators/tests/OdeIntegratores_base_tests.cpp
 		DCPSE/DCPSE_op/tests/DCPSE_op_subset_test.cpp
 		DCPSE/DCPSE_op/tests/DCPSE_op_test_base_tests
 		FiniteDifference/FD_Solver_test.cpp
@@ -34,8 +35,7 @@ add_executable(numerics ${OPENFPM_INIT_FILE} ${CUDA_SOURCES}
 						../../openfpm_vcluster/src/VCluster/VCluster.cpp 
 						../../openfpm_devices/src/memory/CudaMemory.cu  
 						../../openfpm_devices/src/memory/HeapMemory.cpp 
-						../../openfpm_devices/src/memory/PtrMemory.cpp 
-						../../src/lib/pdata.cpp)
+						../../openfpm_devices/src/memory/PtrMemory.cpp)
 
 ###########################
 if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
@@ -146,6 +146,7 @@ install(FILES FiniteDifference/Average.hpp
       	      DESTINATION openfpm_numerics/include/FiniteDifference )
 	      
 install(FILES FiniteDifference/util/common.hpp
+		      FiniteDifference/util/EqnsStructFD.hpp
       	      DESTINATION openfpm_numerics/include/FiniteDifference/util )
 
 install(FILES PSE/Kernels.hpp PSE/Kernels_test_util.hpp 
@@ -180,6 +181,8 @@ install(FILES DCPSE/DCPSE_op/DCPSE_op.hpp
 		DCPSE/DCPSE_op/EqnsStruct.hpp
 		DESTINATION openfpm_numerics/include/DCPSE/DCPSE_op)
 
+install(FILES OdeIntegrators/OdeIntegrators.hpp
+		DESTINATION openfpm_numerics/include/OdeIntegrators)
 
 install(FILES Draw/DrawParticles.hpp 
       	      Draw/PointIterator.hpp 
