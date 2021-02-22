@@ -13,6 +13,8 @@
 
 #include <boost/numeric/odeint.hpp>
 #include "Operators/Vector/vector_dist_operators.hpp"
+#include "OdeIntegrators/boost_vector_algebra_ofp.hpp"
+
 
 template<typename tvar1, typename tvar2>
 struct pair_ref;
@@ -81,22 +83,6 @@ struct pair_ref
         var2 = tmp.var2;
         return *this;
     }
-/*    bool operator<(const pair_it<tvar1,tvar2> & tmp)
-    {
-        return var1 < tmp.var1;
-    }*/
-/*    bool operator>(const pair_<tvar1,tvar2> & tmp)
-    {
-        return var1 > tmp.var1;
-    }*/
-/*    bool operator<(const pair_ref<tvar1,tvar2> & tmp)
-    {
-        return var1 < tmp.var1;
-    }
-    bool operator>(const pair_ref<tvar1,tvar2> & tmp)
-    {
-        return var1 > tmp.var1;
-    }*/
 };
 
 template<typename tvar1, typename tvar2>
@@ -110,36 +96,6 @@ struct const_pair_ref
     const_pair_ref(const_pair_ref<tvar1,tvar2> && tmp)
             :var1(tmp.var1),var2(tmp.var2)
     {}
-
-
-/*    pair_ref & operator=(const pair_it<tvar1,tvar2> & tmp)
-    {
-        var1 = tmp.var1;
-        var2 = tmp.var2;
-        return *this;
-    }*/
-/*    const_pair_ref & operator=(const const_pair_ref<tvar1,tvar2> & tmp)
-    {
-        var1 = tmp.var1;
-        var2 = tmp.var2;
-        return *this;
-    }*/
-/*    bool operator<(const pair_it<tvar1,tvar2> & tmp)
-    {
-        return var1 < tmp.var1;
-    }*/
-/*    bool operator>(const pair_<tvar1,tvar2> & tmp)
-    {
-        return var1 > tmp.var1;
-    }*/
-/*    bool operator<(const const_pair_ref<tvar1,tvar2> & tmp)
-    {
-        return var1 < tmp.var1;
-    }
-    bool operator>(const const_pair_ref<tvar1,tvar2> & tmp)
-    {
-        return var1 > tmp.var1;
-    }*/
 };
 
 template<typename tvar1, typename tvar2>
@@ -344,21 +300,7 @@ pair_val<tvar1,tvar2> operator*(double factor,const const_pair_ref<tvar1,tvar2>&
     return pair_val<tvar1,tvar2>(factor*pair.var1,factor*pair.var2);
 }
 
-/*namespace std{
-    double abs(pair_ref<double,double> tmp){
-        return max(tmp.var1,tmp.var2);
-    }
-    double abs(const_pair_ref<double,double> tmp){
-        return max(tmp.var1,tmp.var2);
-    }
-}*/
-/*! \brief Resize Temporal Expression for Odeint
-  *
-  * \param
-  *
-  * \return
-  *
-  */
+
 namespace boost { namespace numeric { namespace odeint {
 
             template<typename T>

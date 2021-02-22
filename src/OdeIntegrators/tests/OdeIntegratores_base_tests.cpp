@@ -2,7 +2,24 @@
 // Created by Abhinav Singh on 01.12.20.
 //
 #include "config.h"
+#include <type_traits>
+#include <cstring>
+#include "util/common.hpp"
 
+
+template<typename T, typename Sfinae = void>
+struct has_state_vector: std::false_type {};
+template<typename T>
+struct has_state_vector<T, typename Void< typename T::is_state_vector>::type> : std::true_type
+{};
+namespace boost{
+    template<class T,class Enabler=typename std::enable_if<has_state_vector<T>::value>::type>
+    inline size_t
+    size(const T& rng)
+    {
+        return rng.size();
+    }
+}
 
 #define BOOST_TEST_DYN_LINK
 
@@ -14,6 +31,7 @@
 #include "Decomposition/Distribution/SpaceDistribution.hpp"
 #include "OdeIntegrators/OdeIntegrators.hpp"
 #include "DCPSE/DCPSE_op/DCPSE_op.hpp"
+#include "OdeIntegrators/boost_vector_algebra_ofp.hpp"
 
 typedef texp_v<double> state_type;
 const double a = 2.8e-4;
@@ -64,6 +82,33 @@ struct state_type_struct{
 
 };
 
+void *vectorGlobal;
+
+template<typename vector_type>
+struct state_type_struct_ofp{
+    state_type_struct_ofp(){
+    }
+    //Laplacian Lap;
+    typedef size_t size_type;
+    typedef int is_state_vector;
+    aggregate<texp_v<double>,texp_v<double>> data;
+
+    size_t size() const
+    { return data.get<0>().size(); }
+
+    void resize(size_t n)
+    {
+        data.get<0>().resize(n);
+        data.get<1>().resize(n);
+    }
+
+
+
+
+};
+
+typedef vector_dist<2, double, aggregate<double,double,double,double,double,double>> vector_type;
+
 namespace boost {
     namespace numeric {
         namespace odeint {
@@ -74,14 +119,15 @@ namespace boost {
                 static const bool value = type::value;
             };
             template<>
-            struct vector_space_norm_inf<state_type_struct>
-            {
-                typedef double result_type;
-                double operator()( const state_type_struct &x ) const
-                {
+            struct is_resizeable<state_type_struct_ofp<vector_type>> {
+                typedef boost::true_type type;
+                static const bool value = type::value;
+            };
 
-                    return std::max(norm_inf(x.u).getReduction(),norm_inf(x.v).getReduction());
-                }
+            template<typename T>
+            struct vector_space_norm_inf<state_type_struct_ofp<T>>
+            {
+                typedef typename T::stype result_type;
             };
 
         }
@@ -112,10 +158,15 @@ struct FitzHugh_Nagumo_struct
      //   dxdt.v = (b*x.Lap_v+x.u-x.v) / tau;
     }
 };
-void Exponential_struct( const state_type_struct &x , state_type_struct &dxdt , const double t )
+void Exponential_struct( const state_type_struct&x , state_type_struct &dxdt , const double t )
 {
     dxdt.u = x.u;
     dxdt.v = 2.0*x.v;
+}
+void Exponential_struct_ofp( const state_type_struct_ofp<vector_type> &x , state_type_struct_ofp<vector_type> &dxdt , const double t )
+{
+    dxdt.data.get<0>() = x.data.get<0>();
+    dxdt.data.get<1>() = 2.0*x.data.get<1>();
 }
 
 
@@ -320,6 +371,119 @@ BOOST_AUTO_TEST_CASE(odeint_base_test1) {
         }
         std::cout<<worst3<<std::endl;
         std::cout<<worst4<<std::endl;
+        //BOOST_REQUIRE(worst < 1e-6);
+        //BOOST_REQUIRE_EQUAL(worst,worst2);
+    }
+
+    BOOST_AUTO_TEST_CASE(odeint_base_test_STRUCT_ofp) {
+        size_t edgeSemiSize = 40;
+        const size_t sz[2] = {edgeSemiSize,edgeSemiSize };
+        Box<2, double> box({ 0, 0 }, { 1.0, 1.0 });
+        size_t bc[2] = { NON_PERIODIC, NON_PERIODIC };
+        double spacing[2];
+        spacing[0] = 1.0 / (sz[0] - 1);
+        spacing[1] = 1.0 / (sz[1] - 1);
+        double rCut = 3.9 * spacing[0];
+        Ghost<2, double> ghost(rCut);
+        BOOST_TEST_MESSAGE("Init vector_dist...");
+
+        vector_dist<2, double, aggregate<double,double,double,double,double,double>> Particles(0, box, bc, ghost);
+
+        auto it = Particles.getGridIterator(sz);
+        while (it.isNext())
+        {
+            Particles.add();
+            auto key = it.get();
+            mem_id k0 = key.get(0);
+            double xp0 = k0 * spacing[0];
+            Particles.getLastPos()[0] = xp0;
+            mem_id k1 = key.get(1);
+            double yp0 = k1 * spacing[1];
+            Particles.getLastPos()[1] = yp0;
+            Particles.getLastProp<0>() = xp0*yp0*exp(0);
+            Particles.getLastProp<1>() = xp0*yp0*exp(0.4);
+            Particles.getLastProp<2>() = xp0*yp0*exp(0);
+            Particles.getLastProp<3>() = xp0*yp0*exp(0.8);
+            ++it;
+        }
+
+        auto Init1 = getV<0>(Particles);
+        auto Sol1 = getV<1>(Particles);
+        auto Init2 = getV<2>(Particles);
+        auto Sol2 = getV<3>(Particles);
+        auto OdeSol1 = getV<4>(Particles);
+        auto OdeSol2 = getV<5>(Particles);
+
+        state_type_struct_ofp<vector_type> x0;//(Init1,Init2);
+        x0.data.get<0>()=Init1;
+        x0.data.get<1>()=Init2;
+        // The rhs of x' = f(x)
+        double t=0,tf=0.4;
+        const double dt=0.1;
+
+        //size_t steps=boost::numeric::odeint::integrate(Exponential_struct,x0,0.0,tf,dt);
+
+        //size_t steps=boost::numeric::odeint::integrate_const(
+        //        boost::numeric::odeint::runge_kutta4< state_type_struct_ofp<vector_type>,double,state_type_struct_ofp<vector_type>,double,boost::numeric::odeint::vector_space_algebra_ofp > ()
+        //                ,Exponential_struct_ofp,x0,0.0,tf,dt);
+
+        typedef boost::numeric::odeint::controlled_runge_kutta< boost::numeric::odeint::runge_kutta_cash_karp54< state_type_struct_ofp<vector_type>,double,state_type_struct_ofp<vector_type>,double,boost::numeric::odeint::vector_space_algebra_ofp>> stepper_type;
+        integrate_adaptive( stepper_type() , Exponential_struct_ofp , x0 , t , tf , dt);
+
+        OdeSol1=x0.data.get<0>();
+        OdeSol2=x0.data.get<1>();
+        auto it2 = Particles.getDomainIterator();
+        double worst = 0.0;
+        double worst2 = 0.0;
+        while (it2.isNext()) {
+            auto p = it2.get();
+            if (fabs(Particles.getProp<1>(p) - Particles.getProp<4>(p)) > worst) {
+                worst = fabs(Particles.getProp<1>(p) - Particles.getProp<4>(p));
+            }
+            if (fabs(Particles.getProp<3>(p) - Particles.getProp<5>(p)) > worst2) {
+                worst2 = fabs(Particles.getProp<3>(p) - Particles.getProp<5>(p));
+            }
+            ++it2;
+        }
+
+
+
+
+        std::cout<<worst<<std::endl;
+        std::cout<<worst2<<std::endl;
+        //BOOST_REQUIRE(worst < 1e-6);
+
+/*        x0.u=Init1;
+        x0.v=Init2;
+
+        //x0=Init;
+        boost::numeric::odeint::runge_kutta4< state_type_struct_ofp > rk4;
+        while (t<tf)
+        {
+            rk4.do_step(Exponential_struct,x0,t,dt);
+            OdeSol1=x0.u;
+            OdeSol2=x0.v;
+            Particles.write_frame("OdeSol",int(t/dt));
+            t+=dt;
+        }
+
+        OdeSol1=x0.u;
+        OdeSol2=x0.v;
+        auto it3 = Particles.getDomainIterator();
+        double worst3 = 0.0;
+        double worst4 = 0.0;
+        while (it3.isNext()) {
+            auto p = it3.get();
+            if (fabs(Particles.getProp<1>(p) - Particles.getProp<4>(p)) > worst3) {
+                worst3 = fabs(Particles.getProp<1>(p) - Particles.getProp<4>(p));
+            }
+            if (fabs(Particles.getProp<3>(p) - Particles.getProp<5>(p)) > worst4) {
+                worst4 = fabs(Particles.getProp<3>(p) - Particles.getProp<5>(p));
+            }
+            ++it3;
+        }
+        std::cout<<worst3<<std::endl;
+        std::cout<<worst4<<std::endl;*/
         //BOOST_REQUIRE(worst < 1e-6);
         //BOOST_REQUIRE_EQUAL(worst,worst2);
     }
