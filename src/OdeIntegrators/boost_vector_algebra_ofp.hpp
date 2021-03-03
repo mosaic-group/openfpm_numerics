@@ -464,6 +464,7 @@ namespace boost {
                     {
                         n=fabs(v.data.template get<T::value>().getVector().template get<0>(p));
                     }
+
                }
            };
 
@@ -481,6 +482,9 @@ namespace boost {
 
                     ++it;
                 }
+                auto &v_cl = create_vcluster();
+                v_cl.max(n);
+                v_cl.execute();
                 //std::max();
                 //std::cout<<n<<std::endl;
                 return n;

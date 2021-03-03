@@ -1131,7 +1131,10 @@ public:
         }
 
     }
-
+    template<typename particles_type>
+    void deallocate(particles_type &parts) {
+        delete (Dcpse<particles_type::dims, particles_type> *) dcpse;
+    }
     /*! \brief Method for Updating the DCPSE Operator by recomputing DCPSE Kernels.
      *
      *

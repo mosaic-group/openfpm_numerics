@@ -6,7 +6,6 @@
 #include <cstring>
 #include "util/common.hpp"
 
-
 template<typename T, typename Sfinae = void>
 struct has_state_vector: std::false_type {};
 template<typename T>
@@ -123,7 +122,7 @@ struct Fitz
     op_type &Lap;
 
 
-
+    //Constructor
     Fitz(op_type &Lap):Lap(Lap)
     {}
 
@@ -134,12 +133,10 @@ struct Fitz
         auto v=getV<5>(Temp);
         u=x.data.get<0>();
         v=x.data.get<1>();
-        Temp.ghost_get<4,5>();
 
+        Temp.ghost_get<4,5>();
         dxdt.data.get<0>() = a*Lap(u) + u - u*v - v + k;
         dxdt.data.get<1>() = (b*Lap(v)+ u-v) / tau;
-
-
     }
 };
 
@@ -214,6 +211,8 @@ BOOST_AUTO_TEST_CASE(odeint_base_test1) {
             ++it;
         }
 
+        Particles.map();
+        Particles.ghost_get<0>();
         auto Init = getV<0>(Particles);
         auto Sol = getV<1>(Particles);
         auto OdeSol = getV<2>(Particles);
@@ -300,7 +299,8 @@ BOOST_AUTO_TEST_CASE(odeint_base_test1) {
             Particles.getLastProp<3>() = xp0*yp0*exp(0.8);
             ++it;
         }
-
+        Particles.map();
+        Particles.ghost_get<0>();
         auto Init1 = getV<0>(Particles);
         auto Sol1 = getV<1>(Particles);
         auto Init2 = getV<2>(Particles);
@@ -421,7 +421,8 @@ BOOST_AUTO_TEST_CASE(odeint_base_test1) {
             Particles.getLastProp<1>() = xp0*yp0*exp(tf);
             ++it;
         }
-
+        Particles.map();
+        Particles.ghost_get<0>();
         auto Init = getV<0>(Particles);
         auto Sol = getV<1>(Particles);
         auto OdeSol = getV<2>(Particles);
@@ -509,7 +510,8 @@ BOOST_AUTO_TEST_CASE(odeint_base_test1) {
             Particles.getLastProp<1>() = xp0*yp0*1/(1+exp(-tf));
             ++it;
         }
-
+        Particles.map();
+        Particles.ghost_get<0>();
         auto Init = getV<0>(Particles);
         auto Sol = getV<1>(Particles);
         auto OdeSol = getV<2>(Particles);
@@ -597,7 +599,8 @@ BOOST_AUTO_TEST_CASE(odeint_base_test1) {
             {Particles.getLastProp<0>() = 1.0;}
             ++it;
         }
-
+        Particles.map();
+        Particles.ghost_get<0>();
         auto Init = getV<0>(Particles);
         auto Sol = getV<1>(Particles);
         auto OdeSol = getV<2>(Particles);
@@ -677,14 +680,14 @@ BOOST_AUTO_TEST_CASE(odeint_base_test1) {
         BOOST_TEST_MESSAGE("Sync domain across processors...");
 
         domain.map();
-        domain.ghost_get<>();
+        domain.ghost_get<0>();
 
         domain.write_frame("ReactDiffTest",0);
 
         //Derivative_x Dx(domain, 2, rCut);
         //Derivative_y Dy(domain, 2, rCut);
         //Gradient Grad(domain, 2, rCut);
-         vectorGlobal=(void *) &domain;
+        vectorGlobal=(void *) &domain;
 
         Laplacian Lap(domain, 2, rCut);
 
@@ -703,11 +706,18 @@ BOOST_AUTO_TEST_CASE(odeint_base_test1) {
         double tf = 0.5;
         domain.write("ReactDiffTestInit");
         typedef boost::numeric::odeint::controlled_runge_kutta< boost::numeric::odeint::runge_kutta_cash_karp54< state_type_struct_ofp<vector_type>,double,state_type_struct_ofp<vector_type>,double,boost::numeric::odeint::vector_space_algebra_ofp>> stepper_type;
+/*Debug code
+ * int i=0;
+        while(i==1){
+            sleep(500);
+}*/
+
+
         integrate_adaptive( stepper_type() , System , x0 , t , tf , dt);
         fu=x0.data.get<0>();
         fv=x0.data.get<1>();
         domain.write("ReactDiffTest");
-        //size_t steps=boost::numeric::odeint::integrate_const( boost::numeric::odeint::runge_kutta4<state_type_struct_ofp>(),Fitz,x0,0.0,tf,dt);
+/*        //size_t steps=boost::numeric::odeint::integrate_const( boost::numeric::odeint::runge_kutta4<state_type_struct_ofp>(),Fitz,x0,0.0,tf,dt);
         boost::numeric::odeint::runge_kutta4< state_type_struct_ofp<vector_type>,double,state_type_struct_ofp<vector_type>,double,boost::numeric::odeint::vector_space_algebra_ofp> rk4;
         x0.data.get<0>() = u;
         x0.data.get<1>() = v;
@@ -720,6 +730,7 @@ BOOST_AUTO_TEST_CASE(odeint_base_test1) {
             fv=x0.data.get<1>();
             domain.write_frame("ReactDiff",step);
         }
+        Lap.deallocate(domain);*/
 }
 
 
