@@ -6,20 +6,6 @@
 #include <cstring>
 #include "util/common.hpp"
 
-template<typename T, typename Sfinae = void>
-struct has_state_vector: std::false_type {};
-template<typename T>
-struct has_state_vector<T, typename Void< typename T::is_state_vector>::type> : std::true_type
-{};
-namespace boost{
-    template<class T,class Enabler=typename std::enable_if<has_state_vector<T>::value>::type>
-    inline size_t
-    size(const T& rng)
-    {
-        return rng.size();
-    }
-}
-
 #define BOOST_TEST_DYN_LINK
 
 #include "util/util_debug.hpp"
