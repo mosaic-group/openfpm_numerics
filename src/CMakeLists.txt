@@ -182,6 +182,7 @@ install(FILES DCPSE/DCPSE_op/DCPSE_op.hpp
 		DESTINATION openfpm_numerics/include/DCPSE/DCPSE_op)
 
 install(FILES OdeIntegrators/OdeIntegrators.hpp
+		OdeIntegrators/boost_vector_algebra_ofp.hpp
 		DESTINATION openfpm_numerics/include/OdeIntegrators)
 
 install(FILES Draw/DrawParticles.hpp 
