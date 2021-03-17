@@ -3,6 +3,15 @@ cmake_minimum_required(VERSION 3.8 FATAL_ERROR)
 ########################### Executables
 
 
+if (CUDA_ON_CPU)
+        add_definitions(-DCUDA_ON_CPU)
+        set_source_files_properties(${CUDA_SOURCES} PROPERTIES LANGUAGE CXX)
+        set_source_files_properties(${CUDA_SOURCES} PROPERTIES COMPILE_FLAGS "-D__NVCC__ -DCUDA_GPU -DCUDART_VERSION=11000")
+        if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU" OR CMAKE_CXX_COMPILER_ID STREQUAL "AppleClang" OR CMAKE_CXX_COMPILER_ID STREQUAL "Clang" OR CMAKE_CXX_COMPILER_ID STREQUAL "Intel")
+                add_definitions("-x c++")
+        endif()
+endif()
+
 if (CUDA_FOUND)
 	set(CUDA_SOURCES Operators/Vector/vector_dist_operators_unit_tests.cu
 					 Operators/Vector/vector_dist_operators_apply_kernel_unit_tests.cu)
@@ -32,10 +41,10 @@ add_executable(numerics ${OPENFPM_INIT_FILE} ${CUDA_SOURCES}
 						FiniteDifference/eq_unit_test.cpp  
 						Operators/Vector/vector_dist_operators_unit_tests.cpp 
 						Operators/Vector/vector_dist_operators_apply_kernel_unit_tests.cpp
-						../../openfpm_vcluster/src/VCluster/VCluster.cpp 
-						../../openfpm_devices/src/memory/CudaMemory.cu  
-						../../openfpm_devices/src/memory/HeapMemory.cpp 
-						../../openfpm_devices/src/memory/PtrMemory.cpp)
+						../../src/lib/pdata.cpp)
+
+add_dependencies(numerics ofpmmemory)
+add_dependencies(numerics vcluster)
 
 ###########################
 if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
@@ -51,8 +60,11 @@ if ( CMAKE_COMPILER_IS_GNUCC )
     endif()
 endif()
 
+if (CMAKE_CUDA_COMPILER_ID STREQUAL "Clang")
+        add_definitions(-D__STRICT_ANSI__)
+endif()
+
 if(CUDA_FOUND)
-	target_compile_options(numerics PUBLIC $<$<COMPILE_LANGUAGE:CUDA>: ${WARNING_SUPPRESSION_AND_OPTION_NVCC} >)
         if (TEST_COVERAGE)
                 target_compile_options(numerics PRIVATE $<$<COMPILE_LANGUAGE:CUDA>: -Xcompiler "-fprofile-arcs -ftest-coverage" >)
         endif()
@@ -72,6 +84,7 @@ target_include_directories (numerics PUBLIC ${HDF5_ROOT}/include)
 target_include_directories (numerics PUBLIC ${LIBHILBERT_INCLUDE_DIRS})
 target_include_directories (numerics PUBLIC ${Boost_INCLUDE_DIRS})
 target_include_directories (numerics PUBLIC ${Vc_INCLUDE_DIR})
+target_include_directories (numerics PUBLIC ${ALPAKA_ROOT}/include)
 if(EIGEN3_FOUND)
 	target_include_directories (numerics PUBLIC ${EIGEN3_INCLUDE_DIR})
 endif()
@@ -86,6 +99,8 @@ if(PETSC_FOUND)
 	target_include_directories (numerics PUBLIC ${PETSC_INCLUDES})
 	target_link_libraries(numerics ${PETSC_LIBRARIES})
 endif()
+target_link_libraries(numerics vcluster)
+target_link_libraries(numerics ofpmmemory)
 
 if(SuiteSparse_FOUND)
 	target_include_directories (numerics PUBLIC ${SuiteSparse_INCLUDE_DIRS})

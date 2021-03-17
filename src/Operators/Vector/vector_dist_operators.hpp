@@ -332,7 +332,7 @@ public:
 	 *
 	 */
 	template<typename r_type=typename std::remove_reference<decltype(o1.value(vect_dist_key_dx()) + o2.value(vect_dist_key_dx()))>::type >
-	inline r_type value(const vect_dist_key_dx & key) const
+	__device__ __host__ inline r_type value(const vect_dist_key_dx & key) const
 	{
 		return o1.value(key) + o2.value(key);
 	}
@@ -548,7 +548,8 @@ public:
 	 * \return the result of the expression
 	 *
 	 */
-	template<typename r_type=typename std::remove_reference<decltype(o1.value(vect_dist_key_dx()) * o2.value(vect_dist_key_dx()))>::type > inline r_type value(const vect_dist_key_dx & key) const
+	template<typename r_type=typename std::remove_reference<decltype(o1.value(vect_dist_key_dx()) * o2.value(vect_dist_key_dx()))>::type > 
+	__device__ __host__ inline r_type value(const vect_dist_key_dx & key) const
 	{
 		return o1.value(key) * o2.value(key);
 	}
@@ -954,7 +955,7 @@ public:
 	 * \return the result of the expression
 	 *
 	 */
-	__host__ inline auto value(const vect_dist_key_dx & k) const -> decltype(pos_or_propR<vector,prp>::value(v.v,k))
+	__host__ __device__ inline auto value(const vect_dist_key_dx & k) const -> decltype(pos_or_propR<vector,prp>::value(v.v,k))
 	{
 		return pos_or_propR<vector,prp>::value(v.v,k);
 	}
@@ -991,18 +992,9 @@ public:
                         return v.v;
         }
 
-		if (has_vector_kernel<vector>::type::value == false)
-		{
-			vector_dist_op_compute_op<prp,false,vector_dist_expression_comp_sel<comp_host,
+		vector_dist_op_compute_op<prp,false,vector_dist_expression_comp_sel<comp_host + (has_vector_kernel<vector>::type::value == true),
 																	   	  has_vector_kernel<vector>::type::value>::type::value>
 			::compute_expr(v.v,v_exp);
-		}
-		else
-		{
-			vector_dist_op_compute_op<prp,false,vector_dist_expression_comp_sel<comp_dev,
-		   	  	  	  	  	  	  	  	  	  	  	  	  	  	  	  	  has_vector_kernel<vector>::type::value>::type::value>
-			::compute_expr(v.v,v_exp);
-		}
 
 		return v.v;
 	}
@@ -1051,10 +1043,10 @@ public:
 		{
 			vector_dist_op_compute_op<prp,
 									  vector_dist_expression_op<exp1,exp2,op>::is_sort::value,
-									  vector_dist_expression_comp_sel<comp_dev,
-		   	  	  	  	  	  	  	  	  	  	  	  	  	  	  	  has_vector_kernel<vector>::type::value>::type::value>
-			::compute_expr(v.v,v_exp);
-		}
+									  vector_dist_expression_comp_sel<comp_host + (has_vector_kernel<vector>::type::value == true),
+										has_vector_kernel<vector>::type::value>::type::value>
+            ::compute_expr(v.v,v_exp);
+        }
 
 		return v.v;
 	}
@@ -1068,22 +1060,12 @@ public:
 	 */
 	vector & operator=(double d)
 	{
-		if (has_vector_kernel<vector>::type::value == false)
-		{
-			vector_dist_op_compute_op<prp,
+
+		vector_dist_op_compute_op<prp,
 									  false,
-									  vector_dist_expression_comp_sel<comp_host,
-																	  has_vector_kernel<vector>::type::value>::type::value>
-			::compute_const(v.v,d);
-		}
-		else
-		{
-			vector_dist_op_compute_op<prp,
-									  false,
-									  vector_dist_expression_comp_sel<comp_dev,
-		   	  	  	  	  	  	  	  	  	  	  	  	  	  	  	  has_vector_kernel<vector>::type::value>::type::value>
-			::compute_const(v.v,d);
-		}
+									  vector_dist_expression_comp_sel<comp_host + (has_vector_kernel<vector>::type::value == true),
+										has_vector_kernel<vector>::type::value>::type::value>
+		::compute_const(v.v,d);
 
 		return v.v;
 	}
@@ -1800,7 +1782,7 @@ public:
 	 * \return the constant value
 	 *
 	 */
-	inline double value(const vect_dist_key_dx & k) const
+	__device__ __host__ inline double value(const vect_dist_key_dx & k) const
 	{
 		return d;
 	}
