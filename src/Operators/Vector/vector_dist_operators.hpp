@@ -1164,7 +1164,6 @@ public:
     const_iterator end() const
     { return &v.template get<0>(v.size()-1)+1; }
 
-
     size_t size() const
     { return v.size(); }
 

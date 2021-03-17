@@ -229,6 +229,54 @@ struct equations3d1 {
     typedef petsc_solver<double> solver_type;
 };
 
+struct equations3d3Pz {
+    //! dimensionaly of the equation ( 3D problem ...)
+    static const unsigned int dims = 3;
+    //! number of fields in the system
+    static const unsigned int nvar = 3;
+
+    //! boundary at X and Y
+    static constexpr bool boundary[]={NON_PERIODIC, NON_PERIODIC,PERIODIC};
+
+    //! type of space float, double, ..
+    typedef double stype;
+
+    //! type of base particles
+    typedef vector_dist<dims, double, aggregate<double>> b_part;
+
+    //! type of SparseMatrix for the linear solver
+    typedef SparseMatrix<double, int, PETSC_BASE> SparseMatrix_type;
+
+    //! type of Vector for the linear solver
+    typedef Vector<double, PETSC_BASE> Vector_type;
+
+    typedef petsc_solver<double> solver_type;
+};
+
+struct equations3d1Pz {
+    //! dimensionaly of the equation ( 3D problem ...)
+    static const unsigned int dims = 3;
+    //! number of fields in the system
+    static const unsigned int nvar = 1;
+
+    //! boundary at X and Y
+    static constexpr bool boundary[]={NON_PERIODIC, NON_PERIODIC,PERIODIC};
+
+    //! type of space float, double, ...
+    typedef double stype;
+
+    //! type of base particles
+    typedef vector_dist<dims, double, aggregate<double>> b_part;
+
+    //! type of SparseMatrix for the linear solver
+    typedef SparseMatrix<double, int, PETSC_BASE> SparseMatrix_type;
+
+    //! type of Vector for the linear solver
+    typedef Vector<double, PETSC_BASE> Vector_type;
+
+    typedef petsc_solver<double> solver_type;
+};
+
 
 //! Specify the general characteristic of system to solve
 struct equations2d1E {
