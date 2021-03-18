@@ -91,6 +91,10 @@ if(SuiteSparse_FOUND)
 	target_link_libraries(numerics ${BLAS_LIBRARIES})
 endif()
 
+if(OpenMP_CXX_FOUND)
+    target_link_libraries(numerics ${OpenMP_CXX_FLAGS})
+endif()
+
 target_link_libraries(numerics -L${METIS_ROOT}/lib metis)
 
 if (TEST_COVERAGE)
