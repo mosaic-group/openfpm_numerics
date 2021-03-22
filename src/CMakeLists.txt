@@ -109,6 +109,10 @@ if(SuiteSparse_FOUND)
 	target_link_libraries(numerics ${BLAS_LIBRARIES})
 endif()
 
+if(OpenMP_CXX_FOUND)
+    target_link_libraries(numerics ${OpenMP_CXX_FLAGS})
+endif()
+
 target_link_libraries(numerics -L${METIS_ROOT}/lib metis)
 
 if (TEST_COVERAGE)
@@ -127,25 +131,29 @@ endif ()
 install(FILES Matrix/SparseMatrix.hpp 
 	      Matrix/SparseMatrix_Eigen.hpp 
 	      Matrix/SparseMatrix_petsc.hpp
-	      DESTINATION openfpm_numerics/include/Matrix)
+	      DESTINATION openfpm_numerics/include/Matrix
+	      COMPONENT OpenFPM)
 
 install(FILES Vector/Vector_eigen.hpp
 	      Vector/Vector_petsc.hpp 
 	      Vector/Vector_util.hpp 
 	      Vector/Vector.hpp
-	      DESTINATION openfpm_numerics/include/Vector )
+	      DESTINATION openfpm_numerics/include/Vector 
+	      COMPONENT OpenFPM)
 
 install(FILES Solvers/umfpack_solver.hpp 
 	      Solvers/petsc_solver.hpp
 	      Solvers/petsc_solver_AMG_report.hpp
-	      DESTINATION openfpm_numerics/include/Solvers )
+	      DESTINATION openfpm_numerics/include/Solvers 
+	      COMPONENT OpenFPM)
 
 install(FILES util/petsc_util.hpp 
 	      util/linalgebra_lib.hpp 
 	      util/util_num.hpp 
 	      util/grid_dist_testing.hpp
 		  util/SphericalHarmonics.hpp
-		DESTINATION openfpm_numerics/include/util )
+		DESTINATION openfpm_numerics/include/util
+	      COMPONENT OpenFPM)
 
 install(FILES FiniteDifference/Average.hpp 
       	      FiniteDifference/Derivative.hpp 
@@ -158,24 +166,29 @@ install(FILES FiniteDifference/Average.hpp
 	      FiniteDifference/FD_expressions.hpp
 	      FiniteDifference/FD_op.hpp
 	      FiniteDifference/FD_Solver.hpp 
-      	      DESTINATION openfpm_numerics/include/FiniteDifference )
+      	      DESTINATION openfpm_numerics/include/FiniteDifference 
+	      COMPONENT OpenFPM)
 	      
 install(FILES FiniteDifference/util/common.hpp
 		      FiniteDifference/util/EqnsStructFD.hpp
-      	      DESTINATION openfpm_numerics/include/FiniteDifference/util )
+      	      DESTINATION openfpm_numerics/include/FiniteDifference/util
+	      COMPONENT OpenFPM)
 
 install(FILES PSE/Kernels.hpp PSE/Kernels_test_util.hpp 
-        DESTINATION openfpm_numerics/include/PSE )
+        DESTINATION openfpm_numerics/include/PSE 
+	COMPONENT OpenFPM)
 
 install(FILES Operators/Vector/vector_dist_operators_extensions.hpp 
       	       Operators/Vector/vector_dist_operators.hpp 
       	       Operators/Vector/vector_dist_operators_apply_kernel.hpp 
       	       Operators/Vector/vector_dist_operators_functions.hpp 
       	       Operators/Vector/vector_dist_operator_assign.hpp
-      	       DESTINATION openfpm_numerics/include/Operators/Vector )
+      	       DESTINATION openfpm_numerics/include/Operators/Vector 
+	       COMPONENT OpenFPM)
 
        install(FILES Operators/Vector/cuda/vector_dist_operators_cuda.cuh
-	      DESTINATION openfpm_numerics/include/Operators/Vector/cuda )
+	      DESTINATION openfpm_numerics/include/Operators/Vector/cuda 
+	      COMPONENT OpenFPM)
 
 install(FILES DCPSE/Dcpse.hpp
 		DCPSE/DcpseDiagonalScalingMatrix.hpp
@@ -205,22 +218,26 @@ install(FILES Draw/DrawParticles.hpp
       	      Draw/PointIteratorSkin.hpp
 	      Draw/DrawCircle.hpp
 	      Draw/DrawSphere.hpp
-      	      DESTINATION openfpm_numerics/include/Draw )
+      	      DESTINATION openfpm_numerics/include/Draw 
+	      COMPONENT OpenFPM)
 
 install(FILES interpolation/interpolation.hpp 
       	      interpolation/mp4_kernel.hpp 
       	      interpolation/z_spline.hpp
-      	      DESTINATION openfpm_numerics/include/interpolation )
+      	      DESTINATION openfpm_numerics/include/interpolation 
+	      COMPONENT OpenFPM)
 
 install(FILES level_set/redistancing_Sussman/ComputeGradient.hpp
 	      level_set/redistancing_Sussman/HelpFunctions.hpp
 	      level_set/redistancing_Sussman/HelpFunctionsForGrid.hpp
 	      level_set/redistancing_Sussman/NarrowBand.hpp
 	      level_set/redistancing_Sussman/RedistancingSussman.hpp
-	      DESTINATION openfpm_numerics/include/level_set/redistancing_Sussman)
+	      DESTINATION openfpm_numerics/include/level_set/redistancing_Sussman
+	      COMPONENT OpenFPM)
 
 install(FILES DMatrix/EMatrix.hpp
-	DESTINATION openfpm_numerics/include/DMatrix )
+	DESTINATION openfpm_numerics/include/DMatrix 
+	COMPONENT OpenFPM)
 
 #if(BUILD_TESTING)
 
