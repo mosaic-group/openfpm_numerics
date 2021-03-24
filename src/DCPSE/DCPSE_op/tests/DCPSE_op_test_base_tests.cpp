@@ -5,6 +5,8 @@
  *      Author: Abhinav Singh
  *
  */
+#ifdef HAVE_EIGEN
+#ifdef HAVE_PETSC
 #define BOOST_MPL_CFG_NO_PREPROCESSED_HEADERS
 #define BOOST_MPL_LIMIT_VECTOR_SIZE 30
 #include "config.h"
@@ -705,7 +707,8 @@ BOOST_AUTO_TEST_CASE(dcpse_op_tests) {
 BOOST_AUTO_TEST_SUITE_END()
 
 
-
+#endif
+#endif
 
 
 

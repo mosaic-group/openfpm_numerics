@@ -5,6 +5,11 @@
  *      Author: Abhinav Singh, Pietro Incardona
  *
  */
+
+#ifdef HAVE_EIGEN
+#ifdef HAVE_PETSC
+
+
 #define BOOST_MPL_CFG_NO_PREPROCESSED_HEADERS
 #define BOOST_MPL_LIMIT_VECTOR_SIZE 40
 #include "config.h"
@@ -60,7 +65,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
 
         Laplacian Lap(domain, 2, rCut, 2);
 
-        DCPSE_scheme<equations2d1,decltype(domain)> Solver( domain);
+        DCPSE_scheme<equations2d1,decltype(domain)> Solver(domain);
 
         openfpm::vector<aggregate<int>> bulk;
         openfpm::vector<aggregate<int>> up_p;
@@ -1207,5 +1212,6 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
 
 
 BOOST_AUTO_TEST_SUITE_END()
-
+#endif
+#endif
 
