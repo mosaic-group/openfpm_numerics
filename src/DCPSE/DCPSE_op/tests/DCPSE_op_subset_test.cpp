@@ -5,6 +5,8 @@
  *      Author: Abhinav Singh
  *
  */
+#ifdef HAVE_EIGEN
+#ifdef HAVE_PETSC
 #include "config.h"
 
 #define BOOST_TEST_DYN_LINK
@@ -607,4 +609,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_subset_suite_tests)
 
         //Particles.write("PC_subset_lid2");
     }
+
 BOOST_AUTO_TEST_SUITE_END()
+#endif
+#endif

@@ -8,6 +8,7 @@
 #ifndef DCPSE_OP_HPP_
 #define DCPSE_OP_HPP_
 
+#include "Decomposition/CartDecomposition.hpp"
 #include "DCPSE/Dcpse.hpp"
 #include "Operators/Vector/vector_dist_operators.hpp"
 
