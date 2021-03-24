@@ -1,7 +1,8 @@
 //
 // Created by Abhinav Singh on 17.04.20.
 //
-
+//Example file to be used only when DCPSE_Solver is defined before.
+//Create your own structures for your equations after including the solver.
 #ifndef OPENFPM_PDATA_EQNSSTRUCT_HPP
 #define OPENFPM_PDATA_EQNSSTRUCT_HPP
 
