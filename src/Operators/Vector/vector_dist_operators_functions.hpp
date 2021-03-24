@@ -577,7 +577,6 @@ public:
 
 			openfpm::vector<typename point_scalar_process<val_type,is_sort::value>::type,
 							CudaMemory,
-							typename memory_traits_inte<typename point_scalar_process<val_type,is_sort::value>::type>::type,
 							memory_traits_inte,
 							openfpm::grow_policy_identity> ve;
 
