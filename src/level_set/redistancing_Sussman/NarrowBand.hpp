@@ -276,6 +276,7 @@ private:
 			}
 			++dom;
 		}
+		vd.map();
 	}
 	/** @brief Fills the empty vector passed as argument with particles by placing these within a narrow band around the
 	 * interface. SDF and Phi_grad_temp are copied from the temp. grid to the respective particle.
@@ -314,6 +315,7 @@ private:
 			}
 			++dom;
 		}
+		vd.map();
 	}
 	/** @brief Fills the empty vector passed as argument with particles by placing these within a narrow band around the
 	 * interface. SDF, Phi_grad_temp and Phi_magnOfGrad_temp are copied from the temp. grid to the respective particle.
@@ -354,6 +356,7 @@ private:
 			}
 			++dom;
 		}
+		vd.map();
 	}
 	/** @brief Fills the empty vector passed as argument with particles by placing these within a narrow band around the
 	 * interface. An arbitrary property is copied from the grid to the respective particle.
@@ -392,6 +395,7 @@ private:
 			}
 			++dom;
 		}
+		vd.map();
 	}
 };
 
