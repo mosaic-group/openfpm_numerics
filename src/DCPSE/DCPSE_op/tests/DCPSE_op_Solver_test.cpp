@@ -5,14 +5,14 @@
  *      Author: Abhinav Singh, Pietro Incardona
  *
  */
-
+#include "config.h"
 #ifdef HAVE_EIGEN
 #ifdef HAVE_PETSC
 
 
 #define BOOST_MPL_CFG_NO_PREPROCESSED_HEADERS
 #define BOOST_MPL_LIMIT_VECTOR_SIZE 40
-#include "config.h"
+
 
 
 #define BOOST_TEST_DYN_LINK

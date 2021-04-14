@@ -5,11 +5,11 @@
  *      Author: Abhinav Singh
  *
  */
-
+#include "config.h"
 #ifdef HAVE_EIGEN
 #ifdef HAVE_PETSC
 
-#include "config.h"
+
 
 #define BOOST_TEST_DYN_LINK
 
