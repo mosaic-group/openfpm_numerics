@@ -107,27 +107,54 @@ size_t SupportBuilder<vector_type>::getNumElementsInSetOfCells(const std::set<gr
 template<typename vector_type>
 void SupportBuilder<vector_type>::enlargeSetOfCellsUntilSize(std::set<grid_key_dx<vector_type::dims>> &set, unsigned int requiredSize)
 {
-    while (getNumElementsInSetOfCells(set) < 5*requiredSize) //Why 5?
-    {
-        auto tmpSet = set;
-        for (const auto el : tmpSet)
+    if (support_options::RADIUS){
+        auto cell=*set.begin();
+        grid_key_dx<vector_type::dims> middle;
+        int n=std::ceil(rCut/cellList.getCellBox().getHigh(0));
+        size_t sz[vector_type::dims];
+        for (int i=0;i<vector_type::dims;i++)
         {
-            for (unsigned int i = 0; i < vector_type::dims; ++i)
+            sz[i]=2*n+1;
+            middle.set_d(i,n);
+        }
+        grid_sm<vector_type::dims,void> g(sz);
+        grid_key_dx_iterator<vector_type::dims> g_k(g);
+        while(g_k.isNext())
+        {
+            auto key=g_k.get();
+            key=cell+key-middle;
+            if (isCellKeyInBounds(key))
             {
-                const auto pOneEl = el.move(i, +1);
-                const auto mOneEl = el.move(i, -1);
-                if (isCellKeyInBounds(pOneEl))
+                set.insert(key);
+            }
+            ++g_k;
+        }
+    }
+    else{
+        while (getNumElementsInSetOfCells(set) < requiredSize) //Why 5*requiredSize?
+        {
+            auto tmpSet = set;
+            for (const auto el : tmpSet)
+            {
+                for (unsigned int i = 0; i < vector_type::dims; ++i)
                 {
-                    set.insert(pOneEl);
-                }
-                if (isCellKeyInBounds(mOneEl))
-                {
-                    set.insert(mOneEl);
+                    const auto pOneEl = el.move(i, +1);
+                    const auto mOneEl = el.move(i, -1);
+                    if (isCellKeyInBounds(pOneEl))
+                    {
+                        set.insert(pOneEl);
+                    }
+                    if (isCellKeyInBounds(mOneEl))
+                    {
+                        set.insert(mOneEl);
+                    }
                 }
             }
+
         }
     }
 }
+
 
 template<typename vector_type>
 size_t SupportBuilder<vector_type>::getCellLinId(const grid_key_dx<vector_type::dims> &cellKey)
