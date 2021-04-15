@@ -1,6 +1,7 @@
 //
 // Created by tommaso on 25/03/19.
 //
+// Modified by Abhinav and Pietro
 
 #ifndef OPENFPM_PDATA_SUPPORTBUILDER_HPP
 #define OPENFPM_PDATA_SUPPORTBUILDER_HPP
@@ -132,7 +133,7 @@ void SupportBuilder<vector_type>::enlargeSetOfCellsUntilSize(std::set<grid_key_d
         }
     }
     else{
-        while (getNumElementsInSetOfCells(set) < requiredSize) //Why 5*requiredSize?
+        while (getNumElementsInSetOfCells(set) < 5.0*requiredSize) //Why 5*requiredSize? Becasue it can help with adaptive resolutions.
         {
             auto tmpSet = set;
             for (const auto el : tmpSet)
@@ -216,12 +217,13 @@ std::vector<size_t> SupportBuilder<vector_type>::getPointsInSetOfCells(std::set<
 				points.push_back(rp.get(i).offset);
 			}
 		}
-        #ifdef SE_CLASS1
+/*        #ifdef SE_CLASS1
 		if (points.size()<requiredSupportSize)
         {
-		    std::cerr<<__FILE__<<":"<<__LINE__<<" Error:Not enough particles for DCPSE (Please increase the rCut or reduce the over_sampling factor)";
+		    std::cerr<<__FILE__<<":"<<__LINE__<<"Note that the DCPSE neighbourhood doesn't have asked no. particles (Increase the rCut or reduce the over_sampling factor)";
+		    std::cout<<"Particels asked (minimum*oversampling_factor): "<<requiredSupportSize<<". Particles Possible with given options:"<<points.size()<<"."<<std::endl;
         }
-        #endif
+        #endif*/
     }
     else
     {
