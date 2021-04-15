@@ -47,7 +47,7 @@ public:
         supportCells.insert(curCellKey);
 
         // Make sure to consider a set of cells providing enough points for the support
-        enlargeSetOfCellsUntilSize(supportCells, requiredSize + 1); // NOTE: this +1 is because we then remove the point itself
+        enlargeSetOfCellsUntilSize(supportCells, requiredSize + 1,opt); // NOTE: this +1 is because we then remove the point itself
 
         // Now return all the points from the support into a vector
 
@@ -65,7 +65,7 @@ private:
 
     size_t getNumElementsInSetOfCells(const std::set<grid_key_dx<vector_type::dims>> &set);
 
-    void enlargeSetOfCellsUntilSize(std::set<grid_key_dx<vector_type::dims>> &set, unsigned int requiredSize);
+    void enlargeSetOfCellsUntilSize(std::set<grid_key_dx<vector_type::dims>> &set, unsigned int requiredSize,support_options opt);
 
     std::vector<size_t> getPointsInSetOfCells(std::set<grid_key_dx<vector_type::dims>> set, vect_dist_key_dx & p,  vect_dist_key_dx & pOrig, size_t requiredSupportSize, support_options opt);
 
@@ -105,9 +105,10 @@ size_t SupportBuilder<vector_type>::getNumElementsInSetOfCells(const std::set<gr
 }
 
 template<typename vector_type>
-void SupportBuilder<vector_type>::enlargeSetOfCellsUntilSize(std::set<grid_key_dx<vector_type::dims>> &set, unsigned int requiredSize)
+void SupportBuilder<vector_type>::enlargeSetOfCellsUntilSize(std::set<grid_key_dx<vector_type::dims>> &set, unsigned int requiredSize,
+        support_options opt)
 {
-    if (support_options::RADIUS){
+    if (opt==support_options::RADIUS){
         auto cell=*set.begin();
         grid_key_dx<vector_type::dims> middle;
         int n=std::ceil(rCut/cellList.getCellBox().getHigh(0));
@@ -215,6 +216,12 @@ std::vector<size_t> SupportBuilder<vector_type>::getPointsInSetOfCells(std::set<
 				points.push_back(rp.get(i).offset);
 			}
 		}
+        #ifdef SE_CLASS1
+		if (points.size()<requiredSupportSize)
+        {
+		    std::cerr<<__FILE__<<":"<<__LINE__<<" Error:Not enough particles for DCPSE (Please increase the rCut or reduce the over_sampling factor)";
+        }
+        #endif
     }
     else
     {
