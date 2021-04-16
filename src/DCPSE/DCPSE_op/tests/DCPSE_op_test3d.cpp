@@ -5,11 +5,11 @@
  *      Author: Abhinav Singh
  *
  */
-
+#include "config.h"
 #ifdef HAVE_EIGEN
 #ifdef HAVE_PETSC
 
-#include "config.h"
+
 
 #define BOOST_TEST_DYN_LINK
 
@@ -187,9 +187,9 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests3)
         domain.map();
         domain.ghost_get<0>();
 
-        Derivative_x Dx(domain, 2, rCut,3.1,support_options::RADIUS);
-        Derivative_y Dy(domain, 2, rCut,3.1,support_options::RADIUS);
-        Laplacian Lap(domain, 2, rCut,1.9,support_options::RADIUS);
+        Derivative_x Dx(domain, 2, rCut,1.9,support_options::RADIUS);
+        Derivative_y Dy(domain, 2, rCut,1.9,support_options::RADIUS);
+        Laplacian Lap(domain, 2, rCut,1.3,support_options::RADIUS);
 
         openfpm::vector<aggregate<int>> bulk;
         openfpm::vector<aggregate<int>> front_p;
@@ -301,10 +301,9 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests3)
 
         }
         //std::cout << "Maximum Analytic Error: " << worst1 << std::endl;
-
-        BOOST_REQUIRE(worst1 < 0.03);
-
         //domain.write("Dirichlet_anasol_3d");
+
+        BOOST_REQUIRE(worst1 < 0.031);
     }
 
 //Is failing on Ubuntu CI with 5 cores. Needs investigation.

@@ -4,6 +4,7 @@
  *  Created on: Sep 15, 2020
  *      Author: i-bird
  */
+#include "config.h"
 #ifdef HAVE_EIGEN
 #ifdef HAVE_PETSC
 

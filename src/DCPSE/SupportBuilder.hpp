@@ -1,6 +1,7 @@
 //
 // Created by tommaso on 25/03/19.
 //
+// Modified by Abhinav and Pietro
 
 #ifndef OPENFPM_PDATA_SUPPORTBUILDER_HPP
 #define OPENFPM_PDATA_SUPPORTBUILDER_HPP
@@ -47,7 +48,7 @@ public:
         supportCells.insert(curCellKey);
 
         // Make sure to consider a set of cells providing enough points for the support
-        enlargeSetOfCellsUntilSize(supportCells, requiredSize + 1); // NOTE: this +1 is because we then remove the point itself
+        enlargeSetOfCellsUntilSize(supportCells, requiredSize + 1,opt); // NOTE: this +1 is because we then remove the point itself
 
         // Now return all the points from the support into a vector
 
@@ -65,7 +66,7 @@ private:
 
     size_t getNumElementsInSetOfCells(const std::set<grid_key_dx<vector_type::dims>> &set);
 
-    void enlargeSetOfCellsUntilSize(std::set<grid_key_dx<vector_type::dims>> &set, unsigned int requiredSize);
+    void enlargeSetOfCellsUntilSize(std::set<grid_key_dx<vector_type::dims>> &set, unsigned int requiredSize,support_options opt);
 
     std::vector<size_t> getPointsInSetOfCells(std::set<grid_key_dx<vector_type::dims>> set, vect_dist_key_dx & p,  vect_dist_key_dx & pOrig, size_t requiredSupportSize, support_options opt);
 
@@ -105,29 +106,57 @@ size_t SupportBuilder<vector_type>::getNumElementsInSetOfCells(const std::set<gr
 }
 
 template<typename vector_type>
-void SupportBuilder<vector_type>::enlargeSetOfCellsUntilSize(std::set<grid_key_dx<vector_type::dims>> &set, unsigned int requiredSize)
+void SupportBuilder<vector_type>::enlargeSetOfCellsUntilSize(std::set<grid_key_dx<vector_type::dims>> &set, unsigned int requiredSize,
+        support_options opt)
 {
-    while (getNumElementsInSetOfCells(set) < 5*requiredSize) //Why 5?
-    {
-        auto tmpSet = set;
-        for (const auto el : tmpSet)
+    if (opt==support_options::RADIUS){
+        auto cell=*set.begin();
+        grid_key_dx<vector_type::dims> middle;
+        int n=std::ceil(rCut/cellList.getCellBox().getHigh(0));
+        size_t sz[vector_type::dims];
+        for (int i=0;i<vector_type::dims;i++)
         {
-            for (unsigned int i = 0; i < vector_type::dims; ++i)
+            sz[i]=2*n+1;
+            middle.set_d(i,n);
+        }
+        grid_sm<vector_type::dims,void> g(sz);
+        grid_key_dx_iterator<vector_type::dims> g_k(g);
+        while(g_k.isNext())
+        {
+            auto key=g_k.get();
+            key=cell+key-middle;
+            if (isCellKeyInBounds(key))
             {
-                const auto pOneEl = el.move(i, +1);
-                const auto mOneEl = el.move(i, -1);
-                if (isCellKeyInBounds(pOneEl))
+                set.insert(key);
+            }
+            ++g_k;
+        }
+    }
+    else{
+        while (getNumElementsInSetOfCells(set) < 5.0*requiredSize) //Why 5*requiredSize? Becasue it can help with adaptive resolutions.
+        {
+            auto tmpSet = set;
+            for (const auto el : tmpSet)
+            {
+                for (unsigned int i = 0; i < vector_type::dims; ++i)
                 {
-                    set.insert(pOneEl);
-                }
-                if (isCellKeyInBounds(mOneEl))
-                {
-                    set.insert(mOneEl);
+                    const auto pOneEl = el.move(i, +1);
+                    const auto mOneEl = el.move(i, -1);
+                    if (isCellKeyInBounds(pOneEl))
+                    {
+                        set.insert(pOneEl);
+                    }
+                    if (isCellKeyInBounds(mOneEl))
+                    {
+                        set.insert(mOneEl);
+                    }
                 }
             }
+
         }
     }
 }
+
 
 template<typename vector_type>
 size_t SupportBuilder<vector_type>::getCellLinId(const grid_key_dx<vector_type::dims> &cellKey)
@@ -188,6 +217,13 @@ std::vector<size_t> SupportBuilder<vector_type>::getPointsInSetOfCells(std::set<
 				points.push_back(rp.get(i).offset);
 			}
 		}
+/*        #ifdef SE_CLASS1
+		if (points.size()<requiredSupportSize)
+        {
+		    std::cerr<<__FILE__<<":"<<__LINE__<<"Note that the DCPSE neighbourhood doesn't have asked no. particles (Increase the rCut or reduce the over_sampling factor)";
+		    std::cout<<"Particels asked (minimum*oversampling_factor): "<<requiredSupportSize<<". Particles Possible with given options:"<<points.size()<<"."<<std::endl;
+        }
+        #endif*/
     }
     else
     {
