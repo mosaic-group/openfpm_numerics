@@ -100,7 +100,6 @@ fun_name(const vector_dist_expression<prp1,v1> & va)\
 	return exp_sum;\
 }
 
-
 CREATE_VDIST_ARG_FUNC(norm,norm,VECT_NORM)
 CREATE_VDIST_ARG_FUNC(norm2,norm2,VECT_NORM2)
 CREATE_VDIST_ARG_FUNC(abs,abs,POINT_ABS)
@@ -168,6 +167,10 @@ public:\
 	}\
 \
 	vtype & getVector()\
+	{\
+		return vector_result<typename exp1::vtype,typename exp2::vtype>::getVector(o1,o2);\
+	}\
+	const vtype & getVector() const\
 	{\
 		return vector_result<typename exp1::vtype,typename exp2::vtype>::getVector(o1,o2);\
 	}\
@@ -508,5 +511,169 @@ namespace openfpm
 	}
 }
 
+
+/*! \brief expression that encapsulate a vector Norm INF expression
+ *
+ * \tparam exp1 expression 1
+ * \tparam vector_type type of vector on which the expression is acting
+ *
+ */
+template <typename exp1>
+class vector_dist_expression_op<exp1,void,VECT_NORM_INF>
+{
+
+    //! expression on which apply the reduction
+    const exp1 o1;
+
+    //! return type of this expression
+    typedef typename apply_kernel_rtype<decltype(o1.value(vect_dist_key_dx()))>::rtype rtype;
+
+    //! return type of the calculated value (without reference)
+    mutable typename std::remove_reference<rtype>::type val;
+
+public:
+
+    //! Indicate if it is an in kernel expression
+    typedef typename exp1::is_ker is_ker;
+
+    //! return the vector type on which this expression operate
+    typedef typename vector_result<typename exp1::vtype,void>::type vtype;
+
+    //! result for is sort
+    typedef typename vector_is_sort_result<exp1::is_sort::value,false>::type is_sort;
+
+    //! NN_type
+    typedef typename nn_type_result<typename exp1::NN_type,void>::type NN_type;
+
+    //! constructor from an epxression exp1 and a vector vd
+    vector_dist_expression_op(const exp1 & o1)
+            :o1(o1),val(0)
+    {}
+
+    //! sum reduction require initialization where we calculate the reduction
+    // this produce a cache for the calculated value
+    inline void init() const
+    {
+        if (exp1::is_ker::value == true)
+        {
+
+#ifdef __NVCC__
+            typedef decltype(val) val_type;
+
+			// we have to do it on GPU
+
+			openfpm::vector<typename point_scalar_process<val_type,is_sort::value>::type,
+							CudaMemory,
+							typename memory_traits_inte<typename point_scalar_process<val_type,is_sort::value>::type>::type,
+							memory_traits_inte,
+							openfpm::grow_policy_identity> ve;
+
+			auto & orig_v = o1.getVector();
+
+			if (exp_tmp.ref() == 0)
+			{exp_tmp.incRef();}
+
+			ve.setMemory(exp_tmp);
+			ve.resize(orig_v.size_local());
+
+			point_scalar_process<val_type,is_sort::value>::process(val,ve,o1);
+#else
+            std::cout << __FILE__ << ":" << __LINE__ << " error, to use expression on GPU you must compile with nvcc compiler " << std::endl;
+#endif
+        }
+        else
+        {
+            const auto & orig_v = o1.getVector();
+
+            o1.init();
+
+            val = 0.0;
+
+            auto it = orig_v.getDomainIterator();
+
+            while (it.isNext())
+            {
+                auto key = it.get();
+                if(fabs(o1.value(key))>val) {
+                    val = fabs(o1.value(key));
+                }
+                ++it;
+            }
+        }
+    }
+
+    /*! \brief get the NN object
+     *
+     * \return the NN object
+     *
+     */
+    inline NN_type * getNN() const
+    {
+        return nn_type_result<typename exp1::NN_type,void>::getNN(o1);
+    }
+
+    //! it return the result of the expression
+    inline typename std::remove_reference<rtype>::type get()
+    {
+        init();
+        return value(vect_dist_key_dx());
+    }
+
+    //! it return the result of the expression (precalculated before)
+    template<typename r_type= typename std::remove_reference<rtype>::type > inline r_type value(const vect_dist_key_dx & key) const
+    {
+        return val;
+    }
+
+    //! it return the result of the expression for ODEINT
+    template<typename r_type= typename std::remove_reference<rtype>::type > inline r_type getReduction() const
+    {
+        return val;
+    }
+
+    /*! \brief Return the vector on which is acting
+    *
+    * It return the vector used in getVExpr, to get this object
+    *
+    * \return the vector
+    *
+    */
+    vtype & getVector()
+    {
+        return o1.getVector();
+    }
+
+    /*! \brief Return the vector on which is acting
+    *
+    * It return the vector used in getVExpr, to get this object
+    *
+    * \return the vector
+    *
+    */
+    const vtype & getVector() const
+    {
+        return o1.getVector();
+    }
+};
+
+//! Reduce function (it generate an expression)
+template<typename exp1, typename exp2_, unsigned int op1>
+inline vector_dist_expression_op<vector_dist_expression_op<exp1,exp2_,op1>,void,VECT_NORM_INF>
+norm_inf(const vector_dist_expression_op<exp1,exp2_,op1> & va)
+{
+    vector_dist_expression_op<vector_dist_expression_op<exp1,exp2_,op1>,void,VECT_NORM_INF> exp_sum(va);
+
+    return exp_sum;
+}
+
+//! Reduce function (It generate an expression)
+template<unsigned int prp1, typename v1>
+inline vector_dist_expression_op<vector_dist_expression<prp1,v1>,void,VECT_NORM_INF>
+norm_inf(const vector_dist_expression<prp1,v1> & va)
+{
+    vector_dist_expression_op<vector_dist_expression<prp1,v1>,void,VECT_NORM_INF> exp_sum(va);
+
+    return exp_sum;
+}
 
 #endif /* OPENFPM_NUMERICS_SRC_OPERATORS_VECTOR_VECTOR_DIST_OPERATORS_FUNCTIONS_HPP_ */

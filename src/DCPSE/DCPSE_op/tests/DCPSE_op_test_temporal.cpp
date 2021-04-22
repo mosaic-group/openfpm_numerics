@@ -4,6 +4,9 @@
  *  Created on: Sep 15, 2020
  *      Author: i-bird
  */
+#include "config.h"
+#ifdef HAVE_EIGEN
+#ifdef HAVE_PETSC
 
 #ifndef DCPSE_OP_TEST_TEMPORAL_CPP_
 #define DCPSE_OP_TEST_TEMPORAL_CPP_
@@ -18,7 +21,7 @@ BOOST_AUTO_TEST_SUITE(temporal_test_suite)
 
     BOOST_AUTO_TEST_CASE(temporal_test)
     {
-		size_t grd_sz = 17;
+		size_t grd_sz = 12;
 		double boxsize = 10;
 		const size_t sz[3] = {grd_sz, grd_sz, grd_sz};
 		Box<3, double> box({0, 0, 0}, {boxsize, boxsize, boxsize});
@@ -98,7 +101,6 @@ BOOST_AUTO_TEST_SUITE(temporal_test_suite)
 		sT[2][0] = 7;
 		sT[2][1] = 8;
 		sT[2][2] = 9;
-
         TVx=sS;
         dS = TVx;
 
@@ -116,6 +118,26 @@ BOOST_AUTO_TEST_SUITE(temporal_test_suite)
 		}
 
 		BOOST_REQUIRE_EQUAL(match,true);
+        }
+
+
+        TVx=sS*sS;
+        dS = TVx;
+
+        {
+            auto it3 = Particles.getDomainIterator();
+
+            bool match = true;
+            while (it3.isNext())
+            {
+                auto key = it3.get();
+
+                match &= Particles.template getProp<sScalar>(key)*Particles.template getProp<sScalar>(key) == Particles.template getProp<dScalar>(key);
+
+                ++it3;
+            }
+
+            BOOST_REQUIRE_EQUAL(match,true);
         }
 
 		TVx=sV[0];
@@ -199,6 +221,32 @@ BOOST_AUTO_TEST_SUITE(temporal_test_suite)
             BOOST_REQUIRE_EQUAL(match,true);
         }
 
+        TV=sV;
+        dV=pmul(TV,TV);
+        //Pol_bulk = dPol + (0.5 * dt) * k1;
+        {
+            auto it3 = Particles.getDomainIterator();
+
+            bool match = true;
+            while (it3.isNext())
+            {
+                auto key = it3.get();
+                double x1=Particles.template getProp<sVector>(key)[0];
+                double y1=Particles.template getProp<dVector>(key)[0];
+                double x2=Particles.template getProp<sVector>(key)[1];
+                double y2=Particles.template getProp<dVector>(key)[1];
+                double x3=Particles.template getProp<sVector>(key)[2];
+                double y3=Particles.template getProp<dVector>(key)[2];
+
+                match &= Particles.template getProp<sVector>(key)[0]*Particles.template getProp<sVector>(key)[0] == Particles.template getProp<dVector>(key)[0];
+                match &= Particles.template getProp<sVector>(key)[1]*Particles.template getProp<sVector>(key)[1] == Particles.template getProp<dVector>(key)[1];
+                match &= Particles.template getProp<sVector>(key)[2]*Particles.template getProp<sVector>(key)[2] == Particles.template getProp<dVector>(key)[2];
+
+                ++it3;
+            }
+            //THERE IS A BUG HERE IT IS SUMMING THE VECTORS.
+            BOOST_REQUIRE_EQUAL(match,true);
+        }
 
 /*
         TdxVx=Dx(sV[x]);
@@ -209,3 +257,5 @@ BOOST_AUTO_TEST_SUITE(temporal_test_suite)
 BOOST_AUTO_TEST_SUITE_END()
 
 #endif /* DCPSE_OP_TEST_TEMPORAL_CPP_ */
+#endif
+#endif

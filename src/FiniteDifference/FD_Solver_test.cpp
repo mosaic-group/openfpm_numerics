@@ -1,4 +1,6 @@
-
+#include "config.h"
+#ifdef HAVE_EIGEN
+#ifdef HAVE_PETSC
 
 #define BOOST_TEST_DYN_LINK
 #include <boost/test/unit_test.hpp>
@@ -9,63 +11,8 @@
 #include "FD_expressions.hpp"
 #include "FD_op.hpp"
 #include "Grid/staggered_dist_grid.hpp"
+#include "util/EqnsStructFD.hpp"
 
-
-//! Specify the general characteristic of system to solve
-struct equations2d1 {
-
-    //! dimensionaly of the equation ( 3D problem ...)
-    static const unsigned int dims=2;
-    //! number of fields in the system
-    static const unsigned int nvar=1;
-
-    //! boundary at X and Y
-    static const bool boundary[];
-
-    //! type of space float, double, ...
-    typedef double stype;
-
-    //! type of base particles
-    typedef grid_dist_id<dims, double, aggregate<double,double,double>> b_part;
-
-    //! type of SparseMatrix for the linear solver
-    typedef SparseMatrix<double, int, PETSC_BASE> SparseMatrix_type;
-
-    //! type of Vector for the linear solver
-    typedef Vector<double, PETSC_BASE> Vector_type;
-
-    typedef petsc_solver<double> solver_type;
-};
-
-const bool equations2d1::boundary[] = {NON_PERIODIC,NON_PERIODIC};
-
-//! Specify the general characteristic of system to solve
-struct equations2d1_stag {
-
-    //! dimensionaly of the equation ( 3D problem ...)
-    static const unsigned int dims=2;
-    //! number of fields in the system
-    static const unsigned int nvar=1;
-
-    //! boundary at X and Y
-    static const bool boundary[];
-
-    //! type of space float, double, ...
-    typedef double stype;
-
-    //! type of base particles
-    typedef staggered_grid_dist<dims, double, aggregate<double,double,double>> b_part;
-
-    //! type of SparseMatrix for the linear solver
-    typedef SparseMatrix<double, int, PETSC_BASE> SparseMatrix_type;
-
-    //! type of Vector for the linear solver
-    typedef Vector<double, PETSC_BASE> Vector_type;
-
-    typedef petsc_solver<double> solver_type;
-};
-
-const bool equations2d1_stag::boundary[] = {NON_PERIODIC,NON_PERIODIC};
 
 BOOST_AUTO_TEST_SUITE( FD_Solver_test )
 
@@ -150,7 +97,7 @@ BOOST_AUTO_TEST_CASE(solver_check_diagonal)
         FD::Lap Lap;
         FD::LInfError LInfError;
 
-/*        Solver.impose(Lap(v),{1,1},{79,79}, prop_id<1>());
+/*      Solver.impose(Lap(v),{1,1},{79,79}, prop_id<1>());
         Solver.impose(v,{0,0},{80,0}, prop_id<0>());
         Solver.impose(v,{0,1},{0,79}, prop_id<0>());
         Solver.impose(v,{0,80},{80,80}, prop_id<0>());
@@ -240,6 +187,192 @@ BOOST_AUTO_TEST_CASE(solver_check_diagonal)
         //std::cout << "Maximum Error: " << worst << std::endl;
         //domain.write("FDSOLVER_Lap_test");
     }
+    // Test failing for cores>=3
+    /*BOOST_AUTO_TEST_CASE(Lid_driven_PC)
+    {   using namespace FD;
+        timer tt2;
+        tt2.start();
+        size_t gd_sz = 81;
+        double Re=100;
+        double V_err_eps = 1e-2;
+        double alpha=0.01;
+        constexpr int x = 0;
+        constexpr int y = 1;
+        const size_t szu[2] = {gd_sz,gd_sz};
+        int sz[2]={int(gd_sz),int(gd_sz)};
+        Box<2, double> box({0, 0}, {1,1});
+        periodicity<2> bc = {NON_PERIODIC, NON_PERIODIC};
+        double spacing;
+        spacing = 1.0 / (sz[0] - 1);
+        Ghost<2,long int> ghost(1);
+        auto &v_cl = create_vcluster();
+        //szu[0] = (size_t)sz[0];
+        //szu[1] = (size_t)sz[1];
+        typedef aggregate<double, VectorS<2, double>, VectorS<2, double>,VectorS<2, double>,double,VectorS<2, double>,double,double> LidCavity;
+        grid_dist_id<2, double, LidCavity> domain(szu, box,ghost,bc);
+        double x0, y0, x1, y1;
+        x0 = box.getLow(0);
+        y0 = box.getLow(1);
+        x1 = box.getHigh(0);
+        y1 = box.getHigh(1);
+        auto it = domain.getDomainIterator();
+        while (it.isNext())
+        {
+            auto key = it.get();
+            auto gkey = it.getGKey(key);
+            double x = gkey.get(0) * domain.spacing(0);
+            double y = gkey.get(1) * domain.spacing(1);
+            if (y==1)
+            {domain.get<1>(key) = 1.0;}
+            else
+            {domain.get<1>(key) = 0.0;}
+
+            ++it;
+        }
+        domain.ghost_get<0>();
+        Derivative_x Dx;
+        Derivative_y Dy;
+        Derivative_xx Dxx;
+        Derivative_yy Dyy;
+        auto P = getV<0>(domain);
+        auto V = getV<1>(domain);
+        auto RHS = getV<2>(domain);
+        auto dV = getV<3>(domain);
+        auto div = getV<4>(domain);
+        auto V_star = getV<5>(domain);
+        auto H = getV<6>(domain);
+        auto dP = getV<7>(domain);
+
+        //0 doesnt work
+        P = 0.0;
+        int n = 0, nmax = 50, ctr = 0, errctr=1, Vreset = 0;
+        double V_err=1;
+        if (Vreset == 1) {
+            Vreset = 0;
+        }
+        eq_id vx,vy;
+        vx.setId(0);
+        vy.setId(1);
+
+        double sum, sum1, sum_k,V_err_old;
+        auto StokesX=(V[x]*Dx(V_star[x])+V[y]*Dy(V_star[x]))-(1.0/Re)*(Dxx(V_star[x])+Dyy(V_star[x]));
+        auto StokesY=(V[x]*Dx(V_star[y])+V[y]*Dy(V_star[y]))-(1.0/Re)*(Dxx(V_star[y])+Dyy(V_star[y]));
+        petsc_solver<double> solverPetsc;
+        solverPetsc.setSolver(KSPGMRES);
+
+        RHS=0;
+        dV=0;
+
+        timer tt;
+        while (V_err >= V_err_eps && n <= nmax) {
+            if (n%5==0){
+                domain.ghost_get<0,1    >(SKIP_LABELLING);
+                domain.write_frame("LID",n,BINARY);
+                domain.ghost_get<0>();
+            }
+            tt.start();
+            domain.ghost_get<0>(SKIP_LABELLING);
+            RHS[x] = -Dx(P);
+            RHS[y] = -Dy(P);
+            FD_scheme<equations2d2,decltype(domain)> Solver(ghost,domain);
+            Solver.impose(StokesX, {1,1},{sz[0]-2,sz[1]-2}, RHS[x], vx);
+            Solver.impose(StokesY, {1,1},{sz[0]-2,sz[1]-2}, RHS[y], vy);
+            Solver.impose(V_star[x], {0,sz[1]-1},{sz[0]-1,sz[1]-1}, 1.0, vx);
+            Solver.impose(V_star[y], {0,sz[1]-1},{sz[0]-1,sz[1]-1}, 0.0, vy);
+            Solver.impose(V_star[x], {0,1},{0,sz[1]-2}, 0.0, vx);
+            Solver.impose(V_star[y], {0,1},{0,sz[1]-2}, 0.0, vy);
+            Solver.impose(V_star[x], {sz[0]-1,1},{sz[0]-1,sz[1]-2}, 0.0, vx);
+            Solver.impose(V_star[y], {sz[0]-1,1},{sz[0]-1,sz[1]-2}, 0.0, vy);
+            Solver.impose(V_star[x], {0,0},{sz[0]-1,0}, 0.0, vx);
+            Solver.impose(V_star[y], {0,0},{sz[0]-1,0}, 0.0, vy);
+            //auto A=Solver.getA();
+            //A.write("Matrix");
+            Solver.solve(V_star[x], V_star[y]);
+            //return;
+            //Solver.solve_with_solver(solverPetsc,V_star[x], V_star[y]);
+
+            domain.ghost_get<5>(SKIP_LABELLING);
+            div = (Dx(V_star[x]) + Dy(V_star[y]));
+
+            FD_scheme<equations2d1E,decltype(domain)> SolverH(ghost,domain);
+            auto Helmholtz = Dxx(H)+Dyy(H);
+            SolverH.impose(Helmholtz,{1,1},{sz[0]-2,sz[1]-2},div);
+            SolverH.impose(Dy(H), {0,sz[0]-1},{sz[0]-1,sz[1]-1},0);
+            SolverH.impose(Dx(H), {sz[0]-1,1},{sz[0]-1,sz[1]-2},0);
+            SolverH.impose(Dx(H), {0,0},{sz[0]-1,0},0,vx,true);
+            SolverH.impose(H, {0,0},{0,0},0);
+            SolverH.impose(Dy(H), {0,1},{0,sz[1]-2},0);
+            //SolverH.solve_with_solver(solverPetsc2,H);
+            SolverH.solve(H);
+            //dP_bulk=Bulk_Lap(H);
+            domain.ghost_get<1,4,6>(SKIP_LABELLING);
+            P = P - alpha*(div-0.5*(V[x]*Dx(H)+V[y]*Dy(H)));
+            //dV[x]=Dx(H);
+            //dV[y]=Dy(H);
+            V_star[0] = V_star[0] - Dx(H);
+            V_star[1] = V_star[1] - Dy(H);
+            sum = 0;
+            sum1 = 0;
+            auto it2 = domain.getDomainIterator();
+            while (it2.isNext()) {
+                auto p = it2.get();
+                sum += (domain.getProp<5>(p)[0] - domain.getProp<1>(p)[0]) *
+                       (domain.getProp<5>(p)[0] - domain.getProp<1>(p)[0]) +
+                       (domain.getProp<5>(p)[1] - domain.getProp<1>(p)[1]) *
+                       (domain.getProp<5>(p)[1] - domain.getProp<1>(p)[1]);
+                sum1 += domain.getProp<5>(p)[0] * domain.getProp<5>(p)[0] +
+                        domain.getProp<5>(p)[1] * domain.getProp<5>(p)[1];
+                ++it2;
+            }
+
+            V[x] = V_star[x];
+            V[y] = V_star[y];
+            v_cl.sum(sum);
+            v_cl.sum(sum1);
+            v_cl.execute();
+            sum = sqrt(sum);
+            sum1 = sqrt(sum1);
+            V_err_old = V_err;
+            V_err = sum / sum1;
+            if (V_err > V_err_old || abs(V_err_old - V_err) < 1e-8) {
+                errctr++;
+                //alpha_P -= 0.1;
+            } else {
+                errctr = 0;
+            }
+            if (n > 3) {
+                if (errctr > 5) {
+                    //std::cout << "CONVERGENCE LOOP BROKEN DUE TO INCREASE/VERY SLOW DECREASE IN ERROR" << std::endl;
+                    std::cout << "Alpha Halfed DUE TO INCREASE/VERY SLOW DECREASE IN ERROR" << std::endl;
+                    //alpha=alpha/2;
+                    Vreset = 1;
+                    errctr=0;
+                    //break;
+                } else {
+                    Vreset = 0;
+                }
+            }
+            n++;
+            tt.stop();
+            if (v_cl.rank() == 0) {
+                std::cout << "Rel l2 cgs err in V = " << V_err << " at " << n << " and took " <<tt.getwct() <<"("<<tt.getcputime()<<") seconds(CPU)." << std::endl;
+            }
+        }
+        double worst1 = 0.0;
+        double worst2 = 0.0;
+
+        domain.write("LID_final");
+        tt2.stop();
+        if (v_cl.rank() == 0) {
+            std::cout << "The simulation took " << tt2.getcputime() << "(CPU) ------ " << tt2.getwct()
+                      << "(Wall) Seconds.";
+        }
+    }*/
+
+
+
+
+
 
     /*
 In 3D we use exact solution:
@@ -688,6 +821,7 @@ f_x = f_y = f_z = 3
     }
 
 #endif
-
+#endif //Have Eigen
+#endif //Have Petsc
 
 BOOST_AUTO_TEST_SUITE_END()

@@ -796,5 +796,5 @@ public:
 };
 
 
-
+#include "DCPSE/DCPSE_op/EqnsStruct.hpp"
 #endif //OPENFPM_PDATA_DCPSE_SOLVER_HPP

@@ -8,6 +8,7 @@
 #ifndef DCPSE_OP_HPP_
 #define DCPSE_OP_HPP_
 
+#include "Decomposition/CartDecomposition.hpp"
 #include "DCPSE/Dcpse.hpp"
 #include "Operators/Vector/vector_dist_operators.hpp"
 
@@ -1131,7 +1132,10 @@ public:
         }
 
     }
-
+    template<typename particles_type>
+    void deallocate(particles_type &parts) {
+        delete (Dcpse<particles_type::dims, particles_type> *) dcpse;
+    }
     /*! \brief Method for Updating the DCPSE Operator by recomputing DCPSE Kernels.
      *
      *

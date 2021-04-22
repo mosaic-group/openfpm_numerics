@@ -64,12 +64,12 @@ namespace FD
         {
             long int old_val = kmap.getKeyRef().get(dir);
             kmap.getKeyRef().set_d(dir, kmap.getKeyRef().get(dir) + 1);
-            o1.template value_nz<Sys_eqs>(g_map,kmap,gs,spacing,cols,coeff/spacing[dir]/2.0,comp);
+            o1.template value_nz<Sys_eqs>(g_map,kmap,gs,spacing,cols,coeff/spacing[dir]/2.0,comp,c_where);
             kmap.getKeyRef().set_d(dir,old_val);
 
             old_val = kmap.getKeyRef().get(dir);
             kmap.getKeyRef().set_d(dir, kmap.getKeyRef().get(dir) - 1);
-            o1.template value_nz<Sys_eqs>(g_map,kmap,gs,spacing,cols,-coeff/spacing[dir]/2.0,comp);
+            o1.template value_nz<Sys_eqs>(g_map,kmap,gs,spacing,cols,-coeff/spacing[dir]/2.0,comp,c_where);
             kmap.getKeyRef().set_d(dir,old_val);
         }
     };
@@ -265,13 +265,13 @@ namespace FD
                                         comb<Sys_eqs::dims> & c_where)
         {   long int old_val = kmap.getKeyRef().get(dir);
             kmap.getKeyRef().set_d(dir, kmap.getKeyRef().get(dir));
-            o1.template value_nz<Sys_eqs>(g_map,kmap,gs,spacing,cols,-3.0*coeff/spacing[dir]/2.0,comp);
+            o1.template value_nz<Sys_eqs>(g_map,kmap,gs,spacing,cols,-3.0*coeff/spacing[dir]/2.0,comp,c_where);
             kmap.getKeyRef().set_d(dir,old_val);
             kmap.getKeyRef().set_d(dir, kmap.getKeyRef().get(dir) + 1);
-            o1.template value_nz<Sys_eqs>(g_map,kmap,gs,spacing,cols,2.0*coeff/spacing[dir],comp);
+            o1.template value_nz<Sys_eqs>(g_map,kmap,gs,spacing,cols,2.0*coeff/spacing[dir],comp,c_where);
             kmap.getKeyRef().set_d(dir,old_val);
             kmap.getKeyRef().set_d(dir, kmap.getKeyRef().get(dir) + 2);
-            o1.template value_nz<Sys_eqs>(g_map,kmap,gs,spacing,cols,-0.5*coeff/spacing[dir],comp);
+            o1.template value_nz<Sys_eqs>(g_map,kmap,gs,spacing,cols,-0.5*coeff/spacing[dir],comp,c_where);
             kmap.getKeyRef().set_d(dir,old_val);
         }
     };
@@ -391,13 +391,13 @@ namespace FD
                                         comb<Sys_eqs::dims> & c_where)
         {   long int old_val = kmap.getKeyRef().get(dir);
             kmap.getKeyRef().set_d(dir, kmap.getKeyRef().get(dir));
-            o1.template value_nz<Sys_eqs>(g_map,kmap,gs,spacing,cols,3.0*coeff/spacing[dir]/2.0,comp);
+            o1.template value_nz<Sys_eqs>(g_map,kmap,gs,spacing,cols,3.0*coeff/spacing[dir]/2.0,comp,c_where);
             kmap.getKeyRef().set_d(dir,old_val);
             kmap.getKeyRef().set_d(dir, kmap.getKeyRef().get(dir) - 1);
-            o1.template value_nz<Sys_eqs>(g_map,kmap,gs,spacing,cols,-2.0*coeff/spacing[dir],comp);
+            o1.template value_nz<Sys_eqs>(g_map,kmap,gs,spacing,cols,-2.0*coeff/spacing[dir],comp,c_where);
             kmap.getKeyRef().set_d(dir,old_val);
             kmap.getKeyRef().set_d(dir, kmap.getKeyRef().get(dir) - 2);
-            o1.template value_nz<Sys_eqs>(g_map,kmap,gs,spacing,cols,0.5*coeff/spacing[dir],comp);
+            o1.template value_nz<Sys_eqs>(g_map,kmap,gs,spacing,cols,0.5*coeff/spacing[dir],comp,c_where);
             kmap.getKeyRef().set_d(dir,old_val);
         }
     };
