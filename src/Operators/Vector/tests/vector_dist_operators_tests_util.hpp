@@ -1073,6 +1073,10 @@ void check_all_expressions_imp(vector_type & vd,
 	vVA = vPOS / (vPOS + vPOS);
 	vVA = (vPOS + vPOS) / vPOS;
 	vVA = (vPOS + vPOS) / (vPOS + vPOS);
+
+	// Position with slicer
+
+	vVA[0]=-vPOS[1]*exp(-10.0*(vPOS[0]*vPOS[0]+vPOS[1]*vPOS[1]));
 }
 
 template<unsigned int impl>

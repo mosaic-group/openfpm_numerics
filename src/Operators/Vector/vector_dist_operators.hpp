@@ -1494,7 +1494,8 @@ public:
 	}
 
 	//! property on which this view is acting
-	typedef typename boost::mpl::at<typename vtype::value_type::type,boost::mpl::int_<exp1::prop>>::type property_act;
+	//typedef typename boost::mpl::at<typename vtype::value_type::type,boost::mpl::int_<exp1::prop>>::type property_act;
+	typedef typename std::remove_reference<decltype(pos_or_propL<vtype,exp1::prop>::value(std::declval<vtype>(),vect_dist_key_dx(0)))>::type property_act;
 
 	/*! \brief Return the result of the expression
 	 *
