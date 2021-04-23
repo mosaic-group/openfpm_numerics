@@ -55,10 +55,18 @@ find_package(LAPACK)
 find_package(Eigen3)
 find_package(SuiteSparse OPTIONAL_COMPONENTS UMFPACK)
 
+set(CMAKE_SKIP_BUILD_RPATH TRUE)
+
 if(PROFILE_WITH_SCOREP)
 	set(CMAKE_CXX_COMPILER_LAUNCHER "scorep")
 	set(CMAKE_CC_COMPILER_LAUNCHER "scorep")
 	set(CMAKE_CUDA_COMPILER_LAUNCHER "scorep")
+endif()
+
+if(NOT HIP_FOUND)
+        #if not HIP we set the MPI wrappers
+        set(CMAKE_C_COMPILER mpicc)
+        set(CMAKE_CXX_COMPILER mpic++)
 endif()
 
 if(CUDA_FOUND)
