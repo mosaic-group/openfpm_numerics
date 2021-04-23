@@ -1418,17 +1418,20 @@ struct get_vector_dist_expression_op<1,false>
 	template<typename exp_type>
 	static int get(exp_type & o1, const vect_dist_key_dx & key, const int (& comp)[1])
 	{
+		printf("ERROR: Slicer, the expression is incorrect, please check it\n");
 		return 0;
 	}
 
 	template<unsigned int prop, typename exp_type, typename vector_type>
 	inline static void assign(exp_type & o1, vector_type & v, const vect_dist_key_dx & key)
 	{
+		printf("ERROR: Slicer, the expression is incorrect, please check it\n");
 	}
 
 	template<unsigned int prop, typename vector_type>
 	inline static void assign_double(double d, vector_type & v, const vect_dist_key_dx & key)
 	{
+		printf("ERROR: Slicer, the expression is incorrect, please check it\n");
 	}
 };
 
@@ -1475,7 +1478,6 @@ struct get_vector_dist_expression_op<2,true>
 		pos_or_propL<vector_type,prop>::value(v,key)[comp[0]][comp[1]] = d;
 	}
 };
-
 
 
 /*! \brief it take an expression and create the negatove of this expression
@@ -1552,7 +1554,7 @@ public:
 
 	//! property on which this view is acting
 	//typedef typename boost::mpl::at<typename vtype::value_type::type,boost::mpl::int_<exp1::prop>>::type property_act;
-	typedef typename std::remove_reference<decltype(pos_or_propL<vtype,exp1::prop>::value(std::declval<vtype>(),vect_dist_key_dx(0)))>::type property_act;
+	typedef typename std::remove_const<typename std::remove_reference<decltype(pos_or_propL<vtype,exp1::prop>::value_type(std::declval<vtype>(),vect_dist_key_dx(0)))>::type>::type property_act;
 
 	/*! \brief Return the result of the expression
 	 *

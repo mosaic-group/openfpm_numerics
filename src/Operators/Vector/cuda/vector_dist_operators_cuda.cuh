@@ -27,7 +27,7 @@ struct pos_or_propL
 	}
 
 	//! return the value (position or property) of the particle k in the vector v
-	static inline auto value(vector && v, const vect_dist_key_dx & k) -> decltype(v.template getProp<prp>(k))
+	static inline auto value_type(vector && v, const vect_dist_key_dx & k) -> decltype(v.template getProp<prp>(k))
 	{
 		return v.template getProp<prp>(k);
 	}
@@ -78,9 +78,9 @@ struct pos_or_propL<vector,PROP_POS>
 	}
 
 	//! return the value (position or property) of the particle k in the vector v
-	static inline auto value(vector && v, const vect_dist_key_dx & k) -> decltype(ger<vector::dims,typename vector::stype>::getExprL(v.getPos(k)))
+	static inline auto value_type(vector && v, const vect_dist_key_dx & k) -> decltype(v.getPos(k))
 	{
-		return ger<vector::dims,typename vector::stype>::getExprL(v.getPos(k));
+		return v.getPos(k);
 	}
 
 #endif
