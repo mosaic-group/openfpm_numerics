@@ -63,11 +63,6 @@ if(PROFILE_WITH_SCOREP)
 	set(CMAKE_CUDA_COMPILER_LAUNCHER "scorep")
 endif()
 
-if(NOT HIP_FOUND)
-        #if not HIP we set the MPI wrappers
-        set(CMAKE_C_COMPILER mpicc)
-        set(CMAKE_CXX_COMPILER mpic++)
-endif()
 
 if(CUDA_FOUND)
 	set(OPENFPM_INIT_FILE "initialize/initialize_wrapper_cuda.cu")
