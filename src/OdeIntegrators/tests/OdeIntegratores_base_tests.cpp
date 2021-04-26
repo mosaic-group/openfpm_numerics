@@ -25,78 +25,7 @@ const double tau = .1;
 const double k = .005;
 
 void *vectorGlobal;
-
-template<typename vector_type>
-struct state_type_struct_ofp{
-    state_type_struct_ofp(){
-    }
-    //Laplacian Lap;
-    typedef size_t size_type;
-    typedef int is_state_vector;
-    aggregate<texp_v<double>,texp_v<double>> data;
-
-    size_t size() const
-    { return data.get<0>().size(); }
-
-    void resize(size_t n)
-    {
-        data.get<0>().resize(n);
-        data.get<1>().resize(n);
-    }
-};
-
-template<typename vector_type>
-struct state_type_struct_ofp2{
-    state_type_struct_ofp2(){
-    }
-    //Laplacian Lap;
-    typedef size_t size_type;
-    typedef int is_state_vector;
-    aggregate<texp_v<double>,texp_v<double>,texp_v<double>> data;
-
-    size_t size() const
-    { return data.get<0>().size(); }
-
-    void resize(size_t n)
-    {
-        data.get<0>().resize(n);
-        data.get<1>().resize(n);
-        data.get<2>().resize(n);
-    }
-};
-
 typedef vector_dist<2, double, aggregate<double,double,double,double,double,double>> vector_type;
-
-namespace boost {
-    namespace numeric {
-        namespace odeint {
-            template<>
-            struct is_resizeable<state_type_struct_ofp<vector_type>> {
-                typedef boost::true_type type;
-                static const bool value = type::value;
-            };
-
-            template<>
-            struct is_resizeable<state_type_struct_ofp2<vector_type>> {
-                typedef boost::true_type type;
-                static const bool value = type::value;
-            };
-
-            template<typename T>
-            struct vector_space_norm_inf<state_type_struct_ofp2<T>>
-            {
-                typedef typename T::stype result_type;
-            };
-
-            template<typename T>
-            struct vector_space_norm_inf<state_type_struct_ofp<T>>
-            {
-                typedef typename T::stype result_type;
-            };
-
-        }
-    }
-}
 
 template<typename op_type>
 struct Fitz
@@ -112,7 +41,7 @@ struct Fitz
     Fitz(op_type &Lap):Lap(Lap)
     {}
 
-    void operator()( const state_type_struct_ofp<vector_type> &x , state_type_struct_ofp<vector_type> &dxdt , const double t ) const
+    void operator()( const state_type_2d_ofp &x , state_type_2d_ofp &dxdt , const double t ) const
     {
         vector_type &Temp= *(vector_type *) vectorGlobal;
         auto u=getV<4>(Temp);
@@ -126,31 +55,12 @@ struct Fitz
     }
 };
 
-/*void Fitz( const state_type_struct_ofp<vector_type> &x , state_type_struct_ofp<vector_type> &dxdt , const double t )
-{
-    double a = 2.8e-4;
-    double b = 5e-3;
-    double tau = .1;
-    double k = .005;
-    vector_type &Temp= *(vector_type *) vectorGlobal;
-    u_temp=getV<5>(Temp);
-    v_temp=getV<5>(Temp);
-    u_temp=x.data.get<0>();
-    v_temp=x.data.get<1>();
-    temp.ghost_get<5,6>();
-    Lap
-
-    dxdt.data.get<0>() = a*x.Lap_u +x.u - x.u*x.u - x.v + k;
-    dxdt.data.get<1>() = (b*x.Lap_v+x.u-x.v) / tau;
-}*/
-
-
-void Exponential_struct_ofp( const state_type_struct_ofp<vector_type> &x , state_type_struct_ofp<vector_type> &dxdt , const double t )
+void Exponential_struct_ofp( const state_type_2d_ofp &x , state_type_2d_ofp &dxdt , const double t )
 {
     dxdt.data.get<0>() = x.data.get<0>();
     dxdt.data.get<1>() = 2.0*x.data.get<1>();
 }
-void Exponential_struct_ofp2( const state_type_struct_ofp2<vector_type> &x , state_type_struct_ofp2<vector_type> &dxdt , const double t )
+void Exponential_struct_ofp2( const state_type_3d_ofp &x , state_type_3d_ofp &dxdt , const double t )
 {
     dxdt.data.get<0>() = x.data.get<0>();
     dxdt.data.get<1>() = 2.0*x.data.get<1>();
@@ -294,7 +204,7 @@ BOOST_AUTO_TEST_CASE(odeint_base_test1) {
         auto OdeSol1 = getV<4>(Particles);
         auto OdeSol2 = getV<5>(Particles);
 
-        state_type_struct_ofp2<vector_type> x0;//(Init1,Init2);
+        state_type_3d_ofp x0;//(Init1,Init2);
         x0.data.get<0>()=Init1;
         x0.data.get<1>()=Init2;
         x0.data.get<2>()=Init1;
@@ -310,7 +220,7 @@ BOOST_AUTO_TEST_CASE(odeint_base_test1) {
         //                ,Exponential_struct_ofp,x0,0.0,tf,dt);
 
         //typedef boost::numeric::odeint::controlled_runge_kutta< boost::numeric::odeint::runge_kutta_cash_karp54< state_type_struct_ofp<vector_type>,double,state_type_struct_ofp<vector_type>,double,boost::numeric::odeint::vector_space_algebra_ofp>> stepper_type;
-        typedef boost::numeric::odeint::controlled_runge_kutta< boost::numeric::odeint::runge_kutta_cash_karp54< state_type_struct_ofp2<vector_type>,double,state_type_struct_ofp2<vector_type>,double,boost::numeric::odeint::vector_space_algebra_ofp>> stepper_type;
+        typedef boost::numeric::odeint::controlled_runge_kutta< boost::numeric::odeint::runge_kutta_cash_karp54< state_type_3d_ofp,double,state_type_3d_ofp,double,boost::numeric::odeint::vector_space_algebra_ofp>> stepper_type;
         integrate_adaptive( stepper_type() , Exponential_struct_ofp2 , x0 , t , tf , dt);
 
         OdeSol1=x0.data.get<0>();
@@ -683,7 +593,7 @@ BOOST_AUTO_TEST_CASE(odeint_base_test1) {
         auto fv = getV<3>(domain);
 
         Fitz<Laplacian> System(Lap);
-        state_type_struct_ofp<vector_type> x0;
+        state_type_2d_ofp x0;
         x0.data.get<0>()=u;
         x0.data.get<1>()=v;
 
@@ -691,7 +601,7 @@ BOOST_AUTO_TEST_CASE(odeint_base_test1) {
         double t = 0.0;
         double tf = 0.5;
         domain.write("ReactDiffTestInit");
-        typedef boost::numeric::odeint::controlled_runge_kutta< boost::numeric::odeint::runge_kutta_cash_karp54< state_type_struct_ofp<vector_type>,double,state_type_struct_ofp<vector_type>,double,boost::numeric::odeint::vector_space_algebra_ofp>> stepper_type;
+        typedef boost::numeric::odeint::controlled_runge_kutta< boost::numeric::odeint::runge_kutta_cash_karp54< state_type_2d_ofp,double,state_type_2d_ofp,double,boost::numeric::odeint::vector_space_algebra_ofp>> stepper_type;
 /*Debug code
  * int i=0;
         while(i==1){

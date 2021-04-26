@@ -39,6 +39,106 @@ namespace boost { namespace numeric { namespace odeint {
             };
 
         } } }
+struct state_type_1d_ofp{
+    state_type_1d_ofp(){
+    }
+    //Laplacian Lap;
+    typedef size_t size_type;
+    typedef int is_state_vector;
+    aggregate<texp_v<double>> data;
+
+    size_t size() const
+    { return data.get<0>().size(); }
+
+    void resize(size_t n)
+    {
+        data.get<0>().resize(n);
+    }
+};
+
+
+struct state_type_2d_ofp{
+    state_type_2d_ofp(){
+    }
+    //Laplacian Lap;
+    typedef size_t size_type;
+    typedef int is_state_vector;
+    aggregate<texp_v<double>,texp_v<double>> data;
+
+    size_t size() const
+    { return data.get<0>().size(); }
+
+    void resize(size_t n)
+    {
+        data.get<0>().resize(n);
+        data.get<1>().resize(n);
+    }
+};
+
+
+struct state_type_3d_ofp{
+    state_type_3d_ofp(){
+    }
+    //Laplacian Lap;
+    typedef size_t size_type;
+    typedef int is_state_vector;
+    aggregate<texp_v<double>,texp_v<double>,texp_v<double>> data;
+
+    size_t size() const
+    { return data.get<0>().size(); }
+
+    void resize(size_t n)
+    {
+        data.get<0>().resize(n);
+        data.get<1>().resize(n);
+        data.get<2>().resize(n);
+    }
+};
+
+namespace boost {
+    namespace numeric {
+        namespace odeint {
+            template<>
+            struct is_resizeable<state_type_1d_ofp> {
+            typedef boost::true_type type;
+            static const bool value = type::value;
+            };
+
+            template<>
+            struct is_resizeable<state_type_2d_ofp> {
+                typedef boost::true_type type;
+                static const bool value = type::value;
+            };
+
+            template<>
+            struct is_resizeable<state_type_3d_ofp> {
+                typedef boost::true_type type;
+                static const bool value = type::value;
+            };
+
+
+
+            template<>
+            struct vector_space_norm_inf<state_type_1d_ofp>
+            {
+                typedef double result_type;
+            };
+
+            template<>
+            struct vector_space_norm_inf<state_type_2d_ofp>
+            {
+                typedef double result_type;
+            };
+
+            template<>
+            struct vector_space_norm_inf<state_type_3d_ofp>
+            {
+                typedef double result_type;
+            };
+
+        }
+    }
+}
 
 
 
