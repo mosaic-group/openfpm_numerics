@@ -5,7 +5,7 @@
 #define BOOST_TEST_DYN_LINK
 
 #include <boost/test/unit_test.hpp>
-#include <boost/test/floating_point_comparison.hpp>
+#include <boost/test/tools/floating_point_comparison.hpp>
 #include <Vector/vector_dist.hpp>
 #include <DCPSE/Dcpse.hpp>
 
