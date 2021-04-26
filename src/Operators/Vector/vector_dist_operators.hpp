@@ -1478,7 +1478,28 @@ struct get_vector_dist_expression_op<2,true>
 		pos_or_propL<vector_type,prop>::value(v,key)[comp[0]][comp[1]] = d;
 	}
 };
+#ifdef SE_CLASS1
+template<bool is_subset>
+struct SubsetSelector_impl{
+    template<typename particle_type,typename subset_type>
+    static void check(particle_type &particles,subset_type &particle_subset)
+    {
+    }
+};
 
+template<>
+struct SubsetSelector_impl<true>
+{
+    template<typename particle_type,typename subset_type>
+    static void check(particle_type &particles,subset_type &particle_subset){
+
+        if(particles.getMapCtr()!=particle_subset.getUpdateCtr())
+        {
+            std::cerr<<__FILE__<<":"<<__LINE__<<" Error: You forgot a subset update after map."<<std::endl;
+        }
+    }
+};
+#endif
 
 /*! \brief it take an expression and create the negatove of this expression
  *
@@ -1626,6 +1647,11 @@ public:
         v_exp.init();
 
         auto & v = getVector();
+/*#ifdef SE_CLASS1
+        auto &v2=v_exp.getVector();
+
+        SubsetSelector_impl<std::remove_reference<decltype(v)>::type::is_it_a_subset::value>::check(v2,v);
+#endif*/
 
         auto it = v.getDomainIterator();
 
@@ -1654,7 +1680,11 @@ public:
 		v_exp.init();
 
 		auto & v = getVector();
+#ifdef SE_CLASS1
+		auto &v2=v_exp.getVector();
 
+        SubsetSelector_impl<std::remove_reference<decltype(v)>::type::is_it_a_subset::value>::check(v2,v);
+#endif
 		auto it = v.getDomainIterator();
 
 		while (it.isNext())
@@ -1682,6 +1712,11 @@ public:
 		v_exp.init();
 
 		auto & v = getVector();
+#ifdef SE_CLASS1
+        auto &v2=v_exp.getVector();
+
+        SubsetSelector_impl<std::remove_reference<decltype(v)>::type::is_it_a_subset::value>::check(v2,v);
+#endif
 
 		auto it = v.getDomainIterator();
 
