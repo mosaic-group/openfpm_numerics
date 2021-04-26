@@ -43,6 +43,10 @@ public:
     typedef typename vector_type::value_type part_type;
     typedef vector_type vtype;
 
+    #ifdef SE_CLASS1
+    int update_ctr=0;
+    #endif
+
     // This works in this way:
     // 1) User constructs this by giving a domain of points (where one of the properties is the value of our f),
     //    the signature of the differential operator and the error order bound.
@@ -70,6 +74,12 @@ private:
     support_options opt;
 
 public:
+#ifdef SE_CLASS1
+    int getUpdateCtr() const
+    {
+        return update_ctr;
+    }
+#endif
 
     // Here we require the first element of the aggregate to be:
     // 1) the value of the function f on the point
@@ -341,6 +351,13 @@ public:
 
         auto &particles = o1.getVector();
 
+#ifdef SE_CLASS1
+        if(particles.getMapCtr()!=this->getUpdateCtr())
+        {
+            std::cerr<<__FILE__<<":"<<__LINE__<<" Error: You forgot a DCPSE operator update after map."<<std::endl;
+        }
+#endif
+
         expr_type Dfxp = 0;
         Support support = localSupports[key.getKey()];
         size_t xpK = support.getReferencePointKey();
@@ -390,6 +407,13 @@ public:
 
         auto &particles = o1.getVector();
 
+#ifdef SE_CLASS1
+        if(particles.getMapCtr()!=this->getUpdateCtr())
+        {
+            std::cerr<<__FILE__<<":"<<__LINE__<<" Error: You forgot a DCPSE operator update after map."<<std::endl;
+        }
+#endif
+
         expr_type Dfxp = 0;
         Support support = localSupports[key.getKey()];
         size_t xpK = support.getReferencePointKey();
@@ -412,6 +436,10 @@ public:
 
     void initializeUpdate(vector_type &particles)
     {
+#ifdef SE_CLASS1
+        update_ctr=particles.getMapCtr();
+#endif
+
         localSupports.clear();
         localSupports.resize(particles.size_local_orig());
         localEps.clear();
@@ -562,6 +590,9 @@ private:
                               unsigned int convergenceOrder,
                               T rCut,
                               T supportSizeFactor) {
+#ifdef SE_CLASS1
+        this->update_ctr=particles.getMapCtr();
+#endif
         this->rCut=rCut;
         this->supportSizeFactor=supportSizeFactor;
         this->convergenceOrder=convergenceOrder;

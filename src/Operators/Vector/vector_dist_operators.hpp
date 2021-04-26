@@ -1400,17 +1400,20 @@ struct get_vector_dist_expression_op<1,false>
 	template<typename exp_type>
 	static int get(exp_type & o1, const vect_dist_key_dx & key, const int (& comp)[1])
 	{
+		printf("ERROR: Slicer, the expression is incorrect, please check it\n");
 		return 0;
 	}
 
 	template<unsigned int prop, typename exp_type, typename vector_type>
 	inline static void assign(exp_type & o1, vector_type & v, const vect_dist_key_dx & key)
 	{
+		printf("ERROR: Slicer, the expression is incorrect, please check it\n");
 	}
 
 	template<unsigned int prop, typename vector_type>
 	inline static void assign_double(double d, vector_type & v, const vect_dist_key_dx & key)
 	{
+		printf("ERROR: Slicer, the expression is incorrect, please check it\n");
 	}
 };
 
@@ -1457,8 +1460,28 @@ struct get_vector_dist_expression_op<2,true>
 		pos_or_propL<vector_type,prop>::value(v,key)[comp[0]][comp[1]] = d;
 	}
 };
+#ifdef SE_CLASS1
+template<bool is_subset>
+struct SubsetSelector_impl{
+    template<typename particle_type,typename subset_type>
+    static void check(particle_type &particles,subset_type &particle_subset)
+    {
+    }
+};
 
+template<>
+struct SubsetSelector_impl<true>
+{
+    template<typename particle_type,typename subset_type>
+    static void check(particle_type &particles,subset_type &particle_subset){
 
+        if(particles.getMapCtr()!=particle_subset.getUpdateCtr())
+        {
+            std::cerr<<__FILE__<<":"<<__LINE__<<" Error: You forgot a subset update after map."<<std::endl;
+        }
+    }
+};
+#endif
 
 /*! \brief it take an expression and create the negatove of this expression
  *
@@ -1533,7 +1556,8 @@ public:
 	}
 
 	//! property on which this view is acting
-	typedef typename boost::mpl::at<typename vtype::value_type::type,boost::mpl::int_<exp1::prop>>::type property_act;
+	//typedef typename boost::mpl::at<typename vtype::value_type::type,boost::mpl::int_<exp1::prop>>::type property_act;
+	typedef typename std::remove_const<typename std::remove_reference<decltype(pos_or_propL<vtype,exp1::prop>::value_type(std::declval<vtype>(),vect_dist_key_dx(0)))>::type>::type property_act;
 
 	/*! \brief Return the result of the expression
 	 *
@@ -1605,6 +1629,11 @@ public:
         v_exp.init();
 
         auto & v = getVector();
+/*#ifdef SE_CLASS1
+        auto &v2=v_exp.getVector();
+
+        SubsetSelector_impl<std::remove_reference<decltype(v)>::type::is_it_a_subset::value>::check(v2,v);
+#endif*/
 
         auto it = v.getDomainIterator();
 
@@ -1633,7 +1662,11 @@ public:
 		v_exp.init();
 
 		auto & v = getVector();
+#ifdef SE_CLASS1
+		auto &v2=v_exp.getVector();
 
+        SubsetSelector_impl<std::remove_reference<decltype(v)>::type::is_it_a_subset::value>::check(v2,v);
+#endif
 		auto it = v.getDomainIterator();
 
 		while (it.isNext())
@@ -1661,6 +1694,11 @@ public:
 		v_exp.init();
 
 		auto & v = getVector();
+#ifdef SE_CLASS1
+        auto &v2=v_exp.getVector();
+
+        SubsetSelector_impl<std::remove_reference<decltype(v)>::type::is_it_a_subset::value>::check(v2,v);
+#endif
 
 		auto it = v.getDomainIterator();
 
