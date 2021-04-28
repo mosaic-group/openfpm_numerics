@@ -821,7 +821,8 @@ f_x = f_y = f_z = 3
     }
 
 #endif
-#endif //Have Eigen
-#endif //Have Petsc
+
 
 BOOST_AUTO_TEST_SUITE_END()
+#endif //Have Eigen
+#endif //Have Petsc
