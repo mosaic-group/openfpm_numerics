@@ -1,0 +1,133 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CodeBlocks_project_file>
+	<FileVersion major="1" minor="6"/>
+	<Project>
+		<Option title="Boost_Tests_run"/>
+		<Option makefile_is_custom="1"/>
+		<Option compiler="gcc"/>
+		<Option virtualFolders="CMake Files\;"/>
+		<Build>
+			<Target title="all">
+				<Option working_dir="/Users/jstark/clone_openfpm_pdata_dev/openfpm_numerics/src/level_set/redistancing_Sussman/tests/cmake-build-debug"/>
+				<Option type="4"/>
+				<MakeCommands>
+					<Build command="/usr/bin/make -j8 -f &quot;/Users/jstark/clone_openfpm_pdata_dev/openfpm_numerics/src/level_set/redistancing_Sussman/tests/cmake-build-debug/Makefile&quot;  VERBOSE=1 all"/>
+					<CompileFile command="/usr/bin/make -j8 -f &quot;/Users/jstark/clone_openfpm_pdata_dev/openfpm_numerics/src/level_set/redistancing_Sussman/tests/cmake-build-debug/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -j8 -f &quot;/Users/jstark/clone_openfpm_pdata_dev/openfpm_numerics/src/level_set/redistancing_Sussman/tests/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -j8 -f &quot;/Users/jstark/clone_openfpm_pdata_dev/openfpm_numerics/src/level_set/redistancing_Sussman/tests/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="rebuild_cache">
+				<Option working_dir="/Users/jstark/clone_openfpm_pdata_dev/openfpm_numerics/src/level_set/redistancing_Sussman/tests/cmake-build-debug"/>
+				<Option type="4"/>
+				<MakeCommands>
+					<Build command="/usr/bin/make -j8 -f &quot;/Users/jstark/clone_openfpm_pdata_dev/openfpm_numerics/src/level_set/redistancing_Sussman/tests/cmake-build-debug/Makefile&quot;  VERBOSE=1 rebuild_cache"/>
+					<CompileFile command="/usr/bin/make -j8 -f &quot;/Users/jstark/clone_openfpm_pdata_dev/openfpm_numerics/src/level_set/redistancing_Sussman/tests/cmake-build-debug/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -j8 -f &quot;/Users/jstark/clone_openfpm_pdata_dev/openfpm_numerics/src/level_set/redistancing_Sussman/tests/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -j8 -f &quot;/Users/jstark/clone_openfpm_pdata_dev/openfpm_numerics/src/level_set/redistancing_Sussman/tests/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="edit_cache">
+				<Option working_dir="/Users/jstark/clone_openfpm_pdata_dev/openfpm_numerics/src/level_set/redistancing_Sussman/tests/cmake-build-debug"/>
+				<Option type="4"/>
+				<MakeCommands>
+					<Build command="/usr/bin/make -j8 -f &quot;/Users/jstark/clone_openfpm_pdata_dev/openfpm_numerics/src/level_set/redistancing_Sussman/tests/cmake-build-debug/Makefile&quot;  VERBOSE=1 edit_cache"/>
+					<CompileFile command="/usr/bin/make -j8 -f &quot;/Users/jstark/clone_openfpm_pdata_dev/openfpm_numerics/src/level_set/redistancing_Sussman/tests/cmake-build-debug/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -j8 -f &quot;/Users/jstark/clone_openfpm_pdata_dev/openfpm_numerics/src/level_set/redistancing_Sussman/tests/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -j8 -f &quot;/Users/jstark/clone_openfpm_pdata_dev/openfpm_numerics/src/level_set/redistancing_Sussman/tests/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="Boost_Tests_run">
+				<Option output="/Users/jstark/clone_openfpm_pdata_dev/openfpm_numerics/src/level_set/redistancing_Sussman/tests/cmake-build-debug/Boost_Tests_run" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="/Users/jstark/clone_openfpm_pdata_dev/openfpm_numerics/src/level_set/redistancing_Sussman/tests/cmake-build-debug"/>
+				<Option object_output="./"/>
+				<Option type="1"/>
+				<Option compiler="gcc"/>
+				<Compiler>
+					<Add option="-DBOOST_LOG_DYN_LINK"/>
+					<Add directory="/."/>
+					<Add directory="/Users/jstark/OpenFPM_install_dev/openfpm_numerics/include"/>
+					<Add directory="/Users/jstark/OpenFPM_install_dev/openfpm_pdata/include/config"/>
+					<Add directory="/Users/jstark/OpenFPM_install_dev/openfpm_pdata/include"/>
+					<Add directory="/Users/jstark/OpenFPM_install_dev/openfpm_data/include"/>
+					<Add directory="/Users/jstark/OpenFPM_install_dev/openfpm_vcluster/include"/>
+					<Add directory="/Users/jstark/OpenFPM_install_dev/openfpm_io/include"/>
+					<Add directory="/Users/jstark/OpenFPM_install_dev/openfpm_devices/include"/>
+					<Add directory="/Users/jstark/OPENFPM_DEPENDENCIES_dev/VCDEVEL/include"/>
+					<Add directory="/Users/jstark/OPENFPM_DEPENDENCIES_dev/METIS/include"/>
+					<Add directory="/Users/jstark/OPENFPM_DEPENDENCIES_dev/PARMETIS/include"/>
+					<Add directory="/Users/jstark/OPENFPM_DEPENDENCIES_dev/BOOST/include"/>
+					<Add directory="/Users/jstark/OPENFPM_DEPENDENCIES_dev/HDF5/include"/>
+					<Add directory="/Users/jstark/OPENFPM_DEPENDENCIES_dev/LIBHILBERT/include"/>
+					<Add directory="/Users/jstark/OPENFPM_DEPENDENCIES_dev/PETSC/include"/>
+					<Add directory="/Users/jstark/OPENFPM_DEPENDENCIES_dev/OPENBLAS/include"/>
+					<Add directory="/Users/jstark/OPENFPM_DEPENDENCIES_dev/SUITESPARSE/include"/>
+					<Add directory="/Users/jstark/OPENFPM_DEPENDENCIES_dev/EIGEN"/>
+					<Add directory="/Users/jstark/OPENFPM_DEPENDENCIES_dev//MPI/include"/>
+					<Add directory="/usr/local/include"/>
+					<Add directory="/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/../include/c++/v1"/>
+					<Add directory="/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/12.0.0/include"/>
+					<Add directory="/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include"/>
+					<Add directory="/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include"/>
+					<Add directory="/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/System/Library/Frameworks"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="/usr/bin/make -j8 -f &quot;/Users/jstark/clone_openfpm_pdata_dev/openfpm_numerics/src/level_set/redistancing_Sussman/tests/cmake-build-debug/Makefile&quot;  VERBOSE=1 Boost_Tests_run"/>
+					<CompileFile command="/usr/bin/make -j8 -f &quot;/Users/jstark/clone_openfpm_pdata_dev/openfpm_numerics/src/level_set/redistancing_Sussman/tests/cmake-build-debug/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -j8 -f &quot;/Users/jstark/clone_openfpm_pdata_dev/openfpm_numerics/src/level_set/redistancing_Sussman/tests/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -j8 -f &quot;/Users/jstark/clone_openfpm_pdata_dev/openfpm_numerics/src/level_set/redistancing_Sussman/tests/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="Boost_Tests_run/fast">
+				<Option output="/Users/jstark/clone_openfpm_pdata_dev/openfpm_numerics/src/level_set/redistancing_Sussman/tests/cmake-build-debug/Boost_Tests_run" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="/Users/jstark/clone_openfpm_pdata_dev/openfpm_numerics/src/level_set/redistancing_Sussman/tests/cmake-build-debug"/>
+				<Option object_output="./"/>
+				<Option type="1"/>
+				<Option compiler="gcc"/>
+				<Compiler>
+					<Add option="-DBOOST_LOG_DYN_LINK"/>
+					<Add directory="/."/>
+					<Add directory="/Users/jstark/OpenFPM_install_dev/openfpm_numerics/include"/>
+					<Add directory="/Users/jstark/OpenFPM_install_dev/openfpm_pdata/include/config"/>
+					<Add directory="/Users/jstark/OpenFPM_install_dev/openfpm_pdata/include"/>
+					<Add directory="/Users/jstark/OpenFPM_install_dev/openfpm_data/include"/>
+					<Add directory="/Users/jstark/OpenFPM_install_dev/openfpm_vcluster/include"/>
+					<Add directory="/Users/jstark/OpenFPM_install_dev/openfpm_io/include"/>
+					<Add directory="/Users/jstark/OpenFPM_install_dev/openfpm_devices/include"/>
+					<Add directory="/Users/jstark/OPENFPM_DEPENDENCIES_dev/VCDEVEL/include"/>
+					<Add directory="/Users/jstark/OPENFPM_DEPENDENCIES_dev/METIS/include"/>
+					<Add directory="/Users/jstark/OPENFPM_DEPENDENCIES_dev/PARMETIS/include"/>
+					<Add directory="/Users/jstark/OPENFPM_DEPENDENCIES_dev/BOOST/include"/>
+					<Add directory="/Users/jstark/OPENFPM_DEPENDENCIES_dev/HDF5/include"/>
+					<Add directory="/Users/jstark/OPENFPM_DEPENDENCIES_dev/LIBHILBERT/include"/>
+					<Add directory="/Users/jstark/OPENFPM_DEPENDENCIES_dev/PETSC/include"/>
+					<Add directory="/Users/jstark/OPENFPM_DEPENDENCIES_dev/OPENBLAS/include"/>
+					<Add directory="/Users/jstark/OPENFPM_DEPENDENCIES_dev/SUITESPARSE/include"/>
+					<Add directory="/Users/jstark/OPENFPM_DEPENDENCIES_dev/EIGEN"/>
+					<Add directory="/Users/jstark/OPENFPM_DEPENDENCIES_dev//MPI/include"/>
+					<Add directory="/usr/local/include"/>
+					<Add directory="/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/../include/c++/v1"/>
+					<Add directory="/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/12.0.0/include"/>
+					<Add directory="/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include"/>
+					<Add directory="/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include"/>
+					<Add directory="/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/System/Library/Frameworks"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="/usr/bin/make -j8 -f &quot;/Users/jstark/clone_openfpm_pdata_dev/openfpm_numerics/src/level_set/redistancing_Sussman/tests/cmake-build-debug/Makefile&quot;  VERBOSE=1 Boost_Tests_run/fast"/>
+					<CompileFile command="/usr/bin/make -j8 -f &quot;/Users/jstark/clone_openfpm_pdata_dev/openfpm_numerics/src/level_set/redistancing_Sussman/tests/cmake-build-debug/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -j8 -f &quot;/Users/jstark/clone_openfpm_pdata_dev/openfpm_numerics/src/level_set/redistancing_Sussman/tests/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -j8 -f &quot;/Users/jstark/clone_openfpm_pdata_dev/openfpm_numerics/src/level_set/redistancing_Sussman/tests/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+		</Build>
+		<Unit filename="/Users/jstark/clone_openfpm_pdata_dev/openfpm_numerics/src/level_set/redistancing_Sussman/tests/computeGradient_unit_test.cpp">
+			<Option target="Boost_Tests_run"/>
+		</Unit>
+		<Unit filename="/Users/jstark/clone_openfpm_pdata_dev/openfpm_numerics/src/level_set/redistancing_Sussman/tests/redistancingSussman_unit_test.cpp">
+			<Option target="Boost_Tests_run"/>
+		</Unit>
+		<Unit filename="/Users/jstark/clone_openfpm_pdata_dev/openfpm_numerics/src/level_set/redistancing_Sussman/tests/CMakeLists.txt">
+			<Option virtualFolder="CMake Files\"/>
+		</Unit>
+	</Project>
+</CodeBlocks_project_file>

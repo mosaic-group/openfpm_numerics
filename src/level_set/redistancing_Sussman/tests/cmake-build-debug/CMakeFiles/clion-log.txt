@@ -1,0 +1,115 @@
+/Applications/CLion.app/Contents/bin/cmake/mac/bin/cmake -DCMAKE_BUILD_TYPE=Debug -DCMAKE_C_COMPILER=/Users/jstark/OPENFPM_DEPENDENCIES_dev/MPI/bin/mpicc -DCMAKE_CXX_COMPILER=/Users/jstark/OPENFPM_DEPENDENCIES_dev/MPI/bin/mpic++ -G "CodeBlocks - Unix Makefiles" /Users/jstark/clone_openfpm_pdata_dev/openfpm_numerics/src/level_set/redistancing_Sussman/tests
+-- The C compiler identification is AppleClang 12.0.0.12000032
+-- The CXX compiler identification is AppleClang 12.0.0.12000032
+-- Detecting C compiler ABI info
+-- Detecting C compiler ABI info - done
+-- Check for working C compiler: /Users/jstark/OPENFPM_DEPENDENCIES_dev/MPI/bin/mpicc - skipped
+-- Detecting C compile features
+-- Detecting C compile features - done
+-- Detecting CXX compiler ABI info
+-- Detecting CXX compiler ABI info - done
+-- Check for working CXX compiler: /Users/jstark/OPENFPM_DEPENDENCIES_dev/MPI/bin/mpic++ - skipped
+-- Detecting CXX compile features
+-- Detecting CXX compile features - done
+-- Found MPI_C: /Users/jstark/OPENFPM_DEPENDENCIES_dev/MPI/bin/mpicc (found version "3.1") 
+-- Found MPI_CXX: /Users/jstark/OPENFPM_DEPENDENCIES_dev/MPI/bin/mpic++ (found version "3.1") 
+-- Found MPI: TRUE (found version "3.1")  
+CMake Warning at /Applications/CLion.app/Contents/bin/cmake/mac/share/cmake-3.19/Modules/FindBoost.cmake:1204 (message):
+  New Boost version may have incorrect or missing dependencies and imported
+  targets
+Call Stack (most recent call first):
+  /Applications/CLion.app/Contents/bin/cmake/mac/share/cmake-3.19/Modules/FindBoost.cmake:1326 (_Boost_COMPONENT_DEPENDENCIES)
+  /Applications/CLion.app/Contents/bin/cmake/mac/share/cmake-3.19/Modules/FindBoost.cmake:1935 (_Boost_MISSING_DEPENDENCIES)
+  CMakeLists.txt:22 (find_package)
+
+
+CMake Warning at /Applications/CLion.app/Contents/bin/cmake/mac/share/cmake-3.19/Modules/FindBoost.cmake:1204 (message):
+  New Boost version may have incorrect or missing dependencies and imported
+  targets
+Call Stack (most recent call first):
+  /Applications/CLion.app/Contents/bin/cmake/mac/share/cmake-3.19/Modules/FindBoost.cmake:1326 (_Boost_COMPONENT_DEPENDENCIES)
+  /Applications/CLion.app/Contents/bin/cmake/mac/share/cmake-3.19/Modules/FindBoost.cmake:1935 (_Boost_MISSING_DEPENDENCIES)
+  CMakeLists.txt:22 (find_package)
+
+
+CMake Warning at /Applications/CLion.app/Contents/bin/cmake/mac/share/cmake-3.19/Modules/FindBoost.cmake:1204 (message):
+  New Boost version may have incorrect or missing dependencies and imported
+  targets
+Call Stack (most recent call first):
+  /Applications/CLion.app/Contents/bin/cmake/mac/share/cmake-3.19/Modules/FindBoost.cmake:1326 (_Boost_COMPONENT_DEPENDENCIES)
+  /Applications/CLion.app/Contents/bin/cmake/mac/share/cmake-3.19/Modules/FindBoost.cmake:1935 (_Boost_MISSING_DEPENDENCIES)
+  CMakeLists.txt:22 (find_package)
+
+
+CMake Warning at /Applications/CLion.app/Contents/bin/cmake/mac/share/cmake-3.19/Modules/FindBoost.cmake:1204 (message):
+  New Boost version may have incorrect or missing dependencies and imported
+  targets
+Call Stack (most recent call first):
+  /Applications/CLion.app/Contents/bin/cmake/mac/share/cmake-3.19/Modules/FindBoost.cmake:1326 (_Boost_COMPONENT_DEPENDENCIES)
+  /Applications/CLion.app/Contents/bin/cmake/mac/share/cmake-3.19/Modules/FindBoost.cmake:1935 (_Boost_MISSING_DEPENDENCIES)
+  CMakeLists.txt:22 (find_package)
+
+
+CMake Warning at /Applications/CLion.app/Contents/bin/cmake/mac/share/cmake-3.19/Modules/FindBoost.cmake:1204 (message):
+  New Boost version may have incorrect or missing dependencies and imported
+  targets
+Call Stack (most recent call first):
+  /Applications/CLion.app/Contents/bin/cmake/mac/share/cmake-3.19/Modules/FindBoost.cmake:1326 (_Boost_COMPONENT_DEPENDENCIES)
+  /Applications/CLion.app/Contents/bin/cmake/mac/share/cmake-3.19/Modules/FindBoost.cmake:1935 (_Boost_MISSING_DEPENDENCIES)
+  CMakeLists.txt:22 (find_package)
+
+
+CMake Warning at /Applications/CLion.app/Contents/bin/cmake/mac/share/cmake-3.19/Modules/FindBoost.cmake:1204 (message):
+  New Boost version may have incorrect or missing dependencies and imported
+  targets
+Call Stack (most recent call first):
+  /Applications/CLion.app/Contents/bin/cmake/mac/share/cmake-3.19/Modules/FindBoost.cmake:1326 (_Boost_COMPONENT_DEPENDENCIES)
+  /Applications/CLion.app/Contents/bin/cmake/mac/share/cmake-3.19/Modules/FindBoost.cmake:1935 (_Boost_MISSING_DEPENDENCIES)
+  CMakeLists.txt:22 (find_package)
+
+
+CMake Warning at /Applications/CLion.app/Contents/bin/cmake/mac/share/cmake-3.19/Modules/FindBoost.cmake:1204 (message):
+  New Boost version may have incorrect or missing dependencies and imported
+  targets
+Call Stack (most recent call first):
+  /Applications/CLion.app/Contents/bin/cmake/mac/share/cmake-3.19/Modules/FindBoost.cmake:1326 (_Boost_COMPONENT_DEPENDENCIES)
+  /Applications/CLion.app/Contents/bin/cmake/mac/share/cmake-3.19/Modules/FindBoost.cmake:1935 (_Boost_MISSING_DEPENDENCIES)
+  CMakeLists.txt:22 (find_package)
+
+
+CMake Warning at /Applications/CLion.app/Contents/bin/cmake/mac/share/cmake-3.19/Modules/FindBoost.cmake:1204 (message):
+  New Boost version may have incorrect or missing dependencies and imported
+  targets
+Call Stack (most recent call first):
+  /Applications/CLion.app/Contents/bin/cmake/mac/share/cmake-3.19/Modules/FindBoost.cmake:1326 (_Boost_COMPONENT_DEPENDENCIES)
+  /Applications/CLion.app/Contents/bin/cmake/mac/share/cmake-3.19/Modules/FindBoost.cmake:1935 (_Boost_MISSING_DEPENDENCIES)
+  CMakeLists.txt:22 (find_package)
+
+
+CMake Warning at /Applications/CLion.app/Contents/bin/cmake/mac/share/cmake-3.19/Modules/FindBoost.cmake:1204 (message):
+  New Boost version may have incorrect or missing dependencies and imported
+  targets
+Call Stack (most recent call first):
+  /Applications/CLion.app/Contents/bin/cmake/mac/share/cmake-3.19/Modules/FindBoost.cmake:1326 (_Boost_COMPONENT_DEPENDENCIES)
+  /Applications/CLion.app/Contents/bin/cmake/mac/share/cmake-3.19/Modules/FindBoost.cmake:1935 (_Boost_MISSING_DEPENDENCIES)
+  CMakeLists.txt:22 (find_package)
+
+
+CMake Warning at /Applications/CLion.app/Contents/bin/cmake/mac/share/cmake-3.19/Modules/FindBoost.cmake:1204 (message):
+  New Boost version may have incorrect or missing dependencies and imported
+  targets
+Call Stack (most recent call first):
+  /Applications/CLion.app/Contents/bin/cmake/mac/share/cmake-3.19/Modules/FindBoost.cmake:1326 (_Boost_COMPONENT_DEPENDENCIES)
+  /Applications/CLion.app/Contents/bin/cmake/mac/share/cmake-3.19/Modules/FindBoost.cmake:1935 (_Boost_MISSING_DEPENDENCIES)
+  CMakeLists.txt:22 (find_package)
+
+
+-- Looking for pthread.h
+-- Looking for pthread.h - found
+-- Performing Test CMAKE_HAVE_LIBC_PTHREAD
+-- Performing Test CMAKE_HAVE_LIBC_PTHREAD - Success
+-- Found Threads: TRUE  
+-- Found Boost: /Users/jstark/OPENFPM_DEPENDENCIES_dev/BOOST/include (found version "1.75.0") found components: unit_test_framework filesystem system log log_setup thread date_time regex chrono atomic 
+-- Configuring done
+-- Generating done
+-- Build files have been written to: /Users/jstark/clone_openfpm_pdata_dev/openfpm_numerics/src/level_set/redistancing_Sussman/tests/cmake-build-debug
