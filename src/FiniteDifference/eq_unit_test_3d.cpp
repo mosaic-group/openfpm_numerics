@@ -84,7 +84,7 @@ struct lid_nn_3d_petsc
 const bool lid_nn_3d_eigen::boundary[] = {NON_PERIODIC,NON_PERIODIC,NON_PERIODIC};
 const bool lid_nn_3d_petsc::boundary[] = {NON_PERIODIC,NON_PERIODIC,NON_PERIODIC};
 
-// Constant Field`
+// Constant Field
 struct eta
 {
 	//! define that eta is a constant field
@@ -207,92 +207,43 @@ template<typename solver_type,typename lid_nn_3d> void lid_driven_cavity_3d()
 
 	g_dist.write(s + "lid_driven_cavity_3d_p" + std::to_string(v_cl.getProcessingUnits()) + "_grid");
 
-#ifdef HAVE_OSX
-
-        std::string file1 = std::string("test/") + s + "lid_driven_cavity_3d_p" + std::to_string(v_cl.getProcessingUnits()) + "_grid_" + std::to_string(v_cl.getProcessUnitID()) + "_test_osx.vtk";
-        std::string file2 = s + "lid_driven_cavity_3d_p" + std::to_string(v_cl.getProcessingUnits()) + "_grid_" + std::to_string(v_cl.getProcessUnitID()) + ".vtk";
-
-#else
-
-	#if __GNUC__ == 8
-
-        std::string file1 = std::string("test/") + s + "lid_driven_cavity_3d_p" + std::to_string(v_cl.getProcessingUnits()) + "_grid_" + std::to_string(v_cl.getProcessUnitID()) + "_test_GCC8.vtk";
-        std::string file2 = s + "lid_driven_cavity_3d_p" + std::to_string(v_cl.getProcessingUnits()) + "_grid_" + std::to_string(v_cl.getProcessUnitID()) + ".vtk";
-
-	#elif __GNUC__ == 7
-
-        std::string file1 = std::string("test/") + s + "lid_driven_cavity_3d_p" + std::to_string(v_cl.getProcessingUnits()) + "_grid_" + std::to_string(v_cl.getProcessUnitID()) + "_test_GCC7.vtk";
-        std::string file2 = s + "lid_driven_cavity_3d_p" + std::to_string(v_cl.getProcessingUnits()) + "_grid_" + std::to_string(v_cl.getProcessUnitID()) + ".vtk";
-
-	#elif __GNUC__ == 5
-
-        std::string file1 = std::string("test/") + s + "lid_driven_cavity_3d_p" + std::to_string(v_cl.getProcessingUnits()) + "_grid_" + std::to_string(v_cl.getProcessUnitID()) + "_test_GCC5.vtk";
-        std::string file2 = s + "lid_driven_cavity_3d_p" + std::to_string(v_cl.getProcessingUnits()) + "_grid_" + std::to_string(v_cl.getProcessUnitID()) + ".vtk";
-
-    #elif __GNUC__ == 6
-
-        std::string file1 = std::string("test/") + s + "lid_driven_cavity_3d_p" + std::to_string(v_cl.getProcessingUnits()) + "_grid_" + std::to_string(v_cl.getProcessUnitID()) + "_test_GCC6.vtk";
-        std::string file2 = s + "lid_driven_cavity_3d_p" + std::to_string(v_cl.getProcessingUnits()) + "_grid_" + std::to_string(v_cl.getProcessUnitID()) + ".vtk";
-
-    #elif __GNUC__ == 7
-
-        std::string file1 = std::string("test/") + s + "lid_driven_cavity_3d_p" + std::to_string(v_cl.getProcessingUnits()) + "_grid_" + std::to_string(v_cl.getProcessUnitID()) + "_test_GCC7.vtk";
-        std::string file2 = s + "lid_driven_cavity_3d_p" + std::to_string(v_cl.getProcessingUnits()) + "_grid_" + std::to_string(v_cl.getProcessUnitID()) + ".vtk";
-
-     #elif __GNUC__ == 8
-
-        std::string file1 = std::string("test/") + s + "lid_driven_cavity_3d_p" + std::to_string(v_cl.getProcessingUnits()) + "_grid_" + std::to_string(v_cl.getProcessUnitID()) + "_test_GCC8.vtk";
-        std::string file2 = s + "lid_driven_cavity_3d_p" + std::to_string(v_cl.getProcessingUnits()) + "_grid_" + std::to_string(v_cl.getProcessUnitID()) + ".vtk";
-
-	#else
-
-        std::string file1 = std::string("test/") + s + "lid_driven_cavity_3d_p" + std::to_string(v_cl.getProcessingUnits()) + "_grid_" + std::to_string(v_cl.getProcessUnitID()) + "_test_GCC4.vtk";
-        std::string file2 = s + "lid_driven_cavity_3d_p" + std::to_string(v_cl.getProcessingUnits()) + "_grid_" + std::to_string(v_cl.getProcessUnitID()) + ".vtk";
-
-	#endif
-
-#endif
-
-    std::cout << "File1: " << file1 << std::endl;
-    std::cout << "File2: " << file2 << std::endl;
-
 #if !(defined(SE_CLASS3) || defined(TEST_COVERAGE_MODE))
 
-    // Initialize openfpm
-    grid_dist_id<3,float,aggregate<float[3],float>> g_dist2(g_dist.getDecomposition(),szu,g);
-    g_dist2.load("test/lid_driven_cavity_reference.hdf5");
+	// Initialize openfpm
+	grid_dist_id<3,float,aggregate<float[3],float>,CartDecomposition<3,float>> g_dist2(g_dist.getDecomposition(),szu,g);
+	g_dist2.load("test/lid_driven_cavity_3d_reference.hdf5");
 
-    auto it2 = g_dist2.getDomainIterator();
+	auto it2 = g_dist2.getDomainIterator();
 
-    bool test = true;
-    while (it2.isNext())
-    {
-        auto p = it2.get();
+	bool test = true;
+	while (it2.isNext())
+	{
+		auto p = it2.get();
 
-        test &= fabs(g_dist2.template getProp<velocity>(p)[0] - g_dist.template getProp<velocity>(p)[0]) < 3.5e-5;
-        test &= fabs(g_dist2.template getProp<velocity>(p)[1] - g_dist.template getProp<velocity>(p)[1]) < 3.5e-5;
-        test &= fabs(g_dist2.template getProp<velocity>(p)[2] - g_dist.template getProp<velocity>(p)[1]) < 3.5e-5;
+		test &= fabs(g_dist2.template getProp<velocity>(p)[0] - g_dist.template getProp<velocity>(p)[0]) < 3.5e-5;
+		test &= fabs(g_dist2.template getProp<velocity>(p)[1] - g_dist.template getProp<velocity>(p)[1]) < 3.5e-5;
+		test &= fabs(g_dist2.template getProp<velocity>(p)[2] - g_dist.template getProp<velocity>(p)[2]) < 3.5e-5;
 
+		test &= fabs(g_dist2.template getProp<pressure>(p) - g_dist.template getProp<pressure>(p)) < 3.0e-4;
 
-        test &= fabs(g_dist2.template getProp<pressure>(p) - g_dist.template getProp<pressure>(p)) < 3.0e-4;
+		if (test == false)
+		{
+			std::cout << g_dist2.template getProp<velocity>(p)[0] << "   " << g_dist.template getProp<velocity>(p)[0] << std::endl;
+			std::cout << g_dist2.template getProp<velocity>(p)[1] << "   " << g_dist.template getProp<velocity>(p)[1] << std::endl;
+			std::cout << g_dist2.template getProp<velocity>(p)[2] << "   " << g_dist.template getProp<velocity>(p)[2] << std::endl;
 
-        if (test == false)
-        {
-            std::cout << g_dist2.template getProp<velocity>(p)[0] << "   " << g_dist.template getProp<velocity>(p)[0] << std::endl;
-            std::cout << g_dist2.template getProp<velocity>(p)[1] << "   " << g_dist.template getProp<velocity>(p)[1] << std::endl;
-            std::cout << g_dist2.template getProp<velocity>(p)[2] << "   " << g_dist.template getProp<velocity>(p)[2] << std::endl;
+			std::cout << g_dist2.template getProp<pressure>(p) << "   " << g_dist.template getProp<pressure>(p) << std::endl;
 
-            std::cout << g_dist2.template getProp<pressure>(p) << "   " << g_dist.template getProp<pressure>(p) << std::endl;
+			break;
+		}
 
-            break;
-        }
+		++it2;
+	}
 
-        ++it2;
-    }
-
-    BOOST_REQUIRE_EQUAL(test,true);
+	BOOST_REQUIRE_EQUAL(test,true);
 
 #endif
+
 }
 
 // Lid driven cavity, uncompressible fluid
@@ -300,10 +251,10 @@ template<typename solver_type,typename lid_nn_3d> void lid_driven_cavity_3d()
 BOOST_AUTO_TEST_CASE(lid_driven_cavity)
 {
 #if defined(HAVE_EIGEN) && defined(HAVE_SUITESPARSE)
-	//lid_driven_cavity_3d<umfpack_solver<double>,lid_nn_3d_eigen>();
+	lid_driven_cavity_3d<umfpack_solver<double>,lid_nn_3d_eigen>();
 #endif
 #ifdef HAVE_PETSC
-	//lid_driven_cavity_3d<petsc_solver<double>,lid_nn_3d_petsc>();
+	lid_driven_cavity_3d<petsc_solver<double>,lid_nn_3d_petsc>();
 #endif
 }
 

@@ -1,9 +1,9 @@
 /*
-* vector_dist_operators.hpp
-*
-*  Created on: Jun 11, 2016
-*      Author: i-bird
-*/
+ * vector_dist_operators.hpp
+ *
+ *  Created on: Jun 11, 2016
+ *      Author: i-bird
+ */
 
 #ifndef OPENFPM_NUMERICS_SRC_OPERATORS_VECTOR_VECTOR_DIST_OPERATORS_HPP_
 #define OPENFPM_NUMERICS_SRC_OPERATORS_VECTOR_VECTOR_DIST_OPERATORS_HPP_
@@ -332,7 +332,7 @@ public:
 	 *
 	 */
 	template<typename r_type=typename std::remove_reference<decltype(o1.value(vect_dist_key_dx()) + o2.value(vect_dist_key_dx()))>::type >
-	inline r_type value(const vect_dist_key_dx & key) const
+	__device__ __host__ inline r_type value(const vect_dist_key_dx & key) const
 	{
 		return o1.value(key) + o2.value(key);
 	}
@@ -548,7 +548,8 @@ public:
 	 * \return the result of the expression
 	 *
 	 */
-	template<typename r_type=typename std::remove_reference<decltype(o1.value(vect_dist_key_dx()) * o2.value(vect_dist_key_dx()))>::type > inline r_type value(const vect_dist_key_dx & key) const
+	template<typename r_type=typename std::remove_reference<decltype(o1.value(vect_dist_key_dx()) * o2.value(vect_dist_key_dx()))>::type >
+	__device__ __host__ inline r_type value(const vect_dist_key_dx & key) const
 	{
 		return o1.value(key) * o2.value(key);
 	}
@@ -954,7 +955,7 @@ public:
 	 * \return the result of the expression
 	 *
 	 */
-	__host__ inline auto value(const vect_dist_key_dx & k) const -> decltype(pos_or_propR<vector,prp>::value(v.v,k))
+	__host__ __device__ inline auto value(const vect_dist_key_dx & k) const -> decltype(pos_or_propR<vector,prp>::value(v.v,k))
 	{
 		return pos_or_propR<vector,prp>::value(v.v,k);
 	}
@@ -1838,7 +1839,7 @@ public:
 	 * \return the constant value
 	 *
 	 */
-	inline double value(const vect_dist_key_dx & k) const
+	__device__ __host__ inline double value(const vect_dist_key_dx & k) const
 	{
 		return d;
 	}

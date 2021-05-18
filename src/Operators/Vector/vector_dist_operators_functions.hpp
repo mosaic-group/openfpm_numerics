@@ -9,9 +9,9 @@
 #define OPENFPM_NUMERICS_SRC_OPERATORS_VECTOR_VECTOR_DIST_OPERATORS_FUNCTIONS_HPP_
 
 #ifdef __NVCC__
-#include "util/cuda/moderngpu/kernel_reduce.hxx"
 #include "cuda/vector_dist_operators_cuda.cuh"
 #endif
+
 
 /*! A macro to define single value function specialization that apply the function component-wise
  *
@@ -62,7 +62,7 @@ public:\
 	}\
 \
 	template<typename r_type=typename std::remove_reference<decltype(fun_base(o1.value(vect_dist_key_dx(0))))>::type > \
-	inline r_type value(const vect_dist_key_dx & key) const\
+	__device__ __host__ inline r_type value(const vect_dist_key_dx & key) const\
 	{\
 		return fun_base(o1.value(key));\
 	}\
@@ -286,7 +286,7 @@ struct point_scalar_process
 
 		auto & v_cl = create_vcluster<CudaMemory>();
 
-		mgpu::reduce((val_type *)ve.template getDeviceBuffer<0>(), ve.size(), (val_type *)(exp_tmp2[0].getDevicePointer()), mgpu::plus_t<val_type>(), v_cl.getmgpuContext());
+		openfpm::reduce((val_type *)ve.template getDeviceBuffer<0>(), ve.size(), (val_type *)(exp_tmp2[0].getDevicePointer()), mgpu::plus_t<val_type>(), v_cl.getmgpuContext());
 
 		exp_tmp2[0].deviceToHost();
 
@@ -322,7 +322,7 @@ struct point_scalar_process<val_type,is_sort,true>
 
 		for (size_t i = 0 ; i < val_type::dims ; i++)
 		{
-			mgpu::reduce(&((typename val_type::coord_type *)ve.template getDeviceBuffer<0>())[offset],
+			openfpm::reduce(&((typename val_type::coord_type *)ve.template getDeviceBuffer<0>())[offset],
 						 ve.size(),
 						 (typename val_type::coord_type *)(exp_tmp2[0].getDevicePointer()),
 						 mgpu::plus_t<typename val_type::coord_type>(),
@@ -338,6 +338,63 @@ struct point_scalar_process<val_type,is_sort,true>
 #else
 		std::cout << __FILE__ << ":" << __LINE__ << " error: to make expression work on GPU the file must be compiled on GPU" << std::endl;
 #endif
+	}
+};
+
+
+template<bool is_device>
+struct vector_reduce_selector
+{
+	template<typename is_sort, typename o1_type, typename val_type>
+	static void red(o1_type & o1, val_type & val)
+	{
+
+#ifdef __NVCC__
+
+			// we have to do it on GPU
+
+			openfpm::vector<typename point_scalar_process<val_type,is_sort::value>::type,
+							CudaMemory,
+							memory_traits_inte,
+							openfpm::grow_policy_identity> ve;
+
+			auto & orig_v = o1.getVector();
+
+			if (exp_tmp.ref() == 0)
+			{exp_tmp.incRef();}
+
+			ve.setMemory(exp_tmp);
+			ve.resize(orig_v.size_local());
+
+			point_scalar_process<val_type,is_sort::value>::process(val,ve,o1);
+#else
+			std::cout << __FILE__ << ":" << __LINE__ << " error, to use expression on GPU you must compile with nvcc compiler " << std::endl;
+#endif
+	}
+};
+
+template<>
+struct vector_reduce_selector<false>
+{
+	template<typename is_sort, typename o1_type, typename val_type>
+	static void red(o1_type & o1, val_type & val)
+	{
+			const auto & orig_v = o1.getVector();
+
+			o1.init();
+
+			val = 0.0;
+
+			auto it = orig_v.getDomainIterator();
+
+			while (it.isNext())
+			{
+				auto key = it.get();
+
+				val += o1.value(key);
+
+				++it;
+			}
 	}
 };
 
@@ -383,52 +440,7 @@ public:
 	// this produce a cache for the calculated value
 	inline void init() const
 	{
-		if (exp1::is_ker::value == true)
-		{
-
-#ifdef __NVCC__
-			typedef decltype(val) val_type;
-
-			// we have to do it on GPU
-
-			openfpm::vector<typename point_scalar_process<val_type,is_sort::value>::type,
-							CudaMemory,
-							typename memory_traits_inte<typename point_scalar_process<val_type,is_sort::value>::type>::type,
-							memory_traits_inte,
-							openfpm::grow_policy_identity> ve;
-
-			auto & orig_v = o1.getVector();
-
-			if (exp_tmp.ref() == 0)
-			{exp_tmp.incRef();}
-
-			ve.setMemory(exp_tmp);
-			ve.resize(orig_v.size_local());
-
-			point_scalar_process<val_type,is_sort::value>::process(val,ve,o1);
-#else
-			std::cout << __FILE__ << ":" << __LINE__ << " error, to use expression on GPU you must compile with nvcc compiler " << std::endl;
-#endif
-		}
-		else
-		{
-			const auto & orig_v = o1.getVector();
-
-			o1.init();
-
-			val = 0.0;
-
-			auto it = orig_v.getDomainIterator();
-
-			while (it.isNext())
-			{
-				auto key = it.get();
-
-				val += o1.value(key);
-
-				++it;
-			}
-		}
+		vector_reduce_selector<exp1::is_ker::value>::template red<is_sort>(o1,val);
 	}
 
 	/*! \brief get the NN object
@@ -449,7 +461,8 @@ public:
 	}
 
 	//! it return the result of the expression (precalculated before)
-	template<typename r_type= typename std::remove_reference<rtype>::type > inline r_type value(const vect_dist_key_dx & key) const
+	template<typename r_type= typename std::remove_reference<rtype>::type > 
+	__device__ __host__ inline r_type value(const vect_dist_key_dx & key) const
 	{
 		return val;
 	}
