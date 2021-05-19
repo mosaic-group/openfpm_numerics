@@ -53,8 +53,6 @@ if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
 endif()
 if ( CMAKE_COMPILER_IS_GNUCC )
     target_compile_options(numerics PRIVATE "-Wno-deprecated-declarations")
-    #target_compile_options(numerics PRIVATE "-fsanitize=leak")
-    #target_link_options(numerics PRIVATE "-fsanitize=leak")
     if (TEST_COVERAGE)
         target_compile_options(numerics PRIVATE $<$<COMPILE_LANGUAGE:CXX>: -fprofile-arcs -ftest-coverage>)
     endif()
@@ -141,13 +139,13 @@ install(FILES Vector/Vector_eigen.hpp
 	      Vector/Vector_petsc.hpp 
 	      Vector/Vector_util.hpp 
 	      Vector/Vector.hpp
-	      DESTINATION openfpm_numerics/include/Vector 
+	      DESTINATION openfpm_numerics/include/Vector
 	      COMPONENT OpenFPM)
 
 install(FILES Solvers/umfpack_solver.hpp 
 	      Solvers/petsc_solver.hpp
 	      Solvers/petsc_solver_AMG_report.hpp
-	      DESTINATION openfpm_numerics/include/Solvers 
+	      DESTINATION openfpm_numerics/include/Solvers
 	      COMPONENT OpenFPM)
 
 install(FILES util/petsc_util.hpp 
@@ -155,7 +153,7 @@ install(FILES util/petsc_util.hpp
 	      util/util_num.hpp 
 	      util/grid_dist_testing.hpp
 		  util/SphericalHarmonics.hpp
-		DESTINATION openfpm_numerics/include/util
+	      DESTINATION openfpm_numerics/include/util
 	      COMPONENT OpenFPM)
 
 install(FILES FiniteDifference/Average.hpp 
@@ -166,10 +164,10 @@ install(FILES FiniteDifference/Average.hpp
       	      FiniteDifference/Laplacian.hpp 
       	      FiniteDifference/mul.hpp 
       	      FiniteDifference/sum.hpp
-	      FiniteDifference/FD_expressions.hpp
-	      FiniteDifference/FD_op.hpp
-	      FiniteDifference/FD_Solver.hpp 
-      	      DESTINATION openfpm_numerics/include/FiniteDifference 
+			  FiniteDifference/FD_expressions.hpp
+			  FiniteDifference/FD_op.hpp
+			  FiniteDifference/FD_Solver.hpp
+      	      DESTINATION openfpm_numerics/include/FiniteDifference
 	      COMPONENT OpenFPM)
 	      
 install(FILES FiniteDifference/util/common.hpp
@@ -178,7 +176,7 @@ install(FILES FiniteDifference/util/common.hpp
 	      COMPONENT OpenFPM)
 
 install(FILES PSE/Kernels.hpp PSE/Kernels_test_util.hpp 
-        DESTINATION openfpm_numerics/include/PSE 
+        DESTINATION openfpm_numerics/include/PSE
 	COMPONENT OpenFPM)
 
 install(FILES Operators/Vector/vector_dist_operators_extensions.hpp 
@@ -186,11 +184,11 @@ install(FILES Operators/Vector/vector_dist_operators_extensions.hpp
       	       Operators/Vector/vector_dist_operators_apply_kernel.hpp 
       	       Operators/Vector/vector_dist_operators_functions.hpp 
       	       Operators/Vector/vector_dist_operator_assign.hpp
-      	       DESTINATION openfpm_numerics/include/Operators/Vector 
+      	       DESTINATION openfpm_numerics/include/Operators/Vector
 	       COMPONENT OpenFPM)
 
        install(FILES Operators/Vector/cuda/vector_dist_operators_cuda.cuh
-	      DESTINATION openfpm_numerics/include/Operators/Vector/cuda 
+	      DESTINATION openfpm_numerics/include/Operators/Vector/cuda
 	      COMPONENT OpenFPM)
 
 install(FILES DCPSE/Dcpse.hpp
@@ -202,32 +200,40 @@ install(FILES DCPSE/Dcpse.hpp
 		DCPSE/SupportBuilder.hpp
 		DCPSE/Vandermonde.hpp
 		DCPSE/VandermondeRowBuilder.hpp
-		DESTINATION openfpm_numerics/include/DCPSE)
+		DESTINATION openfpm_numerics/include/DCPSE
+		COMPONENT OpenFPM)
+
 install(FILES DMatrix/EMatrix.hpp
-		DESTINATION openfpm_numerics/include/DMatrix)
+		DESTINATION openfpm_numerics/include/DMatrix
+		COMPONENT OpenFPM)
+
 install(FILES util/eq_solve_common.hpp
-		DESTINATION openfpm_numerics/include/util)		
+		DESTINATION openfpm_numerics/include/util
+		COMPONENT OpenFPM)
+
 install(FILES DCPSE/DCPSE_op/DCPSE_op.hpp
 		DCPSE/DCPSE_op/DCPSE_Solver.hpp
 		DCPSE/DCPSE_op/EqnsStruct.hpp
-		DESTINATION openfpm_numerics/include/DCPSE/DCPSE_op)
+		DESTINATION openfpm_numerics/include/DCPSE/DCPSE_op
+		COMPONENT OpenFPM)
 
 install(FILES OdeIntegrators/OdeIntegrators.hpp
 		OdeIntegrators/boost_vector_algebra_ofp.hpp
-		DESTINATION openfpm_numerics/include/OdeIntegrators)
+		DESTINATION openfpm_numerics/include/OdeIntegrators
+		COMPONENT OpenFPM)
 
-install(FILES Draw/DrawParticles.hpp 
+install(FILES Draw/DrawParticles.hpp
       	      Draw/PointIterator.hpp 
       	      Draw/PointIteratorSkin.hpp
 	      Draw/DrawCircle.hpp
 	      Draw/DrawSphere.hpp
-      	      DESTINATION openfpm_numerics/include/Draw 
+      	      DESTINATION openfpm_numerics/include/Draw
 	      COMPONENT OpenFPM)
 
 install(FILES interpolation/interpolation.hpp 
       	      interpolation/mp4_kernel.hpp 
       	      interpolation/z_spline.hpp
-      	      DESTINATION openfpm_numerics/include/interpolation 
+      	      DESTINATION openfpm_numerics/include/interpolation
 	      COMPONENT OpenFPM)
 
 install(FILES level_set/redistancing_Sussman/ComputeGradient.hpp
@@ -239,7 +245,7 @@ install(FILES level_set/redistancing_Sussman/ComputeGradient.hpp
 	      COMPONENT OpenFPM)
 
 install(FILES DMatrix/EMatrix.hpp
-	DESTINATION openfpm_numerics/include/DMatrix 
+	DESTINATION openfpm_numerics/include/DMatrix
 	COMPONENT OpenFPM)
 
 #if(BUILD_TESTING)

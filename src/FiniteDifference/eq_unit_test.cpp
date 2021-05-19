@@ -244,39 +244,39 @@ BOOST_AUTO_TEST_SUITE( eq_test_suite )
 
 #if !(defined(SE_CLASS3) || defined(TEST_COVERAGE_MODE))
 
-	// Initialize openfpm
-	grid_dist_id<2,float,aggregate<float[2],float>> g_dist2(g_dist.getDecomposition(),szu,g);
-	g_dist2.load("test/lid_driven_cavity_reference.hdf5");
+        // Initialize openfpm
+        grid_dist_id<2,float,aggregate<float[2],float>> g_dist2(g_dist.getDecomposition(),szu,g);
+        g_dist2.load("test/lid_driven_cavity_reference.hdf5");
 
-	auto it2 = g_dist2.getDomainIterator();
+        auto it2 = g_dist2.getDomainIterator();
 
-	bool test = true;
-	while (it2.isNext())
-	{
-		auto p = it2.get();
+        bool test = true;
+        while (it2.isNext())
+        {
+            auto p = it2.get();
 
-		test &= fabs(g_dist2.template getProp<velocity>(p)[0] - g_dist.template getProp<velocity>(p)[0]) < 3.5e-5;
-		test &= fabs(g_dist2.template getProp<velocity>(p)[1] - g_dist.template getProp<velocity>(p)[1]) < 3.5e-5;
+            test &= fabs(g_dist2.template getProp<velocity>(p)[0] - g_dist.template getProp<velocity>(p)[0]) < 3.5e-5;
+            test &= fabs(g_dist2.template getProp<velocity>(p)[1] - g_dist.template getProp<velocity>(p)[1]) < 3.5e-5;
 
-		test &= fabs(g_dist2.template getProp<pressure>(p) - g_dist.template getProp<pressure>(p)) < 3.0e-4;
+            test &= fabs(g_dist2.template getProp<pressure>(p) - g_dist.template getProp<pressure>(p)) < 3.0e-4;
 
-		if (test == false)
-		{
-			std::cout << g_dist2.template getProp<velocity>(p)[0] << "   " << g_dist.template getProp<velocity>(p)[0] << std::endl;
-			std::cout << g_dist2.template getProp<velocity>(p)[1] << "   " << g_dist.template getProp<velocity>(p)[1] << std::endl;
+            if (test == false)
+            {
+                std::cout << g_dist2.template getProp<velocity>(p)[0] << "   " << g_dist.template getProp<velocity>(p)[0] << std::endl;
+                std::cout << g_dist2.template getProp<velocity>(p)[1] << "   " << g_dist.template getProp<velocity>(p)[1] << std::endl;
 
-			std::cout << g_dist2.template getProp<pressure>(p) << "   " << g_dist.template getProp<pressure>(p) << std::endl;
+                std::cout << g_dist2.template getProp<pressure>(p) << "   " << g_dist.template getProp<pressure>(p) << std::endl;
 
-			break;
-		}
+                break;
+            }
 
-		++it2;
-	}
+            ++it2;
+        }
 
-	BOOST_REQUIRE_EQUAL(test,true);
+        BOOST_REQUIRE_EQUAL(test,true);
 
 #endif
-}
+    }
 
 // Lid driven cavity, incompressible fluid
 

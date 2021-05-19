@@ -84,7 +84,7 @@ struct lid_nn_3d_petsc
 const bool lid_nn_3d_eigen::boundary[] = {NON_PERIODIC,NON_PERIODIC,NON_PERIODIC};
 const bool lid_nn_3d_petsc::boundary[] = {NON_PERIODIC,NON_PERIODIC,NON_PERIODIC};
 
-// Constant Field`
+// Constant Field
 struct eta
 {
 	//! define that eta is a constant field
@@ -251,10 +251,10 @@ template<typename solver_type,typename lid_nn_3d> void lid_driven_cavity_3d()
 BOOST_AUTO_TEST_CASE(lid_driven_cavity)
 {
 #if defined(HAVE_EIGEN) && defined(HAVE_SUITESPARSE)
-	//lid_driven_cavity_3d<umfpack_solver<double>,lid_nn_3d_eigen>();
+	lid_driven_cavity_3d<umfpack_solver<double>,lid_nn_3d_eigen>();
 #endif
 #ifdef HAVE_PETSC
-	//lid_driven_cavity_3d<petsc_solver<double>,lid_nn_3d_petsc>();
+	lid_driven_cavity_3d<petsc_solver<double>,lid_nn_3d_petsc>();
 #endif
 }
 
