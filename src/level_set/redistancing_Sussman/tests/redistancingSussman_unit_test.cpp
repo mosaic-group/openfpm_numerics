@@ -14,27 +14,22 @@
 #include "l_norms/LNorms.hpp"
 #include "analytical_SDF/AnalyticalSDF.hpp"
 
-#ifndef INDICES
-#define INDICES
-// Grid dimension
-const size_t grid_dim = 3;
-// some indices
-const size_t x                      = 0;
-const size_t y                      = 1;
-const size_t z                      = 2;
-
-const size_t Phi_0_grid             = 0;
-const size_t SDF_sussman_grid       = 1;
-const size_t SDF_exact_grid         = 2;
-const size_t Error_grid             = 3;
-#endif
-
-const double EPSILON = std::numeric_limits<double>::epsilon();
-
 BOOST_AUTO_TEST_SUITE(RedistancingSussmanTestSuite)
 	
 	BOOST_AUTO_TEST_CASE(RedistancingSussman_unit_sphere)
 	{
+		const double EPSILON = std::numeric_limits<double>::epsilon();
+		const size_t grid_dim = 3;
+		// some indices
+		const size_t x                      = 0;
+		const size_t y                      = 1;
+		const size_t z                      = 2;
+		
+		const size_t Phi_0_grid             = 0;
+		const size_t SDF_sussman_grid       = 1;
+		const size_t SDF_exact_grid         = 2;
+		const size_t Error_grid             = 3;
+		
 		size_t N = 32;
 		const double dt = 0.000165334;
 		const size_t sz[grid_dim] = {N, N, N};
