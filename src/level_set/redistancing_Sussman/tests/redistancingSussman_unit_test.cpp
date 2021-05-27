@@ -36,6 +36,7 @@ BOOST_AUTO_TEST_SUITE(RedistancingSussmanTestSuite)
 	BOOST_AUTO_TEST_CASE(RedistancingSussman_unit_sphere)
 	{
 		size_t N = 32;
+		const double dt = 0.000165334;
 		const size_t sz[grid_dim] = {N, N, N};
 		const double radius = 1.0;
 		const double box_lower = 0.0;
@@ -68,6 +69,8 @@ BOOST_AUTO_TEST_SUITE(RedistancingSussmanTestSuite)
 		redist_options.print_steadyState_iter               = true;     // if true, prints out the final iteration number when steady state was reached + final change + residual (default: true)
 		
 		RedistancingSussman<grid_in_type> redist_obj(g_dist, redist_options);   // Instantiation of Sussman-redistancing class
+		redist_obj.set_user_time_step(dt);
+		std::cout << "dt set to = " << dt << std::endl;
 		// Run the redistancing. in the <> brackets provide property-index where 1.) your initial Phi is stored and 2.) where the resulting SDF should be written to.
 		redist_obj.run_redistancing<Phi_0_grid, SDF_sussman_grid>();
 		
@@ -87,7 +90,7 @@ BOOST_AUTO_TEST_SUITE(RedistancingSussmanTestSuite)
 		Ghost<grid_dim, double> ghost_vd(0);
 		vd_type vd_narrow_band(0, box, bc, ghost_vd);
 		vd_narrow_band.setPropNames({"error"});
-		double narrow_band_width = 8;
+		size_t narrow_band_width = 8;
 		NarrowBand<grid_in_type> narrowBand(g_dist, narrow_band_width); // Instantiation of NarrowBand class
 		const size_t Error_vd = 0;
 		narrowBand.get_narrow_band_copy_specific_property<SDF_sussman_grid, Error_grid, Error_vd>(g_dist,
@@ -97,8 +100,12 @@ BOOST_AUTO_TEST_SUITE(RedistancingSussmanTestSuite)
 		lNorms_vd = get_l_norms_vector<0>(vd_narrow_band);
 		std::cout << lNorms_vd.l2 << ", " << lNorms_vd.linf << std::endl;
 		
-		BOOST_CHECK(lNorms_vd.l2 < 0.739933 + EPSILON);
-		BOOST_CHECK(lNorms_vd.linf < 0.952531 + EPSILON);
+		// l-norms original implementation of 1st order upwinding:
+		// 32,0.033643,0.063065; dt = 0.000165334; 1e4 iterations
+		// 0.0336846, 0.0630651
+		
+		BOOST_CHECK(lNorms_vd.l2 <   0.03369 + EPSILON);
+		BOOST_CHECK(lNorms_vd.linf < 0.06307 + EPSILON);
 //		BOOST_CHECK(narrow_band_width > 0);
 	}
 
