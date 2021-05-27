@@ -42,7 +42,8 @@ add_executable(numerics ${OPENFPM_INIT_FILE} ${CUDA_SOURCES}
 #						Operators/Vector/vector_dist_operators_unit_tests.cpp
 #						Operators/Vector/vector_dist_operators_apply_kernel_unit_tests.cpp
 #						../../src/lib/pdata.cpp
-		level_set/redistancing_Sussman/tests/redistancingSussman_unit_test.cpp)
+#		level_set/redistancing_Sussman/tests/redistancingSussman_unit_test.cpp
+		level_set/redistancing_Sussman/tests/convergence_test.cpp)
 
 add_dependencies(numerics ofpmmemory)
 add_dependencies(numerics vcluster)
@@ -170,6 +171,9 @@ install(FILES FiniteDifference/Average.hpp
 			  FiniteDifference/FD_expressions.hpp
 			  FiniteDifference/FD_op.hpp
 			  FiniteDifference/FD_Solver.hpp
+			  FiniteDifference/Eno_Weno.hpp
+		      FiniteDifference/Upwind_gradient.hpp
+		      FiniteDifference/FD_order1.hpp
       	      DESTINATION openfpm_numerics/include/FiniteDifference
 	      COMPONENT OpenFPM)
 	      
@@ -228,8 +232,8 @@ install(FILES OdeIntegrators/OdeIntegrators.hpp
 install(FILES Draw/DrawParticles.hpp
       	      Draw/PointIterator.hpp 
       	      Draw/PointIteratorSkin.hpp
-	      Draw/DrawDisk.hpp
-	      Draw/DrawSphere.hpp
+	          Draw/DrawDisk.hpp
+	          Draw/DrawSphere.hpp
       	      DESTINATION openfpm_numerics/include/Draw
 	      COMPONENT OpenFPM)
 
