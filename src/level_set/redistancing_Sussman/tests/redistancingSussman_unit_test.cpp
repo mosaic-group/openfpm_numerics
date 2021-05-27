@@ -57,7 +57,7 @@ BOOST_AUTO_TEST_SUITE(RedistancingSussmanTestSuite)
 		redist_options.max_iter                             = 1e4;     // max. number of iterations you want to run the
 		// redistancing, even if steady state might not yet have been reached (default: 1e6)
 		
-//		redist_options.order_space_op                       = 5;
+		redist_options.order_space_op                       = 5;
 		
 		// set both convergence criteria to false s.t. termination only when max_iterations reached
 		redist_options.convTolChange.check                  = false;    // define here which of the convergence criteria above should be used. If both are true, termination only occurs when both are fulfilled or when iter > max_iter
@@ -103,6 +103,11 @@ BOOST_AUTO_TEST_SUITE(RedistancingSussmanTestSuite)
 		// l-norms original implementation of 1st order upwinding:
 		// 32,0.033643,0.063065; dt = 0.000165334; 1e4 iterations
 		// 0.0336846, 0.0630651
+		// new impl
+		// order 1: 0.0336846, 0.0630651
+		// order 3: 0.02794, 0.0586704
+		// order 5: 0.0187199, 0.0367638
+		
 		
 		BOOST_CHECK(lNorms_vd.l2 <   0.03369 + EPSILON);
 		BOOST_CHECK(lNorms_vd.linf < 0.06307 + EPSILON);
