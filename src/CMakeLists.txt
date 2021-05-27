@@ -85,6 +85,7 @@ target_include_directories (numerics PUBLIC ${Vc_INCLUDE_DIR})
 target_include_directories (numerics PUBLIC ${ALPAKA_ROOT}/include)
 target_include_directories (numerics PUBLIC ${MPI_C_INCLUDE_DIRS})
 if(EIGEN3_FOUND)
+        target_include_directories (numerics PUBLIC /usr/local/include) 
 	target_include_directories (numerics PUBLIC ${EIGEN3_INCLUDE_DIR})
 endif()
 
@@ -112,6 +113,7 @@ endif()
 
 if(OpenMP_CXX_FOUND)
     target_link_libraries(numerics ${OpenMP_CXX_FLAGS})
+    target_link_libraries(numerics -L/usr/local/lib -lomp)
 endif()
 
 target_link_libraries(numerics -L${METIS_ROOT}/lib metis)
@@ -225,7 +227,7 @@ install(FILES OdeIntegrators/OdeIntegrators.hpp
 install(FILES Draw/DrawParticles.hpp
       	      Draw/PointIterator.hpp 
       	      Draw/PointIteratorSkin.hpp
-	      Draw/DrawCircle.hpp
+	      Draw/DrawDisk.hpp
 	      Draw/DrawSphere.hpp
       	      DESTINATION openfpm_numerics/include/Draw
 	      COMPONENT OpenFPM)
