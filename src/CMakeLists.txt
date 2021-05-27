@@ -169,6 +169,9 @@ install(FILES FiniteDifference/Average.hpp
 			  FiniteDifference/FD_expressions.hpp
 			  FiniteDifference/FD_op.hpp
 			  FiniteDifference/FD_Solver.hpp
+		      FiniteDifference/FD_order1.hpp
+		      FiniteDifference/Eno_Weno.hpp
+		      FiniteDifference/Upwind_gradient.hpp
       	      DESTINATION openfpm_numerics/include/FiniteDifference
 	      COMPONENT OpenFPM)
 	      
@@ -227,8 +230,8 @@ install(FILES OdeIntegrators/OdeIntegrators.hpp
 install(FILES Draw/DrawParticles.hpp
       	      Draw/PointIterator.hpp 
       	      Draw/PointIteratorSkin.hpp
-	      Draw/DrawDisk.hpp
-	      Draw/DrawSphere.hpp
+	          Draw/DrawDisk.hpp
+	          Draw/DrawSphere.hpp
       	      DESTINATION openfpm_numerics/include/Draw
 	      COMPONENT OpenFPM)
 
