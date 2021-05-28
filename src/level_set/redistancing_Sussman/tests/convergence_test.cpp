@@ -96,13 +96,13 @@ BOOST_AUTO_TEST_SUITE(ConvergenceTestSuite)
 				NarrowBand<grid_in_type> narrowBand_points(g_dist, narrow_band_width); // Instantiation of NarrowBand class
 				narrowBand_points.get_narrow_band_copy_specific_property<SDF_sussman_grid, Error_grid, Error_vd>(g_dist,
 				                                                                                                 vd_narrow_band);
-				vd_narrow_band.write("test_data/output/vd_nb8p_error_N" + std::to_string(N) + "_order" +
+				vd_narrow_band.write("vd_nb8p_error_N" + std::to_string(N) + "_order" +
 				std::to_string(order), FORMAT_BINARY);
 //				vd_narrow_band.save("test_data/output/vd_nb8p_error" + std::to_string(N) + ".bin");
 				// Compute the L_2- and L_infinity-norm and save to file
 				L_norms lNorms_vd;
 				lNorms_vd = get_l_norms_vector<Error_vd>(vd_narrow_band);
-				write_lnorms_to_file(N, lNorms_vd, "l_norms_vd_absError_8p_order" + std::to_string(order), "test_data/output/");
+				write_lnorms_to_file(N, lNorms_vd, "l_norms_vd_absError_8p_order" + std::to_string(order), "./");
 				
 //				switch(order)
 //				{
