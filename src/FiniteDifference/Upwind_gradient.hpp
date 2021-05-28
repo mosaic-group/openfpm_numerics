@@ -116,7 +116,7 @@ double FD_upwind(gridtype &grid, keytype &key, size_t d, size_t order)
  */
 // Use upwinding for inner grid points and one sided backward / forward stencil at border (if one_sided_BC=true)
 template <size_t Field, size_t Sign, size_t Gradient, typename gridtype>
-void upwind_gradient(gridtype & grid, const bool one_sided_BC, size_t order)
+void upwind_gradient(gridtype & grid, size_t order, const bool one_sided_BC)
 {
 	grid.template ghost_get<Field>(KEEP_PROPERTIES);
 	grid.template ghost_get<Sign>(KEEP_PROPERTIES);
@@ -237,13 +237,13 @@ void get_upwind_gradient(gridtype & grid, const size_t order=5, const bool one_s
 		case 1:
 		case 3:
 		case 5:
-			upwind_gradient<Field_in, Sign, Gradient_out>(grid, one_sided_BC, order);
+			upwind_gradient<Field_in, Sign, Gradient_out>(grid, order, one_sided_BC);
 			break;
 		default:
 			auto &v_cl = create_vcluster();
 			if (v_cl.rank() == 0) std::cout << "Order of accuracy chosen not valid. Using default order 1." <<
 						std::endl;
-			upwind_gradient<Field_in, Sign, Gradient_out>(grid, one_sided_BC, 1);
+			upwind_gradient<Field_in, Sign, Gradient_out>(grid, 1, one_sided_BC);
 			break;
 	}
 	
