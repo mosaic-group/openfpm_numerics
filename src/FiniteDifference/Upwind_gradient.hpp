@@ -68,7 +68,7 @@ double upwinding(double dplus, double dminus, int sign)
 template <size_t Field, size_t Sign, typename gridtype, typename keytype>
 double FD_upwind(gridtype &grid, keytype &key, size_t d, size_t order)
 {
-	double dplus = 0, dminus = 0, dphi = 0;
+	double dplus = 0, dminus = 0;
 	int sign_phi0 = grid.template get<Sign> (key);
 	
 	switch(order)
@@ -85,11 +85,16 @@ double FD_upwind(gridtype &grid, keytype &key, size_t d, size_t order)
 			dplus  = WENO_5_Plus<gridtype, keytype, Field>(key, grid, d);
 			dminus = WENO_5_Minus<gridtype, keytype, Field>(key, grid, d);
 			break;
+		default:
+			auto &v_cl = create_vcluster();
+			if (v_cl.rank() == 0) std::cout << "Order of accuracy chosen not valid. Using default order 1." <<
+						std::endl;
+			dplus  = FD_forward<Field>(grid, key, d);
+			dminus = FD_backward<Field>(grid, key, d);
+			break;
 	}
 	
-	dphi = upwinding(dplus, dminus, sign_phi0);
-	
-	return dphi;
+	return upwinding(dplus, dminus, sign_phi0);
 }
 
 
@@ -113,7 +118,9 @@ double FD_upwind(gridtype &grid, keytype &key, size_t d, size_t order)
 template <size_t Field, size_t Sign, size_t Gradient, typename gridtype>
 void upwind_gradient(gridtype & grid, const bool one_sided_BC, size_t order)
 {
-	grid.template ghost_get<Field>();
+	grid.template ghost_get<Field>(KEEP_PROPERTIES);
+	grid.template ghost_get<Sign>(KEEP_PROPERTIES);
+	
 	auto dom = grid.getDomainIterator();
 	
 	if (one_sided_BC)
@@ -157,7 +164,6 @@ void upwind_gradient(gridtype & grid, const bool one_sided_BC, size_t order)
 		while (dom.isNext())
 		{
 			auto key = dom.get();
-			auto key_g = grid.getGKey(key);
 			for(size_t d = 0; d < gridtype::dims; d++ )
 			{
 				grid.template get<Gradient> (key) [d] = FD_upwind<Field, Sign>(grid, key, d, order);
@@ -235,9 +241,9 @@ void get_upwind_gradient(gridtype & grid, const size_t order=5, const bool one_s
 			break;
 		default:
 			auto &v_cl = create_vcluster();
-			if (v_cl.rank() == 0) std::cout << "Order of accuracy chosen not valid. Using default order 5." <<
+			if (v_cl.rank() == 0) std::cout << "Order of accuracy chosen not valid. Using default order 1." <<
 						std::endl;
-			upwind_gradient<Field_in, Sign, Gradient_out>(grid, one_sided_BC, 5);
+			upwind_gradient<Field_in, Sign, Gradient_out>(grid, one_sided_BC, 1);
 			break;
 	}
 	
