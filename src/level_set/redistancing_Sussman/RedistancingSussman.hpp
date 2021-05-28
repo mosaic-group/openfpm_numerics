@@ -481,6 +481,11 @@ private:
 							print_out_iteration_change_residual(grid, i);
 						}
 						update_grid(grid); // Update Phi
+						if (redistOptions.save_temp_grid)
+						{
+							g_temp.setPropNames({"Phi_0", "Phi_nplus1_temp", "Phi_grad_temp", "Phi_magnOfGrad_temp", "Phi_0_sign_temp"});
+							g_temp.save("g_temp_redistancing.hdf5"); // HDF5 file}
+						}
 						break;
 					}
 				}

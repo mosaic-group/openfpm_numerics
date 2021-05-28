@@ -54,6 +54,7 @@ find_package(BLAS)
 find_package(LAPACK)
 find_package(Eigen3)
 find_package(SuiteSparse OPTIONAL_COMPONENTS UMFPACK)
+find_package(Boost REQUIRED COMPONENTS unit_test_framework filesystem system thread)
 
 set(CMAKE_SKIP_BUILD_RPATH TRUE)
 
