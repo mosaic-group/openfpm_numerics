@@ -206,6 +206,9 @@ static bool ghost_width_is_sufficient(gridtype & grid, size_t required_width)
 template <size_t Field_in, size_t Sign, size_t Gradient_out, typename gridtype>
 void get_upwind_gradient(gridtype & grid, const size_t order=5, const bool one_sided_BC=true)
 {
+	grid.template ghost_get<Field_in>();
+	grid.template ghost_get<Sign>();
+	
 	if (!one_sided_BC)
 	{
 		auto &v_cl = create_vcluster();
