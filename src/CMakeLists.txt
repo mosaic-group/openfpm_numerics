@@ -115,7 +115,7 @@ endif()
 
 if(OpenMP_CXX_FOUND)
     target_link_libraries(numerics ${OpenMP_CXX_FLAGS})
-    target_link_libraries(numerics -L/usr/local/lib -lomp)
+    target_link_libraries(numerics ${OpenMP_CXX_LIBRARIES})
 endif()
 
 target_link_libraries(numerics -L${METIS_ROOT}/lib metis)
