@@ -41,7 +41,8 @@ add_executable(numerics ${OPENFPM_INIT_FILE} ${CUDA_SOURCES}
 						FiniteDifference/eq_unit_test.cpp  
 						Operators/Vector/vector_dist_operators_unit_tests.cpp 
 						Operators/Vector/vector_dist_operators_apply_kernel_unit_tests.cpp
-						../../src/lib/pdata.cpp)
+						../../src/lib/pdata.cpp
+		level_set/closest_point/closest_point_unit_tests.cpp)
 
 add_dependencies(numerics ofpmmemory)
 add_dependencies(numerics vcluster)
@@ -249,6 +250,10 @@ install(FILES level_set/redistancing_Sussman/ComputeGradient.hpp
 install(FILES DMatrix/EMatrix.hpp
 	DESTINATION openfpm_numerics/include/DMatrix
 	COMPONENT OpenFPM)
+
+install(FILES level_set/closest_point/closest_point.hpp
+	      DESTINATION openfpm_numerics/include/level_set/closest_point
+	      COMPONENT OpenFPM)
 
 #if(BUILD_TESTING)
 
