@@ -7,6 +7,10 @@
 
 #include <cmath>
 
+#define PID_VECTOR_TYPE openfpm::vector<aggregate<int>>
+#define KEY_VECTOR_TYPE openfpm::vector<vect_dist_key_dx>
+
+
 /**@brief Class for getting mirror particles to impose Neumann BCs
  *
  * @details Source refers to the particles close to the boundary that will we mirrored at the boundary. The source
@@ -35,7 +39,7 @@ public:
 	MethodOfImages(
 			vd_type & vd,
 			const KEY_VECTOR_TYPE & keys_source,
-			const size_t subset_id_mirror = 1,
+			const size_t subset_id_mirror = 1)
 			: keys_source(keys_source)
 			, subset_id_mirror(subset_id_mirror)
 			, Mirror(vd, subset_id_mirror)
