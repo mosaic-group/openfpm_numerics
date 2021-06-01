@@ -34,7 +34,7 @@ public:
 	 */
 	MethodOfImages(
 			vd_type & vd,
-			const KEY_VECTOR_TYPE keys_source,
+			const KEY_VECTOR_TYPE & keys_source,
 			const size_t subset_id_mirror = 1,
 			: keys_source(keys_source)
 			, subset_id_mirror(subset_id_mirror)
