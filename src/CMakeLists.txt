@@ -41,7 +41,7 @@ add_executable(numerics ${OPENFPM_INIT_FILE} ${CUDA_SOURCES}
 						FiniteDifference/eq_unit_test.cpp
 						Operators/Vector/vector_dist_operators_unit_tests.cpp
 						Operators/Vector/vector_dist_operators_apply_kernel_unit_tests.cpp
-						../../src/lib/pdata.cpp
+						../../src/lib/pdata.cpp)
 #		level_set/redistancing_Sussman/tests/redistancingSussman_unit_test.cpp
 #		level_set/redistancing_Sussman/tests/convergence_test.cpp)
 
@@ -115,7 +115,7 @@ endif()
 
 if(OpenMP_CXX_FOUND)
     target_link_libraries(numerics ${OpenMP_CXX_FLAGS})
-    target_link_libraries(numerics -L/usr/local/lib -lomp)
+    target_link_libraries(numerics ${OpenMP_CXX_LIBRARIES})
 endif()
 
 target_link_libraries(numerics -L${METIS_ROOT}/lib metis)
