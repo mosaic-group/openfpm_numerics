@@ -104,25 +104,25 @@ public:
 
 
 private:
-	/**@brief Checks if the size of the ghost layer is bigger or equal the size of the mirror layer. This is needed s
-	 * .t. added mirror particles can be accessed by the same processor on which the corresponding source lies.
-	 *
-	 * @param vd
-	 */
-	void check_ghost_thick_enough(vd_type & vd)
-	{
-		double mirror_thickness = _b_up - _b_low;
-		for (size_t i = 0 ; i < vd_type::dims ; i++)
-		{
-			if (fabs(vd.getDecomposition().getGhost().getLow(i)) < mirror_thickness)
-			{
-				std::cerr << __FILE__ << ":" << __LINE__ << " Error: thickness of the mirror layer (" <<
-						mirror_thickness <<	") is bigger than the ghost layer on the dimension " << i << " which is "
-						<< fabs(vd.getDecomposition().getGhost().getLow(i)) << ". Create a bigger ghost layer." << std::endl;
-				abort();
-			}
-		}
-	}
+//	/**@brief Checks if the size of the ghost layer is bigger or equal the size of the mirror layer. This is needed s
+//	 * .t. added mirror particles can be accessed by the same processor on which the corresponding source lies.
+//	 *
+//	 * @param vd
+//	 */
+//	void check_ghost_thick_enough(vd_type & vd)
+//	{
+//		double mirror_thickness = _b_up - _b_low;
+//		for (size_t i = 0 ; i < vd_type::dims ; i++)
+//		{
+//			if (fabs(vd.getDecomposition().getGhost().getLow(i)) < mirror_thickness)
+//			{
+//				std::cerr << __FILE__ << ":" << __LINE__ << " Error: thickness of the mirror layer (" <<
+//						mirror_thickness <<	") is bigger than the ghost layer on the dimension " << i << " which is "
+//						<< fabs(vd.getDecomposition().getGhost().getLow(i)) << ". Create a bigger ghost layer." << std::endl;
+//				abort();
+//			}
+//		}
+//	}
 	
 	/**@brief Checks if local vector containing source particle ids and vector containing mirror particle ids match
 	 * in size. Necessary, because in apply_mirror, source ids and mirror ids are iterated in same loop on same
