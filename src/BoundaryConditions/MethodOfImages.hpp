@@ -27,9 +27,6 @@ public:
 	typedef vector_dist_subset<vd_type::dims, typename vd_type::stype, typename vd_type::value_type> vd_subset_type;
 	typedef Point<vd_type::dims, double> point_type;
 	
-	typedef PID_VECTOR_TYPE openfpm::vector<aggregate<int>>
-	typedef KEY_VECTOR_TYPE openfpm::vector<vect_dist_key_dx>
-	
 	/**@brief Constructor
 	 *
 	 * @param vd Input particle vector_dist of type vd_type.
@@ -39,9 +36,12 @@ public:
 	MethodOfImages(
 			vd_type & vd,
 			const KEY_VECTOR_TYPE & keys_source,
+			const size_t subset_id_real = 0,
 			const size_t subset_id_mirror = 1)
 			: keys_source(keys_source)
+			, subset_id_real(subset_id_real)
 			, subset_id_mirror(subset_id_mirror)
+			, Real(vd, subset_id_real)
 			, Mirror(vd, subset_id_mirror)
 	
 	{
@@ -49,10 +49,12 @@ public:
 	}
 	
 	//	Member variables
-	size_t subset_id_mirror; ///< ID of subset containing the mirror particles (default=2).
+	size_t subset_id_real; ///< ID of subset containing the real particles (default=0).
+	size_t subset_id_mirror; ///< ID of subset containing the mirror particles (default=1).
 	KEY_VECTOR_TYPE keys_source; ///< Vector containing keys of source particles.
 	PID_VECTOR_TYPE pid_mirror; ///< Vector containing indices of mirror particles.
 	vd_subset_type Mirror; ///< Subset containing the mirror particles.
+	vd_subset_type Real;
 	
 	/**@brief Place mirror particles along the surface normal.
 	 *
@@ -100,7 +102,7 @@ public:
 		}
 	}
 
-	
+
 private:
 	/**@brief Checks if the size of the ghost layer is bigger or equal the size of the mirror layer. This is needed s
 	 * .t. added mirror particles can be accessed by the same processor on which the corresponding source lies.
