@@ -45,7 +45,7 @@ public:
 			, Mirror(vd, subset_id_mirror)
 	
 	{
-		check_ghost_thick_enough(vd);
+		//check_ghost_thick_enough(vd);
 	}
 	
 	//	Member variables
