@@ -20,7 +20,7 @@
 #include "algoim_hocp.hpp"
 
 // Width of extra padding around each grid patch needed to correctly construct kDTree in Algoim.
-constexpr int algoim_padding = 3;
+constexpr int algoim_padding = 4;
 
 /**@brief Wrapping container to pass OpenFPM grid property values to Algoim library.
  *
@@ -32,7 +32,7 @@ constexpr int algoim_padding = 3;
  * @tparam wrapping_field Property id on the grid for the field to be wrapped
  */
 
-template<typename grid_type, typename grid_key_type, const unsigned int dim, const unsigned int wrapping_field>
+template<typename grid_type, typename grid_key_type, unsigned int dim, size_t wrapping_field>
 struct AlgoimWrapper
 {
     grid_type &gd;
@@ -60,19 +60,18 @@ struct AlgoimWrapper
  *
  * @tparam grid_type Type of the grid container
  * @tparam grid_key_type Type of the key for the grid container
- * @tparam domain_type Type of the grid domain
  * @tparam dim Dimension of the space
- * @tparam poly_order Order of the polynomial for stencil interpolation
+ * @tparam poly_order Order of the polynomial for stencil interpolation (orders between 2 to 5 is supported)
  * @tparam phi_field Property id on grid for the level set SDF
  * @tparam cp_field Property id on grid for storing closest point coordinates
  *
  * @param gd The distributed grid containing at least level set SDF field and placeholder for closest point coordinates
- * @param domain Domain of the simulation box
  * @param nb_gamma The width of the narrow band within which closest point estimation is to be done
  */
-template<typename grid_type, typename grid_key_type, typename domain_type, const unsigned int dim, const unsigned int poly_order, const unsigned int phi_field, const unsigned int cp_field>
-void estimateClosestPoint(grid_type &gd, domain_type &domain, const double nb_gamma)
+template<typename grid_type, typename grid_key_type, unsigned int poly_order, size_t phi_field, size_t cp_field>
+void estimateClosestPoint(grid_type &gd, const double nb_gamma)
 {
+    const unsigned int dim = gd.dims;
     // Stencil polynomial type
     using Poly = typename Algoim::StencilPoly<dim, poly_order>::T_Poly;
 
@@ -135,6 +134,11 @@ void estimateClosestPoint(grid_type &gd, domain_type &domain, const double nb_ga
                     for(int d = 0; d < dim; ++d)
                         gd.template get<cp_field>(key)[d] = cp(d);
                 }
+                else
+                {
+                    for(int d = 0; d < dim; ++d)
+                        gd.template get<cp_field>(key)[d] = -100.0;
+                }
             }
             ++it;
         }
@@ -156,9 +160,10 @@ void estimateClosestPoint(grid_type &gd, domain_type &domain, const double nb_ga
  * @param gd The distributed grid containing atleast level set SDF field and closest point coordinates
  * @param nb_gamma The width of the narrow band within which extension is required
  */
-template<typename grid_type, typename grid_key_type, int dim, int poly_order, const unsigned int phi_field, const unsigned int cp_field, const unsigned int extend_field, const unsigned int extend_field_temp>
+template<typename grid_type, typename grid_key_type, unsigned int poly_order, size_t phi_field, size_t cp_field, size_t extend_field, size_t extend_field_temp>
 void extendLSField(grid_type &gd, const double nb_gamma)
 {
+    const unsigned int dim = gd.dims;
     // Stencil polynomial object
     using Poly = typename Algoim::StencilPoly<dim, poly_order>::T_Poly;
     auto &patches = gd.getLocalGridsInfo();
@@ -226,9 +231,10 @@ void extendLSField(grid_type &gd, const double nb_gamma)
  * @param gd The distributed grid containing atleast level set SDF field and closest point coordinates
  * @param nb_gamma The width of the narrow band for reinitialization
  */
-template<typename grid_type, typename grid_key_type, int dim, int poly_order, const unsigned int phi_field, const unsigned int cp_field>
+template<typename grid_type, typename grid_key_type, unsigned int poly_order, size_t phi_field, size_t cp_field>
 void reinitializeLS(grid_type &gd, const double nb_gamma)
 {
+    const unsigned int dim = gd.dims;
     // Stencil polynomial object
     using Poly = typename Algoim::StencilPoly<dim, poly_order>::T_Poly;
     auto &patches = gd.getLocalGridsInfo();
