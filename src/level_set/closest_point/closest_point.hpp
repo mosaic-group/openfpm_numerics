@@ -71,7 +71,7 @@ struct AlgoimWrapper
 template<typename grid_type, typename grid_key_type, unsigned int poly_order, size_t phi_field, size_t cp_field>
 void estimateClosestPoint(grid_type &gd, const double nb_gamma)
 {
-    const unsigned int dim = gd.dims;
+    const unsigned int dim = grid_type::dims;
     // Stencil polynomial type
     using Poly = typename Algoim::StencilPoly<dim, poly_order>::T_Poly;
 
@@ -163,7 +163,7 @@ void estimateClosestPoint(grid_type &gd, const double nb_gamma)
 template<typename grid_type, typename grid_key_type, unsigned int poly_order, size_t phi_field, size_t cp_field, size_t extend_field, size_t extend_field_temp>
 void extendLSField(grid_type &gd, const double nb_gamma)
 {
-    const unsigned int dim = gd.dims;
+    const unsigned int dim = grid_type::dims;
     // Stencil polynomial object
     using Poly = typename Algoim::StencilPoly<dim, poly_order>::T_Poly;
     auto &patches = gd.getLocalGridsInfo();
@@ -234,7 +234,7 @@ void extendLSField(grid_type &gd, const double nb_gamma)
 template<typename grid_type, typename grid_key_type, unsigned int poly_order, size_t phi_field, size_t cp_field>
 void reinitializeLS(grid_type &gd, const double nb_gamma)
 {
-    const unsigned int dim = gd.dims;
+    const unsigned int dim = grid_type::dims;
     // Stencil polynomial object
     using Poly = typename Algoim::StencilPoly<dim, poly_order>::T_Poly;
     auto &patches = gd.getLocalGridsInfo();
