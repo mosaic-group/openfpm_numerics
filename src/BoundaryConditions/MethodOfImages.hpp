@@ -45,7 +45,7 @@ public:
 			, Mirror(vd, subset_id_mirror)
 	
 	{
-		//check_ghost_thick_enough(vd);
+//		check_ghost_thick_enough(vd);
 	}
 	
 	//	Member variables
@@ -67,9 +67,8 @@ public:
 			auto key        = keys_source.get(i);
 			point_type xp   = vd.getPos(key);
 			point_type n    = vd.template getProp<SurfaceNormal>(key);
-			double distance = n.norm() * 2.0;
 			
-			point_type xm   = xp + n * distance;
+			point_type xm   = xp + n;
 			
 			vd.add();
 			for (size_t d = 0; d < vd_type::dims; d++)
@@ -85,6 +84,8 @@ public:
 		check_size_mirror_source_equal();
 	}
 	
+	
+	
 	/**@brief Copies the values stored in PropToMirror from each source particle to its respective mirror particles
 	 *
 	 * @tparam PropToMirror Index of property storing the values that should be mirrored.
@@ -93,6 +94,7 @@ public:
 	template <size_t PropToMirror>
 	void apply_reflection(vd_type & vd)
 	{
+		check_size_mirror_source_equal();
 		vd.template ghost_get<PropToMirror>(KEEP_PROPERTIES); // Update Ghost layer.
 		for (int i = 0; i < keys_source.size(); ++i)
 		{
@@ -131,10 +133,10 @@ private:
 	 */
 	void check_size_mirror_source_equal()
 	{
-		std::cout << "pid_mirror.size() = " << pid_mirror.size() << ", keys_source.size() = " << keys_source.size()
-				<< std::endl;
 		if (pid_mirror.size() != keys_source.size())
 		{
+			std::cout << "pid_mirror.size() = " << pid_mirror.size() << ", keys_source.size() = " << keys_source.size()
+					<< std::endl;
 			std::cerr << __FILE__ << ":" << __LINE__
 					<< " Error: Local vector of source-IDs has different size than local vector of mirror-IDs. Matching "
 					   "source and mirror particle IDs must be stored on same processor." << std::endl;
