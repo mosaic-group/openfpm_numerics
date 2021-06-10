@@ -371,7 +371,7 @@ private:
 			if (lays_inside_NB(grid.template get<Phi_nplus1_temp>(key)))
 			{
 				total_points_in_nb += 1.0;
-				auto & dphi_magn = grid.template get<Phi_grad_temp>(key).norm();
+				auto dphi_magn = grid.template get<Phi_grad_temp>(key).norm();
 				total_residual += abs(dphi_magn - 1);
 				total_change += abs(grid.template get<Phi_nplus1_temp>(key) - grid.template get<Phi_0_temp>(key));
 			}
