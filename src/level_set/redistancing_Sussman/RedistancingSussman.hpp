@@ -182,7 +182,6 @@ public:
 	 * @details The initial (input) Phi_0 (will be updated by Phi_{n+1} after each redistancing step),
 	 * Phi_{n+1} (received from redistancing),
 	 * gradient of Phi_{n+1},
-	 * L2 norm of gradient of Phi_{n+1} (=gradient magnitude),
 	 * sign of the original input Phi_0 (for the upwinding).
 	 */
 	typedef aggregate<double, double, Point<grid_in_type::dims, double>, int>
@@ -193,11 +192,10 @@ public:
 	/**
 	 * @brief Create temporary grid, which is only used inside the class for the redistancing.
 	 *
-	 * @details The temporary grid stores the following 5 properties:
+	 * @details The temporary grid stores the following 4 properties:
 	 * the initial (input) Phi_0 (will be updated by Phi_{n+1} after each redistancing step),
 	 * Phi_{n+1}(received from redistancing),
 	 * gradient of Phi_{n+1},
-	 * L2 norm of gradient of Phi_{n+1} (=gradient magnitude),
 	 * sign of the original input Phi_0 (for the upwinding).
 	 */
 	g_temp_type g_temp;
@@ -373,8 +371,8 @@ private:
 			if (lays_inside_NB(grid.template get<Phi_nplus1_temp>(key)))
 			{
 				total_points_in_nb += 1.0;
-				auto & dphi = grid.template get<Phi_grad_temp>(key);
-				total_residual += abs(dphi.norm() - 1);
+				auto & dphi_magn = grid.template get<Phi_grad_temp>(key).norm();
+				total_residual += abs(dphi_magn - 1);
 				total_change += abs(grid.template get<Phi_nplus1_temp>(key) - grid.template get<Phi_0_temp>(key));
 			}
 			++dom;
