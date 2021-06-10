@@ -183,6 +183,8 @@ private:
 	double b_low;   ///< Narrow band extension towards the object outside.
 	double b_up;    ///< Narrow band extension towards the object inside.
 	
+	const double EPSILON = std::numeric_limits<double>::epsilon();
+	
 	/** @brief Set the member variable NarrowBand::b_low and NarrowBand::b_up.
 	 *
 	 * @param thickness Thickness of narrow band in number of grid points.
@@ -190,8 +192,8 @@ private:
 	 */
 	void set_bounds(size_t thickness, const grid_in_type & grid_in)
 	{
-		b_low   = - ceil((double)thickness / 2.0) * get_biggest_spacing(grid_in);
-		b_up    =   ceil((double)thickness / 2.0) * get_biggest_spacing(grid_in);
+		b_low   = - ceil((double)thickness / 2.0) * get_biggest_spacing(grid_in) - EPSILON;
+		b_up    =   ceil((double)thickness / 2.0) * get_biggest_spacing(grid_in) + EPSILON;
 	}
 	/** @brief Set the member variable NarrowBand::b_low and NarrowBand::b_up.
 	 *
@@ -200,8 +202,8 @@ private:
 	 */
 	void set_bounds(double thickness, const grid_in_type & grid_in)
 	{
-		b_low   = - thickness / 2.0;
-		b_up    =   thickness / 2.0;
+		b_low   = - thickness / 2.0 - EPSILON;
+		b_up    =   thickness / 2.0 + EPSILON;
 	}
 	/** @brief Set the member variable NarrowBand::b_low and NarrowBand::b_up.
 	 *
@@ -211,8 +213,8 @@ private:
 	 */
 	void set_bounds(double lower_bound, double upper_bound, const grid_in_type & grid_in)
 	{
-		b_low   =   lower_bound;
-		b_up    =   upper_bound;
+		b_low   =   lower_bound - EPSILON;
+		b_up    =   upper_bound + EPSILON;
 	}
 	
 	/**@brief Initialize the internal temporary grid.

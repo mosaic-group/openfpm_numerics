@@ -14,7 +14,6 @@
 BOOST_AUTO_TEST_SUITE(NarrowBandTestSuite)
 	BOOST_AUTO_TEST_CASE(NarrowBand_unit_sphere)
 	{
-		const double EPSILON = std::numeric_limits<double>::epsilon();
 		const size_t dims = 3;
 		// some indices
 		const size_t x                      = 0;
