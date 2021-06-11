@@ -45,7 +45,9 @@ public:
 			, Mirror(vd, subset_id_mirror)
 
 	{
+		#ifdef SE_CLASS1
 		check_if_ghost_isometric(vd);
+		#endif // SE_CLASS1
 	}
 
 	//	Member variables
@@ -72,18 +74,9 @@ public:
 			point_type n    = vd.template getProp<SurfaceNormal>(key);
 			
 			point_type xm   = xp + n;
-			
-			if(point_lies_on_this_processor(vd, xm))
-			{
-				vd.add();
-				for (size_t d = 0; d < vd_type::dims; d++)
-				{
-					vd.getLastPos()[d] = xm[d];
-				}
-				vd.getLastSubset(subset_id_mirror);
-			}
-			
-			else
+
+			#ifdef SE_CLASS1
+			if(!point_lies_on_this_processor(vd, xm))
 			{
 				std::cerr << __FILE__ << ":" << __LINE__ << " Error: Ghost layer is too small. Source and mirror"
 															" particles that belong together must lie on the same"
@@ -92,7 +85,14 @@ public:
 															" mirror particle layer. Aborting..." << std::endl;
 				abort();
 			}
-
+			#endif // SE_CLASS1
+			
+			vd.add();
+			for (size_t d = 0; d < vd_type::dims; d++)
+			{
+				vd.getLastPos()[d] = xm[d];
+			}
+			vd.getLastSubset(subset_id_mirror);
 		}
 // No vd.map() here, because we want to keep the source and the mirror particles on the same node
 		////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -101,7 +101,9 @@ public:
 				<< vd.size_local_with_ghost() - vd.size_local() << std::endl;
 		Mirror.update();
 		pid_mirror = Mirror.getIds();
+		#ifdef SE_CLASS1
 		check_size_mirror_source_equal();
+		#endif // SE_CLASS1
 	}
 
 	
@@ -149,9 +151,7 @@ private:
 	bool point_lies_on_this_processor(vd_type & vd, point_type p)
 	{
 		double g_width = fabs(vd.getDecomposition().getGhost().getLow(0));
-		//std::cout << "g_width = " << g_width << std::endl;
 		Ghost<vd_type::dims, typename vd_type::stype> g(g_width);
-//		Ghost<3,float> g(0.1);
 		
 		auto & subs = vd.getDecomposition().getSubDomains();
 		
@@ -164,7 +164,7 @@ private:
 			is_inside |= sub.isInside(p);
 		}
 
-		if (is_inside == false)  {std::cout << "Processor does not have the point" << std::endl;}
+		if (!is_inside)  {std::cout << "Processor does not have the point" << std::endl;}
 
 		return is_inside;
 	}
