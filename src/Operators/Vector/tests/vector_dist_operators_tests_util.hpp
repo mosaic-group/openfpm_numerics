@@ -1103,10 +1103,14 @@ void check_all_expressions_imp(vector_type & vd,
 	vVA = (vPOS + vPOS) / vPOS;
 	vVA = (vPOS + vPOS) / (vPOS + vPOS);
 
-	// Position with slicer
+	// Position with slicer (not tested on GPU)
+
+	#ifndef __NVCC__
 
 	vVA[0]=-vPOS[1]*exp(-10.0*(vPOS[0]*vPOS[0]+vPOS[1]*vPOS[1]));
-	check_values_pos_exp_slicer<impl,VA>(vd);	
+	check_values_pos_exp_slicer<impl,VA>(vd);
+
+	#endif
 }
 
 template<unsigned int impl>

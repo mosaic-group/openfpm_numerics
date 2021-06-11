@@ -34,14 +34,18 @@ add_executable(numerics ${OPENFPM_INIT_FILE} ${CUDA_SOURCES}
 						main.cpp
 						Matrix/SparseMatrix_unit_tests.cpp
 						interpolation/interpolation_unit_tests.cpp
-						Vector/Vector_unit_tests.cpp  
-						Solvers/petsc_solver_unit_tests.cpp 
-						FiniteDifference/FDScheme_unit_tests.cpp 
-						FiniteDifference/eq_unit_test_3d.cpp 
-						FiniteDifference/eq_unit_test.cpp  
-						Operators/Vector/vector_dist_operators_unit_tests.cpp 
+						Vector/Vector_unit_tests.cpp
+						Solvers/petsc_solver_unit_tests.cpp
+						FiniteDifference/FDScheme_unit_tests.cpp
+						FiniteDifference/eq_unit_test_3d.cpp
+						FiniteDifference/eq_unit_test.cpp
+						Operators/Vector/vector_dist_operators_unit_tests.cpp
 						Operators/Vector/vector_dist_operators_apply_kernel_unit_tests.cpp
-						../../src/lib/pdata.cpp)
+						../../src/lib/pdata.cpp
+#		level_set/redistancing_Sussman/tests/redistancingSussman_unit_test.cpp
+#		level_set/redistancing_Sussman/tests/convergence_test.cpp
+		level_set/closest_point/closest_point_unit_tests.cpp)
+
 
 add_dependencies(numerics ofpmmemory)
 add_dependencies(numerics vcluster)
@@ -82,9 +86,12 @@ target_include_directories (numerics PUBLIC ${HDF5_ROOT}/include)
 target_include_directories (numerics PUBLIC ${LIBHILBERT_INCLUDE_DIRS})
 target_include_directories (numerics PUBLIC ${Boost_INCLUDE_DIRS})
 target_include_directories (numerics PUBLIC ${Vc_INCLUDE_DIR})
+target_include_directories (numerics PUBLIC ${BLITZ_ROOT}/include)
+target_include_directories (numerics PUBLIC ${ALGOIM_ROOT}/include)
 target_include_directories (numerics PUBLIC ${ALPAKA_ROOT}/include)
 target_include_directories (numerics PUBLIC ${MPI_C_INCLUDE_DIRS})
 if(EIGEN3_FOUND)
+        target_include_directories (numerics PUBLIC /usr/local/include) 
 	target_include_directories (numerics PUBLIC ${EIGEN3_INCLUDE_DIR})
 endif()
 
@@ -112,6 +119,7 @@ endif()
 
 if(OpenMP_CXX_FOUND)
     target_link_libraries(numerics ${OpenMP_CXX_FLAGS})
+    target_link_libraries(numerics ${OpenMP_CXX_LIBRARIES})
 endif()
 
 target_link_libraries(numerics -L${METIS_ROOT}/lib metis)
@@ -167,6 +175,9 @@ install(FILES FiniteDifference/Average.hpp
 			  FiniteDifference/FD_expressions.hpp
 			  FiniteDifference/FD_op.hpp
 			  FiniteDifference/FD_Solver.hpp
+			  FiniteDifference/Eno_Weno.hpp
+		      FiniteDifference/Upwind_gradient.hpp
+		      FiniteDifference/FD_order1.hpp
       	      DESTINATION openfpm_numerics/include/FiniteDifference
 	      COMPONENT OpenFPM)
 	      
@@ -225,8 +236,8 @@ install(FILES OdeIntegrators/OdeIntegrators.hpp
 install(FILES Draw/DrawParticles.hpp
       	      Draw/PointIterator.hpp 
       	      Draw/PointIteratorSkin.hpp
-	      Draw/DrawCircle.hpp
-	      Draw/DrawSphere.hpp
+	          Draw/DrawDisk.hpp
+	          Draw/DrawSphere.hpp
       	      DESTINATION openfpm_numerics/include/Draw
 	      COMPONENT OpenFPM)
 
@@ -241,12 +252,18 @@ install(FILES level_set/redistancing_Sussman/ComputeGradient.hpp
 	      level_set/redistancing_Sussman/HelpFunctionsForGrid.hpp
 	      level_set/redistancing_Sussman/NarrowBand.hpp
 	      level_set/redistancing_Sussman/RedistancingSussman.hpp
+		  level_set/redistancing_Sussman/tests/l_norms/LNorms.hpp
+		  level_set/redistancing_Sussman/tests/analytical_SDF/AnalyticalSDF.hpp
 	      DESTINATION openfpm_numerics/include/level_set/redistancing_Sussman
 	      COMPONENT OpenFPM)
 
 install(FILES DMatrix/EMatrix.hpp
 	DESTINATION openfpm_numerics/include/DMatrix
 	COMPONENT OpenFPM)
+
+install(FILES level_set/closest_point/closest_point.hpp
+	      DESTINATION openfpm_numerics/include/level_set/closest_point
+	      COMPONENT OpenFPM)
 
 #if(BUILD_TESTING)
 
