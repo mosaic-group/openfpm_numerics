@@ -380,6 +380,54 @@ public:
         copy_nested(x, comp, exps ...);
     }
 
+    /*! \brief Solve an equation with a given Nullspace
+     *
+     *  \warning exp must be a scalar type
+     *
+     * \param Solver Manually created Solver instead from the Equation structure
+     * \param exp where to store the result
+     *
+     */
+/*    template<typename NullspaceType, typename SolverType, typename ... expr_type>
+    void solve_with_nullspace_solver(NullspaceType &nullspace,SolverType &solver, expr_type ... exps) {
+#ifdef SE_CLASS1
+
+        if (sizeof...(exps) != Sys_eqs::nvar) {
+            std::cerr << __FILE__ << ":" << __LINE__ << " Error the number of properties you gave does not match the solution in\
+    													dimensionality, I am expecting " << Sys_eqs::nvar <<
+                      " properties " << std::endl;
+        };
+#endif
+        auto x = solver.nullspace_solve(nullspace,getA(opt), getB(opt));
+
+        unsigned int comp = 0;
+        copy_nested(x, comp, exps ...);
+    }*/
+
+    /*! \brief Solve an equation with a constant Nullspace from PETSC Hack
+     *
+     *  \warning exp must be a scalar type
+     *
+     * \param Solver Manually created Solver instead from the Equation structure
+     * \param exp where to store the result
+     *
+     */
+    template<typename SolverType, typename ... expr_type>
+    void solve_with_default_nullspace_solver(SolverType &solver, expr_type ... exps) {
+#ifdef SE_CLASS1
+
+        if (sizeof...(exps) != Sys_eqs::nvar) {
+            std::cerr << __FILE__ << ":" << __LINE__ << " Error the number of properties you gave does not match the solution in\
+    													dimensionality, I am expecting " << Sys_eqs::nvar <<
+                      " properties " << std::endl;
+        };
+#endif
+        auto x = solver.with_constant_nullspace_solve(getA(opt), getB(opt));
+
+        unsigned int comp = 0;
+        copy_nested(x, comp, exps ...);
+    }
+
     /*! \brief Solve an equation
      *
      *  \warning exp must be a scalar type
