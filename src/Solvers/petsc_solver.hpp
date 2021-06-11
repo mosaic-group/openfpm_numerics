@@ -1327,6 +1327,55 @@ public:
 		return x;
 	}
 
+    /*! \brief Here we invert the matrix and solve the system using a Nullspace for Neumann BC
+     *
+     *  \warning umfpack is not a parallel solver, this function work only with one processor
+     *
+     *  \note if you want to use umfpack in a NON parallel, but on a distributed data, use solve with triplet
+     *
+     *	\tparam impl Implementation of the SparseMatrix
+     *
+     * \param A sparse matrix
+     * \param b vector
+     * \param initial_guess true if x has the initial guess
+     *
+     * \return the solution
+     *
+     */
+    Vector<double,PETSC_BASE> with_constant_nullspace_solve(SparseMatrix<double,int,PETSC_BASE> & A, const Vector<double,PETSC_BASE> & b, bool initial_guess = false)
+    {
+        Mat & A_ = A.getMat();
+        const Vec & b_ = b.getVec();
+
+        // We set the size of x according to the Matrix A
+        PetscInt row;
+        PetscInt col;
+        PetscInt row_loc;
+        PetscInt col_loc;
+        MatNullSpace nullspace;
+
+
+        PETSC_SAFE_CALL(KSPSetInitialGuessNonzero(ksp,PETSC_FALSE));
+        PETSC_SAFE_CALL(MatGetSize(A_,&row,&col));
+        PETSC_SAFE_CALL(MatGetLocalSize(A_,&row_loc,&col_loc));
+
+
+        Vector<double,PETSC_BASE> x(row,row_loc);
+        Vec & x_ = x.getVec();
+
+        //Removing Null Space from RHS
+        PETSC_SAFE_CALL(MatNullSpaceCreate(PETSC_COMM_WORLD,PETSC_TRUE,0,0,&nullspace));
+        PETSC_SAFE_CALL(MatNullSpaceRemove(nullspace,b_));
+        PETSC_SAFE_CALL(MatNullSpaceDestroy(&nullspace));
+
+        pre_solve_impl(A_,b_,x_);
+        solve_simple(A_,b_,x_);
+
+        x.update();
+
+        return x;
+    }
+
 	/*! \brief Return the KSP solver
 	 *
 	 * In case you want to do fine tuning of the KSP solver before
