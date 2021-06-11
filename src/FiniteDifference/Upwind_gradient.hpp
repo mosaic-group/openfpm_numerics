@@ -186,7 +186,8 @@ static bool ghost_width_is_sufficient(gridtype & grid, size_t required_width)
 	auto ghost = grid.getDecomposition().getGhost();
 	int np_ghost[gridtype::dims];
 	
-	for (int d = 0 ; d < gridtype::dims ; d++)
+	for (int d = 0 ; d < gridtype::dims ; d git checkout testing_MOF
+	)
 	{
 		np_ghost[d] = ghost.getHigh(d) / grid.getSpacing()[d];
 	}
