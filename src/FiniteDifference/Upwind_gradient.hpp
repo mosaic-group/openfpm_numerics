@@ -78,12 +78,12 @@ double FD_upwind(gridtype &grid, keytype &key, size_t d, size_t order)
 			dminus = FD_backward<Field>(grid, key, d);
 			break;
 		case 3:
-			dplus  = ENO_3_Plus<gridtype, keytype, Field>(key, grid, d);
-			dminus = ENO_3_Minus<gridtype, keytype,Field>(key, grid, d);
+			dplus  = ENO_3_Plus<Field>(grid, key, d);
+			dminus = ENO_3_Minus<Field>(grid, key, d);
 			break;
 		case 5:
-			dplus  = WENO_5_Plus<gridtype, keytype, Field>(key, grid, d);
-			dminus = WENO_5_Minus<gridtype, keytype, Field>(key, grid, d);
+			dplus  = WENO_5_Plus<Field>(grid, key, d);
+			dminus = WENO_5_Minus<Field>(grid, key, d);
 			break;
 		default:
 			auto &v_cl = create_vcluster();
