@@ -35,7 +35,7 @@
  * @param sign: Sign of the velocity with which the wave front is moving.
  * @return Scalar double upwind gradient approximation in the dimension given.
  */
-double upwinding(double dplus, double dminus, int sign)
+static double upwinding(double dplus, double dminus, int sign)
 {
 	double grad_upwind = 0;
 	if (dplus * sign < 0
