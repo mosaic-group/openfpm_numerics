@@ -10,7 +10,7 @@
 
 #include "Grid/grid_dist_id.hpp"
 
-double adjustWeights(double v1, double v2, double v3, double v4, double v5)
+static double adjustWeights(double v1, double v2, double v3, double v4, double v5)
 {
 	double phix1, phix2, phix3;
 	double s1, s2, s3;
