@@ -186,8 +186,7 @@ static bool ghost_width_is_sufficient(gridtype & grid, size_t required_width)
 	auto ghost = grid.getDecomposition().getGhost();
 	int np_ghost[gridtype::dims];
 	
-	for (int d = 0 ; d < gridtype::dims ; d git checkout testing_MOF
-	)
+	for (int d = 0 ; d < gridtype::dims; d++)
 	{
 		np_ghost[d] = ghost.getHigh(d) / grid.getSpacing()[d];
 	}
@@ -198,7 +197,7 @@ static bool ghost_width_is_sufficient(gridtype & grid, size_t required_width)
 		if(np_ghost[d] < min_width) min_width = np_ghost[d];
 	}
 	
-	return (required_width >= min_width);
+	return (required_width <= min_width);
 }
 
 /**@brief Calls #upwind_gradient. Computes upwind gradient of desired order {1, 3, 5} for the whole n-dim grid.
