@@ -5,12 +5,14 @@
  * For HJ WENO method - Sec. 3.4
 */
 
+// Created by Sachin, modified by Justina
+
 #ifndef __ENO_WENO_HPP__
 #define __ENO_WENO_HPP__
 
 #include "Grid/grid_dist_id.hpp"
 
-double adjustWeights(double v1, double v2, double v3, double v4, double v5)
+static double adjustWeights(double v1, double v2, double v3, double v4, double v5)
 {
 	double phix1, phix2, phix3;
 	double s1, s2, s3;
@@ -45,56 +47,56 @@ double adjustWeights(double v1, double v2, double v3, double v4, double v5)
 	return (w1 * phix1 + w2 * phix2 + w3 * phix3);
 }
 
-template<typename GridDist, typename GridKey, unsigned int field>
-double WENO_5_Plus(GridKey key, GridDist &gd, size_t x)
+template<size_t Field, typename grid_type, typename key_type>
+double WENO_5_Plus(grid_type & grid, key_type key, size_t x)
 {
 	double c2, c3, c4, c5, c6;
-	double coeff = 1.0 / gd.spacing(x);
+	double coeff = 1.0 / grid.spacing(x);
 	double df;
 	
-	c2 = (gd.template get<field>(key.move(x, -1)) - gd.template get<field>(key.move(x, -2))) * coeff;
-	c3 = (gd.template get<field>(key) - gd.template get<field>(key.move(x, -1))) * coeff;
-	c4 = (gd.template get<field>(key.move(x,1)) - gd.template get<field>(key)) * coeff;
-	c5 = (gd.template get<field>(key.move(x, 2)) - gd.template get<field>(key.move(x, 1))) * coeff;
-	c6 = (gd.template get<field>(key.move(x, 3)) - gd.template get<field>(key.move(x, 2))) * coeff;
+	c2 = (grid.template get<Field>(key.move(x, -1)) - grid.template get<Field>(key.move(x, -2))) * coeff;
+	c3 = (grid.template get<Field>(key) - grid.template get<Field>(key.move(x, -1))) * coeff;
+	c4 = (grid.template get<Field>(key.move(x,1)) - grid.template get<Field>(key)) * coeff;
+	c5 = (grid.template get<Field>(key.move(x, 2)) - grid.template get<Field>(key.move(x, 1))) * coeff;
+	c6 = (grid.template get<Field>(key.move(x, 3)) - grid.template get<Field>(key.move(x, 2))) * coeff;
 	df = adjustWeights(c6, c5, c4, c3, c2);
 	
 	return df;
 }
 
-template<typename GridDist, typename GridKey, unsigned int field>
-double WENO_5_Minus(GridKey key, GridDist &gd, size_t x)
+template<size_t Field, typename grid_type, typename key_type>
+double WENO_5_Minus(grid_type & grid, key_type key, size_t x)
 {
 	double c1, c2, c3, c4, c5;
-	double coeff = 1.0 / gd.spacing(x);
+	double coeff = 1.0 / grid.spacing(x);
 	double df;
 	
-	c1 = (gd.template get<field>(key.move(x, -2)) - gd.template get<field>(key.move(x, -3))) * coeff;
-	c2 = (gd.template get<field>(key.move(x, -1)) - gd.template get<field>(key.move(x, -2))) * coeff;
-	c3 = (gd.template get<field>(key) - gd.template get<field>(key.move(x, -1))) * coeff;
-	c4 = (gd.template get<field>(key.move(x,1)) - gd.template get<field>(key)) * coeff;
-	c5 = (gd.template get<field>(key.move(x, 2)) - gd.template get<field>(key.move(x, 1))) * coeff;
+	c1 = (grid.template get<Field>(key.move(x, -2)) - grid.template get<Field>(key.move(x, -3))) * coeff;
+	c2 = (grid.template get<Field>(key.move(x, -1)) - grid.template get<Field>(key.move(x, -2))) * coeff;
+	c3 = (grid.template get<Field>(key) - grid.template get<Field>(key.move(x, -1))) * coeff;
+	c4 = (grid.template get<Field>(key.move(x,1)) - grid.template get<Field>(key)) * coeff;
+	c5 = (grid.template get<Field>(key.move(x, 2)) - grid.template get<Field>(key.move(x, 1))) * coeff;
 	
 	df = adjustWeights(c1, c2, c3, c4, c5);
 	
 	return df;
 }
 
-template<typename GridDist, typename GridKey, unsigned int field>
-double ENO_3_Plus(GridKey key, GridDist &gd, size_t x)
+template<size_t Field, typename grid_type, typename key_type>
+double ENO_3_Plus(grid_type & grid, key_type key, size_t x)
 {
 	double q1x, q2x, q3x;
-	double gridsize = gd.spacing(x);
+	double gridsize = grid.spacing(x);
 	double coeff = 1.0 / gridsize;
 	
-	q1x = (gd.template get<field>(key.move(x,1)) - gd.template get<field>(key)) * coeff;
-	double d2ix = (gd.template get<field>(key.move(x,1)) - 2*gd.template get<field>(key) + gd.template get<field>(key.move(x,-1))) * 0.5 * coeff * coeff;
-	double d2ip1x = (gd.template get<field>(key.move(x,2)) - 2*gd.template get<field>(key.move(x,1)) + gd.template get<field>(key)) * 0.5 * coeff * coeff;
+	q1x = (grid.template get<Field>(key.move(x,1)) - grid.template get<Field>(key)) * coeff;
+	double d2ix = (grid.template get<Field>(key.move(x,1)) - 2*grid.template get<Field>(key) + grid.template get<Field>(key.move(x,-1))) * 0.5 * coeff * coeff;
+	double d2ip1x = (grid.template get<Field>(key.move(x,2)) - 2*grid.template get<Field>(key.move(x,1)) + grid.template get<Field>(key)) * 0.5 * coeff * coeff;
 	if(abs(d2ix) <= abs(d2ip1x))
 	{
 		q2x = -d2ix * gridsize; // (3.22)
-		double d3p1hx = (gd.template get<field>(key.move(x,1)) - 3*gd.template get<field>(key) + 3*gd.template get<field>(key.move(x,-1)) - gd.template get<field>(key.move(x,-2))) * coeff * coeff * coeff / 6.0;
-		double d3p3hx = (gd.template get<field>(key.move(x,2)) - 3*gd.template get<field>(key.move(x,1)) + 3*gd.template get<field>(key) - gd.template get<field>(key.move(x,-1))) * coeff * coeff * coeff / 6.0;
+		double d3p1hx = (grid.template get<Field>(key.move(x,1)) - 3*grid.template get<Field>(key) + 3*grid.template get<Field>(key.move(x,-1)) - grid.template get<Field>(key.move(x,-2))) * coeff * coeff * coeff / 6.0;
+		double d3p3hx = (grid.template get<Field>(key.move(x,2)) - 3*grid.template get<Field>(key.move(x,1)) + 3*grid.template get<Field>(key) - grid.template get<Field>(key.move(x,-1))) * coeff * coeff * coeff / 6.0;
 		if(abs(d3p1hx) <= abs(d3p3hx))
 			q3x = -d3p1hx * gridsize * gridsize;
 		else
@@ -103,8 +105,8 @@ double ENO_3_Plus(GridKey key, GridDist &gd, size_t x)
 	else
 	{
 		q2x = -d2ip1x * gridsize;
-		double d3p1hx = (gd.template get<field>(key.move(x,2)) - 3*gd.template get<field>(key.move(x,1)) + 3*gd.template get<field>(key) - gd.template get<field>(key.move(x,-1))) * coeff * coeff * coeff / 6.0;
-		double d3p3hx = (gd.template get<field>(key.move(x,3)) - 3*gd.template get<field>(key.move(x,2)) + 3*gd.template get<field>(key.move(x,1)) - gd.template get<field>(key)) * coeff * coeff * coeff / 6.0;
+		double d3p1hx = (grid.template get<Field>(key.move(x,2)) - 3*grid.template get<Field>(key.move(x,1)) + 3*grid.template get<Field>(key) - grid.template get<Field>(key.move(x,-1))) * coeff * coeff * coeff / 6.0;
+		double d3p3hx = (grid.template get<Field>(key.move(x,3)) - 3*grid.template get<Field>(key.move(x,2)) + 3*grid.template get<Field>(key.move(x,1)) - grid.template get<Field>(key)) * coeff * coeff * coeff / 6.0;
 		if(abs(d3p1hx) <= abs(d3p3hx))
 			q3x = d3p1hx * 2 * gridsize * gridsize;
 		else
@@ -114,22 +116,22 @@ double ENO_3_Plus(GridKey key, GridDist &gd, size_t x)
 	return (q1x + q2x + q3x);
 }
 
-template<typename GridDist, typename GridKey, unsigned int field>
-double ENO_3_Minus(GridKey key, GridDist &gd, size_t x)
+template<size_t Field, typename grid_type, typename key_type>
+double ENO_3_Minus(grid_type & grid, key_type key, size_t x)
 {
 	double q1x, q2x, q3x;
-	double gridsize = gd.spacing(x);
+	double gridsize = grid.spacing(x);
 	double coeff = 1.0 / gridsize;
 	
-	q1x = (gd.template get<field>(key) - gd.template get<field>(key.move(x, -1))) * coeff;
-	double d2im1x = (gd.template get<field>(key) - 2*gd.template get<field>(key.move(x, -1)) + gd.template get<field>(key.move(x, -2))) * 0.5 * coeff * coeff;
-	double d2ix = (gd.template get<field>(key.move(x,1)) - 2*gd.template get<field>(key) + gd.template get<field>(key.move(x,-1))) * 0.5 * coeff * coeff;
+	q1x = (grid.template get<Field>(key) - grid.template get<Field>(key.move(x, -1))) * coeff;
+	double d2im1x = (grid.template get<Field>(key) - 2*grid.template get<Field>(key.move(x, -1)) + grid.template get<Field>(key.move(x, -2))) * 0.5 * coeff * coeff;
+	double d2ix = (grid.template get<Field>(key.move(x,1)) - 2*grid.template get<Field>(key) + grid.template get<Field>(key.move(x,-1))) * 0.5 * coeff * coeff;
 	
 	if(abs(d2im1x) <= abs(d2ix))
 	{
 		q2x = d2im1x * gridsize;
-		double d3p1hx = (gd.template get<field>(key) - 3*gd.template get<field>(key.move(x,-1)) + 3*gd.template get<field>(key.move(x,-2)) - gd.template get<field>(key.move(x,-3))) * coeff * coeff * coeff / 6.0;
-		double d3p3hx = (gd.template get<field>(key.move(x,1)) - 3*gd.template get<field>(key) + 3*gd.template get<field>(key.move(x,-1)) - gd.template get<field>(key.move(x,-2))) * coeff * coeff * coeff / 6.0;
+		double d3p1hx = (grid.template get<Field>(key) - 3*grid.template get<Field>(key.move(x,-1)) + 3*grid.template get<Field>(key.move(x,-2)) - grid.template get<Field>(key.move(x,-3))) * coeff * coeff * coeff / 6.0;
+		double d3p3hx = (grid.template get<Field>(key.move(x,1)) - 3*grid.template get<Field>(key) + 3*grid.template get<Field>(key.move(x,-1)) - grid.template get<Field>(key.move(x,-2))) * coeff * coeff * coeff / 6.0;
 		if(abs(d3p1hx) <= abs(d3p3hx))
 			q3x = d3p1hx * 2 * gridsize * gridsize;
 		else
@@ -138,8 +140,8 @@ double ENO_3_Minus(GridKey key, GridDist &gd, size_t x)
 	else
 	{
 		q2x = d2ix * gridsize;
-		double d3p1hx = (gd.template get<field>(key.move(x,1)) - 3*gd.template get<field>(key) + 3*gd.template get<field>(key.move(x,-1)) - gd.template get<field>(key.move(x,-2))) * coeff * coeff * coeff / 6.0;
-		double d3p3hx = (gd.template get<field>(key.move(x,2)) - 3*gd.template get<field>(key.move(x,1)) + 3*gd.template get<field>(key) - gd.template get<field>(key.move(x,-1))) * coeff * coeff * coeff / 6.0;
+		double d3p1hx = (grid.template get<Field>(key.move(x,1)) - 3*grid.template get<Field>(key) + 3*grid.template get<Field>(key.move(x,-1)) - grid.template get<Field>(key.move(x,-2))) * coeff * coeff * coeff / 6.0;
+		double d3p3hx = (grid.template get<Field>(key.move(x,2)) - 3*grid.template get<Field>(key.move(x,1)) + 3*grid.template get<Field>(key) - grid.template get<Field>(key.move(x,-1))) * coeff * coeff * coeff / 6.0;
 		if(abs(d3p1hx) <= abs(d3p3hx))
 			q3x = -d3p1hx * gridsize * gridsize;
 		else

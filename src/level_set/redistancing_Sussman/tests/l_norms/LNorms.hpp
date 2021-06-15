@@ -145,7 +145,7 @@ L_norms get_l_norms_vector(vectortype & vd)
  *                 written to.
  * @param path_output Std::string containing the path where the output csv file should be saved.
  */
-void write_lnorms_to_file(size_t N, L_norms l_norms, std::string filename, std::string path_output)
+static void write_lnorms_to_file(size_t N, L_norms l_norms, std::string filename, std::string path_output)
 {
 	auto &v_cl = create_vcluster();
 	if (v_cl.rank() == 0)
