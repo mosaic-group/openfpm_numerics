@@ -35,7 +35,7 @@ BOOST_AUTO_TEST_SUITE(EnoWenoTestSuite)
 			typedef aggregate<double, Point<grid_dim, double>, Point<grid_dim, double>, double, double> props;
 			typedef grid_dist_id<grid_dim, double, props> grid_in_type;
 			grid_in_type g_dist(sz, box, ghost);
-			/*
+			
 			g_dist.setPropNames({"f_gaussian", "df_gaussian", "ddf_gaussian", "Error gradient", "Error Laplace"});
 
 			double mu = 0.5 * (box_upper - abs(box_lower));
@@ -46,7 +46,7 @@ BOOST_AUTO_TEST_SUITE(EnoWenoTestSuite)
 				auto key = dom.get();
 				Point<grid_dim, double> p = g_dist.getPos(key);
 				g_dist.getProp<f_gaussian>(key) = gaussian(p, mu, sigma);
-				for (int d = 0; d <= grid_dim; d++)
+				for (int d = 0; d < grid_dim; d++)
 				{
 					g_dist.getProp<df_gaussian>(key)[d] = gaussian_dx(p.get(d), mu, sigma);
 //					g_dist.getProp<df_gaussian>(key)[d] = 1;
@@ -55,8 +55,8 @@ BOOST_AUTO_TEST_SUITE(EnoWenoTestSuite)
 
 				++dom;
 			}
-			*/
-			g_dist.write("grid_gaussian_1D_N" + std::to_string(N));
+			
+			g_dist.write("grid_gaussian_1D_N" + std::to_string(N), FORMAT_BINARY);
 			
 		}
 	}
@@ -83,7 +83,7 @@ BOOST_AUTO_TEST_SUITE(EnoWenoTestSuite)
 				auto key = dom.get();
 				Point<grid_dim, double> p = g_dist.getPos(key);
 				g_dist.getProp<f_gaussian>(key) = gaussian(p, mu, sigma);
-				for (int d = 0; d <= grid_dim; d++)
+				for (int d = 0; d < grid_dim; d++)
 				{
 					g_dist.getProp<df_gaussian>(key)[d] = gaussian_dx(p.get(d), mu, sigma);
 				}
@@ -91,7 +91,7 @@ BOOST_AUTO_TEST_SUITE(EnoWenoTestSuite)
 				++dom;
 			}
 			
-//			g_dist.write("grid_gaussian_2D_N" + std::to_string(N));
+			g_dist.write("grid_gaussian_2D_N" + std::to_string(N), FORMAT_BINARY);
 		}
 	}
 BOOST_AUTO_TEST_SUITE_END()
