@@ -213,7 +213,7 @@ public:
 		init_sign_prop<Phi_0_temp, Phi_0_sign_temp>(
 				g_temp); // initialize Phi_0_sign_temp with the sign of the initial (pre-redistancing) Phi_0
 		// Get initial gradients
-		get_upwind_gradient<Phi_0_temp, Phi_0_sign_temp, Phi_grad_temp>(g_temp, redistOptions.order_space_op, true);
+		get_upwind_gradient<Phi_0_temp, Phi_0_sign_temp, Phi_grad_temp>(g_temp, redistOptions.order_space_op, false);
 		get_vector_magnitude<Phi_grad_temp, Phi_magnOfGrad_temp>(g_temp); // Get initial magnitude of gradients
 		
 		iterative_redistancing(g_temp); // Do the redistancing on the temporary grid
@@ -341,7 +341,7 @@ private:
 	void update_grid(g_temp_type &grid)
 	{
 		copy_gridTogrid<Phi_nplus1_temp, Phi_0_temp>(grid, grid); // Update Phi_0
-		get_upwind_gradient<Phi_0_temp, Phi_0_sign_temp, Phi_grad_temp>(grid, redistOptions.order_space_op, true);
+		get_upwind_gradient<Phi_0_temp, Phi_0_sign_temp, Phi_grad_temp>(grid, redistOptions.order_space_op, false);
 		get_vector_magnitude<Phi_grad_temp, Phi_magnOfGrad_temp>(grid);
 	}
 	

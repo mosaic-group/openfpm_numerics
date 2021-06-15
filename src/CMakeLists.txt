@@ -17,7 +17,7 @@ if (CUDA_FOUND)
 					 Operators/Vector/vector_dist_operators_apply_kernel_unit_tests.cu)
 endif()
 
-add_executable(numerics ${OPENFPM_INIT_FILE} ${CUDA_SOURCES}
+add_executable(numerics ${OPENFPM_INIT_FILE} #${CUDA_SOURCES}
 #		OdeIntegrators/tests/OdeIntegratores_base_tests.cpp
 #		DCPSE/DCPSE_op/tests/DCPSE_op_subset_test.cpp
 #		DCPSE/DCPSE_op/tests/DCPSE_op_test_base_tests
@@ -39,12 +39,13 @@ add_executable(numerics ${OPENFPM_INIT_FILE} ${CUDA_SOURCES}
 #						FiniteDifference/FDScheme_unit_tests.cpp
 #						FiniteDifference/eq_unit_test_3d.cpp
 #						FiniteDifference/eq_unit_test.cpp
-						FiniteDifference/tests/Eno_Weno_unit_test.cpp
+#						FiniteDifference/tests/Eno_Weno_unit_test.cpp
+#						BoundaryConditions/tests/method_of_images_cylinder_unit_test.cpp
 #						Operators/Vector/vector_dist_operators_unit_tests.cpp
 #						Operators/Vector/vector_dist_operators_apply_kernel_unit_tests.cpp
 #						../../src/lib/pdata.cpp
 #		level_set/redistancing_Sussman/tests/redistancingSussman_unit_test.cpp
-#		level_set/redistancing_Sussman/tests/convergence_test.cpp
+		level_set/redistancing_Sussman/tests/convergence_test.cpp
 		)
 
 add_dependencies(numerics ofpmmemory)
