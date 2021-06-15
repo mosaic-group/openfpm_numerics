@@ -27,10 +27,10 @@ constexpr size_t subset_id_mirror = 1;
 
 
 
-BOOST_AUTO_TEST_SUITE(odeInt_BASE_tests)
-	BOOST_AUTO_TEST_CASE(mirror_base_test) {
+BOOST_AUTO_TEST_SUITE(MethodOfImagesTestSuite)
+	BOOST_AUTO_TEST_CASE(mirror_cylinder_base_test) {
 		const size_t sz[3] = {18, 18, 5};
-		double boxsize = 12.0;
+		double boxsize = 20.0;
 		double spacing_p = 10.0 / (sz[x]-1);
 		double spacing_np = 10.0 / (sz[x]-1);
 		Box<3, double> box({-2.0, -2.0, 0}, {boxsize, boxsize, (sz[z])*spacing_p});
@@ -78,7 +78,6 @@ BOOST_AUTO_TEST_SUITE(odeInt_BASE_tests)
 				Particles.getLastProp<NORMAL>()[y] = 0;
 				Particles.getLastProp<NORMAL>()[z] = 0;
 				Particles.getLastProp<CONCENTRATION>() = x_coord+y_coord+z_coord;
-//				Particles.getLastSubset(subset_id_real);
 				
 				Particles.getLastProp<IS_SOURCE>() = 0;
 			}
@@ -109,36 +108,21 @@ BOOST_AUTO_TEST_SUITE(odeInt_BASE_tests)
 				Particles.getLastProp<NORMAL>()[z] = 0.0;
 				Particles.getLastProp<CONCENTRATION>() = x_coord+y_coord+z_coord;
 				
-//				Particles.getLastSubset(subset_id_real);
 				Particles.getLastProp<IS_SOURCE>() = 1;
-				
-				/*Particles.getLastProp<8>()[0] = 1.0 ;
-				Particles.getLastProp<8>()[1] = std::atan2(sqrt(x*x+y*y),z);
-				Particles.getLastProp<8>()[2] = std::atan2(y,x);*/
+
 				number_of_border_particles++;
 			}
 		}
+		auto &v_cl = create_vcluster();
+		v_cl.sum(number_of_border_particles);
+		v_cl.execute();
+		
 		std::cout << "Number of particles with surface normal = " << number_of_border_particles << std::endl;
 		Particles.map();
 		Particles.ghost_get<NORMAL,IS_SOURCE>();
 		//We write the particles to check if the initialization is correct.
-//		Particles.deleteGhost();
 		Particles.write("Init");
 		
-		/*
-		//Now we construct the subsets based on the subset number.
-		vector_dist_subset<3, double, aggregate<double,VectorS<3,double>, bool>> Particles_bulk(Particles,0);
-
-		//We create aliases for referring to property and and positions.
-		auto Pos = getV<PROP_POS>(Particles);
-		auto Concentration = getV<0>(Particles);
-		auto Normal = getV<1>(Particles);
-
-		//We create aliases for referring to the subset properties.
-		auto Concentration_bulk = getV<0>(Particles_bulk);
-		auto Normal_bulk = getV<1>(Particles_bulk);
-		Particles.write("Init_bulk");
-		*/
 		//Here Mirror Particle and do method of Images and check if it matches  property 0 mirroring (x+y+z of the mirror).
 		
 		openfpm::vector<vect_dist_key_dx> keys_source;
@@ -154,6 +138,8 @@ BOOST_AUTO_TEST_SUITE(odeInt_BASE_tests)
 			++dom;
 		}
 		size_t number_of_source_particles = keys_source.size();
+		v_cl.sum(number_of_source_particles);
+		v_cl.execute();
 		size_t number_of_real_particle_no_ghost = Particles.size_local();
 		size_t number_of_real_particle_with_ghost = Particles.size_local_with_ghost();
 		
@@ -169,14 +155,12 @@ BOOST_AUTO_TEST_SUITE(odeInt_BASE_tests)
 		NBCs.get_mirror_particles(Particles);
 		NBCs.apply_reflection<CONCENTRATION>(Particles);
 		
-		
-		
-		
-		
 		size_t number_of_mirror_particles = Particles.size_local() - number_of_real_particle_no_ghost;
-		/*
-		std::cout << "Number of mirror particles = " << number_of_mirror_particles << std::endl;
+		v_cl.sum(number_of_mirror_particles);
+		v_cl.execute();
 		
+		std::cout << "Number of mirror particles = " << number_of_mirror_particles << std::endl;
+		/*
 		std::cout << "number_of_real_particle_with_ghost + mirror particles = " << Particles.size_local_with_ghost() <<
 				std::endl;
 
