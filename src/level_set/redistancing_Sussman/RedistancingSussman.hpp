@@ -182,20 +182,21 @@ public:
 	 * @details The initial (input) Phi_0 (will be updated by Phi_{n+1} after each redistancing step),
 	 * Phi_{n+1} (received from redistancing),
 	 * gradient of Phi_{n+1},
+	 * L2 norm of gradient of Phi_{n+1} (=gradient magnitude),
 	 * sign of the original input Phi_0 (for the upwinding).
 	 */
-	typedef aggregate<double, double, Point<grid_in_type::dims, double>, int>
-	        props_temp;
+	typedef aggregate<double, double, double[grid_in_type::dims], double, int> props_temp;
 	/** @brief Type definition for the temporary grid.
 	 */
 	typedef grid_dist_id<grid_in_type::dims, typename grid_in_type::stype, props_temp> g_temp_type;
 	/**
 	 * @brief Create temporary grid, which is only used inside the class for the redistancing.
 	 *
-	 * @details The temporary grid stores the following 4 properties:
+	 * @details The temporary grid stores the following 5 properties:
 	 * the initial (input) Phi_0 (will be updated by Phi_{n+1} after each redistancing step),
 	 * Phi_{n+1}(received from redistancing),
 	 * gradient of Phi_{n+1},
+	 * L2 norm of gradient of Phi_{n+1} (=gradient magnitude),
 	 * sign of the original input Phi_0 (for the upwinding).
 	 */
 	g_temp_type g_temp;
@@ -213,6 +214,7 @@ public:
 				g_temp); // initialize Phi_0_sign_temp with the sign of the initial (pre-redistancing) Phi_0
 		// Get initial gradients
 		get_upwind_gradient<Phi_0_temp, Phi_0_sign_temp, Phi_grad_temp>(g_temp, redistOptions.order_space_op, true);
+		get_vector_magnitude<Phi_grad_temp, Phi_magnOfGrad_temp>(g_temp); // Get initial magnitude of gradients
 		
 		iterative_redistancing(g_temp); // Do the redistancing on the temporary grid
 		copy_gridTogrid<Phi_nplus1_temp, Phi_SDF_out>(g_temp, r_grid_in); // Copy resulting SDF function to input grid
@@ -246,7 +248,8 @@ private:
 	static constexpr size_t Phi_0_temp          = 0; ///< Property index of Phi_0 on the temporary grid.
 	static constexpr size_t Phi_nplus1_temp     = 1; ///< Property index of Phi_n+1 on the temporary grid.
 	static constexpr size_t Phi_grad_temp       = 2; ///< Property index of gradient of Phi_n on the temporary grid.
-	static constexpr size_t Phi_0_sign_temp     = 3; ///< Property index of sign of initial (input) Phi_0 (temp. grid).
+	static constexpr size_t Phi_magnOfGrad_temp = 3; ///< Property index of gradient magn. of Phi_n (temporary grid).
+	static constexpr size_t Phi_0_sign_temp     = 4; ///< Property index of sign of initial (input) Phi_0 (temp. grid).
 	
 	
 	//	Member variables
@@ -316,14 +319,14 @@ private:
     */
 	void go_one_redistancing_step_whole_grid(g_temp_type &grid)
 	{
-		grid.template ghost_get<Phi_0_temp, Phi_nplus1_temp, Phi_grad_temp>();
+		grid.template ghost_get<Phi_0_temp, Phi_nplus1_temp, Phi_grad_temp, Phi_magnOfGrad_temp>();
 		double spacing_x = grid.getSpacing()[0];
 		auto dom = grid.getDomainIterator();
 		while (dom.isNext())
 		{
 			auto key = dom.get();
 			const double phi_n = grid.template get<Phi_0_temp>(key);
-			const double phi_n_magnOfGrad = grid.template get<Phi_grad_temp>(key).norm();
+			const double phi_n_magnOfGrad = grid.template get<Phi_magnOfGrad_temp>(key);
 			double epsilon = phi_n_magnOfGrad * spacing_x;
 			grid.template get<Phi_nplus1_temp>(key) = get_phi_nplus1(phi_n, phi_n_magnOfGrad, time_step,
 			                                                         smooth_S(phi_n, epsilon));
@@ -339,6 +342,7 @@ private:
 	{
 		copy_gridTogrid<Phi_nplus1_temp, Phi_0_temp>(grid, grid); // Update Phi_0
 		get_upwind_gradient<Phi_0_temp, Phi_0_sign_temp, Phi_grad_temp>(grid, redistOptions.order_space_op, true);
+		get_vector_magnitude<Phi_grad_temp, Phi_magnOfGrad_temp>(grid);
 	}
 	
 	/** @brief Checks if a node lays within the narrow band around the interface.
@@ -371,8 +375,7 @@ private:
 			if (lays_inside_NB(grid.template get<Phi_nplus1_temp>(key)))
 			{
 				total_points_in_nb += 1.0;
-				auto dphi_magn = grid.template get<Phi_grad_temp>(key).norm();
-				total_residual += abs(dphi_magn - 1);
+				total_residual += abs(grid.template get<Phi_magnOfGrad_temp>(key) - 1);
 				total_change += abs(grid.template get<Phi_nplus1_temp>(key) - grid.template get<Phi_0_temp>(key));
 			}
 			++dom;
@@ -478,11 +481,6 @@ private:
 							print_out_iteration_change_residual(grid, i);
 						}
 						update_grid(grid); // Update Phi
-						if (redistOptions.save_temp_grid)
-						{
-							g_temp.setPropNames({"Phi_0", "Phi_nplus1_temp", "Phi_grad_temp", "Phi_0_sign_temp"});
-							g_temp.save("g_temp_redistancing.hdf5"); // HDF5 file}
-						}
 						break;
 					}
 				}
@@ -493,7 +491,7 @@ private:
 		// reused
 		if (redistOptions.save_temp_grid)
 		{
-			g_temp.setPropNames({"Phi_0", "Phi_nplus1_temp", "Phi_grad_temp", "Phi_0_sign_temp"});
+			g_temp.setPropNames({"Phi_0", "Phi_nplus1_temp", "Phi_grad_temp", "Phi_magnOfGrad_temp", "Phi_0_sign_temp"});
 			g_temp.save("g_temp_redistancing.hdf5"); // HDF5 file}
 		}
 	}
