@@ -70,11 +70,13 @@ void get_absolute_error(gridtype & grid)
 template <size_t PropNumeric, size_t PropAnalytic, size_t Error, typename gridtype>
 void get_relative_error(gridtype & grid)
 {
+	const double EPSILON = std::numeric_limits<double>::epsilon();
 	auto dom = grid.getDomainIterator();
 	while(dom.isNext())
 	{
 		auto key = dom.get();
-		grid.template getProp<Error> (key) = abs( 1 - (grid.template getProp<PropNumeric> (key) / grid.template getProp<PropAnalytic> (key)) );
+		grid.template getProp<Error> (key) = abs( 1 - (grid.template getProp<PropNumeric> (key) / (grid.template
+				getProp<PropAnalytic> (key) + EPSILON)) );
 		++dom;
 	}
 }

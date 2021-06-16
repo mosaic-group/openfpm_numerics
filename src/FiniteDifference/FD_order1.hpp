@@ -10,33 +10,33 @@
 
 /**@brief Computes the forward finite difference of a scalar property on the current grid node.
  *
- * @tparam Phi Size_t index of property for which the gradient should be computed.
+ * @tparam Field Size_t index of property for which the gradient should be computed.
  * @tparam gridtype Type of input grid.
  * @tparam keytype Type of key variable.
  * @param grid Grid, on which the gradient should be computed.
  * @param key Key that contains the index of the current grid node.
  * @param d Variable (size_t) that contains the dimension.
- * @return Forward finite difference for the property under index Phi on the current node with index key.
+ * @return Forward finite difference for the property under index Field on the current node with index key.
  */
-template <size_t Phi, typename gridtype, typename keytype>
+template <size_t Field, typename gridtype, typename keytype>
 double FD_forward(gridtype & grid, keytype & key, size_t d)
 {
-	return (grid.template get<Phi> (key.move(d, 1)) - grid.template get<Phi> (key)) / grid.getSpacing()[d];
+	return (grid.template get<Field> (key.move(d, 1)) - grid.template get<Field> (key)) / grid.getSpacing()[d];
 }
 /**@brief Computes the backward finite difference of a scalar property on the current grid node.
  *
- * @tparam Phi Size_t index of property for which the gradient should be computed.
+ * @tparam Field Size_t index of property for which the gradient should be computed.
  * @tparam gridtype Type of input grid.
  * @tparam keytype Type of key variable.
  * @param grid Grid, on which the gradient should be computed.
  * @param key Key that contains the index of the current grid node.
  * @param d Variable (size_t) that contains the dimension.
- * @return Backward finite difference for the property under index Phi on the current node with index key.
+ * @return Backward finite difference for the property under index Field on the current node with index key.
  */
-template <size_t Phi, typename gridtype, typename keytype>
+template <size_t Field, typename gridtype, typename keytype>
 double FD_backward(gridtype & grid, keytype & key, size_t d)
 {
-	return (grid.template get<Phi> (key) - grid.template get<Phi> (key.move(d, -1))) / grid.getSpacing()[d];
+	return (grid.template get<Field> (key) - grid.template get<Field> (key.move(d, -1))) / grid.getSpacing()[d];
 }
 
 
