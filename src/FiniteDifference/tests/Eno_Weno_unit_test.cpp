@@ -34,7 +34,7 @@ BOOST_AUTO_TEST_SUITE(EnoWenoTestSuite)
 			const double box_upper = 1.0;
 			Box<grid_dim, double> box({box_lower}, {box_upper});
 			Ghost<grid_dim, long int> ghost(3);
-			typedef aggregate<double, double, double, double, double, double> props;
+			typedef aggregate<double, Point<grid_dim, double>, Point<grid_dim, double>, Point<grid_dim, double>, double, double> props;
 			typedef grid_dist_id<grid_dim, double, props> grid_in_type;
 			grid_in_type g_dist(sz, box, ghost);
 			
@@ -49,7 +49,7 @@ BOOST_AUTO_TEST_SUITE(EnoWenoTestSuite)
 				auto key = gdom.get();
 				Point<grid_dim, double> p = g_dist.getPos(key);
 				// Initialize grid and ghost with gaussian function
-				g_dist.getProp<f_gaussian>(key)  = gaussian(p, mu, sigma);
+				g_dist.getProp<f_gaussian>(key) = gaussian(p, mu, sigma);
 				++gdom;
 			}
 			
@@ -58,13 +58,16 @@ BOOST_AUTO_TEST_SUITE(EnoWenoTestSuite)
 			{
 				auto key = dom.get();
 				Point<grid_dim, double> p = g_dist.getPos(key);
-				
-				// Analytical solution
-				g_dist.getProp<df_gaussian>(key) = gaussian(p, mu, sigma, 1);
-				// ENO_plus
-				g_dist.getProp<ENO_plus>(key)  = ENO_3_Plus<f_gaussian>(g_dist, key, 0);
-				// ENO_minus
-				g_dist.getProp<ENO_minus>(key)  = ENO_3_Minus<f_gaussian>(g_dist, key, 0);
+		
+				for (int d = 0; d < grid_dim; d++)
+				{
+					// Analytical solution
+					g_dist.getProp<df_gaussian>(key)[d] = hermite_polynomial(p.get(d), sigma, 1) * g_dist.getProp<f_gaussian>(key);
+					// ENO_plus
+					g_dist.getProp<ENO_plus>(key)[d]  = ENO_3_Plus<f_gaussian>(g_dist, key, d);
+					// ENO_minus
+					g_dist.getProp<ENO_minus>(key)[d]  = ENO_3_Minus<f_gaussian>(g_dist, key, d);
+				}
 				
 				++dom;
 			}
@@ -100,7 +103,7 @@ BOOST_AUTO_TEST_SUITE(EnoWenoTestSuite)
 			const double box_upper = 1.0;
 			Box<grid_dim, double> box({box_lower}, {box_upper});
 			Ghost<grid_dim, long int> ghost(3);
-			typedef aggregate<double, double, double, double, double, double> props;
+			typedef aggregate<double, Point<grid_dim, double>, Point<grid_dim, double>, Point<grid_dim, double>, double, double> props;
 			typedef grid_dist_id<grid_dim, double, props> grid_in_type;
 			grid_in_type g_dist(sz, box, ghost);
 			
@@ -124,14 +127,15 @@ BOOST_AUTO_TEST_SUITE(EnoWenoTestSuite)
 			{
 				auto key = dom.get();
 				Point<grid_dim, double> p = g_dist.getPos(key);
-				
-				// Analytical solution
-				g_dist.getProp<f_gaussian>(key)  = gaussian(p, mu, sigma);
-				g_dist.getProp<df_gaussian>(key) = gaussian(p, mu, sigma, 1);
-				// ENO_plus
-				g_dist.getProp<WENO_plus>(key)  = WENO_5_Plus<f_gaussian>(g_dist, key, 0);
-				// ENO_minus
-				g_dist.getProp<WENO_minus>(key)  = WENO_5_Minus<f_gaussian>(g_dist, key, 0);
+				for (int d = 0; d < grid_dim; d++)
+				{
+					// Analytical solution
+					g_dist.getProp<df_gaussian>(key)[d] = hermite_polynomial(p.get(d), sigma, 1) * g_dist.getProp<f_gaussian>(key);
+					// WENO_plus
+					g_dist.getProp<WENO_plus>(key)[d]   = WENO_5_Plus<f_gaussian>(g_dist, key, d);
+					// WENO_minus
+					g_dist.getProp<WENO_minus>(key)[d]  = WENO_5_Minus<f_gaussian>(g_dist, key, d);
+				}
 				
 				++dom;
 			}
@@ -158,7 +162,7 @@ BOOST_AUTO_TEST_SUITE(EnoWenoTestSuite)
 	
 	BOOST_AUTO_TEST_CASE(Eno_2D_1stDerivative_test)
 	{
-		for(size_t N=32; N<=128; N*=2)
+		for(size_t N=32; N<=256; N*=2)
 		{
 			const size_t grid_dim = 2;
 			const size_t sz[grid_dim] = {N, N};
@@ -192,9 +196,9 @@ BOOST_AUTO_TEST_SUITE(EnoWenoTestSuite)
 				Point<grid_dim, double> p = g_dist.getPos(key);
 				for (int d = 0; d < grid_dim; d++)
 				{
-					g_dist.getProp<df_gaussian>(key)[d]  = gaussian(p.get(d), mu, sigma, 1);
-					g_dist.getProp<ENO_plus>(key)[d]     = ENO_3_Plus<f_gaussian>(g_dist, key, d);
-					g_dist.getProp<ENO_minus>(key)[d]    = ENO_3_Minus<f_gaussian>(g_dist, key, d);
+					g_dist.getProp<df_gaussian>(key)[d] = hermite_polynomial(p.get(d), sigma, 1) * g_dist.getProp<f_gaussian>(key);
+					g_dist.getProp<ENO_plus>(key)[d]    = ENO_3_Plus<f_gaussian>(g_dist, key, d);
+					g_dist.getProp<ENO_minus>(key)[d]   = ENO_3_Minus<f_gaussian>(g_dist, key, d);
 				}
 				
 				++dom;
