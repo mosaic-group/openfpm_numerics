@@ -22,11 +22,18 @@ BOOST_AUTO_TEST_SUITE(EnoWenoTestSuite)
 	const size_t ENO_minus    = 3;
 	const size_t Error_plus   = 4;
 	const size_t Error_minus  = 5;
-
+	const double EPSILON = std::numeric_limits<double>::epsilon();
+	
+	double l2_norms_ENO []    = {0.084908, 0.014937, 0.002310};
+	double linf_norms_ENO []  = {0.228915, 0.047215, 0.008046};
+	
+	double l2_norms_WENO []   = {0.032770, 0.000935, 0.000052};
+	double linf_norms_WENO [] = {0.088540, 0.002453, 0.000143};
 	
 	BOOST_AUTO_TEST_CASE(Eno_1D_1stDerivative_test)
 	{
-		for (size_t N = 32; N <= 256; N *= 2)
+		int count = 0;
+		for (size_t N = 32; N <= 128; N *= 2)
 		{
 			const size_t grid_dim = 1;
 			const size_t sz[grid_dim] = {N};
@@ -78,24 +85,30 @@ BOOST_AUTO_TEST_SUITE(EnoWenoTestSuite)
 			{
 				L_norms lNorms;
 				lNorms = get_l_norms_grid<Error_plus>(g_dist);
-				write_lnorms_to_file(N, lNorms, "l_norms_ENO_plus", "./");
+				BOOST_CHECK_MESSAGE(lNorms.l2   < l2_norms_ENO[count] + 0.00001 + EPSILON, "Checking L2-norm ENO");
+				BOOST_CHECK_MESSAGE(lNorms.linf < linf_norms_ENO[count] + 0.00001 + EPSILON, "Checking Linf-norm "
+				                                                                             "ENO");
+//				write_lnorms_to_file(N, lNorms, "l_norms_ENO_plus", "./");
 			}
 			
 			{
 				L_norms lNorms;
 				lNorms = get_l_norms_grid<Error_minus>(g_dist);
-				write_lnorms_to_file(N, lNorms, "l_norms_ENO_minus", "./");
+				BOOST_CHECK_MESSAGE(lNorms.l2   < l2_norms_ENO[count] + 0.00001 + EPSILON, "Checking L2-norm ENO");
+				BOOST_CHECK_MESSAGE(lNorms.linf < linf_norms_ENO[count] + 0.00001 + EPSILON, "Checking Linf-norm "
+				                                                                             "ENO");
+//				write_lnorms_to_file(N, lNorms, "l_norms_ENO_minus", "./");
 			}
-			
-			g_dist.write("grid_gaussian_ENO_1D_N" + std::to_string(N), FORMAT_BINARY);
-			
+//			g_dist.write("grid_gaussian_ENO_1D_N" + std::to_string(N), FORMAT_BINARY);
+			count++;
 		}
 	}
 	const size_t WENO_plus     = 2;
 	const size_t WENO_minus    = 3;
 	BOOST_AUTO_TEST_CASE(Weno_1D_1stDerivative_test)
 	{
-		for (size_t N = 32; N <= 256; N *= 2)
+		int count = 0;
+		for (size_t N = 32; N <= 128; N *= 2)
 		{
 			const size_t grid_dim = 1;
 			const size_t sz[grid_dim] = {N};
@@ -146,23 +159,29 @@ BOOST_AUTO_TEST_SUITE(EnoWenoTestSuite)
 			{
 				L_norms lNorms;
 				lNorms = get_l_norms_grid<Error_plus>(g_dist);
-				write_lnorms_to_file(N, lNorms, "l_norms_WENO_plus", "./");
+				BOOST_CHECK_MESSAGE(lNorms.l2   < l2_norms_WENO[count] + 0.00001 + EPSILON, "Checking L2-norm WENO");
+				BOOST_CHECK_MESSAGE(lNorms.linf < linf_norms_WENO[count] + 0.00001 + EPSILON, "Checking Linf-norm "
+																							  "WENO");
+//				write_lnorms_to_file(N, lNorms, "l_norms_WENO_plus", "./");
 			}
 			
 			{
 				L_norms lNorms;
 				lNorms = get_l_norms_grid<Error_minus>(g_dist);
-				write_lnorms_to_file(N, lNorms, "l_norms_WENO_minus", "./");
+				BOOST_CHECK_MESSAGE(lNorms.l2   < l2_norms_WENO[count] + 0.00001 + EPSILON, "Checking L2-norm WENO");
+				BOOST_CHECK_MESSAGE(lNorms.linf < linf_norms_WENO[count] + 0.00001 + EPSILON, "Checking Linf-norm "
+				                                                                              "WENO");
+//				write_lnorms_to_file(N, lNorms, "l_norms_WENO_minus", "./");
 			}
-			
-			g_dist.write("grid_gaussian_WENO_1D_N" + std::to_string(N), FORMAT_BINARY);
-			
+//			g_dist.write("grid_gaussian_WENO_1D_N" + std::to_string(N), FORMAT_BINARY);
+			count++;
 		}
 	}
 	
 	BOOST_AUTO_TEST_CASE(Eno_2D_1stDerivative_test)
 	{
-		for(size_t N=32; N<=256; N*=2)
+		int count = 0;
+		for(size_t N=32; N<=128; N*=2)
 		{
 			const size_t grid_dim = 2;
 			const size_t sz[grid_dim] = {N, N};
@@ -211,17 +230,22 @@ BOOST_AUTO_TEST_SUITE(EnoWenoTestSuite)
 			{
 				L_norms lNorms;
 				lNorms = get_l_norms_grid<Error_plus>(g_dist);
-				write_lnorms_to_file(N, lNorms, "l_norms_2D_ENO_plus", "./");
+				BOOST_CHECK_MESSAGE(lNorms.l2   < l2_norms_ENO[count] + 0.00001 + EPSILON, "Checking L2-norm ENO");
+				BOOST_CHECK_MESSAGE(lNorms.linf < linf_norms_ENO[count] + 0.00001 + EPSILON, "Checking Linf-norm "
+				                                                                              "ENO");
+//				write_lnorms_to_file(N, lNorms, "l_norms_2D_ENO_plus", "./");
 			}
 			
 			{
 				L_norms lNorms;
 				lNorms = get_l_norms_grid<Error_minus>(g_dist);
-				write_lnorms_to_file(N, lNorms, "l_norms_2D_ENO_minus", "./");
+				BOOST_CHECK_MESSAGE(lNorms.l2   < l2_norms_ENO[count] + 0.00001 + EPSILON, "Checking L2-norm ENO");
+				BOOST_CHECK_MESSAGE(lNorms.linf < linf_norms_ENO[count] + 0.00001 + EPSILON, "Checking Linf-norm "
+				                                                                             "ENO");
+//				write_lnorms_to_file(N, lNorms, "l_norms_2D_ENO_minus", "./");
 			}
-			
-			
-			g_dist.write("grid_gaussian_2D_N" + std::to_string(N), FORMAT_BINARY);
+//			g_dist.write("grid_gaussian_2D_N" + std::to_string(N), FORMAT_BINARY);
+			count++;
 		}
 	}
 BOOST_AUTO_TEST_SUITE_END()
