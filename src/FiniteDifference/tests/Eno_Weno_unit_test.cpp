@@ -3,17 +3,12 @@
 //
 
 #define BOOST_TEST_DYN_LINK
-//#define BOOST_TEST_MAIN  // in only one cpp file
 #include <boost/test/unit_test.hpp>
 
-// Include redistancing files
-#include "util/PathsAndFiles.hpp"
-#include "level_set/redistancing_Sussman/RedistancingSussman.hpp"
-#include "level_set/redistancing_Sussman/NarrowBand.hpp"
 // Include header files for testing
-#include "Draw/DrawSphere.hpp"
 #include "level_set/redistancing_Sussman/tests/l_norms/LNorms.hpp"
 #include "Gaussian.hpp"
+#include "FiniteDifference/Eno_Weno.hpp"
 
 BOOST_AUTO_TEST_SUITE(EnoWenoTestSuite)
 	const size_t f_gaussian   = 0;
@@ -24,16 +19,22 @@ BOOST_AUTO_TEST_SUITE(EnoWenoTestSuite)
 	const size_t Error_minus  = 5;
 	const double EPSILON = std::numeric_limits<double>::epsilon();
 	
-	double l2_norms_ENO []    = {0.084908, 0.014937, 0.002310};
-	double linf_norms_ENO []  = {0.228915, 0.047215, 0.008046};
+	// 32,0.079885,0.186274
+	// 64,0.014594,0.045086
+	//128,0.002300,0.007982
+	double l2_norms_ENO []    = {0.079885, 0.014594, 0.002300};
+	double linf_norms_ENO []  = {0.186274, 0.045086, 0.007982};
 	
-	double l2_norms_WENO []   = {0.032770, 0.000935, 0.000052};
-	double linf_norms_WENO [] = {0.088540, 0.002453, 0.000143};
+	// 32,0.033198,0.097141
+	// 64,0.000935,0.002459
+	//128,0.000052,0.000143
+	double l2_norms_WENO []   = {0.033198, 0.000935, 0.000052};
+	double linf_norms_WENO [] = {0.097141, 0.002459, 0.000143};
 	
 	BOOST_AUTO_TEST_CASE(Eno_1D_1stDerivative_test)
 	{
 		int count = 0;
-		for (size_t N = 32; N <= 128; N *= 2)
+		for (size_t N = 32; N <= 128; N *= 2, ++count)
 		{
 			const size_t grid_dim = 1;
 			const size_t sz[grid_dim] = {N};
@@ -79,8 +80,8 @@ BOOST_AUTO_TEST_SUITE(EnoWenoTestSuite)
 				++dom;
 			}
 			// Get the error between analytical and numerical solution
-			get_relative_error<df_gaussian, ENO_plus, Error_plus>(g_dist);
-			get_relative_error<df_gaussian, ENO_minus, Error_minus>(g_dist);
+			get_relative_error<ENO_plus, df_gaussian, Error_plus>(g_dist);
+			get_relative_error<ENO_minus, df_gaussian, Error_minus>(g_dist);
 			
 			{
 				L_norms lNorms;
@@ -95,12 +96,10 @@ BOOST_AUTO_TEST_SUITE(EnoWenoTestSuite)
 				L_norms lNorms;
 				lNorms = get_l_norms_grid<Error_minus>(g_dist);
 				BOOST_CHECK_MESSAGE(lNorms.l2   < l2_norms_ENO[count] + 0.00001 + EPSILON, "Checking L2-norm ENO");
-				BOOST_CHECK_MESSAGE(lNorms.linf < linf_norms_ENO[count] + 0.00001 + EPSILON, "Checking Linf-norm "
-				                                                                             "ENO");
+				BOOST_CHECK_MESSAGE(lNorms.linf < linf_norms_ENO[count] + 0.00001 + EPSILON, "Checking Linf-norm ENO");
 //				write_lnorms_to_file(N, lNorms, "l_norms_ENO_minus", "./");
 			}
 //			g_dist.write("grid_gaussian_ENO_1D_N" + std::to_string(N), FORMAT_BINARY);
-			count++;
 		}
 	}
 	const size_t WENO_plus     = 2;
@@ -108,7 +107,7 @@ BOOST_AUTO_TEST_SUITE(EnoWenoTestSuite)
 	BOOST_AUTO_TEST_CASE(Weno_1D_1stDerivative_test)
 	{
 		int count = 0;
-		for (size_t N = 32; N <= 128; N *= 2)
+		for (size_t N = 32; N <= 128; N *= 2, ++count)
 		{
 			const size_t grid_dim = 1;
 			const size_t sz[grid_dim] = {N};
@@ -153,8 +152,8 @@ BOOST_AUTO_TEST_SUITE(EnoWenoTestSuite)
 				++dom;
 			}
 			// Get the error between analytical and numerical solution
-			get_relative_error<df_gaussian, WENO_plus, Error_plus>(g_dist);
-			get_relative_error<df_gaussian, WENO_minus, Error_minus>(g_dist);
+			get_relative_error<WENO_plus, df_gaussian, Error_plus>(g_dist);
+			get_relative_error<WENO_minus, df_gaussian, Error_minus>(g_dist);
 			
 			{
 				L_norms lNorms;
@@ -173,15 +172,14 @@ BOOST_AUTO_TEST_SUITE(EnoWenoTestSuite)
 				                                                                              "WENO");
 //				write_lnorms_to_file(N, lNorms, "l_norms_WENO_minus", "./");
 			}
-//			g_dist.write("grid_gaussian_WENO_1D_N" + std::to_string(N), FORMAT_BINARY);
-			count++;
+//			if(N==128) g_dist.write("grid_gaussian_WENO_1D_N" + std::to_string(N), FORMAT_BINARY);
 		}
 	}
 	
 	BOOST_AUTO_TEST_CASE(Eno_2D_1stDerivative_test)
 	{
 		int count = 0;
-		for(size_t N=32; N<=128; N*=2)
+		for (size_t N = 32; N <= 128; N *= 2, ++count)
 		{
 			const size_t grid_dim = 2;
 			const size_t sz[grid_dim] = {N, N};
@@ -224,8 +222,8 @@ BOOST_AUTO_TEST_SUITE(EnoWenoTestSuite)
 			}
 			
 			// Get the error between analytical and numerical solution
-			get_relative_error<df_gaussian, ENO_plus, Error_plus>(g_dist);
-			get_relative_error<df_gaussian, ENO_minus, Error_minus>(g_dist);
+			get_relative_error<ENO_plus, df_gaussian, Error_plus>(g_dist);
+			get_relative_error<ENO_minus, df_gaussian, Error_minus>(g_dist);
 			
 			{
 				L_norms lNorms;
@@ -245,7 +243,6 @@ BOOST_AUTO_TEST_SUITE(EnoWenoTestSuite)
 //				write_lnorms_to_file(N, lNorms, "l_norms_2D_ENO_minus", "./");
 			}
 //			g_dist.write("grid_gaussian_2D_N" + std::to_string(N), FORMAT_BINARY);
-			count++;
 		}
 	}
 BOOST_AUTO_TEST_SUITE_END()
