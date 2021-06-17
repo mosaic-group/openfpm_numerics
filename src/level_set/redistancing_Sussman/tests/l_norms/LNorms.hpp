@@ -76,7 +76,7 @@ void get_relative_error(gridtype & grid)
 	{
 		auto key = dom.get();
 		grid.template getProp<Error> (key) = abs( 1 - (grid.template getProp<PropNumeric> (key) / (grid.template
-				getProp<PropAnalytic> (key) + EPSILON)) );
+				getProp<PropAnalytic> (key))) );
 		++dom;
 	}
 }
@@ -139,6 +139,21 @@ L_norms get_l_norms_vector(vectortype & vd)
 	double linf = maxError;
 	return {l2, linf};
 }
+/**@brief Converts value into string maintaining a desired precision.
+ *
+ * @tparam T Template type of vlaue.
+ * @param myValue Value of type T.
+ * @param n Number of digits after the point the string of the value should have
+ * @return String containing myValue with precision n.
+ */
+template <typename T>
+std::string to_string_with_precision(const T myValue, const size_t n = 6)
+{
+	std::ostringstream out;
+	out.precision(n);
+	out << std::fixed << myValue;
+	return out.str();
+}
 /**@brief Writes the N (number of grid points on a square grid) and L-norms as strings to a csv-file.
  *
  * @param N Size_t variable that contains the grid size in number of grid points in one dimension for an NxN(xN) grid
@@ -157,8 +172,8 @@ static void write_lnorms_to_file(size_t N, L_norms l_norms, std::string filename
 		
 		std::ofstream l_out;
 		l_out.open(path_output_lnorm, std::ios_base::app); // append instead of overwrite
-		l_out << std::to_string(N) << ',' << std::to_string(l_norms.l2) << ',' << std::to_string(l_norms.linf)
-				<< std::endl;
+		l_out << std::to_string(N) << ',' << to_string_with_precision(l_norms.l2, 15)
+		<< ',' << to_string_with_precision(l_norms.linf) << std::endl;
 		l_out.close();
 	}
 }
