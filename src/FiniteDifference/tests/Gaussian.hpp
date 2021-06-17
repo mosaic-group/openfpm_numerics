@@ -8,7 +8,7 @@
 #include "cmath"
 
 
-double hermite_polynomial(double x, double sigma, int order)
+static double hermite_polynomial(double x, double sigma, int order)
 {
 	double h;
 	switch(order)
