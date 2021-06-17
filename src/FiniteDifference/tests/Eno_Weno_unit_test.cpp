@@ -86,8 +86,8 @@ BOOST_AUTO_TEST_SUITE(EnoWenoTestSuite)
 			{
 				L_norms lNorms;
 				lNorms = get_l_norms_grid<Error_plus>(g_dist);
-				BOOST_CHECK_MESSAGE(lNorms.l2   < l2_norms_ENO[count] + 0.00001 + EPSILON, "Checking L2-norm ENO");
-				BOOST_CHECK_MESSAGE(lNorms.linf < linf_norms_ENO[count] + 0.00001 + EPSILON, "Checking Linf-norm "
+				BOOST_CHECK_MESSAGE(lNorms.l2   < l2_norms_ENO[count] + 0.000001 + EPSILON, "Checking L2-norm ENO");
+				BOOST_CHECK_MESSAGE(lNorms.linf < linf_norms_ENO[count] + 0.000001 + EPSILON, "Checking Linf-norm "
 				                                                                             "ENO");
 //				write_lnorms_to_file(N, lNorms, "l_norms_ENO_plus", "./");
 			}
@@ -95,8 +95,8 @@ BOOST_AUTO_TEST_SUITE(EnoWenoTestSuite)
 			{
 				L_norms lNorms;
 				lNorms = get_l_norms_grid<Error_minus>(g_dist);
-				BOOST_CHECK_MESSAGE(lNorms.l2   < l2_norms_ENO[count] + 0.00001 + EPSILON, "Checking L2-norm ENO");
-				BOOST_CHECK_MESSAGE(lNorms.linf < linf_norms_ENO[count] + 0.00001 + EPSILON, "Checking Linf-norm ENO");
+				BOOST_CHECK_MESSAGE(lNorms.l2   < l2_norms_ENO[count] + 0.000001 + EPSILON, "Checking L2-norm ENO");
+				BOOST_CHECK_MESSAGE(lNorms.linf < linf_norms_ENO[count] + 0.000001 + EPSILON, "Checking Linf-norm ENO");
 //				write_lnorms_to_file(N, lNorms, "l_norms_ENO_minus", "./");
 			}
 //			g_dist.write("grid_gaussian_ENO_1D_N" + std::to_string(N), FORMAT_BINARY);
@@ -158,8 +158,8 @@ BOOST_AUTO_TEST_SUITE(EnoWenoTestSuite)
 			{
 				L_norms lNorms;
 				lNorms = get_l_norms_grid<Error_plus>(g_dist);
-				BOOST_CHECK_MESSAGE(lNorms.l2   < l2_norms_WENO[count] + 0.00001 + EPSILON, "Checking L2-norm WENO");
-				BOOST_CHECK_MESSAGE(lNorms.linf < linf_norms_WENO[count] + 0.00001 + EPSILON, "Checking Linf-norm "
+				BOOST_CHECK_MESSAGE(lNorms.l2   < l2_norms_WENO[count] + 0.000001 + EPSILON, "Checking L2-norm WENO");
+				BOOST_CHECK_MESSAGE(lNorms.linf < linf_norms_WENO[count] + 0.000001 + EPSILON, "Checking Linf-norm "
 																							  "WENO");
 //				write_lnorms_to_file(N, lNorms, "l_norms_WENO_plus", "./");
 			}
@@ -167,8 +167,8 @@ BOOST_AUTO_TEST_SUITE(EnoWenoTestSuite)
 			{
 				L_norms lNorms;
 				lNorms = get_l_norms_grid<Error_minus>(g_dist);
-				BOOST_CHECK_MESSAGE(lNorms.l2   < l2_norms_WENO[count] + 0.00001 + EPSILON, "Checking L2-norm WENO");
-				BOOST_CHECK_MESSAGE(lNorms.linf < linf_norms_WENO[count] + 0.00001 + EPSILON, "Checking Linf-norm "
+				BOOST_CHECK_MESSAGE(lNorms.l2   < l2_norms_WENO[count] + 0.000001 + EPSILON, "Checking L2-norm WENO");
+				BOOST_CHECK_MESSAGE(lNorms.linf < linf_norms_WENO[count] + 0.000001 + EPSILON, "Checking Linf-norm "
 				                                                                              "WENO");
 //				write_lnorms_to_file(N, lNorms, "l_norms_WENO_minus", "./");
 			}
@@ -228,8 +228,8 @@ BOOST_AUTO_TEST_SUITE(EnoWenoTestSuite)
 			{
 				L_norms lNorms;
 				lNorms = get_l_norms_grid<Error_plus>(g_dist);
-				BOOST_CHECK_MESSAGE(lNorms.l2   < l2_norms_ENO[count] + 0.00001 + EPSILON, "Checking L2-norm ENO");
-				BOOST_CHECK_MESSAGE(lNorms.linf < linf_norms_ENO[count] + 0.00001 + EPSILON, "Checking Linf-norm "
+				BOOST_CHECK_MESSAGE(lNorms.l2   < l2_norms_ENO[count] + 0.000001 + EPSILON, "Checking L2-norm ENO");
+				BOOST_CHECK_MESSAGE(lNorms.linf < linf_norms_ENO[count] + 0.000001 + EPSILON, "Checking Linf-norm "
 				                                                                              "ENO");
 //				write_lnorms_to_file(N, lNorms, "l_norms_2D_ENO_plus", "./");
 			}
@@ -237,8 +237,8 @@ BOOST_AUTO_TEST_SUITE(EnoWenoTestSuite)
 			{
 				L_norms lNorms;
 				lNorms = get_l_norms_grid<Error_minus>(g_dist);
-				BOOST_CHECK_MESSAGE(lNorms.l2   < l2_norms_ENO[count] + 0.00001 + EPSILON, "Checking L2-norm ENO");
-				BOOST_CHECK_MESSAGE(lNorms.linf < linf_norms_ENO[count] + 0.00001 + EPSILON, "Checking Linf-norm "
+				BOOST_CHECK_MESSAGE(lNorms.l2   < l2_norms_ENO[count] + 0.000001 + EPSILON, "Checking L2-norm ENO");
+				BOOST_CHECK_MESSAGE(lNorms.linf < linf_norms_ENO[count] + 0.000001 + EPSILON, "Checking Linf-norm "
 				                                                                             "ENO");
 //				write_lnorms_to_file(N, lNorms, "l_norms_2D_ENO_minus", "./");
 			}

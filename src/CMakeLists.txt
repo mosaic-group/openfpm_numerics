@@ -40,7 +40,7 @@ add_executable(numerics ${OPENFPM_INIT_FILE} ${CUDA_SOURCES}
 						FiniteDifference/eq_unit_test_3d.cpp
 						FiniteDifference/eq_unit_test.cpp
 						FiniteDifference/tests/Eno_Weno_unit_test.cpp
-						FiniteDifference/tests/Upwind_gradient_unit_test.hpp.cpp
+						FiniteDifference/tests/Upwind_gradient_unit_test.cpp
 						FiniteDifference/tests/FD_order1_unit_test.cpp
 						Operators/Vector/vector_dist_operators_unit_tests.cpp
 						Operators/Vector/vector_dist_operators_apply_kernel_unit_tests.cpp
