@@ -270,8 +270,8 @@ private:
 				for(size_t d = 0; d < grid_type::dims; d++)
 				{
 					vd.getLastPos()[d] = key_g.get(d) * grid.getSpacing()[d];
-					vd.template getLastProp<Phi_SDF_vd>() = grid.template get<Phi_SDF_grid>(key);
 				}
+				vd.template getLastProp<Phi_SDF_vd>() = grid.template get<Phi_SDF_grid>(key);
 			}
 			++dom;
 		}
@@ -390,8 +390,8 @@ private:
 				for(size_t d = 0; d < grid_type::dims; d++)
 				{
 					vd.getLastPos()[d] = key_g.get(d) * grid.getSpacing()[d];
-					vd.template getLastProp<Prop1_vd>() = grid.template get<Prop1_grid>(key);
 				}
+				vd.template getLastProp<Prop1_vd>() = grid.template get<Prop1_grid>(key);
 			}
 			++dom;
 		}
