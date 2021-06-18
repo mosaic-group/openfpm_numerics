@@ -173,7 +173,41 @@ public:
 	{
 		get_narrow_band_one_prop<Phi_SDF_grid, Prop1_grid, Prop1_vd>(grid, vd);
 	}
-
+	/** @brief Calls NarrowBand::get_narrow_band_one_prop which fills the empty vector passed as argument with
+	 * particles by placing these within a narrow band around the interface. An arbitrary property is copied from the
+	 * grid to the respective particle.
+	 *
+	 * @tparam Phi_SDF_grid Index of property storing the signed distance function in the input grid.
+	 * @tparam Prop1_grid Index of arbitrary grid property that should be copied to the particles (prop. value must
+	 * be a scalar).
+	 * @tparam Prop1_vd Index of particle property, where grid property should be copied to (prop. value must be a
+	 * scalar).
+	 * @tparam vector_type Inferred type of the particle vector.
+	 * @tparam grid_type Inferred type of the grid storing the SDF.
+	 *
+	 * @param grid Grid of arb. dims. storing the SDF (result of redistancing) and any arbitrary other (scalar)
+	 * property.
+	 * @param vd Empty vector with same spatial scaling (box) as the grid.
+	 */
+	 
+	/**
+	 *
+	 * @tparam Phi_SDF_grid
+	 * @tparam IndexStartGrid
+	 * @tparam IndexStopGrid
+	 * @tparam IndexStartVd
+	 * @tparam vector_type
+	 * @tparam grid_type
+	 * @param grid
+	 * @param vd
+	 */
+	template <size_t Phi_SDF_grid, size_t Index1Grid, size_t Index2Grid, size_t Index3Grid, size_t Index1Vd, size_t
+	Index2Vd, size_t Index3Vd, typename grid_type, typename vector_type>
+	void get_narrow_band_copy_three_scalar_properties(grid_type & grid, vector_type & vd)
+	{
+		get_narrow_band_three_props<Phi_SDF_grid, Index1Grid, Index2Grid, Index3Grid, Index1Vd, Index2Vd, Index3Vd>
+		        (grid, vd);
+	}
 private:
 	//	Some indices for better readability
 	static const size_t Phi_SDF_temp        = 0; ///< Property index of Phi_SDF on the temporary grid.
@@ -392,6 +426,33 @@ private:
 					vd.getLastPos()[d] = key_g.get(d) * grid.getSpacing()[d];
 				}
 				vd.template getLastProp<Prop1_vd>() = grid.template get<Prop1_grid>(key);
+			}
+			++dom;
+		}
+		vd.map();
+	}
+	// get_narrow_band_multiple_props<Phi_SDF_grid, IndexStartGrid, IndexStopGrid, IndexStartVd>(grid, vd);
+	template <size_t Phi_SDF_grid, size_t Index1Grid, size_t Index2Grid, size_t Index3Grid, size_t Index1Vd, size_t
+			Index2Vd, size_t Index3Vd, typename grid_type, typename vector_type>
+	void get_narrow_band_three_props(grid_type & grid, vector_type & vd)
+	{
+		auto dom = grid.getDomainIterator();
+		while(dom.isNext())
+		{
+			auto key = dom.get();
+			auto key_g = grid.getGKey(key);
+			if(within_narrow_band(grid.template get<Phi_SDF_grid>(key)))
+			{
+				// add particle to vd_narrow_band
+				vd.add();
+				// assign coordinates and properties from respective grid point to particle
+				for(size_t d = 0; d < grid_type::dims; d++)
+				{
+					vd.getLastPos()[d] = key_g.get(d) * grid.getSpacing()[d];
+				}
+				vd.template getLastProp<Index1Vd>() = grid.template get<Index1Grid>(key);
+				vd.template getLastProp<Index2Vd>() = grid.template get<Index2Grid>(key);
+				vd.template getLastProp<Index3Vd>() = grid.template get<Index3Grid>(key);
 			}
 			++dom;
 		}
