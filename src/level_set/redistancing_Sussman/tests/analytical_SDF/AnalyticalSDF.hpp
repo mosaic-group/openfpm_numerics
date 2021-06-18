@@ -128,7 +128,7 @@ void init_analytic_sdf_circle(grid_type & grid, radius_type radius, center_type 
 	{
 		auto key = dom.get();
 		Point<grid_type::dims, double> coords = grid.getPos(key);
-		grid.template getProp<SDF_exact>(key) = get_analytic_sdf_sphere(coords, radius, center_x,
+		grid.template getProp<SDF_exact>(key) = get_analytic_sdf_circle(coords, radius, center_x,
 		                                                                center_y);
 		++dom;
 	}
