@@ -201,11 +201,12 @@ public:
 	 * @param grid
 	 * @param vd
 	 */
-	template <size_t Phi_SDF_grid, size_t IndexStartGrid, size_t IndexStopGrid, size_t IndexStartVd, typename
-			vector_type, typename grid_type>
-	void get_narrow_band_copy_scalar_properties(grid_type & grid, vector_type & vd)
+	template <size_t Phi_SDF_grid, size_t Index1Grid, size_t Index2Grid, size_t Index3Grid, size_t Index1Vd, size_t
+	Index2Vd, size_t Index3Vd, typename grid_type, typename vector_type>
+	void get_narrow_band_copy_three_scalar_properties(grid_type & grid, vector_type & vd)
 	{
-		get_narrow_band_multiple_props<Phi_SDF_grid, IndexStartGrid, IndexStopGrid, IndexStartVd>(grid, vd);
+		get_narrow_band_three_props<Phi_SDF_grid, Index1Grid, Index2Grid, Index3Grid, Index1Vd, Index2Vd, Index3Vd>
+		        (grid, vd);
 	}
 private:
 	//	Some indices for better readability
@@ -431,9 +432,9 @@ private:
 		vd.map();
 	}
 	// get_narrow_band_multiple_props<Phi_SDF_grid, IndexStartGrid, IndexStopGrid, IndexStartVd>(grid, vd);
-	template <size_t Phi_SDF_grid, size_t IndexStartGrid, size_t IndexStopGrid, size_t IndexStartVd, typename
-			grid_type, typename vector_type>
-	void get_narrow_band_multiple_props(grid_type & grid, vector_type & vd)
+	template <size_t Phi_SDF_grid, size_t Index1Grid, size_t Index2Grid, size_t Index3Grid, size_t Index1Vd, size_t
+			Index2Vd, size_t Index3Vd, typename grid_type, typename vector_type>
+	void get_narrow_band_three_props(grid_type & grid, vector_type & vd)
 	{
 		auto dom = grid.getDomainIterator();
 		while(dom.isNext())
@@ -449,10 +450,9 @@ private:
 				{
 					vd.getLastPos()[d] = key_g.get(d) * grid.getSpacing()[d];
 				}
-				for(size_t i = IndexStartGrid, j = IndexStartVd; i <= IndexStopGrid; i++, j++)
-				{
-					vd.template getLastProp<j>() = grid.template get<i>(key);
-				}
+				vd.template getLastProp<Index1Vd>() = grid.template get<Index1Grid>(key);
+				vd.template getLastProp<Index2Vd>() = grid.template get<Index2Grid>(key);
+				vd.template getLastProp<Index3Vd>() = grid.template get<Index3Grid>(key);
 			}
 			++dom;
 		}

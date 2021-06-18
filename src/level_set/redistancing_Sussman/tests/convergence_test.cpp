@@ -26,32 +26,49 @@ BOOST_AUTO_TEST_SUITE(ConvergenceTestSuite)
 	const size_t SDF_sussman_grid       = 1;
 	const size_t SDF_exact_grid         = 2;
 	const size_t Error_grid             = 3;
+	
+	const size_t SDF_sussman_vd         = 0;
+	const size_t SDF_exact_vd           = 1;
+	const size_t Error_vd               = 2;
+	
+	//h = 0.129032, dt = 0.00416233
+	//h = 0.0634921, dt = 0.00100781
+	//h = 0.0314961, dt = 0.000248
+	//h = 0.0156863, dt = 6.15148e-05
+	//h = 0.00782779, dt = 1.53186e-05
+	//h = 0.00391007, dt = 3.82216e-06
+	
+	
 	BOOST_AUTO_TEST_CASE(RedistancingSussman_2D_convergence_test)
 	{
 		const size_t grid_dim = 2;
-		for (size_t N=32; N <=512; N*=2)
+		const double dt = 0.000248;
+		const double tmax = 5.0;
+		
+		const double radius = 1.0;
+		const double box_lower = 0.0;
+		const double box_upper = 4.0 * radius;
+		
+		Box<grid_dim, double> box({box_lower, box_lower}, {box_upper, box_upper});
+		Ghost<grid_dim, long int> ghost(0);
+		typedef aggregate<double, double, double, double> props;
+		typedef grid_dist_id<grid_dim, double, props > grid_in_type;
+		
+		for (size_t N=32; N <=128; N*=2)
 		{
-			const double dt = 0.000165334;
 			const size_t sz[grid_dim] = {N, N};
-			const double radius = 1.0;
-			const double box_lower = 0.0;
-			const double box_upper = 4.0 * radius;
-			Box<grid_dim, double> box({box_lower, box_lower}, {box_upper, box_upper});
-			Ghost<grid_dim, long int> ghost(0);
-			typedef aggregate<double, double, double, double> props;
-			typedef grid_dist_id<grid_dim, double, props > grid_in_type;
 			grid_in_type g_dist(sz, box, ghost);
-			g_dist.setPropNames({"Phi_0", "SDF_sussman", "SDF_exact", "Relative error"});
+			g_dist.setPropNames({"Phi_0", "SDF_sussman", "SDF_exact", "Error"});
 			
 			const double center[grid_dim] = {0.5*(box_upper-box_lower), 0.5*(box_upper-box_lower)};
 			init_grid_with_disk<Phi_0_grid>(g_dist, radius, center[x], center[y]); // Initialize sphere onto grid
 			
-			
+//			int order = 5;
 			for (int order=1; order<=5; order+=2)
 			{
 				Redist_options redist_options;
-				redist_options.min_iter                             = 1e4;
-				redist_options.max_iter                             = 1e4;
+				redist_options.min_iter                             = (int) std::round(tmax/dt);
+				redist_options.max_iter                             = (int) std::round(tmax/dt);
 				
 				redist_options.order_space_op                       = order;
 				
@@ -66,9 +83,11 @@ BOOST_AUTO_TEST_SUITE(ConvergenceTestSuite)
 				redist_options.print_steadyState_iter               = true;     // if true, prints out the final iteration number when steady state was reached + final change + residual (default: true)
 				
 				RedistancingSussman<grid_in_type> redist_obj(g_dist, redist_options);   // Instantiation of Sussman-redistancing class
+//				std::cout << "h = " << g_dist.spacing(x) << ", dt = " << redist_obj.get_time_step() << std::endl;
 				redist_obj.set_user_time_step(dt);
 				std::cout << "dt set to = " << dt << std::endl;
 				// Run the redistancing. in the <> brackets provide property-index where 1.) your initial Phi is stored and 2.) where the resulting SDF should be written to.
+
 				redist_obj.run_redistancing<Phi_0_grid, SDF_sussman_grid>();
 				
 				// Compute exact signed distance function at each grid point
@@ -77,23 +96,29 @@ BOOST_AUTO_TEST_SUITE(ConvergenceTestSuite)
 				// Compute the absolute error between analytical and numerical solution at each grid point
 				get_absolute_error<SDF_sussman_grid, SDF_exact_grid, Error_grid>(g_dist);
 				
+				g_dist.write("g_dist_postRedistancing_N" + std::to_string(N) + "_order" +
+						             std::to_string(order), FORMAT_BINARY);
 				
+				L_norms lNorms_grid;
+				lNorms_grid = get_l_norms_grid<Error_grid>(g_dist);
+				std::cout << N << ", " << lNorms_grid.l2 << ", " << lNorms_grid.linf << std::endl;
+				write_lnorms_to_file(N, lNorms_grid, "l_norms_redistancing_2Ddisk_grid_gradOrder" + std::to_string
+						(order), "./");
 				/////////////////////////////////////////////////////////////////////////////////////////////
 				//	Get narrow band: Place particles on interface (narrow band width e.g. 4 grid points on each side of the
 				//	interface)
 				size_t bc[grid_dim] = {PERIODIC, PERIODIC};
-				typedef aggregate<double> props_nb;
+				typedef aggregate<double, double, double> props_nb;
 				typedef vector_dist<grid_dim, double, props_nb> vd_type;
 				Ghost<grid_dim, double> ghost_vd(0);
 				vd_type vd_narrow_band(0, box, bc, ghost_vd);
-				vd_narrow_band.setPropNames({"error"});
-				const size_t Error_vd = 0;
+				vd_narrow_band.setPropNames({"SDF_sussman", "SDF_exact", "Error"});
 				// Compute the L_2- and L_infinity-norm and save to file
 				size_t narrow_band_width = 8;
 				NarrowBand<grid_in_type> narrowBand_points(g_dist, narrow_band_width); // Instantiation of NarrowBand class
-				narrowBand_points.get_narrow_band_copy_specific_property<SDF_sussman_grid, Error_grid, Error_vd>(g_dist,
-				                                                                                                 vd_narrow_band);
-				if (N==128) vd_narrow_band.write("vd_nb8p_error_N" + std::to_string(N) + "_order" +
+				narrowBand_points.get_narrow_band_copy_three_scalar_properties<SDF_sussman_grid, SDF_sussman_grid,
+				SDF_exact_grid, Error_grid, SDF_sussman_vd, SDF_exact_vd, Error_vd> (g_dist, vd_narrow_band);
+				vd_narrow_band.write("vd_nb8p_error_N" + std::to_string(N) + "_order" +
 						                     std::to_string(order), FORMAT_BINARY);
 //				vd_narrow_band.save("test_data/output/vd_nb8p_error" + std::to_string(N) + ".bin");
 				// Compute the L_2- and L_infinity-norm and save to file
@@ -104,7 +129,7 @@ BOOST_AUTO_TEST_SUITE(ConvergenceTestSuite)
 				
 				write_lnorms_to_file(N, lNorms_vd, "l_norms_redistancing_2Ddisk_vd_8p_gradOrder" + std::to_string
 				(order), "./");
-				
+
 
 //				switch(order)
 //				{
