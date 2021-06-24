@@ -117,6 +117,7 @@ struct Redist_options
 	size_t max_iter = 1e6;
 	
 	size_t order_space_op = 5;
+	size_t order_timestepper = 3;
 	
 	Conv_tol_change convTolChange;
 	Conv_tol_residual convTolResidual;
@@ -173,8 +174,23 @@ public:
 	                                                                                   Ghost<grid_in_type::dims, long int>(3))
 	{
 		time_step = get_time_step_CFL(g_temp);
-//		assure_minimal_thickness_of_NB(); // overwrites user-set NB thickness in which convergence and residual is
-//		checked
+#ifdef SE_CLASS1
+		if(!(redistOptions.order_timestepper == 1 || redistOptions.order_timestepper == 3))
+		{
+			std::cout << "You set the order of time discretization to " << redistOptions.order_timestepper <<
+						 " but time stepping only implemented for order 1 and 3. Using order 3 instead..." << std::endl;
+			redistOptions.order_timestepper = 3;
+		}
+		if(!(redistOptions.order_space_op == 1
+		|| redistOptions.order_space_op == 3
+		|| redistOptions.order_space_op == 5))
+		{
+			std::cout << "You set the order of space discretization to " << redistOptions.order_space_op <<
+					" but space discretization only implemented for order 1, 3 and 5. Using order 5 instead..." <<
+					std::endl;
+			redistOptions.order_space_op = 5;
+		}
+#endif // SE_CLASS1
 	}
 	
 	/**@brief Aggregated properties for the temporary grid.
@@ -182,21 +198,19 @@ public:
 	 * @details The initial (input) Phi_0 (will be updated by Phi_{n+1} after each redistancing step),
 	 * Phi_{n+1} (received from redistancing),
 	 * gradient of Phi_{n+1},
-	 * L2 norm of gradient of Phi_{n+1} (=gradient magnitude),
 	 * sign of the original input Phi_0 (for the upwinding).
 	 */
-	typedef aggregate<double, double, double[grid_in_type::dims], double, int> props_temp;
+	typedef aggregate<double, double, Point<grid_in_type::dims, double>, int, double, double> props_temp;
 	/** @brief Type definition for the temporary grid.
 	 */
 	typedef grid_dist_id<grid_in_type::dims, typename grid_in_type::stype, props_temp> g_temp_type;
 	/**
 	 * @brief Create temporary grid, which is only used inside the class for the redistancing.
 	 *
-	 * @details The temporary grid stores the following 5 properties:
+	 * @details The temporary grid stores the following 4 properties:
 	 * the initial (input) Phi_0 (will be updated by Phi_{n+1} after each redistancing step),
 	 * Phi_{n+1}(received from redistancing),
 	 * gradient of Phi_{n+1},
-	 * L2 norm of gradient of Phi_{n+1} (=gradient magnitude),
 	 * sign of the original input Phi_0 (for the upwinding).
 	 */
 	g_temp_type g_temp;
@@ -210,14 +224,13 @@ public:
 	template<size_t Phi_0_in, size_t Phi_SDF_out> void run_redistancing()
 	{
 		init_temp_grid<Phi_0_in>();
-		init_sign_prop<Phi_0_temp, Phi_0_sign_temp>(
-				g_temp); // initialize Phi_0_sign_temp with the sign of the initial (pre-redistancing) Phi_0
+		init_sign_prop<Phi_0, Sign_Phi0in>(
+				g_temp); // initialize Sign_Phi0in with the sign of the initial (pre-redistancing) Phi_0
 		// Get initial gradients
-		get_upwind_gradient<Phi_0_temp, Phi_0_sign_temp, Phi_grad_temp>(g_temp, redistOptions.order_space_op, true);
-		get_vector_magnitude<Phi_grad_temp, Phi_magnOfGrad_temp>(g_temp); // Get initial magnitude of gradients
+		get_upwind_gradient<Phi_0, Sign_Phi0in, Phi_grad>(g_temp, redistOptions.order_space_op, true);
 		
 		iterative_redistancing(g_temp); // Do the redistancing on the temporary grid
-		copy_gridTogrid<Phi_nplus1_temp, Phi_SDF_out>(g_temp, r_grid_in); // Copy resulting SDF function to input grid
+		copy_gridTogrid<Phi_nplus1, Phi_SDF_out>(g_temp, r_grid_in); // Copy resulting SDF function to input grid
 	}
 	
 	/** @brief Overwrite the time_step found via CFL condition with an individual time_step.
@@ -245,11 +258,12 @@ public:
 
 private:
 	//	Some indices for better readability
-	static constexpr size_t Phi_0_temp          = 0; ///< Property index of Phi_0 on the temporary grid.
-	static constexpr size_t Phi_nplus1_temp     = 1; ///< Property index of Phi_n+1 on the temporary grid.
-	static constexpr size_t Phi_grad_temp       = 2; ///< Property index of gradient of Phi_n on the temporary grid.
-	static constexpr size_t Phi_magnOfGrad_temp = 3; ///< Property index of gradient magn. of Phi_n (temporary grid).
-	static constexpr size_t Phi_0_sign_temp     = 4; ///< Property index of sign of initial (input) Phi_0 (temp. grid).
+	static constexpr size_t Phi_0       = 0; ///< Property index of Phi_0 on the temporary grid.
+	static constexpr size_t Phi_nplus1  = 1; ///< Property index of Phi_n+1 on the temporary grid.
+	static constexpr size_t Phi_grad    = 2; ///< Property index of gradient of Phi_n on the temporary grid.
+	static constexpr size_t Sign_Phi0in = 3; ///< Property index of sign of initial (input) Phi_0 (temp. grid).
+	static constexpr size_t L_factor    = 4; ///< Property index of RHS: sign(phi)*(1-|gradPhi|)
+	static constexpr size_t Phi_interm  = 5; ///< Property index of intermediate state for RK3.
 	
 	
 	//	Member variables
@@ -273,45 +287,95 @@ private:
 	void init_temp_grid()
 	{
 		double min_value = get_min_val<Phi_0_in>(r_grid_in); // get minimum Phi_0 value on the input grid
-		init_grid_and_ghost<Phi_0_temp>(g_temp, min_value); // init. Phi_0_temp (incl. ghost) with min. Phi_0
-		init_grid_and_ghost<Phi_nplus1_temp>(g_temp, min_value); // init. Phi_nplus1_temp (incl. ghost) with min. Phi_0
-		copy_gridTogrid<Phi_0_in, Phi_0_temp>(r_grid_in, g_temp); // Copy Phi_0 from the input grid to Phi_0_temp
+		init_grid_and_ghost<Phi_0>(g_temp, min_value); // init. Phi_0 (incl. ghost) with min. Phi_0
+		init_grid_and_ghost<Phi_nplus1>(g_temp, min_value); // init. Phi_nplus1 (incl. ghost) with min. Phi_0
+		copy_gridTogrid<Phi_0_in, Phi_0>(r_grid_in, g_temp); // Copy Phi_0 from the input grid to Phi_0
 	}
 	
-	/** @brief Checks if narrow band thickness >= 4 grid points. Else, sets it to 4 grid points.
-	 *
-	 * @details Makes sure, that the narrow band within which the convergence criteria are checked during the
-	 * redistancing, is thick enough.
-    */
-	void assure_minimal_thickness_of_NB()
+	template <size_t U, size_t Sign, size_t Gradient, size_t L>
+	void get_L()
 	{
-		if (redistOptions.width_NB_in_grid_points < 4)
+		g_temp.template ghost_get<U, Sign>();
+		get_upwind_gradient<U, Sign, Gradient>(g_temp, redistOptions.order_space_op, true);
+		g_temp.template ghost_get<Gradient>(KEEP_PROPERTIES);
+		double spacing_x = g_temp.getSpacing()[0];
+		auto dom = g_temp.getDomainIterator();
+		while (dom.isNext())
 		{
-			redistOptions.width_NB_in_grid_points = 4;
-		} // overwrite kappa if set too small by user
+			auto key = dom.get();
+			const double phi_n = g_temp.template get<U>(key);
+			const double phi_n_magnOfGrad = g_temp.template get<Gradient>(key).norm();
+			double epsilon = phi_n_magnOfGrad * spacing_x;
+			g_temp.template get<L>(key) = smooth_S(phi_n, epsilon) * (1 - phi_n_magnOfGrad);
+			++dom;
+		}
 	}
 	
-	/** @brief Run one timestep of re-distancing and compute Phi_n+1.
-	 *
-	 * @param phi_n Phi value on current node and current time.
-	 * @param phi_n_magnOfGrad Gradient magnitude of current Phi from upwinding FD.
-	 * @param dt Time step.
-	 * @param sign_phi_n Sign of the current Phi, should be the smooth sign.
-	 *
-	 * @return Phi_n+1 which is the Phi of the next time step on current node.
-	 *
-	 */
-	double get_phi_nplus1(double phi_n, double phi_n_magnOfGrad, double dt, double sign_phi_n)
+	template <size_t Un, size_t L, size_t U1>
+	void get_u1(double dt)
 	{
-		double step = dt * sign_phi_n * (1 - phi_n_magnOfGrad); // <- original Sussman
-//		if (step > 10)
-//		{
-//			std::cout << "phi_n_magnOfGrad = " << phi_n_magnOfGrad << ", step = " << step
-//					<< ", skip to prevent exploding peaks." << std::endl;
-//			step = 0;
-//		}
-		return phi_n + step;
+		g_temp.template ghost_get<Un, L>();
+		auto dom = g_temp.getDomainIterator();
+		while (dom.isNext())
+		{
+			auto key = dom.get();
+			g_temp.template get<U1>(key) = g_temp.template get<Un>(key) + dt * g_temp.template get<L>(key);
+			++dom;
+		}
 	}
+	
+	template <size_t Un, size_t U1, size_t L, size_t U2>
+	void get_u2(double dt)
+	{
+		g_temp.template ghost_get<Un, U1, L>();
+		auto dom = g_temp.getDomainIterator();
+		while (dom.isNext())
+		{
+			auto key = dom.get();
+			g_temp.template get<U2>(key) =
+			                0.75 * g_temp.template get<Un>(key) + 
+	                        0.25 * g_temp.template get<U1>(key) +
+                            0.25 * dt * g_temp.template get<L>(key);
+			++dom;
+		}
+	}
+	
+	template <size_t Un, size_t U2, size_t L, size_t Unplus1>
+	void get_u3(double dt)
+	{
+		g_temp.template ghost_get<Un, U2, L>();
+		auto dom = g_temp.getDomainIterator();
+		while (dom.isNext())
+		{
+			auto key = dom.get();
+			g_temp.template get<Unplus1>(key) =
+							1.0/3.0 * g_temp.template get<Un>(key) +
+							2.0/3.0 * g_temp.template get<U2>(key) +
+					        2.0/3.0 * dt * g_temp.template get<L>(key);
+			++dom;
+		}
+	}
+	
+	template <size_t Un, size_t L, size_t Sign, size_t Gradient, size_t Unplus1>
+	void tvd_runge_kutta_1_stepper(double dt)
+	{
+		get_L<Un, Sign, Gradient, L>();
+		get_u1<Un, L, Unplus1>(dt);
+	}
+	
+	template <size_t Un, size_t Uintermed, size_t L, size_t Sign, size_t Gradient, size_t Unplus1>
+	void tvd_runge_kutta_3_stepper(double dt)
+	{
+		get_L<Un, Sign, Gradient, L>();
+		get_u1<Un, L, Uintermed>(dt);
+		get_L<Uintermed, Sign, Gradient, L>();
+		//template <size_t Un, size_t U1, size_t L, size_t U2>
+		get_u2<Un, Uintermed, L, Uintermed>(dt);
+		get_L<Uintermed, Sign, Gradient, L>();
+		get_u3<Un, Uintermed, L, Unplus1>(dt);
+	}
+	
+
 	
 	/** @brief Go one re-distancing time-step on the whole grid.
     *
@@ -319,19 +383,21 @@ private:
     */
 	void go_one_redistancing_step_whole_grid(g_temp_type &grid)
 	{
-		grid.template ghost_get<Phi_0_temp, Phi_nplus1_temp, Phi_grad_temp, Phi_magnOfGrad_temp>();
-		double spacing_x = grid.getSpacing()[0];
-		auto dom = grid.getDomainIterator();
-		while (dom.isNext())
+		switch(redistOptions.order_timestepper)
 		{
-			auto key = dom.get();
-			const double phi_n = grid.template get<Phi_0_temp>(key);
-			const double phi_n_magnOfGrad = grid.template get<Phi_magnOfGrad_temp>(key);
-			double epsilon = phi_n_magnOfGrad * spacing_x;
-			grid.template get<Phi_nplus1_temp>(key) = get_phi_nplus1(phi_n, phi_n_magnOfGrad, time_step,
-			                                                         smooth_S(phi_n, epsilon));
-			++dom;
+			case 1:
+				//	template <size_t Un, size_t L, size_t Sign, size_t Gradient, size_t Unplus1>
+				tvd_runge_kutta_1_stepper<Phi_0, L_factor, Sign_Phi0in, Phi_grad, Phi_nplus1>(time_step);
+				std::cout << "RK 1" << std::endl;
+				break;
+			case 3:
+			default:
+				// 	template <size_t Un, size_t U1, size_t L, size_t Sign, size_t Gradient, size_t Unplus1>
+				tvd_runge_kutta_3_stepper<Phi_0, Phi_interm, L_factor, Sign_Phi0in, Phi_grad, Phi_nplus1>(time_step);
+				std::cout << "RK 3" << std::endl;
+				break;
 		}
+
 	}
 	
 	/** @brief Updates Phi_n with the new Phi_n+1 and recomputes the gradients.
@@ -340,9 +406,8 @@ private:
 	 */
 	void update_grid(g_temp_type &grid)
 	{
-		copy_gridTogrid<Phi_nplus1_temp, Phi_0_temp>(grid, grid); // Update Phi_0
-		get_upwind_gradient<Phi_0_temp, Phi_0_sign_temp, Phi_grad_temp>(grid, redistOptions.order_space_op, true);
-		get_vector_magnitude<Phi_grad_temp, Phi_magnOfGrad_temp>(grid);
+		copy_gridTogrid<Phi_nplus1, Phi_0>(grid, grid); // Update Phi_0
+		get_upwind_gradient<Phi_0, Sign_Phi0in, Phi_grad>(grid, redistOptions.order_space_op, true);
 	}
 	
 	/** @brief Checks if a node lays within the narrow band around the interface.
@@ -372,11 +437,12 @@ private:
 		while (dom.isNext())
 		{
 			auto key = dom.get();
-			if (lays_inside_NB(grid.template get<Phi_nplus1_temp>(key)))
+			if (lays_inside_NB(grid.template get<Phi_nplus1>(key)))
 			{
 				total_points_in_nb += 1.0;
-				total_residual += abs(grid.template get<Phi_magnOfGrad_temp>(key) - 1);
-				total_change += abs(grid.template get<Phi_nplus1_temp>(key) - grid.template get<Phi_0_temp>(key));
+				auto dphi_magn = grid.template get<Phi_grad>(key).norm();
+				total_residual += abs(dphi_magn - 1);
+				total_change += abs(grid.template get<Phi_nplus1>(key) - grid.template get<Phi_0>(key));
 			}
 			++dom;
 		}
@@ -481,6 +547,11 @@ private:
 							print_out_iteration_change_residual(grid, i);
 						}
 						update_grid(grid); // Update Phi
+						if (redistOptions.save_temp_grid)
+						{
+							g_temp.setPropNames({"Phi_0", "Phi_nplus1", "Phi_grad", "Sign_Phi0in"});
+							g_temp.save("g_temp_redistancing.hdf5"); // HDF5 file}
+						}
 						break;
 					}
 				}
@@ -491,7 +562,7 @@ private:
 		// reused
 		if (redistOptions.save_temp_grid)
 		{
-			g_temp.setPropNames({"Phi_0", "Phi_nplus1_temp", "Phi_grad_temp", "Phi_magnOfGrad_temp", "Phi_0_sign_temp"});
+			g_temp.setPropNames({"Phi_0", "Phi_nplus1", "Phi_grad", "Sign_Phi0in"});
 			g_temp.save("g_temp_redistancing.hdf5"); // HDF5 file}
 		}
 	}
