@@ -50,13 +50,15 @@ BOOST_AUTO_TEST_SUITE(ConvergenceTestSuite)
 			init_grid_with_sphere<Phi_0_grid>(g_dist, radius, center[x], center[y], center[z]); // Initialize sphere onto grid
 			
 			
-			for (int order=1; order<=5; order+=2)
+//			for (int order=1; order<=5; order+=2)
 			{
 				Redist_options redist_options;
 				redist_options.min_iter                             = 1e4;
 				redist_options.max_iter                             = 1e4;
 				
-				redist_options.order_space_op                       = order;
+//				redist_options.order_space_op                       = order;
+				redist_options.order_space_op                       = 1;
+				redist_options.order_timestepper                    = 1;
 				
 				// set both convergence criteria to false s.t. termination only when max_iterations reached
 				redist_options.convTolChange.check                  = false;    // define here which of the convergence criteria above should be used. If both are true, termination only occurs when both are fulfilled or when iter > max_iter

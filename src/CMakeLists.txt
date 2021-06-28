@@ -18,34 +18,34 @@ if (CUDA_FOUND)
 endif()
 
 add_executable(numerics ${OPENFPM_INIT_FILE} ${CUDA_SOURCES}
-		OdeIntegrators/tests/OdeIntegratores_base_tests.cpp
-		DCPSE/DCPSE_op/tests/DCPSE_op_subset_test.cpp
-		DCPSE/DCPSE_op/tests/DCPSE_op_test_base_tests
-		FiniteDifference/FD_Solver_test.cpp
-		FiniteDifference/FD_op_Tests.cpp
-		DCPSE/DCPSE_op/tests/DCPSE_op_test3d.cpp
-        DCPSE/DCPSE_op/tests/DCPSE_op_Solver_test.cpp
-        DCPSE/DCPSE_op/tests/DCPSE_op_test_temporal.cpp
-        DCPSE/tests/Dcpse_unit_tests.cpp
-        DCPSE/tests/DcpseRhs_unit_tests.cpp
-        DCPSE/tests/MonomialBasis_unit_tests.cpp
-        DCPSE/tests/Support_unit_tests.cpp
-        DCPSE/tests/Vandermonde_unit_tests.cpp
+#		OdeIntegrators/tests/OdeIntegratores_base_tests.cpp
+#		DCPSE/DCPSE_op/tests/DCPSE_op_subset_test.cpp
+#		DCPSE/DCPSE_op/tests/DCPSE_op_test_base_tests
+#		FiniteDifference/FD_Solver_test.cpp
+#		FiniteDifference/FD_op_Tests.cpp
+#		DCPSE/DCPSE_op/tests/DCPSE_op_test3d.cpp
+#        DCPSE/DCPSE_op/tests/DCPSE_op_Solver_test.cpp
+#        DCPSE/DCPSE_op/tests/DCPSE_op_test_temporal.cpp
+#        DCPSE/tests/Dcpse_unit_tests.cpp
+#        DCPSE/tests/DcpseRhs_unit_tests.cpp
+#        DCPSE/tests/MonomialBasis_unit_tests.cpp
+#        DCPSE/tests/Support_unit_tests.cpp
+#        DCPSE/tests/Vandermonde_unit_tests.cpp
 						main.cpp
-						Matrix/SparseMatrix_unit_tests.cpp
-						interpolation/interpolation_unit_tests.cpp
-						Vector/Vector_unit_tests.cpp
-						Solvers/petsc_solver_unit_tests.cpp
-						FiniteDifference/FDScheme_unit_tests.cpp
-						FiniteDifference/eq_unit_test_3d.cpp
-						FiniteDifference/eq_unit_test.cpp
-						FiniteDifference/tests/Eno_Weno_unit_test.cpp
-						FiniteDifference/tests/Upwind_gradient_unit_test.cpp
-						FiniteDifference/tests/FD_order1_unit_test.cpp
-						Operators/Vector/vector_dist_operators_unit_tests.cpp
-						Operators/Vector/vector_dist_operators_apply_kernel_unit_tests.cpp
-						../../src/lib/pdata.cpp
-						BoundaryConditions/tests/method_of_images_cylinder_unit_test.cpp
+#						Matrix/SparseMatrix_unit_tests.cpp
+#						interpolation/interpolation_unit_tests.cpp
+#						Vector/Vector_unit_tests.cpp
+#						Solvers/petsc_solver_unit_tests.cpp
+#						FiniteDifference/FDScheme_unit_tests.cpp
+#						FiniteDifference/eq_unit_test_3d.cpp
+#						FiniteDifference/eq_unit_test.cpp
+#						FiniteDifference/tests/Eno_Weno_unit_test.cpp
+#						FiniteDifference/tests/Upwind_gradient_unit_test.cpp
+#						FiniteDifference/tests/FD_order1_unit_test.cpp
+#						Operators/Vector/vector_dist_operators_unit_tests.cpp
+#						Operators/Vector/vector_dist_operators_apply_kernel_unit_tests.cpp
+#						../../src/lib/pdata.cpp
+#						BoundaryConditions/tests/method_of_images_cylinder_unit_test.cpp
 #		level_set/closest_point/closest_point_unit_tests.cpp
 		level_set/redistancing_Sussman/tests/redistancingSussman_unit_test.cpp
 #		level_set/redistancing_Sussman/tests/convergence_test.cpp
@@ -249,7 +249,7 @@ install(FILES interpolation/interpolation.hpp
       	      DESTINATION openfpm_numerics/include/interpolation
 	      COMPONENT OpenFPM)
 
-install(FILES level_set/redistancing_Sussman/ComputeGradient.hpp
+install(FILES
 	      level_set/redistancing_Sussman/HelpFunctions.hpp
 	      level_set/redistancing_Sussman/HelpFunctionsForGrid.hpp
 	      level_set/redistancing_Sussman/NarrowBand.hpp
