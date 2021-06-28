@@ -73,7 +73,7 @@ public:
 			point_type xp   = vd.getPos(key);
 			point_type n    = vd.template getProp<SurfaceNormal>(key);
 			
-			point_type xm   = xp + n;
+			point_type xm   = xp + 2 * n;
 
 			#ifdef SE_CLASS1
 			if(!point_lies_on_this_processor(vd, xm))
