@@ -95,6 +95,7 @@ if(SuiteSparse_FOUND)
 endif()
 
 if(OpenMP_CXX_FOUND)
+    target_include_directories (numerics PUBLIC ${OpenMP_CXX_INCLUDE_DIRS})
     target_link_libraries(numerics ${OpenMP_CXX_FLAGS})
 endif()
 

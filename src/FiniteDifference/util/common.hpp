@@ -11,6 +11,8 @@
 #define STAGGERED_GRID 1
 #define NORMAL_GRID 0
 
+#include "util/common.hpp"
+
 template<typename T, typename Sfinae = void>
 struct has_grid_type: std::false_type {};
 
