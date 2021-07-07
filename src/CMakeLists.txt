@@ -149,6 +149,7 @@ install(FILES FiniteDifference/Average.hpp
       	      FiniteDifference/mul.hpp 
       	      FiniteDifference/sum.hpp 
 	      FiniteDifference/Upwind_gradient.hpp
+	      FiniteDifference/FD_order1.hpp
       	      DESTINATION openfpm_numerics/include/FiniteDifference 
 	      COMPONENT OpenFPM)
 	      
