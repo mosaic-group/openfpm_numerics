@@ -167,7 +167,7 @@ install(FILES Operators/Vector/vector_dist_operators_extensions.hpp
       	       DESTINATION openfpm_numerics/include/Operators/Vector 
 	       COMPONENT OpenFPM)
 
-       install(FILES Operators/Vector/cuda/vector_dist_operators_cuda.cuh
+install(FILES Operators/Vector/cuda/vector_dist_operators_cuda.cuh
 	      DESTINATION openfpm_numerics/include/Operators/Vector/cuda 
 	      COMPONENT OpenFPM)
 
@@ -185,8 +185,7 @@ install(FILES interpolation/interpolation.hpp
       	      DESTINATION openfpm_numerics/include/interpolation 
 	      COMPONENT OpenFPM)
 
-install(FILES level_set/redistancing_Sussman/ComputeGradient.hpp
-	      level_set/redistancing_Sussman/HelpFunctions.hpp
+install(FILES level_set/redistancing_Sussman/HelpFunctions.hpp
 	      level_set/redistancing_Sussman/HelpFunctionsForGrid.hpp
 	      level_set/redistancing_Sussman/NarrowBand.hpp
 	      level_set/redistancing_Sussman/RedistancingSussman.hpp
