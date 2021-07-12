@@ -249,8 +249,7 @@ install(FILES interpolation/interpolation.hpp
       	      DESTINATION openfpm_numerics/include/interpolation
 	      COMPONENT OpenFPM)
 
-install(FILES level_set/redistancing_Sussman/ComputeGradient.hpp
-	      level_set/redistancing_Sussman/HelpFunctions.hpp
+install(FILES level_set/redistancing_Sussman/HelpFunctions.hpp
 	      level_set/redistancing_Sussman/HelpFunctionsForGrid.hpp
 	      level_set/redistancing_Sussman/NarrowBand.hpp
 	      level_set/redistancing_Sussman/RedistancingSussman.hpp
