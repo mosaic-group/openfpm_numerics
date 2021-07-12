@@ -47,6 +47,9 @@
 //#include "ComputeGradient.hpp"
 #include "FiniteDifference/Upwind_gradient.hpp"
 
+#include "level_set/redistancing_Sussman/tests/l_norms/LNorms.hpp" // for to_string_with_precision
+
+
 
 /** @brief Optional convergence criterium checking the total change.
  *
@@ -169,11 +172,17 @@ public:
 	 */
 	RedistancingSussman(grid_in_type &grid_in, Redist_options &redistOptions) : redistOptions(redistOptions),
 	                                                                            r_grid_in(grid_in),
+	                                                                            key_checkpoint(0, {10}),
 	                                                                            g_temp(grid_in.getDecomposition(),
 	                                                                                   grid_in.getGridInfoVoid().getSize(),
 	                                                                                   Ghost<grid_in_type::dims, long int>(3))
 	{
 		time_step = get_time_step_CFL(g_temp);
+
+
+
+
+
 #ifdef SE_CLASS1
 		if(!(redistOptions.order_timestepper == 1 || redistOptions.order_timestepper == 3))
 		{
@@ -192,6 +201,8 @@ public:
 		}
 #endif // SE_CLASS1
 	}
+	
+	grid_dist_key_dx<grid_in_type::dims> key_checkpoint;
 	
 	/**@brief Aggregated properties for the temporary grid.
 	 *
@@ -381,7 +392,7 @@ private:
     *
     * @param grid Internal temporary grid.
     */
-	void go_one_redistancing_step_whole_grid(g_temp_type &grid)
+	void go_one_redistancing_step_whole_grid()
 	{
 		switch(redistOptions.order_timestepper)
 		{
@@ -395,7 +406,19 @@ private:
 				tvd_runge_kutta_3_stepper<Phi_0, Phi_interm, L_factor, Sign_Phi0in, Phi_grad, Phi_nplus1>(time_step);
 				break;
 		}
-
+		////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+		auto &v_cl = create_vcluster();
+		if (v_cl.rank() == 0)
+		{
+			std::string filename = "Phi_of_checkpoint_dt" + std::to_string((int)(time_step*1e12)) + ".csv";
+			create_file_if_not_exist(filename);
+			
+			std::ofstream l_out;
+			l_out.open(filename, std::ios_base::app); // append instead of overwrite
+			l_out << to_string_with_precision(g_temp.template get<Phi_0>(key_checkpoint)) << std::endl;
+			l_out.close();
+		}
+		////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	}
 	
 	/** @brief Updates Phi_n with the new Phi_n+1 and recomputes the gradients.
@@ -405,7 +428,6 @@ private:
 	void update_grid(g_temp_type &grid)
 	{
 		copy_gridTogrid<Phi_nplus1, Phi_0>(grid, grid); // Update Phi_0
-		get_upwind_gradient<Phi_0, Sign_Phi0in, Phi_grad>(grid, redistOptions.order_space_op, true);
 	}
 	
 	/** @brief Checks if a node lays within the narrow band around the interface.
@@ -520,7 +542,7 @@ private:
 	{
 		for (size_t i = 0; i <= redistOptions.max_iter; i++)
 		{
-			go_one_redistancing_step_whole_grid(grid);
+			go_one_redistancing_step_whole_grid();
 			
 			if (i % redistOptions.interval_check_convergence == 0) // after some iterations check if steady state
 				// is reached in the narrow band
@@ -545,6 +567,9 @@ private:
 							print_out_iteration_change_residual(grid, i);
 						}
 						update_grid(grid); // Update Phi
+						grid.template ghost_get<Phi_0, Sign_Phi0in>();
+						get_upwind_gradient<Phi_0, Sign_Phi0in, Phi_grad>(grid, redistOptions.order_space_op, true);
+						grid.template ghost_get<Phi_grad>(KEEP_PROPERTIES);
 						if (redistOptions.save_temp_grid)
 						{
 							g_temp.setPropNames({"Phi_0", "Phi_nplus1", "Phi_grad", "Sign_Phi0in"});

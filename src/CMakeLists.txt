@@ -48,8 +48,9 @@ add_executable(numerics ${OPENFPM_INIT_FILE} ${CUDA_SOURCES}
 #						BoundaryConditions/tests/method_of_images_cylinder_unit_test.cpp
 #		level_set/closest_point/closest_point_unit_tests.cpp
 #		level_set/redistancing_Sussman/tests/redistancingSussman_unit_test.cpp
-#		level_set/redistancing_Sussman/tests/convergence_test.cpp
-		level_set/redistancing_Sussman/tests/single_point_convergence_test.hpp
+		level_set/redistancing_Sussman/tests/convergence_test.cpp
+#		level_set/redistancing_Sussman/tests/single_point_convergence_test.cpp
+#		level_set/redistancing_Sussman/tests/test.cpp
 		)
 
 add_dependencies(numerics ofpmmemory)

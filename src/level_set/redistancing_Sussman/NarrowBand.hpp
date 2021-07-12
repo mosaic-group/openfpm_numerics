@@ -295,7 +295,6 @@ private:
 		while(dom.isNext())
 		{
 			auto key = dom.get();
-			auto key_g = grid.getGKey(key);
 			if(within_narrow_band(grid.template get<Phi_SDF_grid>(key)))
 			{
 				// add particle to vd_narrow_band
@@ -303,7 +302,7 @@ private:
 				// assign coordinates and properties from respective grid point to particle
 				for(size_t d = 0; d < grid_type::dims; d++)
 				{
-					vd.getLastPos()[d] = key_g.get(d) * grid.getSpacing()[d];
+					vd.getLastPos()[d] = grid.getPos(key)[d];
 				}
 				vd.template getLastProp<Phi_SDF_vd>() = grid.template get<Phi_SDF_grid>(key);
 			}
@@ -333,7 +332,6 @@ private:
 		while(dom.isNext())
 		{
 			auto key = dom.get();
-			auto key_g = g_temp.getGKey(key);
 			if(within_narrow_band(g_temp.template get<Phi_SDF_temp>(key)))
 			{
 				// add particle to vd_narrow_band
@@ -341,7 +339,7 @@ private:
 				// assign coordinates and properties from respective grid point to particle
 				for(size_t d = 0; d < grid_type::dims; d++)
 				{
-					vd.getLastPos()[d] = key_g.get(d) * g_temp.getSpacing()[d];
+					vd.getLastPos()[d] = g_temp.getPos(key)[d];
 					vd.template getLastProp<Phi_grad>()[d] = g_temp.template get<Phi_grad_temp>(key)[d];
 				}
 				vd.template getLastProp<Phi_SDF_vd>() = g_temp.template get<Phi_SDF_temp>(key);
@@ -382,7 +380,7 @@ private:
 				// assign coordinates and properties from respective grid point to particle
 				for(size_t d = 0; d < grid_type::dims; d++)
 				{
-					vd.getLastPos()[d] = key_g.get(d) * g_temp.getSpacing()[d];
+					vd.getLastPos()[d] = g_temp.getPos(key)[d];
 					vd.template getLastProp<Phi_grad>()[d] = g_temp.template get<Phi_grad_temp>(key)[d];
 				}
 				vd.template getLastProp<Phi_SDF_vd>()     = g_temp.template get<Phi_SDF_temp>(key);
@@ -415,7 +413,6 @@ private:
 		while(dom.isNext())
 		{
 			auto key = dom.get();
-			auto key_g = grid.getGKey(key);
 			if(within_narrow_band(grid.template get<Phi_SDF_grid>(key)))
 			{
 				// add particle to vd_narrow_band
@@ -423,7 +420,7 @@ private:
 				// assign coordinates and properties from respective grid point to particle
 				for(size_t d = 0; d < grid_type::dims; d++)
 				{
-					vd.getLastPos()[d] = key_g.get(d) * grid.getSpacing()[d];
+					vd.getLastPos()[d] = grid.getPos(key)[d];
 				}
 				vd.template getLastProp<Prop1_vd>() = grid.template get<Prop1_grid>(key);
 			}
@@ -440,7 +437,6 @@ private:
 		while(dom.isNext())
 		{
 			auto key = dom.get();
-			auto key_g = grid.getGKey(key);
 			if(within_narrow_band(grid.template get<Phi_SDF_grid>(key)))
 			{
 				// add particle to vd_narrow_band
@@ -448,7 +444,7 @@ private:
 				// assign coordinates and properties from respective grid point to particle
 				for(size_t d = 0; d < grid_type::dims; d++)
 				{
-					vd.getLastPos()[d] = key_g.get(d) * grid.getSpacing()[d];
+					vd.getLastPos()[d] = grid.getPos(key)[d];
 				}
 				vd.template getLastProp<Index1Vd>() = grid.template get<Index1Grid>(key);
 				vd.template getLastProp<Index2Vd>() = grid.template get<Index2Grid>(key);

@@ -250,7 +250,6 @@ BOOST_AUTO_TEST_SUITE(ConvergenceTestSuite)
 			}
 		}
 	}
-
 	BOOST_AUTO_TEST_CASE(RedistancingSussman_1D_convergence_test_time)
 	{
 		// CFL dt in 1D for N=64 and c=1 is 0.000503905
@@ -266,12 +265,12 @@ BOOST_AUTO_TEST_SUITE(ConvergenceTestSuite)
 		const size_t SDF_exact_grid = 2;
 		const size_t Error_grid = 3;
 		
-		size_t N = 64;
+		size_t N = 1024;
 		double dt = 0.000503905;
 		double tf = 1e4 * dt;
 		dt *= 2.0;
-//		for (int i = 0; i < 3; i++)
-		int i = 0;
+		for (int i = 0; i < 3; i++)
+//		int i = 0;
 		{
 			dt /= 2.0;
 			size_t max_iter = (size_t) std::round(tf / dt);
