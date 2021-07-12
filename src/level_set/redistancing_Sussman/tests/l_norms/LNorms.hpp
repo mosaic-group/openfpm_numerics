@@ -162,7 +162,8 @@ std::string to_string_with_precision(const T myValue, const size_t n = 6)
  *                 written to.
  * @param path_output Std::string containing the path where the output csv file should be saved.
  */
-static void write_lnorms_to_file(size_t N, L_norms l_norms, std::string filename, std::string path_output)
+template <typename T>
+static void write_lnorms_to_file(T N, L_norms l_norms, std::string filename, std::string path_output)
 {
 	auto &v_cl = create_vcluster();
 	if (v_cl.rank() == 0)
@@ -172,8 +173,8 @@ static void write_lnorms_to_file(size_t N, L_norms l_norms, std::string filename
 		
 		std::ofstream l_out;
 		l_out.open(path_output_lnorm, std::ios_base::app); // append instead of overwrite
-		l_out << std::to_string(N) << ',' << to_string_with_precision(l_norms.l2, 15)
-		<< ',' << to_string_with_precision(l_norms.linf) << std::endl;
+		l_out << to_string_with_precision(N, 16) << ',' << to_string_with_precision(l_norms.l2, 16)
+		<< ',' << to_string_with_precision(l_norms.linf, 16) << std::endl;
 		l_out.close();
 	}
 }

@@ -228,7 +228,7 @@ public:
 				g_temp); // initialize Sign_Phi0in with the sign of the initial (pre-redistancing) Phi_0
 		// Get initial gradients
 		get_upwind_gradient<Phi_0, Sign_Phi0in, Phi_grad>(g_temp, redistOptions.order_space_op, true);
-		
+		std::cout << "timestep before redistancing starts: " << time_step << std::endl;
 		iterative_redistancing(g_temp); // Do the redistancing on the temporary grid
 		copy_gridTogrid<Phi_nplus1, Phi_SDF_out>(g_temp, r_grid_in); // Copy resulting SDF function to input grid
 	}
@@ -388,13 +388,11 @@ private:
 			case 1:
 				//	template <size_t Un, size_t L, size_t Sign, size_t Gradient, size_t Unplus1>
 				tvd_runge_kutta_1_stepper<Phi_0, L_factor, Sign_Phi0in, Phi_grad, Phi_nplus1>(time_step);
-				std::cout << "RK 1" << std::endl;
 				break;
 			case 3:
 			default:
 				// 	template <size_t Un, size_t U1, size_t L, size_t Sign, size_t Gradient, size_t Unplus1>
 				tvd_runge_kutta_3_stepper<Phi_0, Phi_interm, L_factor, Sign_Phi0in, Phi_grad, Phi_nplus1>(time_step);
-				std::cout << "RK 3" << std::endl;
 				break;
 		}
 
