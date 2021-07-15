@@ -80,8 +80,6 @@ public:
 	{
 		set_bounds(width_outside, width_inside, grid_in);
 	}
-	
-	
 	/**@brief Aggregated properties for the temporary grid.
 	 *
 	 * @details The properties are Phi_SDF (result from redistancing), gradient of Phi, and sign of Phi_SDF (for the upwinding).
@@ -99,9 +97,8 @@ public:
 	 * */
 	g_temp_type g_temp;
 	
-	/** @brief Calls NarrowBand::get_narrow_band_phi_only which fills the empty vector passed as argument with particles
-	 * by placing these within a narrow band around the interface. Only the SDF is copied from the grid properties to
-	 * the respective particle.
+	/** @brief Places particles within a narrow band around the interface.
+	 * Only the SDF is copied from the grid properties to the respective particles.
 	 *
 	 * @tparam Phi_SDF_grid Index of property storing the signed distance function in the input grid.
 	 * @tparam Phi_SDF_vd Index of property that should store the SDF in the narrow band particle vector.
@@ -114,10 +111,27 @@ public:
 	template <size_t Phi_SDF_grid, size_t Phi_SDF_vd, typename vector_type, typename grid_type>
 	void get_narrow_band(grid_type & grid, vector_type & vd)
 	{
-		get_narrow_band_phi_only<Phi_SDF_grid, Phi_SDF_vd>(grid, vd);
+		auto dom = grid.getDomainIterator();
+		while(dom.isNext())
+		{
+			auto key = dom.get();
+			if(within_narrow_band(grid.template get<Phi_SDF_grid>(key)))
+			{
+				// add particle to vd_narrow_band
+				vd.add();
+				// assign coordinates and properties from respective grid point to particle
+				for(size_t d = 0; d < grid_type::dims; d++)
+				{
+					vd.getLastPos()[d] = grid.getPos(key)[d];
+				}
+				vd.template getLastProp<Phi_SDF_vd>() = grid.template get<Phi_SDF_grid>(key);
+			}
+			++dom;
+		}
+		vd.map();
 	}
-	/** @brief Calls NarrowBand::get_narrow_band_with_gradients which fills the empty vector passed as argument with particles by placing these within a narrow band around the
-	 * interface. SDF and Phi_grad_temp are copied from the temp. grid to the respective particle.
+	/** @brief Places particles within a narrow band around the interface.
+	 * SDF and Phi_grad_temp are copied from the temp. grid to the respective particle.
 	 *
 	 * @tparam Phi_SDF_grid Index of property storing the signed distance function in the input grid.
 	 * @tparam Phi_SDF_vd Index of property that should store the SDF in the narrow band particle vector.
@@ -131,10 +145,29 @@ public:
 	template <size_t Phi_SDF_grid, size_t Phi_SDF_vd, size_t Phi_grad, typename vector_type, typename grid_type>
 	void get_narrow_band(grid_type & grid, vector_type & vd)
 	{
-		get_narrow_band_with_gradients<Phi_SDF_grid, Phi_SDF_vd, Phi_grad>(grid, vd);
+		initialize_temporary_grid<Phi_SDF_grid>(grid);
+		auto dom = grid.getDomainIterator();
+		while(dom.isNext())
+		{
+			auto key = dom.get();
+			if(within_narrow_band(grid.template get<Phi_SDF_temp>(key)))
+			{
+				// add particle to vd_narrow_band
+				vd.add();
+				// assign coordinates and properties from respective grid point to particle
+				for(size_t d = 0; d < grid_type::dims; d++)
+				{
+					vd.getLastPos()[d] = grid.getPos(key)[d];
+					vd.template getLastProp<Phi_grad>()[d] = g_temp.template get<Phi_grad_temp>(key)[d];
+				}
+				vd.template getLastProp<Phi_SDF_vd>() = grid.template get<Phi_SDF_temp>(key);
+			}
+			++dom;
+		}
+		vd.map();
 	}
-	/** @brief Calls NarrowBand::get_narrow_band_with_gradients which fills the empty vector passed as argument with particles by placing these within a narrow band around the
-	 * interface. SDF and Phi_grad_temp are copied from the temp. grid to the respective particle.
+	/** @brief Places particles within a narrow band around the interface.
+	 * SDF and Phi_grad_temp are copied from the temp. grid to the respective particle.
 	 *
 	 * @tparam Phi_SDF_grid Index of property storing the signed distance function in the input grid.
 	 * @tparam Phi_SDF_vd Index of property that should store the SDF in the narrow band particle vector.
@@ -150,10 +183,28 @@ public:
 			typename grid_type>
 	void get_narrow_band(grid_type & grid, vector_type & vd)
 	{
-		get_narrow_band_with_gradients<Phi_SDF_grid, Phi_SDF_vd, Phi_grad, Phi_magnOfGrad>(grid, vd);
-	}
-	/** @brief Calls NarrowBand::get_narrow_band_one_prop which fills the empty vector passed as argument with
-	 * particles by placing these within a narrow band around the interface. An arbitrary property is copied from the
+		initialize_temporary_grid<Phi_SDF_grid>(grid);
+		auto dom = grid.getDomainIterator();
+		while(dom.isNext())
+		{
+			auto key = dom.get();
+			if(within_narrow_band(grid.template get<Phi_SDF_grid>(key)))
+			{
+				// add particle to vd_narrow_band
+				vd.add();
+				// assign coordinates and properties from respective grid point to particle
+				for(size_t d = 0; d < grid_type::dims; d++)
+				{
+					vd.getLastPos()[d] = grid.getPos(key)[d];
+					vd.template getLastProp<Phi_grad>()[d] = g_temp.template get<Phi_grad_temp>(key)[d];
+				}
+				vd.template getLastProp<Phi_SDF_vd>()     = grid.template get<Phi_SDF_grid>(key);
+				vd.template getLastProp<Phi_magnOfGrad>() = g_temp.template get<Phi_grad_temp>(key).norm();
+			}
+			++dom;
+		}
+		vd.map();	}
+	/** @brief Places particles within a narrow band around the interface. An arbitrary property is copied from the
 	 * grid to the respective particle.
 	 *
 	 * @tparam Phi_SDF_grid Index of property storing the signed distance function in the input grid.
@@ -171,17 +222,34 @@ public:
 	template <size_t Phi_SDF_grid, size_t Prop1_grid, size_t Prop1_vd, typename vector_type, typename grid_type>
 	void get_narrow_band_copy_specific_property(grid_type & grid, vector_type & vd)
 	{
-		get_narrow_band_one_prop<Phi_SDF_grid, Prop1_grid, Prop1_vd>(grid, vd);
+		auto dom = grid.getDomainIterator();
+		while(dom.isNext())
+		{
+			auto key = dom.get();
+			if(within_narrow_band(grid.template get<Phi_SDF_grid>(key)))
+			{
+				// add particle to vd_narrow_band
+				vd.add();
+				// assign coordinates and properties from respective grid point to particle
+				for(size_t d = 0; d < grid_type::dims; d++)
+				{
+					vd.getLastPos()[d] = grid.getPos(key)[d];
+				}
+				vd.template getLastProp<Prop1_vd>() = grid.template get<Prop1_grid>(key);
+			}
+			++dom;
+		}
+		vd.map();
 	}
-	/** @brief Calls NarrowBand::get_narrow_band_one_prop which fills the empty vector passed as argument with
-	 * particles by placing these within a narrow band around the interface. An arbitrary property is copied from the
+	/**@brief Places particles within a narrow band around the interface. An arbitrary property is copied from the
 	 * grid to the respective particle.
-	 *
 	 * @tparam Phi_SDF_grid Index of property storing the signed distance function in the input grid.
-	 * @tparam Prop1_grid Index of arbitrary grid property that should be copied to the particles (prop. value must
-	 * be a scalar).
-	 * @tparam Prop1_vd Index of particle property, where grid property should be copied to (prop. value must be a
-	 * scalar).
+	 * @tparam Index1Grid Index of 1st scalar grid property that should be copied from grid to particles.
+	 * @tparam Index2Grid Index of 2nd scalar grid property that should be copied from grid to particles.
+	 * @tparam Index3Grid Index of 3rd scalar grid property that should be copied from grid to particles.
+	 * @tparam Index1Vd Index of 1st scalar property on particle to which value from grid should be copied to.
+	 * @tparam Index2Vd Index of 2nd scalar property on particle to which value from grid should be copied to.
+	 * @tparam Index3Vd Index of 3rd scalar property on particle to which value from grid should be copied to.
 	 * @tparam vector_type Inferred type of the particle vector.
 	 * @tparam grid_type Inferred type of the grid storing the SDF.
 	 *
@@ -189,24 +257,32 @@ public:
 	 * property.
 	 * @param vd Empty vector with same spatial scaling (box) as the grid.
 	 */
-	 
-	/**
-	 *
-	 * @tparam Phi_SDF_grid
-	 * @tparam IndexStartGrid
-	 * @tparam IndexStopGrid
-	 * @tparam IndexStartVd
-	 * @tparam vector_type
-	 * @tparam grid_type
-	 * @param grid
-	 * @param vd
-	 */
 	template <size_t Phi_SDF_grid, size_t Index1Grid, size_t Index2Grid, size_t Index3Grid, size_t Index1Vd, size_t
 	Index2Vd, size_t Index3Vd, typename grid_type, typename vector_type>
 	void get_narrow_band_copy_three_scalar_properties(grid_type & grid, vector_type & vd)
 	{
-		get_narrow_band_three_props<Phi_SDF_grid, Index1Grid, Index2Grid, Index3Grid, Index1Vd, Index2Vd, Index3Vd>
-		        (grid, vd);
+		
+			auto dom = grid.getDomainIterator();
+			while(dom.isNext())
+			{
+				auto key = dom.get();
+				auto key_g = grid.getGKey(key);
+				if(within_narrow_band(grid.template get<Phi_SDF_grid>(key)))
+				{
+					// add particle to vd_narrow_band
+					vd.add();
+					// assign coordinates and properties from respective grid point to particle
+					for(size_t d = 0; d < grid_type::dims; d++)
+					{
+						vd.getLastPos()[d] = key_g.get(d) * grid.getSpacing()[d];
+					}
+					vd.template getLastProp<Index1Vd>() = grid.template get<Index1Grid>(key);
+					vd.template getLastProp<Index2Vd>() = grid.template get<Index2Grid>(key);
+					vd.template getLastProp<Index3Vd>() = grid.template get<Index3Grid>(key);
+				}
+				++dom;
+			}
+			vd.map();
 	}
 private:
 	//	Some indices for better readability
@@ -274,189 +350,6 @@ private:
 	bool within_narrow_band(double Phi)
 	{
 		return (Phi >= b_low && Phi <= b_up);
-	}
-	/** @brief Fills the empty vector passed as argument with particles by placing these within a narrow band around the
-	 * interface. Only the SDF is copied from the grid properties to the respective particle.
-	 *
-	 * @tparam Phi_SDF_grid Index of property storing the signed distance function in the input grid.
-	 * @tparam Phi_SDF_vd Index of property that should store the SDF in the narrow band particle vector.
-	 * @tparam vector_type Inferred type of the particle vector.
-	 * @tparam grid_type Inferred type of the grid storing the SDF.
-	 *
-	 * @param[in] grid Grid of arb. dims. storing the SDF (result of redistancing).
-	 * @param[in] vd Empty vector with same spatial scaling (box) as the grid.
-	 * @param[out] vd Particle vector containing the narrow-band-particles that store the SDF provided by the grid.
-	 *
-	 */
-	template <size_t Phi_SDF_grid, size_t Phi_SDF_vd, typename grid_type, typename vector_type>
-	void get_narrow_band_phi_only(grid_type & grid, vector_type & vd)
-	{
-		auto dom = grid.getDomainIterator();
-		while(dom.isNext())
-		{
-			auto key = dom.get();
-			auto key_g = grid.getGKey(key);
-			if(within_narrow_band(grid.template get<Phi_SDF_grid>(key)))
-			{
-				// add particle to vd_narrow_band
-				vd.add();
-				// assign coordinates and properties from respective grid point to particle
-				for(size_t d = 0; d < grid_type::dims; d++)
-				{
-					vd.getLastPos()[d] = key_g.get(d) * grid.getSpacing()[d];
-				}
-				vd.template getLastProp<Phi_SDF_vd>() = grid.template get<Phi_SDF_grid>(key);
-			}
-			++dom;
-		}
-		vd.map();
-	}
-	/** @brief Fills the empty vector passed as argument with particles by placing these within a narrow band around the
-	 * interface. SDF and Phi_grad_temp are copied from the temp. grid to the respective particle.
-	 *
-	 * @tparam Phi_SDF_grid Index of property storing the signed distance function in the input grid.
-	 * @tparam Phi_SDF_vd Index of property that should store the SDF in the narrow band particle vector.
-	 * @tparam Phi_grad Index of property that should store the gradient of phi in the narrow band particle vector.
-	 * @tparam vector_type Inferred type of the particle vector.
-	 * @tparam grid_type Inferred type of the grid storing the SDF.
-	 *
-	 * @param[in] grid Grid of arb. dims. storing the SDF (result of redistancing).
-	 * @param[in] vd Empty vector with same spatial scaling (box) as the grid.
-	 * @param[out] vd Particle vector containing the narrow-band-particles that store the SDF and Phi_grad provided
-	 * by the grid.
-	 */
-	template <size_t Phi_SDF_grid, size_t Phi_SDF_vd, size_t Phi_grad, typename grid_type, typename vector_type>
-	void get_narrow_band_with_gradients(grid_type & grid, vector_type & vd)
-	{
-		initialize_temporary_grid<Phi_SDF_grid>(grid);
-		auto dom = g_temp.getDomainIterator();
-		while(dom.isNext())
-		{
-			auto key = dom.get();
-			auto key_g = g_temp.getGKey(key);
-			if(within_narrow_band(g_temp.template get<Phi_SDF_temp>(key)))
-			{
-				// add particle to vd_narrow_band
-				vd.add();
-				// assign coordinates and properties from respective grid point to particle
-				for(size_t d = 0; d < grid_type::dims; d++)
-				{
-					vd.getLastPos()[d] = key_g.get(d) * g_temp.getSpacing()[d];
-					vd.template getLastProp<Phi_grad>()[d] = g_temp.template get<Phi_grad_temp>(key)[d];
-				}
-				vd.template getLastProp<Phi_SDF_vd>() = g_temp.template get<Phi_SDF_temp>(key);
-			}
-			++dom;
-		}
-		vd.map();
-	}
-	/** @brief Fills the empty vector passed as argument with particles by placing these within a narrow band around the
-	 * interface. SDF and Phi_grad_temp are copied from the temp. grid to the respective particle.
-	 *
-	 * @tparam Phi_SDF_grid Index of property storing the signed distance function in the input grid.
-	 * @tparam Phi_SDF_vd Index of property that should store the SDF in the narrow band particle vector.
-	 * @tparam Phi_grad Index of property that should store the gradient of phi in the narrow band particle vector.
-	 * @tparam Phi_magnOfGrad Index of property that should store the gradient magnitude of Phi.
-	 * @tparam vector_type Inferred type of the particle vector.
-	 * @tparam grid_type Inferred type of the grid storing the SDF.
-	 *
-	 * @param[in] grid Grid of arb. dims. storing the SDF (result of redistancing).
-	 * @param[in] vd Empty vector with same spatial scaling (box) as the grid.
-	 * @param[out] vd Particle vector containing the narrow-band-particles that store the SDF and Phi_grad provided
-	 * by the grid.
-	 */
-	template <size_t Phi_SDF_grid, size_t Phi_SDF_vd, size_t Phi_grad, size_t Phi_magnOfGrad, typename grid_type,
-	        typename vector_type>
-	void get_narrow_band_with_gradients(grid_type & grid, vector_type & vd)
-	{
-		initialize_temporary_grid<Phi_SDF_grid>(grid);
-		auto dom = g_temp.getDomainIterator();
-		while(dom.isNext())
-		{
-			auto key = dom.get();
-			auto key_g = g_temp.getGKey(key);
-			if(within_narrow_band(g_temp.template get<Phi_SDF_temp>(key)))
-			{
-				// add particle to vd_narrow_band
-				vd.add();
-				// assign coordinates and properties from respective grid point to particle
-				for(size_t d = 0; d < grid_type::dims; d++)
-				{
-					vd.getLastPos()[d] = key_g.get(d) * g_temp.getSpacing()[d];
-					vd.template getLastProp<Phi_grad>()[d] = g_temp.template get<Phi_grad_temp>(key)[d];
-				}
-				vd.template getLastProp<Phi_SDF_vd>()     = g_temp.template get<Phi_SDF_temp>(key);
-				vd.template getLastProp<Phi_magnOfGrad>() = g_temp.template get<Phi_grad_temp>(key).norm();
-			}
-			++dom;
-		}
-		vd.map();
-	}
-	/** @brief Fills the empty vector passed as argument with particles by placing these within a narrow band around the
-	 * interface. An arbitrary property is copied from the grid to the respective particle.
-	 *
-	 * @tparam Phi_SDF_grid Index of property storing the signed distance function in the input grid.
-	 * @tparam Prop1_grid Index of arbitrary grid property that should be copied to the particles (prop. value must
-	 * be a scalar).
-	 * @tparam Prop1_vd Index of particle property, where grid property should be copied to (prop. value must be a
-	 * scalar).
-	 * @tparam vector_type Inferred type of the particle vector.
-	 * @tparam grid_type Inferred type of the grid storing the SDF.
-	 *
-	 * @param[in] grid Grid of arb. dims. storing the SDF (result of redistancing).
-	 * @param[in] vd Empty vector with same spatial scaling (box) as the grid.
-	 * @param[out] vd Particle vector containing the narrow-band-particles that store an arbitrary property provided by
-	 * the grid.
-	 */
-	template <size_t Phi_SDF_grid, size_t Prop1_grid, size_t Prop1_vd, typename grid_type, typename vector_type>
-	void get_narrow_band_one_prop(grid_type & grid, vector_type & vd)
-	{
-		auto dom = grid.getDomainIterator();
-		while(dom.isNext())
-		{
-			auto key = dom.get();
-			auto key_g = grid.getGKey(key);
-			if(within_narrow_band(grid.template get<Phi_SDF_grid>(key)))
-			{
-				// add particle to vd_narrow_band
-				vd.add();
-				// assign coordinates and properties from respective grid point to particle
-				for(size_t d = 0; d < grid_type::dims; d++)
-				{
-					vd.getLastPos()[d] = key_g.get(d) * grid.getSpacing()[d];
-				}
-				vd.template getLastProp<Prop1_vd>() = grid.template get<Prop1_grid>(key);
-			}
-			++dom;
-		}
-		vd.map();
-	}
-	// get_narrow_band_multiple_props<Phi_SDF_grid, IndexStartGrid, IndexStopGrid, IndexStartVd>(grid, vd);
-	template <size_t Phi_SDF_grid, size_t Index1Grid, size_t Index2Grid, size_t Index3Grid, size_t Index1Vd, size_t
-			Index2Vd, size_t Index3Vd, typename grid_type, typename vector_type>
-	void get_narrow_band_three_props(grid_type & grid, vector_type & vd)
-	{
-		auto dom = grid.getDomainIterator();
-		while(dom.isNext())
-		{
-			auto key = dom.get();
-			auto key_g = grid.getGKey(key);
-			if(within_narrow_band(grid.template get<Phi_SDF_grid>(key)))
-			{
-				// add particle to vd_narrow_band
-				vd.add();
-				// assign coordinates and properties from respective grid point to particle
-				for(size_t d = 0; d < grid_type::dims; d++)
-				{
-					vd.getLastPos()[d] = key_g.get(d) * grid.getSpacing()[d];
-				}
-				vd.template getLastProp<Index1Vd>() = grid.template get<Index1Grid>(key);
-				vd.template getLastProp<Index2Vd>() = grid.template get<Index2Grid>(key);
-				vd.template getLastProp<Index3Vd>() = grid.template get<Index3Grid>(key);
-			}
-			++dom;
-		}
-		vd.map();
 	}
 };
 
