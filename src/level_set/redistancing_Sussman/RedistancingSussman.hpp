@@ -130,6 +130,7 @@ struct Redist_options
 	bool print_current_iterChangeResidual = false;
 	bool print_steadyState_iter = true;
 	bool save_temp_grid = false;
+	size_t id_checkpoint = 0;
 };
 
 /** @brief Bundles total residual and total change over all the grid points.
@@ -172,7 +173,7 @@ public:
 	 */
 	RedistancingSussman(grid_in_type &grid_in, Redist_options &redistOptions) : redistOptions(redistOptions),
 	                                                                            r_grid_in(grid_in),
-	                                                                            key_checkpoint(0, {10}),
+	                                                                            key_checkpoint(0, redistOptions.id_checkpoint),
 	                                                                            g_temp(grid_in.getDecomposition(),
 	                                                                                   grid_in.getGridInfoVoid().getSize(),
 	                                                                                   Ghost<grid_in_type::dims, long int>(3))
@@ -306,7 +307,6 @@ private:
 	template <size_t U, size_t Sign, size_t Gradient, size_t L>
 	void get_L()
 	{
-		g_temp.template ghost_get<U, Sign>();
 		get_upwind_gradient<U, Sign, Gradient>(g_temp, redistOptions.order_space_op, true);
 		g_temp.template ghost_get<Gradient>(KEEP_PROPERTIES);
 		double spacing_x = g_temp.getSpacing()[0];
