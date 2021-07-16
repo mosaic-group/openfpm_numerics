@@ -17,6 +17,7 @@
 #ifndef __CLOSEST_POINT_HPP__
 #define __CLOSEST_POINT_HPP__
 
+#include "Grid/grid_dist_key.hpp"
 #include "algoim_hocp.hpp"
 
 // Width of extra padding around each grid patch needed to correctly construct kDTree in Algoim.
@@ -26,21 +27,20 @@ constexpr int algoim_padding = 4;
  *
  * @file closest_point.hpp
  * @struct AlgoimWrapper
- * @tparam grid_type Type of the grid container
- * @tparam grid_key_type Type of the key for the grid container
- * @tparam dim Dimension of the space
  * @tparam wrapping_field Property id on the grid for the field to be wrapped
+ * @tparam grid_type Type of the grid container
  */
 
-template<typename grid_type, typename grid_key_type, unsigned int dim, size_t wrapping_field>
+template<size_t wrapping_field, typename grid_type>
 struct AlgoimWrapper
 {
+    const static unsigned int dim = grid_type::dims;
     grid_type &gd;
     int patch_id;
     AlgoimWrapper(grid_type& ls_grid, const int pid) : gd(ls_grid), patch_id(pid) {}
 
     //! Call operator for the wrapper.
-    double operator() (const blitz::TinyVector<int,dim> idx) const
+    double operator() (const blitz::TinyVector<int, dim> idx) const
     {
         long int local_key[dim];
         
@@ -50,7 +50,7 @@ struct AlgoimWrapper
             local_key[d] = idx(d) - algoim_padding;
 
         // Generate OpenFPM grid_key object from local grid indices
-        grid_key_type grid_key(patch_id, grid_key_dx<dim> (local_key) + ghost_offset);
+        grid_dist_key_dx<dim> grid_key(patch_id, grid_key_dx<dim> (local_key) + ghost_offset);
         
         return gd.template get<wrapping_field>(grid_key);
     }
@@ -58,17 +58,15 @@ struct AlgoimWrapper
 
 /**@brief Computes the closest point coordinate for each grid point within nb_gamma from interface.
  *
- * @tparam grid_type Type of the grid container
- * @tparam grid_key_type Type of the key for the grid container
- * @tparam dim Dimension of the space
- * @tparam poly_order Order of the polynomial for stencil interpolation (orders between 2 to 5 is supported)
  * @tparam phi_field Property id on grid for the level set SDF
  * @tparam cp_field Property id on grid for storing closest point coordinates
+ * @tparam poly_order Order of the polynomial for stencil interpolation (orders between 2 to 5 is supported)
+ * @tparam grid_type Type of the grid container
  *
  * @param gd The distributed grid containing at least level set SDF field and placeholder for closest point coordinates
  * @param nb_gamma The width of the narrow band within which closest point estimation is to be done
  */
-template<typename grid_type, typename grid_key_type, unsigned int poly_order, size_t phi_field, size_t cp_field>
+template<size_t phi_field, size_t cp_field, unsigned int poly_order, typename grid_type>
 void estimateClosestPoint(grid_type &gd, const double nb_gamma)
 {
     const unsigned int dim = grid_type::dims;
@@ -93,7 +91,7 @@ void estimateClosestPoint(grid_type &gd, const double nb_gamma)
             p_hi.set_d(d, patches.get(i).Dbox.getHigh(d) + patches.get(i).origin[d]);
         }
 
-        AlgoimWrapper<grid_type, grid_key_type, dim, phi_field> phiwrap(gd, i);
+        AlgoimWrapper<phi_field, grid_type> phiwrap(gd, i);
 
         // Find all cells containing the interface and construct the high-order polynomials
         std::vector<Algoim::detail::CellPoly<dim,Poly>> cells;
@@ -148,19 +146,17 @@ void estimateClosestPoint(grid_type &gd, const double nb_gamma)
 
 /**@brief Extends a (scalar) field to within nb_gamma from interface. The grid should have level set SDF and closest point field.
  *
- * @tparam grid_type Type of the grid container
- * @tparam grid_key_type Type of the key for the grid container
- * @tparam dim Dimension of the space
- * @tparam poly_order Order of the polynomial for stencil interpolation
  * @tparam phi_field Property id on grid for the level set SDF
  * @tparam cp_field Property id on grid for storing closest point coordinates
  * @tparam extend_field Property id on grid where the field to be extended resides
  * @tparam extend_field_temp Property id on grid for storing temporary intermediate values
+ * @tparam poly_order Order of the polynomial for stencil interpolation
+ * @tparam grid_type Type of the grid container
  *
  * @param gd The distributed grid containing atleast level set SDF field and closest point coordinates
  * @param nb_gamma The width of the narrow band within which extension is required
  */
-template<typename grid_type, typename grid_key_type, unsigned int poly_order, size_t phi_field, size_t cp_field, size_t extend_field, size_t extend_field_temp>
+template<size_t phi_field, size_t cp_field, size_t extend_field, size_t extend_field_temp, unsigned int poly_order, typename grid_type>
 void extendLSField(grid_type &gd, const double nb_gamma)
 {
     const unsigned int dim = grid_type::dims;
@@ -199,7 +195,7 @@ void extendLSField(grid_type &gd, const double nb_gamma)
                     pos(d) = cp_d - coord(d)*gd.spacing(d);
                 }
 
-                AlgoimWrapper<grid_type, grid_key_type, dim, extend_field> fieldwrap(gd,i);
+                AlgoimWrapper<extend_field, grid_type> fieldwrap(gd,i);
                 Poly field_poly = Poly(coord, fieldwrap, dx);
                 // Extension is first done to the temporary field. Otherwise interpolation will be affected.
                 gd.template get<extend_field_temp>(key) = field_poly(pos);
@@ -221,17 +217,15 @@ void extendLSField(grid_type &gd, const double nb_gamma)
 
 /**@brief Reinitializes the level set Phi field on a grid. The grid should have level set SDF and closest point field.
  *
- * @tparam grid_type Type of the grid container
- * @tparam grid_key_type Type of the key for the grid container
- * @tparam dim Dimension of the space
- * @tparam poly_order Order of the polynomial for stencil interpolation
  * @tparam phi_field Property id on grid for the level set SDF
  * @tparam cp_field Property id on grid for storing closest point coordinates
- *
+ * @tparam poly_order Order of the polynomial for stencil interpolation
+ * @tparam grid_type Type of the grid container
+
  * @param gd The distributed grid containing atleast level set SDF field and closest point coordinates
  * @param nb_gamma The width of the narrow band for reinitialization
  */
-template<typename grid_type, typename grid_key_type, unsigned int poly_order, size_t phi_field, size_t cp_field>
+template<size_t phi_field, size_t cp_field, unsigned int poly_order, typename grid_type>
 void reinitializeLS(grid_type &gd, const double nb_gamma)
 {
     const unsigned int dim = grid_type::dims;

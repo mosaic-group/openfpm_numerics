@@ -28,21 +28,17 @@ typedef struct EllipseParameters{
 } EllipseParams;
 
 // Generate an ellipsoid initial levelset signed distance function
-template<typename grid_type, typename domain_type, size_t phi_field>
-void initializeLSEllipsoid(grid_type &gd, const domain_type &domain,  const EllipseParams &params)
+template<size_t phi_field, typename grid_type, typename domain_type>
+void initializeLSEllipsoid(grid_type &gd, const domain_type &domain, const EllipseParams &params)
 {
     auto it = gd.getDomainIterator();
-    double dx = gd.getSpacing()[0];
-    double dy = gd.getSpacing()[1];
-    double dz = gd.getSpacing()[2];
     while(it.isNext())
     {
         auto key = it.get();
-        auto key_g = gd.getGKey(key);
-        
-        double posx = key_g.get(0)*dx + domain.getLow(0);
-        double posy = key_g.get(1)*dy + domain.getLow(1);
-        double posz = key_g.get(2)*dz + domain.getLow(2);
+        Point<grid_type::dims, double> coords = gd.getPos(key);
+        double posx = coords.get(0) + domain.getLow(0);
+        double posy = coords.get(1) + domain.getLow(1);
+        double posz = coords.get(2) + domain.getLow(2);
         
         // NOTE: Except for a sphere, this is not the SDF. It is just an implicit function whose zero contour is an ellipsoid.
         double phi_val = 1.0 - sqrt(((posx - params.origin[0])/params.radiusA)*((posx - params.origin[0])/params.radiusA) + ((posy - params.origin[1])/params.radiusB)*((posy - params.origin[1])/params.radiusB) + ((posz - params.origin[2])/params.radiusC)*((posz - params.origin[2])/params.radiusC));
@@ -100,11 +96,11 @@ BOOST_AUTO_TEST_CASE( closest_point_unit_sphere )
     nb_gamma = narrow_band_half_width * gdist.spacing(0);
 
     // Initializes the grid property 'phi' whose zero contour represents the ellipsoid
-    initializeLSEllipsoid<GridDist, Box<SIM_DIM,double>, phi>(gdist, domain, params);
+    initializeLSEllipsoid<phi>(gdist, domain, params);
     gdist.template ghost_get<phi>();
 
     // Updates the property 'cp' of the grid to the closest point coords (only done in the narrowband).
-    estimateClosestPoint<GridDist, GridKey, POLY_ORDER, phi, cp>(gdist, nb_gamma);
+    estimateClosestPoint<phi, cp, POLY_ORDER>(gdist, nb_gamma);
     gdist.template ghost_get<cp>();
 
     // Estimate error in closest point estimation
@@ -213,14 +209,14 @@ BOOST_AUTO_TEST_CASE( reinitialization_unit_sphere )
 
     nb_gamma = narrow_band_half_width * gdist.spacing(0);
 
-    initializeLSEllipsoid<GridDist, Box<SIM_DIM,double>, phi>(gdist, domain, params);
+    initializeLSEllipsoid<phi>(gdist, domain, params);
     gdist.template ghost_get<phi>();
 
-    estimateClosestPoint<GridDist, GridKey, POLY_ORDER, phi, cp>(gdist, nb_gamma);
+    estimateClosestPoint<phi, cp, POLY_ORDER>(gdist, nb_gamma);
     gdist.template ghost_get<cp>();
 
     // Reinitialize the level set function stored in property 'phi' based on closest points in 'cp'
-    reinitializeLS<GridDist, GridKey, POLY_ORDER, phi, cp>(gdist, nb_gamma);
+    reinitializeLS<phi, cp, POLY_ORDER>(gdist, nb_gamma);
     gdist.template ghost_get<phi>();
 
     // Estimate error in closest point estimation
