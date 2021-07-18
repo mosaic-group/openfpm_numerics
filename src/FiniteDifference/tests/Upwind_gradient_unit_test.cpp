@@ -32,7 +32,7 @@ BOOST_AUTO_TEST_SUITE(UpwindGradientTestSuite)
 		typedef grid_dist_id<grid_dim, double, props> grid_in_type;
 		
 		double mu = 0.5 * (box_upper - abs(box_lower));
-		double sigma = 0.1 * (box_upper - box_lower);
+		double sigma = 0.3 * (box_upper - box_lower);
 		int count = 0;
 		size_t N = 32;
 //		for (size_t N = 32; N <= 128; N *= 2, ++count)
@@ -103,7 +103,7 @@ BOOST_AUTO_TEST_SUITE(UpwindGradientTestSuite)
 		typedef grid_dist_id<grid_dim, double, props> grid_in_type;
 		
 		double mu = 0.5 * (box_upper - abs(box_lower));
-		double sigma = 0.1 * (box_upper - box_lower);
+		double sigma = 0.3 * (box_upper - box_lower);
 		int count = 0;
 		size_t N = 32;
 //		for (size_t N = 32; N <= 128; N *= 2, ++count)
@@ -171,7 +171,7 @@ BOOST_AUTO_TEST_SUITE(UpwindGradientTestSuite)
 		typedef grid_dist_id<grid_dim, double, props> grid_in_type;
 		
 		double mu = 0.5 * (box_upper - abs(box_lower));
-		double sigma = 0.1 * (box_upper - box_lower);
+		double sigma = 0.3 * (box_upper - box_lower);
 		int count = 0;
 		size_t N = 32;
 //		for (size_t N = 32; N <= 128; N *= 2, ++count)
@@ -238,7 +238,7 @@ BOOST_AUTO_TEST_SUITE(UpwindGradientTestSuite)
 			typedef grid_dist_id<grid_dim, double, props> grid_in_type;
 			
 			double mu = 0.5 * (box_upper - abs(box_lower));
-			double sigma = 0.1 * (box_upper - box_lower);
+			double sigma = 0.3 * (box_upper - box_lower);
 			
 			
 			
