@@ -1,7 +1,6 @@
 //
 // Created by jstark on 12.07.21.
 //
-#define SE_CLASS1
 #define BOOST_TEST_DYN_LINK
 //#define BOOST_TEST_MAIN  // in only one cpp file
 #include <boost/test/unit_test.hpp>
@@ -83,7 +82,6 @@ BOOST_AUTO_TEST_SUITE(RedistancingSussmanSinglePointConvergenceTestSuite)
 			// be at least 4, in order to have at least 2 grid points on each side of the interface. (default: 4)
 			redist_options.print_current_iterChangeResidual = true;     // if true, prints out every current iteration + corresponding change from the previous iteration + residual from SDF (default: false)
 			redist_options.print_steadyState_iter = true;     // if true, prints out the final iteration number when steady state was reached + final change + residual (default: true)
-			redist_options.coord_checkpoint = 10;
 			
 			RedistancingSussman<grid_in_type> redist_obj(g_dist,
 			                                             redist_options);   // Instantiation of Sussman-redistancing class
@@ -159,7 +157,7 @@ BOOST_AUTO_TEST_SUITE(RedistancingSussmanSinglePointConvergenceTestSuite)
 			grid_in_type g_dist(sz, box, ghost);
 			g_dist.setPropNames({"Phi_0", "SDF_sussman", "SDF_exact", "Relative error"});
 			
-			const double center[grid_dim] = {0.5 * (box_upper - box_lower), 0.5 * (box_upper - box_lower)};
+			const double center[grid_dim] = {0.5 * (box_upper + box_lower), 0.5 * (box_upper + box_lower)};
 			init_grid_with_disk<Phi_0_grid>(g_dist, radius, center[x], center[y]); // Initialize sphere onto grid
 
 

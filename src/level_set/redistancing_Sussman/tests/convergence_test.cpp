@@ -46,7 +46,7 @@ BOOST_AUTO_TEST_SUITE(ConvergenceTestSuite)
 			grid_in_type g_dist(sz, box, ghost);
 			g_dist.setPropNames({"Phi_0", "SDF_sussman", "SDF_exact", "Relative error"});
 			
-			const double center[grid_dim] = {0.5*(box_upper-box_lower), 0.5*(box_upper-box_lower), 0.5*(box_upper-box_lower)};
+			const double center[grid_dim] = {0.5*(box_upper+box_lower), 0.5*(box_upper+box_lower), 0.5*(box_upper+box_lower)};
 			init_grid_with_sphere<Phi_0_grid>(g_dist, radius, center[x], center[y], center[z]); // Initialize sphere onto grid
 			
 			
