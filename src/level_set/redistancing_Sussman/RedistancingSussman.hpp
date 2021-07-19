@@ -137,16 +137,16 @@ struct Redist_options
  */
 struct DistFromSol
 {
-	double residual; 	///< Double variable that contains the absolute value of how far the gradient magnitude of
-	///< the current \a &phi; of iteration number \a i is away from being equal to 1: @f[ abs(|\nabla\phi_i| - 1 ) @f]
-	///< It is computed for all grid points that lie within the narrow band and
-	///< normalized to the number of grid points that lie in that narrow band.
 	double change;   	///< Double variable that contains the absolute value of the change of \a &phi; between the
 	///< current
 	///< iteration \a i and the previous iteration \a i-1: @f[ abs( \phi_i - \phi_{i-1} ) @f] It is
 	///< computed for all grid
 	///< points that lie within the narrow band and normalized to the number of grid points that
 	///< lie in that narrow band.
+	double residual; 	///< Double variable that contains the absolute value of how far the gradient magnitude of
+	///< the current \a &phi; of iteration number \a i is away from being equal to 1: @f[ abs(|\nabla\phi_i| - 1 ) @f]
+	///< It is computed for all grid points that lie within the narrow band and
+	///< normalized to the number of grid points that lie in that narrow band.
 };
 
 
@@ -173,7 +173,8 @@ public:
 	                                                                                   grid_in.getGridInfoVoid().getSize(),
 	                                                                                   Ghost<grid_in_type::dims, long int>(3))
 	{
-		time_step = get_time_step_CFL(g_temp);
+//		time_step = set_cfl_time_step();
+		time_step = get_time_step_CFL(grid_in);
 #ifdef SE_CLASS1
 		assure_minimal_thickness_of_NB();
 #endif // SE_CLASS1
@@ -186,7 +187,7 @@ public:
 	 * gradient of Phi_{n+1},
 	 * sign of the original input Phi_0 (for the upwinding).
 	 */
-	typedef aggregate<double, double, Point<grid_in_type::dims, double>, int>
+	typedef aggregate<double, Point<grid_in_type::dims, double>, int>
 	        props_temp;
 	/** @brief Type definition for the temporary grid.
 	 */
@@ -216,7 +217,7 @@ public:
 		// Get initial gradients
 		get_upwind_gradient<Phi_n_temp, Phi_0_sign_temp, Phi_grad_temp>(g_temp, redistOptions.order_space_op, true);
 		iterative_redistancing(g_temp); // Do the redistancing on the temporary grid
-		copy_gridTogrid<Phi_nplus1_temp, Phi_SDF_out>(g_temp, r_grid_in); // Copy resulting SDF function to input grid
+		copy_gridTogrid<Phi_n_temp, Phi_SDF_out>(g_temp, r_grid_in); // Copy resulting SDF function to input grid
 	}
 	/** @brief Overwrite the time_step found via CFL condition with an individual time_step.
 	 *
@@ -244,14 +245,13 @@ public:
 private:
 	//	Some indices for better readability
 	static constexpr size_t Phi_n_temp          = 0; ///< Property index of Phi_0 on the temporary grid.
-	static constexpr size_t Phi_nplus1_temp     = 1; ///< Property index of Phi_n+1 on the temporary grid.
-	static constexpr size_t Phi_grad_temp       = 2; ///< Property index of gradient of Phi_n on the temporary grid.
-	static constexpr size_t Phi_0_sign_temp     = 3; ///< Property index of sign of initial (input) Phi_0 (temp. grid).
+	static constexpr size_t Phi_grad_temp       = 1; ///< Property index of gradient of Phi_n on the temporary grid.
+	static constexpr size_t Phi_0_sign_temp     = 2; ///< Property index of sign of initial (input) Phi_0 (temp. grid).
 	
 	//	Member variables
 	Redist_options redistOptions; ///< Instantiate redistancing options.
 	grid_in_type &r_grid_in; ///< Define reference to input grid.
-
+	
 	/// Transform the half-bandwidth in no_of_grid_points into physical half-bandwidth kappa.
 	double kappa = ceil(redistOptions.width_NB_in_grid_points / 2.0) * get_biggest_spacing(g_temp);
 	/**@brief Artificial timestep for the redistancing iterations.
@@ -260,7 +260,18 @@ private:
 	double time_step;
 	
 	//	Member functions
-	
+	/** @brief Set artificial iteration time_step that fulfills the cfl condition for the redistancing accoridng to
+    * Sussman & Fatemi, 1999.
+    *
+    * @details dt = dx / 2 with grid spacing dx.
+    *
+    */
+	double set_cfl_time_step()
+	{
+		return g_temp.getSpacing()[0] / 2.0;
+	}
+
+#ifdef SE_CLASS1
 	/** @brief Checks if narrow band thickness >= 4 grid points. Else, sets it to 4 grid points.
 		*
 		* @details Makes sure, that the narrow band within which the convergence criteria are checked during the
@@ -274,7 +285,7 @@ private:
 			             "setting redist_options.width_NB_in_grid_points to at least 8" << std::endl;
 		} // check narrow band width of convergence check if defined SE_CLASS1
 	}
-	
+#endif // SE_CLASS1
 	/** @brief Copies values from input grid to internal temporary grid and initializes ghost layer with minimum
 	 * value of input grid.
 	 */
@@ -283,7 +294,6 @@ private:
 	{
 		double min_value = get_min_val<Phi_0_in>(r_grid_in); // get minimum Phi_0 value on the input grid
 		init_grid_and_ghost<Phi_n_temp>(g_temp, min_value); // init. Phi_n_temp (incl. ghost) with min. Phi_0
-		init_grid_and_ghost<Phi_nplus1_temp>(g_temp, min_value); // init. Phi_nplus1_temp (incl. ghost) with min. Phi_0
 		copy_gridTogrid<Phi_0_in, Phi_n_temp>(r_grid_in, g_temp); // Copy Phi_0 from the input grid to Phi_n_temp
 	}
 
@@ -308,31 +318,21 @@ private:
     */
 	void go_one_redistancing_step_whole_grid(g_temp_type &grid)
 	{
-		grid.template ghost_get<Phi_n_temp, Phi_nplus1_temp, Phi_grad_temp>();
-		double spacing_x = grid.getSpacing()[0];
+		get_upwind_gradient<Phi_n_temp, Phi_0_sign_temp, Phi_grad_temp>(grid, redistOptions.order_space_op, true);
+		grid.template ghost_get<Phi_n_temp, Phi_grad_temp>();
 		auto dom = grid.getDomainIterator();
 		while (dom.isNext())
 		{
 			auto key = dom.get();
 			const double phi_n = grid.template get<Phi_n_temp>(key);
 			const double phi_n_magnOfGrad = grid.template get<Phi_grad_temp>(key).norm();
-			double epsilon = phi_n_magnOfGrad * spacing_x;
-			grid.template get<Phi_nplus1_temp>(key) = get_phi_nplus1(phi_n, phi_n_magnOfGrad, time_step,
+			double epsilon = phi_n_magnOfGrad * grid.getSpacing()[0];
+			grid.template get<Phi_n_temp>(key) = get_phi_nplus1(phi_n, phi_n_magnOfGrad, time_step,
 			                                                         smooth_S(phi_n, epsilon));
 			++dom;
 		}
 	}
-	
-	/** @brief Updates Phi_n with the new Phi_n+1 and recomputes the gradients.
-	 *
-	 * @param grid Internal temporary grid.
-	 */
-	void update_grid(g_temp_type &grid)
-	{
-		copy_gridTogrid<Phi_nplus1_temp, Phi_n_temp>(grid, grid); // Update Phi_0
-		get_upwind_gradient<Phi_n_temp, Phi_0_sign_temp, Phi_grad_temp>(grid, redistOptions.order_space_op, true);
-	}
-	
+
 	/** @brief Checks if a node lays within the narrow band around the interface.
 	 *
 	 * @param Phi Value of Phi at that specific node.
@@ -353,28 +353,33 @@ private:
 	 */
 	DistFromSol get_residual_and_change_NB(g_temp_type &grid)
 	{
-		double total_residual = 0;
-		double total_change = 0;
-		double total_points_in_nb = 0;
+		double max_residual = 0;
+		double max_change = 0;
 		auto dom = grid.getDomainIterator();
 		while (dom.isNext())
 		{
 			auto key = dom.get();
-			if (lays_inside_NB(grid.template get<Phi_nplus1_temp>(key)))
+			if (lays_inside_NB(grid.template get<Phi_n_temp>(key)))
 			{
-				total_points_in_nb += 1.0;
-				auto dphi_magn = grid.template get<Phi_grad_temp>(key).norm();
-				total_residual += abs(dphi_magn - 1);
-				total_change += abs(grid.template get<Phi_nplus1_temp>(key) - grid.template get<Phi_n_temp>(key));
+				double phi_n_magnOfGrad = grid.template get<Phi_grad_temp>(key).norm();
+				double epsilon = phi_n_magnOfGrad * grid.getSpacing()[0];
+				double phi_nplus1 = get_phi_nplus1(grid.template get<Phi_n_temp>(key), phi_n_magnOfGrad, time_step,
+				                                   smooth_S(grid.template get<Phi_n_temp>(key), epsilon));
+				
+				if (abs(phi_nplus1 - grid.template get<Phi_n_temp>(key)) > max_change)
+				{
+					max_change = abs(phi_nplus1 - grid.template get<Phi_n_temp>(key));
+				}
+				
+				if (abs(phi_n_magnOfGrad - 1) > max_residual) { max_residual = abs(phi_n_magnOfGrad - 1); }
 			}
 			++dom;
 		}
 		auto &v_cl = create_vcluster();
-		v_cl.sum(total_points_in_nb);
-		v_cl.sum(total_residual);
-		v_cl.sum(total_change);
+		v_cl.max(max_change);
+		v_cl.max(max_residual);
 		v_cl.execute();
-		return {total_residual / total_points_in_nb, total_change / total_points_in_nb};
+		return {max_change, max_residual};
 	}
 	
 	/** @brief Prints out the iteration number, residual and change of the current re-distancing iteration
@@ -393,7 +398,7 @@ private:
 		{
 			if (iter == 0)
 			{
-				std::cout << "Iteration,Change,Residual" << std::endl;
+				std::cout << "Iteration,MaxChange,MaxResidual" << std::endl;
 			}
 			std::cout << iter << "," << distFromSol.change << "," << distFromSol.residual << std::endl;
 		}
@@ -444,7 +449,7 @@ private:
 	void iterative_redistancing(g_temp_type &grid)
 	{
 		int i = 0;
-		while (i <= redistOptions.max_iter)
+		while (i < redistOptions.max_iter)
 		{
 			for (int j = 0; j < redistOptions.interval_check_convergence; j++)
 			{
@@ -464,25 +469,19 @@ private:
 						auto &v_cl = create_vcluster();
 						if (v_cl.rank() == 0)
 						{
-							std::cout << "Steady state reached at iteration: " << i << std::endl;
-							std::cout << "Final_Iteration,Change,Residual" << std::endl;
+							std::cout << "Steady state criterion reached at iteration: " << i << std::endl;
+							std::cout << "FinalIteration,MaxChange,MaxResidual" << std::endl;
 						}
 						print_out_iteration_change_residual(grid, i);
-					}
-					update_grid(grid); // Update Phi
-					if (redistOptions.save_temp_grid)
-					{
-						g_temp.setPropNames({"Phi_n", "Phi_nplus1_temp", "Phi_grad_temp", "Phi_0_sign_temp"});
-						g_temp.save("g_temp_redistancing.hdf5"); // HDF5 file}
 					}
 					break;
 				}
 			}
-			update_grid(grid);
 		}
 		// If save_temp_grid set true, save the temporary grid as hdf5 that can be reloaded onto a grid
 		if (redistOptions.save_temp_grid)
 		{
+			get_upwind_gradient<Phi_n_temp, Phi_0_sign_temp, Phi_grad_temp>(g_temp, redistOptions.order_space_op, true);
 			g_temp.setPropNames({"Phi_n", "Phi_nplus1_temp", "Phi_grad_temp", "Phi_0_sign_temp"});
 			g_temp.save("g_temp_redistancing.hdf5"); // HDF5 file}
 		}
