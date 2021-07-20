@@ -15,7 +15,7 @@
  * @author Justina Stark
  * @date May 2020
  */
- 
+
 #ifndef REDISTANCING_SUSSMAN_NARROWBAND_HPP
 #define REDISTANCING_SUSSMAN_NARROWBAND_HPP
 
@@ -31,7 +31,7 @@
 // Include level-set-method related header files
 #include "HelpFunctions.hpp"
 #include "HelpFunctionsForGrid.hpp"
-#include "ComputeGradient.hpp"
+#include "FiniteDifference/Upwind_gradient.hpp"
 
 /**@brief Class for getting the narrow band around the interface
  * @file NarrowBand.hpp
@@ -49,8 +49,8 @@ public:
 	 * @param thickness Width of narrow band in # grid points.
 	 */
 	NarrowBand(const grid_in_type & grid_in,
-				size_t thickness) // thickness in # grid points
-				: g_temp(grid_in.getDecomposition(), grid_in.getGridInfoVoid().getSize(), Ghost<grid_in_type::dims, long int>(3))
+	           size_t thickness) // thickness in # grid points
+			: g_temp(grid_in.getDecomposition(), grid_in.getGridInfoVoid().getSize(), Ghost<grid_in_type::dims, long int>(3))
 	{
 		set_bounds(thickness, grid_in);
 	}
@@ -62,7 +62,7 @@ public:
 	 */
 	NarrowBand(const grid_in_type & grid_in,
 	           double thickness)    // thickness as physical width
-	           : g_temp(grid_in.getDecomposition(), grid_in.getGridInfoVoid().getSize(), Ghost<grid_in_type::dims, long int>(3))
+			: g_temp(grid_in.getDecomposition(), grid_in.getGridInfoVoid().getSize(), Ghost<grid_in_type::dims, long int>(3))
 	{
 		set_bounds(thickness, grid_in);
 	}
@@ -76,7 +76,7 @@ public:
 	NarrowBand(const grid_in_type & grid_in,
 	           double width_outside,     // physical width of nb inside of object -> Phi > 0
 	           double width_inside)     // physical width nb outside of object -> Phi < 0
-	           : g_temp(grid_in.getDecomposition(), grid_in.getGridInfoVoid().getSize(), Ghost<grid_in_type::dims, long int>(3))
+			: g_temp(grid_in.getDecomposition(), grid_in.getGridInfoVoid().getSize(), Ghost<grid_in_type::dims, long int>(3))
 	{
 		set_bounds(width_outside, width_inside, grid_in);
 	}
@@ -125,7 +125,7 @@ public:
 	 * @tparam Phi_grad Index of property that should store the gradient of phi in the narrow band particle vector.
 	 * @tparam vector_type Inferred type of the particle vector.
 	 * @tparam grid_type Inferred type of the grid storing the SDF.
-	 * 
+	 *
 	 * @param grid Grid of arb. dims. storing the SDF (result of redistancing).
 	 * @param vd Empty vector with same spatial scaling (box) as the grid.
 	 */
@@ -174,7 +174,7 @@ public:
 	{
 		get_narrow_band_one_prop<Phi_SDF_grid, Prop1_grid, Prop1_vd>(grid, vd);
 	}
-	
+
 private:
 	//	Some indices for better readability
 	static const size_t Phi_SDF_temp        = 0; ///< Property index of Phi_SDF on the temporary grid.
@@ -218,9 +218,9 @@ private:
 	}
 	
 	/**@brief Initialize the internal temporary grid.
-	 * 
+	 *
 	 * @details Copies Phi_SDF from the input grid to the temorary grid.
-	 * 
+	 *
 	 * @tparam Phi_SDF Index of property storing the signed distance function in the input grid.
 	 * @param grid_in Input grid storing the signed distance function Phi_SDF (redistancing output).
 	 */
@@ -228,10 +228,10 @@ private:
 	void initialize_temporary_grid(const grid_in_type & grid_in)
 	{
 		copy_gridTogrid<Phi_SDF, Phi_SDF_temp>(grid_in, g_temp); // Copy Phi_SDF from the input grid to the temorary grid
-		init_sign_prop<Phi_SDF_temp, Phi_sign_temp>(g_temp); // initialize Phi_sign_temp with the sign of the 
+		init_sign_prop<Phi_SDF_temp, Phi_sign_temp>(g_temp); // initialize Phi_sign_temp with the sign of the
 		// input Phi_SDF
 		get_upwind_gradient<Phi_SDF_temp, Phi_sign_temp, Phi_grad_temp>(g_temp);   // Get initial gradients
-		get_gradient_magnitude<Phi_grad_temp, Phi_magnOfGrad_temp>(g_temp);     // Get initial magnitude of gradients
+		get_vector_magnitude<Phi_grad_temp, Phi_magnOfGrad_temp>(g_temp);     // Get initial magnitude of gradients
 	}
 	/**@brief Checks if a value for Phi_SDF lays within the narrow band.
 	 *
