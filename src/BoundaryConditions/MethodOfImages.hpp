@@ -25,8 +25,8 @@ class MethodOfImages {
 
 public:
 	typedef vector_dist_subset<vd_type::dims, typename vd_type::stype, typename vd_type::value_type> vd_subset_type;
-	typedef Point<vd_type::dims, double> point_type;
-	
+	typedef Point<vd_type::dims, typename vd_type::stype> point_type;
+
 	/**@brief Constructor
 	 *
 	 * @param vd Input particle vector_dist of type vd_type.
@@ -43,11 +43,13 @@ public:
 			, subset_id_mirror(subset_id_mirror)
 			, Real(vd, subset_id_real)
 			, Mirror(vd, subset_id_mirror)
-	
+
 	{
-		//check_ghost_thick_enough(vd);
+		#ifdef SE_CLASS1
+		check_if_ghost_isometric(vd);
+		#endif // SE_CLASS1
 	}
-	
+
 	//	Member variables
 	size_t subset_id_real; ///< ID of subset containing the real particles (default=0).
 	size_t subset_id_mirror; ///< ID of subset containing the mirror particles (default=1).
@@ -55,21 +57,35 @@ public:
 	PID_VECTOR_TYPE pid_mirror; ///< Vector containing indices of mirror particles.
 	vd_subset_type Mirror; ///< Subset containing the mirror particles.
 	vd_subset_type Real;
-	
+
 	/**@brief Place mirror particles along the surface normal.
 	 *
 	 * @param vd Input particle vector_dist of type vd_type.
 	 */
 	void get_mirror_particles(vd_type & vd)
 	{
+		std::cout << "Ghost size before placing mirror particles = "
+				<< vd.size_local_with_ghost() - vd.size_local() << std::endl;
+
 		for (int i = 0; i < keys_source.size(); i++)
 		{
 			auto key        = keys_source.get(i);
 			point_type xp   = vd.getPos(key);
 			point_type n    = vd.template getProp<SurfaceNormal>(key);
-			double distance = n.norm() * 2.0;
 			
-			point_type xm   = xp + n * distance;
+			point_type xm   = xp + 2 * n;
+
+			#ifdef SE_CLASS1
+			if(!point_lies_on_this_processor(vd, xm))
+			{
+				std::cerr << __FILE__ << ":" << __LINE__ << " Error: Ghost layer is too small. Source and mirror"
+															" particles that belong together must lie on the same"
+															" processor."
+															" Create a bigger ghost layer which is bigger than the"
+															" mirror particle layer. Aborting..." << std::endl;
+				abort();
+			}
+			#endif // SE_CLASS1
 			
 			vd.add();
 			for (size_t d = 0; d < vd_type::dims; d++)
@@ -80,10 +96,17 @@ public:
 		}
 // No vd.map() here, because we want to keep the source and the mirror particles on the same node
 		////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+		vd.template ghost_get();
+		std::cout << "Ghost size after placing mirror particles = "
+				<< vd.size_local_with_ghost() - vd.size_local() << std::endl;
 		Mirror.update();
 		pid_mirror = Mirror.getIds();
+		#ifdef SE_CLASS1
 		check_size_mirror_source_equal();
+		#endif // SE_CLASS1
 	}
+
+	
 	
 	/**@brief Copies the values stored in PropToMirror from each source particle to its respective mirror particles
 	 *
@@ -93,6 +116,7 @@ public:
 	template <size_t PropToMirror>
 	void apply_reflection(vd_type & vd)
 	{
+		check_size_mirror_source_equal();
 		vd.template ghost_get<PropToMirror>(KEEP_PROPERTIES); // Update Ghost layer.
 		for (int i = 0; i < keys_source.size(); ++i)
 		{
@@ -104,26 +128,47 @@ public:
 
 
 private:
-//	/**@brief Checks if the size of the ghost layer is bigger or equal the size of the mirror layer. This is needed s
-//	 * .t. added mirror particles can be accessed by the same processor on which the corresponding source lies.
-//	 *
-//	 * @param vd
-//	 */
-//	void check_ghost_thick_enough(vd_type & vd)
-//	{
-//		double mirror_thickness = _b_up - _b_low;
-//		for (size_t i = 0 ; i < vd_type::dims ; i++)
-//		{
-//			if (fabs(vd.getDecomposition().getGhost().getLow(i)) < mirror_thickness)
-//			{
-//				std::cerr << __FILE__ << ":" << __LINE__ << " Error: thickness of the mirror layer (" <<
-//						mirror_thickness <<	") is bigger than the ghost layer on the dimension " << i << " which is "
-//						<< fabs(vd.getDecomposition().getGhost().getLow(i)) << ". Create a bigger ghost layer." << std::endl;
-//				abort();
-//			}
-//		}
-//	}
-	
+	void check_if_ghost_isometric(vd_type & vd)
+	{
+		for(int d=0; d<vd_type::dims; d++)
+		{
+			if (vd.getDecomposition().getGhost().getLow(0) != vd.getDecomposition().getGhost().getLow(d))
+			{
+				std::cerr << __FILE__ << ":" << __LINE__ << "Ghost layer doesn't have the same size in all dimensions"
+															". Use an isometric ghost layer. Aborting..."
+															<< std::endl;
+				abort();
+			}
+		}
+	}
+
+	/**@brief Checks if the size of the ghost layer is bigger or equal the size of the mirror layer. This is needed s
+	 * .t. added mirror particles can be accessed by the same processor on which the corresponding source lies.
+	 * @param vd Input particle vector_dist of type vd_type.
+	 * @param p Point for which we want to know if it is covered by the current processor (incl. its ghost).
+	 * @return True, if processor has access to point. False, if point lays too far away.
+	 */
+	bool point_lies_on_this_processor(vd_type & vd, point_type p)
+	{
+		double g_width = fabs(vd.getDecomposition().getGhost().getLow(0));
+		Ghost<vd_type::dims, typename vd_type::stype> g(g_width);
+		
+		auto & subs = vd.getDecomposition().getSubDomains();
+		
+		bool is_inside = false;
+		
+		for (int i = 0 ; i < subs.size() ; i++)
+		{
+			SpaceBox<vd_type::dims, typename vd_type::stype> sub = subs.get(i);
+			sub.enlarge(g);
+			is_inside |= sub.isInside(p);
+		}
+
+		if (!is_inside)  {std::cout << "Processor does not have the point" << std::endl;}
+
+		return is_inside;
+	}
+
 	/**@brief Checks if local vector containing source particle ids and vector containing mirror particle ids match
 	 * in size. Necessary, because in apply_mirror, source ids and mirror ids are iterated in same loop on same
 	 * processor.
@@ -131,19 +176,19 @@ private:
 	 */
 	void check_size_mirror_source_equal()
 	{
-		std::cout << "pid_mirror.size() = " << pid_mirror.size() << ", keys_source.size() = " << keys_source.size()
-				<< std::endl;
 		if (pid_mirror.size() != keys_source.size())
 		{
+			std::cout << "pid_mirror.size() = " << pid_mirror.size() << ", keys_source.size() = " << keys_source.size()
+					<< std::endl;
 			std::cerr << __FILE__ << ":" << __LINE__
 					<< " Error: Local vector of source-IDs has different size than local vector of mirror-IDs. Matching "
 					   "source and mirror particle IDs must be stored on same processor." << std::endl;
 			abort();
 		}
 	}
-	
-	
-	
+
+
+
 };
 
 

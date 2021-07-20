@@ -35,7 +35,7 @@
  * @param sign: Sign of the velocity with which the wave front is moving.
  * @return Scalar double upwind gradient approximation in the dimension given.
  */
-double upwinding(double dplus, double dminus, int sign)
+static double upwinding(double dplus, double dminus, int sign)
 {
 	double grad_upwind = 0;
 	if (dplus * sign < 0
@@ -78,12 +78,12 @@ double FD_upwind(gridtype &grid, keytype &key, size_t d, size_t order)
 			dminus = FD_backward<Field>(grid, key, d);
 			break;
 		case 3:
-			dplus  = ENO_3_Plus<gridtype, keytype, Field>(key, grid, d);
-			dminus = ENO_3_Minus<gridtype, keytype,Field>(key, grid, d);
+			dplus  = ENO_3_Plus<Field>(grid, key, d);
+			dminus = ENO_3_Minus<Field>(grid, key, d);
 			break;
 		case 5:
-			dplus  = WENO_5_Plus<gridtype, keytype, Field>(key, grid, d);
-			dminus = WENO_5_Minus<gridtype, keytype, Field>(key, grid, d);
+			dplus  = WENO_5_Plus<Field>(grid, key, d);
+			dminus = WENO_5_Minus<Field>(grid, key, d);
 			break;
 		default:
 			auto &v_cl = create_vcluster();
@@ -116,7 +116,7 @@ double FD_upwind(gridtype &grid, keytype &key, size_t d, size_t order)
  */
 // Use upwinding for inner grid points and one sided backward / forward stencil at border (if one_sided_BC=true)
 template <size_t Field, size_t Sign, size_t Gradient, typename gridtype>
-void upwind_gradient(gridtype & grid, size_t order, const bool one_sided_BC)
+void upwind_gradient(gridtype & grid, const bool one_sided_BC, size_t order)
 {
 	grid.template ghost_get<Field>(KEEP_PROPERTIES);
 	grid.template ghost_get<Sign>(KEEP_PROPERTIES);
@@ -164,7 +164,7 @@ void upwind_gradient(gridtype & grid, size_t order, const bool one_sided_BC)
 		while (dom.isNext())
 		{
 			auto key = dom.get();
-			for(size_t d = 0; d < gridtype::dims; d++ )
+			for(size_t d = 0; d < gridtype::dims; d++)
 			{
 				grid.template get<Gradient> (key) [d] = FD_upwind<Field, Sign>(grid, key, d, order);
 			}
@@ -197,7 +197,7 @@ static bool ghost_width_is_sufficient(gridtype & grid, size_t required_width)
 		if(np_ghost[d] < min_width) min_width = np_ghost[d];
 	}
 	
-	return (required_width >= min_width);
+	return (min_width >= required_width);
 }
 
 /**@brief Calls #upwind_gradient. Computes upwind gradient of desired order {1, 3, 5} for the whole n-dim grid.
@@ -237,13 +237,13 @@ void get_upwind_gradient(gridtype & grid, const size_t order=5, const bool one_s
 		case 1:
 		case 3:
 		case 5:
-			upwind_gradient<Field_in, Sign, Gradient_out>(grid, order, one_sided_BC);
+			upwind_gradient<Field_in, Sign, Gradient_out>(grid, one_sided_BC, order);
 			break;
 		default:
 			auto &v_cl = create_vcluster();
 			if (v_cl.rank() == 0) std::cout << "Order of accuracy chosen not valid. Using default order 1." <<
 						std::endl;
-			upwind_gradient<Field_in, Sign, Gradient_out>(grid, 1, one_sided_BC);
+			upwind_gradient<Field_in, Sign, Gradient_out>(grid, one_sided_BC, 1);
 			break;
 	}
 	
