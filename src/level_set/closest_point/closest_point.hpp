@@ -70,6 +70,9 @@ template<size_t phi_field, size_t cp_field, unsigned int poly_order, typename gr
 void estimateClosestPoint(grid_type &gd, const double nb_gamma)
 {
     const unsigned int dim = grid_type::dims;
+    // Update the phi field in ghosts
+    gd.template ghost_get<phi_field>(KEEP_PROPERTIES);
+
     // Stencil polynomial type
     using Poly = typename Algoim::StencilPoly<dim, poly_order>::T_Poly;
 
@@ -160,6 +163,9 @@ template<size_t phi_field, size_t cp_field, size_t extend_field, size_t extend_f
 void extendLSField(grid_type &gd, const double nb_gamma)
 {
     const unsigned int dim = grid_type::dims;
+    // Update the phi and cp fields in ghost
+    gd.template ghost_get<phi_field, cp_field>(KEEP_PROPERTIES);
+
     // Stencil polynomial object
     using Poly = typename Algoim::StencilPoly<dim, poly_order>::T_Poly;
     auto &patches = gd.getLocalGridsInfo();
@@ -229,6 +235,10 @@ template<size_t phi_field, size_t cp_field, unsigned int poly_order, typename gr
 void reinitializeLS(grid_type &gd, const double nb_gamma)
 {
     const unsigned int dim = grid_type::dims;
+
+    // Update the cp_field in ghost
+    gd.template ghost_get<cp_field>(KEEP_PROPERTIES);
+
     // Stencil polynomial object
     using Poly = typename Algoim::StencilPoly<dim, poly_order>::T_Poly;
     auto &patches = gd.getLocalGridsInfo();
