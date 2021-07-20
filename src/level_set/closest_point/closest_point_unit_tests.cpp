@@ -28,17 +28,17 @@ typedef struct EllipseParameters{
 } EllipseParams;
 
 // Generate an ellipsoid initial levelset signed distance function
-template<size_t phi_field, typename grid_type, typename domain_type>
-void initializeLSEllipsoid(grid_type &gd, const domain_type &domain, const EllipseParams &params)
+template<size_t phi_field, typename grid_type>
+void initializeLSEllipsoid(grid_type &gd, const EllipseParams &params)
 {
     auto it = gd.getDomainIterator();
     while(it.isNext())
     {
         auto key = it.get();
         Point<grid_type::dims, double> coords = gd.getPos(key);
-        double posx = coords.get(0) + domain.getLow(0);
-        double posy = coords.get(1) + domain.getLow(1);
-        double posz = coords.get(2) + domain.getLow(2);
+        double posx = coords.get(0);
+        double posy = coords.get(1);
+        double posz = coords.get(2);
         
         // NOTE: Except for a sphere, this is not the SDF. It is just an implicit function whose zero contour is an ellipsoid.
         double phi_val = 1.0 - sqrt(((posx - params.origin[0])/params.radiusA)*((posx - params.origin[0])/params.radiusA) + ((posy - params.origin[1])/params.radiusB)*((posy - params.origin[1])/params.radiusB) + ((posz - params.origin[2])/params.radiusC)*((posz - params.origin[2])/params.radiusC));
@@ -96,12 +96,10 @@ BOOST_AUTO_TEST_CASE( closest_point_unit_sphere )
     nb_gamma = narrow_band_half_width * gdist.spacing(0);
 
     // Initializes the grid property 'phi' whose zero contour represents the ellipsoid
-    initializeLSEllipsoid<phi>(gdist, domain, params);
-    gdist.template ghost_get<phi>();
+    initializeLSEllipsoid<phi>(gdist, params);
 
     // Updates the property 'cp' of the grid to the closest point coords (only done in the narrowband).
     estimateClosestPoint<phi, cp, POLY_ORDER>(gdist, nb_gamma);
-    gdist.template ghost_get<cp>();
 
     // Estimate error in closest point estimation
     auto &patches = gdist.getLocalGridsInfo();
@@ -123,7 +121,6 @@ BOOST_AUTO_TEST_CASE( closest_point_unit_sphere )
 
             if(std::abs(gdist.template get<phi>(key)) < nb_gamma)
             {
-                auto key_g = gdist.getGKey(key);
                 // Computed closest point coordinates.
                 // Note: This is patch coordinates not the real one.
                 double cpx = gdist.template get<cp>(key)[x];
@@ -139,9 +136,10 @@ BOOST_AUTO_TEST_CASE( closest_point_unit_sphere )
                 double estim_pz = domain.getLow(z) + (p_zlo - algoim_padding)*gdist.spacing(z) + cpz;
         
                 // Global coordinate of the selected grid point.
-                double posx = key_g.get(0)*gdist.spacing(0) + domain.getLow(0);
-                double posy = key_g.get(1)*gdist.spacing(1) + domain.getLow(1);
-                double posz = key_g.get(2)*gdist.spacing(2) + domain.getLow(2);
+                Point<GridDist::dims, double> coords = gdist.getPos(key);
+                double posx = coords.get(0);
+                double posy = coords.get(1);
+                double posz = coords.get(2);
                     
                 double norm = sqrt(posx*posx + posy*posy + posz*posz);
                 // Analytically known closest point coordinate for unit sphere.
@@ -209,15 +207,12 @@ BOOST_AUTO_TEST_CASE( reinitialization_unit_sphere )
 
     nb_gamma = narrow_band_half_width * gdist.spacing(0);
 
-    initializeLSEllipsoid<phi>(gdist, domain, params);
-    gdist.template ghost_get<phi>();
+    initializeLSEllipsoid<phi>(gdist, params);
 
     estimateClosestPoint<phi, cp, POLY_ORDER>(gdist, nb_gamma);
-    gdist.template ghost_get<cp>();
 
     // Reinitialize the level set function stored in property 'phi' based on closest points in 'cp'
     reinitializeLS<phi, cp, POLY_ORDER>(gdist, nb_gamma);
-    gdist.template ghost_get<phi>();
 
     // Estimate error in closest point estimation
     auto &patches = gdist.getLocalGridsInfo();
@@ -238,11 +233,11 @@ BOOST_AUTO_TEST_CASE( reinitialization_unit_sphere )
 
             if(std::abs(gdist.template get<phi>(key)) < nb_gamma)
             {
-                auto key_g = gdist.getGKey(key);
                 // Global grid coordinate
-                double posx = key_g.get(0)*gdist.spacing(0) + domain.getLow(0);
-                double posy = key_g.get(1)*gdist.spacing(1) + domain.getLow(1);
-                double posz = key_g.get(2)*gdist.spacing(2) + domain.getLow(2);
+                Point<GridDist::dims, double> coords = gdist.getPos(key);
+                double posx = coords.get(0);
+                double posy = coords.get(1);
+                double posz = coords.get(2);
 
                 // Analytically computed signed distance
                 // NOTE: SDF convention here is positive inside and negative outside the sphere

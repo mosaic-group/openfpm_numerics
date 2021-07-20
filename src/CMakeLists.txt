@@ -90,6 +90,8 @@ target_include_directories (numerics PUBLIC ${HDF5_ROOT}/include)
 target_include_directories (numerics PUBLIC ${LIBHILBERT_INCLUDE_DIRS})
 target_include_directories (numerics PUBLIC ${Boost_INCLUDE_DIRS})
 target_include_directories (numerics PUBLIC ${Vc_INCLUDE_DIR})
+target_include_directories (numerics PUBLIC ${BLITZ_ROOT}/include)
+target_include_directories (numerics PUBLIC ${ALGOIM_ROOT}/include)
 target_include_directories (numerics PUBLIC ${ALPAKA_ROOT}/include)
 target_include_directories (numerics PUBLIC ${MPI_C_INCLUDE_DIRS})
 if(EIGEN3_FOUND)
@@ -258,6 +260,10 @@ install(FILES level_set/redistancing_Sussman/HelpFunctions.hpp
 install(FILES DMatrix/EMatrix.hpp
 	DESTINATION openfpm_numerics/include/DMatrix
 	COMPONENT OpenFPM)
+
+install(FILES level_set/closest_point/closest_point.hpp
+	      DESTINATION openfpm_numerics/include/level_set/closest_point
+	      COMPONENT OpenFPM)
 
 #if(BUILD_TESTING)
 
