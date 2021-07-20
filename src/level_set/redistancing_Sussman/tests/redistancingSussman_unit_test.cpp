@@ -53,8 +53,6 @@ BOOST_AUTO_TEST_SUITE(RedistancingSussmanTestSuite)
 		redist_options.min_iter                             = 1e4;
 		redist_options.max_iter                             = 1e4;
 		
-		redist_options.order_space_op                       = 5;
-		
 		redist_options.convTolChange.check                  = false;
 		redist_options.convTolResidual.check                = false;
 		

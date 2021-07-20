@@ -51,7 +51,7 @@ BOOST_AUTO_TEST_SUITE(ConvergenceTestSuite)
 		
 //		double dt = 0.000503905;
 		size_t Nmin = 32;
-		size_t Nmax = 1024;
+		size_t Nmax = 4096;
 		double dt = get_min_required_time_step(Nmax, box_lower, box_upper, grid_dim);
 		for (size_t N = Nmin; N <= Nmax; N*=2)
 		{
@@ -70,15 +70,10 @@ BOOST_AUTO_TEST_SUITE(ConvergenceTestSuite)
 				++dom;
 			}
 			
-			for (int i = 1; i <=5; i += 2)
 			{
-				std::cout << "N = " << N << std::endl;
-				std::cout << "i = " << i << std::endl;
-				
 				Redist_options redist_options;
 				redist_options.min_iter = 1e3;
 				redist_options.max_iter = 1e16;
-				redist_options.order_space_op = i;
 				
 				// set both convergence criteria to false s.t. termination only when max_iterations reached
 				redist_options.convTolChange.check = true;    // define here which of the convergence criteria above should
@@ -104,7 +99,7 @@ BOOST_AUTO_TEST_SUITE(ConvergenceTestSuite)
 				
 				// Compute the absolute error between analytical and numerical solution at each grid point
 				get_absolute_error<SDF_sussman_grid, SDF_exact_grid, Error_grid>(g_dist);
-				g_dist.write("grid_spaceOrder_" + std::to_string(i),FORMAT_BINARY);
+				g_dist.write("grid_postRedistancing", FORMAT_BINARY);
 				/////////////////////////////////////////////////////////////////////////////////////////////
 				//	Get narrow band: Place particles on interface (narrow band width e.g. 4 grid points on each side of the
 				//	interface)
@@ -120,14 +115,12 @@ BOOST_AUTO_TEST_SUITE(ConvergenceTestSuite)
 				NarrowBand<grid_in_type> narrowBand_points(g_dist, narrow_band_width); // Instantiation of NarrowBand class
 				narrowBand_points.get_narrow_band_copy_specific_property<SDF_sussman_grid, Error_grid, Error_vd>(g_dist,
 				                                                                                                 vd_narrow_band);
-			    vd_narrow_band.write("vd_error_N" + std::to_string(N) + "_spaceOrder" + std::to_string(redist_options
-			    .order_space_op), FORMAT_BINARY);
+			    vd_narrow_band.write("vd_error_N" + std::to_string(N), FORMAT_BINARY);
 //				vd_narrow_band.save("test_data/output/vd_nb8p_error" + std::to_string(N) + ".bin");
 				// Compute the L_2- and L_infinity-norm and save to file
 				L_norms lNorms_vd;
 				lNorms_vd = get_l_norms_vector<Error_vd>(vd_narrow_band);
-				write_lnorms_to_file(N, lNorms_vd, "l_norms_spaceOrder" + std::to_string(redist_options
-				.order_space_op),"./");
+				write_lnorms_to_file(N, lNorms_vd, "l_norms_", "./");
 			}
 			
 		}
@@ -165,14 +158,11 @@ BOOST_AUTO_TEST_SUITE(ConvergenceTestSuite)
 			const double center[grid_dim] = {0.5*(box_upper+box_lower), 0.5*(box_upper+box_lower), 0.5*(box_upper+box_lower)};
 			init_grid_with_sphere<Phi_0_grid>(g_dist, radius, center[x], center[y], center[z]); // Initialize sphere onto grid
 			
-			
-			for (int order=1; order<=5; order+=2)
+			int order = 1;
 			{
 				Redist_options redist_options;
 				redist_options.min_iter                             = 1e4;
 				redist_options.max_iter                             = 1e4;
-				
-				redist_options.order_space_op                       = order;
 				
 				// set both convergence criteria to false s.t. termination only when max_iterations reached
 				redist_options.convTolChange.check                  = false;    // define here which of the convergence criteria above should be used. If both are true, termination only occurs when both are fulfilled or when iter > max_iter

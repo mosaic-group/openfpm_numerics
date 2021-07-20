@@ -117,8 +117,6 @@ struct Redist_options
 	size_t min_iter = 1e5;
 	size_t max_iter = 1e12;
 	
-	size_t order_space_op = 5;
-	
 	Conv_tol_change convTolChange;
 	Conv_tol_residual convTolResidual;
 	
@@ -175,6 +173,7 @@ public:
 	                                                                                   Ghost<grid_in_type::dims, long int>(3))
 	{
 		time_step = get_time_step_CFL(grid_in);
+		order_upwind_gradient = 1;
 #ifdef SE_CLASS1
 		assure_minimal_thickness_of_NB();
 #endif // SE_CLASS1
@@ -215,7 +214,7 @@ public:
 		init_sign_prop<Phi_n_temp, Phi_0_sign_temp>(
 				g_temp); // initialize Phi_0_sign_temp with the sign of the initial (pre-redistancing) Phi_0
 		// Get initial gradients
-		get_upwind_gradient<Phi_n_temp, Phi_0_sign_temp, Phi_grad_temp>(g_temp, redistOptions.order_space_op, true);
+		get_upwind_gradient<Phi_n_temp, Phi_0_sign_temp, Phi_grad_temp>(g_temp, order_upwind_gradient, true);
 		iterative_redistancing(g_temp); // Do the redistancing on the temporary grid
 		copy_gridTogrid<Phi_n_temp, Phi_SDF_out>(g_temp, r_grid_in); // Copy resulting SDF function to input grid
 	}
@@ -258,7 +257,7 @@ private:
 	 * @see get_time_step_CFL(g_temp_type &grid), get_time_step(), set_user_time_step()
 	 */
 	double time_step;
-	
+	int order_upwind_gradient;
 	//	Member functions
 #ifdef SE_CLASS1
 	/** @brief Checks if narrow band thickness >= 4 grid points. Else, sets it to 4 grid points.
@@ -307,7 +306,7 @@ private:
     */
 	void go_one_redistancing_step_whole_grid(g_temp_type &grid)
 	{
-		get_upwind_gradient<Phi_n_temp, Phi_0_sign_temp, Phi_grad_temp>(grid, redistOptions.order_space_op, true);
+		get_upwind_gradient<Phi_n_temp, Phi_0_sign_temp, Phi_grad_temp>(grid, order_upwind_gradient, true);
 		grid.template ghost_get<Phi_n_temp, Phi_grad_temp>();
 		auto dom = grid.getDomainIterator();
 		while (dom.isNext())
@@ -479,7 +478,7 @@ private:
 		// If save_temp_grid set true, save the temporary grid as hdf5 that can be reloaded onto a grid
 		if (redistOptions.save_temp_grid)
 		{
-			get_upwind_gradient<Phi_n_temp, Phi_0_sign_temp, Phi_grad_temp>(g_temp, redistOptions.order_space_op, true);
+			get_upwind_gradient<Phi_n_temp, Phi_0_sign_temp, Phi_grad_temp>(g_temp, order_upwind_gradient, true);
 			g_temp.setPropNames({"Phi_n", "Phi_nplus1_temp", "Phi_grad_temp", "Phi_0_sign_temp"});
 			g_temp.save("g_temp_redistancing.hdf5"); // HDF5 file}
 		}
