@@ -147,6 +147,7 @@ struct DistFromSol
 	///< the current \a &phi; of iteration number \a i is away from being equal to 1: @f[ abs(|\nabla\phi_i| - 1 ) @f]
 	///< It is computed for all grid points that lie within the narrow band and
 	///< normalized to the number of grid points that lie in that narrow band.
+	int count; ///< Integer variable that contains the number of points that could be assigned to the narrow band.
 };
 
 
@@ -173,7 +174,6 @@ public:
 	                                                                                   grid_in.getGridInfoVoid().getSize(),
 	                                                                                   Ghost<grid_in_type::dims, long int>(3))
 	{
-//		time_step = set_cfl_time_step();
 		time_step = get_time_step_CFL(grid_in);
 #ifdef SE_CLASS1
 		assure_minimal_thickness_of_NB();
@@ -260,17 +260,6 @@ private:
 	double time_step;
 	
 	//	Member functions
-	/** @brief Set artificial iteration time_step that fulfills the cfl condition for the redistancing accoridng to
-    * Sussman & Fatemi, 1999.
-    *
-    * @details dt = dx / 2 with grid spacing dx.
-    *
-    */
-	double set_cfl_time_step()
-	{
-		return g_temp.getSpacing()[0] / 2.0;
-	}
-
 #ifdef SE_CLASS1
 	/** @brief Checks if narrow band thickness >= 4 grid points. Else, sets it to 4 grid points.
 		*
@@ -355,12 +344,14 @@ private:
 	{
 		double max_residual = 0;
 		double max_change = 0;
+		int count = 0;
 		auto dom = grid.getDomainIterator();
 		while (dom.isNext())
 		{
 			auto key = dom.get();
 			if (lays_inside_NB(grid.template get<Phi_n_temp>(key)))
 			{
+				count++;
 				double phi_n_magnOfGrad = grid.template get<Phi_grad_temp>(key).norm();
 				double epsilon = phi_n_magnOfGrad * grid.getSpacing()[0];
 				double phi_nplus1 = get_phi_nplus1(grid.template get<Phi_n_temp>(key), phi_n_magnOfGrad, time_step,
@@ -378,8 +369,9 @@ private:
 		auto &v_cl = create_vcluster();
 		v_cl.max(max_change);
 		v_cl.max(max_residual);
+		v_cl.sum(count);
 		v_cl.execute();
-		return {max_change, max_residual};
+		return {max_change, max_residual, count};
 	}
 	
 	/** @brief Prints out the iteration number, residual and change of the current re-distancing iteration
@@ -398,9 +390,12 @@ private:
 		{
 			if (iter == 0)
 			{
-				std::cout << "Iteration,MaxChange,MaxResidual" << std::endl;
+				std::cout << "Iteration,MaxChange,MaxResidual,NumberOfNarrowBandPoints" << std::endl;
 			}
-			std::cout << iter << "," << distFromSol.change << "," << distFromSol.residual << std::endl;
+			std::cout << iter
+			<< "," << to_string_with_precision(distFromSol.change, 15)
+			<< "," << to_string_with_precision(distFromSol.residual, 15)
+			<< "," << distFromSol.count << std::endl;
 		}
 	}
 	
@@ -420,18 +415,21 @@ private:
 		DistFromSol distFromSol = get_residual_and_change_NB(grid);
 		if (redistOptions.convTolChange.check && redistOptions.convTolResidual.check)
 		{
-			steady_state = (distFromSol.change <= redistOptions.convTolChange.value &&
-					distFromSol.residual <= redistOptions.convTolResidual.value);
+			steady_state = (
+					distFromSol.change <= redistOptions.convTolChange.value &&
+					distFromSol.residual <= redistOptions.convTolResidual.value &&
+					distFromSol.count > 0
+					);
 		}
 		else
 		{
 			if (redistOptions.convTolChange.check)
 			{
-				steady_state = (distFromSol.change <= redistOptions.convTolChange.value);
+				steady_state = (distFromSol.change <= redistOptions.convTolChange.value && distFromSol.count > 0);
 			}       // Use the normalized total change between two iterations in the narrow bands steady-state criterion
 			if (redistOptions.convTolResidual.check)
 			{
-				steady_state = (distFromSol.residual <= redistOptions.convTolResidual.value);
+				steady_state = (distFromSol.residual <= redistOptions.convTolResidual.value && distFromSol.count > 0);
 			} // Use the normalized total residual of phi compared to SDF in the narrow bands steady-state criterion
 		}
 		return steady_state;

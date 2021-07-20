@@ -30,8 +30,8 @@ BOOST_AUTO_TEST_SUITE(RedistancingSussmanTestSuite)
 		const size_t SDF_exact_grid         = 2;
 		const size_t Error_grid             = 3;
 		
-		size_t N = 32;
-		const double dt = 0.000165334;
+		size_t N = 128;
+		const double dt = 0.000165334; // CFL-condition for N=128
 		const size_t sz[grid_dim] = {N, N, N};
 		const double radius = 1.0;
 		const double box_lower = -2.0;
