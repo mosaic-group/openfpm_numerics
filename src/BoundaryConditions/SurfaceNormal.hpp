@@ -6,6 +6,8 @@
 #define BOUNDARY_CONDITION_SURFACENORMAL_HPP
 
 #include "cmath"
+// Include OpenFPM header files
+#include "Vector/vector_dist_subset.hpp"
 
 template <size_t Phi_SDF, size_t Phi_Gradient, size_t Normal, typename vd_type>
 void get_surface_normal_sdf(vd_type & vd, bool unit_vector=false)
