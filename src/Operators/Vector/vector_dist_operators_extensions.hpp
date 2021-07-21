@@ -65,7 +65,7 @@ public:
 	 * \return the point stored
 	 *
 	 */
-	inline point value(const vect_dist_key_dx & k) const
+	__device__ __host__ inline point value(const vect_dist_key_dx & k) const
 	{
 		return p;
 	}

@@ -4,6 +4,9 @@
  *  Created on: Sep 15, 2020
  *      Author: i-bird
  */
+#include "config.h"
+#ifdef HAVE_EIGEN
+#ifdef HAVE_PETSC
 
 #ifndef DCPSE_OP_TEST_TEMPORAL_CPP_
 #define DCPSE_OP_TEST_TEMPORAL_CPP_
@@ -254,3 +257,5 @@ BOOST_AUTO_TEST_SUITE(temporal_test_suite)
 BOOST_AUTO_TEST_SUITE_END()
 
 #endif /* DCPSE_OP_TEST_TEMPORAL_CPP_ */
+#endif
+#endif

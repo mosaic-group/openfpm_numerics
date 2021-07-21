@@ -50,6 +50,29 @@ namespace boost {
             }
         };*/
 
+        template<typename S1,typename S2>
+        struct for_each_prop_resize{
+            S1 &v1;
+            S2 &v2;
+            /*! \brief constructor
+             *
+             *
+             * \param src source encapsulated object
+             * \param dst destination encapsulated object
+             *
+             */
+            inline for_each_prop_resize(S1 &v1,S2 &v2)
+            :v1(v1),v2(v2)
+            {};
+            //! It call the copy function for each property
+            template<typename T>
+            inline void operator()(T& t) const
+            {
+                v1.data.template get<T::value>().getVector().resize(v2.data.template get<T::value>().getVector().size());
+            }
+
+        };
+
         /* It copy one element of the chunk for each property
          *
          */
@@ -127,8 +150,9 @@ namespace boost {
             template< class S1 , class S2 , class Op >
             static void for_each2( S1 &s1 , S2 &s2 , Op op )
             {
-
-
+                for_each_prop_resize<S1,S2> the_resize(s1,s2);
+                boost::mpl::for_each_ref<boost::mpl::range_c<int,0,decltype(s1.data)::max_prop>>(the_resize);
+                //s1.data.template get<0>().getVector().resize(s2.data.template get<0>().getVector().size());
                 // ToDo : build checks, that the +-*/ operators are well defined
                 auto it=s1.data.template get<0>().getVector().getIterator();
                 while(it.isNext()){
@@ -167,14 +191,19 @@ namespace boost {
                 template<typename T>
                 inline void operator()(T& t) const
                 {
+                    //std::cout<<v1.data.template get<T::value>().getVector().size()<<":"<<v2.data.template get<T::value>().getVector().size()<<":"<<v3.data.template get<T::value>().getVector().size()<<std::endl;
                     op(v1.data.template get<T::value>().getVector().template get<0>(p),v2.data.template get<T::value>().getVector().template get<0>(p),v3.data.template get<T::value>().getVector().template get<0>(p));
                 }
             };
+
+
             template< class S1 , class S2 , class S3 , class Op >
             static void for_each3( S1 &s1 , S2 &s2 , S3 &s3 , Op op )
             {
 
-
+//
+                for_each_prop_resize<S1,S2> the_resize(s1,s2);
+                boost::mpl::for_each_ref<boost::mpl::range_c<int,0,decltype( s1.data)::max_prop>>(the_resize);
                 // ToDo : build checks, that the +-*/ operators are well defined
                 auto it=s1.data.template get<0>().getVector().getIterator();
                 while(it.isNext()){
@@ -221,7 +250,8 @@ namespace boost {
             template< class S1 , class S2 , class S3 , class S4 , class Op >
             static void for_each4( S1 &s1 , S2 &s2 , S3 &s3 , S4 &s4 , Op op )
             {
-
+                for_each_prop_resize<S1,S2> the_resize(s1,s2);
+                boost::mpl::for_each_ref<boost::mpl::range_c<int,0,decltype(s1.data)::max_prop>>(the_resize);
                 // ToDo : build checks, that the +-*/ operators are well defined
                 auto it=s1.data.template get<0>().getVector().getIterator();
                 while(it.isNext()){
@@ -269,7 +299,8 @@ namespace boost {
             template< class S1 , class S2 , class S3 , class S4,class S5 , class Op >
             static void for_each5( S1 &s1 , S2 &s2 , S3 &s3 , S4 &s4,S5 &s5 , Op op )
             {
-
+                for_each_prop_resize<S1,S2> the_resize(s1,s2);
+                boost::mpl::for_each_ref<boost::mpl::range_c<int,0,decltype(s1.data)::max_prop>>(the_resize);
                 // ToDo : build checks, that the +-*/ operators are well defined
                 auto it=s1.data.template get<0>().getVector().getIterator();
                 while(it.isNext()){
@@ -318,6 +349,8 @@ namespace boost {
             template< class S1 , class S2 , class S3 , class S4,class S5,class S6 , class Op >
             static void for_each6( S1 &s1 , S2 &s2 , S3 &s3 , S4 &s4,S5 &s5,S6 &s6 , Op op )
             {
+                for_each_prop_resize<S1,S2> the_resize(s1,s2);
+                boost::mpl::for_each_ref<boost::mpl::range_c<int,0,decltype(s1.data)::max_prop>>(the_resize);
                 // ToDo : build checks, that the +-*/ operators are well defined
                 auto it=s1.data.template get<0>().getVector().getIterator();
                 while(it.isNext()){
@@ -370,6 +403,8 @@ namespace boost {
             template< class S1 , class S2 , class S3 , class S4,class S5,class S6 ,class S7, class Op >
             static void for_each7( S1 &s1 , S2 &s2 , S3 &s3 , S4 &s4,S5 &s5,S6 &s6,S7 &s7 , Op op )
             {
+                for_each_prop_resize<S1,S2> the_resize(s1,s2);
+                boost::mpl::for_each_ref<boost::mpl::range_c<int,0,decltype(s1.data)::max_prop>>(the_resize);
                 // ToDo : build checks, that the +-*/ operators are well defined
                 auto it=s1.data.template get<0>().getVector().getIterator();
                 while(it.isNext()){
@@ -421,6 +456,8 @@ namespace boost {
             template< class S1 , class S2 , class S3 , class S4,class S5,class S6 ,class S7,class S8, class Op >
             static void for_each8( S1 &s1 , S2 &s2 , S3 &s3 , S4 &s4,S5 &s5,S6 &s6,S7 &s7,S8 &s8 , Op op )
             {
+                for_each_prop_resize<S1,S2> the_resize(s1,s2);
+                boost::mpl::for_each_ref<boost::mpl::range_c<int,0,decltype(s1.data)::max_prop>>(the_resize);
                 // ToDo : build checks, that the +-*/ operators are well defined
                 auto it=s1.data.template get<0>().getVector().getIterator();
                 while(it.isNext()){
@@ -473,6 +510,8 @@ namespace boost {
             template< class S1 , class S2 , class S3 , class S4,class S5,class S6 ,class S7,class S8, class S9, class Op >
             static void for_each9( S1 &s1 , S2 &s2 , S3 &s3 , S4 &s4,S5 &s5,S6 &s6,S7 &s7,S8 &s8, S9 &s9 , Op op )
             {
+                for_each_prop_resize<S1,S2> the_resize(s1,s2);
+                boost::mpl::for_each_ref<boost::mpl::range_c<int,0,decltype(s1.data)::max_prop>>(the_resize);
                 // ToDo : build checks, that the +-*/ operators are well defined
                 auto it=s1.data.template get<0>().getVector().getIterator();
                 while(it.isNext()){
@@ -526,6 +565,8 @@ namespace boost {
             template< class S1 , class S2 , class S3 , class S4,class S5,class S6 ,class S7,class S8, class S9, class S10, class Op >
             static void for_each10( S1 &s1 , S2 &s2 , S3 &s3 , S4 &s4,S5 &s5,S6 &s6,S7 &s7,S8 &s8, S9 &s9 , S10 &s10, Op op )
             {
+                for_each_prop_resize<S1,S2> the_resize(s1,s2);
+                boost::mpl::for_each_ref<boost::mpl::range_c<int,0,decltype(s1.data)::max_prop>>(the_resize);
                 // ToDo : build checks, that the +-*/ operators are well defined
                 auto it=s1.data.template get<0>().getVector().getIterator();
                 while(it.isNext()){
@@ -580,6 +621,8 @@ namespace boost {
             template< class S1 , class S2 , class S3 , class S4,class S5,class S6 ,class S7,class S8, class S9, class S10, class S11, class Op >
             static void for_each11( S1 &s1 , S2 &s2 , S3 &s3 , S4 &s4,S5 &s5,S6 &s6,S7 &s7,S8 &s8, S9 &s9 , S10 &s10,S11 &s11, Op op )
             {
+                for_each_prop_resize<S1,S2> the_resize(s1,s2);
+                boost::mpl::for_each_ref<boost::mpl::range_c<int,0,decltype(s1.data)::max_prop>>(the_resize);
                 // ToDo : build checks, that the +-*/ operators are well defined
                 auto it=s1.data.template get<0>().getVector().getIterator();
                 while(it.isNext()){
@@ -635,6 +678,8 @@ namespace boost {
             template< class S1 , class S2 , class S3 , class S4,class S5,class S6 ,class S7,class S8, class S9, class S10, class S11, class S12, class Op >
             static void for_each12( S1 &s1 , S2 &s2 , S3 &s3 , S4 &s4,S5 &s5,S6 &s6,S7 &s7,S8 &s8, S9 &s9 , S10 &s10,S11 &s11,S12 &s12, Op op )
             {
+                for_each_prop_resize<S1,S2> the_resize(s1,s2);
+                boost::mpl::for_each_ref<boost::mpl::range_c<int,0,decltype(s1.data)::max_prop>>(the_resize);
                 // ToDo : build checks, that the +-*/ operators are well defined
                 auto it=s1.data.template get<0>().getVector().getIterator();
                 while(it.isNext()){
@@ -691,6 +736,8 @@ namespace boost {
             template< class S1 , class S2 , class S3 , class S4,class S5,class S6 ,class S7,class S8, class S9, class S10, class S11, class S12, class S13, class Op >
             static void for_each13( S1 &s1 , S2 &s2 , S3 &s3 , S4 &s4,S5 &s5,S6 &s6,S7 &s7,S8 &s8, S9 &s9 , S10 &s10,S11 &s11,S12 &s12,S13 &s13, Op op )
             {
+                for_each_prop_resize<S1,S2> the_resize(s1,s2);
+                boost::mpl::for_each_ref<boost::mpl::range_c<int,0,decltype(s1.data)::max_prop>>(the_resize);
                 // ToDo : build checks, that the +-*/ operators are well defined
                 auto it=s1.data.template get<0>().getVector().getIterator();
                 while(it.isNext()){
@@ -748,6 +795,8 @@ namespace boost {
             template< class S1 , class S2 , class S3 , class S4,class S5,class S6 ,class S7,class S8, class S9, class S10, class S11, class S12, class S13, class S14, class Op >
             static void for_each14( S1 &s1 , S2 &s2 , S3 &s3 , S4 &s4,S5 &s5,S6 &s6,S7 &s7,S8 &s8, S9 &s9, S10 &s10,S11 &s11,S12 &s12,S13 &s13,S14 &s14, Op op )
             {
+                for_each_prop_resize<S1,S2> the_resize(s1,s2);
+                boost::mpl::for_each_ref<boost::mpl::range_c<int,0,decltype(s1.data)::max_prop>>(the_resize);
                 // ToDo : build checks, that the +-*/ operators are well defined
                 auto it=s1.data.template get<0>().getVector().getIterator();
                 while(it.isNext()){
@@ -806,6 +855,8 @@ namespace boost {
             template< class S1 , class S2 , class S3 , class S4,class S5,class S6 ,class S7,class S8, class S9, class S10, class S11, class S12, class S13, class S14, class S15, class Op >
             static void for_each15( S1 &s1 , S2 &s2 , S3 &s3 , S4 &s4,S5 &s5,S6 &s6,S7 &s7,S8 &s8, S9 &s9, S10 &s10,S11 &s11,S12 &s12,S13 &s13,S14 &s14,S15 &s15, Op op )
             {
+                for_each_prop_resize<S1,S2> the_resize(s1,s2);
+                boost::mpl::for_each_ref<boost::mpl::range_c<int,0,decltype(s1.data)::max_prop>>(the_resize);
                 // ToDo : build checks, that the +-*/ operators are well defined
                 auto it=s1.data.template get<0>().getVector().getIterator();
                 while(it.isNext()){
@@ -827,7 +878,6 @@ namespace boost {
            template<typename vector_type,typename index_type,typename norm_result_type>
            struct for_each_norm
            {
-
                const vector_type &v;
                index_type &p;
                norm_result_type &n;
