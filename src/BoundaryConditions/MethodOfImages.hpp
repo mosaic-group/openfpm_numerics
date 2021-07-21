@@ -6,6 +6,8 @@
 #define OPENFPM_NUMERICS_BOUNDARYCONDITIONS_METHODOFIMAGES_HPP
 
 #include <cmath>
+// Include OpenFPM header files
+#include "Vector/vector_dist_subset.hpp"
 
 #define PID_VECTOR_TYPE openfpm::vector<aggregate<int>>
 #define KEY_VECTOR_TYPE openfpm::vector<vect_dist_key_dx>
