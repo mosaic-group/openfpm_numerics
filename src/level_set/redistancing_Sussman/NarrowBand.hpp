@@ -340,7 +340,7 @@ private:
 		copy_gridTogrid<Phi_SDF, Phi_SDF_temp>(grid_in, g_temp); // Copy Phi_SDF from the input grid to the temorary grid
 		init_sign_prop<Phi_SDF_temp, Phi_sign_temp>(g_temp); // initialize Phi_sign_temp with the sign of the
 		// input Phi_SDF
-		get_upwind_gradient<Phi_SDF_temp, Phi_sign_temp, Phi_grad_temp>(g_temp);   // Get initial gradients
+		get_upwind_gradient<Phi_SDF_temp, Phi_sign_temp, Phi_grad_temp>(g_temp, 1, true);   // Get initial gradients
 	}
 	/**@brief Checks if a value for Phi_SDF lays within the narrow band.
 	 *
