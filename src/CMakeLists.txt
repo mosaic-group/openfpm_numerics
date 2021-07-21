@@ -5,6 +5,7 @@ cmake_minimum_required(VERSION 3.8 FATAL_ERROR)
 
 if (CUDA_FOUND)
 	set(CUDA_SOURCES Operators/Vector/vector_dist_operators_unit_tests.cu
+					 DCPSE/DCPSE_op/tests/DCPSE_op_Solver_test.cu
 					 Operators/Vector/vector_dist_operators_apply_kernel_unit_tests.cu)
 endif()
 
@@ -56,6 +57,7 @@ if(CUDA_FOUND)
         if (TEST_COVERAGE)
                 target_compile_options(numerics PRIVATE $<$<COMPILE_LANGUAGE:CUDA>: -Xcompiler "-fprofile-arcs -ftest-coverage" >)
         endif()
+    target_link_libraries(numerics -lcublas)
 endif()
 
 target_include_directories (numerics PUBLIC ${CUDA_INCLUDE_DIRS})
@@ -163,13 +165,19 @@ install(FILES Operators/Vector/vector_dist_operators_extensions.hpp
 	      DESTINATION openfpm_numerics/include/Operators/Vector/cuda )
 
 install(FILES DCPSE/Dcpse.hpp
+		DCPSE/Dcpse.cuh
+		DCPSE/DCPSE_op/DCPSE_Solver.cuh
 		DCPSE/DcpseDiagonalScalingMatrix.hpp
 		DCPSE/DcpseRhs.hpp
+		DCPSE/DcpseRhs.cuh
 		DCPSE/Monomial.hpp
+		DCPSE/Monomial.cuh
 		DCPSE/MonomialBasis.hpp
 		DCPSE/Support.hpp
+		DCPSE/SupportBuilder.cuh
 		DCPSE/SupportBuilder.hpp
 		DCPSE/Vandermonde.hpp
+		DCPSE/Vandermonde.cuh
 		DCPSE/VandermondeRowBuilder.hpp
 		DESTINATION openfpm_numerics/include/DCPSE)
 install(FILES DMatrix/EMatrix.hpp

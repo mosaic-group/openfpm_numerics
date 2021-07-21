@@ -14,7 +14,7 @@ class Vandermonde
 {
 private:
     const Point<dim, T> point;
-    std::vector<Point<dim, T>> offsets;
+    openfpm::vector_std<Point<dim, T>> offsets;
     const MonomialBasis<dim> monomialBasis;
     T eps;
 
@@ -38,8 +38,11 @@ public:
         // Build the Vandermonde matrix, row-by-row
         VandermondeRowBuilder<dim, T> vrb(monomialBasis);
         unsigned int row = 0;
-        for (auto &offset : offsets)
+
+        size_t N = offsets.size();
+        for (size_t i = 0; i < N; ++i)
         {
+            const auto& offset = offsets.get(i);
             vrb.buildRow(M, row, offset, eps);
             ++row;
         }
@@ -57,8 +60,10 @@ private:
     void computeEps(T factor)
     {
         T avgNeighbourSpacing = 0;
-        for (auto &offset : offsets)
+        size_t N = offsets.size();
+        for (size_t i = 0; i < N; ++i)
         {
+            const auto& offset = offsets.get(i);
             avgNeighbourSpacing += computeAbsSum(offset);
         }
         avgNeighbourSpacing /= offsets.size();
@@ -84,8 +89,8 @@ private:
     	for (int i = 0 ; i < keys.size() ; i++)
     	{
     		Point<dim,T> p = particles.getPosOrig(sup.getReferencePointKey());
-    		p -= particles.getPosOrig(keys[i]);
-    		offsets.push_back(p);
+            p -= particles.getPosOrig(keys.get(i));
+            offsets.add(p);
     	}
 
         // First check that the number of points given is enough for building the Vandermonde matrix
