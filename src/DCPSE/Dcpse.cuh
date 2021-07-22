@@ -17,34 +17,11 @@
 #include "DcpseRhs.hpp"
 #include "DcpseRhs.cuh"
 
-#include <type_traits>
-#include <typeinfo>
-#ifndef _MSC_VER
-#   include <cxxabi.h>
-#endif
-#include <memory>
-#include <string>
-#include <cstdlib>
-
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <assert.h>
-#include <algorithm>
-#include <cmath>
-#include <iostream>
-#include <vector>
-#include <ctime>
-#include <ratio>
 #include <chrono>
-#include <random>
-#include <time.h>
-#include <math.h>
 
 // CUDA
 #include <cuda.h>
 #include <cuda_runtime.h>
-#include "device_launch_parameters.h"
 #include <cusolverDn.h>
 
 
