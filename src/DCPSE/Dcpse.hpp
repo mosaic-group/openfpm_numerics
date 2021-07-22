@@ -57,10 +57,9 @@ private:
     const Point<dim, unsigned int> differentialSignature;
     const unsigned int differentialOrder;
     const MonomialBasis<dim> monomialBasis;
-    //std::vector<EMatrix<T, Eigen::Dynamic, 1>> localCoefficients; // Each MPI rank has just access to the local ones
-    std::vector<Support> localSupports; // Each MPI rank has just access to the local ones
-    std::vector<T> localEps; // Each MPI rank has just access to the local ones
-    std::vector<T> localEpsInvPow; // Each MPI rank has just access to the local ones
+    openfpm::vector<Support> localSupports; // Each MPI rank has just access to the local ones
+    openfpm::vector<T> localEps; // Each MPI rank has just access to the local ones
+    openfpm::vector<T> localEpsInvPow; // Each MPI rank has just access to the local ones
 
     openfpm::vector<size_t> kerOffsets;
     openfpm::vector<T> calcKernels;
@@ -111,7 +110,7 @@ public:
     template<unsigned int prp>
     void DrawKernel(vector_type &particles, int k)
     {
-        Support support = localSupports[k];
+        Support support = localSupports.get(k);
         size_t xpK = k;
         size_t kerOff = kerOffsets.get(k);
         auto & keys = support.getKeys();
@@ -125,7 +124,7 @@ public:
     template<unsigned int prp>
     void DrawKernelNN(vector_type &particles, int k)
     {
-        Support support = localSupports[k];
+        Support support = localSupports.get(k);
         size_t xpK = k;
         size_t kerOff = kerOffsets.get(k);
         auto & keys = support.getKeys();
@@ -140,7 +139,7 @@ public:
     void DrawKernel(vector_type &particles, int k, int i)
     {
 
-        Support support = localSupports[k];
+        Support support = localSupports.get(k);
         size_t xpK = k;
         size_t kerOff = kerOffsets.get(k);
         auto & keys = support.getKeys();
@@ -284,7 +283,7 @@ public:
      */
     inline int getNumNN(const vect_dist_key_dx &key)
     {
-        return localSupports[key.getKey()].size();
+        return localSupports.get(key.getKey()).size();
     }
 
     /*! \brief Get the coefficent j (Neighbour) of the particle key
@@ -308,7 +307,7 @@ public:
  */
     inline size_t getIndexNN(const vect_dist_key_dx &key, int j)
     {
-        return localSupports[key.getKey()].getKeys().get(j);
+        return localSupports.get(key.getKey()).getKeys().get(j);
     }
 
 
@@ -324,7 +323,7 @@ public:
 
     T getEpsilonInvPrefactor(const vect_dist_key_dx &key)
     {
-        return localEpsInvPow[key.getKey()];
+        return localEpsInvPow.get(key.getKey());
     }
 
     /**
@@ -347,8 +346,8 @@ public:
             sign = -1;
         }
 
-        double eps = localEps[key.getKey()];
-        double epsInvPow = localEpsInvPow[key.getKey()];
+        double eps = localEps.get(key.getKey());
+        double epsInvPow = localEpsInvPow.get(key.getKey());
 
         auto &particles = o1.getVector();
 
@@ -360,7 +359,7 @@ public:
 #endif
 
         expr_type Dfxp = 0;
-        Support support = localSupports[key.getKey()];
+        Support support = localSupports.get(key.getKey());
         size_t xpK = support.getReferencePointKey();
         Point<dim, T> xp = particles.getPos(xpK);
         expr_type fxp = sign * o1.value(key);
@@ -403,11 +402,10 @@ public:
             sign = -1;
         }
 
-        double eps = localEps[key.getKey()];
-        double epsInvPow = localEpsInvPow[key.getKey()];
+        double eps = localEps.get(key.getKey());
+        double epsInvPow = localEpsInvPow.get(key.getKey());
 
         auto &particles = o1.getVector();
-
 #ifdef SE_CLASS1
         if(particles.getMapCtr()!=this->getUpdateCtr())
         {
@@ -416,7 +414,7 @@ public:
 #endif
 
         expr_type Dfxp = 0;
-        Support support = localSupports[key.getKey()];
+        Support support = localSupports.get(key.getKey());
         size_t xpK = support.getReferencePointKey();
         Point<dim, T> xp = particles.getPos(xpK);
         expr_type fxp = sign * o1.value(key)[i];
@@ -492,9 +490,9 @@ private:
             }
 
             auto key_o = particles.getOriginKey(it.get());
-            localSupports[key_o.getKey()] = support;
-            localEps[key_o.getKey()] = eps;
-            localEpsInvPow[key_o.getKey()] = 1.0 / openfpm::math::intpowlog(eps,differentialOrder);
+            localSupports.get(key_o.getKey()) = support;
+            localEps.get(key_o.getKey()) = eps;
+            localEpsInvPow.get(key_o.getKey()) = 1.0 / openfpm::math::intpowlog(eps,differentialOrder);
             // Compute the diagonal matrix E
             DcpseDiagonalScalingMatrix<dim> diagonalScalingMatrix(monomialBasis);
             EMatrix<T, Eigen::Dynamic, Eigen::Dynamic> E(support.size(), support.size());
@@ -567,9 +565,9 @@ private:
 
             T eps = vandermonde.getEps();
 
-            localSupports[key_o.getKey()] = support;
-            localEps[key_o.getKey()] = eps;
-            localEpsInvPow[key_o.getKey()] = 1.0 / openfpm::math::intpowlog(eps,differentialOrder);
+            localSupports.get(key_o.getKey()) = support;
+            localEps.get(key_o.getKey()) = eps;
+            localEpsInvPow.get(key_o.getKey()) = 1.0 / openfpm::math::intpowlog(eps,differentialOrder);
             // Compute the diagonal matrix E
             DcpseDiagonalScalingMatrix<dim> diagonalScalingMatrix(monomialBasis);
             EMatrix<T, Eigen::Dynamic, Eigen::Dynamic> E(support.size(), support.size());
