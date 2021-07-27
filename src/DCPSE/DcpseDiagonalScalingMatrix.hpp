@@ -52,9 +52,7 @@ public:
         Point<dim,typename vector_type::stype> ref_p = particles.getPos(supportRefKey);
 
         // M.setZero(); // Make sure the rest of the matrix is zero!
-        for (size_t i = 0; i < supportKeysSize; ++i)
-            for (size_t j = 0; j < supportKeysSize; ++j)
-                M[i*supportKeysSize+j] = 0.0;
+        memset(M, 0.0, supportKeysSize*supportKeysSize*sizeof(T));
 
         for (size_t i = 0; i < supportKeysSize; ++i)
         {
