@@ -92,6 +92,7 @@ target_include_directories (numerics PUBLIC ${Boost_INCLUDE_DIRS})
 target_include_directories (numerics PUBLIC ${Vc_INCLUDE_DIR})
 target_include_directories (numerics PUBLIC ${ALPAKA_ROOT}/include)
 target_include_directories (numerics PUBLIC ${MPI_C_INCLUDE_DIRS})
+target_include_directories (numerics PUBLIC /usr/local/include)
 if(EIGEN3_FOUND)
         target_include_directories (numerics PUBLIC /usr/local/include) 
 	target_include_directories (numerics PUBLIC ${EIGEN3_INCLUDE_DIR})
@@ -111,7 +112,7 @@ if(PETSC_FOUND)
 endif()
 target_link_libraries(numerics vcluster)
 target_link_libraries(numerics ofpmmemory)
-
+target_link_libraries(numerics -L/usr/local/lib -lomp)
 if(SuiteSparse_FOUND)
 	target_include_directories (numerics PUBLIC ${SuiteSparse_INCLUDE_DIRS})
         target_link_libraries(numerics ${SuiteSparse_LIBRARIES})
@@ -254,6 +255,11 @@ install(FILES level_set/redistancing_Sussman/HelpFunctions.hpp
 	      level_set/redistancing_Sussman/RedistancingSussman.hpp
 	      DESTINATION openfpm_numerics/include/level_set/redistancing_Sussman
 	      COMPONENT OpenFPM)
+
+install(FILES BoundaryConditions/MethodOfImages.hpp
+		BoundaryConditions/SurfaceNormal.hpp
+		DESTINATION openfpm_numerics/include/BoundaryConditions
+		COMPONENT OpenFPM)
 
 install(FILES DMatrix/EMatrix.hpp
 	DESTINATION openfpm_numerics/include/DMatrix
