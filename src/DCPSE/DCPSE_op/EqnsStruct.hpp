@@ -134,7 +134,7 @@ struct equations2d1p {
     typedef petsc_solver<double> solver_type;
 };
 
-struct equations2d1_gpu {
+struct equations2d1p_gpu {
     //! dimensionaly of the equation ( 3D problem ...)
     static const unsigned int dims = 2;
     //! number of fields in the system
