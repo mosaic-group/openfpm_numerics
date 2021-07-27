@@ -7,6 +7,7 @@
 
 #ifndef DCPSE_OP_HPP_
 #define DCPSE_OP_HPP_
+#ifdef HAVE_EIGEN
 
 #include "Decomposition/CartDecomposition.hpp"
 #include "DCPSE/Dcpse.hpp"
@@ -677,7 +678,7 @@ public:
     template<typename particles_type>
     Derivative_x(particles_type &parts, unsigned int ord, typename particles_type::stype rCut,
                  double oversampling_factor = dcpse_oversampling_factor,
-                 support_options opt = support_options::N_PARTICLES) {
+                 support_options opt = support_options::RADIUS) {
         Point<particles_type::dims, unsigned int> p;
         p.zero();
         p.get(0) = 1;
@@ -767,7 +768,7 @@ public:
     template<typename particles_type>
     Derivative_y(particles_type &parts, unsigned int ord, typename particles_type::stype rCut,
                  double oversampling_factor = dcpse_oversampling_factor,
-                 support_options opt = support_options::N_PARTICLES) {
+                 support_options opt = support_options::RADIUS) {
         Point<particles_type::dims, unsigned int> p;
         p.zero();
         p.get(1) = 1;
@@ -854,7 +855,7 @@ public:
     template<typename particles_type>
     Derivative_z(particles_type &parts, unsigned int ord, typename particles_type::stype rCut,
                  double oversampling_factor = dcpse_oversampling_factor,
-                 support_options opt = support_options::N_PARTICLES) {
+                 support_options opt = support_options::RADIUS) {
         Point<particles_type::dims, unsigned int> p;
         p.zero();
         p.get(2) = 1;
@@ -932,7 +933,7 @@ public:
     template<typename particles_type>
     Gradient(particles_type &parts, unsigned int ord, typename particles_type::stype rCut,
              double oversampling_factor = dcpse_oversampling_factor,
-             support_options opt = support_options::N_PARTICLES) {
+             support_options opt = support_options::RADIUS) {
         typedef Dcpse<particles_type::dims, particles_type> DCPSE_type;
 
         dcpse = new unsigned char[particles_type::dims * sizeof(DCPSE_type)];
@@ -1024,7 +1025,7 @@ public:
      */
     template<typename particles_type>
     Curl2D(particles_type &parts, unsigned int ord, typename particles_type::stype rCut,
-           double oversampling_factor = dcpse_oversampling_factor, support_options opt = support_options::N_PARTICLES) {
+           double oversampling_factor = dcpse_oversampling_factor, support_options opt = support_options::RADIUS) {
         typedef Dcpse<particles_type::dims, particles_type> DCPSE_type;
 
         dcpse = new unsigned char[particles_type::dims * sizeof(DCPSE_type)];
@@ -1087,7 +1088,7 @@ public:
     template<typename particles_type>
     Laplacian(particles_type &parts, unsigned int ord, typename particles_type::stype rCut,
               double oversampling_factor = dcpse_oversampling_factor,
-              support_options opt = support_options::N_PARTICLES) {
+              support_options opt = support_options::RADIUS) {
         typedef Dcpse<particles_type::dims, particles_type> DCPSE_type;
 
         dcpse = new unsigned char[particles_type::dims * sizeof(DCPSE_type)];
@@ -1189,7 +1190,7 @@ public:
     template<typename particles_type>
     Divergence(particles_type &parts, unsigned int ord, typename particles_type::stype rCut,
                double oversampling_factor = dcpse_oversampling_factor,
-               support_options opt = support_options::N_PARTICLES) {
+               support_options opt = support_options::RADIUS) {
         typedef Dcpse<particles_type::dims, particles_type> DCPSE_type;
 
         dcpse = new unsigned char[particles_type::dims * sizeof(DCPSE_type)];
@@ -1266,7 +1267,7 @@ public:
     template<typename particles_type>
     Advection(particles_type &parts, unsigned int ord, typename particles_type::stype rCut,
               double oversampling_factor = dcpse_oversampling_factor,
-              support_options opt = support_options::N_PARTICLES) {
+              support_options opt = support_options::RADIUS) {
         typedef Dcpse<particles_type::dims, particles_type> DCPSE_type;
 
         dcpse = new unsigned char[particles_type::dims * sizeof(DCPSE_type)];
@@ -1363,7 +1364,7 @@ public:
     template<typename particles_type>
     Derivative_xy(particles_type &parts, unsigned int ord, typename particles_type::stype rCut,
                   double oversampling_factor = dcpse_oversampling_factor,
-                  support_options opt = support_options::N_PARTICLES) {
+                  support_options opt = support_options::RADIUS) {
         Point<particles_type::dims, unsigned int> p;
         p.zero();
         p.get(0) = 1;
@@ -1450,7 +1451,7 @@ public:
     template<typename particles_type>
     Derivative_yz(particles_type &parts, unsigned int ord, typename particles_type::stype rCut,
                   double oversampling_factor = dcpse_oversampling_factor,
-                  support_options opt = support_options::N_PARTICLES) {
+                  support_options opt = support_options::RADIUS) {
         Point<particles_type::dims, unsigned int> p;
         p.zero();
         p.get(1) = 1;
@@ -1537,7 +1538,7 @@ public:
     template<typename particles_type>
     Derivative_xz(particles_type &parts, unsigned int ord, typename particles_type::stype rCut,
                   double oversampling_factor = dcpse_oversampling_factor,
-                  support_options opt = support_options::N_PARTICLES) {
+                  support_options opt = support_options::RADIUS) {
         Point<particles_type::dims, unsigned int> p;
         p.zero();
         p.get(0) = 1;
@@ -1625,7 +1626,7 @@ public:
     template<typename particles_type>
     Derivative_xx(particles_type &parts, unsigned int ord, typename particles_type::stype rCut,
                   double oversampling_factor = dcpse_oversampling_factor,
-                  support_options opt = support_options::N_PARTICLES) {
+                  support_options opt = support_options::RADIUS) {
         Point<particles_type::dims, unsigned int> p;
         p.zero();
         p.get(0) = 2;
@@ -1706,7 +1707,7 @@ public:
     template<typename particles_type>
     Derivative_yy(particles_type &parts, unsigned int ord, typename particles_type::stype rCut,
                   double oversampling_factor = dcpse_oversampling_factor,
-                  support_options opt = support_options::N_PARTICLES) {
+                  support_options opt = support_options::RADIUS) {
         Point<particles_type::dims, unsigned int> p;
         p.zero();
         p.get(0) = 0;
@@ -1786,7 +1787,7 @@ public:
     template<typename particles_type>
     Derivative_zz(particles_type &parts, unsigned int ord, typename particles_type::stype rCut,
                   double oversampling_factor = dcpse_oversampling_factor,
-                  support_options opt = support_options::N_PARTICLES) {
+                  support_options opt = support_options::RADIUS) {
         Point<particles_type::dims, unsigned int> p;
         p.zero();
         p.get(2) = 2;
@@ -1844,7 +1845,7 @@ public:
     template<typename particles_type>
     Derivative_xxx(particles_type &parts, unsigned int ord, typename particles_type::stype rCut,
                    double oversampling_factor = dcpse_oversampling_factor,
-                   support_options opt = support_options::N_PARTICLES) {
+                   support_options opt = support_options::RADIUS) {
         Point<particles_type::dims, unsigned int> p;
         p.zero();
         p.get(0) = 3;
@@ -1899,7 +1900,7 @@ public:
     template<typename particles_type>
     Derivative_xxy(particles_type &parts, unsigned int ord, typename particles_type::stype rCut,
                    double oversampling_factor = dcpse_oversampling_factor,
-                   support_options opt = support_options::N_PARTICLES) {
+                   support_options opt = support_options::RADIUS) {
         Point<particles_type::dims, unsigned int> p;
         p.zero();
         p.get(0) = 2;
@@ -1954,7 +1955,7 @@ public:
     template<typename particles_type>
     Derivative_yyx(particles_type &parts, unsigned int ord, typename particles_type::stype rCut,
                    double oversampling_factor = dcpse_oversampling_factor,
-                   support_options opt = support_options::N_PARTICLES) {
+                   support_options opt = support_options::RADIUS) {
         Point<particles_type::dims, unsigned int> p;
         p.zero();
         p.get(0) = 1;
@@ -2009,7 +2010,7 @@ public:
     template<typename particles_type>
     Derivative_yyy(particles_type &parts, unsigned int ord, typename particles_type::stype rCut,
                    double oversampling_factor = dcpse_oversampling_factor,
-                   support_options opt = support_options::N_PARTICLES) {
+                   support_options opt = support_options::RADIUS) {
         Point<particles_type::dims, unsigned int> p;
         p.zero();
         p.get(0) = 0;
@@ -2063,4 +2064,5 @@ public:
 //{
 //	return plus<operand_type1,operand_type2>(op1,op2);
 //}
+#endif /* Eigen */
 #endif /* DCPSE_OP_HPP_ */
