@@ -16,9 +16,10 @@
 
 enum support_options
 {
-	N_PARTICLES,
-	RADIUS
+    N_PARTICLES,
+    RADIUS
 };
+
 
 template<typename vector_type>
 class SupportBuilder
@@ -56,9 +57,9 @@ public:
 
         auto p_o = domain.getOriginKey(p.getKey());
         std::remove(supportKeys.begin(), supportKeys.end(), p_o.getKey());
-        return Support(p_o.getKey(), supportKeys);
-    }
 
+        return Support(p_o.getKey(), openfpm::vector_std<size_t>(supportKeys.begin(), supportKeys.end()));
+    }
 private:
     size_t getCellLinId(const grid_key_dx<vector_type::dims> &cellKey);
 
