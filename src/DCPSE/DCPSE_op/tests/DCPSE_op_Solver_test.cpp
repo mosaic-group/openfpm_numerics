@@ -63,7 +63,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
         domain.map();
         domain.ghost_get<0>();
 
-        Laplacian Lap(domain, 2, rCut, 2);
+        Laplacian Lap(domain, 2, rCut, 2,support_options::N_PARTICLES);
 
         DCPSE_scheme<equations2d1,decltype(domain)> Solver(domain);
 
@@ -298,9 +298,9 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
         domain.map();
         domain.ghost_get<0>();
 
-        Derivative_x Dx(domain, 2, rCut/3.0 ,1.9/*,support_options::RADIUS*/);
-        Derivative_y Dy(domain, 2, rCut/3.0,1.9/*,support_options::RADIUS*/);
-        Laplacian Lap(domain, 2, rCut/3.0 ,1.9/*,support_options::RADIUS*/);
+        Derivative_x Dx(domain, 2, rCut/3.0 ,1.9,support_options::N_PARTICLES);
+        Derivative_y Dy(domain, 2, rCut/3.0,1.9,support_options::N_PARTICLES);
+        Laplacian Lap(domain, 2, rCut/3.0 ,1.9,support_options::N_PARTICLES);
 
         openfpm::vector<aggregate<int>> bulk;
         openfpm::vector<aggregate<int>> up_p;
@@ -768,8 +768,8 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
         domain.map();
         domain.ghost_get<0>();
 
-        Derivative_y Dy(domain, 2, rCut,2);
-        Laplacian Lap(domain, 2, rCut, 3);
+        Derivative_y Dy(domain, 2, rCut,2,support_options::N_PARTICLES);
+        Laplacian Lap(domain, 2, rCut, 3,support_options::N_PARTICLES);
 
         DCPSE_scheme<equations2d1,decltype(domain)> Solver(domain);
 
@@ -915,9 +915,9 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
         domain.map();
         domain.ghost_get<0>();
 
-        Derivative_x Dx(domain, 2, rCut,1.9);
-        Derivative_y Dy(domain, 2, rCut,1.9);
-        Laplacian Lap(domain, 2, rCut, 1.9);
+        Derivative_x Dx(domain, 2, rCut,1.9,support_options::N_PARTICLES);
+        Derivative_y Dy(domain, 2, rCut,1.9,support_options::N_PARTICLES);
+        Laplacian Lap(domain, 2, rCut, 1.9,support_options::N_PARTICLES);
         petsc_solver<double> solver;
         solver.setRestart(500);
         solver.setSolver(KSPGMRES);

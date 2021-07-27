@@ -59,7 +59,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests_cu)
         domain.map();
         domain.ghost_get<0>();
 
-        Laplacian_gpu Lap(domain, 2, rCut, 2);
+        Laplacian_gpu Lap(domain, 2, rCut, 2,support_option::N_PARTICLES);
 
         DCPSE_scheme_gpu<equations2d1_gpu,decltype(domain)> Solver( domain);
 
@@ -765,8 +765,8 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests_cu)
         domain.map();
         domain.ghost_get<0>();
 
-        Derivative_y_gpu Dy(domain, 2, rCut,2);
-        Laplacian_gpu Lap(domain, 2, rCut, 3);
+        Derivative_y_gpu Dy(domain, 2, rCut,2,support_option::N_PARTICLES);
+        Laplacian_gpu Lap(domain, 2, rCut, 3,support_option::N_PARTICLES);
 
         DCPSE_scheme_gpu<equations2d1_gpu,decltype(domain)> Solver(domain);
 
@@ -912,9 +912,9 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests_cu)
         domain.map();
         domain.ghost_get<0>();
 
-        Derivative_x_gpu Dx(domain, 2, rCut,1.9);
-        Derivative_y_gpu Dy(domain, 2, rCut,1.9);
-        Laplacian_gpu Lap(domain, 2, rCut, 1.9);
+        Derivative_x_gpu Dx(domain, 2, rCut,1.9,support_option::N_PARTICLES);
+        Derivative_y_gpu Dy(domain, 2, rCut,1.9,support_option::N_PARTICLES);
+        Laplacian_gpu Lap(domain, 2, rCut, 1.9,support_option::N_PARTICLES);
         petsc_solver<double> solver;
         solver.setRestart(500);
         solver.setSolver(KSPGMRES);

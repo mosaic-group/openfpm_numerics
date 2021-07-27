@@ -520,7 +520,7 @@ BOOST_AUTO_TEST_CASE(odeint_base_test1) {
             ++it2;
         }
 
-        std::cout<<worst<<std::endl;
+        //std::cout<<worst<<std::endl;
         Particles.write("OdeInt-Diffusion");
     }
 
@@ -533,7 +533,7 @@ BOOST_AUTO_TEST_CASE(odeint_base_test1) {
         spacing[0] = 1.0 / (sz[0] - 1);
         spacing[1] = 1.0 / (sz[1] - 1);
         Ghost<2, double> ghost(spacing[0] * 3);
-        double rCut = 2.0 * spacing[0];
+        double rCut = 3.0 * spacing[0];
         BOOST_TEST_MESSAGE("Init vector_dist...");
         double sigma2 = spacing[0] * spacing[1] / (2 * 4);
 

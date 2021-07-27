@@ -33,8 +33,8 @@ BOOST_AUTO_TEST_CASE(dcpse_op_tests) {
         double spacing[2];
         spacing[0] = 2 * M_PI / (sz[0] - 1);
         spacing[1] = 2 * M_PI / (sz[1] - 1);
-        Ghost<2, double> ghost(spacing[0] * 3);
-        double rCut = 2.0 * spacing[0];
+        Ghost<2, double> ghost(spacing[0] * 3.9);
+        double rCut = 3.9 * spacing[0];
         BOOST_TEST_MESSAGE("Init vector_dist...");
         double sigma2 = spacing[0] * spacing[1] / (2 * 4);
 
@@ -105,8 +105,8 @@ BOOST_AUTO_TEST_CASE(dcpse_op_tests) {
         double spacing[2];
         spacing[0] = 2 * M_PI / (sz[0] - 1);
         spacing[1] = 2 * M_PI / (sz[1] - 1);
-        Ghost<2, double> ghost(spacing[0] * 3);
-        double rCut = 2.0 * spacing[0];
+        Ghost<2, double> ghost(spacing[0] * 3.9);
+        double rCut = 3.9 * spacing[0];
         BOOST_TEST_MESSAGE("Init vector_dist...");
         double sigma2 = spacing[0] * spacing[1] / (2 * 4);
 
@@ -146,7 +146,7 @@ BOOST_AUTO_TEST_CASE(dcpse_op_tests) {
         domain.map();
         domain.ghost_get<0>();
 
-        Laplacian Lap(domain, 2, rCut,1.9);
+        Laplacian Lap(domain, 2, rCut);
         auto v = getV<1>(domain);
         auto P = getV<0>(domain);
         auto vv = getV<2>(domain);
@@ -233,9 +233,9 @@ BOOST_AUTO_TEST_CASE(dcpse_op_tests) {
         domain.map();
         domain.ghost_get<0>();
 
-        Divergence Div(domain, 2, rCut, 1.9,support_options::RADIUS);
-        Derivative_x Dx(domain, 2, rCut, 1.9,support_options::RADIUS);
-        Derivative_y Dy(domain, 2, rCut, 1.9,support_options::RADIUS);
+        Divergence Div(domain, 2, rCut);
+        Derivative_x Dx(domain, 2, rCut);
+        Derivative_y Dy(domain, 2, rCut);
 
         auto v = getV<1>(domain);
         auto anasol = getV<0>(domain);
@@ -338,7 +338,7 @@ BOOST_AUTO_TEST_CASE(dcpse_op_tests) {
         domain.map();
         domain.ghost_get<0>();
 
-        Advection Adv(domain, 2, rCut, 1.9,support_options::RADIUS);
+        Advection Adv(domain, 2, rCut);
         auto v = getV<1>(domain);
         auto P = getV<0>(domain);
         auto dv = getV<3>(domain);
@@ -395,8 +395,8 @@ BOOST_AUTO_TEST_CASE(dcpse_op_tests) {
         Box<2, double> box({0, 0}, {1,1});
         size_t bc[2] = {NON_PERIODIC, NON_PERIODIC};
         double spacing = box.getHigh(0) / (sz[0] - 1);
-        Ghost<2, double> ghost(spacing * 3);
-        double rCut = 2.0 * spacing;
+        Ghost<2, double> ghost(spacing * 3.9);
+        double rCut = 3.9 * spacing;
 
         vector_dist<2, double, aggregate<double,VectorS<2, double>,double,double[3][3]>> Particles(0, box, bc, ghost);
 
@@ -481,8 +481,8 @@ BOOST_AUTO_TEST_CASE(dcpse_op_tests) {
         Box<3, double> box({0, 0,0}, {1,1,1});
         size_t bc[3] = {NON_PERIODIC, NON_PERIODIC,NON_PERIODIC};
         double spacing = box.getHigh(0) / (sz[0] - 1);
-        Ghost<3, double> ghost(spacing * 3);
-        double rCut = 2.0 * spacing;
+        Ghost<3, double> ghost(spacing * 3.9);
+        double rCut = 3.9 * spacing;
 
         vector_dist<3, double, aggregate<double,VectorS<3, double>,double,double[3][3]>> Particles(0, box, bc, ghost);
 
