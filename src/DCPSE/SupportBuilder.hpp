@@ -206,8 +206,6 @@ std::vector<size_t> SupportBuilder<vector_type>::getPointsInSetOfCells(std::set<
         }
     }
 
-    rp.sort();
-
     if (opt == support_options::RADIUS)
     {
 		for (int i = 0 ; i < rp.size() ; i++)
@@ -226,8 +224,8 @@ std::vector<size_t> SupportBuilder<vector_type>::getPointsInSetOfCells(std::set<
         #endif*/
     }
     else
-    {
-		for (int i = 0 ; i < requiredSupportSize ; i++)
+    {   rp.sort();
+        for (int i = 0 ; i < requiredSupportSize ; i++)
 		{
 			points.push_back(rp.get(i).offset);
 		}

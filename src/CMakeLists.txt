@@ -244,8 +244,9 @@ install(FILES Draw/DrawParticles.hpp
 	      COMPONENT OpenFPM)
 
 install(FILES interpolation/interpolation.hpp 
-      	      interpolation/mp4_kernel.hpp 
-      	      interpolation/z_spline.hpp
+      	      interpolation/mp4_kernel.hpp
+			  interpolation/lambda_kernel.hpp
+			  interpolation/z_spline.hpp
       	      DESTINATION openfpm_numerics/include/interpolation
 	      COMPONENT OpenFPM)
 
