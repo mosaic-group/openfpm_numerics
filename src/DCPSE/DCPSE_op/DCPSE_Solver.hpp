@@ -4,6 +4,8 @@
 
 #ifndef OPENFPM_PDATA_DCPSE_SOLVER_HPP
 #define OPENFPM_PDATA_DCPSE_SOLVER_HPP
+#ifdef HAVE_EIGEN
+
 
 #include "DCPSE_op.hpp"
 #include "Matrix/SparseMatrix.hpp"
@@ -843,6 +845,6 @@ public:
 
 };
 
-
 #include "DCPSE/DCPSE_op/EqnsStruct.hpp"
+#endif //Eigen
 #endif //OPENFPM_PDATA_DCPSE_SOLVER_HPP
