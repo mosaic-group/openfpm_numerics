@@ -111,7 +111,6 @@ if(PETSC_FOUND)
 endif()
 target_link_libraries(numerics vcluster)
 target_link_libraries(numerics ofpmmemory)
-
 if(SuiteSparse_FOUND)
 	target_include_directories (numerics PUBLIC ${SuiteSparse_INCLUDE_DIRS})
         target_link_libraries(numerics ${SuiteSparse_LIBRARIES})
@@ -255,6 +254,11 @@ install(FILES level_set/redistancing_Sussman/HelpFunctions.hpp
 	      level_set/redistancing_Sussman/RedistancingSussman.hpp
 	      DESTINATION openfpm_numerics/include/level_set/redistancing_Sussman
 	      COMPONENT OpenFPM)
+
+install(FILES BoundaryConditions/MethodOfImages.hpp
+		BoundaryConditions/SurfaceNormal.hpp
+		DESTINATION openfpm_numerics/include/BoundaryConditions
+		COMPONENT OpenFPM)
 
 install(FILES DMatrix/EMatrix.hpp
 	DESTINATION openfpm_numerics/include/DMatrix
