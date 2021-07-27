@@ -46,8 +46,7 @@ __host__ __device__ void VandermondeRowBuilder<dim, T, MonomialBasis_type>::buil
     for (size_t col = 0; col < basisElements.size(); ++col)
     {
         const Monomial_gpu<dim>& m = basisElements.get(col);
-        M[col] = m.evaluate(x);
-        M[col] /= openfpm::math::intpowlog(eps, m.order());
+        M[col] = m.evaluate(x) / pow(eps, m.order());
     }
 }
 

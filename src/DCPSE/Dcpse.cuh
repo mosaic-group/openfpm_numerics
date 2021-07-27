@@ -841,7 +841,7 @@ __global__ void assembleLocalMatrices_gpu(
     vandermonde.getMatrix(V);
 
     T eps = vandermonde.getEps(); localEps.get(p_key) = eps;
-    localEpsInvPow.get(p_key) = 1.0 / openfpm::math::intpowlog(eps,differentialOrder);
+    localEpsInvPow.get(p_key) = 1.0 / pow(eps,differentialOrder);
 
     DcpseDiagonalScalingMatrix<dim, MonomialBasis<dim, aggregate<Monomial_gpu<dim>>, openfpm::vector_custd_ker, memory_traits_inte>> diagonalScalingMatrix(monomialBasis);
     diagonalScalingMatrix.buildMatrix(E, xpK, supportKeysSize, supportKeys, eps, particles);

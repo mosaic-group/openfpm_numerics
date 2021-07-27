@@ -157,7 +157,7 @@ __host__ __device__ T Monomial_gpu<dim>::evaluate(const Point<dim, T> x) const
 {
     T res = scalar;
     for (unsigned int i = 0; i < dim; ++i)
-        res *= openfpm::math::intpowlog(x[i], getExponent(i));
+        res *= pow(x[i], getExponent(i));
 
     return res;
 }
@@ -168,7 +168,7 @@ __host__ __device__ T Monomial_gpu<dim>::evaluate(const T (& x) [dim]) const
 {
     T res = scalar;
     for (unsigned int i = 0; i < dim; ++i)
-        res *= openfpm::math::intpowlog(x[i], getExponent(i));
+        res *= pow(x[i], getExponent(i));
 
     return res;
 }
