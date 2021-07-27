@@ -94,7 +94,7 @@ private:
             ACTION_ON_ERROR(std::length_error("Not enough neighbour points passed for Vandermonde matrix construction!"));
         }
         // Compute eps for this point
-        //factor here
+        //factor here. This is C factor.
         computeEps(2);
     }
 
