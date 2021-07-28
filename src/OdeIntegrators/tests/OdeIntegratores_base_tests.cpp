@@ -524,7 +524,7 @@ BOOST_AUTO_TEST_CASE(odeint_base_test1) {
         Particles.write("OdeInt-Diffusion");
     }
 
-    BOOST_AUTO_TEST_CASE(dcpse_op_react_diff_test) {
+BOOST_AUTO_TEST_CASE(dcpse_op_react_diff_test) {
         size_t edgeSemiSize = 20;
         const size_t sz[2] = {2 * edgeSemiSize+1, 2 * edgeSemiSize+1};
         Box<2, double> box({0, 0}, {1.0, 1.0});
@@ -533,14 +533,14 @@ BOOST_AUTO_TEST_CASE(odeint_base_test1) {
         spacing[0] = 1.0 / (sz[0] - 1);
         spacing[1] = 1.0 / (sz[1] - 1);
         Ghost<2, double> ghost(spacing[0] * 3);
-        double rCut = 2.0 * spacing[0];
+        double rCut = 3.0 * spacing[0];
         BOOST_TEST_MESSAGE("Init vector_dist...");
         double sigma2 = spacing[0] * spacing[1] / (2 * 4);
 
         //properties: u, v, du, dv
         vector_dist<2, double, aggregate<double, double, double, double,double,double>> domain(0, box,
-                                                                                 bc,
-                                                                                 ghost);
+        bc,
+        ghost);
 
         //Init_DCPSE(domain)
         BOOST_TEST_MESSAGE("Init domain...");
@@ -567,8 +567,8 @@ BOOST_AUTO_TEST_CASE(odeint_base_test1) {
             domain.template getLastProp<2>() = 0;
             domain.template getLastProp<3>() = 0;
             if (x==0.5 && y==0.5){
-            domain.template getLastProp<0>() = 1.0;
-            domain.template getLastProp<1>() = 1.0;
+                domain.template getLastProp<0>() = 1.0;
+                domain.template getLastProp<1>() = 1.0;
             }
             ++counter;
             ++it;
