@@ -331,15 +331,53 @@ private:
 	{
 		get_upwind_gradient<Phi_n_temp, Phi_0_sign_temp, Phi_grad_temp>(grid, order_upwind_gradient, true);
 		grid.template ghost_get<Phi_n_temp, Phi_grad_temp>();
+		
+		double dx = grid.getSpacing()[0];
 		auto dom = grid.getDomainIterator();
 		while (dom.isNext())
 		{
 			auto key = dom.get();
-			const double phi_n = grid.template get<Phi_n_temp>(key);
 			const double phi_n_magnOfGrad = grid.template get<Phi_grad_temp>(key).norm();
-			double epsilon = phi_n_magnOfGrad * grid.getSpacing()[0];
-			grid.template get<Phi_n_temp>(key) = get_phi_nplus1(phi_n, phi_n_magnOfGrad, time_step,
-			                                                         smooth_S(phi_n, epsilon));
+			//	grid.template get<Field> (key.move(d, 1));
+			
+			bool is_interface_point = false;
+			for(int d = 0; d < grid_in_type::dims; d++)
+			{
+				if (grid.template get<Phi_0_sign_temp>(key)
+				        * grid.template get<Phi_0_sign_temp>(key.move(d, 1)) < 0)
+				{
+					is_interface_point = true;
+					break;
+				}
+				else if (grid.template get<Phi_0_sign_temp>(key)
+				        * grid.template get<Phi_0_sign_temp>(key.move(d, -1)) < 0)
+				{
+					is_interface_point = true;
+					break;
+				}
+			}
+			
+			if (is_interface_point)
+			{
+				double sum = 0;
+				for (int d = 0; d < grid_in_type::dims; d++)
+				{
+					sum += (grid.template get<Phi_0_sign_temp>(key.move(d, +1))
+					        - grid.template get<Phi_0_sign_temp>(key.move(d, -1)))
+			                * (grid.template get<Phi_0_sign_temp>(key.move(d, +1))
+							- grid.template get<Phi_0_sign_temp>(key.move(d, -1)));
+				}
+				
+				double Dij = (2 * dx * grid.template get<Phi_0_sign_temp>(key)) / sqrt( sum );
+				grid.template get<Phi_n_temp>(key) += time_step / dx
+						* (Dij - grid.template get<Phi_0_sign_temp>(key) * abs(grid.template get<Phi_n_temp>(key)));
+			}
+			
+			else
+			{
+				grid.template get<Phi_n_temp>(key) += time_step * grid.template get<Phi_0_sign_temp>(key) * (1 - phi_n_magnOfGrad);
+			}
+
 			++dom;
 		}
 	}
