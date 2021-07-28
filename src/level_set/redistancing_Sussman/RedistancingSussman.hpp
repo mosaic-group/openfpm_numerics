@@ -479,7 +479,7 @@ private:
 		if (redistOptions.save_temp_grid)
 		{
 			get_upwind_gradient<Phi_n_temp, Phi_0_sign_temp, Phi_grad_temp>(g_temp, order_upwind_gradient, true);
-			g_temp.setPropNames({"Phi_n", "Phi_nplus1_temp", "Phi_grad_temp", "Phi_0_sign_temp"});
+			g_temp.setPropNames({"Phi_n", "Phi_grad_temp", "Phi_0_sign_temp"});
 			g_temp.save("g_temp_redistancing.hdf5"); // HDF5 file}
 		}
 	}
