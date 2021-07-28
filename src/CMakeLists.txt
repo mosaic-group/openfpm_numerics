@@ -47,7 +47,7 @@ add_executable(numerics ${OPENFPM_INIT_FILE} ${CUDA_SOURCES}
 						../../src/lib/pdata.cpp
 						BoundaryConditions/tests/method_of_images_cylinder_unit_test.cpp
 #		level_set/closest_point/closest_point_unit_tests.cpp
-		level_set/redistancing_Sussman/tests/redistancingSussman_unit_test.cpp
+#		level_set/redistancing_Sussman/tests/redistancingSussman_unit_test.cpp
 #		level_set/redistancing_Sussman/tests/convergence_test.cpp
 		)
 
@@ -252,6 +252,8 @@ install(FILES level_set/redistancing_Sussman/HelpFunctions.hpp
 	      level_set/redistancing_Sussman/HelpFunctionsForGrid.hpp
 	      level_set/redistancing_Sussman/NarrowBand.hpp
 	      level_set/redistancing_Sussman/RedistancingSussman.hpp
+		  level_set/redistancing_Sussman/tests/l_norms/LNorms.hpp
+		  level_set/redistancing_Sussman/tests/analytical_SDF/AnalyticalSDF.hpp
 	      DESTINATION openfpm_numerics/include/level_set/redistancing_Sussman
 	      COMPONENT OpenFPM)
 
