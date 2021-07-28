@@ -461,6 +461,7 @@ BOOST_AUTO_TEST_CASE(odeint_base_test1) {
         BOOST_REQUIRE_EQUAL(worst,worst2);*/
     }
 
+#ifdef HAVE_EIGEN
     BOOST_AUTO_TEST_CASE(odeint_diffusion) {
         size_t edgeSemiSize = 40;
         const size_t sz[2] = {edgeSemiSize+1,edgeSemiSize+1};
@@ -520,7 +521,7 @@ BOOST_AUTO_TEST_CASE(odeint_base_test1) {
             ++it2;
         }
 
-        //std::cout<<worst<<std::endl;
+        std::cout<<worst<<std::endl;
         Particles.write("OdeInt-Diffusion");
     }
 
@@ -539,8 +540,8 @@ BOOST_AUTO_TEST_CASE(odeint_base_test1) {
 
         //properties: u, v, du, dv
         vector_dist<2, double, aggregate<double, double, double, double,double,double>> domain(0, box,
-                                                                                 bc,
-                                                                                 ghost);
+                                                                                               bc,
+                                                                                               ghost);
 
         //Init_DCPSE(domain)
         BOOST_TEST_MESSAGE("Init domain...");
@@ -567,8 +568,8 @@ BOOST_AUTO_TEST_CASE(odeint_base_test1) {
             domain.template getLastProp<2>() = 0;
             domain.template getLastProp<3>() = 0;
             if (x==0.5 && y==0.5){
-            domain.template getLastProp<0>() = 1.0;
-            domain.template getLastProp<1>() = 1.0;
+                domain.template getLastProp<0>() = 1.0;
+                domain.template getLastProp<1>() = 1.0;
             }
             ++counter;
             ++it;
@@ -627,7 +628,8 @@ BOOST_AUTO_TEST_CASE(odeint_base_test1) {
             domain.write_frame("ReactDiff",step);
         }
         Lap.deallocate(domain);*/
-}
+    }
+#endif
 
 
 BOOST_AUTO_TEST_SUITE_END()
