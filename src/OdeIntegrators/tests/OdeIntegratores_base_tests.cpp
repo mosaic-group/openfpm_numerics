@@ -460,6 +460,7 @@ BOOST_AUTO_TEST_CASE(odeint_base_test1) {
         BOOST_REQUIRE(worst < 1e-6);
         BOOST_REQUIRE_EQUAL(worst,worst2);*/
     }
+#ifdef HAVE_EIGEN
 
     BOOST_AUTO_TEST_CASE(odeint_diffusion) {
         size_t edgeSemiSize = 40;
@@ -628,6 +629,6 @@ BOOST_AUTO_TEST_CASE(dcpse_op_react_diff_test) {
         }
         Lap.deallocate(domain);*/
 }
-
+#endif
 
 BOOST_AUTO_TEST_SUITE_END()
