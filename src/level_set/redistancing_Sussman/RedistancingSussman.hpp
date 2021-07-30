@@ -173,6 +173,7 @@ public:
 	                                                                                   Ghost<grid_in_type::dims, long int>(3))
 	{
 		time_step = get_time_step_CFL(grid_in);
+		dx = grid_in.getSpacing()[0];
 		order_upwind_gradient = 1;
 #ifdef SE_CLASS1
 		assure_minimal_thickness_of_NB();
@@ -186,7 +187,7 @@ public:
 	 * gradient of Phi_{n+1},
 	 * sign of the original input Phi_0 (for the upwinding).
 	 */
-	typedef aggregate<double, Point<grid_in_type::dims, double>, int>
+	typedef aggregate<double, Point<grid_in_type::dims, double>, int, double, int>
 	        props_temp;
 	/** @brief Type definition for the temporary grid.
 	 */
@@ -266,6 +267,9 @@ private:
 	static constexpr size_t Phi_n_temp          = 0; ///< Property index of Phi_0 on the temporary grid.
 	static constexpr size_t Phi_grad_temp       = 1; ///< Property index of gradient of Phi_n on the temporary grid.
 	static constexpr size_t Phi_0_sign_temp     = 2; ///< Property index of sign of initial (input) Phi_0 (temp. grid).
+	static constexpr size_t Dij                 = 3; ///< Distance to surface obtained by lin. interpolation.
+	static constexpr size_t Is_interface        = 4; ///< Property storing if point lies at interface or not.
+	
 	
 	//	Member variables
 	Redist_options redistOptions; ///< Instantiate redistancing options.
@@ -274,8 +278,16 @@ private:
 	DistFromSol distFromSol; ///< Instantiate distance from solution in terms of change, residual, numb. point in NB.
 	int final_iter = 0; ///< Will be set to the final iteration when redistancing ends.
 	
+	typedef grid_dist_key_dx<grid_in_type::dims> keytype;
+	openfpm::vector<keytype> keys_interface;
+	openfpm::vector<keytype> keys_notinterface;
+	
+	
+	
+	
 	/// Transform the half-bandwidth in no_of_grid_points into physical half-bandwidth kappa.
 	double kappa = ceil(redistOptions.width_NB_in_grid_points / 2.0) * get_biggest_spacing(g_temp);
+	double dx;
 	/**@brief Artificial timestep for the redistancing iterations.
 	 * @see get_time_step_CFL(g_temp_type &grid), get_time_step(), set_user_time_step()
 	 */
@@ -323,6 +335,97 @@ private:
 		return phi_n + dt * sgn_phi_n * (1 - phi_n_magnOfGrad);
 	}
 	
+	void get_interface_points(g_temp_type &grid)
+	{
+		auto dom = grid.getDomainIterator();
+		while (dom.isNext())
+		{
+			bool is_interface_point = false;
+			auto key = dom.get();
+			
+			for (int d = 0; d < grid_in_type::dims; d++)
+			{
+				if (grid.template get<Phi_n_temp>(key) * grid.template get<Phi_n_temp>(key.move(d, 1)) < 0
+				|| grid.template get<Phi_n_temp>(key) * grid.template get<Phi_n_temp>(key.move(d, -1)) < 0)
+				{
+					is_interface_point = true;
+					break;
+				}
+			}
+			if (is_interface_point)
+			{
+				keys_interface.add(key);
+				grid.template get<Is_interface>(key) = 1;
+			}
+			else
+			{
+				keys_notinterface.add(key);
+				grid.template get<Is_interface>(key) = 0;
+			}
+			++dom;
+		}
+	}
+	
+	double get_Dij(g_temp_type & grid, keytype & key)
+	{
+		double sum = 0;
+		for (int d = 0; d < grid_in_type::dims; d++)
+		{
+			sum += (grid.template get<Phi_n_temp>(key.move(d, +1))
+					- grid.template get<Phi_n_temp>(key.move(d, -1)))
+					* (grid.template get<Phi_n_temp>(key.move(d, +1))
+					- grid.template get<Phi_n_temp>(key.move(d, -1)));
+		}
+		
+		return (2 * dx * grid.template get<Phi_n_temp>(key)) / sqrt( sum );
+	}
+	
+	
+	void subcell_fix(g_temp_type & grid)
+	{
+		get_interface_points(g_temp);
+		for (int i = 0; i < keys_interface.size(); ++i)
+		{
+			grid.template getProp<Dij>(keys_interface.get(i)) = get_Dij(g_temp, keys_interface.get(i));
+		}
+	}
+	
+	/** @brief Go one re-distancing time-step on the whole grid.
+    *
+    * @param grid Internal temporary grid.
+    */
+	void go_one_subcellfixredistancing_step_whole_grid(g_temp_type &grid)
+	{
+		get_upwind_gradient<Phi_n_temp, Phi_0_sign_temp, Phi_grad_temp>(grid, order_upwind_gradient, true);
+		grid.template ghost_get<Phi_n_temp, Phi_grad_temp>();
+		
+		for (int i = 0; i < keys_interface.size(); ++i)
+		{
+			auto key = keys_interface.get(i);
+			double step = grid.template get<Dij>(key)
+			        - grid.template get<Phi_0_sign_temp>(key) * abs(grid.template get<Phi_n_temp>(key));
+			
+					
+			grid.template get<Phi_n_temp>(key)
+			        = grid.template get<Phi_n_temp>(key)
+			                - time_step / dx
+			           		* (grid.template get<Phi_0_sign_temp>(key) * abs(grid.template get<Phi_n_temp>(key))
+							- grid.template get<Dij>(key));
+			
+//			std::cout << grid.template get<Phi_n_temp>(key) << " -> " << std::endl;
+		}
+		
+		for (int i = 0; i < keys_notinterface.size(); ++i)
+		{
+			auto key = keys_notinterface.get(i);
+			grid.template get<Phi_n_temp>(key)
+			        = grid.template get<Phi_n_temp>(key)
+			                - time_step * grid.template get<Phi_0_sign_temp>(key)
+			                * (grid.template get<Phi_grad_temp>(key).norm() - 1);
+			
+		}
+	}
+	
 	/** @brief Go one re-distancing time-step on the whole grid.
     *
     * @param grid Internal temporary grid.
@@ -331,57 +434,19 @@ private:
 	{
 		get_upwind_gradient<Phi_n_temp, Phi_0_sign_temp, Phi_grad_temp>(grid, order_upwind_gradient, true);
 		grid.template ghost_get<Phi_n_temp, Phi_grad_temp>();
-		
-		double dx = grid.getSpacing()[0];
 		auto dom = grid.getDomainIterator();
 		while (dom.isNext())
 		{
 			auto key = dom.get();
+			const double phi_n = grid.template get<Phi_n_temp>(key);
 			const double phi_n_magnOfGrad = grid.template get<Phi_grad_temp>(key).norm();
-			//	grid.template get<Field> (key.move(d, 1));
-			
-			bool is_interface_point = false;
-			for(int d = 0; d < grid_in_type::dims; d++)
-			{
-				if (grid.template get<Phi_0_sign_temp>(key)
-				        * grid.template get<Phi_0_sign_temp>(key.move(d, 1)) < 0)
-				{
-					is_interface_point = true;
-					break;
-				}
-				else if (grid.template get<Phi_0_sign_temp>(key)
-				        * grid.template get<Phi_0_sign_temp>(key.move(d, -1)) < 0)
-				{
-					is_interface_point = true;
-					break;
-				}
-			}
-			
-			if (is_interface_point)
-			{
-				double sum = 0;
-				for (int d = 0; d < grid_in_type::dims; d++)
-				{
-					sum += (grid.template get<Phi_0_sign_temp>(key.move(d, +1))
-					        - grid.template get<Phi_0_sign_temp>(key.move(d, -1)))
-			                * (grid.template get<Phi_0_sign_temp>(key.move(d, +1))
-							- grid.template get<Phi_0_sign_temp>(key.move(d, -1)));
-				}
-				
-				double Dij = (2 * dx * grid.template get<Phi_0_sign_temp>(key)) / sqrt( sum );
-				grid.template get<Phi_n_temp>(key) += time_step / dx
-						* (Dij - grid.template get<Phi_0_sign_temp>(key) * abs(grid.template get<Phi_n_temp>(key)));
-			}
-			
-			else
-			{
-				grid.template get<Phi_n_temp>(key) += time_step * grid.template get<Phi_0_sign_temp>(key) * (1 - phi_n_magnOfGrad);
-			}
-
+			double epsilon = phi_n_magnOfGrad * grid.getSpacing()[0];
+			grid.template get<Phi_n_temp>(key) = get_phi_nplus1(phi_n, phi_n_magnOfGrad, time_step,
+			                                                    smooth_S(phi_n, epsilon));
 			++dom;
 		}
 	}
-
+	
 	/** @brief Checks if a node lays within the narrow band around the interface.
 	 *
 	 * @param Phi Value of Phi at that specific node.
@@ -506,18 +571,34 @@ private:
 	 */
 	void iterative_redistancing(g_temp_type &grid)
 	{
+		subcell_fix(g_temp);
+		g_temp.setPropNames({"Phi_n", "Phi_grad_temp", "Phi_0_sign_temp", "Dij", "is_interface"});
+		g_temp.write("g_temp_redistancing_subcellFix", FORMAT_BINARY); // VTK file
+		std::cout << "finished subcell fix" << std::endl;
 		int i = 0;
 		while (i < redistOptions.max_iter)
 		{
-			for (int j = 0; j < redistOptions.interval_check_convergence; j++)
-			{
-				go_one_redistancing_step_whole_grid(grid);
-				++i;
-			}
+//			if (i < redistOptions.min_iter)
+//			{
+				for (int j = 0; j < redistOptions.interval_check_convergence; j++)
+				{
+					go_one_subcellfixredistancing_step_whole_grid(grid);
+					++i;
+				}
+//			}
+//			else
+//			{
+//				for (int j = 0; j < redistOptions.interval_check_convergence; j++)
+//				{
+//					go_one_redistancing_step_whole_grid(grid);
+//					++i;
+//				}
+//			}
 			if (redistOptions.print_current_iterChangeResidual)
 			{
 				print_out_iteration_change_residual(grid, i);
 			}
+			
 			if (i >= redistOptions.min_iter)
 			{
 				if (steady_state_NB(grid))
@@ -542,8 +623,9 @@ private:
 		if (redistOptions.save_temp_grid)
 		{
 			get_upwind_gradient<Phi_n_temp, Phi_0_sign_temp, Phi_grad_temp>(g_temp, order_upwind_gradient, true);
-			g_temp.setPropNames({"Phi_n", "Phi_grad_temp", "Phi_0_sign_temp"});
-			g_temp.save("g_temp_redistancing.hdf5"); // HDF5 file}
+			g_temp.setPropNames({"Phi_n", "Phi_grad_temp", "Phi_0_sign_temp", "Dij", "is_interface"});
+			g_temp.save("g_temp_redistancing.hdf5"); // HDF5 file
+			g_temp.write("g_temp_redistancing_corrected", FORMAT_BINARY); // VTK file
 		}
 	}
 };
