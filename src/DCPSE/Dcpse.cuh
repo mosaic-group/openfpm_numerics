@@ -44,6 +44,9 @@ public:
     typedef typename vector_type::value_type part_type;
     typedef vector_type vtype;
 
+    #ifdef SE_CLASS1
+    int update_ctr=0;
+    #endif
     // This works in this way:
     // 1) User constructs this by giving a domain of points (where one of the properties is the value of our f),
     //    the signature of the differential operator and the error order bound.
@@ -72,6 +75,12 @@ private:
     support_options opt;
 
 public:
+#ifdef SE_CLASS1
+    int getUpdateCtr() const
+    {
+        return update_ctr;
+    }
+#endif
 
     // Here we require the first element of the aggregate to be:
     // 1) the value of the function f on the point
@@ -325,6 +334,13 @@ public:
 
         auto &particles = o1.getVector();
 
+#ifdef SE_CLASS1
+        if(particles.getMapCtr()!=this->getUpdateCtr())
+        {
+            std::cerr<<__FILE__<<":"<<__LINE__<<" Error: You forgot a DCPSE operator update after map."<<std::endl;
+        }
+#endif
+
         expr_type Dfxp = 0;
         size_t xpK = localSupportRefs.get(key.getKey());
         Point<dim, T> xp = particles.getPos(xpK);
@@ -371,6 +387,13 @@ public:
 
         auto &particles = o1.getVector();
 
+#ifdef SE_CLASS1
+        if(particles.getMapCtr()!=this->getUpdateCtr())
+        {
+            std::cerr<<__FILE__<<":"<<__LINE__<<" Error: You forgot a DCPSE operator update after map."<<std::endl;
+        }
+#endif
+
         expr_type Dfxp = 0;
         size_t xpK = localSupportRefs.get(key.getKey());
 
@@ -393,6 +416,10 @@ public:
 
     void initializeUpdate(vector_type &particles)
     {
+#ifdef SE_CLASS1
+        update_ctr=particles.getMapCtr();
+#endif
+
         localSupportKeys.clear();
         localSupportRefs.clear();
         localEps.clear();
@@ -586,6 +613,10 @@ private:
                               unsigned int convergenceOrder,
                               T rCut,
                               T supportSizeFactor) {
+#ifdef SE_CLASS1
+        this->update_ctr=particles.getMapCtr();
+#endif
+
         this->rCut=rCut;
         this->supportSizeFactor=supportSizeFactor;
         this->convergenceOrder=convergenceOrder;
@@ -685,6 +716,7 @@ private:
         T **d_b_pointers; cudaMalloc((void**)&d_b_pointers, numMatrices*sizeof(T*));
         cudaMemcpy(d_b_pointers, h_b_pointers, numMatrices*sizeof(T*), cudaMemcpyHostToDevice);
 
+        std::chrono::high_resolution_clock::time_point t9 = std::chrono::high_resolution_clock::now();
         // assemble local matrices on GPU
         particles.hostToDevicePos();
         localSupportKeys1D.template hostToDevice();
@@ -696,6 +728,11 @@ private:
         localEps.template deviceToHost();
         localEpsInvPow.template deviceToHost();
 
+        std::chrono::high_resolution_clock::time_point t10 = std::chrono::high_resolution_clock::now();
+        std::chrono::duration<double> time_span3 = std::chrono::duration_cast<std::chrono::duration<double>>(t10 - t9);
+        std::cout << "assembleLocalMatrices_gpu took " << time_span3.count() * 1000. << " milliseconds." << std::endl;
+
+        std::chrono::high_resolution_clock::time_point t7 = std::chrono::high_resolution_clock::now();
         //cublas lu solver
         int *d_infoArray; cudaMalloc((void**)&d_infoArray,  numMatrices*sizeof(int));
         int *h_infoArray = (int *)malloc(numMatrices*sizeof(int));
@@ -722,12 +759,21 @@ private:
         // }
         cudaDeviceSynchronize();
 
+        std::chrono::high_resolution_clock::time_point t8 = std::chrono::high_resolution_clock::now();
+        std::chrono::duration<double> time_span4 = std::chrono::duration_cast<std::chrono::duration<double>>(t8 - t7);
+        std::cout << "cublas took " << time_span4.count() * 1000. << " milliseconds." << std::endl;
+
+        std::chrono::high_resolution_clock::time_point t5 = std::chrono::high_resolution_clock::now();
         // populate the calcKernels on GPU
         calcKernels.resize(localSupportRefKeysTotalN);
         localEps.template hostToDevice();
         auto it2 = particles.getDomainIteratorGPU(512);
         calcKernels_gpu<dim><<<it2.wthr,it2.thr>>>(particles.toKernel(), monomialBasisKernel, localSupportKeys1D.toKernel(), d_b_pointers, localEps.toKernel(), numMatrices, calcKernels.toKernel());
         calcKernels.template deviceToHost();
+
+        std::chrono::high_resolution_clock::time_point t6 = std::chrono::high_resolution_clock::now();
+        std::chrono::duration<double> time_span5 = std::chrono::duration_cast<std::chrono::duration<double>>(t6 - t5);
+        std::cout << "calcKernels_gpu took " << time_span5.count() * 1000. << " milliseconds." << std::endl;
 
         // free the resources
         cublasDestroy_v2(cublas_handle);
@@ -743,6 +789,9 @@ private:
         std::chrono::high_resolution_clock::time_point t4 = std::chrono::high_resolution_clock::now();
         std::chrono::duration<double> time_span = std::chrono::duration_cast<std::chrono::duration<double>>(t4 - t3);
         std::cout << "Matrices inverse took " << time_span.count() * 1000. << " milliseconds." << std::endl;
+
+        std::chrono::duration<double> time_span6 = std::chrono::duration_cast<std::chrono::duration<double>>(t4 - t1);
+        std::cout << "initializeStaticSize took " << time_span6.count() * 1000. << " milliseconds." << std::endl;
     }
 
 
@@ -851,7 +900,8 @@ __global__ void assembleLocalMatrices_gpu(
         for (int i = 0; i < supportKeysSize; ++i)
             for (int j = 0; j < monomialBasisSize; ++j) {
                 for (int k = 0; k < supportKeysSize; ++k)
-                    sum += E[i*supportKeysSize+k] * V[k*monomialBasisSize+j];
+                    // E is a diagonal matrix
+                    if (i == k) sum += E[i*supportKeysSize+k] * V[k*monomialBasisSize+j];
 
                 B[i*monomialBasisSize+j] = sum; sum = 0.0;
             }
