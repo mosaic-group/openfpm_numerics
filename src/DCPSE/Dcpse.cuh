@@ -679,7 +679,7 @@ private:
         std::cout << "numThreads " << numThreads << " numMatrices " << numMatrices << std::endl;
 
         openfpm::vector_custd<size_t> localSupportKeys1D(localSupportRefKeysTotalN+numMatrices+1);
-        openfpm::vector_custd<T> EMat(numThreads * maxSupport * maxSupport);
+        openfpm::vector_custd<T> EMat(numThreads * maxSupport * dim);
         openfpm::vector_custd<T> VMat(numThreads * maxSupport * monomialBasisSize);
         // B has the same dimensions as V
         openfpm::vector_custd<T> BMat(numThreads * maxSupport * monomialBasisSize);
@@ -862,7 +862,7 @@ __global__ void assembleLocalMatrices_gpu(
     auto p_key = GET_PARTICLE(particles);
     size_t monomialBasisSize = monomialBasis.size();
 
-    size_t EStartPos = maxSupport * maxSupport * p_key;
+    size_t EStartPos = maxSupport * dim * p_key;
     size_t VStartPos = maxSupport * monomialBasisSize * p_key;
     size_t BStartPos = maxSupport * monomialBasisSize * p_key;
 
@@ -885,7 +885,6 @@ __global__ void assembleLocalMatrices_gpu(
 
         // Vandermonde matrix computation
         // Pointer to E is passed to reuse memory for offset construction inside Vandermonde. 
-        // Memory needed is supportKeysSize*dim. In rare case where supportKeysSize < dim, memory is allocated with new[] 
         Vandermonde_gpu<dim, T, MonomialBasis<dim, aggregate<Monomial_gpu<dim>>, openfpm::vector_custd_ker, memory_traits_inte>>
                 vandermonde(E, xpK, supportKeysSize, supportKeys, monomialBasis, particles);
         vandermonde.getMatrix(V);
@@ -896,16 +895,12 @@ __global__ void assembleLocalMatrices_gpu(
         diagonalScalingMatrix.buildMatrix(E, xpK, supportKeysSize, supportKeys, eps, particles);
 
         // EMatrix<T, Eigen::Dynamic, Eigen::Dynamic> B = E * V;
-        T sum = 0.0;
         for (int i = 0; i < supportKeysSize; ++i)
-            for (int j = 0; j < monomialBasisSize; ++j) {
-                for (int k = 0; k < supportKeysSize; ++k)
-                    // E is a diagonal matrix
-                    if (i == k) sum += E[i*supportKeysSize+k] * V[k*monomialBasisSize+j];
+            for (int j = 0; j < monomialBasisSize; ++j)
+                // E is a diagonal matrix
+                B[i*monomialBasisSize+j] = E[i] * V[i*monomialBasisSize+j];
 
-                B[i*monomialBasisSize+j] = sum; sum = 0.0;
-            }
-
+        T sum = 0.0;
         // EMatrix<T, Eigen::Dynamic, Eigen::Dynamic> A = B.transpose() * B;
         for (int i = 0; i < monomialBasisSize; ++i)
             for (int j = 0; j < monomialBasisSize; ++j) {

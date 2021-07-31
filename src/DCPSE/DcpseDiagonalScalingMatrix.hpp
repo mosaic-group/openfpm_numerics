@@ -57,7 +57,7 @@ public:
             Point<dim,typename vector_type::stype> p = ref_p;
             p -= particles.getPos(pt);
 
-            M[i*supportKeysSize+i] = exp(- norm2(p) / (2.0 * eps * eps));
+            M[i] = exp(- norm2(p) / (2.0 * eps * eps));
         }
     }
 };
