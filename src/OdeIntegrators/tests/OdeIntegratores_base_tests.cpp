@@ -239,11 +239,9 @@ BOOST_AUTO_TEST_CASE(odeint_base_test1) {
             ++it2;
         }
 
+        BOOST_REQUIRE(worst < 1e-6);
+        BOOST_REQUIRE(worst2 < 1e-6);
 
-
-
-        std::cout<<worst<<std::endl;
-        std::cout<<worst2<<std::endl;
         //BOOST_REQUIRE(worst < 1e-6);
 
 /*        x0.u=Init1;
