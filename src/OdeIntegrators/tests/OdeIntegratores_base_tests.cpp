@@ -73,7 +73,7 @@ void Exponential( const state_type &x , state_type &dxdt , const double t )
 }
 void sigmoid( const state_type &x , state_type &dxdt , const double t )
 {
-    dxdt = x*(1-x);
+    dxdt = x*(1.0-x);
 }
 
 BOOST_AUTO_TEST_SUITE(odeInt_BASE_tests)
@@ -345,7 +345,6 @@ BOOST_AUTO_TEST_CASE(odeint_base_test1) {
             ++it2;
         }
 
-        //std::cout<<worst<<std::endl;
         BOOST_REQUIRE(worst < 1e-6);
 /*
         x0=Init;
@@ -400,8 +399,8 @@ BOOST_AUTO_TEST_CASE(odeint_base_test1) {
             mem_id k1 = key.get(1);
             double yp0 = k1 * spacing[1];
             Particles.getLastPos()[1] = yp0;
-            Particles.getLastProp<0>() = xp0*yp0*1/(1+exp(-t));
-            Particles.getLastProp<1>() = xp0*yp0*1/(1+exp(-tf));
+            Particles.getLastProp<0>() = 1.0/(1.0+exp(-t)); // Carefull in putting the constant, f = A*sigmoid does not respect f' = f*(1.0-f) but f*(1.0-f/A), for simplicity I remove the constant
+            Particles.getLastProp<1>() = 1.0/(1.0+exp(-tf)); // Carefull in putting the constant, f = A*sigmoid does not respect f' = f*(1.0-f)  but f*(1.0-f/A), for simplicity I remove the constant
             ++it;
         }
         Particles.map();
@@ -413,10 +412,10 @@ BOOST_AUTO_TEST_CASE(odeint_base_test1) {
         state_type x0;
         x0=Init;
         // The rhs of x' = f(x)
-        //size_t steps=boost::numeric::odeint::integrate(Exponential,x0,0.0,tf,dt);
-        //typedef boost::numeric::odeint::controlled_runge_kutta< boost::numeric::odeint::runge_kutta_cash_karp54< state_type_struct_ofp2<vector_type>,double,state_type_struct_ofp2<vector_type>,double,boost::numeric::odeint::vector_space_algebra_ofp>> stepper_type;
+        //size_t steps=boost::numeric::odeint::integrate(sigmoid,x0,0.0,tf,dt);
+        //typedef boost::numeric::odeint::controlled_runge_kutta< boost::numeric::odeint::runge_kutta_cash_karp54< state_type > > stepper_type;
         //integrate_adaptive( stepper_type() , sigmoid , x0 , t , tf , dt);
-        //size_t steps=boost::numeric::odeint::integrate_const( boost::numeric::odeint::runge_kutta4< state_type >(),Exponential,x0,0.0,tf,dt);
+        size_t steps=boost::numeric::odeint::integrate_const( boost::numeric::odeint::runge_kutta4< state_type >(),sigmoid,x0,0.0,tf,dt);
 
         OdeSol=x0;
         auto it2 = Particles.getDomainIterator();
@@ -429,10 +428,7 @@ BOOST_AUTO_TEST_CASE(odeint_base_test1) {
             ++it2;
         }
 
-        std::cout<<worst<<std::endl;
-        Particles.write("SigmoidODE");
-
-        //BOOST_REQUIRE(worst < 1e-6);
+        BOOST_REQUIRE(worst < 1e-8);
 /*
         x0=Init;
         boost::numeric::odeint::runge_kutta4< state_type > rk4;
