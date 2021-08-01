@@ -671,9 +671,8 @@ private:
 
         size_t numMatrices = localSupportKeys.size();
         size_t monomialBasisSize = monomialBasis.size();
-        size_t EMatN = 0, VMatN = 0;
-        int numSMs, numSMsMult = 1;
 
+        int numSMs, numSMsMult = 1;
         cudaDeviceGetAttribute(&numSMs, cudaDevAttrMultiProcessorCount, 0);
         size_t numThreads = numSMs*numSMsMult*256;
         std::cout << "numThreads " << numThreads << " numMatrices " << numMatrices << std::endl;
@@ -699,31 +698,33 @@ private:
             for (size_t j = 0; j < localSupportKeys.get(i).size(); ++j, ++offset)
                 localSupportKeys1D.get(offset) = localSupportKeys.get(i).get(j);
 
-        // allocate device space for A, b on device
-        T *d_A; cudaMalloc((void**)&d_A, sizeof(T)*numMatrices*monomialBasisSize*monomialBasisSize);
-        T *d_b; cudaMalloc((void**)&d_b, sizeof(T)*numMatrices*monomialBasisSize);
+        // allocate device space for A, b
+        openfpm::vector_custd<T> AMat(numMatrices*monomialBasisSize*monomialBasisSize);
+        openfpm::vector_custd<T> bVec(numMatrices*monomialBasisSize);
 
         // create array of pointers to pass T** pointers to cublas subroutines
-        T **h_A_pointers = (T**)malloc(numMatrices*sizeof(T*));
-        for (int i = 0; i < numMatrices; i++) h_A_pointers[i] = d_A + i*monomialBasisSize*monomialBasisSize;
+        openfpm::vector_custd<T*> AMatPointers(numMatrices);
+        openfpm::vector_custd<T*> bVecPointers(numMatrices);
 
-        T **h_b_pointers = (T**)malloc(numMatrices*sizeof(T*));
-        for (int i = 0; i < numMatrices; i++) h_b_pointers[i] = d_b + i*monomialBasisSize;
+        auto AMatKernel = AMat.toKernel(); T* AMatKernelPointer = (T*) AMatKernel.getPointer();
+        for (size_t i = 0; i < numMatrices; i++) AMatPointers.get(i) = AMatKernelPointer + i*monomialBasisSize*monomialBasisSize;
 
-        T **d_A_pointers; cudaMalloc((void**)&d_A_pointers, numMatrices*sizeof(T*));
-        cudaMemcpy(d_A_pointers, h_A_pointers, numMatrices*sizeof(T*), cudaMemcpyHostToDevice);
+        auto bVecKernel = bVec.toKernel(); T* bVecKernelPointer = (T*) bVecKernel.getPointer();
+        for (size_t i = 0; i < numMatrices; i++) bVecPointers.get(i) = bVecKernelPointer + i*monomialBasisSize;
 
-        T **d_b_pointers; cudaMalloc((void**)&d_b_pointers, numMatrices*sizeof(T*));
-        cudaMemcpy(d_b_pointers, h_b_pointers, numMatrices*sizeof(T*), cudaMemcpyHostToDevice);
-
-        std::chrono::high_resolution_clock::time_point t9 = std::chrono::high_resolution_clock::now();
         // assemble local matrices on GPU
+        std::chrono::high_resolution_clock::time_point t9 = std::chrono::high_resolution_clock::now();
         particles.hostToDevicePos();
         localSupportKeys1D.template hostToDevice();
         localSupportRefs.template hostToDevice();
+        AMatPointers.template hostToDevice();
+        bVecPointers.template hostToDevice();
+
+        auto AMatPointersKernel = AMatPointers.toKernel(); T** AMatPointersKernelPointer = (T**) AMatPointersKernel.getPointer();
+        auto bVecPointersKernel = bVecPointers.toKernel(); T** bVecPointersKernelPointer = (T**) bVecPointersKernel.getPointer();
 
         assembleLocalMatrices_gpu<<<numSMsMult*numSMs, 256>>>(particles.toKernel(), differentialSignature, differentialOrder, monomialBasisKernel, localSupportRefs.toKernel(), localSupportKeys1D.toKernel(), 
-            d_A_pointers, d_b_pointers, localEps.toKernel(), localEpsInvPow.toKernel(), EMat.toKernel(), VMat.toKernel(), BMat.toKernel(), numMatrices, maxSupport);
+            AMatPointersKernelPointer, bVecPointersKernelPointer, localEps.toKernel(), localEpsInvPow.toKernel(), EMat.toKernel(), VMat.toKernel(), BMat.toKernel(), numMatrices, maxSupport);
 
         localEps.template deviceToHost();
         localEpsInvPow.template deviceToHost();
@@ -732,30 +733,28 @@ private:
         std::chrono::duration<double> time_span3 = std::chrono::duration_cast<std::chrono::duration<double>>(t10 - t9);
         std::cout << "assembleLocalMatrices_gpu took " << time_span3.count() * 1000. << " milliseconds." << std::endl;
 
-        std::chrono::high_resolution_clock::time_point t7 = std::chrono::high_resolution_clock::now();
         //cublas lu solver
-        int *d_infoArray; cudaMalloc((void**)&d_infoArray,  numMatrices*sizeof(int));
-        int *h_infoArray = (int *)malloc(numMatrices*sizeof(int));
-
+        std::chrono::high_resolution_clock::time_point t7 = std::chrono::high_resolution_clock::now();
         cublasHandle_t cublas_handle; cublasCreate_v2(&cublas_handle);
 
+        openfpm::vector_custd<int> infoArray(numMatrices); auto infoArrayKernel = infoArray.toKernel();
         // if (std::is_same<T, float>::value)
             // cublasSgetrfBatched(cublas_handle, monomialBasisSize, d_A_pointers, monomialBasisSize, NULL, d_infoArray, numMatrices);
         // else
-            cublasDgetrfBatched(cublas_handle, monomialBasisSize, d_A_pointers, monomialBasisSize, NULL, d_infoArray, numMatrices);
+            cublasDgetrfBatched(cublas_handle, monomialBasisSize, AMatPointersKernelPointer, monomialBasisSize, NULL, (int*) infoArrayKernel.getPointer(), numMatrices);
         cudaDeviceSynchronize();
 
-        cudaMemcpy(h_infoArray, d_infoArray, numMatrices*sizeof(int), cudaMemcpyDeviceToHost);
+        infoArray.template deviceToHost();
         for (size_t i = 0; i < numMatrices; i++)
-            if (h_infoArray[i] != 0) fprintf(stderr, "Factorization of matrix %d Failed: Matrix may be singular\n", i);
+            if (infoArray.get(i) != 0) fprintf(stderr, "Factorization of matrix %d Failed: Matrix may be singular\n", i);
 
         const double alpha = 1.f;
         // if (std::is_same<T, float>::value) {
-        //     cublasStrsmBatched(cublas_handle, CUBLAS_SIDE_LEFT, CUBLAS_FILL_MODE_LOWER, CUBLAS_OP_N, CUBLAS_DIAG_UNIT, monomialBasisSize, 1, &alpha, d_A_pointers, monomialBasisSize, d_b_pointers, monomialBasisSize, numMatrices);
-        //     cublasStrsmBatched(cublas_handle, CUBLAS_SIDE_LEFT, CUBLAS_FILL_MODE_UPPER, CUBLAS_OP_N, CUBLAS_DIAG_NON_UNIT, monomialBasisSize, 1, &alpha, d_A_pointers, monomialBasisSize, d_b_pointers, monomialBasisSize, numMatrices);
+        //     cublasStrsmBatched(cublas_handle, CUBLAS_SIDE_LEFT, CUBLAS_FILL_MODE_LOWER, CUBLAS_OP_N, CUBLAS_DIAG_UNIT, monomialBasisSize, 1, &alpha, AMatPointersKernelPointer, monomialBasisSize, d_b_pointers, monomialBasisSize, numMatrices);
+        //     cublasStrsmBatched(cublas_handle, CUBLAS_SIDE_LEFT, CUBLAS_FILL_MODE_UPPER, CUBLAS_OP_N, CUBLAS_DIAG_NON_UNIT, monomialBasisSize, 1, &alpha, AMatPointersKernelPointer, monomialBasisSize, d_b_pointers, monomialBasisSize, numMatrices);
         // } else {
-            cublasDtrsmBatched(cublas_handle, CUBLAS_SIDE_LEFT, CUBLAS_FILL_MODE_LOWER, CUBLAS_OP_N, CUBLAS_DIAG_UNIT, monomialBasisSize, 1, &alpha, d_A_pointers, monomialBasisSize, d_b_pointers, monomialBasisSize, numMatrices);
-            cublasDtrsmBatched(cublas_handle, CUBLAS_SIDE_LEFT, CUBLAS_FILL_MODE_UPPER, CUBLAS_OP_N, CUBLAS_DIAG_NON_UNIT, monomialBasisSize, 1, &alpha, d_A_pointers, monomialBasisSize, d_b_pointers, monomialBasisSize, numMatrices);
+            cublasDtrsmBatched(cublas_handle, CUBLAS_SIDE_LEFT, CUBLAS_FILL_MODE_LOWER, CUBLAS_OP_N, CUBLAS_DIAG_UNIT, monomialBasisSize, 1, &alpha, AMatPointersKernelPointer, monomialBasisSize, bVecPointersKernelPointer, monomialBasisSize, numMatrices);
+            cublasDtrsmBatched(cublas_handle, CUBLAS_SIDE_LEFT, CUBLAS_FILL_MODE_UPPER, CUBLAS_OP_N, CUBLAS_DIAG_NON_UNIT, monomialBasisSize, 1, &alpha, AMatPointersKernelPointer, monomialBasisSize, bVecPointersKernelPointer, monomialBasisSize, numMatrices);
         // }
         cudaDeviceSynchronize();
 
@@ -768,7 +767,7 @@ private:
         calcKernels.resize(localSupportRefKeysTotalN);
         localEps.template hostToDevice();
         auto it2 = particles.getDomainIteratorGPU(512);
-        calcKernels_gpu<dim><<<it2.wthr,it2.thr>>>(particles.toKernel(), monomialBasisKernel, localSupportKeys1D.toKernel(), d_b_pointers, localEps.toKernel(), numMatrices, calcKernels.toKernel());
+        calcKernels_gpu<dim><<<it2.wthr,it2.thr>>>(particles.toKernel(), monomialBasisKernel, localSupportKeys1D.toKernel(), bVecPointersKernelPointer, localEps.toKernel(), numMatrices, calcKernels.toKernel());
         calcKernels.template deviceToHost();
 
         std::chrono::high_resolution_clock::time_point t6 = std::chrono::high_resolution_clock::now();
@@ -777,14 +776,6 @@ private:
 
         // free the resources
         cublasDestroy_v2(cublas_handle);
-        if (d_infoArray) cudaFree(d_infoArray);
-        if (h_infoArray) free(h_infoArray);
-        if (d_A) cudaFree(d_A);
-        if (d_b) cudaFree(d_b);
-        if (d_A_pointers) cudaFree(d_A_pointers);
-        if (d_b_pointers) cudaFree(d_b_pointers);
-        if (h_A_pointers) free(h_A_pointers);
-        if (h_b_pointers) free(h_b_pointers);
 
         std::chrono::high_resolution_clock::time_point t4 = std::chrono::high_resolution_clock::now();
         std::chrono::duration<double> time_span = std::chrono::duration_cast<std::chrono::duration<double>>(t4 - t3);
@@ -925,7 +916,7 @@ __global__ void calcKernels_gpu(particles_type particles, monomialBasis_type mon
     size_t  monomialBasisSize = monomialBasis.size();
     size_t  supportKeysSize = localSupportKeys1D.get(p_key+1)-localSupportKeys1D.get(p_key);
     size_t* supportKeys = &((size_t*)localSupportKeys1D.getPointer())[localSupportKeys1D.get(p_key)];
-    T* d_calcKernels = &((T*)calcKernels.getPointer())[localSupportKeys1D.get(p_key)-numMatrices-1];
+    T* calcKernelsLocal = &((T*)calcKernels.getPointer())[localSupportKeys1D.get(p_key)-numMatrices-1];
     T eps = localEps.get(p_key);
 
     for (size_t j = 0; j < supportKeysSize; ++j)
@@ -934,7 +925,7 @@ __global__ void calcKernels_gpu(particles_type particles, monomialBasis_type mon
         Point<dim, T> xq = particles.getPos(xqK);
         Point<dim, T> normalizedArg = (xa - xq) / eps;
 
-        d_calcKernels[j] = computeKernel_gpu(normalizedArg, h_b[p_key], monomialBasis);
+        calcKernelsLocal[j] = computeKernel_gpu(normalizedArg, h_b[p_key], monomialBasis);
     }
 }
 
