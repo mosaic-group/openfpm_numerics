@@ -667,7 +667,7 @@ public:
  * \return Operator Dx which is a function on Vector_dist_Expressions
  *
  */
-template<template<unsigned int, typename> class Dcpse_type = Dcpse>
+template<template<unsigned int, typename, typename...> class Dcpse_type = Dcpse>
 class Derivative_x_T {
 
     void *dcpse;
@@ -756,7 +756,7 @@ public:
  * \return Operator Dy which is a function on Vector_dist_Expressions
  *
  */
-template<template<unsigned int, typename> class Dcpse_type = Dcpse>
+template<template<unsigned int, typename, typename...> class Dcpse_type = Dcpse>
 class Derivative_y_T {
 
     void *dcpse;
@@ -839,7 +839,7 @@ public:
  * \return Operator Dz which is a function on Vector_dist_Expressions
  *
  */
-template<template<unsigned int, typename> class Dcpse_type = Dcpse>
+template<template<unsigned int, typename, typename...> class Dcpse_type = Dcpse>
 class Derivative_z_T {
 
     void *dcpse;
@@ -916,7 +916,7 @@ public:
      * \return Operator Grad which is a function on Vector_dist_Expressions
      *
      */
-template<template<unsigned int, typename> class Dcpse_type = Dcpse>
+template<template<unsigned int, typename, typename...> class Dcpse_type = Dcpse>
 class Gradient_T {
 
     void *dcpse;
@@ -1011,7 +1011,7 @@ public:
      * \return Operator which is a function on Vector_dist_Expressions
      *
      */
-template<template<unsigned int, typename> class Dcpse_type = Dcpse>
+template<template<unsigned int, typename, typename...> class Dcpse_type = Dcpse>
 class Curl2D_T {
 
     void *dcpse;
@@ -1073,7 +1073,7 @@ public:
      * \return Operator which is a function on Vector_dist_Expressions
      *
      */
-template<template<unsigned int, typename> class Dcpse_type = Dcpse>
+template<template<unsigned int, typename, typename...> class Dcpse_type = Dcpse>
 class Laplacian_T {
 
     void *dcpse;
@@ -1176,7 +1176,7 @@ public:
      * \return Operator which is a function on Vector_dist_Expressions. Computes Divergence of Vectors
      *
      */
-template<template<unsigned int, typename> class Dcpse_type = Dcpse>
+template<template<unsigned int, typename, typename...> class Dcpse_type = Dcpse>
 class Divergence_T {
 
     void *dcpse;
@@ -1254,7 +1254,7 @@ public:
      * \return Operator which is a function on Vector_dist_Expressions. Computes Advection of Vectors Adv(v,u) = v.Grad(u)
      *
      */
-template<template<unsigned int, typename> class Dcpse_type = Dcpse>
+template<template<unsigned int, typename, typename...> class Dcpse_type = Dcpse>
 class Advection_T {
 
     void *dcpse;
@@ -1354,7 +1354,7 @@ public:
      * \return Operator Dxy which is a function on Vector_dist_Expressions
      *
      */
-template<template<unsigned int, typename> class Dcpse_type = Dcpse>
+template<template<unsigned int, typename, typename...> class Dcpse_type = Dcpse>
 class Derivative_xy_T {
 
     void *dcpse;
@@ -1442,7 +1442,7 @@ public:
      * \return Operator Dyz which is a function on Vector_dist_Expressions
      *
      */
-template<template<unsigned int, typename> class Dcpse_type = Dcpse>
+template<template<unsigned int, typename, typename...> class Dcpse_type = Dcpse>
 class Derivative_yz_T {
 
     void *dcpse;
@@ -1530,7 +1530,7 @@ public:
      * \return Operator Dxz which is a function on Vector_dist_Expressions
      *
      */
-template<template<unsigned int, typename> class Dcpse_type = Dcpse>
+template<template<unsigned int, typename, typename...> class Dcpse_type = Dcpse>
 class Derivative_xz_T {
 
     void *dcpse;
@@ -1619,7 +1619,7 @@ public:
      * \return Operator Dxx which is a function on Vector_dist_Expressions
      *
      */
-template<template<unsigned int, typename> class Dcpse_type = Dcpse>
+template<template<unsigned int, typename, typename...> class Dcpse_type = Dcpse>
 class Derivative_xx_T {
 
     void *dcpse;
@@ -1701,7 +1701,7 @@ public:
  * \return Operator Dyy which is a function on Vector_dist_Expressions
  *
  */
-template<template<unsigned int, typename> class Dcpse_type = Dcpse>
+template<template<unsigned int, typename, typename...> class Dcpse_type = Dcpse>
 class Derivative_yy_T {
 
     void *dcpse;
@@ -1782,7 +1782,7 @@ public:
      * \return Operator Dzz which is a function on Vector_dist_Expressions
      *
      */
-template<template<unsigned int, typename> class Dcpse_type = Dcpse>
+template<template<unsigned int, typename, typename...> class Dcpse_type = Dcpse>
 class Derivative_zz_T {
 
     void *dcpse;
@@ -1851,7 +1851,7 @@ public:
     }
 };
 
-template<template<unsigned int, typename> class Dcpse_type = Dcpse>
+template<template<unsigned int, typename, typename...> class Dcpse_type = Dcpse>
 class Derivative_xxx_T {
 
     void *dcpse;
@@ -1906,7 +1906,7 @@ public:
     }
 };
 
-template<template<unsigned int, typename> class Dcpse_type = Dcpse>
+template<template<unsigned int, typename, typename...> class Dcpse_type = Dcpse>
 class Derivative_xxy_T {
 
     void *dcpse;
@@ -1961,7 +1961,7 @@ public:
     }
 };
 
-template<template<unsigned int, typename> class Dcpse_type = Dcpse>
+template<template<unsigned int, typename, typename...> class Dcpse_type = Dcpse>
 class Derivative_yyx_T {
 
     void *dcpse;
@@ -2016,7 +2016,7 @@ public:
     }
 };
 
-template<template<unsigned int, typename> class Dcpse_type = Dcpse>
+template<template<unsigned int, typename, typename...> class Dcpse_type = Dcpse>
 class Derivative_yyy_T {
 
     void *dcpse;
