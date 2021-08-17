@@ -19,6 +19,8 @@ private:
 public:
     MonomialBasis(const std::vector<unsigned int> &degrees, unsigned int convergenceOrder);
 
+    MonomialBasis(unsigned int orderLimit);
+
     MonomialBasis(unsigned int degrees[dim], unsigned int convergenceOrder);
 
 //    explicit MonomialBasis(Point<dim, unsigned int> degrees, unsigned int convergenceOrder);
@@ -54,8 +56,11 @@ public:
         return lhs;
     }
 
+
+
 private:
     void generateBasis(std::vector<unsigned int> m, unsigned int r);
+    void generateBasis(unsigned int orderLimit);
 };
 
 //// Definitions below
@@ -139,6 +144,42 @@ void MonomialBasis<dim>::generateBasis(std::vector<unsigned int> m, unsigned int
         }
         ++it;
     }
+}
+
+template<unsigned int dim>
+void MonomialBasis<dim>::generateBasis( unsigned int orderLimit)
+{
+	size_t dimensions[dim];
+	std::fill(dimensions, dimensions + dim, orderLimit);
+
+	// Now initialize grid with appropriate size, then start-stop points and boundary conditions for the iterator
+	grid_sm<dim, void> grid(dimensions);
+
+	long int startV[dim] = {}; // 0-initialized
+	grid_key_dx<dim, long int> start(startV);
+	grid_key_dx<dim, long int> stop(dimensions);
+
+	size_t bc[dim];
+	std::fill(bc, bc + dim, NON_PERIODIC);
+
+	grid_key_dx_iterator_sub_bc<dim> it(grid, start, stop, bc);
+
+	// Finally compute alpha_min
+	unsigned char alphaMin = static_cast<unsigned char>(!(mSum % 2)); // if mSum is even, alpha_min must be 1
+	//std::cout<<"AlphaMin: "<<alphaMin<<std::endl;
+	//unsigned char alphaMin = 0; // we want to always have 1 in the basis
+
+	while (it.isNext())
+	{
+	Point<dim, long int> p = it.get().get_k();
+	Monomial<dim> candidateBasisElement(p);
+	// Filter out the elements which don't fullfil the theoretical condition for being in the vandermonde matrix
+	if (candidateBasisElement.order() < orderLimit && candidateBasisElement.order() >= alphaMin)
+	{
+	basis.push_back(candidateBasisElement);
+	}
+	++it;
+	}
 }
 
 template<unsigned int dim>
