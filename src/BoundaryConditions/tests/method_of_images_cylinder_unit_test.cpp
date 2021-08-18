@@ -1,14 +1,13 @@
 //
 // Created by Abhinav Singh & Justina Stark on 10.06.21.
 //
-
+#define BOOST_TEST_DYN_LINK
+#include <iostream>
 #include "config.h"
 #include "util/common.hpp"
-#define BOOST_TEST_DYN_LINK
-
 #include "util/util_debug.hpp"
 #include <boost/test/unit_test.hpp>
-#include <iostream>
+
 #include "Vector/vector_dist_subset.hpp"
 #include "Operators/Vector/vector_dist_operators.hpp"
 
@@ -117,7 +116,8 @@ BOOST_AUTO_TEST_SUITE(MethodOfImagesTestSuite)
 		v_cl.sum(number_of_border_particles);
 		v_cl.execute();
 		
-		std::cout << "Number of particles with surface normal = " << number_of_border_particles << std::endl;
+		if (v_cl.rank() == 0) std::cout << "Number of particles with surface normal = " << number_of_border_particles
+		<< std::endl;
 		Particles.map();
 		Particles.ghost_get<NORMAL,IS_SOURCE>();
 		//We write the particles to check if the initialization is correct.
@@ -144,28 +144,34 @@ BOOST_AUTO_TEST_SUITE(MethodOfImagesTestSuite)
 		size_t number_of_real_particle_with_ghost = Particles.size_local_with_ghost();
 		
 		/*
-		std::cout << "number_of_source_particles = " << number_of_source_particles << std::endl;
-		std::cout << "number_of_real_particle_no_ghost = " << number_of_real_particle_no_ghost << std::endl;
-		std::cout << "number_of_real_particle_with_ghost before mirroring = " << number_of_real_particle_with_ghost << std::endl;
+		if (v_cl.rank() == 0)
+		{
+			std::cout << "number_of_source_particles = " << number_of_source_particles << std::endl;
+			std::cout << "number_of_real_particle_no_ghost = " << number_of_real_particle_no_ghost << std::endl;
+			std::cout << "number_of_real_particle_with_ghost before mirroring = " << number_of_real_particle_with_ghost << std::endl;
+		}
 		*/
 		
 		
-		// Apply Method of images to impose reflecting Neumann Boundary Conditions
+		// Apply Method of images to impose noflux Neumann Boundary Conditions
 		MethodOfImages<NORMAL, vd_type> NBCs(Particles, keys_source, subset_id_real, subset_id_mirror);
 		NBCs.get_mirror_particles(Particles);
-		NBCs.apply_reflection<CONCENTRATION>(Particles);
+		NBCs.apply_noflux<CONCENTRATION>(Particles);
 		
 		size_t number_of_mirror_particles = Particles.size_local() - number_of_real_particle_no_ghost;
 		v_cl.sum(number_of_mirror_particles);
 		v_cl.execute();
 		
-		std::cout << "Number of mirror particles = " << number_of_mirror_particles << std::endl;
+		if (v_cl.rank() == 0) std::cout << "Number of mirror particles = " << number_of_mirror_particles << std::endl;
+		
 		/*
-		std::cout << "number_of_real_particle_with_ghost + mirror particles = " << Particles.size_local_with_ghost() <<
-				std::endl;
-
-		std::cout << "Total number of particles expected after mirroring = " << number_of_real_particle_with_ghost + keys_source.size() <<
-		std::endl;
+		if (v_cl.rank() == 0)
+		{
+			std::cout << "number_of_real_particle_with_ghost + mirror particles = " << Particles.size_local_with_ghost() <<
+					std::endl;
+			std::cout << "Total number of particles expected after mirroring = " << number_of_real_particle_with_ghost +
+					keys_source.size() << std::endl;
+		}
 		*/
 		
 		Particles.write("Cylinder_with_mirror_particles");
