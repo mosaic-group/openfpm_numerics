@@ -41,7 +41,7 @@ add_executable(numerics ${OPENFPM_INIT_FILE} ${CUDA_SOURCES}
 						FiniteDifference/eq_unit_test.cpp
 						FiniteDifference/tests/Eno_Weno_unit_test.cpp
 						FiniteDifference/tests/Upwind_gradient_unit_test.cpp
-						FiniteDifference/tests/FD_order1_unit_test.cpp
+						FiniteDifference/tests/FD_simple_unit_test.cpp
 						Operators/Vector/vector_dist_operators_unit_tests.cpp
 						Operators/Vector/vector_dist_operators_apply_kernel_unit_tests.cpp
 						../../src/lib/pdata.cpp
@@ -177,7 +177,7 @@ install(FILES FiniteDifference/Average.hpp
 			  FiniteDifference/FD_Solver.hpp
 			  FiniteDifference/Eno_Weno.hpp
 		      FiniteDifference/Upwind_gradient.hpp
-		      FiniteDifference/FD_order1.hpp
+		FiniteDifference/FD_simple.hpp
       	      DESTINATION openfpm_numerics/include/FiniteDifference
 	      COMPONENT OpenFPM)
 	      
