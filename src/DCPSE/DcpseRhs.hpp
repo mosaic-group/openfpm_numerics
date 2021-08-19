@@ -53,9 +53,8 @@ MatrixType &DcpseRhs<dim>::getVector(MatrixType &b)
     //Choosing a(0,0) for even order as a free parameter can let us set b(0,0) for numerical robustness
 /*    if (b(0,0) == 0.0 && sign == 1)
     {
-        b(0,0) = 25;
+        b(0,0) = 10.0;
     }*/
-
 
     return b;
 }
