@@ -99,9 +99,10 @@ public:
 			openfpm::vector<size_t> pair = {id_source, id_mirror};
 			key_map_source_mirror.add(pair);
 		}
-		// No vd.map() here, because we want to keep the source and the mirror particles on the same processor!
-		////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+		vd.map(); // We redistribute the mirror particles to the processors they belong to. Source and mirror will be
+		// still seen by the same processor via the ghost layer.
 		vd.template ghost_get();
+		////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 		Mirror.update();
 		pid_mirror = Mirror.getIds();
 
