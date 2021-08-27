@@ -121,7 +121,7 @@ BOOST_AUTO_TEST_SUITE(MethodOfImagesTestSuite)
 		Particles.map();
 		Particles.ghost_get<NORMAL,IS_SOURCE>();
 		//We write the particles to check if the initialization is correct.
-		Particles.write("Init");
+//		Particles.write("Init");
 		
 		//Here Mirror Particle and do method of Images and check if it matches  property 0 mirroring (x+y+z of the mirror).
 		
@@ -179,11 +179,12 @@ BOOST_AUTO_TEST_SUITE(MethodOfImagesTestSuite)
 		BOOST_CHECK(number_of_source_particles == number_of_border_particles);
 		BOOST_CHECK(number_of_mirror_particles == number_of_source_particles);
 		
-		for (int i = 0; i < keys_source.size(); ++i)
+		for (int i = 0; i < NBCs.key_map_source_mirror.size(); ++i)
 		{
-			auto key_source = keys_source.get<0>(i); // Get key of one source particle
-			auto key_mirror = NBCs.pid_mirror.get<0>(i); // Get key of corresponding mirror particle to that source
-			// particle
+			openfpm::vector<size_t> row = NBCs.key_map_source_mirror.get(i);
+			vect_dist_key_dx key_source, key_mirror;
+			key_source.setKey(row.get(0));
+			key_mirror.setKey(row.get(1));
 			BOOST_CHECK(Particles.template getProp<CONCENTRATION>(key_mirror) == Particles.template getProp<CONCENTRATION>(key_source));
 		}
 		
