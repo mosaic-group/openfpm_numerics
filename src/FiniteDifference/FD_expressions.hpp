@@ -22,6 +22,270 @@ namespace FD
 
 	struct g_comp {};
 
+	template<unsigned int i>
+	struct grid_dist_expression_value_impl_func_scal
+	{
+		template<unsigned int prp, typename base_type, typename gtype>
+		static void inte(gtype & g, grid_dist_key_dx<gtype::dims> & k, comb<gtype::dims> & c_where, comb<gtype::dims> & c_o1, base_type & inte_out, int & c, int comp)
+		{
+			if (c_where[i] != c_o1[i])
+			{
+				int sign = (c_where[i] > c_o1[i])?1:-1;
+
+				grid_dist_expression_value_impl_func_scal<i-1>::template inte<prp,base_type>(g,k,c_where,c_o1,inte_out,c,comp);
+				long int x0 = k.getKeyRef().get(i);
+
+				k.getKeyRef().set_d(i, x0 + sign);
+				grid_dist_expression_value_impl_func_scal<i-1>::template inte<prp,base_type>(g,k,c_where,c_o1,inte_out,c,comp);
+				k.getKeyRef().set_d(i, x0);
+			}
+		}
+	};
+
+	template<>
+	struct grid_dist_expression_value_impl_func_scal<0>
+	{
+		template<unsigned int prp, typename base_type, typename gtype>
+		static void inte(gtype & g, grid_dist_key_dx<gtype::dims> & k, comb<gtype::dims> & c_where, comb<gtype::dims> & c_o1, base_type & inte_out , int & c , int comp)
+		{
+			if (c_where[0] != c_o1[0])
+			{
+				int sign = (c_where[0] > c_o1[0])?1:-1;
+
+				inte_out += g.template getProp<prp>(k);
+
+				long int x0 = k.getKeyRef().get(0);
+
+				k.getKeyRef().set_d(0, x0 + sign);
+				inte_out += g.template getProp<prp>(k);
+				k.getKeyRef().set_d(0, x0);
+				c += 2;
+			}
+		}
+	};
+
+	template<typename base_type>
+	struct grid_dist_expression_value_impl
+	{
+		typedef base_type type;
+
+		template<unsigned int prp, typename gtype>
+		static base_type inte(gtype & g, grid_dist_key_dx<gtype::dims> & k, comb<gtype::dims> & c_where, comb<gtype::dims> & c_o1, int comp)
+		{
+			int c = 0;
+			base_type inte = 0;
+
+			grid_dist_expression_value_impl_func_scal<gtype::dims-1>::template inte<prp,base_type>(g,k,c_where,c_o1,inte,c,comp);
+
+        	if (c != 0)
+        	{inte /= c;}
+        	else
+        	{inte = g.template getProp<prp>(k);}
+
+			return inte;
+		}
+
+		template<unsigned int prp, typename gtype>
+		static base_type value_n(gtype & g, const grid_dist_key_dx<gtype::dims> & k, int comp)
+		{
+        	return g.template getProp<prp>(k);
+		}
+
+		template<unsigned int prp, typename gtype>
+		static auto value_ref(gtype & g, const grid_dist_key_dx<gtype::dims> & k, int comp) -> decltype(g.template getProp<prp>(k))
+		{
+        	return g.template getProp<prp>(k);
+		}
+	};
+
+
+	template<unsigned int i>
+	struct grid_dist_expression_value_impl_func_vec
+	{
+		template<unsigned int prp, typename base_type, typename gtype>
+		static void inte(gtype & g, grid_dist_key_dx<gtype::dims> & k, comb<gtype::dims> & c_where, comb<gtype::dims> & c_o1, base_type & inte_out, int & c, int comp)
+		{
+			if (c_where[i] != c_o1[i])
+			{
+				grid_dist_expression_value_impl_func_vec<i-1>::template inte<prp,base_type>(g,k,c_where,c_o1,inte_out,c,comp);
+				long int x0 = k.getKeyRef().get(i);
+
+				int sign = (c_where[i] > c_o1[i])?1:-1;
+
+				k.getKeyRef().set_d(i, x0 + sign);
+				grid_dist_expression_value_impl_func_vec<i-1>::template inte<prp,base_type>(g,k,c_where,c_o1,inte_out,c,comp);
+				k.getKeyRef().set_d(i, x0);
+			}
+			else
+			{
+				grid_dist_expression_value_impl_func_vec<i-1>::template inte<prp,base_type>(g,k,c_where,c_o1,inte_out,c,comp);
+			}
+		}
+	};
+
+	template<>
+	struct grid_dist_expression_value_impl_func_vec<0>
+	{
+		template<unsigned int prp, typename base_type, typename gtype>
+		static void inte(gtype & g, grid_dist_key_dx<gtype::dims> & k, comb<gtype::dims> & c_where, comb<gtype::dims> & c_o1, base_type & inte_out , int & c , int comp)
+		{
+			if (c_where[0] != c_o1[0])
+			{
+				int sign = (c_where[0] > c_o1[0])?1:-1;
+
+				inte_out += g.template getProp<prp>(k)[comp];
+
+				long int x0 = k.getKeyRef().get(0);
+
+				k.getKeyRef().set_d(0, x0 + sign);
+				inte_out += g.template getProp<prp>(k)[comp];
+				k.getKeyRef().set_d(0, x0);
+				c += 2;
+			}
+			else
+			{
+				inte_out += g.template getProp<prp>(k)[comp];
+				c += 1;
+			}
+		}
+	};
+
+	template<typename base_type, unsigned int N1>
+	struct grid_dist_expression_value_impl<base_type[N1]>
+	{
+		typedef base_type type;
+
+		template<unsigned int prp, typename gtype>
+		static base_type inte(gtype & g, grid_dist_key_dx<gtype::dims> & k, comb<gtype::dims> & c_where, comb<gtype::dims> & c_o1, int comp)
+		{
+			int c = 0;
+			base_type inte = 0;
+
+        	grid_dist_expression_value_impl_func_vec<gtype::dims-1>::template inte<prp,base_type>(g,k,c_where,c_o1,inte,c,comp);
+
+        	if (c != 0)
+        	{inte /= c;}
+        	else
+        	{inte = g.template getProp<prp>(k)[comp];}
+
+			return inte;
+		}
+
+		template<unsigned int prp, typename gtype>
+		static base_type value_n(gtype & g, const grid_dist_key_dx<gtype::dims> & k, int comp)
+		{
+        	return g.template getProp<prp>(k)[comp];
+		}
+
+		template<unsigned int prp, typename gtype>
+		static auto value_ref(gtype & g, const grid_dist_key_dx<gtype::dims> & k, int comp) -> decltype(g.template getProp<prp>(k)[comp])
+		{
+        	return g.template getProp<prp>(k)[comp];
+		}
+	};
+
+	template<typename base_type, unsigned int N1>
+	struct grid_dist_expression_value_impl<Point<N1,base_type>>
+	{
+		typedef base_type type;
+
+		template<unsigned int prp, typename gtype>
+		static base_type inte(gtype & g, grid_dist_key_dx<gtype::dims> & k, comb<gtype::dims> & c_where, comb<gtype::dims> & c_o1, int comp)
+		{
+			int c = 0;
+			base_type inte = 0;
+
+			grid_dist_expression_value_impl_func_vec<gtype::dims-1>::template inte<prp,base_type>(g,k,c_where,c_o1,inte,c,comp);
+
+        	if (c != 0)
+        	{inte /= c;}
+        	else
+        	{inte = g.template getProp<prp>(k)[comp];}
+
+			return inte;
+		}
+
+		template<unsigned int prp, typename gtype>
+		static base_type value_n(gtype & g, const grid_dist_key_dx<gtype::dims> & k, int comp)
+		{
+        	return g.template getProp<prp>(k)[comp];
+		}
+
+		template<unsigned int prp, typename gtype>
+		static auto value_ref(gtype & g, const grid_dist_key_dx<gtype::dims> & k, int comp) -> decltype(g.template getProp<prp>(k)[comp])
+		{
+        	return g.template getProp<prp>(k)[comp];
+		}
+	};
+
+	template<unsigned int i>
+	struct grid_dist_expression_value_impl_vnz
+	{
+		template<typename Sys_eqs, typename gmap_type, typename unordered_map_type ,typename gtype>
+		static void value_nz(const gmap_type & g_map,
+							 unordered_map_type & cols,
+							 gtype & g, 
+							 grid_dist_key_dx<gtype::dims> & key, 
+							 comb<gtype::dims> & c_where, 
+							 comb<gtype::dims> & c_o1, 
+							 typename Sys_eqs::stype coeff, 
+							 int & c, 
+							 int comp,
+							 int var_id)
+		{
+			if (c_where[i] != c_o1[i])
+			{
+				int sign = (c_where[i] > c_o1[i])?1:-1;
+
+				grid_dist_expression_value_impl_vnz<i-1>::template value_nz<Sys_eqs>(g_map,cols,g,key,c_where,c_o1,coeff,c,comp,var_id);
+				//cols[g_map.template getProp<0>(key)*Sys_eqs::nvar + var_id + comp] += coeff / c;
+
+				long int x0 = key.getKeyRef().get(i);
+
+				key.getKeyRef().set_d(i, x0 + sign);
+				grid_dist_expression_value_impl_vnz<i-1>::template value_nz<Sys_eqs>(g_map,cols,g,key,c_where,c_o1,coeff,c,comp,var_id);
+				//cols[g_map.template getProp<0>(key)*Sys_eqs::nvar + var_id + comp] += coeff / c;
+				key.getKeyRef().set_d(i, x0);
+			}
+        	else
+        	{grid_dist_expression_value_impl_vnz<i-1>::template value_nz<Sys_eqs>(g_map,cols,g,key,c_where,c_o1,coeff,c,comp,var_id);}
+		}
+	};
+
+	template<>
+	struct grid_dist_expression_value_impl_vnz<0>
+	{
+		template<typename Sys_eqs, typename gmap_type, typename unordered_map_type ,typename gtype>
+		static void value_nz(const gmap_type & g_map,
+							 unordered_map_type & cols,
+							 gtype & g, 
+							 grid_dist_key_dx<gtype::dims> & key, 
+							 comb<gtype::dims> & c_where, 
+							 comb<gtype::dims> & c_o1, 
+							 typename Sys_eqs::stype coeff, 
+							 int & c , 
+							 int comp,
+							 int var_id)
+		{
+			if (c_where[0] != c_o1[0])
+			{
+				int sign = (c_where[0] > c_o1[0])?1:-1;
+
+				cols[g_map.template getProp<0>(key)*Sys_eqs::nvar + var_id + comp] += coeff / c;
+
+				long int x0 = key.getKeyRef().get(0);
+
+				key.getKeyRef().set_d(0, x0 + sign);
+				cols[g_map.template getProp<0>(key)*Sys_eqs::nvar + var_id + comp] += coeff / c;
+				key.getKeyRef().set_d(0, x0);
+			}
+        	else
+        	{
+				cols[g_map.template getProp<0>(key)*Sys_eqs::nvar + var_id + comp] += coeff;
+			}
+		}
+	};
+
 	template<unsigned int prp, typename grid, unsigned int impl>
 	class grid_dist_expression
 	{};
@@ -37,6 +301,8 @@ namespace FD
 	{
 		//! The grid
 		grid & g;
+
+		typedef typename boost::mpl::at<typename grid::value_type::type,boost::mpl::int_<prp>>::type type_proc;
 
 	public:
 
@@ -97,9 +363,10 @@ namespace FD
 		 * \return the result of the expression
 		 *
 		 */
-		inline auto value(const grid_dist_key_dx<grid::dims> & k, comb<grid::dims> & c_where, int comp = 0) const -> decltype(g.template getProp<prp>(k))
+		inline auto value(const grid_dist_key_dx<grid::dims> & k, comb<grid::dims> & c_where, int comp = 0) const -> decltype(grid_dist_expression_value_impl<type_proc>::template value_n<prp>(g,k,comp))
 		{
-			return g.template getProp<prp>(k);
+			return grid_dist_expression_value_impl<type_proc>::template value_n<prp>(g,k,comp);
+//			return g.template getProp<prp>(k);
 		}
 
 		/*! \brief Evaluate the expression
@@ -109,9 +376,10 @@ namespace FD
 		 * \return the result of the expression
 		 *
 		 */
-		inline auto value_ref(const grid_dist_key_dx<grid::dims> & k, comb<grid::dims> & c_where) const -> decltype(g.template getProp<prp>(k))
+		inline auto value_ref(const grid_dist_key_dx<grid::dims> & k, comb<grid::dims> & c_where, int comp = 0) const -> decltype(grid_dist_expression_value_impl<type_proc>::template value_ref<prp>(g,k,comp))
 		{
-			return g.template getProp<prp>(k);
+			return grid_dist_expression_value_impl<type_proc>::template value_ref<prp>(g,k,comp);
+//			return g.template getProp<prp>(k);
 		}
 
 		/*! \brief Fill the grid property with the evaluated expression
@@ -240,6 +508,8 @@ namespace FD
 		//! The grid
 		grid & g;
 
+		typedef typename boost::mpl::at<typename grid::value_type::type,boost::mpl::int_<prp>>::type type_proc;
+
 	public:
 
 		//! The type of the internal grid
@@ -299,9 +569,10 @@ namespace FD
 		 * \return the result of the expression
 		 *
 		 */
-		inline auto value_ref(const grid_dist_key_dx<grid::dims> & k, comb<grid::dims> & c_where) const -> decltype(g.template getProp<prp>(k))
+		inline auto value_ref(const grid_dist_key_dx<grid::dims> & k, comb<grid::dims> & c_where,int comp = 0) const -> decltype(grid_dist_expression_value_impl<type_proc>::template value_ref<prp>(g,k,comp))
 		{
-			return g.template getProp<prp>(k);
+			return grid_dist_expression_value_impl<type_proc>::template value_ref<prp>(g,k,comp);
+			//return g.template getProp<prp>(k);
 		}
 
 		/*! \brief Evaluate the expression
@@ -311,38 +582,11 @@ namespace FD
 		 * \return the result of the expression
 		 *
 		 */
-		inline auto value(grid_dist_key_dx<grid::dims> & k, comb<grid::dims> & c_where, int comp = 0) const -> typename std::remove_reference<decltype(g.template getProp<prp>(k))>::type
+		inline auto value(grid_dist_key_dx<grid::dims> & k, comb<grid::dims> & c_where, int comp = 0) const -> decltype(grid_dist_expression_value_impl<type_proc>::template inte<prp>(g,k,c_where,c_where,comp))
 		{
-			comb<grid::dims> c_o1 = g. getStagPositions()[prp].get(comp);
+			comb<grid::dims> c_o1 = g.getStagPositions()[prp].get(comp);
 
-            // x0, dx are defined in proper dir є(x, y, z)
-
-            int c = 0;
-
-            typename std::remove_reference<decltype(g.template getProp<prp>(k))>::type inte = 0;
-        	for (int i = 0 ; i < grid::dims ; i++)
-        	{
-        		if (c_where[i] != c_o1[i])
-        		{
-        			int sign = (c_where[i] > c_o1[i])?1:-1;
-
-        			inte += g.template getProp<prp>(k);
-
-        			long int x0 = k.getKeyRef().get(i);
-
-        			k.getKeyRef().set_d(i, x0 + sign);
-        			inte += g.template getProp<prp>(k);
-        			k.getKeyRef().set_d(i, x0);
-        			c += 2;
-        		}
-        	}
-
-        	if (c != 0)
-        	{inte /= c;}
-        	else
-        	{inte = g.template getProp<prp>(k);}
-
-			return inte;
+			return grid_dist_expression_value_impl<type_proc>::template inte<prp>(g,k,c_where,c_o1,comp);
 		}
 
 		/*! \brief Fill the grid property with the evaluated expression
@@ -432,37 +676,19 @@ namespace FD
 				 unsigned int comp,
 				 comb<Sys_eqs::dims> & c_where) const
 		{
+			int c = 1;
 			comb<grid::dims> c_o1 = g.getStagPositions()[prp].get(comp);
 
             // x0, dx are defined in proper dir є(x, y, z)
 
-            int c = 0;
         	for (int i = 0 ; i < grid::dims ; i++)
         	{
         		if (c_where[i] != c_o1[i])
-        		{c += 2;}
+        		{c *= 2;}
         	}
 
-        	if (c != 0)
-        	{
-            	for (int i = 0 ; i < grid::dims ; i++)
-            	{
-            		if (c_where[i] != c_o1[i])
-            		{
-            			int sign = (c_where[i] > c_o1[i])?1:-1;
+			grid_dist_expression_value_impl_vnz<Sys_eqs::dims-1>::template value_nz<Sys_eqs>(g_map,cols,g,key,c_where,c_o1,coeff,c,comp,var_id);
 
-            			cols[g_map.template getProp<0>(key)*Sys_eqs::nvar + var_id + comp] += coeff / c;
-
-            			long int x0 = key.getKeyRef().get(i);
-
-            			key.getKeyRef().set_d(i, x0 + sign);
-            			cols[g_map.template getProp<0>(key)*Sys_eqs::nvar + var_id + comp] += coeff / c;
-            			key.getKeyRef().set_d(i, x0);
-            		}
-            	}
-        	}
-        	else
-        	{cols[g_map.template getProp<0>(key)*Sys_eqs::nvar + var_id + comp] += coeff;}
 		}
 
 	    inline grid_dist_expression_op<grid_dist_expression<prp,grid,STAG_EXPRESSION>,boost::mpl::int_<1>,g_comp> operator[](int comp)
@@ -1006,15 +1232,15 @@ namespace FD
 	struct get_grid_dist_expression_op<1,true>
 	{
 		template<typename exp_type>
-		static auto get(exp_type & o1, grid_dist_key_dx<exp_type::gtype::dims> & key, comb<exp_type::gtype::dims> & c_where, const int (& comp)[1]) -> decltype(o1.value(key,c_where)[0])
+		static auto get(exp_type & o1, grid_dist_key_dx<exp_type::gtype::dims> & key, comb<exp_type::gtype::dims> & c_where, const int (& comp)[1]) -> decltype(o1.value(key,c_where,comp[0]))
 		{
-			return o1.value(key,c_where,comp[0])[comp[0]];
+			return o1.value(key,c_where,comp[0]);
 		}
 
 		template<typename exp_type>
-		static auto get_ref(exp_type & o1, grid_dist_key_dx<exp_type::gtype::dims> & key, comb<exp_type::gtype::dims> & c_where, const int (& comp)[1]) -> decltype(o1.value_ref(key,c_where)[0])
+		static auto get_ref(exp_type & o1, grid_dist_key_dx<exp_type::gtype::dims> & key, comb<exp_type::gtype::dims> & c_where, const int (& comp)[1]) -> decltype(o1.value_ref(key,c_where,comp[0]))
 		{
-			return o1.value_ref(key,c_where)[comp[0]];
+			return o1.value_ref(key,c_where,comp[0]);
 		}
 
 		template<unsigned int prop,typename exp_type, typename grid_type>
@@ -1149,7 +1375,7 @@ namespace FD
 		 *
 		 *
 		 */
-		inline auto value_ref(grid_dist_key_dx<gtype::dims> & key, comb<gtype::dims> & c_where) const -> decltype(get_grid_dist_expression_op<n,n == rank_gen<property_act>::type::value>::get(o1,key,c_where,comp))
+		inline auto value_ref(grid_dist_key_dx<gtype::dims> & key, comb<gtype::dims> & c_where) const -> decltype(get_grid_dist_expression_op<n,n == rank_gen<property_act>::type::value>::get_ref(o1,key,c_where,comp))
 		{
 			return get_grid_dist_expression_op<n,n == rank_gen<property_act>::type::value>::get_ref(o1,key,c_where,comp);
 		}
