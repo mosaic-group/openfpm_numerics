@@ -39,6 +39,10 @@ namespace FD
 				grid_dist_expression_value_impl_func_scal<i-1>::template inte<prp,base_type>(g,k,c_where,c_o1,inte_out,c,comp);
 				k.getKeyRef().set_d(i, x0);
 			}
+			else
+			{
+				grid_dist_expression_value_impl_func_scal<i-1>::template inte<prp,base_type>(g,k,c_where,c_o1,inte_out,c,comp);
+			}
 		}
 	};
 
@@ -61,6 +65,11 @@ namespace FD
 				k.getKeyRef().set_d(0, x0);
 				c += 2;
 			}
+			else
+			{
+				inte_out += g.template getProp<prp>(k);
+				c += 1;
+			}
 		}
 	};
 
@@ -77,10 +86,7 @@ namespace FD
 
 			grid_dist_expression_value_impl_func_scal<gtype::dims-1>::template inte<prp,base_type>(g,k,c_where,c_o1,inte,c,comp);
 
-        	if (c != 0)
-        	{inte /= c;}
-        	else
-        	{inte = g.template getProp<prp>(k);}
+        	inte /= c;
 
 			return inte;
 		}

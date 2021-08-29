@@ -438,8 +438,8 @@ f_x = f_y = f_z = 3
     	Box<2,float> domain({0.0,0.0},{3.0,1.0});
 
     	// Ghost (Not important in this case but required)
-    	Ghost<2,float> g(0.01); // suited for particles
-        //Ghost<2,long int> g(1); //better for grids
+    	//Ghost<2,float> g(0.01); // suited for particles
+        Ghost<2,long int> g(1); //better for grids
     	// Grid points on x=256 and y=64
     	long int sz[] = {256,64};
     	size_t szu[2];
