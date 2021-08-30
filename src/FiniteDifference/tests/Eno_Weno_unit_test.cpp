@@ -47,7 +47,7 @@ BOOST_AUTO_TEST_SUITE(EnoWenoTestSuite)
 			g_dist.setPropNames({"f_gaussian", "df_gaussian", "ENO_plus", "ENO_minus", "Error_plus", "Error_minus"});
 
 			double mu = 0.5 * (box_upper - abs(box_lower));
-			double sigma = 0.1 * (box_upper - box_lower);
+			double sigma = 0.3 * (box_upper - box_lower);
 			
 			auto gdom = g_dist.getDomainGhostIterator();
 			while (gdom.isNext())
@@ -122,7 +122,7 @@ BOOST_AUTO_TEST_SUITE(EnoWenoTestSuite)
 			g_dist.setPropNames({"f_gaussian", "df_gaussian", "WENO_plus", "WENO_minus", "Error_plus", "Error_minus"});
 			
 			double mu = 0.5 * (box_upper - abs(box_lower));
-			double sigma = 0.1 * (box_upper - box_lower);
+			double sigma = 0.3 * (box_upper - box_lower);
 			
 			auto gdom = g_dist.getDomainGhostIterator();
 			while (gdom.isNext())
@@ -195,7 +195,7 @@ BOOST_AUTO_TEST_SUITE(EnoWenoTestSuite)
 			g_dist.setPropNames({"f_gaussian", "df_gaussian", "ENO_plus", "ENO_minus", "Error_plus", "Error_minus"});
 			
 			double mu = 0.5 * (box_upper - abs(box_lower));
-			double sigma = 0.1 * (box_upper - box_lower);
+			double sigma = 0.3 * (box_upper - box_lower);
 			
 			auto gdom = g_dist.getDomainGhostIterator();
 			while (gdom.isNext())
@@ -265,7 +265,7 @@ BOOST_AUTO_TEST_SUITE(EnoWenoTestSuite)
 			g_dist.setPropNames({"f_gaussian", "df_gaussian", "WENO_plus", "WENO_minus", "Error_plus", "Error_minus"});
 			
 			double mu = 0.5 * (box_upper - abs(box_lower));
-			double sigma = 0.1 * (box_upper - box_lower);
+			double sigma = 0.3 * (box_upper - box_lower);
 			
 			auto gdom = g_dist.getDomainGhostIterator();
 			while (gdom.isNext())

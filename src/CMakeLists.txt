@@ -18,23 +18,47 @@ if (CUDA_FOUND)
 endif()
 
 add_executable(numerics ${OPENFPM_INIT_FILE} ${CUDA_SOURCES}
-						main.cpp 
+		OdeIntegrators/tests/OdeIntegratores_base_tests.cpp
+		DCPSE/DCPSE_op/tests/DCPSE_op_subset_test.cpp
+		DCPSE/DCPSE_op/tests/DCPSE_op_test_base_tests
+		FiniteDifference/FD_Solver_test.cpp
+		FiniteDifference/FD_op_Tests.cpp
+		DCPSE/DCPSE_op/tests/DCPSE_op_test3d.cpp
+        DCPSE/DCPSE_op/tests/DCPSE_op_Solver_test.cpp
+        DCPSE/DCPSE_op/tests/DCPSE_op_test_temporal.cpp
+        DCPSE/tests/Dcpse_unit_tests.cpp
+        DCPSE/tests/DcpseRhs_unit_tests.cpp
+        DCPSE/tests/MonomialBasis_unit_tests.cpp
+        DCPSE/tests/Support_unit_tests.cpp
+        DCPSE/tests/Vandermonde_unit_tests.cpp
+						main.cpp
 						Matrix/SparseMatrix_unit_tests.cpp
 						interpolation/interpolation_unit_tests.cpp
-						Vector/Vector_unit_tests.cpp  
-						Solvers/petsc_solver_unit_tests.cpp 
-						FiniteDifference/FDScheme_unit_tests.cpp 
-						FiniteDifference/eq_unit_test_3d.cpp 
-						FiniteDifference/eq_unit_test.cpp  
-						Operators/Vector/vector_dist_operators_unit_tests.cpp 
+						Vector/Vector_unit_tests.cpp
+						Solvers/petsc_solver_unit_tests.cpp
+						FiniteDifference/FDScheme_unit_tests.cpp
+						FiniteDifference/eq_unit_test_3d.cpp
+						FiniteDifference/eq_unit_test.cpp
+						FiniteDifference/tests/Eno_Weno_unit_test.cpp
+						FiniteDifference/tests/Upwind_gradient_unit_test.cpp
+						FiniteDifference/tests/FD_simple_unit_test.cpp
+						Operators/Vector/vector_dist_operators_unit_tests.cpp
 						Operators/Vector/vector_dist_operators_apply_kernel_unit_tests.cpp
-						../../src/lib/pdata.cpp)
+						../../src/lib/pdata.cpp
+						BoundaryConditions/tests/method_of_images_cylinder_unit_test.cpp
+#		level_set/closest_point/closest_point_unit_tests.cpp
+#		level_set/redistancing_Sussman/tests/redistancingSussman_unit_test.cpp
+#		level_set/redistancing_Sussman/tests/convergence_test.cpp
+		)
 
 add_dependencies(numerics ofpmmemory)
 add_dependencies(numerics vcluster)
 
 ###########################
-
+if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+	target_compile_options(numerics PRIVATE "-Wno-undefined-var-template")
+	target_compile_options(numerics PRIVATE "-Wno-macro-redefined")
+endif()
 if ( CMAKE_COMPILER_IS_GNUCC )
     target_compile_options(numerics PRIVATE "-Wno-deprecated-declarations")
     if (TEST_COVERAGE)
@@ -69,6 +93,7 @@ target_include_directories (numerics PUBLIC ${Vc_INCLUDE_DIR})
 target_include_directories (numerics PUBLIC ${ALPAKA_ROOT}/include)
 target_include_directories (numerics PUBLIC ${MPI_C_INCLUDE_DIRS})
 if(EIGEN3_FOUND)
+        target_include_directories (numerics PUBLIC /usr/local/include) 
 	target_include_directories (numerics PUBLIC ${EIGEN3_INCLUDE_DIR})
 endif()
 
@@ -86,7 +111,6 @@ if(PETSC_FOUND)
 endif()
 target_link_libraries(numerics vcluster)
 target_link_libraries(numerics ofpmmemory)
-
 if(SuiteSparse_FOUND)
 	target_include_directories (numerics PUBLIC ${SuiteSparse_INCLUDE_DIRS})
         target_link_libraries(numerics ${SuiteSparse_LIBRARIES})
@@ -95,8 +119,7 @@ if(SuiteSparse_FOUND)
 endif()
 
 if(OpenMP_CXX_FOUND)
-    target_include_directories (numerics PUBLIC ${OpenMP_CXX_INCLUDE_DIRS})
-    target_link_libraries(numerics ${OpenMP_CXX_FLAGS})
+    target_link_libraries(numerics OpenMP::OpenMP_CXX)
 endif()
 
 target_link_libraries(numerics -L${METIS_ROOT}/lib metis)
@@ -124,20 +147,21 @@ install(FILES Vector/Vector_eigen.hpp
 	      Vector/Vector_petsc.hpp 
 	      Vector/Vector_util.hpp 
 	      Vector/Vector.hpp
-	      DESTINATION openfpm_numerics/include/Vector 
+	      DESTINATION openfpm_numerics/include/Vector
 	      COMPONENT OpenFPM)
 
 install(FILES Solvers/umfpack_solver.hpp 
 	      Solvers/petsc_solver.hpp
 	      Solvers/petsc_solver_AMG_report.hpp
-	      DESTINATION openfpm_numerics/include/Solvers 
+	      DESTINATION openfpm_numerics/include/Solvers
 	      COMPONENT OpenFPM)
 
 install(FILES util/petsc_util.hpp 
 	      util/linalgebra_lib.hpp 
 	      util/util_num.hpp 
 	      util/grid_dist_testing.hpp
-	      DESTINATION openfpm_numerics/include/util 
+		  util/SphericalHarmonics.hpp
+	      DESTINATION openfpm_numerics/include/util
 	      COMPONENT OpenFPM)
 
 install(FILES FiniteDifference/Average.hpp 
@@ -151,15 +175,20 @@ install(FILES FiniteDifference/Average.hpp
 	      FiniteDifference/Upwind_gradient.hpp
 	      FiniteDifference/FD_order1.hpp
 	      FiniteDifference/Eno_Weno.hpp
-      	      DESTINATION openfpm_numerics/include/FiniteDifference 
+              FiniteDifference/FD_op.hpp
+              FiniteDifference/FD_Solver.hpp
+              FiniteDifference/FD_simple.hpp
+	      FiniteDifference/FD_expressions.hpp
+	      DESTINATION openfpm_numerics/include/FiniteDifference
 	      COMPONENT OpenFPM)
 	      
 install(FILES FiniteDifference/util/common.hpp
-      	      DESTINATION openfpm_numerics/include/FiniteDifference/util 
+		      FiniteDifference/util/EqnsStructFD.hpp
+      	      DESTINATION openfpm_numerics/include/FiniteDifference/util
 	      COMPONENT OpenFPM)
 
 install(FILES PSE/Kernels.hpp PSE/Kernels_test_util.hpp 
-        DESTINATION openfpm_numerics/include/PSE 
+        DESTINATION openfpm_numerics/include/PSE
 	COMPONENT OpenFPM)
 
 install(FILES Operators/Vector/vector_dist_operators_extensions.hpp 
@@ -167,14 +196,45 @@ install(FILES Operators/Vector/vector_dist_operators_extensions.hpp
       	       Operators/Vector/vector_dist_operators_apply_kernel.hpp 
       	       Operators/Vector/vector_dist_operators_functions.hpp 
       	       Operators/Vector/vector_dist_operator_assign.hpp
-      	       DESTINATION openfpm_numerics/include/Operators/Vector 
+      	       DESTINATION openfpm_numerics/include/Operators/Vector
 	       COMPONENT OpenFPM)
 
 install(FILES Operators/Vector/cuda/vector_dist_operators_cuda.cuh
 	      DESTINATION openfpm_numerics/include/Operators/Vector/cuda 
 	      COMPONENT OpenFPM)
 
-install(FILES Draw/DrawParticles.hpp 
+install(FILES DCPSE/Dcpse.hpp
+		DCPSE/DcpseDiagonalScalingMatrix.hpp
+		DCPSE/DcpseRhs.hpp
+		DCPSE/Monomial.hpp
+		DCPSE/MonomialBasis.hpp
+		DCPSE/Support.hpp
+		DCPSE/SupportBuilder.hpp
+		DCPSE/Vandermonde.hpp
+		DCPSE/VandermondeRowBuilder.hpp
+		DESTINATION openfpm_numerics/include/DCPSE
+		COMPONENT OpenFPM)
+
+install(FILES DMatrix/EMatrix.hpp
+		DESTINATION openfpm_numerics/include/DMatrix
+		COMPONENT OpenFPM)
+
+install(FILES util/eq_solve_common.hpp
+		DESTINATION openfpm_numerics/include/util
+		COMPONENT OpenFPM)
+
+install(FILES DCPSE/DCPSE_op/DCPSE_op.hpp
+		DCPSE/DCPSE_op/DCPSE_Solver.hpp
+		DCPSE/DCPSE_op/EqnsStruct.hpp
+		DESTINATION openfpm_numerics/include/DCPSE/DCPSE_op
+		COMPONENT OpenFPM)
+
+install(FILES OdeIntegrators/OdeIntegrators.hpp
+		OdeIntegrators/boost_vector_algebra_ofp.hpp
+		DESTINATION openfpm_numerics/include/OdeIntegrators
+		COMPONENT OpenFPM)
+
+install(FILES Draw/DrawParticles.hpp
       	      Draw/PointIterator.hpp 
       	      Draw/PointIteratorSkin.hpp
 	      Draw/DrawDisk.hpp
@@ -183,20 +243,28 @@ install(FILES Draw/DrawParticles.hpp
 	      COMPONENT OpenFPM)
 
 install(FILES interpolation/interpolation.hpp 
-      	      interpolation/mp4_kernel.hpp 
-      	      interpolation/z_spline.hpp
-      	      DESTINATION openfpm_numerics/include/interpolation 
+      	      interpolation/mp4_kernel.hpp
+			  interpolation/lambda_kernel.hpp
+			  interpolation/z_spline.hpp
+      	      DESTINATION openfpm_numerics/include/interpolation
 	      COMPONENT OpenFPM)
 
 install(FILES level_set/redistancing_Sussman/HelpFunctions.hpp
 	      level_set/redistancing_Sussman/HelpFunctionsForGrid.hpp
 	      level_set/redistancing_Sussman/NarrowBand.hpp
 	      level_set/redistancing_Sussman/RedistancingSussman.hpp
+		  level_set/redistancing_Sussman/tests/l_norms/LNorms.hpp
+		  level_set/redistancing_Sussman/tests/analytical_SDF/AnalyticalSDF.hpp
 	      DESTINATION openfpm_numerics/include/level_set/redistancing_Sussman
 	      COMPONENT OpenFPM)
 
+install(FILES BoundaryConditions/MethodOfImages.hpp
+		BoundaryConditions/SurfaceNormal.hpp
+		DESTINATION openfpm_numerics/include/BoundaryConditions
+		COMPONENT OpenFPM)
+
 install(FILES DMatrix/EMatrix.hpp
-	DESTINATION openfpm_numerics/include/DMatrix 
+	DESTINATION openfpm_numerics/include/DMatrix
 	COMPONENT OpenFPM)
 
 #if(BUILD_TESTING)

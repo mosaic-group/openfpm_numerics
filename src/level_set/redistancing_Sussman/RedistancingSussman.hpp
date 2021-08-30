@@ -240,7 +240,27 @@ public:
 		/// This timestep is computed according to the grid spacing fulfilling the CFL condition.
 		return time_step;
 	}
-
+	
+	int get_finalIteration()
+	{
+		return final_iter;
+	}
+	
+	double get_finalChange()
+	{
+		return distFromSol.change;
+	}
+	
+	double get_finalResidual()
+	{
+		return distFromSol.residual;
+	}
+	
+	int get_finalNumberNbPoints()
+	{
+		return distFromSol.count;
+	}
+	
 private:
 	//	Some indices for better readability
 	static constexpr size_t Phi_n_temp          = 0; ///< Property index of Phi_0 on the temporary grid.
@@ -332,14 +352,12 @@ private:
 		return (abs(Phi) <= kappa);
 	}
 	
-	/** @brief Checks how far current solution is from fulfilling the user-defined convergence criteria.
+	/** @brief Re-computes the member variables distFromSol.change, distFromSol.residual, distFromSol.count for the
+	 * Phi of the current iteration. Needed to check how far current solution is from fulfilling the user-defined convergence criteria.
 	 *
 	 * @param grid Internal temporary grid.
-	 *
-	 * @return Total residual (1 - phi_gradient_magnitude) and total change from the last time step,
-	 * both normalized by the number of grid nodes in the narrow band.
 	 */
-	DistFromSol get_residual_and_change_NB(g_temp_type &grid)
+	void update_distFromSol(g_temp_type &grid)
 	{
 		double max_residual = 0;
 		double max_change = 0;
@@ -373,17 +391,15 @@ private:
 		return {max_change, max_residual, count};
 	}
 	
-	/** @brief Prints out the iteration number, residual and change of the current re-distancing iteration
+	/** @brief Prints out the iteration number, max. change, max. residual and number of points in the narrow band of
+	 * the current re-distancing iteration.
 	 *
 	 * @param grid Internal temporary grid.
 	 * @param iter Current re-distancing iteration.
-	 *
-	 * @return Total residual (1 - phi_gradient_magnitude) and total change from the last time step,
-	 * both normalized by the number of grid nodes in the narrow band.
 	 */
 	void print_out_iteration_change_residual(g_temp_type &grid, size_t iter)
 	{
-		DistFromSol distFromSol = get_residual_and_change_NB(grid);
+		update_distFromSol(grid);
 		auto &v_cl = create_vcluster();
 		if (v_cl.rank() == 0)
 		{
@@ -411,7 +427,7 @@ private:
 	bool steady_state_NB(g_temp_type &grid)
 	{
 		bool steady_state = false;
-		DistFromSol distFromSol = get_residual_and_change_NB(grid);
+		update_distFromSol(grid);
 		if (redistOptions.convTolChange.check && redistOptions.convTolResidual.check)
 		{
 			steady_state = (

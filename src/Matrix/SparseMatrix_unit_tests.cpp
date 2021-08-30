@@ -149,7 +149,8 @@ BOOST_AUTO_TEST_CASE(sparse_matrix_eigen_parallel)
 
 	// try to invert the Matrix with umfpack
 
-	auto x = umfpack_solver<double>::solve(sm,v);
+	umfpack_solver<double> solver;
+	auto x = solver.solve(sm,v);
 
 	// we control the solution
 
