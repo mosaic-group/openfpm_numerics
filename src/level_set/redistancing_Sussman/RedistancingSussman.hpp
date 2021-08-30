@@ -271,6 +271,9 @@ private:
 	Redist_options redistOptions; ///< Instantiate redistancing options.
 	grid_in_type &r_grid_in; ///< Define reference to input grid.
 	
+	DistFromSol distFromSol; ///< Instantiate distance from solution in terms of change, residual, numb. point in NB.
+	int final_iter = 0; ///< Will be set to the final iteration when redistancing ends.
+	
 	/// Transform the half-bandwidth in no_of_grid_points into physical half-bandwidth kappa.
 	double kappa = ceil(redistOptions.width_NB_in_grid_points / 2.0) * get_biggest_spacing(g_temp);
 	/**@brief Artificial timestep for the redistancing iterations.
@@ -388,7 +391,11 @@ private:
 		v_cl.max(max_residual);
 		v_cl.sum(count);
 		v_cl.execute();
-		return {max_change, max_residual, count};
+		
+		// Update member variable distFromSol
+		distFromSol.change   = max_change;
+		distFromSol.residual = max_residual;
+		distFromSol.count    = count;
 	}
 	
 	/** @brief Prints out the iteration number, max. change, max. residual and number of points in the narrow band of
@@ -491,12 +498,15 @@ private:
 				}
 			}
 		}
+		update_distFromSol(grid);
+		final_iter = i;
 		// If save_temp_grid set true, save the temporary grid as hdf5 that can be reloaded onto a grid
 		if (redistOptions.save_temp_grid)
 		{
 			get_upwind_gradient<Phi_n_temp, Phi_0_sign_temp, Phi_grad_temp>(g_temp, order_upwind_gradient, true);
-			g_temp.setPropNames({"Phi_n", "Phi_nplus1_temp", "Phi_grad_temp", "Phi_0_sign_temp"});
-			g_temp.save("g_temp_redistancing.hdf5"); // HDF5 file}
+			g_temp.setPropNames({"Phi_Sussman_Out", "Phi_upwind_gradient", "Phi_0_sign_temp"});
+			g_temp.save("g_temp_redistancing.hdf5"); // HDF5 file
+			g_temp.write("g_temp_redistancing", FORMAT_BINARY); // VTK file
 		}
 	}
 };
