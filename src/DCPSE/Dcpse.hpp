@@ -57,6 +57,8 @@ private:
     const Point<dim, unsigned int> differentialSignature;
     const unsigned int differentialOrder;
     const MonomialBasis<dim> monomialBasis;
+
+    bool isSharedLocalSupport = false;
     openfpm::vector<Support> localSupports; // Each MPI rank has just access to the local ones
     openfpm::vector<T> localEps; // Each MPI rank has just access to the local ones
     openfpm::vector<T> localEpsInvPow; // Each MPI rank has just access to the local ones
@@ -105,7 +107,26 @@ public:
         }
     }
 
-
+    Dcpse(vector_type &particles,
+          const Dcpse<dim, vector_type>& other,
+          Point<dim, unsigned int> differentialSignature,
+          unsigned int convergenceOrder,
+          T rCut,
+          T supportSizeFactor = 1,
+          support_options opt = support_options::N_PARTICLES)
+        :particles(particles), opt(opt),
+            differentialSignature(differentialSignature),
+            differentialOrder(Monomial<dim>(differentialSignature).order()),
+            monomialBasis(differentialSignature.asArray(), convergenceOrder),
+            localSupports(other.localSupports),
+            isSharedLocalSupport(true)
+    {
+        particles.ghost_get_subset();
+        if (supportSizeFactor < 1)
+            initializeAdaptive(particles, convergenceOrder, rCut);
+        else
+            initializeStaticSize(particles, convergenceOrder, rCut, supportSizeFactor);
+    }
 
     template<unsigned int prp>
     void DrawKernel(vector_type &particles, int k)
@@ -457,7 +478,8 @@ private:
                 supportBuilder(particles, differentialSignature, rCut);
         unsigned int requiredSupportSize = monomialBasis.size();
 
-        localSupports.resize(particles.size_local_orig());
+        if (!isSharedLocalSupport)
+            localSupports.resize(particles.size_local_orig());
         localEps.resize(particles.size_local_orig());
         localEpsInvPow.resize(particles.size_local_orig());
         kerOffsets.resize(particles.size_local_orig());
@@ -466,9 +488,14 @@ private:
         auto it = particles.getDomainIterator();
         while (it.isNext()) {
             const T condVTOL = 1e2;
+            auto key_o = particles.getOriginKey(it.get());
+
+            if (!isSharedLocalSupport)
+                localSupports.get(key_o.getKey()) = supportBuilder.getSupport(it, requiredSupportSize,opt);
+
+            Support& support = localSupports.get(key_o.getKey());
 
             // Get the points in the support of the DCPSE kernel and store the support for reuse
-            Support support = supportBuilder.getSupport(it, requiredSupportSize,opt);
             EMatrix<T, Eigen::Dynamic, Eigen::Dynamic> V(support.size(), monomialBasis.size());
 
             // Vandermonde matrix computation
@@ -476,20 +503,21 @@ private:
                     vandermonde(support, monomialBasis,particles);
             vandermonde.getMatrix(V);
 
-            T condV = conditionNumber(V, condVTOL);
             T eps = vandermonde.getEps();
 
-            if (condV > condVTOL) {
-                requiredSupportSize *= 2;
-                std::cout
-                        << "INFO: Increasing, requiredSupportSize = " << requiredSupportSize
-                        << std::endl; // debug
-                continue;
-            } else {
-                requiredSupportSize = monomialBasis.size();
+            if (!isSharedLocalSupport) {
+                T condV = conditionNumber(V, condVTOL);
+
+                if (condV > condVTOL) {
+                    requiredSupportSize *= 2;
+                    std::cout
+                            << "INFO: Increasing, requiredSupportSize = " << requiredSupportSize
+                            << std::endl; // debug
+                    continue;
+                } else
+                    requiredSupportSize = monomialBasis.size();
             }
 
-            auto key_o = particles.getOriginKey(it.get());
             localSupports.get(key_o.getKey()) = support;
             localEps.get(key_o.getKey()) = eps;
             localEpsInvPow.get(key_o.getKey()) = 1.0 / openfpm::math::intpowlog(eps,differentialOrder);
@@ -544,7 +572,8 @@ private:
                 supportBuilder(particles, differentialSignature, rCut);
         unsigned int requiredSupportSize = monomialBasis.size() * supportSizeFactor;
 
-        localSupports.resize(particles.size_local_orig());
+        if (!isSharedLocalSupport)
+            localSupports.resize(particles.size_local_orig());
         localEps.resize(particles.size_local_orig());
         localEpsInvPow.resize(particles.size_local_orig());
         kerOffsets.resize(particles.size_local_orig());
@@ -553,10 +582,14 @@ private:
         auto it = particles.getDomainIterator();
         while (it.isNext()) {
             // Get the points in the support of the DCPSE kernel and store the support for reuse
-            Support support = supportBuilder.getSupport(it, requiredSupportSize,opt);
-            EMatrix<T, Eigen::Dynamic, Eigen::Dynamic> V(support.size(), monomialBasis.size());
-
             auto key_o = particles.getOriginKey(it.get());
+
+            if (!isSharedLocalSupport)
+                localSupports.get(key_o.getKey()) = supportBuilder.getSupport(it, requiredSupportSize,opt);
+
+            Support& support = localSupports.get(key_o.getKey());
+
+            EMatrix<T, Eigen::Dynamic, Eigen::Dynamic> V(support.size(), monomialBasis.size());
 
             // Vandermonde matrix computation
             Vandermonde<dim, T, EMatrix<T, Eigen::Dynamic, Eigen::Dynamic>>
@@ -565,7 +598,6 @@ private:
 
             T eps = vandermonde.getEps();
 
-            localSupports.get(key_o.getKey()) = support;
             localEps.get(key_o.getKey()) = eps;
             localEpsInvPow.get(key_o.getKey()) = 1.0 / openfpm::math::intpowlog(eps,differentialOrder);
             // Compute the diagonal matrix E

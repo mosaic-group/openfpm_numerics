@@ -15,12 +15,6 @@
 #include "DCPSE/Dcpse.cuh"
 #endif
 
-// #if defined(CUDA_GPU) && defined(__NVCC__)
-//     template<unsigned int dim, typename vector_type> using Dcpse_type = Dcpse_gpu<dim, vector_type>;
-// #else
-//     template<unsigned int dim, typename vector_type> using Dcpse_type = Dcpse<dim, vector_type>;
-// #endif
-
 
 const double dcpse_oversampling_factor = 1.9;
 const double rcut_verlet = 3.1;
@@ -950,8 +944,11 @@ public:
             Point<particles_type::dims, unsigned int> p;
             p.zero();
             p.get(i) = 1;
-            new(dcpse_ptr) Dcpse_type<particles_type::dims, particles_type>(parts, p, ord, rCut, oversampling_factor, opt);
-            dcpse_ptr++;
+
+            if (i)
+                new(&dcpse_ptr[i]) Dcpse_type<particles_type::dims, particles_type>(parts, dcpse_ptr[0], p, ord, rCut, oversampling_factor, opt);
+            else
+                new(&dcpse_ptr[i]) Dcpse_type<particles_type::dims, particles_type>(parts, p, ord, rCut, oversampling_factor, opt);
         }
     }
 
@@ -1039,14 +1036,14 @@ public:
 
         Dcpse_type<particles_type::dims, particles_type> *dcpse_ptr = (Dcpse_type<particles_type::dims, particles_type> *) dcpse;
         Point<particles_type::dims, unsigned int> p;
+
         p.zero();
         p.get(1) = 1;
         new(dcpse_ptr) Dcpse_type<particles_type::dims, particles_type>(parts, p, ord, rCut, oversampling_factor, opt);
-        dcpse_ptr++;
+
         p.zero();
         p.get(0) = 1;
-        new(dcpse_ptr) Dcpse_type<particles_type::dims, particles_type>(parts, p, ord, rCut, oversampling_factor, opt);
-        dcpse_ptr++;
+        new(dcpse_ptr+1) Dcpse_type<particles_type::dims, particles_type>(parts, dcpse_ptr[0], p, ord, rCut, oversampling_factor, opt);
 
     }
 
@@ -1107,8 +1104,10 @@ public:
             p.zero();
             p.get(i) = 2;
 
-            new(dcpse_ptr) Dcpse_type<particles_type::dims, particles_type>(parts, p, ord, rCut, oversampling_factor, opt);
-            dcpse_ptr++;
+            if (i)
+                new(&dcpse_ptr[i]) Dcpse_type<particles_type::dims, particles_type>(parts, dcpse_ptr[0], p, ord, rCut, oversampling_factor, opt);
+            else
+                new(&dcpse_ptr[i]) Dcpse_type<particles_type::dims, particles_type>(parts, p, ord, rCut, oversampling_factor, opt);
         }
     }
 
@@ -1210,8 +1209,11 @@ public:
             Point<particles_type::dims, unsigned int> p;
             p.zero();
             p.get(i) = 1;
-            new(dcpse_ptr) Dcpse_type<particles_type::dims, particles_type>(parts, p, ord, rCut, oversampling_factor, opt);
-            dcpse_ptr++;
+
+            if (i)
+                new(&dcpse_ptr[i]) Dcpse_type<particles_type::dims, particles_type>(parts, dcpse_ptr[0], p, ord, rCut, oversampling_factor, opt);
+            else
+                new(&dcpse_ptr[i]) Dcpse_type<particles_type::dims, particles_type>(parts, p, ord, rCut, oversampling_factor, opt);
         }
     }
 
@@ -1288,8 +1290,11 @@ public:
             Point<particles_type::dims, unsigned int> p;
             p.zero();
             p.get(i) = 1;
-            new(dcpse_ptr) Dcpse_type<particles_type::dims, particles_type>(parts, p, ord, rCut, oversampling_factor, opt);
-            dcpse_ptr++;
+
+            if (i)
+                new(&dcpse_ptr[i]) Dcpse_type<particles_type::dims, particles_type>(parts, dcpse_ptr[0], p, ord, rCut, oversampling_factor, opt);
+            else
+                new(&dcpse_ptr[i]) Dcpse_type<particles_type::dims, particles_type>(parts, p, ord, rCut, oversampling_factor, opt);
         }
 
 
@@ -1382,12 +1387,6 @@ public:
         p.get(1) = 1;
 
         dcpse = new Dcpse_type<particles_type::dims, particles_type>(parts, p, ord, rCut, oversampling_factor, opt);
-
-        Dcpse_type<particles_type::dims, particles_type> *dcpse_ptr = (Dcpse_type<particles_type::dims, particles_type> *) dcpse;
-
-        new(dcpse_ptr) Dcpse_type<particles_type::dims, particles_type>(parts, p, ord, rCut, oversampling_factor, opt);
-        dcpse_ptr++;
-
     }
 
     template<typename particles_type>
@@ -1470,12 +1469,6 @@ public:
         p.get(2) = 1;
 
         dcpse = new Dcpse_type<particles_type::dims, particles_type>(parts, p, ord, rCut, oversampling_factor, opt);
-
-        Dcpse_type<particles_type::dims, particles_type> *dcpse_ptr = (Dcpse_type<particles_type::dims, particles_type> *) dcpse;
-
-        new(dcpse_ptr) Dcpse_type<particles_type::dims, particles_type>(parts, p, ord, rCut, oversampling_factor, opt);
-        dcpse_ptr++;
-
     }
 
     template<typename particles_type>
@@ -1558,12 +1551,6 @@ public:
         p.get(2) = 1;
 
         dcpse = new Dcpse_type<particles_type::dims, particles_type>(parts, p, ord, rCut, oversampling_factor, opt);
-
-        Dcpse_type<particles_type::dims, particles_type> *dcpse_ptr = (Dcpse_type<particles_type::dims, particles_type> *) dcpse;
-
-        new(dcpse_ptr) Dcpse_type<particles_type::dims, particles_type>(parts, p, ord, rCut, oversampling_factor, opt);
-        dcpse_ptr++;
-
     }
 
     template<typename particles_type>
@@ -2112,11 +2099,5 @@ typedef Derivative_yyx_T<Dcpse_gpu> Derivative_yyx_gpu;
 typedef Derivative_yyy_T<Dcpse_gpu> Derivative_yyy_gpu;
 #endif
 
-//template<typename operand_type1, typename operand_type2/*, typename sfinae=typename std::enable_if<
-//                                                                                      std::is_same<typename operand_type1::it_is_a_node,int>::value
-//                                                                                      >::type*/ >
-//plus<operand_type1,operand_type2> operator+(const operand_type1 & op1, const operand_type2 & op2)
-//{
-//  return plus<operand_type1,operand_type2>(op1,op2);
-//}
+
 #endif /* DCPSE_OP_HPP_ */

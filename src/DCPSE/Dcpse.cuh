@@ -58,6 +58,8 @@ private:
     const unsigned int differentialOrder;
     MonomialBasis<dim> monomialBasis;
 
+    // shared local support previosly built by another operator
+    bool isSharedLocalSupport = false;
     openfpm::vector_custd<size_t> localSupportRefs; // Each MPI rank has just access to the local ones
     openfpm::vector<openfpm::vector<size_t>> localSupportKeys; // Each MPI rank has just access to the local ones
 
@@ -96,16 +98,35 @@ public:
             monomialBasis(differentialSignature.asArray(), convergenceOrder),
             opt(opt)
     {
-        // This 
         particles.ghost_get_subset();
+
         if (supportSizeFactor < 1) 
-        {
             initializeAdaptive(particles, convergenceOrder, rCut);
-        } 
         else 
-        {
             initializeStaticSize(particles, convergenceOrder, rCut, supportSizeFactor);
-        }
+    }
+
+    Dcpse_gpu(vector_type &particles,
+          const Dcpse_gpu<dim, vector_type, T>& other,
+          Point<dim, unsigned int> differentialSignature,
+          unsigned int convergenceOrder,
+          T rCut,
+          T supportSizeFactor = 1,
+          support_options opt = support_options::N_PARTICLES)
+        :particles(particles), opt(opt),
+            differentialSignature(differentialSignature),
+            differentialOrder(Monomial<dim>(differentialSignature).order()),
+            monomialBasis(differentialSignature.asArray(), convergenceOrder),
+            localSupportRefs(other.localSupportRefs),
+            localSupportKeys(other.localSupportKeys),
+            isSharedLocalSupport(true)
+    {
+        particles.ghost_get_subset();
+
+        if (supportSizeFactor < 1)
+            initializeAdaptive(particles, convergenceOrder, rCut);
+        else
+            initializeStaticSize(particles, convergenceOrder, rCut, supportSizeFactor);
     }
 
     template<unsigned int prp>
@@ -442,48 +463,54 @@ private:
         SupportBuilder<vector_type> supportBuilder(particles, differentialSignature, rCut);
         unsigned int requiredSupportSize = monomialBasis.size();
 
-        localSupportKeys.resize(particles.size_local_orig());
-        localSupportRefs.resize(particles.size_local_orig());
+        if (!isSharedLocalSupport) {
+            localSupportKeys.resize(particles.size_local_orig());
+            localSupportRefs.resize(particles.size_local_orig());
+        }
         localEps.resize(particles.size_local_orig());
         localEpsInvPow.resize(particles.size_local_orig());
         kerOffsets.resize(particles.size_local_orig());
         kerOffsets.fill(-1);
 
-        size_t offsetKer = 0, maxSupport = 0, localSupportKeysTotalN = 0;
+        size_t maxSupport = 0, localSupportKeysTotalN = 0;
 
         auto it = particles.getDomainIterator();
         while (it.isNext()) {
-            const T condVTOL = 1e2;
-
-            // Get the points in the support of the DCPSE kernel and store the support for reuse
-            Support support = supportBuilder.getSupport(it, requiredSupportSize,opt);
-            size_t localSupportSize = support.size();
-
-            EMatrix<T, Eigen::Dynamic, Eigen::Dynamic> V(localSupportSize, monomialBasis.size());
-
-            // Vandermonde matrix computation
-            Vandermonde<dim, T, EMatrix<T, Eigen::Dynamic, Eigen::Dynamic>>
-                    vandermonde(support, monomialBasis, particles);
-            vandermonde.getMatrix(V);
-
-            T condV = conditionNumber(V, condVTOL);
-            T eps = vandermonde.getEps();
-
-            if (condV > condVTOL) {
-                requiredSupportSize *= 2;
-                std::cout << "INFO: Increasing, requiredSupportSize = " << requiredSupportSize << std::endl; // debug
-                continue;
-            } else requiredSupportSize = monomialBasis.size();
-
+            size_t localSupportSize;
             auto key_o = particles.getOriginKey(it.get());
 
-            localSupportRefs.get(key_o.getKey()) = support.getReferencePointKey();
-            localSupportKeys.get(key_o.getKey()) = support.getKeys();
-            kerOffsets.get(key_o.getKey()) = offsetKer;
+            if (!isSharedLocalSupport) {
+                const T condVTOL = 1e2;
 
+                // Get the points in the support of the DCPSE kernel and store the support for reuse
+                Support support = supportBuilder.getSupport(it, requiredSupportSize,opt);
+                localSupportSize = support.size();
+
+                EMatrix<T, Eigen::Dynamic, Eigen::Dynamic> V(localSupportSize, monomialBasis.size());
+
+                // Vandermonde matrix computation
+                Vandermonde<dim, T, EMatrix<T, Eigen::Dynamic, Eigen::Dynamic>>
+                        vandermonde(support, monomialBasis, particles);
+                vandermonde.getMatrix(V);
+
+                T condV = conditionNumber(V, condVTOL);
+                T eps = vandermonde.getEps();
+
+                if (condV > condVTOL) {
+                    requiredSupportSize *= 2;
+                    std::cout << "INFO: Increasing, requiredSupportSize = " << requiredSupportSize << std::endl; // debug
+                    continue;
+                } else requiredSupportSize = monomialBasis.size();
+
+                localSupportRefs.get(key_o.getKey()) = support.getReferencePointKey();
+                localSupportKeys.get(key_o.getKey()) = support.getKeys();
+            } else
+                localSupportSize = localSupportKeys.get(key_o.getKey()).size();
+
+            kerOffsets.get(key_o.getKey()) = localSupportKeysTotalN;
             if (maxSupport < localSupportSize) maxSupport = localSupportSize;
+
             localSupportKeysTotalN += localSupportSize;
-            offsetKer += support.getKeys().size();
             ++it;
         }
 
@@ -500,48 +527,54 @@ private:
         SupportBuilder<vector_type> supportBuilder(particles, differentialSignature, rCut);
         unsigned int requiredSupportSize = monomialBasis.size();
 
-        localSupportKeys.resize(particles.size_local_orig());
-        localSupportRefs.resize(particles.size_local_orig());
+        if (!isSharedLocalSupport) {
+            localSupportKeys.resize(particles.size_local_orig());
+            localSupportRefs.resize(particles.size_local_orig());
+        }
         localEps.resize(particles.size_local_orig());
         localEpsInvPow.resize(particles.size_local_orig());
         kerOffsets.resize(particles.size_local_orig());
         kerOffsets.fill(-1);
 
-        size_t offsetKer = 0, maxSupport = 0, localSupportKeysTotalN = 0;
+        size_t maxSupport = 0, localSupportKeysTotalN = 0;
 
         auto it = particles.getDomainIterator();
         while (it.isNext()) {
-            const T condVTOL = 1e2;
-
-            // Get the points in the support of the DCPSE kernel and store the support for reuse
-            Support support = supportBuilder.getSupport(it, requiredSupportSize,opt);
-            size_t localSupportSize = support.size();
-
-            EMatrix<T, Eigen::Dynamic, Eigen::Dynamic> V(localSupportSize, monomialBasis.size());
-
-            // Vandermonde matrix computation
-            Vandermonde<dim, T, EMatrix<T, Eigen::Dynamic, Eigen::Dynamic>>
-                    vandermonde(support, monomialBasis, particles);
-            vandermonde.getMatrix(V);
-
-            T condV = conditionNumber(V, condVTOL);
-            T eps = vandermonde.getEps();
-
-            if (condV > condVTOL) {
-                requiredSupportSize *= 2;
-                std::cout << "INFO: Increasing, requiredSupportSize = " << requiredSupportSize << std::endl; // debug
-                continue;
-            } else requiredSupportSize = monomialBasis.size();
-
+            size_t localSupportSize;
             auto key_o = particles.getOriginKey(it.get());
 
-            localSupportRefs.get(key_o.getKey()) = support.getReferencePointKey();
-            localSupportKeys.get(key_o.getKey()) = support.getKeys();
-            kerOffsets.get(key_o.getKey()) = offsetKer;
+            if (!isSharedLocalSupport) {
+                const T condVTOL = 1e2;
 
+                // Get the points in the support of the DCPSE kernel and store the support for reuse
+                Support support = supportBuilder.getSupport(it, requiredSupportSize,opt);
+                localSupportSize = support.size();
+
+                EMatrix<T, Eigen::Dynamic, Eigen::Dynamic> V(localSupportSize, monomialBasis.size());
+
+                // Vandermonde matrix computation
+                Vandermonde<dim, T, EMatrix<T, Eigen::Dynamic, Eigen::Dynamic>>
+                        vandermonde(support, monomialBasis, particles);
+                vandermonde.getMatrix(V);
+
+                T condV = conditionNumber(V, condVTOL);
+                T eps = vandermonde.getEps();
+
+                if (condV > condVTOL) {
+                    requiredSupportSize *= 2;
+                    std::cout << "INFO: Increasing, requiredSupportSize = " << requiredSupportSize << std::endl; // debug
+                    continue;
+                } else requiredSupportSize = monomialBasis.size();
+
+                localSupportRefs.get(key_o.getKey()) = support.getReferencePointKey();
+                localSupportKeys.get(key_o.getKey()) = support.getKeys();
+            } else
+                localSupportSize = localSupportKeys.get(key_o.getKey()).size();
+
+            kerOffsets.get(key_o.getKey()) = localSupportKeysTotalN;
             if (maxSupport < localSupportSize) maxSupport = localSupportSize;
+
             localSupportKeysTotalN += localSupportSize;
-            offsetKer += support.getKeys().size();
             ++it;
         }
 
@@ -563,36 +596,40 @@ private:
                 supportBuilder(particles, differentialSignature, rCut);
         unsigned int requiredSupportSize = monomialBasis.size() * supportSizeFactor;
 
-        localSupportKeys.resize(particles.size_local_orig());
-        localSupportRefs.resize(particles.size_local_orig());
+        if (!isSharedLocalSupport) {
+            localSupportKeys.resize(particles.size_local_orig());
+            localSupportRefs.resize(particles.size_local_orig());
+        }
         localEps.resize(particles.size_local_orig());
         localEpsInvPow.resize(particles.size_local_orig());
         kerOffsets.resize(particles.size_local_orig());
         kerOffsets.fill(-1);
 
         size_t maxSupport = 0;
+        size_t localSupportKeysTotalN = 0;
         // size_t minSupport = 10000, maxSupport = 0;
 
         std::chrono::high_resolution_clock::time_point t1 = std::chrono::high_resolution_clock::now();
 
-        size_t offsetKer = 0;
-        size_t localSupportKeysTotalN = 0;
-
         auto it = particles.getDomainIterator();
         while (it.isNext()) {
             // Get the points in the support of the DCPSE kernel and store the support for reuse
-            Support support = supportBuilder.getSupport(it, requiredSupportSize,opt);
-
-            size_t localSupportSize = support.size();
+            size_t localSupportSize;
             auto key_o = particles.getOriginKey(it.get());
-            localSupportRefs.get(key_o.getKey()) = support.getReferencePointKey();
-            localSupportKeys.get(key_o.getKey()) = support.getKeys();
-            kerOffsets.get(key_o.getKey()) = offsetKer;
+
+            if (!isSharedLocalSupport){
+                Support support = supportBuilder.getSupport(it, requiredSupportSize,opt);
+                localSupportRefs.get(key_o.getKey()) = support.getReferencePointKey();
+                localSupportKeys.get(key_o.getKey()) = support.getKeys();
+                localSupportSize = support.size();
+            } else
+                localSupportSize = localSupportKeys.get(key_o.getKey()).size();
+
+            kerOffsets.get(key_o.getKey()) = localSupportKeysTotalN;
             // if (minSupport > localSupportSize) minSupport = localSupportSize;
             if (maxSupport < localSupportSize) maxSupport = localSupportSize;
 
             localSupportKeysTotalN += localSupportSize;
-            offsetKer += support.getKeys().size();
             ++it;
         }
 
@@ -619,8 +656,10 @@ private:
                 supportBuilder(particles, differentialSignature, rCut);
         unsigned int requiredSupportSize = monomialBasis.size() * supportSizeFactor;
 
-        localSupportKeys.resize(particles.size_local_orig());
-        localSupportRefs.resize(particles.size_local_orig());
+        if (!isSharedLocalSupport) {
+            localSupportKeys.resize(particles.size_local_orig());
+            localSupportRefs.resize(particles.size_local_orig());
+        }
         localEps.resize(particles.size_local_orig());
         localEpsInvPow.resize(particles.size_local_orig());
         kerOffsets.resize(particles.size_local_orig());
@@ -631,24 +670,27 @@ private:
 
         std::chrono::high_resolution_clock::time_point t1 = std::chrono::high_resolution_clock::now();
 
-        size_t offsetKer = 0;
         size_t localSupportKeysTotalN = 0;
 
         auto it = particles.getDomainIterator();
         while (it.isNext()) {
             // Get the points in the support of the DCPSE kernel and store the support for reuse
-            Support support = supportBuilder.getSupport(it, requiredSupportSize,opt);
-
-            size_t localSupportSize = support.size();
+            size_t localSupportSize;
             auto key_o = particles.getOriginKey(it.get());
-            localSupportRefs.get(key_o.getKey()) = support.getReferencePointKey();
-            localSupportKeys.get(key_o.getKey()) = support.getKeys();
-            kerOffsets.get(key_o.getKey()) = offsetKer;
+
+            if (!isSharedLocalSupport){
+                Support support = supportBuilder.getSupport(it, requiredSupportSize,opt);
+                localSupportRefs.get(key_o.getKey()) = support.getReferencePointKey();
+                localSupportKeys.get(key_o.getKey()) = support.getKeys();
+                localSupportSize = support.size();
+            } else
+                localSupportSize = localSupportKeys.get(key_o.getKey()).size();
+
+            kerOffsets.get(key_o.getKey()) = localSupportKeysTotalN;
             // if (minSupport > localSupportSize) minSupport = localSupportSize;
             if (maxSupport < localSupportSize) maxSupport = localSupportSize;
 
             localSupportKeysTotalN += localSupportSize;
-            offsetKer += support.getKeys().size();
             ++it;
         }
 
