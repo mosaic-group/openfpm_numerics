@@ -112,8 +112,10 @@ void estimateClosestPoint(grid_type &gd, const double nb_gamma)
 
         Algoim::KDTree<double,dim> kdtree(points);
 
+        // In order to ensure that CP is estimated for all points in the narrowband, we add a buffer to the distance check.
+        double nb_gamma_plus_dx = nb_gamma + gd.spacing(0);
         // Pass everything to the closest point computation engine
-        Algoim::ComputeHighOrderCP<dim,Poly> hocp(nb_gamma < std::numeric_limits<double>::max() ? nb_gamma*nb_gamma : std::numeric_limits<double>::max(), // squared bandradius
+        Algoim::ComputeHighOrderCP<dim,Poly> hocp(nb_gamma_plus_dx < std::numeric_limits<double>::max() ? nb_gamma_plus_dx*nb_gamma_plus_dx : std::numeric_limits<double>::max(), // squared bandradius
                                         0.5*blitz::max(dx), // amount that each polynomial overlaps / size of the bounding ball in Newton's method
                                         Algoim::sqr(std::max(1.0e-14, std::pow(blitz::max(dx), Poly::order))), // tolerance to determine convergence
                                         cells, kdtree, points, pointcells, dx, 0.0);
@@ -122,7 +124,7 @@ void estimateClosestPoint(grid_type &gd, const double nb_gamma)
         while(it.isNext())
         {
             auto key = it.get();
-            if(std::abs(gd.template get<phi_field>(key)) <= nb_gamma)
+            if(std::abs(gd.template get<phi_field>(key)) < nb_gamma)
             {
                 auto key_g = gd.getGKey(key);
                 // NOTE: This is not the real grid coordinates, but internal coordinates for algoim
@@ -137,6 +139,7 @@ void estimateClosestPoint(grid_type &gd, const double nb_gamma)
                 }
                 else
                 {
+                    std::cout<<"WARN: Closest point computation fails at : "<<key_g.get(0)<<", "<<key_g.get(1)<<", "<<key_g.get(2)<<std::endl;
                     for(int d = 0; d < dim; ++d)
                         gd.template get<cp_field>(key)[d] = -100.0;
                 }
@@ -275,6 +278,9 @@ void reinitializeLS(grid_type &gd, const double nb_gamma)
                     // NOTE: This is not the real grid coordinates, but internal coordinates used for algoim
                     double patch_pos = (key_g.get(d) - p_lo.get(d) + algoim_padding) * gd.spacing(d);
                     double cp_d = gd.template get<cp_field>(key)[d];
+                    if(cp_d == -100.0)
+                        std::cout<<"WARNING: Requesting closest point on nodes where it was not computed."<<std::endl;
+
                     distance += ((patch_pos - cp_d)*(patch_pos - cp_d));
                 }
                 distance = sqrt(distance);
