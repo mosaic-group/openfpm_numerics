@@ -294,9 +294,7 @@ BOOST_AUTO_TEST_SUITE(fd_op_suite_tests)
             auto key_l = it.get();
             auto key = it.getGKey(key_l);
             mem_id i = key.get(0);
-            double x = i * spacing[0];
             mem_id j = key.get(1);
-            double y = j * spacing[1];
             // Here fill the function value P
             domain.template getProp<phi_>(key_l) = j % 2;
 

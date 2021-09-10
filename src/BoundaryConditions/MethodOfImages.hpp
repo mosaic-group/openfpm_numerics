@@ -6,10 +6,11 @@
 #define OPENFPM_NUMERICS_BOUNDARYCONDITIONS_METHODOFIMAGES_HPP
 
 #include <cmath>
+// Include OpenFPM header files
+#include "Vector/vector_dist_subset.hpp"
 
 #define PID_VECTOR_TYPE openfpm::vector<aggregate<int>>
 #define KEY_VECTOR_TYPE openfpm::vector<vect_dist_key_dx>
-
 
 /**@brief Class for getting mirror particles to impose Neumann BCs
  *
@@ -26,7 +27,7 @@ class MethodOfImages {
 public:
 	typedef vector_dist_subset<vd_type::dims, typename vd_type::stype, typename vd_type::value_type> vd_subset_type;
 	typedef Point<vd_type::dims, typename vd_type::stype> point_type;
-
+	
 	/**@brief Constructor
 	 *
 	 * @param vd Input particle vector_dist of type vd_type.
@@ -43,13 +44,13 @@ public:
 			, subset_id_mirror(subset_id_mirror)
 			, Real(vd, subset_id_real)
 			, Mirror(vd, subset_id_mirror)
-
+	
 	{
-		#ifdef SE_CLASS1
+#ifdef SE_CLASS1
 		check_if_ghost_isometric(vd);
-		#endif // SE_CLASS1
+#endif // SE_CLASS1
 	}
-
+	
 	//	Member variables
 	size_t subset_id_real; ///< ID of subset containing the real particles (default=0).
 	size_t subset_id_mirror; ///< ID of subset containing the mirror particles (default=1).
@@ -57,25 +58,27 @@ public:
 	PID_VECTOR_TYPE pid_mirror; ///< Vector containing indices of mirror particles.
 	vd_subset_type Mirror; ///< Subset containing the mirror particles.
 	vd_subset_type Real;
-
+	openfpm::vector<openfpm::vector<size_t>> key_map_source_mirror;
+	
 	/**@brief Place mirror particles along the surface normal.
 	 *
 	 * @param vd Input particle vector_dist of type vd_type.
 	 */
 	void get_mirror_particles(vd_type & vd)
 	{
-		std::cout << "Ghost size before placing mirror particles = "
-				<< vd.size_local_with_ghost() - vd.size_local() << std::endl;
-
+		auto lastReal = vd.size_local();
 		for (int i = 0; i < keys_source.size(); i++)
 		{
-			auto key        = keys_source.get(i);
-			point_type xp   = vd.getPos(key);
-			point_type n    = vd.template getProp<SurfaceNormal>(key);
+			auto key_source  = keys_source.get(i);
 			
+			size_t id_source = key_source.getKey();
+			size_t id_mirror = lastReal + i;
+			
+			point_type xp   = vd.getPos(key_source);
+			point_type n    = vd.template getProp<SurfaceNormal>(key_source);
 			point_type xm   = xp + 2 * n;
 
-			#ifdef SE_CLASS1
+#ifdef SE_CLASS1
 			if(!point_lies_on_this_processor(vd, xm))
 			{
 				std::cerr << __FILE__ << ":" << __LINE__ << " Error: Ghost layer is too small. Source and mirror"
@@ -85,7 +88,7 @@ public:
 															" mirror particle layer. Aborting..." << std::endl;
 				abort();
 			}
-			#endif // SE_CLASS1
+#endif // SE_CLASS1
 			
 			vd.add();
 			for (size_t d = 0; d < vd_type::dims; d++)
@@ -93,19 +96,20 @@ public:
 				vd.getLastPos()[d] = xm[d];
 			}
 			vd.getLastSubset(subset_id_mirror);
+			openfpm::vector<size_t> pair = {id_source, id_mirror};
+			key_map_source_mirror.add(pair);
 		}
-// No vd.map() here, because we want to keep the source and the mirror particles on the same node
-		////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+		// No vd.map() since this would change the IDs of the particles and then we wouldn't know which source and
+		// which mirror belong to each other
 		vd.template ghost_get();
-		std::cout << "Ghost size after placing mirror particles = "
-				<< vd.size_local_with_ghost() - vd.size_local() << std::endl;
+		////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 		Mirror.update();
 		pid_mirror = Mirror.getIds();
-		#ifdef SE_CLASS1
-		check_size_mirror_source_equal();
-		#endif // SE_CLASS1
-	}
 
+#ifdef SE_CLASS1
+		check_size_mirror_source_equal();
+#endif // SE_CLASS1
+	}
 	
 	
 	/**@brief Copies the values stored in PropToMirror from each source particle to its respective mirror particles
@@ -114,20 +118,28 @@ public:
 	 * @param vd Input particle vector_dist of type vd_type.
 	 */
 	template <size_t PropToMirror>
-	void apply_reflection(vd_type & vd)
+	void apply_noflux(vd_type & vd)
 	{
-		check_size_mirror_source_equal();
 		vd.template ghost_get<PropToMirror>(KEEP_PROPERTIES); // Update Ghost layer.
-		for (int i = 0; i < keys_source.size(); ++i)
+		
+		for(int i = 0; i < key_map_source_mirror.size(); ++i)
 		{
-			auto key_source = keys_source.get<0>(i); // Get key of one source particle
-			auto key_mirror = pid_mirror.get<0>(i); // Get key of corresponding mirror particle to that source particle
+			openfpm::vector<size_t> row = key_map_source_mirror.get(i);
+			vect_dist_key_dx key_source, key_mirror;
+			key_source.setKey(row.get(0));
+			key_mirror.setKey(row.get(1));
 			vd.template getProp<PropToMirror>(key_mirror) = vd.template getProp<PropToMirror>(key_source);
 		}
 	}
 
 
 private:
+	/**@brief Checks if the ghost layer has the same size in all dimensions. This is required to ensure that the
+	 * ghost layer is bigger than the mirror layer in all dimensions. This is needed s.t. added mirror particles can
+	 * be accessed by the same processor on which the corresponding source lies.
+	 *
+	 * @param vd Input particle vector_dist of type vd_type.
+	 */
 	void check_if_ghost_isometric(vd_type & vd)
 	{
 		for(int d=0; d<vd_type::dims; d++)
@@ -135,15 +147,17 @@ private:
 			if (vd.getDecomposition().getGhost().getLow(0) != vd.getDecomposition().getGhost().getLow(d))
 			{
 				std::cerr << __FILE__ << ":" << __LINE__ << "Ghost layer doesn't have the same size in all dimensions"
-															". Use an isometric ghost layer. Aborting..."
-															<< std::endl;
+				                                            ". Use an isometric ghost layer. Aborting..."
+						<< std::endl;
 				abort();
 			}
 		}
 	}
-
-	/**@brief Checks if the size of the ghost layer is bigger or equal the size of the mirror layer. This is needed s
-	 * .t. added mirror particles can be accessed by the same processor on which the corresponding source lies.
+#ifdef SE_CLASS1
+	/**@brief Checks if a point, i.e. the added mirror particle, lies on the same processor as the source particle, i
+	 * .e. the ghost is big enough to cover the space where the mirror particle was placed. Mirror and Source must
+	 * lie on same processor in order to avoid communication overhead when mirror (= copy from source to mirror
+	 * particle) is applied.
 	 * @param vd Input particle vector_dist of type vd_type.
 	 * @param p Point for which we want to know if it is covered by the current processor (incl. its ghost).
 	 * @return True, if processor has access to point. False, if point lays too far away.
@@ -169,10 +183,8 @@ private:
 		return is_inside;
 	}
 
-	/**@brief Checks if local vector containing source particle ids and vector containing mirror particle ids match
-	 * in size. Necessary, because in apply_mirror, source ids and mirror ids are iterated in same loop on same
-	 * processor.
-	 *
+	/**@brief Checks if local vector containing source particle ids and mirror particle subset match in size, i.e.
+	 * for each source particle a mirror particle exists and vice versa.
 	 */
 	void check_size_mirror_source_equal()
 	{
@@ -186,8 +198,7 @@ private:
 			abort();
 		}
 	}
-
-
+#endif // SE_CLASS1
 
 };
 

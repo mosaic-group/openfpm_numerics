@@ -280,12 +280,12 @@ BOOST_AUTO_TEST_SUITE( eq_test_suite )
 
 // Lid driven cavity, incompressible fluid
 
-    BOOST_AUTO_TEST_CASE(lid_driven_cavity)
-    {
+BOOST_AUTO_TEST_CASE(lid_driven_cavity)
+{
 #if defined(HAVE_EIGEN) && defined(HAVE_SUITESPARSE)
-        //lid_driven_cavity_2d<umfpack_solver<double>,lid_nn>();
+    lid_driven_cavity_2d<umfpack_solver<double>,lid_nn>();
 #endif
-    }
+}
 
 BOOST_AUTO_TEST_SUITE_END()
 

@@ -25,7 +25,7 @@
 
 // Include OpenFPM header files
 #include "Grid/grid_dist_id.hpp"
-#include "FD_order1.hpp"
+#include "FD_simple.hpp"
 #include "Eno_Weno.hpp"
 
 /**@brief Upwinding: For a specific dimension, from the forward and backward gradient find the upwind side.
@@ -210,7 +210,7 @@ static bool ghost_width_is_sufficient(gridtype & grid, size_t required_width)
  * @param grid Grid, on which the gradient should be computed.
  */
 template <size_t Field_in, size_t Sign, size_t Gradient_out, typename gridtype>
-void get_upwind_gradient(gridtype & grid, const size_t order=5, const bool one_sided_BC=true)
+void get_upwind_gradient(gridtype & grid, const size_t order=1, const bool one_sided_BC=true)
 {
 	grid.template ghost_get<Field_in>();
 	grid.template ghost_get<Sign>();

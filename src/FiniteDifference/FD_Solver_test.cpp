@@ -438,8 +438,8 @@ f_x = f_y = f_z = 3
     	Box<2,float> domain({0.0,0.0},{3.0,1.0});
 
     	// Ghost (Not important in this case but required)
-    	Ghost<2,float> g(0.011); // suited for particles
-        //Ghost<2,long int> g(1); //better for grids
+    	//Ghost<2,float> g(0.01); // suited for particles
+        Ghost<2,long int> g(1); //better for grids
     	// Grid points on x=256 and y=64
     	long int sz[] = {256,64};
     	size_t szu[2];
@@ -585,31 +585,79 @@ f_x = f_y = f_z = 3
 
     	fd.solve(v[x],v[y],P);
 
+        // auto it5 = g_dist.getSubDomainIterator({1,1},{(int)g_dist.size(0)-1,(int)g_dist.size(1)-1});
 
-    	auto it2 = g_dist_normal.getDomainIterator();
+    	// while (it5.isNext())
+    	// {
+        //     auto key2 = it5.get();
 
-    	while (it2.isNext())
+    	// 	std::cout << g_dist.template getProp<0>(key2)[0] << " " << std::endl;
+
+        //     ++it5;
+    	// }
+
+        g_dist.template ghost_get<0,1>();
+
+        // Carefull we cannot interpolate on the border
+
+    	auto it3 = g_dist_normal.getSubDomainIterator({1,1},{(int)g_dist_normal.size(0)-1,(int)g_dist_normal.size(1)-1});
+        auto it4 = g_dist.getSubDomainIterator({1,1},{(int)g_dist.size(0)-1,(int)g_dist.size(1)-1});
+
+    	while (it3.isNext())
     	{
-    		auto key = it2.get();
+    		auto key = it3.get();
+            auto key2 = it4.get();
 
-    		g_dist_normal.template getProp<0>(key)[0] = v[x].value(key,left_cell);
-    		g_dist_normal.template getProp<0>(key)[1] = v[y].value(key,bottom_cell);
+    		g_dist_normal.template getProp<0>(key)[0] = v[x].value(key2,corner_dw);
+    		g_dist_normal.template getProp<0>(key)[1] = v[y].value(key2,corner_dw);;
 
-    		g_dist_normal.template getProp<1>(key) = P.value(key,center_cell);
-            g_dist_normal.template getProp<2>(key)[x] = RHS[x].value(key,center_cell);
-            //SOME PROBLEM IN THIS LINE:
-            return;
-            g_dist_normal.template getProp<2>(key)[y] = RHS[y].value(key,center_cell);
+    		g_dist_normal.template getProp<1>(key) = P.value(key2,corner_dw);
+            g_dist_normal.template getProp<2>(key)[x] = RHS[x].value(key2,corner_dw);
+            g_dist_normal.template getProp<2>(key)[y] = RHS[y].value(key2,corner_dw);
 
 
-            ++it2;
+            ++it3;
+            ++it4;
     	}
 
-    	//g_dist_normal.write("out_test");
+#if !(defined(SE_CLASS3) || defined(TEST_COVERAGE_MODE))
 
-    	//! [Copy the solution to grid]
+        // Initialize openfpm
+        grid_dist_id<2,float,aggregate<float[2],float>> g_dist2(g_dist.getDecomposition(),szu,g);
+        g_dist2.load("test/lid_driven_cavity_reference.hdf5");
 
-    	//g_dist.write("out_test")
+        auto it2 = g_dist2.getSubDomainIterator({1,1},{(int)g_dist2.size(0)-1,(int)g_dist2.size(1)-1});
+
+        bool test = true;
+        while (it2.isNext())
+        {
+            auto p = it2.get();
+
+            test &= fabs(g_dist2.template getProp<velocity>(p)[0] - g_dist_normal.template getProp<velocity>(p)[0]) < 3.5e-3;
+            test &= fabs(g_dist2.template getProp<velocity>(p)[1] - g_dist_normal.template getProp<velocity>(p)[1]) < 3.5e-3;
+
+            test &= fabs(g_dist2.template getProp<pressure>(p) - g_dist_normal.template getProp<pressure>(p)) < 3.0;
+
+            if (test == false)
+            {
+                std::cout << g_dist2.template getProp<velocity>(p)[0] << "   " << g_dist_normal.template getProp<velocity>(p)[0] << std::endl;
+                std::cout << g_dist2.template getProp<velocity>(p)[1] << "   " << g_dist_normal.template getProp<velocity>(p)[1] << std::endl;
+
+                std::cout << g_dist2.template getProp<pressure>(p) << "   " << g_dist_normal.template getProp<pressure>(p) << std::endl;
+
+                //g_dist_normal.template getProp<0>(p)[1] = v[y].value(p,corner_dw);
+
+                g_dist_normal.template getProp<1>(p) = P.value(p,corner_dw);
+
+                break;
+            }
+
+            ++it2;
+        }
+
+        BOOST_REQUIRE_EQUAL(test,true);
+
+#endif
     }
 
 

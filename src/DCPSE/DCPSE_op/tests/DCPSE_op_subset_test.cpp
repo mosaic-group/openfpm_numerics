@@ -48,7 +48,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_subset_suite_tests)
         vector_dist_ws<2, double, aggregate<double, double, double, VectorS<2, double>, VectorS<2, double>,VectorS<2, double>,double>> Particles(0, box,
                                                                                                                  bc,
                                                                                                                  ghost);
-
+        Particles.setPropNames({"0","1","2","3","4","5","6"});
         //Init_DCPSE(Particles)
         BOOST_TEST_MESSAGE("Init Particles...");
         std::mt19937 rng{6666666};
@@ -172,6 +172,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_subset_suite_tests)
 //        P = Dx_bulk(P);   <------- Incorrect produce overflow
 
         Particles.ghost_get<0>();
+        Particles.write("TEST");
 
         for (int i = 0 ; i < boundary.size() ; i++)
         {

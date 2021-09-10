@@ -87,8 +87,8 @@ public:
           Point<dim, unsigned int> differentialSignature,
           unsigned int convergenceOrder,
           T rCut,
-          T supportSizeFactor = 1,
-          support_options opt = support_options::N_PARTICLES)
+          T supportSizeFactor = 1,                               //Maybe change this to epsilon/h or h/epsilon = c 0.9. Benchmark
+          support_options opt = support_options::RADIUS)
 		:particles(particles),
             differentialSignature(differentialSignature),
             differentialOrder(Monomial<dim>(differentialSignature).order()),

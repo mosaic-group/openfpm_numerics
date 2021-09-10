@@ -1012,8 +1012,7 @@ public:
         bool increment = false;
         if (skip_first == true)
         {
-
-                auto it = g_map.getSubDomainIterator(start_k,stop_k);
+                auto it = g_map.getSubDomainIterator(start_k,start_k);
 
                 if (it.isNext() == true)
                         increment = true;
@@ -1381,6 +1380,22 @@ public:
     													" properties " << std::endl;};
 #endif
         auto x = solver.solve(getA(opt),getB(opt));
+
+        unsigned int comp = 0;
+        copy_nested(x,comp,exps ...);
+    }
+
+    template<typename SolverType, typename ... expr_type>
+    void solve_with_constant_nullspace_solver(SolverType & solver, expr_type ... exps)
+    {
+#ifdef SE_CLASS1
+
+        if (sizeof...(exps) != Sys_eqs::nvar)
+        {std::cerr << __FILE__ << ":" << __LINE__ << " Error the number of properties you gave does not match the solution in\
+    													dimensionality, I am expecting " << Sys_eqs::nvar <<
+                   " properties " << std::endl;};
+#endif
+        auto x = solver.with_constant_nullspace_solve(getA(opt),getB(opt));
 
         unsigned int comp = 0;
         copy_nested(x,comp,exps ...);
