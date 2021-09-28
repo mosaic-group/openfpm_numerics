@@ -25,6 +25,127 @@
 
 BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests_cu)
 
+BOOST_AUTO_TEST_CASE(dcpse_op_vec3d_gpu) {
+//  int rank;
+//  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+        size_t edgeSemiSize = 257;
+        const size_t sz[3] = {edgeSemiSize,  edgeSemiSize,edgeSemiSize};
+        Box<3, double> box({0, 0,0}, {1,1,1});
+        size_t bc[3] = {NON_PERIODIC, NON_PERIODIC, NON_PERIODIC};
+        double spacing = box.getHigh(0) / (sz[0] - 1);
+        double rCut = 3.1 * spacing;
+        Ghost<3, double> ghost(rCut);
+        BOOST_TEST_MESSAGE("Init vector_dist...");
+        double sigma2 = spacing * spacing/ (2 * 4);
+
+        vector_dist_gpu<3, double, aggregate<double, VectorS<3, double>, VectorS<3, double>, VectorS<3, double>, VectorS<3, double>,double,double>> domain(
+        0, box, bc, ghost);
+
+        //Init_DCPSE(domain)
+        BOOST_TEST_MESSAGE("Init domain...");
+
+        auto it = domain.getGridIterator(sz);
+        size_t pointId = 0;
+        size_t counter = 0;
+        double minNormOne = 999;
+        while (it.isNext()) {
+            domain.add();
+            auto key = it.get();
+            mem_id k0 = key.get(0);
+            double x = k0 * spacing;
+            domain.getLastPos()[0] = x;//+ gaussian(rng);
+            mem_id k1 = key.get(1);
+            double y = k1 * spacing;
+            domain.getLastPos()[1] = y;//+gaussian(rng);
+            mem_id k2 = key.get(2);
+            double z = k2 * spacing;
+            domain.getLastPos()[2] = z;//+gaussian(rng);
+            // Here fill the function value
+            domain.template getLastProp<0>()    = sin(domain.getLastPos()[0]) + sin(domain.getLastPos()[1]) + sin(domain.getLastPos()[2]) ;
+            domain.template getLastProp<1>()[0] = cos(domain.getLastPos()[0]);
+            domain.template getLastProp<1>()[1] = cos(domain.getLastPos()[1]) ;
+            domain.template getLastProp<1>()[2] = cos(domain.getLastPos()[2]);
+            // Here fill the validation value for Df/Dx
+            domain.template getLastProp<2>()[0] = 0;//cos(domain.getLastPos()[0]);//+cos(domain.getLastPos()[1]);
+            domain.template getLastProp<2>()[1] = 0;//-sin(domain.getLastPos()[0]);//+cos(domain.getLastPos()[1]);
+            domain.template getLastProp<3>()[0] = 0;//cos(domain.getLastPos()[0]);//+cos(domain.getLastPos()[1]);
+            domain.template getLastProp<3>()[1] = 0;//-sin(domain.getLastPos()[0]);//+cos(domain.getLastPos()[1]);
+            domain.template getLastProp<3>()[2] = 0;
+
+            domain.template getLastProp<4>()[0] = -cos(domain.getLastPos()[0]) * sin(domain.getLastPos()[0]);
+            domain.template getLastProp<4>()[1] = -cos(domain.getLastPos()[1]) * sin(domain.getLastPos()[1]);
+            domain.template getLastProp<4>()[2] = -cos(domain.getLastPos()[2]) * sin(domain.getLastPos()[2]);
+
+
+            /*  domain.template getLastProp<4>()[0] = cos(domain.getLastPos()[0]) * (sin(domain.getLastPos()[0]) + sin(domain.getLastPos()[1])) +
+                                                    cos(domain.getLastPos()[1]) * (cos(domain.getLastPos()[0]) + cos(domain.getLastPos()[1]));
+              domain.template getLastProp<4>()[1] = -sin(domain.getLastPos()[0]) * (sin(domain.getLastPos()[0]) + sin(domain.getLastPos()[1])) -
+                                                    sin(domain.getLastPos()[1]) * (cos(domain.getLastPos()[0]) + cos(domain.getLastPos()[1]));
+              domain.template getLastProp<4>()[2] = -sin(domain.getLastPos()[0]) * (sin(domain.getLastPos()[0]) + sin(domain.getLastPos()[1])) -
+                                                    sin(domain.getLastPos()[1]) * (cos(domain.getLastPos()[0]) + cos(domain.getLastPos()[1]));*/
+            domain.template getLastProp<5>()    = cos(domain.getLastPos()[0]) * cos(domain.getLastPos()[0])+cos(domain.getLastPos()[1]) * cos(domain.getLastPos()[1])+cos(domain.getLastPos()[2]) * cos(domain.getLastPos()[2]) ;
+            ++counter;
+            ++it;
+        }
+        BOOST_TEST_MESSAGE("Sync domain across processors...");
+
+        domain.map();
+        domain.ghost_get<0>();
+
+        Advection_gpu Adv(domain, 2, rCut, 1.9,support_options::RADIUS);
+        auto v = getV<1>(domain);
+        auto P = getV<0>(domain);
+        auto dv = getV<3>(domain);
+        auto dP = getV<6>(domain);
+
+
+//        typedef boost::mpl::int_<std::is_fundamental<point_expression_op<Point<2U, double>, point_expression<double>, Point<2U, double>, 3>>::value>::blabla blabla;
+//        std::is_fundamental<decltype(o1.value(key))>
+
+        domain.ghost_get<1>();
+        dv = Adv(v, v);
+        auto it2 = domain.getDomainIterator();
+
+        double worst1 = 0.0;
+
+        while (it2.isNext()) {
+            auto p = it2.get();
+
+            if (fabs(domain.getProp<3>(p)[1] - domain.getProp<4>(p)[1]) > worst1) {
+                worst1 = fabs(domain.getProp<3>(p)[1] - domain.getProp<4>(p)[1]);
+
+            }
+
+            ++it2;
+        }
+        //std::cout << "Maximum Error in component 2: " << worst1 << std::endl;
+        BOOST_REQUIRE(worst1 < 0.03);
+
+        //Adv.checkMomenta(domain);
+        //Adv.DrawKernel<2>(domain,0);
+
+        //domain.deleteGhost();
+
+        dP = Adv(v, P);//+Dy(P);
+        auto it3 = domain.getDomainIterator();
+
+        double worst2 = 0.0;
+
+        while (it3.isNext()) {
+            auto p = it3.get();
+            if (fabs(domain.getProp<6>(p) - domain.getProp<5>(p)) > worst2) {
+                worst2 = fabs(domain.getProp<6>(p) - domain.getProp<5>(p));
+
+            }
+
+            ++it3;
+        }
+        domain.deleteGhost();
+        BOOST_REQUIRE(worst2 < 0.03);
+
+
+}
+
     BOOST_AUTO_TEST_CASE(dcpse_op_solver) {
 //  int rank;
 //  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
