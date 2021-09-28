@@ -20,9 +20,6 @@ private:
     const MonomialBasis_type& monomialBasis;
     T eps;
 
-    // to accomodate for cases when (dim > supportKeysSize)
-    bool isMemAllocated = false;
-
 public:
     template<typename vector_type>
     __host__ __device__ Vandermonde_gpu( T* mem, size_t supportRefKey, size_t supportKeysSize,
@@ -54,7 +51,6 @@ public:
 
     __host__ __device__ ~Vandermonde_gpu()
     {
-        if (isMemAllocated) delete[] offsets;
     }
 
 private:
@@ -99,11 +95,6 @@ private:
     __host__ __device__ void initialize(size_t supportRefKey, size_t supportKeysSize, const size_t* supportKeys, const vector_type & particles)
     {
         N = supportKeysSize;
-
-        if (N < dim) {
-            isMemAllocated = true;
-            offsets = new T[dim*N];
-        }
 
         for (int i = 0 ; i < N ; i++)
         {

@@ -51,16 +51,13 @@ public:
 
         Point<dim,typename vector_type::stype> ref_p = particles.getPos(supportRefKey);
 
-        // M.setZero(); // Make sure the rest of the matrix is zero!
-        memset(M, 0.0, supportKeysSize*supportKeysSize*sizeof(T));
-
         for (size_t i = 0; i < supportKeysSize; ++i)
         {
             size_t pt = supportKeys[i];
             Point<dim,typename vector_type::stype> p = ref_p;
             p -= particles.getPos(pt);
 
-            M[i*supportKeysSize+i] = exp(- norm2(p) / (2.0 * eps * eps));
+            M[i] = exp(- norm2(p) / (2.0 * eps * eps));
         }
     }
 };
