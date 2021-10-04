@@ -66,7 +66,7 @@ struct AlgoimWrapper
  * @param gd The distributed grid containing at least level set SDF field and placeholder for closest point coordinates
  * @param nb_gamma The width of the narrow band within which closest point estimation is to be done
  */
-template<size_t phi_field, size_t cp_field, unsigned int poly_order, typename grid_type>
+template<size_t phi_field, size_t cp_field, int poly_order, typename grid_type>
 void estimateClosestPoint(grid_type &gd, const double nb_gamma)
 {
     const unsigned int dim = grid_type::dims;
@@ -162,7 +162,7 @@ void estimateClosestPoint(grid_type &gd, const double nb_gamma)
  * @param gd The distributed grid containing atleast level set SDF field and closest point coordinates
  * @param nb_gamma The width of the narrow band within which extension is required
  */
-template<size_t phi_field, size_t cp_field, size_t extend_field, size_t extend_field_temp, unsigned int poly_order, typename grid_type>
+template<size_t phi_field, size_t cp_field, size_t extend_field, size_t extend_field_temp, int poly_order, typename grid_type>
 void extendLSField(grid_type &gd, const double nb_gamma)
 {
     const unsigned int dim = grid_type::dims;
@@ -234,7 +234,7 @@ void extendLSField(grid_type &gd, const double nb_gamma)
  * @param gd The distributed grid containing atleast level set SDF field and closest point coordinates
  * @param nb_gamma The width of the narrow band for reinitialization
  */
-template<size_t phi_field, size_t cp_field, unsigned int poly_order, typename grid_type>
+template<size_t phi_field, size_t cp_field, int poly_order, typename grid_type>
 void reinitializeLS(grid_type &gd, const double nb_gamma)
 {
     const unsigned int dim = grid_type::dims;
