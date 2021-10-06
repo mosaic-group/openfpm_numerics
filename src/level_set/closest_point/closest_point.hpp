@@ -228,13 +228,12 @@ void extendLSField(grid_type &gd, const double nb_gamma)
  *
  * @tparam phi_field Property id on grid for the level set SDF
  * @tparam cp_field Property id on grid for storing closest point coordinates
- * @tparam poly_order Order of the polynomial for stencil interpolation
  * @tparam grid_type Type of the grid container
 
  * @param gd The distributed grid containing atleast level set SDF field and closest point coordinates
  * @param nb_gamma The width of the narrow band for reinitialization
  */
-template<size_t phi_field, size_t cp_field, int poly_order, typename grid_type>
+template<size_t phi_field, size_t cp_field, typename grid_type>
 void reinitializeLS(grid_type &gd, const double nb_gamma)
 {
     const unsigned int dim = grid_type::dims;
@@ -242,8 +241,6 @@ void reinitializeLS(grid_type &gd, const double nb_gamma)
     // Update the cp_field in ghost
     gd.template ghost_get<cp_field>(KEEP_PROPERTIES);
 
-    // Stencil polynomial object
-    using Poly = typename Algoim::StencilPoly<dim, poly_order>::T_Poly;
     auto &patches = gd.getLocalGridsInfo();
     blitz::TinyVector<double,dim> dx;
     for(int d = 0; d < dim; ++d)
