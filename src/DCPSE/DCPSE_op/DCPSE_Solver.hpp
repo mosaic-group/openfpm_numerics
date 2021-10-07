@@ -211,22 +211,34 @@ class DCPSE_scheme {
     /*! \brief Check if the Matrix is consistent
  *
  */
-    void consistency() {
+    void consistency(options_solver opt)
+    {
         openfpm::vector<triplet> &trpl = A.getMatrixTriplets();
+        Vcluster<> &v_cl = create_vcluster();
 
         // A and B must have the same rows
         if (row != row_b) {
             std::cerr << "Error " << __FILE__ << ":" << __LINE__
-                      << " the term B and the Matrix A for Ax=B must contain the same number of rows " << row << "!=" << row_b << "\n";
-            return;
-        }
-        if (row_b != p_map.size_local() * Sys_eqs::nvar) {
-            std::cerr << "Error " << __FILE__ << ":" << __LINE__ << " your system is underdetermined you set "
-                      << row_b << " conditions " << " but i am expecting " << p_map.size_local() * Sys_eqs::nvar
-                      << std::endl;
+                      << " the term B and the Matrix A for Ax=B must contain the same number of rows " << row
+                      << "!=" << row_b << "\n";
             return;
         }
 
+        if (v_cl.rank() == v_cl.size() && opt == options_solver::LAGRANGE_MULTIPLIER) {
+            if (row_b + 1 != p_map.size_local() * Sys_eqs::nvar) {
+                std::cerr << "Error " << __FILE__ << ":" << __LINE__ << " your system is underdetermined you set "
+                          << row_b << " conditions " << " but i am expecting " << p_map.size_local() * Sys_eqs::nvar
+                          << std::endl;
+                return;
+            }
+        } else {
+            if (row_b != p_map.size_local() * Sys_eqs::nvar) {
+                std::cerr << "Error " << __FILE__ << ":" << __LINE__ << " your system is underdetermined you set "
+                          << row_b << " conditions " << " but i am expecting " << p_map.size_local() * Sys_eqs::nvar
+                          << std::endl;
+                return;
+            }
+        }
         // Indicate all the non zero rows
         openfpm::vector<unsigned char> nz_rows;
         nz_rows.resize(row_b);
@@ -242,7 +254,6 @@ class DCPSE_scheme {
         // Indicate all the non zero colums
         // This check can be done only on single processor
 
-        Vcluster<> &v_cl = create_vcluster();
         if (v_cl.getProcessingUnits() == 1) {
             openfpm::vector<unsigned> nz_cols;
             nz_cols.resize(row_b);
@@ -637,7 +648,7 @@ public:
     template<typename options>
     typename Sys_eqs::SparseMatrix_type &getA(options opt) {
 #ifdef SE_CLASS1
-        consistency();
+        consistency(opt);
 #endif
         if (opt == options_solver::STANDARD) {
             A.resize(tot * Sys_eqs::nvar, tot * Sys_eqs::nvar,
@@ -681,8 +692,8 @@ public:
 
                 trpl.add(t3);
 
-                row_b++;
-                row++;
+                //row_b++;
+                //row++;
             }
             else {
                 A.resize(tot * Sys_eqs::nvar + 1, tot * Sys_eqs::nvar + 1,
@@ -728,7 +739,7 @@ public:
      */
     typename Sys_eqs::Vector_type &getB(options_solver opt = options_solver::STANDARD) {
 #ifdef SE_CLASS1
-        consistency();
+        consistency(opt);
 #endif
         if (opt == options_solver::LAGRANGE_MULTIPLIER) {
             auto &v_cl = create_vcluster();
