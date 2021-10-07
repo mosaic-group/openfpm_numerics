@@ -1,14 +1,15 @@
 #! /bin/bash
 
-cd ..
-branch=$(git ls-remote --heads origin | grep $(git rev-parse HEAD) | cut -d / -f 3)
-cd openfpm_numerics
+#cd ..
+#branch=$(git ls-remote --heads origin | grep $(git rev-parse HEAD) | cut -d / -f 3)
+#cd openfpm_numerics
 
 workspace=$1
 hostname=$2
 nproc=$3
 ntask_per_node=$5
 nodes=$4
+branch=$7
 
 echo "Directory: $workspace"
 echo "Machine: $hostname"

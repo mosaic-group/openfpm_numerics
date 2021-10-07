@@ -15,10 +15,11 @@
 #include "analytical_SDF/AnalyticalSDF.hpp"
 
 BOOST_AUTO_TEST_SUITE(RedistancingSussmanTestSuite)
+	
 	BOOST_AUTO_TEST_CASE(RedistancingSussman_unit_sphere)
 	{
 		const double EPSILON = std::numeric_limits<double>::epsilon();
-		const size_t dims = 3;
+		const size_t grid_dim = 3;
 		// some indices
 		const size_t x                      = 0;
 		const size_t y                      = 1;
@@ -29,43 +30,41 @@ BOOST_AUTO_TEST_SUITE(RedistancingSussmanTestSuite)
 		const size_t SDF_exact_grid         = 2;
 		const size_t Error_grid             = 3;
 		
-		size_t N = 32;
-		const double dt = 0.000165334;
-		const size_t sz[dims] = {N, N, N};
+		size_t N = 128;
+		const double dt = 0.000165334; // CFL-condition for N=128
+		const size_t sz[grid_dim] = {N, N, N};
 		const double radius = 1.0;
-		const double box_lower = 0.0;
-		const double box_upper = 4.0 * radius;
-		Box<dims, double> box({box_lower, box_lower, box_lower}, {box_upper, box_upper, box_upper});
-		Ghost<dims, long int> ghost(0);
+		const double box_lower = -2.0;
+		const double box_upper = 2.0;
+		Box<grid_dim, double> box({box_lower, box_lower, box_lower}, {box_upper, box_upper, box_upper});
+		Ghost<grid_dim, long int> ghost(0);
 		typedef aggregate<double, double, double, double> props;
-		typedef grid_dist_id<dims, double, props > grid_in_type;
+		typedef grid_dist_id<grid_dim, double, props > grid_in_type;
 		grid_in_type g_dist(sz, box, ghost);
 		g_dist.setPropNames({"Phi_0", "SDF_sussman", "SDF_exact", "Relative error"});
 		
-		const double center[dims] = {0.5*(box_upper-box_lower), 0.5*(box_upper-box_lower), 0.5*(box_upper-box_lower)};
+		const double center[grid_dim] = {0.5*(box_upper+box_lower),
+										 0.5*(box_upper+box_lower),
+										 0.5*(box_upper+box_lower)};
 		init_grid_with_sphere<Phi_0_grid>(g_dist, radius, center[x], center[y], center[z]); // Initialize sphere onto grid
 		
 		
 		Redist_options redist_options;
 		redist_options.min_iter                             = 1e4;
-		redist_options.max_iter                             = 1e4;     // max. number of iterations you want to run the
-		// redistancing, even if steady state might not yet have been reached (default: 1e6)
+		redist_options.max_iter                             = 1e4;
 		
-		redist_options.order_space_op                       = 5;
+		redist_options.convTolChange.check                  = false;
+		redist_options.convTolResidual.check                = false;
 		
-		// set both convergence criteria to false s.t. termination only when max_iterations reached
-		redist_options.convTolChange.check                  = false;    // define here which of the convergence criteria above should be used. If both are true, termination only occurs when both are fulfilled or when iter > max_iter
-		redist_options.convTolResidual.check                = false;    // (default: false)
-		
-		redist_options.interval_check_convergence           = 100;        // interval of #iterations at which
-		// convergence is checked (default: 100)
-		redist_options.width_NB_in_grid_points              = 8;        // width of narrow band in number of grid points. Must be at least 4, in order to have at least 2 grid points on each side of the interface. (default: 4)
-		redist_options.print_current_iterChangeResidual     = true;     // if true, prints out every current iteration + corresponding change from the previous iteration + residual from SDF (default: false)
-		redist_options.print_steadyState_iter               = true;     // if true, prints out the final iteration number when steady state was reached + final change + residual (default: true)
+		redist_options.interval_check_convergence           = 1e3;
+		redist_options.width_NB_in_grid_points              = 8;
+		redist_options.print_current_iterChangeResidual     = true;
+		redist_options.print_steadyState_iter               = true;
 		
 		RedistancingSussman<grid_in_type> redist_obj(g_dist, redist_options);   // Instantiation of Sussman-redistancing class
-		redist_obj.set_user_time_step(dt);
-		std::cout << "dt set to = " << dt << std::endl;
+		std::cout << "New CFL timestep = " << redist_obj.get_time_step() << std::endl;
+//		redist_obj.set_user_time_step(dt);
+//		std::cout << "dt set to = " << dt << std::endl;
 		// Run the redistancing. in the <> brackets provide property-index where 1.) your initial Phi is stored and 2.) where the resulting SDF should be written to.
 		redist_obj.run_redistancing<Phi_0_grid, SDF_sussman_grid>();
 		
@@ -79,10 +78,10 @@ BOOST_AUTO_TEST_SUITE(RedistancingSussmanTestSuite)
 		/////////////////////////////////////////////////////////////////////////////////////////////
 		//	Get narrow band: Place particles on interface (narrow band width e.g. 4 grid points on each side of the
 		//	interface)
-		size_t bc[dims] = {NON_PERIODIC, NON_PERIODIC, NON_PERIODIC};
+		size_t bc[grid_dim] = {NON_PERIODIC, NON_PERIODIC, NON_PERIODIC};
 		typedef aggregate<double> props_nb;
-		typedef vector_dist<dims, double, props_nb> vd_type;
-		Ghost<dims, double> ghost_vd(0);
+		typedef vector_dist<grid_dim, double, props_nb> vd_type;
+		Ghost<grid_dim, double> ghost_vd(0);
 		vd_type vd_narrow_band(0, box, bc, ghost_vd);
 		vd_narrow_band.setPropNames({"error"});
 		size_t narrow_band_width = 8;
@@ -94,7 +93,7 @@ BOOST_AUTO_TEST_SUITE(RedistancingSussmanTestSuite)
 		L_norms lNorms_vd;
 		lNorms_vd = get_l_norms_vector<0>(vd_narrow_band);
 		std::cout << lNorms_vd.l2 << ", " << lNorms_vd.linf << std::endl;
-		std::cout << "Narrowband size = " << vd_narrow_band.size_local() << std::endl;
+		
 		// l-norms original implementation of 1st order upwinding:
 		// 32,0.033643,0.063065; dt = 0.000165334; 1e4 iterations
 		// 0.0336846, 0.0630651
@@ -106,8 +105,9 @@ BOOST_AUTO_TEST_SUITE(RedistancingSussmanTestSuite)
 		
 		BOOST_CHECK(lNorms_vd.l2 <   0.03369 + EPSILON);
 		BOOST_CHECK(lNorms_vd.linf < 0.06307 + EPSILON);
-//		BOOST_CHECK(narrow_band_width > 0);
+		
 	}
+
 BOOST_AUTO_TEST_SUITE_END()
 
 

@@ -6,6 +6,8 @@
 #define BOUNDARY_CONDITION_SURFACENORMAL_HPP
 
 #include "cmath"
+// Include OpenFPM header files
+#include "Vector/vector_dist_subset.hpp"
 
 template <size_t Phi_SDF, size_t Phi_Gradient, size_t Normal, typename vd_type>
 void get_surface_normal_sdf(vd_type & vd, bool unit_vector=false)
@@ -33,7 +35,7 @@ void get_surface_normal_sdf(vd_type & vd, bool unit_vector=false)
 			{
 				vd.template getProp<Normal>(key)[d] =
 						- vd.template getProp<Phi_Gradient>(key)[d] / gradient_magnitude
-								* vd.template getProp<Phi_SDF>(key) * 2.0;
+								* vd.template getProp<Phi_SDF>(key);
 			}
 		}
 		++dom;
@@ -62,7 +64,7 @@ unit_vector=false)
 		}
 		if(!unit_vector)
 		{
-			vd.template getProp<Normal>(key) = vd.template getProp<Normal>(key) * 2.0 * vd.template getProp<Phi_SDF>
+			vd.template getProp<Normal>(key) = vd.template getProp<Normal>(key) * vd.template getProp<Phi_SDF>
 			        (key);
 		}
 	}

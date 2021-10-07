@@ -41,7 +41,7 @@ BOOST_AUTO_TEST_SUITE(NarrowBandTestSuite)
 		grid_in_type g_dist(sz, box, ghost);
 		g_dist.setPropNames({"Phi_0", "SDF_exact"});
 
-		const double center[dims] = {0.5*(box_upper-box_lower), 0.5*(box_upper-box_lower), 0.5*(box_upper-box_lower)};
+		const double center[dims] = {0.5*(box_upper+box_lower), 0.5*(box_upper+box_lower), 0.5*(box_upper+box_lower)};
 		init_grid_with_sphere<Phi_0_grid>(g_dist, radius, center[x], center[y], center[z]); // Initialize sphere onto grid
 		// Compute exact signed distance function at each grid point
 		init_analytic_sdf_sphere<SDF_exact_grid>(g_dist, radius, center[x], center[y], center[z]);
