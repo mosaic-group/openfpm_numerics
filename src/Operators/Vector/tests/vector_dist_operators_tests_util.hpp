@@ -75,7 +75,10 @@ template <typename rtype, typename vector, unsigned int A, unsigned int B, unsig
 bool check_values_pos_sum(vector & vd, const rtype & p)
 {
 	if (impl == comp_dev)
-	{vd.template deviceToHostProp<A>();}
+	{
+		vd.template deviceToHostProp<VA>();
+		vd.deviceToHostPos();
+	}
 
 	bool ret = true;
 	auto it = vd.getDomainIterator();
@@ -87,7 +90,38 @@ bool check_values_pos_sum(vector & vd, const rtype & p)
 		Point<vector::dims,typename vector::stype> xp = vd.getPos(key);
 
 		rtype base1 = rtype(xp) + p;
-		rtype base2 = vd.template getProp<A>(key);
+		rtype base2 = vd.template getProp<VA>(key);
+
+		ret &=  base1 == base2;
+
+		++it;
+	}
+
+	BOOST_REQUIRE_EQUAL(ret,true);
+
+	return ret;
+}
+
+template <typename rtype, typename vector, unsigned int A, unsigned int B, unsigned int C, unsigned int impl>
+bool check_values_pos_integration(vector & vd, double dt)
+{
+	if (impl == comp_dev)
+	{
+		vd.template deviceToHostProp<VA,VB>();
+		vd.deviceToHostPos();
+	}
+
+	bool ret = true;
+	auto it = vd.getDomainIterator();
+
+	while (it.isNext())
+	{
+		auto key = it.get();
+
+		Point<vector::dims,typename vector::stype> xp = vd.template getProp<VB>(key);
+
+		rtype base1 = rtype(xp) + rtype(vd.template getProp<VA>(key)) * dt;
+		rtype base2 = vd.getPos(key);
 
 		ret &=  base1 == base2;
 
@@ -1038,6 +1072,7 @@ void check_all_expressions_imp(vector_type & vd,
 	auto p0_e = getVExpr(p0);
 
 	vVA = vPOS + p0_e;
+
 	check_values_pos_sum<VectorS<3,float>,vtype,VA,VB,VC,impl>(vd,p0);
 
 	vVA = vPOS - p0_e;
@@ -1102,6 +1137,12 @@ void check_all_expressions_imp(vector_type & vd,
 	vVA = vPOS / (vPOS + vPOS);
 	vVA = (vPOS + vPOS) / vPOS;
 	vVA = (vPOS + vPOS) / (vPOS + vPOS);
+
+	vVB = vPOS;
+	double dt = 0.1;
+	vPOS = vPOS + vVA * dt;
+
+	check_values_pos_integration<Point<3,float>,vtype,VA,VB,VC,impl>(vd,dt);
 
 	// Position with slicer (not tested on GPU)
 
