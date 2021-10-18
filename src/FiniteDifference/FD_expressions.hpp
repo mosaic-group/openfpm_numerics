@@ -350,7 +350,7 @@ namespace FD
 		template<unsigned int prp, typename gtype>
 		static base_type inte(gtype & g, const grid_dist_key_dx<gtype::dims> & k, comb<gtype::dims> & c_where, comb<gtype::dims> & c_o1)
 		{
-			const int comp[1];
+			int comp[1];
 			printf("Error wrong expression please check the components");
 			int c = 0;
 			base_type inte = 0;
