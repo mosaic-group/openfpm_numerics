@@ -224,24 +224,21 @@ class DCPSE_scheme {
             return;
         }
 
-        if (v_cl.rank() == v_cl.size() && opt == options_solver::LAGRANGE_MULTIPLIER) {
-            if (row_b + 1 != p_map.size_local() * Sys_eqs::nvar) {
-                std::cerr << "Error " << __FILE__ << ":" << __LINE__ << " your system is underdetermined you set "
-                          << row_b << " conditions " << " but i am expecting " << p_map.size_local() * Sys_eqs::nvar
-                          << std::endl;
-                return;
-            }
-        } else {
-            if (row_b != p_map.size_local() * Sys_eqs::nvar) {
-                std::cerr << "Error " << __FILE__ << ":" << __LINE__ << " your system is underdetermined you set "
-                          << row_b << " conditions " << " but i am expecting " << p_map.size_local() * Sys_eqs::nvar
-                          << std::endl;
-                return;
-            }
+        if (row_b != p_map.size_local() * Sys_eqs::nvar) {
+            std::cerr << "Error " << __FILE__ << ":" << __LINE__ << " your system is underdetermined you set "
+                      << row_b << " conditions " << " but i am expecting " << p_map.size_local() * Sys_eqs::nvar
+                      << std::endl;
+            return;
         }
         // Indicate all the non zero rows
         openfpm::vector<unsigned char> nz_rows;
-        nz_rows.resize(row_b);
+
+        if (v_cl.rank() == v_cl.size()-1 && opt == options_solver::LAGRANGE_MULTIPLIER) {
+            nz_rows.resize(row_b+1);
+            }
+        else{
+            nz_rows.resize(row_b);
+        };
 
         for (size_t i = 0; i < trpl.size(); i++) {
             if (trpl.get(i).row() - s_pnt * Sys_eqs::nvar >= nz_rows.size()) {
@@ -256,7 +253,12 @@ class DCPSE_scheme {
 
         if (v_cl.getProcessingUnits() == 1) {
             openfpm::vector<unsigned> nz_cols;
-            nz_cols.resize(row_b);
+            if (v_cl.rank() == v_cl.size()-1 && opt == options_solver::LAGRANGE_MULTIPLIER) {
+                nz_cols.resize(row_b+1);
+            }
+            else{
+                nz_cols.resize(row_b);
+            };
 
             for (size_t i = 0; i < trpl.size(); i++) {
                 if (trpl.get(i).value() != 0) { nz_cols.get(trpl.get(i).col()) = true; }
@@ -647,9 +649,6 @@ public:
  */
     template<typename options>
     typename Sys_eqs::SparseMatrix_type &getA(options opt) {
-#ifdef SE_CLASS1
-        consistency(opt);
-#endif
         if (opt == options_solver::STANDARD) {
             A.resize(tot * Sys_eqs::nvar, tot * Sys_eqs::nvar,
                      p_map.size_local() * Sys_eqs::nvar,
@@ -727,7 +726,9 @@ public:
                          p_map.size_local() * Sys_eqs::nvar);
                 }
             }
-
+#ifdef SE_CLASS1
+        consistency(opt);
+#endif
         return A;
 
     }
@@ -738,9 +739,9 @@ public:
      *
      */
     typename Sys_eqs::Vector_type &getB(options_solver opt = options_solver::STANDARD) {
-#ifdef SE_CLASS1
+/*#ifdef SE_CLASS1
         consistency(opt);
-#endif
+#endif*/
         if (opt == options_solver::LAGRANGE_MULTIPLIER) {
             auto &v_cl = create_vcluster();
             if (v_cl.rank() == v_cl.size() - 1) {

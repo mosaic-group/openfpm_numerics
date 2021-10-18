@@ -245,7 +245,7 @@ public:
 
         for (int i = 0 ; i < momenta.size() ; i++)
         {
-            std::cout << "MOMENTA: " << monomialBasis.getElements()[i] << "Min: " << momenta.template get<0>(i) << "  " << "Max: " << momenta.template get<1>(i) << std::endl;
+            std::cout << "MOMENTA: " << monomialBasis.getElements(i) << "Min: " << momenta.template get<0>(i) << "  " << "Max: " << momenta.template get<1>(i) << std::endl;
         }
     }
 
