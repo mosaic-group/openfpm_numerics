@@ -1502,7 +1502,7 @@ struct SubsetSelector_impl<true>
 };
 #endif
 
-/*! \brief it take an expression and create the negatove of this expression
+/*! \brief it take an expression and take the component
  *
  *
  */
