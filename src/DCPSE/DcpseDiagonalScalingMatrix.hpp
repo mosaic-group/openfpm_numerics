@@ -55,7 +55,7 @@ public:
         {
             size_t pt = supportKeys[i];
             Point<dim,typename vector_type::stype> p = ref_p;
-            p -= particles.getPos(pt);
+            p -= particles.getPosOrig(pt);
 
             M[i] = exp(- norm2(p) / (2.0 * eps * eps));
         }

@@ -100,7 +100,7 @@ private:
         {
             size_t otherKey = supportKeys[i];
             Point<dim,T> p = particles.getPos(supportRefKey);
-            const auto& p2 = particles.getPos(otherKey);
+            const auto& p2 = particles.getPosOrig(otherKey);
 
             p -= p2;
 

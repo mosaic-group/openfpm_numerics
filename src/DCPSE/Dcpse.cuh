@@ -69,6 +69,8 @@ private:
     openfpm::vector<size_t> kerOffsets;
     openfpm::vector_custd<T> calcKernels;
 
+    std::map<size_t, size_t> origToLocalKeys;
+
     vector_type & particles;
     double rCut;
     unsigned int convergenceOrder;
@@ -182,7 +184,7 @@ public:
             momenta.template get<1>(i) = -3000000000.0;
         }
 
-        size_t N = particles.size_local_orig();
+        size_t N = particles.size_local();
         for (size_t j = 0; j < N; ++j)
         {
             double eps = localEps.get(j);
@@ -200,7 +202,7 @@ public:
             for (int i = 0; i < keys.size(); i++)
             {
                 size_t xqK = keys.get(i);
-                Point<dim, T> xq = particles.getPosOrig(xqK);
+                Point<dim, T> xq = particles.getPos(xqK);
                 Point<dim, T> normalizedArg = (xp - xq) / eps;
 
                 auto ker = calcKernels.get(kerOff+i);
@@ -254,7 +256,7 @@ public:
             sign = -1;
         }
 
-        size_t N = particles.size_local_orig();
+        size_t N = particles.size_local();
         for (size_t j = 0; j < N; ++j)
         {
             double epsInvPow = localEpsInvPow.get(j);
@@ -350,8 +352,10 @@ public:
             sign = -1;
         }
 
-        double eps = localEps.get(key.getKey());
-        double epsInvPow = localEpsInvPow.get(key.getKey());
+        size_t localKey = origToLocalKeys[key.getKey()];
+
+        double eps = localEps.get(localKey);
+        double epsInvPow = localEpsInvPow.get(localKey);
 
         auto &particles = o1.getVector();
 
@@ -362,12 +366,14 @@ public:
         }
 #endif
 
+
         expr_type Dfxp = 0;
-        size_t xpK = localSupportRefs.get(key.getKey());
+        size_t xpK = localSupportRefs.get(localKey);
+
         Point<dim, T> xp = particles.getPos(xpK);
         expr_type fxp = sign * o1.value(key);
         size_t kerOff = kerOffsets.get(xpK);
-        auto & keys = localSupportKeys.get(key.getKey());
+        auto & keys = localSupportKeys.get(localKey);
         for (int i = 0; i < keys.size(); i++)
         {
             size_t xqK = keys.get(i);
@@ -375,8 +381,8 @@ public:
             Dfxp = Dfxp + (fxq + fxp) * calcKernels.get(kerOff+i);
         }
         Dfxp = Dfxp * epsInvPow;
-        //
-        //T trueDfxp = particles.template getProp<2>(xpK);
+
+        // T trueDfxp = particles.template getProp<2>(xpK);
         // Store Dfxp in the right position
         return Dfxp;
     }
@@ -403,8 +409,10 @@ public:
             sign = -1;
         }
 
-        double eps = localEps.get(key.getKey());
-        double epsInvPow = localEpsInvPow(key.getKey());
+        size_t localKey = origToLocalKeys[key.getKey()];
+
+        double eps = localEps.get(localKey);
+        double epsInvPow = localEpsInvPow(localKey);
 
         auto &particles = o1.getVector();
 
@@ -416,12 +424,12 @@ public:
 #endif
 
         expr_type Dfxp = 0;
-        size_t xpK = localSupportRefs.get(key.getKey());
+        size_t xpK = localSupportRefs.get(localKey);
 
         Point<dim, T> xp = particles.getPos(xpK);
         expr_type fxp = sign * o1.value(key)[i];
         size_t kerOff = kerOffsets.get(xpK);
-        auto & keys = localSupportKeys.get(key.getKey());
+        auto & keys = localSupportKeys.get(localKey);
         for (int j = 0 ; j < keys.size() ; j++)
         {
             size_t xqK = keys.get(j);
@@ -464,12 +472,12 @@ private:
         unsigned int requiredSupportSize = monomialBasis.size();
 
         if (!isSharedLocalSupport) {
-            localSupportKeys.resize(particles.size_local_orig());
-            localSupportRefs.resize(particles.size_local_orig());
+            localSupportKeys.resize(particles.size_local());
+            localSupportRefs.resize(particles.size_local());
         }
-        localEps.resize(particles.size_local_orig());
-        localEpsInvPow.resize(particles.size_local_orig());
-        kerOffsets.resize(particles.size_local_orig());
+        localEps.resize(particles.size_local());
+        localEpsInvPow.resize(particles.size_local());
+        kerOffsets.resize(particles.size_local());
         kerOffsets.fill(-1);
 
         size_t maxSupport = 0, localSupportKeysTotalN = 0;
@@ -477,7 +485,7 @@ private:
         auto it = particles.getDomainIterator();
         while (it.isNext()) {
             size_t localSupportSize;
-            auto key_o = particles.getOriginKey(it.get());
+            auto key_o = it.get(); origToLocalKeys[particles.getOriginKey(key_o).getKey()] = key_o.getKey();
 
             if (!isSharedLocalSupport) {
                 const T condVTOL = 1e2;
@@ -502,7 +510,7 @@ private:
                     continue;
                 } else requiredSupportSize = monomialBasis.size();
 
-                localSupportRefs.get(key_o.getKey()) = support.getReferencePointKey();
+                localSupportRefs.get(key_o.getKey()) = key_o.getKey();
                 localSupportKeys.get(key_o.getKey()) = support.getKeys();
             } else
                 localSupportSize = localSupportKeys.get(key_o.getKey()).size();
@@ -528,12 +536,12 @@ private:
         unsigned int requiredSupportSize = monomialBasis.size();
 
         if (!isSharedLocalSupport) {
-            localSupportKeys.resize(particles.size_local_orig());
-            localSupportRefs.resize(particles.size_local_orig());
+            localSupportKeys.resize(particles.size_local());
+            localSupportRefs.resize(particles.size_local());
         }
-        localEps.resize(particles.size_local_orig());
-        localEpsInvPow.resize(particles.size_local_orig());
-        kerOffsets.resize(particles.size_local_orig());
+        localEps.resize(particles.size_local());
+        localEpsInvPow.resize(particles.size_local());
+        kerOffsets.resize(particles.size_local());
         kerOffsets.fill(-1);
 
         size_t maxSupport = 0, localSupportKeysTotalN = 0;
@@ -541,7 +549,7 @@ private:
         auto it = particles.getDomainIterator();
         while (it.isNext()) {
             size_t localSupportSize;
-            auto key_o = particles.getOriginKey(it.get());
+            auto key_o = it.get(); origToLocalKeys[particles.getOriginKey(key_o).getKey()] = key_o.getKey();
 
             if (!isSharedLocalSupport) {
                 const T condVTOL = 1e2;
@@ -566,7 +574,7 @@ private:
                     continue;
                 } else requiredSupportSize = monomialBasis.size();
 
-                localSupportRefs.get(key_o.getKey()) = support.getReferencePointKey();
+                localSupportRefs.get(key_o.getKey()) = key_o.getKey();
                 localSupportKeys.get(key_o.getKey()) = support.getKeys();
             } else
                 localSupportSize = localSupportKeys.get(key_o.getKey()).size();
@@ -597,12 +605,12 @@ private:
         unsigned int requiredSupportSize = monomialBasis.size() * supportSizeFactor;
 
         if (!isSharedLocalSupport) {
-            localSupportKeys.resize(particles.size_local_orig());
-            localSupportRefs.resize(particles.size_local_orig());
+            localSupportKeys.resize(particles.size_local());
+            localSupportRefs.resize(particles.size_local());
         }
-        localEps.resize(particles.size_local_orig());
-        localEpsInvPow.resize(particles.size_local_orig());
-        kerOffsets.resize(particles.size_local_orig());
+        localEps.resize(particles.size_local());
+        localEpsInvPow.resize(particles.size_local());
+        kerOffsets.resize(particles.size_local());
         kerOffsets.fill(-1);
 
         size_t maxSupport = 0;
@@ -615,13 +623,14 @@ private:
         while (it.isNext()) {
             // Get the points in the support of the DCPSE kernel and store the support for reuse
             size_t localSupportSize;
-            auto key_o = particles.getOriginKey(it.get());
+            auto key_o = it.get(); origToLocalKeys[particles.getOriginKey(key_o).getKey()] = key_o.getKey();
 
             if (!isSharedLocalSupport){
                 Support support = supportBuilder.getSupport(it, requiredSupportSize,opt);
-                localSupportRefs.get(key_o.getKey()) = support.getReferencePointKey();
+                localSupportRefs.get(key_o.getKey()) = key_o.getKey();
                 localSupportKeys.get(key_o.getKey()) = support.getKeys();
                 localSupportSize = support.size();
+
             } else
                 localSupportSize = localSupportKeys.get(key_o.getKey()).size();
 
@@ -657,12 +666,12 @@ private:
         unsigned int requiredSupportSize = monomialBasis.size() * supportSizeFactor;
 
         if (!isSharedLocalSupport) {
-            localSupportKeys.resize(particles.size_local_orig());
-            localSupportRefs.resize(particles.size_local_orig());
+            localSupportKeys.resize(particles.size_local());
+            localSupportRefs.resize(particles.size_local());
         }
-        localEps.resize(particles.size_local_orig());
-        localEpsInvPow.resize(particles.size_local_orig());
-        kerOffsets.resize(particles.size_local_orig());
+        localEps.resize(particles.size_local());
+        localEpsInvPow.resize(particles.size_local());
+        kerOffsets.resize(particles.size_local());
         kerOffsets.fill(-1);
 
         size_t maxSupport = 0;
@@ -676,13 +685,14 @@ private:
         while (it.isNext()) {
             // Get the points in the support of the DCPSE kernel and store the support for reuse
             size_t localSupportSize;
-            auto key_o = particles.getOriginKey(it.get());
+            auto key_o = it.get(); origToLocalKeys[particles.getOriginKey(key_o).getKey()] = key_o.getKey();
 
             if (!isSharedLocalSupport){
                 Support support = supportBuilder.getSupport(it, requiredSupportSize,opt);
-                localSupportRefs.get(key_o.getKey()) = support.getReferencePointKey();
+                localSupportRefs.get(key_o.getKey()) = key_o.getKey();
                 localSupportKeys.get(key_o.getKey()) = support.getKeys();
                 localSupportSize = support.size();
+
             } else
                 localSupportSize = localSupportKeys.get(key_o.getKey()).size();
 
@@ -953,7 +963,7 @@ __global__ void calcKernels_gpu(particles_type particles, monomialBasis_type mon
     for (size_t j = 0; j < supportKeysSize; ++j)
     {
         size_t xqK = supportKeys[j];
-        Point<dim, T> xq = particles.getPos(xqK);
+        Point<dim, T> xq = particles.getPosOrig(xqK);
         Point<dim, T> normalizedArg = (xa - xq) / eps;
 
         calcKernelsLocal[j] = computeKernel_gpu(normalizedArg, h_b[p_key], monomialBasis);
