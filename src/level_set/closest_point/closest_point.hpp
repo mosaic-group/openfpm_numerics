@@ -29,6 +29,7 @@ constexpr int algoim_padding = 4;
  * @struct AlgoimWrapper
  * @tparam wrapping_field Property id on the grid for the field to be wrapped
  * @tparam grid_type Type of the grid container
+ * 
  */
 
 template<size_t wrapping_field, typename grid_type>
@@ -58,13 +59,14 @@ struct AlgoimWrapper
 
 /**@brief Computes the closest point coordinate for each grid point within nb_gamma from interface.
  *
- * @tparam phi_field Property id on grid for the level set SDF
- * @tparam cp_field Property id on grid for storing closest point coordinates
- * @tparam poly_order Order of the polynomial for stencil interpolation (orders between 2 to 5 is supported)
+ * @tparam phi_field Property id on grid for the level set SDF (input)
+ * @tparam cp_field Property id on grid for storing closest point coordinates (output)
+ * @tparam poly_order Type of stencil interpolation (Taylor poly orders between 2 to 5 and Tri/bicubic through -1 is supported)
  * @tparam grid_type Type of the grid container
  *
  * @param gd The distributed grid containing at least level set SDF field and placeholder for closest point coordinates
  * @param nb_gamma The width of the narrow band within which closest point estimation is to be done
+ * 
  */
 template<size_t phi_field, size_t cp_field, int poly_order, typename grid_type>
 void estimateClosestPoint(grid_type &gd, const double nb_gamma)
@@ -139,9 +141,13 @@ void estimateClosestPoint(grid_type &gd, const double nb_gamma)
                 }
                 else
                 {
-                    std::cout<<"WARN: Closest point computation fails at : "<<key_g.get(0)<<", "<<key_g.get(1)<<", "<<key_g.get(2)<<std::endl;
+                    std::cout<<"WARN: Closest point computation fails at : ";
                     for(int d = 0; d < dim; ++d)
+                    {
+                        std::cout<<key_g.get(d)<<" ";
                         gd.template get<cp_field>(key)[d] = -100.0;
+                    }
+                    std::cout<<"\n";
                 }
             }
             ++it;
@@ -156,7 +162,7 @@ void estimateClosestPoint(grid_type &gd, const double nb_gamma)
  * @tparam cp_field Property id on grid for storing closest point coordinates
  * @tparam extend_field Property id on grid where the field to be extended resides
  * @tparam extend_field_temp Property id on grid for storing temporary intermediate values
- * @tparam poly_order Order of the polynomial for stencil interpolation
+ * @tparam poly_order Type of stencil interpolation (Taylor poly orders between 2 to 5 and Tri/bicubic through -1 is supported)
  * @tparam grid_type Type of the grid container
  *
  * @param gd The distributed grid containing atleast level set SDF field and closest point coordinates
@@ -167,7 +173,7 @@ void extendLSField(grid_type &gd, const double nb_gamma)
 {
     const unsigned int dim = grid_type::dims;
     // Update the phi and cp fields in ghost
-    gd.template ghost_get<phi_field, cp_field>(KEEP_PROPERTIES);
+    gd.template ghost_get<phi_field, cp_field, extend_field>(KEEP_PROPERTIES);
 
     // Stencil polynomial object
     using Poly = typename Algoim::StencilPoly<dim, poly_order>::T_Poly;
