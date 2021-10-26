@@ -5,6 +5,7 @@
 
 #include<iostream>
 #include <boost/test/unit_test_log.hpp>
+#include <cmath>
 #define BOOST_TEST_DYN_LINK
 #include <boost/test/unit_test.hpp>
 #include <iostream>
@@ -45,6 +46,36 @@ void initializeLSEllipsoid(grid_type &gd, const EllipseParams &params)
         gd.template get<phi_field>(key) = phi_val;
         ++it;
     }
+}
+
+// Initialize a scalar field or grid points near the interface
+template<const unsigned int phi, const unsigned int field, typename grid_type>
+void initializeScalarField3D(grid_type &gd, double init_width)
+{
+    auto it = gd.getDomainIterator();
+
+    // Trying with a L_1 and L_2 spherical harmonics as initial condition for scalar_field
+    double prefactor_l1 = std::sqrt(2.0/(4.0*M_PI));
+    //double prefactor_l2 = std::sqrt(5.0/(16.0*M_PI));
+
+    while(it.isNext())
+    {
+        auto key = it.get();
+        if(gd.template get<phi>(key) < init_width)
+        {
+            auto coords = gd.getPos(key);
+            double posx = coords.get(0);
+            double posy = coords.get(1);
+            double posz = coords.get(2);
+        
+            double theta = std::atan2(std::sqrt(posx*posx + posy*posy), posz);
+
+            gd.template get<field>(key) = prefactor_l1 * std::cos(theta);
+            //gd.template get<field>(key) = prefactor_l2 * (3.0 * std::cos(theta) * std::cos(theta) - 1.0);
+        }
+        ++it;
+    }
+    
 }
 
 BOOST_AUTO_TEST_SUITE( closest_point_test )
@@ -212,7 +243,7 @@ BOOST_AUTO_TEST_CASE( reinitialization_unit_sphere )
     estimateClosestPoint<phi, cp, POLY_ORDER>(gdist, nb_gamma);
 
     // Reinitialize the level set function stored in property 'phi' based on closest points in 'cp'
-    reinitializeLS<phi, cp, POLY_ORDER>(gdist, nb_gamma);
+    reinitializeLS<phi, cp>(gdist, nb_gamma);
 
     // Estimate error in closest point estimation
     auto &patches = gdist.getLocalGridsInfo();
@@ -249,6 +280,113 @@ BOOST_AUTO_TEST_CASE( reinitialization_unit_sphere )
         }
     }
     std::cout<<"Reinitialization error : "<<max_error<<std::endl;
+    double tolerance = 1e-5;
+    bool check;
+    if (std::abs(max_error) < tolerance)
+        check = true;
+    else
+        check = false;
+
+    BOOST_TEST( check );
+
+}
+
+
+BOOST_AUTO_TEST_CASE( extension_unit_sphere )
+{
+
+    constexpr int SIM_DIM = 3;
+    constexpr int POLY_ORDER = 5;
+    constexpr int SIM_GRID_SIZE = 128;
+
+    // Fields - phi, cp, scalar_field, scalar_field_temp
+    using GridDist = grid_dist_id<SIM_DIM,double,aggregate<double,double[SIM_DIM],double,double>>;
+    using GridKey = grid_dist_key_dx<SIM_DIM>;
+
+    // Grid size on each dimension
+    const long int sz[SIM_DIM] = {SIM_GRID_SIZE, SIM_GRID_SIZE, SIM_GRID_SIZE};
+    const size_t szu[SIM_DIM] = {(size_t) sz[0], (size_t) sz[1], (size_t) sz[2]};
+
+    // 3D physical domain
+    Box<SIM_DIM,double> domain({-1.5,-1.5,-1.5},{1.5,1.5,1.5});
+
+    constexpr int x = 0;
+    constexpr int y = 1;
+    constexpr int z = 2;
+
+    // Alias for properties on the grid
+    constexpr int phi = 0;
+    constexpr int cp = 1;
+    constexpr int scalar_field = 2;
+    constexpr int scalar_field_temp = 3;
+
+    double nb_gamma = 0.0;
+
+    periodicity<SIM_DIM> grid_bc = {NON_PERIODIC, NON_PERIODIC, NON_PERIODIC};
+    // Ghost in grid units
+    Ghost <SIM_DIM, long int> grid_ghost(2*narrow_band_half_width);
+    GridDist gdist(szu, domain, grid_ghost, grid_bc);
+
+    EllipseParams params;
+    params.origin[x] = 0.0;
+    params.origin[y] = 0.0;
+    params.origin[z] = 0.0;
+    params.radiusA = 1.0;
+    params.radiusB = 1.0;
+    params.radiusC = 1.0;
+
+    nb_gamma = narrow_band_half_width * gdist.spacing(0);
+
+    initializeLSEllipsoid<phi>(gdist, params);
+
+    estimateClosestPoint<phi, cp, POLY_ORDER>(gdist, nb_gamma);
+
+    // Reinitialize the level set function stored in property 'phi' based on closest points in 'cp'
+    reinitializeLS<phi, cp>(gdist, nb_gamma);
+
+    // Initialize a scalar field close to interface
+    initializeScalarField3D<phi,scalar_field>(gdist, 4*gdist.spacing(0));
+
+    // Extension to the full narrow band
+    extendLSField<phi, cp, scalar_field, scalar_field_temp, -1>(gdist, nb_gamma);
+    double prefactor_l1 = std::sqrt(2.0/(4.0*M_PI));
+
+    // Estimate error in closest point estimation
+    auto &patches = gdist.getLocalGridsInfo();
+    double max_error = -1.0;
+    for(int i = 0; i < patches.size();i++)
+    {
+        auto p_xlo = patches.get(i).Dbox.getLow(0) + patches.get(i).origin[0];
+        auto p_xhi = patches.get(i).Dbox.getHigh(0) + patches.get(i).origin[0];
+        auto p_ylo = patches.get(i).Dbox.getLow(1) + patches.get(i).origin[1];
+        auto p_yhi = patches.get(i).Dbox.getHigh(1) + patches.get(i).origin[1];
+        auto p_zlo = patches.get(i).Dbox.getLow(2) + patches.get(i).origin[2];
+        auto p_zhi = patches.get(i).Dbox.getHigh(2) + patches.get(i).origin[2];
+
+        auto it = gdist.getSubDomainIterator({p_xlo, p_ylo, p_zlo}, {p_xhi, p_yhi, p_zhi});
+        while(it.isNext())
+        {
+            auto key = it.get();
+
+            if(std::abs(gdist.template get<phi>(key)) < nb_gamma)
+            {
+                // Global grid coordinate
+                auto coords = gdist.getPos(key);
+                double posx = coords.get(0);
+                double posy = coords.get(1);
+                double posz = coords.get(2);
+
+                double theta = std::atan2(std::sqrt(posx*posx + posy*posy), posz);
+                // Analytically computed signed distance
+                // NOTE: SDF convention here is positive inside and negative outside the sphere
+                double exact_val = prefactor_l1 * std::cos(theta);
+
+                max_error = std::max({std::abs(exact_val - gdist.template get<scalar_field>(key)), max_error});
+            }
+            ++it;
+        }
+    }
+    std::cout<<"Extension error : "<<max_error<<std::endl;
     double tolerance = 1e-5;
     bool check;
     if (std::abs(max_error) < tolerance)
