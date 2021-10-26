@@ -149,7 +149,7 @@ BOOST_AUTO_TEST_SUITE(fd_op_suite_tests)
             ++it;
         }
 
-        domain.ghost_get<0>();
+        domain.ghost_get<0,3>();
 
         FD::Derivative_x Dx;
         FD::Derivative_y Dy;
@@ -164,6 +164,8 @@ BOOST_AUTO_TEST_SUITE(fd_op_suite_tests)
         Mat[0][1] = Dx(vec[0]);
 
         Mat[1][0] = vec[0];
+
+        domain.ghost_get<4>();
 
         Mat[0][0] = Dx(Mat[1][0]);
         Mat3[0][0][0] = Dx(vec[0]);
