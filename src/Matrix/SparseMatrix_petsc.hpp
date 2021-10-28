@@ -222,7 +222,7 @@ public:
 	:g_row(N1),g_col(N2),l_row(n_row_local),l_col(n_row_local)
 	{
 		PETSC_SAFE_CALL(MatCreate(PETSC_COMM_WORLD,&mat));
-		//PETSC_SAFE_CALL(MatSetType(mat,MATMPIAIJ));
+		PETSC_SAFE_CALL(MatSetType(mat,MATMPIAIJ));
         PETSC_SAFE_CALL(MatSetFromOptions(mat));
 		PETSC_SAFE_CALL(MatSetSizes(mat,n_row_local,n_row_local,N1,N2));
 
@@ -246,7 +246,7 @@ public:
 	:g_row(0),g_col(0),l_row(0l),l_col(0),start_row(0)
 	{
 		PETSC_SAFE_CALL(MatCreate(PETSC_COMM_WORLD,&mat));
-        //PETSC_SAFE_CALL(MatSetType(mat,MATMPIAIJ));
+        PETSC_SAFE_CALL(MatSetType(mat,MATMPIAIJ));
         PETSC_SAFE_CALL(MatSetFromOptions(mat));
 
 	}
