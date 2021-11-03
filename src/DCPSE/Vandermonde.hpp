@@ -22,14 +22,16 @@ public:
 /*    Vandermonde(const Point<dim, T> &point, const std::vector<Point<dim, T>> &neighbours,
                 const MonomialBasis<dim> &monomialBasis);*/
 
-    template<typename vector_type>
+    template<typename vector_type,
+             typename vector_type2>
     Vandermonde(const Support &support,
                 const MonomialBasis<dim> &monomialBasis,
-                const vector_type & particles)
-    : point(particles.getPosOrig(support.getReferencePointKey())),
+                const vector_type & particlesFrom,
+                const vector_type2 & particlesTo)
+    : point(particlesTo.getPosOrig(support.getReferencePointKey())),
                   monomialBasis(monomialBasis)
     {
-        initialize(support,particles);
+        initialize(support,particlesFrom,particlesTo);
     }
 
 
@@ -81,15 +83,15 @@ private:
         return absSum;
     }
 
-    template<typename vector_type>
-    void initialize(const Support &sup, const vector_type & particles)
+    template<typename vector_type, typename vector_type2>
+    void initialize(const Support &sup, const vector_type & particlesFrom, vector_type2 particlesTo)
     {
     	auto & keys = sup.getKeys();
 
     	for (int i = 0 ; i < keys.size() ; i++)
     	{
-    		Point<dim,T> p = particles.getPosOrig(sup.getReferencePointKey());
-            p -= particles.getPosOrig(keys.get(i));
+    		Point<dim,T> p = particlesTo.getPosOrig(sup.getReferencePointKey());
+            p -= particlesFrom.getPosOrig(keys.get(i));
             offsets.add(p);
     	}
 

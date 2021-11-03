@@ -17,10 +17,14 @@
  * \return Operator Dx which is a function on Vector_dist_Expressions
  *
  */
-template<template<unsigned int, typename, typename...> class Dcpse_type = Dcpse>
-class PPInterpolation {
+template<typename particlesFrom_type, typename particlesTo_type>
+class PPInterpolation 
+{
 
     void *dcpse;
+
+    particlesFrom_type & particlesFrom;
+    particlesTo_type & particlesTo;
 
 public:
     /*! \brief Constructor for Creating the DCPSE Operator Dx and objects and computes DCPSE Kernels.
@@ -35,18 +39,18 @@ public:
      * \return Operator F which is a function on Vector_dist_Expressions
      *
      */
-    template<typename particlesFrom_type,typename particlesTo_type>
-    PPInterpolation(particlesFrom_type &partsFrom,particlesTo_type &partsTo, unsigned int ord, typename particles_type::stype rCut,
+    PPInterpolation(particlesFrom_type &partsFrom,particlesTo_type &partsTo, unsigned int ord, typename particlesFrom_type::stype rCut,
                       double oversampling_factor = dcpse_oversampling_factor,
-                      support_options opt = support_options::RADIUS) {
-        Point<particles_type::dims, unsigned int> p;
+                      support_options opt = support_options::RADIUS)
+    :particlesFrom(particlesFrom),particlesTo(particlesTo)
+    {
+        Point<particlesFrom_type::dims, unsigned int> p;
         p.zero();
-        dcpse = new Dcpse_type<particles_type::dims, particlesFrom_type,particlesTo_type>(partsFrom,partsTo, p, ord, rCut, oversampling_factor, opt);
+        dcpse = new Dcpse<particlesFrom_type::dims, particlesFrom_type,particlesTo_type>(partsFrom,partsTo, p, ord, rCut, oversampling_factor, opt);
     }
 
-    template<typename particles_type>
-    void deallocate(particles_type &parts) {
-        delete (Dcpse_type<particles_type::dims, particles_type> *) dcpse;
+    void deallocate() {
+        delete (Dcpse<particlesFrom_type::dims, particlesFrom_type, particlesTo_type> *) dcpse;
     }
 
    /* template<typename operand_type>
@@ -56,48 +60,46 @@ public:
         return vector_dist_expression_op<operand_type, dcpse_type, VECT_DCPSE>(arg, *(dcpse_type *) dcpse);
     }*/
 
-   template<unsigned int prp1,unsigned int prp2, typename particlesFrom_type,typename particlesTo_type>
-   void p2p(particlesFrom_type &particlesFrom,particlesTo_type &particlesTo) {
-       auto dcpse_temp = (Dcpse_type<particles_type::dims, particles_type>*) dcpse;
+   template<unsigned int prp1,unsigned int prp2>
+   void p2p() {
+       auto dcpse_temp = (Dcpse<particlesFrom_type::dims, particlesFrom_type, particlesTo_type>*) dcpse;
        dcpse_temp->template p2p<prp1,prp2>(particlesFrom, particlesTo);
 
    }
 
-    template<unsigned int prp, typename particles_type>
-    void DrawKernel(particles_type &particles, int k) {
-        auto dcpse_temp = (Dcpse_type<particles_type::dims, particles_type> *) dcpse;
-        dcpse_temp->template DrawKernel<prp>(particles, k);
+    // template<unsigned int prp, typename particles_type>
+    // void DrawKernel(particles_type &particles, int k) {
+    //     auto dcpse_temp = (Dcpse_type<particlesFrom_type::dims, particlesFrom_type, particlesTo_type> *) dcpse;
+    //     dcpse_temp->template DrawKernel<prp>(particles, k);
 
-    }
+    // }
 
-    template<unsigned int prp, typename particles_type>
-    void DrawKernelNN(particles_type &particles, int k) {
-        auto dcpse_temp = (Dcpse_type<particles_type::dims, particles_type> *) dcpse;
-        dcpse_temp->template DrawKernelNN<prp>(particles, k);
+    // template<unsigned int prp, typename particles_type>
+    // void DrawKernelNN(particles_type &particles, int k) {
+    //     auto dcpse_temp = (Dcpse_type<particlesFrom_type::dims, particlesFrom_type,particlesTo_type> *) dcpse;
+    //     dcpse_temp->template DrawKernelNN<prp>(particles, k);
 
-    }
+    // }
 
-    template<typename particles_type>
-    void checkMomenta(particles_type &particles) {
-        auto dcpse_temp = (Dcpse_type<particles_type::dims, particles_type> *) dcpse;
-        dcpse_temp->checkMomenta(particles);
+    // template<typename particles_type>
+    // void checkMomenta(particles_type &particles) {
+    //     auto dcpse_temp = (Dcpse_type<particles_type::dims, particlesFrom_type, particlesTo_type> *) dcpse;
+    //     dcpse_temp->checkMomenta(particles);
 
-    }
+    // }
 
     /*! \brief Method for Updating the DCPSE Operator by recomputing DCPSE Kernels.
      *
      *
      * \param parts particle set
      */
-    template<typename particles_type>
-    void update(particles_type &particles) {
-        auto dcpse_temp = (Dcpse_type<particles_type::dims, particles_type> *) dcpse;
-        dcpse_temp->initializeUpdate(particles);
+    void update() {
+        auto dcpse_temp = (Dcpse<particlesFrom_type::dims, particlesFrom_type, particlesTo_type> *) dcpse;
+        dcpse_temp->initializeUpdate(particlesFrom,particlesTo);
 
     }
 
 };
-
 
 
 

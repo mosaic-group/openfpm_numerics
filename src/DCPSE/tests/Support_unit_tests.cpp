@@ -53,18 +53,12 @@ BOOST_AUTO_TEST_SUITE(Support_tests)
         // Get spatial position from point iterator
         vect_dist_key_dx p = itPoint.get();
         const auto pos = domain.getPos(p.getKey());
-        //std::cout << "p=(" << pos[0] << "," << pos[1] << ")" << std::endl;
-//        BOOST_REQUIRE_CLOSE(pos[0], 0, 1e-16);
-//        BOOST_REQUIRE_CLOSE(pos[1], 0, 1e-16);
 
-        // Now that domain is built and populated, let's test SupportBuilder
-        // We use (0,0) as initial point
-        SupportBuilder<vector_dist<2, double, aggregate<double>>> supportBuilder(domain, {1,0}, 2*spacing[0]);
+        typedef vector_dist<2, double, aggregate<double>> vector_dist_type;
+
+        SupportBuilder<vector_dist_type,vector_dist_type> supportBuilder(domain, domain, {1,0}, 2*spacing[0],false);
         auto support = supportBuilder.getSupport(itPoint, 6, support_options::N_PARTICLES);
-//        for (const auto &off : support.getOffsets())
-//        {
-//            std::cout << off.toString() << std::endl;
-//        }
+
         BOOST_REQUIRE_GE(support.size(), 6);
     }
 
@@ -113,25 +107,15 @@ BOOST_AUTO_TEST_SUITE(Support_tests)
         // Get spatial position from point iterator
         vect_dist_key_dx p = itPoint.get();
         const auto pos = domain.getPos(p.getKey());
-        //std::cout << "p=(" << pos[0] << "," << pos[1] << ")" << std::endl;
-//        BOOST_REQUIRE_CLOSE(pos[0], 0, 1e-16);
-//        BOOST_REQUIRE_CLOSE(pos[1], 0, 1e-16);
 
-        // Now that domain is built and populated, let's test SupportBuilder
-        // We use (0,0) as initial point
-        SupportBuilder<vector_dist<2, double, aggregate<double>>> supportBuilder(domain, {2,2}, 2*spacing[0]);
+        typedef vector_dist<2, double, aggregate<double>> vector_dist_type;
+
+        SupportBuilder<vector_dist_type,vector_dist_type> supportBuilder(domain, domain, {2,2}, 2*spacing[0],false);
         auto supportPoints = supportBuilder.getSupport(itPoint, 20, support_options::N_PARTICLES);
-//        for (const auto &k : supportPoints)
-//        {
-//            Point<2, double> pt = domain.getPos(k);
-//            std::cout << pt.toString() << std::endl;
-//        }
+
         BOOST_REQUIRE_GE(supportPoints.size(), 20);
     }
 
-//    BOOST_AUTO_TEST_CASE(Support_CopyConstructor_test)
-//    {
-//
-//    }
+
 
 BOOST_AUTO_TEST_SUITE_END()

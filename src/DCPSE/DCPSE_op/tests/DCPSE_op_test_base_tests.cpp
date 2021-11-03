@@ -23,6 +23,7 @@
 #include "Operators/Vector/vector_dist_operators.hpp"
 #include "Vector/vector_dist_subset.hpp"
 #include "../EqnsStruct.hpp"
+#include "DCPSE/DcpseInterpolation.hpp"
 
 BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
 BOOST_AUTO_TEST_CASE(dcpse_op_tests) {
@@ -109,7 +110,9 @@ BOOST_AUTO_TEST_CASE(dcpse_op_tests) {
         BOOST_TEST_MESSAGE("Init vector_dist...");
         double sigma2 = spacing[0] * spacing[1] / (2 * 4);
 
-        vector_dist<2, double, aggregate<double, double, double, VectorS<2, double>, VectorS<2, double>>> domain(0, box,bc,ghost);
+        typedef vector_dist<2, double, aggregate<double, double, double, VectorS<2, double>, VectorS<2, double>>> vector_type;
+
+        vector_type domain(0, box,bc,ghost);
 
         //Init_DCPSE(domain)
         BOOST_TEST_MESSAGE("Init domain...");
@@ -138,11 +141,11 @@ BOOST_AUTO_TEST_CASE(dcpse_op_tests) {
         domain.map();
         domain.ghost_get<0>();
 
-        PPInterpolation Fx(domain,domain, 2, rCut);
+        PPInterpolation<vector_type,vector_type> Fx(domain,domain, 2, rCut);
         auto v = getV<1>(domain);
         auto P = getV<0>(domain);
 
-        v = Fx(P);
+        Fx.p2p<0,1>();
         auto it2 = domain.getDomainIterator();
         double worst = 0.0;
         while (it2.isNext()) {
@@ -171,8 +174,10 @@ BOOST_AUTO_TEST_CASE(dcpse_op_tests) {
         BOOST_TEST_MESSAGE("Init vector_dist...");
         double sigma2 = spacing[0] * spacing[1] / (2 * 4);
 
-        vector_dist<2, double, aggregate<double, double, double, VectorS<2, double>, VectorS<2, double>>> domain(0, box,bc,ghost);
-        vector_dist<2, double, aggregate<double, double, double, VectorS<2, double>, VectorS<2, double>>> domain2(domain.getDecomposition(),0);
+        typedef vector_dist<2, double, aggregate<double, double, double, VectorS<2, double>, VectorS<2, double>>> vector_dist;
+
+        vector_dist domain(0, box,bc,ghost);
+        vector_dist domain2(domain.getDecomposition(),0);
 
         //Init_DCPSE(domain)
         BOOST_TEST_MESSAGE("Init domain...");
@@ -206,7 +211,7 @@ BOOST_AUTO_TEST_CASE(dcpse_op_tests) {
         domain.ghost_get<0>();
         domain2.ghost_get<0>();
 
-        PPInterpolation Fx(domain2,domain, 2, rCut);
+        PPInterpolation<vector_dist,vector_dist> Fx(domain2,domain, 2, rCut);
         auto v = getV<1>(domain);
         auto P = getV<0>(domain);
         Fx.p2p<0,0>();
