@@ -719,10 +719,10 @@ bool check_values_pos_exp_slicer(vector & v)
 	{
 		auto key = it.get();
 
-		typename vector::stype base1 = -v.getPos(key)[1]*exp(-10.0*(v.getPos(key)[0]*v.getPos(key)[0]+v.getPos(key)[1]*v.getPos(key)[1]));;
+		typename vector::stype base1 = -v.getPos(key)[1]*exp(-10.0*(v.getPos(key)[0]*v.getPos(key)[0]+v.getPos(key)[1]*v.getPos(key)[1]));
 		typename vector::stype base2 = v.template getProp<prp>(key)[0];
 
-		ret &=  base1 == base2;
+		ret &= fabs(base1 - base2) < 1e-5;
 
 		++it;
 	}
@@ -1146,12 +1146,8 @@ void check_all_expressions_imp(vector_type & vd,
 
 	// Position with slicer (not tested on GPU)
 
-	#ifndef __NVCC__
-
 	vVA[0]=-vPOS[1]*exp(-10.0*(vPOS[0]*vPOS[0]+vPOS[1]*vPOS[1]));
 	check_values_pos_exp_slicer<impl,VA>(vd);
-
-	#endif
 }
 
 template<unsigned int impl>

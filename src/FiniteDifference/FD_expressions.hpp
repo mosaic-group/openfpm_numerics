@@ -1180,7 +1180,7 @@ namespace FD
 	struct pos_or_propL
 	{
 		//! return the value (position or property) of the particle k in the vector v
-		static inline auto value(grid_type & v, const grid_dist_key_dx<grid_type::dims> & k) -> decltype(v.template getProp<prp>(k))
+		__device__ __host__ static inline auto value(grid_type & v, const grid_dist_key_dx<grid_type::dims> & k) -> decltype(v.template getProp<prp>(k))
 		{
 			return v.template getProp<prp>(k);
 		}

@@ -2,6 +2,10 @@ cmake_minimum_required(VERSION 3.8 FATAL_ERROR)
 
 ########################### Executables
 
+if (CUDA_FOUND OR CUDA_ON_CPU)
+        set(CUDA_SOURCES Operators/Vector/vector_dist_operators_unit_tests.cu
+                                         Operators/Vector/vector_dist_operators_apply_kernel_unit_tests.cu)
+endif()
 
 if (CUDA_ON_CPU)
         add_definitions(-DCUDA_ON_CPU)
@@ -10,11 +14,6 @@ if (CUDA_ON_CPU)
         if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU" OR CMAKE_CXX_COMPILER_ID STREQUAL "AppleClang" OR CMAKE_CXX_COMPILER_ID STREQUAL "Clang" OR CMAKE_CXX_COMPILER_ID STREQUAL "Intel")
                 add_definitions("-x c++")
         endif()
-endif()
-
-if (CUDA_FOUND)
-	set(CUDA_SOURCES Operators/Vector/vector_dist_operators_unit_tests.cu
-					 Operators/Vector/vector_dist_operators_apply_kernel_unit_tests.cu)
 endif()
 
 add_executable(numerics ${OPENFPM_INIT_FILE} ${CUDA_SOURCES}
