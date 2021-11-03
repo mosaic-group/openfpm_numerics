@@ -21,19 +21,20 @@ enum support_options
 };
 
 
-template<typename vector_type>
+template<typename vector_type,typename vector_type2>
 class SupportBuilder
 {
 private:
-    vector_type &domain;
+    vector_type &domainFrom;
+    vector_type &domainTo;
     decltype(std::declval<vector_type>().getCellList(0.0)) cellList;
     const Point<vector_type::dims, unsigned int> differentialSignature;
     typename vector_type::stype rCut;
 
 public:
-    SupportBuilder(vector_type &domain, Point<vector_type::dims, unsigned int> differentialSignature, typename vector_type::stype rCut);
+    SupportBuilder(vector_type &domainFrom,vector_type2 &domainTo, Point<vector_type::dims, unsigned int> differentialSignature, typename vector_type::stype rCut);
 
-    SupportBuilder(vector_type &domain, unsigned int differentialSignature[vector_type::dims], typename vector_type::stype rCut);
+    SupportBuilder(vector_type &domainFrom,vector_type2 &domainTo, unsigned int differentialSignature[vector_type::dims], typename vector_type::stype rCut);
 
     template<typename iterator_type>
     Support getSupport(iterator_type itPoint, unsigned int requiredSize, support_options opt)

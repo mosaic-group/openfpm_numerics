@@ -35,7 +35,7 @@ struct is_scalar<false> {
 	};
 };
 
-template<unsigned int dim, typename vector_type>
+template<unsigned int dim, typename vector_type,typename vector_type2=vector_type>
 class Dcpse {
 public:
 
@@ -67,6 +67,7 @@ private:
     openfpm::vector<T> calcKernels;
 
     vector_type & particles;
+    vector_type2 & particlesTo;
     double rCut;
     unsigned int convergenceOrder;
     double supportSizeFactor;
@@ -127,6 +128,27 @@ public:
         else
             initializeStaticSize(particles, convergenceOrder, rCut, supportSizeFactor);
     }
+    Dcpse(vector_type &particlesFrom,vector_type2 &particlesTo,
+          const Dcpse<dim, vector_type>& other,
+          Point<dim, unsigned int> differentialSignature,
+          unsigned int convergenceOrder,
+          T rCut,
+          T supportSizeFactor = 1,
+          support_options opt = support_options::N_PARTICLES)
+            :particlesFrom(particlesFrom),particlesTo(particlesTo), opt(opt),
+             differentialSignature(differentialSignature),
+             differentialOrder(Monomial<dim>(differentialSignature).order()),
+             monomialBasis(differentialSignature.asArray(), convergenceOrder),
+             localSupports(other.localSupports),
+             isSharedLocalSupport(true)
+    {
+        particles.ghost_get_subset();
+        if (supportSizeFactor < 1)
+            initializeAdaptive(particlesFrom,particlesTo,convergenceOrder, rCut);
+        else
+            initializeStaticSize(particlesFrom,particlesTo,convergenceOrder, rCut, supportSizeFactor);
+    }
+
 
     template<unsigned int prp>
     void DrawKernel(vector_type &particles, int k)
@@ -260,7 +282,7 @@ public:
     template<unsigned int fValuePos, unsigned int DfValuePos>
     void computeDifferentialOperator(vector_type &particles) {
         char sign = 1;
-        if (differentialOrder % 2 == 0) {
+        if (differentialOrder % 2 == 0 && differentialOrder!=0) {
             sign = -1;
         }
 
@@ -335,7 +357,7 @@ public:
     inline T getSign()
     {
         T sign = 1.0;
-        if (differentialOrder % 2 == 0) {
+        if (differentialOrder % 2 == 0 && differentialOrder!=0) {
             sign = -1;
         }
 
@@ -363,7 +385,7 @@ public:
         typedef decltype(is_scalar<std::is_fundamental<decltype(o1.value(key))>::value>::analyze(key, o1)) expr_type;
 
         T sign = 1.0;
-        if (differentialOrder % 2 == 0) {
+        if (differentialOrder % 2 == 0 && differentialOrder !=0) {
             sign = -1;
         }
 
@@ -419,7 +441,7 @@ public:
         //typedef typename decltype(o1.value(key))::blabla blabla;
 
         T sign = 1.0;
-        if (differentialOrder % 2 == 0) {
+        if (differentialOrder % 2 == 0 && differentialOrder!=0) {
             sign = -1;
         }
 
@@ -558,7 +580,7 @@ private:
     }
 
 
-    void initializeStaticSize(vector_type &particles,
+    void initializeStaticSize(vector_type &particlesFrom,vector_type2 &particlesTo,
                               unsigned int convergenceOrder,
                               T rCut,
                               T supportSizeFactor) {
@@ -568,8 +590,8 @@ private:
         this->rCut=rCut;
         this->supportSizeFactor=supportSizeFactor;
         this->convergenceOrder=convergenceOrder;
-        SupportBuilder<vector_type>
-                supportBuilder(particles, differentialSignature, rCut);
+        SupportBuilder<vector_type,vector_type2>
+                supportBuilder(particlesFrom,particlesTo, differentialSignature, rCut);
         unsigned int requiredSupportSize = monomialBasis.size() * supportSizeFactor;
 
         if (!isSharedLocalSupport)
@@ -578,11 +600,14 @@ private:
         localEpsInvPow.resize(particles.size_local_orig());
         kerOffsets.resize(particles.size_local_orig());
         kerOffsets.fill(-1);
-
-        auto it = particles.getDomainIterator();
+        T coeff=1.;
+        if(differentialOrder==0){
+            coeff=.5;
+        }
+        auto it = particlesTo.getDomainIterator();
         while (it.isNext()) {
             // Get the points in the support of the DCPSE kernel and store the support for reuse
-            auto key_o = particles.getOriginKey(it.get());
+            auto key_o = particlesFrom.getOriginKey(it.get());
 
             if (!isSharedLocalSupport)
                 localSupports.get(key_o.getKey()) = supportBuilder.getSupport(it, requiredSupportSize,opt);
@@ -629,8 +654,7 @@ private:
                 const auto& xqK = support_keys.get(i);
                 Point<dim, T> xq = particles.getPosOrig(xqK);
                 Point<dim, T> normalizedArg = (xp - xq) / eps;
-
-                calcKernels.add(computeKernel(normalizedArg, a));
+                calcKernels.add(coeff*computeKernel(normalizedArg, a));
             }
             //
             ++it;

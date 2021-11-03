@@ -649,6 +649,95 @@ public:
         {}
     };
     */
+/*! \brief Class for Creating the DCPSE Operator For the function approximation objects and computes DCPSE Kernels.
+ *
+ *
+ * \param parts particle set
+ * \param ord order of convergence of the operator
+ * \param rCut Argument for cell list construction
+ * \param oversampling_factor multiplier to the minimum no. of particles required by the operator in support
+ * \param support_options default:N_particles, Radius can be used to select all particles inside rCut. Overrides oversampling.
+ *
+ * \return Operator Dx which is a function on Vector_dist_Expressions
+ *
+ */
+template<template<unsigned int, typename, typename...> class Dcpse_type = Dcpse>
+class PPInterpolation_T {
+
+    void *dcpse;
+
+public:
+    /*! \brief Constructor for Creating the DCPSE Operator Dx and objects and computes DCPSE Kernels.
+     *
+     *
+     * \param parts particle set
+     * \param ord order of convergence of the operator
+     * \param rCut Argument for cell list construction
+     * \param oversampling_factor multiplier to the minimum no. of particles required by the operator in support
+     * \param support_options default:N_particles, Radius can be used to select all particles inside rCut. Overrides oversampling.
+     *
+     * \return Operator F which is a function on Vector_dist_Expressions
+     *
+     */
+    template<typename particles_type,typename particles_type>
+    PPInterpolation_T(particles_type &parts,particles_type2 &parts, unsigned int ord, typename particles_type::stype rCut,
+                   double oversampling_factor = dcpse_oversampling_factor,
+                   support_options opt = support_options::RADIUS) {
+        Point<particles_type::dims, unsigned int> p;
+        p.zero();
+        dcpse = new Dcpse_type<particles_type::dims, particles_type>(parts, p, ord, rCut, oversampling_factor, opt);
+    }
+
+    template<typename particles_type>
+    void deallocate(particles_type &parts) {
+        delete (Dcpse_type<particles_type::dims, particles_type> *) dcpse;
+    }
+
+    template<typename operand_type>
+    vector_dist_expression_op<operand_type, Dcpse_type<operand_type::vtype::dims, typename operand_type::vtype>, VECT_DCPSE>
+    operator()(operand_type arg) {
+        typedef Dcpse_type<operand_type::vtype::dims, typename operand_type::vtype> dcpse_type;
+
+        return vector_dist_expression_op<operand_type, dcpse_type, VECT_DCPSE>(arg, *(dcpse_type *) dcpse);
+    }
+
+    template<unsigned int prp, typename particles_type>
+    void DrawKernel(particles_type &particles, int k) {
+        auto dcpse_temp = (Dcpse_type<particles_type::dims, particles_type> *) dcpse;
+        dcpse_temp->template DrawKernel<prp>(particles, k);
+
+    }
+
+    template<unsigned int prp, typename particles_type>
+    void DrawKernelNN(particles_type &particles, int k) {
+        auto dcpse_temp = (Dcpse_type<particles_type::dims, particles_type> *) dcpse;
+        dcpse_temp->template DrawKernelNN<prp>(particles, k);
+
+    }
+
+    template<typename particles_type>
+    void checkMomenta(particles_type &particles) {
+        auto dcpse_temp = (Dcpse_type<particles_type::dims, particles_type> *) dcpse;
+        dcpse_temp->checkMomenta(particles);
+
+    }
+
+    /*! \brief Method for Updating the DCPSE Operator by recomputing DCPSE Kernels.
+     *
+     *
+     * \param parts particle set
+     */
+    template<typename particles_type>
+    void update(particles_type &particles) {
+        auto dcpse_temp = (Dcpse_type<particles_type::dims, particles_type> *) dcpse;
+        dcpse_temp->initializeUpdate(particles);
+
+    }
+
+};
+
+
+
 /*! \brief Class for Creating the DCPSE Operator Dx and objects and computes DCPSE Kernels.
  *
  *
@@ -2058,7 +2147,7 @@ public:
     }
 };
 
-
+//typedef PPInterpolation_T<Dcpse> PPInterpolation;
 typedef Derivative_x_T<Dcpse> Derivative_x;
 typedef Derivative_y_T<Dcpse> Derivative_y;
 typedef Derivative_z_T<Dcpse> Derivative_z;

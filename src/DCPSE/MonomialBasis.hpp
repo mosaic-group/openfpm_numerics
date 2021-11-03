@@ -133,6 +133,10 @@ void MonomialBasis<dim, T, vector_type, Args...>::generateBasis(vector_type<unsi
 
     // Finally compute alpha_min
     unsigned char alphaMin = static_cast<unsigned char>(!(mSum % 2)); // if mSum is even, alpha_min must be 1
+    if(mSum==0)
+    {
+        alphaMin = 0;
+    }
     //std::cout<<"AlphaMin: "<<alphaMin<<std::endl;
     //unsigned char alphaMin = 0; // we want to always have 1 in the basis
 
