@@ -220,6 +220,7 @@ install(FILES DCPSE/Dcpse.hpp
 		DCPSE/Vandermonde.hpp
 		DCPSE/Vandermonde.cuh
 		DCPSE/VandermondeRowBuilder.hpp
+		DCPSE/DcpseInterpolation.hpp
 		DESTINATION openfpm_numerics/include/DCPSE
 		COMPONENT OpenFPM)
 
