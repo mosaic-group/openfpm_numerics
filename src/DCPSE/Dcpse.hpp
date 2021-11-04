@@ -512,7 +512,7 @@ public:
     void initializeUpdate(vector_type &particlesFrom,vector_type2 &particlesTo)
     {
 #ifdef SE_CLASS1
-        update_ctr=particles.getMapCtr();
+        update_ctr=particlesFrom.getMapCtr();
 #endif
 
         localSupports.clear();
@@ -633,7 +633,7 @@ private:
                               T rCut,
                               T supportSizeFactor) {
 #ifdef SE_CLASS1
-        this->update_ctr=particles.getMapCtr();
+        this->update_ctr=particlesFrom.getMapCtr();
 #endif
         this->rCut=rCut;
         this->supportSizeFactor=supportSizeFactor;

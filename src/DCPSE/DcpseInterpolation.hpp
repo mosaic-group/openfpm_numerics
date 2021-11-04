@@ -39,14 +39,14 @@ public:
      * \return Operator F which is a function on Vector_dist_Expressions
      *
      */
-    PPInterpolation(particlesFrom_type &partsFrom,particlesTo_type &partsTo, unsigned int ord, typename particlesFrom_type::stype rCut,
+    PPInterpolation(particlesFrom_type &particlesFrom,particlesTo_type &particlesTo, unsigned int ord, typename particlesFrom_type::stype rCut,
                       double oversampling_factor = dcpse_oversampling_factor,
                       support_options opt = support_options::RADIUS)
     :particlesFrom(particlesFrom),particlesTo(particlesTo)
     {
         Point<particlesFrom_type::dims, unsigned int> p;
         p.zero();
-        dcpse = new Dcpse<particlesFrom_type::dims, particlesFrom_type,particlesTo_type>(partsFrom,partsTo, p, ord, rCut, oversampling_factor, opt);
+        dcpse = new Dcpse<particlesFrom_type::dims, particlesFrom_type,particlesTo_type>(particlesFrom,particlesTo, p, ord, rCut, oversampling_factor, opt);
     }
 
     void deallocate() {
