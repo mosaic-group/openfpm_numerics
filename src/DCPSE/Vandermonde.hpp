@@ -84,7 +84,7 @@ private:
     }
 
     template<typename vector_type, typename vector_type2>
-    void initialize(const Support &sup, const vector_type & particlesFrom, vector_type2 particlesTo)
+    void initialize(const Support &sup, const vector_type & particlesFrom, vector_type2 &particlesTo)
     {
     	auto & keys = sup.getKeys();
 

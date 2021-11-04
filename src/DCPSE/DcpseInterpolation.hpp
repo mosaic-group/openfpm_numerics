@@ -63,7 +63,7 @@ public:
    template<unsigned int prp1,unsigned int prp2>
    void p2p() {
        auto dcpse_temp = (Dcpse<particlesFrom_type::dims, particlesFrom_type, particlesTo_type>*) dcpse;
-       dcpse_temp->template p2p<prp1,prp2>(particlesFrom, particlesTo);
+       dcpse_temp->template p2p<prp1,prp2>();
 
    }
 

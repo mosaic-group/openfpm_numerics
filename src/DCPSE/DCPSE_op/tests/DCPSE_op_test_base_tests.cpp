@@ -172,8 +172,9 @@ BOOST_AUTO_TEST_CASE(dcpse_op_tests) {
         Ghost<2, double> ghost(spacing[0] * 3.9);
         double rCut = 3.9 * spacing[0];
         BOOST_TEST_MESSAGE("Init vector_dist...");
-        double sigma2 = spacing[0] * spacing[1] / (2 * 4);
-
+        double sigma2 = spacing[0] * spacing[1] / ( 4);
+        std::normal_distribution<> gaussian{0, sigma2};
+        std::mt19937 rng{6666666};
         typedef vector_dist<2, double, aggregate<double, double, double, VectorS<2, double>, VectorS<2, double>>> vector_dist;
 
         vector_dist domain(0, box,bc,ghost);
@@ -191,15 +192,22 @@ BOOST_AUTO_TEST_CASE(dcpse_op_tests) {
             domain2.add();
             auto key = it.get();
             mem_id k0 = key.get(0);
-            double x = k0 * spacing[0];
-            domain.getLastPos()[0] = x;//+ gaussian(rng);
-            domain2.getLastPos()[0] = x;//+ gaussian(rng);
             mem_id k1 = key.get(1);
+            double x = k0 * spacing[0];
             double y = k1 * spacing[1];
+            domain.getLastPos()[0] = x;//+ gaussian(rng);
             domain.getLastPos()[1] = y;//+gaussian(rng);
-            domain2.getLastPos()[1] = y;//+gaussian(rng);
+            if(x!=0 && y!=0 && x!=box.getHigh(0) && y!=box.getHigh(1)){
+                domain2.getLastPos()[0] = x+ gaussian(rng);
+                domain2.getLastPos()[1] = y+ gaussian(rng);
+            }
+            else{
+                domain2.getLastPos()[0] = x;
+                domain2.getLastPos()[1] = y;
+            }
             // Here fill the function value
             domain.template getLastProp<0>() = sin(domain.getLastPos()[0]) + sin(domain.getLastPos()[1]);
+            domain.template getLastProp<1>() = 0.0;
             domain2.template getLastProp<0>() = sin(domain2.getLastPos()[0]) + sin(domain2.getLastPos()[1]);
             ++counter;
             ++it;
@@ -214,19 +222,21 @@ BOOST_AUTO_TEST_CASE(dcpse_op_tests) {
         PPInterpolation<vector_dist,vector_dist> Fx(domain2,domain, 2, rCut);
         auto v = getV<1>(domain);
         auto P = getV<0>(domain);
-        Fx.p2p<0,0>();
+        Fx.p2p<0,1>();
         auto it2 = domain.getDomainIterator();
         double worst = 0.0;
         while (it2.isNext()) {
             auto p = it2.get();
+            //domain.template getProp<2>(p) = domain.getProp<1>(p) - domain.getProp<0>(p);
             if (fabs(domain.getProp<1>(p) - domain.getProp<0>(p)) > worst) {
                 worst = fabs(domain.getProp<1>(p) - domain.getProp<0>(p));
             }
             ++it2;
         }
-        std::cout<<"Worst:"<<worst<<std::endl;
+        //std::cout<<"Worst:"<<worst<<std::endl;
         domain.deleteGhost();
-        domain.write("test");
+        //domain.write("test1");
+        //domain2.write("test2");
         BOOST_REQUIRE(worst < 0.03);
     }
 

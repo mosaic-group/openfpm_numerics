@@ -115,7 +115,7 @@ public:
           unsigned int convergenceOrder,
           T rCut,
           T supportSizeFactor = 1,
-          support_options opt = support_options::N_PARTICLES)
+          support_options opt = support_options::RADIUS)
         :particlesFrom(particles), particlesTo(particles), opt(opt),
             differentialSignature(differentialSignature),
             differentialOrder(Monomial<dim>(differentialSignature).order()),
@@ -134,12 +134,12 @@ public:
           unsigned int convergenceOrder,
           T rCut,
           T supportSizeFactor = 1,
-          support_options opt = support_options::N_PARTICLES)
-            :particlesFrom(particlesFrom),particlesTo(particlesTo), opt(opt),
+          support_options opt = support_options::RADIUS)
+            :particlesFrom(particlesFrom),particlesTo(particlesTo),
              differentialSignature(differentialSignature),
              differentialOrder(Monomial<dim>(differentialSignature).order()),
              monomialBasis(differentialSignature.asArray(), convergenceOrder),
-             isSharedLocalSupport(true)
+             opt(opt)
     {
         particlesFrom.ghost_get_subset();
         if (supportSizeFactor < 1)
@@ -189,6 +189,41 @@ public:
         {
             size_t xqK = keys.get(i);
             particles.template getProp<prp>(xqK)[i] += calcKernels.get(kerOff+i);
+        }
+    }
+    /*
+     * breif Particle to Particle Interpolation Evaluation
+     */
+    template<unsigned int prp1,unsigned int prp2>
+    void p2p()
+    {
+        auto it = particlesTo.getDomainIterator();
+        auto supportsIt = localSupports.begin();
+        auto epsItInvPow = localEpsInvPow.begin();
+        while (it.isNext()){
+            double epsInvPow = *epsItInvPow;
+            T Dfxp = 0;
+            Support support = *supportsIt;
+            size_t xpK = support.getReferencePointKey();
+            //Point<dim, typename vector_type::stype> xp = particlesTo.getPos(xpK);
+            //T fxp = sign * particlesTo.template getProp<fValuePos>(xpK);
+            size_t kerOff = kerOffsets.get(xpK);
+            auto & keys = support.getKeys();
+            for (int i = 0 ; i < keys.size() ; i++)
+            {
+                size_t xqK = keys.get(i);
+                T fxq = particlesFrom.template getProp<prp1>(xqK);
+                Dfxp += fxq * calcKernels.get(kerOff+i);
+            }
+            Dfxp *= epsInvPow;
+            //
+            //T trueDfxp = particles.template getProp<2>(xpK);
+            // Store Dfxp in the right position
+            particlesTo.template getProp<prp2>(xpK) = Dfxp;
+            //
+            ++it;
+            ++supportsIt;
+            ++epsItInvPow;
         }
     }
 
@@ -281,7 +316,7 @@ public:
     template<unsigned int fValuePos, unsigned int DfValuePos>
     void computeDifferentialOperator(vector_type &particles) {
         char sign = 1;
-        if (differentialOrder % 2 == 0 && differentialOrder!=0) {
+        if (differentialOrder % 2 == 0) {
             sign = -1;
         }
 
@@ -294,7 +329,7 @@ public:
             T Dfxp = 0;
             Support support = *supportsIt;
             size_t xpK = support.getReferencePointKey();
-            Point<dim, typename vector_type::stype> xp = particles.getPos(support.getReferencePointKey());
+            //Point<dim, typename vector_type::stype> xp = particles.getPos(support.getReferencePointKey());
             T fxp = sign * particles.template getProp<fValuePos>(xpK);
             size_t kerOff = kerOffsets.get(xpK);
             auto & keys = support.getKeys();
@@ -384,7 +419,7 @@ public:
         typedef decltype(is_scalar<std::is_fundamental<decltype(o1.value(key))>::value>::analyze(key, o1)) expr_type;
 
         T sign = 1.0;
-        if (differentialOrder % 2 == 0 && differentialOrder !=0) {
+        if (differentialOrder % 2 == 0) {
             sign = -1;
         }
 
@@ -403,7 +438,7 @@ public:
         expr_type Dfxp = 0;
         Support support = localSupports.get(key.getKey());
         size_t xpK = support.getReferencePointKey();
-        Point<dim, T> xp = particles.getPos(xpK);
+        //Point<dim, T> xp = particles.getPos(xpK);
         expr_type fxp = sign * o1.value(key);
         size_t kerOff = kerOffsets.get(xpK);
         auto & keys = support.getKeys();
@@ -440,7 +475,7 @@ public:
         //typedef typename decltype(o1.value(key))::blabla blabla;
 
         T sign = 1.0;
-        if (differentialOrder % 2 == 0 && differentialOrder!=0) {
+        if (differentialOrder % 2 == 0) {
             sign = -1;
         }
 
@@ -458,7 +493,7 @@ public:
         expr_type Dfxp = 0;
         Support support = localSupports.get(key.getKey());
         size_t xpK = support.getReferencePointKey();
-        Point<dim, T> xp = particles.getPos(xpK);
+        //Point<dim, T> xp = particles.getPos(xpK);
         expr_type fxp = sign * o1.value(key)[i];
         size_t kerOff = kerOffsets.get(xpK);
         auto & keys = support.getKeys();
@@ -474,6 +509,19 @@ public:
         // Store Dfxp in the right position
         return Dfxp;
     }
+    void initializeUpdate(vector_type &particlesFrom,vector_type2 &particlesTo)
+    {
+#ifdef SE_CLASS1
+        update_ctr=particles.getMapCtr();
+#endif
+
+        localSupports.clear();
+        localEps.clear();
+        localEpsInvPow.clear();
+        calcKernels.clear();
+        kerOffsets.clear();
+        initializeStaticSize(particlesFrom,particlesTo, convergenceOrder, rCut, supportSizeFactor);
+    }
 
     void initializeUpdate(vector_type &particles)
     {
@@ -487,7 +535,7 @@ public:
         calcKernels.clear();
         kerOffsets.clear();
 
-        initializeStaticSize(particles, convergenceOrder, rCut, supportSizeFactor);
+        initializeStaticSize(particles,particles, convergenceOrder, rCut, supportSizeFactor);
     }
 
 private:
@@ -600,10 +648,6 @@ private:
         localEpsInvPow.resize(particlesTo.size_local_orig());
         kerOffsets.resize(particlesTo.size_local_orig());
         kerOffsets.fill(-1);
-        T coeff=1.;
-        if(differentialOrder==0){
-            coeff=.5;
-        }
         auto it = particlesTo.getDomainIterator();
         while (it.isNext()) {
             // Get the points in the support of the DCPSE kernel and store the support for reuse
@@ -654,7 +698,7 @@ private:
                 const auto& xqK = support_keys.get(i);
                 Point<dim, T> xq = particlesFrom.getPosOrig(xqK);
                 Point<dim, T> normalizedArg = (xp - xq) / eps;
-                calcKernels.add(coeff*computeKernel(normalizedArg, a));
+                calcKernels.add(computeKernel(normalizedArg, a));
             }
             //
             ++it;
