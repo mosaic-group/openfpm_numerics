@@ -53,7 +53,7 @@ __global__ void gatherSupportSize_gpu(
             size_t el = cl.get(cellLinId, k);
 
             if (p_key == el) continue;
-            if (pos.distance(particles.getPos(el)) < rCut) ++N;
+            if (pos.distance(particles.getPosOrig(el)) < rCut) ++N;
         }
 
     } while (nextCell<dim>(offset, 2+1));
@@ -90,7 +90,7 @@ __global__ void assembleSupport_gpu(particles_type particles, CellList_type cl, 
             size_t el = cl.get(cellLinId, k);
 
             if (p_key == el) continue;
-            if (pos.distance(particles.getPos(el)) < rCut) supportKeys[N++] = el;
+            if (pos.distance(particles.getPosOrig(el)) < rCut) supportKeys[N++] = el;
         }
 
     } while (nextCell<dim>(offset, 2+1));
@@ -118,7 +118,11 @@ public:
     {
         domain.hostToDevicePos();
         auto it = domain.getDomainIteratorGPU(512);
-        auto NN = domain.getCellListGPU(rCut);
+        typedef CellList_gen<vector_type::dims, typename vector_type::stype, Process_keys_lin, Mem_fast<CudaMemory>, shift<vector_type::dims, typename vector_type::stype>> params;
+        // auto NN = domain.getCellListGPU(rCut);
+        auto NN = domain.template getCellList<params>(rCut);
+        NN.hostToDevice();
+
 
         // +1 to allow getting size from cumulative sum: "size[i+1] - size[i]"
         kerOffsets.resize(N+1);
