@@ -398,7 +398,7 @@ struct vector_dist_op_compute_op<prp,false,comp_host>
 template<unsigned int prp, unsigned int dim ,typename vector, typename expr>
 __global__ void compute_expr_ker_vv(vector vd, expr v_exp)
 {
-	int p = threadIdx.x + blockIdx.x * blockDim.x;
+	unsigned int p = threadIdx.x + blockIdx.x * blockDim.x;
 
 	if (p >= vd.size())	{return;}
 
@@ -411,7 +411,7 @@ __global__ void compute_expr_ker_vv(vector vd, expr v_exp)
 template<unsigned int prp, typename vector, typename expr>
 __global__ void compute_expr_ker_v(vector vd, expr v_exp)
 {
-	int p = threadIdx.x + blockIdx.x * blockDim.x;
+	unsigned int p = threadIdx.x + blockIdx.x * blockDim.x;
 
 	if (p >= vd.size())	{return;}
 
@@ -421,7 +421,7 @@ __global__ void compute_expr_ker_v(vector vd, expr v_exp)
 template<unsigned int prp, typename vector, typename expr>
 __global__ void compute_expr_ker(vector vd, expr v_exp)
 {
-	int p = threadIdx.x + blockIdx.x * blockDim.x;
+	unsigned int p = threadIdx.x + blockIdx.x * blockDim.x;
 
 	if (p >= vd.size_local())	{return;}
 
@@ -433,7 +433,7 @@ __global__ void compute_expr_ker_slice(vector vd, expr v_exp, Point<n,int> comp)
 {
 	typedef typename std::remove_const<typename std::remove_reference<decltype(pos_or_propL<vector,prp>::value_type(std::declval<vector>(),vect_dist_key_dx(0)))>::type>::type property_act;
 
-	int p = threadIdx.x + blockIdx.x * blockDim.x;
+	unsigned int p = threadIdx.x + blockIdx.x * blockDim.x;
 
 	if (p >= vd.size_local())	{return;}
 
@@ -443,7 +443,7 @@ __global__ void compute_expr_ker_slice(vector vd, expr v_exp, Point<n,int> comp)
 template<unsigned int prp, typename vector>
 __global__ void compute_double_ker(vector vd, double d)
 {
-	int p = threadIdx.x + blockIdx.x * blockDim.x;
+	unsigned int p = threadIdx.x + blockIdx.x * blockDim.x;
 
 	if (p >= vd.size_local())	{return;}
 
@@ -455,7 +455,7 @@ __global__ void compute_double_ker(vector vd, double d)
 template<unsigned int prp, unsigned int dim ,typename vector, typename NN_type, typename expr>
 __global__ void compute_expr_ker_sort_vv(vector vd, NN_type NN, expr v_exp)
 {
-	int p;
+	unsigned int p;
 
     GET_PARTICLE_SORT(p,NN);
 
@@ -468,7 +468,7 @@ __global__ void compute_expr_ker_sort_vv(vector vd, NN_type NN, expr v_exp)
 template<unsigned int prp, typename vector, typename NN_type, typename expr>
 __global__ void compute_expr_ker_sort_v(vector vd, NN_type NN, expr v_exp)
 {
-	int p;
+	unsigned int p;
 
     GET_PARTICLE_SORT(p,NN);
 
@@ -478,7 +478,7 @@ __global__ void compute_expr_ker_sort_v(vector vd, NN_type NN, expr v_exp)
 template<unsigned int prp, typename vector, typename expr, typename NN_type>
 __global__ void compute_expr_ker_sort(vector vd, NN_type NN, expr v_exp)
 {
-	int p;
+	unsigned int p;
 
     GET_PARTICLE_SORT(p,NN);
 
