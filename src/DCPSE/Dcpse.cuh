@@ -13,10 +13,8 @@
 #include "SupportBuilder.cuh"
 #include "Support.hpp"
 #include "Vandermonde.hpp"
-#include "Vandermonde.cuh"
 #include "DcpseDiagonalScalingMatrix.hpp"
 #include "DcpseRhs.hpp"
-#include "DcpseRhs.cuh"
 
 #include <chrono>
 
@@ -31,10 +29,7 @@ __global__ void calcKernels_gpu(particles_type, monomialBasis_type, supportKey_t
 
 template<unsigned int dim, typename T, typename particles_type, typename monomialBasis_type, typename supportKey_type, typename localEps_type, typename matrix_type>
 __global__ void assembleLocalMatrices_gpu( particles_type, Point<dim, unsigned int>, unsigned int, monomialBasis_type, supportKey_type, supportKey_type, supportKey_type,
-    T**, T**, localEps_type, localEps_type, matrix_type, matrix_type, matrix_type, size_t, size_t);
-
-template <unsigned int dim, typename T, typename monomialBasis_type>
-__device__ T computeKernel_gpu(Point<dim, T>&, const T*, const monomialBasis_type&);
+    T**, T**, localEps_type, localEps_type, matrix_type, size_t, size_t);
 
 
 template<unsigned int dim, typename vector_type, class T = typename vector_type::stype>
@@ -796,9 +791,7 @@ std::cout << "Support building took " << time_span2.count() * 1000. << " millise
         size_t numThreads = numSMs*numSMsMult*256;
         std::cout << "numThreads " << numThreads << " numMatrices " << numMatrices << std::endl;
 
-        openfpm::vector_custd<T> EMat(numThreads * maxSupportSize * dim);
-        openfpm::vector_custd<T> VMat(numThreads * maxSupportSize * monomialBasisSize);
-        // B has the same dimensions as V
+        // B is an intermediate matrix
         openfpm::vector_custd<T> BMat(numThreads * maxSupportSize * monomialBasisSize);
         // allocate device space for A, b
         openfpm::vector_custd<T> AMat(numMatrices*monomialBasisSize*monomialBasisSize);
@@ -829,7 +822,7 @@ std::cout << "Support building took " << time_span2.count() * 1000. << " millise
         auto bVecPointersKernel = bVecPointers.toKernel(); T** bVecPointersKernelPointer = (T**) bVecPointersKernel.getPointer();
 
         assembleLocalMatrices_gpu<<<numSMsMult*numSMs, 256>>>(particles.toKernel(), differentialSignature, differentialOrder, monomialBasisKernel, supportRefs.toKernel(), kerOffsets.toKernel(), supportKeys1D.toKernel(),
-            AMatPointersKernelPointer, bVecPointersKernelPointer, localEps.toKernel(), localEpsInvPow.toKernel(), EMat.toKernel(), VMat.toKernel(), BMat.toKernel(), numMatrices, maxSupportSize);
+            AMatPointersKernelPointer, bVecPointersKernelPointer, localEps.toKernel(), localEpsInvPow.toKernel(), BMat.toKernel(), numMatrices, maxSupportSize);
 
         localEps.template deviceToHost();
         localEpsInvPow.template deviceToHost();
@@ -880,9 +873,8 @@ std::cout << "Support building took " << time_span2.count() * 1000. << " millise
     }
 
     T computeKernel(Point<dim, T> x, EMatrix<T, Eigen::Dynamic, 1> & a) const {
-        T res = 0;
         unsigned int counter = 0;
-        T expFactor = exp(-norm2(x));
+        T res = 0, expFactor = exp(-norm2(x));
 
         size_t N = monomialBasis.getElements().size();
         for (size_t i = 0; i < N; ++i)
@@ -901,9 +893,8 @@ std::cout << "Support building took " << time_span2.count() * 1000. << " millise
     // template <unsigned int a_dim>
     // T computeKernel(Point<dim, T> x, const T (& a) [a_dim]) const {
     T computeKernel(Point<dim, T> x, const T* a) const {
-        T res = 0;
         unsigned int counter = 0;
-        T expFactor = exp(-norm2(x));
+        T res = 0, expFactor = exp(-norm2(x));
 
         size_t N = monomialBasis.getElements().size();
         for (size_t i = 0; i < N; ++i)
@@ -941,21 +932,13 @@ template<unsigned int dim, typename T, typename particles_type, typename monomia
 __global__ void assembleLocalMatrices_gpu(
         particles_type particles, Point<dim, unsigned int> differentialSignature, unsigned int differentialOrder, monomialBasis_type monomialBasis, 
         supportKey_type supportRefs, supportKey_type kerOffsets, supportKey_type supportKeys1D, T** h_A, T** h_b, localEps_type localEps, localEps_type localEpsInvPow,
-        matrix_type EMat, matrix_type VMat, matrix_type BMat, size_t numMatrices, size_t maxSupportSize)
+        matrix_type BMat, size_t numMatrices, size_t maxSupportSize)
     {
     auto p_key = GET_PARTICLE(particles);
     size_t monomialBasisSize = monomialBasis.size();
-
-    size_t EStartPos = maxSupportSize * dim * p_key;
-    size_t VStartPos = maxSupportSize * monomialBasisSize * p_key;
-    size_t BStartPos = maxSupportSize * monomialBasisSize * p_key;
-
-    T* V = &((T*)VMat.getPointer())[VStartPos];
-    T* E = &((T*)EMat.getPointer())[EStartPos];
-    T* B = &((T*)BMat.getPointer())[BStartPos];
-
-    DcpseDiagonalScalingMatrix<dim, MonomialBasis<dim, aggregate<Monomial_gpu<dim>>, openfpm::vector_custd_ker, memory_traits_inte>> diagonalScalingMatrix(monomialBasis);
-    DcpseRhs_gpu<dim, MonomialBasis<dim, aggregate<Monomial_gpu<dim>>, openfpm::vector_custd_ker, memory_traits_inte>> rhs(monomialBasis, differentialSignature);
+    size_t BStartPos = maxSupportSize * monomialBasisSize * p_key; T* B = &((T*)BMat.getPointer())[BStartPos];
+    const auto& basisElements = monomialBasis.getElements();
+    int rhsSign = (Monomial_gpu<dim>(differentialSignature).order() % 2 == 0) ? 1 : -1;
 
     for (; 
         p_key < numMatrices; 
@@ -967,22 +950,35 @@ __global__ void assembleLocalMatrices_gpu(
         size_t* supportKeys = &((size_t*)supportKeys1D.getPointer())[kerOffsets.get(p_key)];
         size_t  xpK = supportRefs.get(p_key);
 
-        // Vandermonde matrix computation
-        // Pointer to E is passed to reuse memory for offset construction inside Vandermonde. 
-        Vandermonde_gpu<dim, T, MonomialBasis<dim, aggregate<Monomial_gpu<dim>>, openfpm::vector_custd_ker, memory_traits_inte>>
-                vandermonde(E, xpK, supportKeysSize, supportKeys, monomialBasis, particles);
-        vandermonde.getMatrix(V);
+    assert(supportKeysSize >= monomialBasis.size());
 
-        T eps = vandermonde.getEps(); localEps.get(p_key) = eps;
+        T FACTOR = 2, avgNeighbourSpacing = 0;
+
+        for (int i = 0 ; i < supportKeysSize; i++) {
+            Point<dim,T> off = xa; off -= particles.getPosOrig(supportKeys[i]);
+
+            for (size_t j = 0; j < dim; ++j)
+                avgNeighbourSpacing += fabs(off.value(j));
+        }
+
+        avgNeighbourSpacing /= supportKeysSize;
+        T eps = FACTOR * avgNeighbourSpacing;
+
+    assert(eps != 0);
+
+        localEps.get(p_key) = eps;
         localEpsInvPow.get(p_key) = 1.0 / pow(eps,differentialOrder);
-
-        diagonalScalingMatrix.buildMatrix(E, xpK, supportKeysSize, supportKeys, eps, particles);
 
         // EMatrix<T, Eigen::Dynamic, Eigen::Dynamic> B = E * V;
         for (int i = 0; i < supportKeysSize; ++i)
-            for (int j = 0; j < monomialBasisSize; ++j)
-                // E is a diagonal matrix
-                B[i*monomialBasisSize+j] = E[i] * V[i*monomialBasisSize+j];
+            for (int j = 0; j < monomialBasisSize; ++j) {
+                Point<dim,T> off = xa; off -= particles.getPosOrig(supportKeys[i]);
+                const Monomial_gpu<dim>& m = basisElements.get(j);
+
+                T V_ij = m.evaluate(off) / pow(eps, m.order());
+                T E_ii = exp(- norm2(off) / (2.0 * eps * eps));
+                B[i*monomialBasisSize+j] = E_ii * V_ij;
+            }
 
         T sum = 0.0;
         // EMatrix<T, Eigen::Dynamic, Eigen::Dynamic> A = B.transpose() * B;
@@ -995,7 +991,10 @@ __global__ void assembleLocalMatrices_gpu(
             }
 
         // Compute RHS vector b
-        rhs.template getVector<T>(h_b[p_key]);
+        for (size_t i = 0; i < monomialBasisSize; ++i) {
+            const Monomial_gpu<dim>& dm = basisElements.get(i).getDerivative(differentialSignature);
+            h_b[p_key][i] = rhsSign * dm.evaluate(Point<dim, T>(0));
+        }
     }
 }
 
@@ -1007,8 +1006,10 @@ __global__ void calcKernels_gpu(particles_type particles, monomialBasis_type mon
     Point<dim, T> xa = particles.getPos(p_key);
 
     size_t  monomialBasisSize = monomialBasis.size();
+    const auto& basisElements = monomialBasis.getElements();
     size_t  supportKeysSize = kerOffsets.get(p_key+1)-kerOffsets.get(p_key);
     size_t* supportKeys = &((size_t*)supportKeys1D.getPointer())[kerOffsets.get(p_key)];
+
     T* calcKernelsLocal = &((T*)calcKernels.getPointer())[kerOffsets.get(p_key)];
     T eps = localEps.get(p_key);
 
@@ -1016,33 +1017,20 @@ __global__ void calcKernels_gpu(particles_type particles, monomialBasis_type mon
     {
         size_t xqK = supportKeys[j];
         Point<dim, T> xq = particles.getPosOrig(xqK);
-        Point<dim, T> normalizedArg = (xa - xq) / eps;
+        Point<dim, T> offNorm = (xa - xq) / eps;
+        T expFactor = exp(-norm2(offNorm));
 
-        calcKernelsLocal[j] = computeKernel_gpu(normalizedArg, h_b[p_key], monomialBasis);
+        T res = 0;
+        for (size_t i = 0; i < monomialBasisSize; ++i) {
+            const Monomial_gpu<dim> &m = basisElements.get(i);
+            T mbValue = m.evaluate(offNorm);
+            T coeff = h_b[p_key][i];
+
+            res += coeff * mbValue * expFactor;
+        }
+        calcKernelsLocal[j] = res;
     }
 }
-
-template <unsigned int dim, typename T, typename monomialBasis_type>
-__device__ T computeKernel_gpu(Point<dim, T>& x, const T* a, const monomialBasis_type& monomialBasis) {
-    T res = 0;
-    unsigned int counter = 0;
-    T expFactor = exp(-norm2(x));
-
-    const auto& basisElements = monomialBasis.getElements();
-
-    size_t N = basisElements.size();
-    for (size_t i = 0; i < N; ++i)
-    {
-        const Monomial_gpu<dim> &m = basisElements.get(i);
-
-        T coeff = a[counter];
-        T mbValue = m.evaluate(x);
-        res += coeff * mbValue * expFactor;
-        ++counter;
-    }
-    return res;
-}
-
 
 #endif
 #endif //OPENFPM_PDATA_DCPSE_CUH
