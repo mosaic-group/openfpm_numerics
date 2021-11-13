@@ -3,16 +3,15 @@ cmake_minimum_required(VERSION 3.8 FATAL_ERROR)
 ########################### Executables
 
 
-if (CUDA_ON_CPU)
-        add_definitions(-DCUDA_ON_CPU)
+if (CUDA_ON_BACKEND STREQUAL "OpenMP" OR CUDA_ON_BACKEND STREQUAL "SEQUENTIAL")
         set_source_files_properties(${CUDA_SOURCES} PROPERTIES LANGUAGE CXX)
-        set_source_files_properties(${CUDA_SOURCES} PROPERTIES COMPILE_FLAGS "-D__NVCC__ -DCUDA_GPU -DCUDART_VERSION=11000")
+        set_source_files_properties(${CUDA_SOURCES} PROPERTIES COMPILE_FLAGS "-D__NVCC__ -DCUDART_VERSION=11000")
         if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU" OR CMAKE_CXX_COMPILER_ID STREQUAL "AppleClang" OR CMAKE_CXX_COMPILER_ID STREQUAL "Clang" OR CMAKE_CXX_COMPILER_ID STREQUAL "Intel")
                 add_definitions("-x c++")
         endif()
 endif()
 
-if (CUDA_FOUND)
+if (NOT CUDA_ON_BACKEND STREQUAL "None")
 	set(CUDA_SOURCES Operators/Vector/vector_dist_operators_unit_tests.cu
 					 Operators/Vector/vector_dist_operators_apply_kernel_unit_tests.cu)
 endif()
@@ -89,6 +88,10 @@ if(SuiteSparse_FOUND)
         target_link_libraries(numerics ${SuiteSparse_LIBRARIES})
 	target_include_directories (numerics PUBLIC ${BLAS_INCLUDE_DIRS})
 	target_link_libraries(numerics ${BLAS_LIBRARIES})
+endif()
+
+if(OpenMP_CXX_FOUND)
+    target_link_libraries(numerics ${OpenMP_CXX_FLAGS})
 endif()
 
 target_link_libraries(numerics -L${METIS_ROOT}/lib metis)
