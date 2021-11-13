@@ -78,7 +78,21 @@ void append_value_to_textfile(std::string & textfile, T value)
 	out << value;
 }
 
-
+/**@brief Converts value into string maintaining a desired precision.
+ *
+ * @tparam T Template type of vlaue.
+ * @param myValue Value of type T.
+ * @param n Number of digits after the point the string of the value should have
+ * @return String containing myValue with precision n.
+ */
+template <typename T>
+std::string to_string_with_precision(const T myValue, const size_t n = 6)
+{
+	std::ostringstream out;
+	out.precision(n);
+	out << std::fixed << myValue;
+	return out.str();
+}
 
 
 #endif //REDISTANCING_SUSSMAN_HELPFUNCTIONS_HPP

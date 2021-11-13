@@ -416,6 +416,7 @@ class petsc_solver<double>
 		}
 	}
 
+
 	/*! \brief It convert the KSP type into a human read-able string
 	 *
 	 * \param solv solver (short form)
@@ -820,8 +821,48 @@ public:
 //		solvs.add(std::string(KSPPGMRES)); <--- Take forever
 //		solvs.add(std::string(KSPGCR));
 
-		setSolver(KSPGMRES);
+		//setSolver(KSPGMRES);
 	}
+
+	/*! \brief Print the preconditioner used by the solver
+	 *
+	 *
+	 */
+	void print_preconditioner()
+	{
+		auto & v_cl = create_vcluster();
+
+		if (v_cl.getProcessUnitID() == 0)
+		{
+			PC pc;
+			PCType type_pc;
+
+			// We set the pre-conditioner
+			PETSC_SAFE_CALL(KSPGetPC(ksp,&pc));
+			PETSC_SAFE_CALL(PCGetType(pc,&type_pc));
+
+			std::cout << "The precoditioner is: " << type_pc << std::endl;
+		}
+	}
+
+    /*! \brief Print the ksp_type used by the solver
+     *
+     *
+     */
+    void print_ksptype()
+    {
+        auto & v_cl = create_vcluster();
+
+        if (v_cl.getProcessUnitID() == 0)
+        {
+            KSPType type_ksp;
+
+            // We get the KSP_type
+            PETSC_SAFE_CALL(KSPGetType(ksp,&type_ksp));
+
+            std::cout << "The ksp_type is: " << type_ksp << std::endl;
+        }
+    }
 
 	/*! \brief Add a test solver
 	 *
@@ -1017,12 +1058,14 @@ public:
 
 		    PETSC_SAFE_CALL(PCFactorSetShiftType(pc, MAT_SHIFT_NONZERO));
 		    PETSC_SAFE_CALL(PCFactorSetShiftAmount(pc, PETSC_DECIDE));
+#ifdef PETSC_HAVE_HYPRE
 		    PETSC_SAFE_CALL(PCHYPRESetType(pc, "boomeramg"));
+#endif
 		    atype = HYPRE_AMG;
 		}
 		else
 		{
-			PETSC_SAFE_CALL(PetscOptionsSetValue(NULL,"-pc_type",PCHYPRE));
+			PETSC_SAFE_CALL(PetscOptionsSetValue(NULL,"-pc_type",type));
 		}
 	}
 
@@ -1285,6 +1328,55 @@ public:
 
 		return x;
 	}
+
+    /*! \brief Here we invert the matrix and solve the system using a Nullspace for Neumann BC
+     *
+     *  \warning umfpack is not a parallel solver, this function work only with one processor
+     *
+     *  \note if you want to use umfpack in a NON parallel, but on a distributed data, use solve with triplet
+     *
+     *	\tparam impl Implementation of the SparseMatrix
+     *
+     * \param A sparse matrix
+     * \param b vector
+     * \param initial_guess true if x has the initial guess
+     *
+     * \return the solution
+     *
+     */
+    Vector<double,PETSC_BASE> with_constant_nullspace_solve(SparseMatrix<double,int,PETSC_BASE> & A, const Vector<double,PETSC_BASE> & b, bool initial_guess = false)
+    {
+        Mat & A_ = A.getMat();
+        const Vec & b_ = b.getVec();
+
+        // We set the size of x according to the Matrix A
+        PetscInt row;
+        PetscInt col;
+        PetscInt row_loc;
+        PetscInt col_loc;
+        MatNullSpace nullspace;
+
+
+        PETSC_SAFE_CALL(KSPSetInitialGuessNonzero(ksp,PETSC_FALSE));
+        PETSC_SAFE_CALL(MatGetSize(A_,&row,&col));
+        PETSC_SAFE_CALL(MatGetLocalSize(A_,&row_loc,&col_loc));
+
+
+        Vector<double,PETSC_BASE> x(row,row_loc);
+        Vec & x_ = x.getVec();
+
+        //Removing Null Space from RHS
+        PETSC_SAFE_CALL(MatNullSpaceCreate(PETSC_COMM_WORLD,PETSC_TRUE,0,0,&nullspace));
+        PETSC_SAFE_CALL(MatNullSpaceRemove(nullspace,b_));
+        PETSC_SAFE_CALL(MatNullSpaceDestroy(&nullspace));
+
+        pre_solve_impl(A_,b_,x_);
+        solve_simple(A_,b_,x_);
+
+        x.update();
+
+        return x;
+    }
 
 	/*! \brief Return the KSP solver
 	 *

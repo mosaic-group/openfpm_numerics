@@ -19,6 +19,8 @@ set(SUITESPARSE_ROOT CACHE PATH "The suitesparse root path")
 set(TINYOBJLOADER_ROOT CACHE PATH "TinyObjLoader library path")
 set(SE_CLASS1 CACHE BOOL "Activate compilation with SE_CLASS1")
 set(SE_CLASS3 CACHE BOOL "Activate compilation with SE_CLASS3")
+set(BLITZ_ROOT CACHE PATH "Blitz root directory")
+set(ALGOIM_ROOT CACHE PATH "Algoim root directory")
 set(PROFILE_WITH_SCOREP CACHE BOOL "Enable profiling with scorep")
 set(ENV{PETSC_DIR} ${PETSC_ROOT})
 set(ENV{HDF5_ROOT} ${HDF5_ROOT})
@@ -53,6 +55,9 @@ find_package(BLAS)
 find_package(LAPACK)
 find_package(Eigen3)
 find_package(SuiteSparse OPTIONAL_COMPONENTS UMFPACK)
+find_package(Boost REQUIRED COMPONENTS unit_test_framework filesystem system thread)
+
+set(CMAKE_SKIP_BUILD_RPATH TRUE)
 
 if(PROFILE_WITH_SCOREP)
 	set(CMAKE_CXX_COMPILER_LAUNCHER "scorep")
@@ -60,12 +65,12 @@ if(PROFILE_WITH_SCOREP)
 	set(CMAKE_CUDA_COMPILER_LAUNCHER "scorep")
 endif()
 
+
 if(CUDA_FOUND)
 	set(OPENFPM_INIT_FILE "initialize/initialize_wrapper_cuda.cu")
 else()
 	set(OPENFPM_INIT_FILE "initialize/initialize_wrapper_cpu.cpp")
 endif()
-
 ###### CONFIG.h FILE ######
 
 if(SE_CLASS1)

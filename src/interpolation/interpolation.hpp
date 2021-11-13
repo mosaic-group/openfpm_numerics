@@ -303,7 +303,7 @@ inline size_t getSub(Point<vector::dims,typename vector::stype> & p,
 	{
 		size_t ns = geo_cell.get(cell,i);
 
-		if (gd.getDecomposition().getSubDomain(ns).isInside(p))
+		if (gd.getDecomposition().getSubDomain(ns).isInsideNP(p))
 			return ns;
 	}
 
@@ -821,6 +821,16 @@ public:
 		typename vector::stype a_int[openfpm::math::pow(kernel::np,vector::dims)];
 
 		inte_calc_impl<vector,kernel>::template inte_calc<prp_g,prp_v,inte_m2p,openfpm::math::pow(kernel::np,vector::dims)>(p,vd,domain,ip,gd,dx,xp,a_int,a,x,sz,geo_cell,offsets);
+	}
+
+	/*! \brief Return the sub-domain of the particles
+	 *
+	 *  \param p Point to check
+	 * 
+	 */
+	int getSub(Point<vector::dims,typename vector::stype> & p)
+	{
+		return ::getSub<vector>(p,geo_cell,gd);
 	}
 
 };

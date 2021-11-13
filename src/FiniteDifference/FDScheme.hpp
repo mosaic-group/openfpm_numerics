@@ -8,7 +8,8 @@
 #ifndef OPENFPM_NUMERICS_SRC_FINITEDIFFERENCE_FDSCHEME_HPP_
 #define OPENFPM_NUMERICS_SRC_FINITEDIFFERENCE_FDSCHEME_HPP_
 
-#include "../Matrix/SparseMatrix.hpp"
+#include "Matrix/SparseMatrix.hpp"
+#include "Vector/Vector.hpp"
 #include "Grid/grid_dist_id.hpp"
 #include "Grid/Iterators/grid_dist_id_iterator_sub.hpp"
 #include "eq.hpp"
@@ -17,6 +18,7 @@
 #include "Grid/grid_dist_id.hpp"
 #include "Vector/Vector_util.hpp"
 #include "Grid/staggered_dist_grid.hpp"
+
 
 /*! \brief Finite Differences
  *
@@ -348,23 +350,17 @@ private:
 	 * \param g_dst target staggered grid
 	 *
 	 */
-	template<typename Vct, typename Grid_dst ,unsigned int ... pos> void copy_staggered(Vct & v, Grid_dst & g_dst)
+	template<typename Vct, typename Grid_dst ,unsigned int ... pos> void copy_staggered(Vct & v, Grid_dst & g_dst, grid_key_dx<Grid_dst::dims> & start_d, grid_key_dx<Grid_dst::dims> & stop_d)
 	{
 		// check that g_dst is staggered
 		if (g_dst.is_staggered() == false)
 			std::cerr << __FILE__ << ":" << __LINE__ << " The destination grid must be staggered " << std::endl;
 
-#ifdef SE_CLASS1
-
-		if (g_map.getLocalDomainSize() != g_dst.getLocalDomainSize())
-			std::cerr << __FILE__ << ":" << __LINE__ << " The staggered and destination grid in size does not match " << std::endl;
-#endif
-
 		// sub-grid iterator over the grid map
-		auto g_map_it = g_map.getDomainIterator();
+		auto g_map_it = g_map.getSubDomainIterator(start_d,stop_d);
 
 		// Iterator over the destination grid
-		auto g_dst_it = g_dst.getDomainIterator();
+		auto g_dst_it = g_dst.getSubDomainIterator(start_d,stop_d);
 
 		while (g_map_it.isNext() == true)
 		{
@@ -718,7 +714,7 @@ public:
 			 const Box<Sys_eqs::dims,typename Sys_eqs::stype> & domain,
 			 const typename Sys_eqs::b_grid & b_g)
 	:pd(pd),gs(b_g.getGridInfoVoid()),g_map(b_g,stencil,pd),row(0),row_b(0)
-	{
+        {
 		Initialize(domain);
 	}
 
@@ -746,30 +742,29 @@ public:
 									 const long int (& stop)[Sys_eqs::dims],
 									 bool skip_first = false)
 	{
-		grid_key_dx<Sys_eqs::dims> start_k;
-		grid_key_dx<Sys_eqs::dims> stop_k;
+	grid_key_dx<Sys_eqs::dims> start_k;
+	grid_key_dx<Sys_eqs::dims> stop_k;
 
-        bool increment = false;
-        if (skip_first == true)
-        {
-                start_k = grid_key_dx<Sys_eqs::dims>(start);
-                stop_k = grid_key_dx<Sys_eqs::dims>(start);
+    bool increment = false;
+    if (skip_first == true)
+    {
+            start_k = grid_key_dx<Sys_eqs::dims>(start);
+            stop_k = grid_key_dx<Sys_eqs::dims>(start);
 
-                auto it = g_map.getSubDomainIterator(start_k,stop_k);
+            auto it = g_map.getSubDomainIterator(start_k,stop_k);
 
-                if (it.isNext() == true)
-                        increment = true;
-        }
+            if (it.isNext() == true)
+                    increment = true;
+    }
 
         // add padding to start and stop
         start_k = grid_key_dx<Sys_eqs::dims>(start);
         stop_k = grid_key_dx<Sys_eqs::dims>(stop);
 
-
         auto it = g_map.getSubDomainIterator(start_k,stop_k);
 
         if (increment == true)
-                ++it;
+        {++it;}
 
         constant_b b(num);
 
@@ -858,11 +853,10 @@ public:
 	template<typename T, typename bop, typename iterator> void impose_git_gmap(const T & op ,
 			                         bop num,
 									 long int id ,
-									 const iterator & it_d)
+									 iterator & it)
 	{
 		openfpm::vector<triplet> & trpl = A.getMatrixTriplets();
 
-		auto it = it_d;
 		grid_sm<Sys_eqs::dims,void> gs = g_map.getGridInfoVoid();
 
 		std::unordered_map<long int,float> cols;
@@ -935,7 +929,8 @@ public:
 	template<typename T, typename bop, typename iterator> void impose_git(const T & op ,
 			                         bop num,
 									 long int id ,
-									 const iterator & it_d)
+									 const iterator & it_d,
+									 bool skip_first = false)
 	{
 		openfpm::vector<triplet> & trpl = A.getMatrixTriplets();
 
@@ -945,6 +940,10 @@ public:
 		auto itg = g_map.getSubDomainIterator(start,stop);
 
 		auto it = it_d;
+
+		if (skip_first == true)
+		{++it;}
+
 		grid_sm<Sys_eqs::dims,void> gs = g_map.getGridInfoVoid();
 
 		std::unordered_map<long int,float> cols;
@@ -1076,12 +1075,17 @@ public:
 	 * \param g_dst Destination grid
 	 *
 	 */
-	template<unsigned int ... pos, typename Vct, typename Grid_dst> void copy(Vct & v,const long int (& start)[Sys_eqs_typ::dims], const long int (& stop)[Sys_eqs_typ::dims], Grid_dst & g_dst)
+	template<unsigned int ... pos, typename Vct, typename Grid_dst>
+	void copy(Vct & v,const long int (& start)[Sys_eqs_typ::dims], const long int (& stop)[Sys_eqs_typ::dims], Grid_dst & g_dst)
 	{
 		if (is_grid_staggered<Sys_eqs>::value())
 		{
 			if (g_dst.is_staggered() == true)
-				copy_staggered<Vct,Grid_dst,pos...>(v,g_dst);
+			{
+				grid_key_dx<Grid_dst::dims> sr(start);
+				grid_key_dx<Grid_dst::dims> st(stop);
+				copy_staggered<Vct,Grid_dst,pos...>(v,g_dst,sr,st);
+			}
 			else
 			{
 				// Create a temporal staggered grid and copy the data there
@@ -1098,7 +1102,17 @@ public:
 
 				staggered_grid_dist<Grid_dst::dims,typename Grid_dst::stype,typename Grid_dst::value_type,typename Grid_dst::decomposition::extended_type, typename Grid_dst::memory_type, typename Grid_dst::device_grid_type> stg(g_dst,g_int,this->getPadding());
 				stg.setDefaultStagPosition();
-				copy_staggered<Vct,decltype(stg),pos...>(v,stg);
+
+				grid_key_dx<Grid_dst::dims> sr;
+				grid_key_dx<Grid_dst::dims> st;
+
+				for (int i = 0 ; i < Grid_dst::dims ; i++)
+				{
+					sr.set_d(i,-1);
+					st.set_d(i,stop[i]);
+				}
+
+				copy_staggered<Vct,decltype(stg),pos...>(v,stg,sr,st);
 
 				// sync the ghost and interpolate to the normal grid
 				stg.template ghost_get<pos...>();

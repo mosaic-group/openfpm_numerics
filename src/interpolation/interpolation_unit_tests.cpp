@@ -12,6 +12,7 @@
 #include <boost/test/unit_test.hpp>
 
 #include "interpolation/mp4_kernel.hpp"
+#include "interpolation/lambda_kernel.hpp"
 #include "interpolation/z_spline.hpp"
 #include "interpolation.hpp"
 #include <boost/math/special_functions/pow.hpp>
@@ -88,8 +89,8 @@ template<typename vector, unsigned int mom_p> void momenta_vector(vector & vd,ty
 	}
 }
 
-template<unsigned int dim, typename T, typename grid, typename vector>
-void interp_test(grid & gd, vector & vd, bool single_particle)
+template<unsigned int dim, typename T,typename Kernel, typename grid, typename vector>
+void interp_test(grid & gd, vector & vd, bool single_particle,unsigned int numberOfMomenta)
 {
 	// Reset the grid
 
@@ -104,7 +105,7 @@ void interp_test(grid & gd, vector & vd, bool single_particle)
 		++it2;
 	}
 
-	interpolate<vector,grid,mp4_kernel<float>> inte(vd,gd);
+	interpolate<vector,grid,Kernel> inte(vd,gd);
 
 	if (single_particle == false)
 	{inte.template p2m<0,0>(vd,gd);}
@@ -124,25 +125,46 @@ void interp_test(grid & gd, vector & vd, bool single_particle)
 
 	T mg[dim];
 	T mv[dim];
+    vd.write("Particles");
+    gd.write("Grid");
 
-	momenta_grid<grid,0>(gd,mg);
-	momenta_vector<vector,0>(vd,mv);
+    if(numberOfMomenta>=0){
+        momenta_grid<grid,0>(gd,mg);
+        momenta_vector<vector,0>(vd,mv);
+        for (size_t i = 0 ; i < dim ; i++)
+        {BOOST_REQUIRE_CLOSE(mg[i],mv[i],0.001);}
+	}
 
-	for (size_t i = 0 ; i < dim ; i++)
-	{BOOST_REQUIRE_CLOSE(mg[i],mv[i],0.001);}
+	if(numberOfMomenta>=1){
+        momenta_grid<grid,1>(gd,mg);
+        momenta_vector<vector,1>(vd,mv);
+	    for (size_t i = 0 ; i < dim ; i++)
+	    {BOOST_REQUIRE_CLOSE(mg[i],mv[i],0.001);}
+    }
 
-	momenta_grid<grid,1>(gd,mg);
-	momenta_vector<vector,1>(vd,mv);
+	if(numberOfMomenta>=2){
+        momenta_grid<grid,2>(gd,mg);
+        momenta_vector<vector,2>(vd,mv);
+        for (size_t i = 0 ; i < dim ; i++)
+        {BOOST_REQUIRE_CLOSE(mg[i],mv[i],0.001);}
+	}
 
-	for (size_t i = 0 ; i < dim ; i++)
-	{BOOST_REQUIRE_CLOSE(mg[i],mv[i],0.001);}
+    if(numberOfMomenta>=3){
+        momenta_grid<grid,3>(gd,mg);
+        momenta_vector<vector,3>(vd,mv);
+        for (size_t i = 0 ; i < dim ; i++)
+        {BOOST_REQUIRE_CLOSE(mg[i],mv[i],0.001);}
+        }
 
-	momenta_grid<grid,2>(gd,mg);
-	momenta_vector<vector,2>(vd,mv);
-
-	for (size_t i = 0 ; i < dim ; i++)
-	{BOOST_REQUIRE_CLOSE(mg[i],mv[i],0.001);}
+    if(numberOfMomenta>=4){
+        momenta_grid<grid,4>(gd,mg);
+        momenta_vector<vector,4>(vd,mv);
+        for (size_t i = 0 ; i < dim ; i++)
+        {BOOST_REQUIRE_CLOSE(mg[i],mv[i],0.001);}
+    }
 }
+
+
 
 BOOST_AUTO_TEST_CASE( interpolation_full_single_test_2D )
 {
@@ -175,8 +197,41 @@ BOOST_AUTO_TEST_CASE( interpolation_full_single_test_2D )
 
 	vd.map();
 
-	interp_test<2,float>(gd,vd,true);
+	interp_test<2,float,mp4_kernel<float>>(gd,vd,true,2);
 }
+    BOOST_AUTO_TEST_CASE( interpolation_full_single_test_2D_double )
+    {
+        Box<2,double> domain({0.0,0.0},{1.0,1.0});
+        size_t sz[2] = {64,64};
+
+        Ghost<2,long int> gg(3);
+        Ghost<2,double> gv(0.01);
+
+        size_t bc_v[2] = {PERIODIC,PERIODIC};
+
+        vector_dist<2,double,aggregate<double>> vd(65536,domain,bc_v,gv);
+        grid_dist_id<2,double,aggregate<double>> gd(vd.getDecomposition(),sz,gg);
+
+        // set one particle on vd
+
+        auto it = vd.getDomainIterator();
+
+        while (it.isNext())
+        {
+            auto p = it.get();
+
+            vd.getPos(p)[0] = (double)rand()/RAND_MAX;
+            vd.getPos(p)[1] = (double)rand()/RAND_MAX;
+
+            vd.getProp<0>(p) = 5.0;
+
+            ++it;
+        }
+
+        vd.map();
+
+        interp_test<2,double,lambda4_4kernel<double>>(gd,vd,true,2);
+    }
 
 
 BOOST_AUTO_TEST_CASE( interpolation_full_test_2D )
@@ -184,7 +239,7 @@ BOOST_AUTO_TEST_CASE( interpolation_full_test_2D )
 	Box<2,float> domain({0.0,0.0},{1.0,1.0});
 	size_t sz[2] = {64,64};
 
-	Ghost<2,long int> gg(2);
+	Ghost<2,long int> gg(3);
 	Ghost<2,float> gv(0.01);
 
 	size_t bc_v[2] = {PERIODIC,PERIODIC};
@@ -212,7 +267,7 @@ BOOST_AUTO_TEST_CASE( interpolation_full_test_2D )
 	vd.map();
 
 	// Reset the grid
-	interp_test<2,float>(gd,vd,false);
+	interp_test<2,float,mp4_kernel<float>>(gd,vd,false,2);
 
 	float mg[2];
 	float mv[2];
@@ -350,7 +405,66 @@ BOOST_AUTO_TEST_CASE( interpolation_full_single_test_3D )
 	vd.map();
 
 	// Reset the grid
-	interp_test<3,double>(gd,vd,true);
+	interp_test<3,double,mp4_kernel<float>>(gd,vd,true,2);
+}
+
+BOOST_AUTO_TEST_CASE( interpolation_getSubCheck )
+{
+	Box<3,double> domain({0.0,0.0,0.0},{1.0,1.0,1.0});
+	size_t sz[3] = {64,64,64};
+
+	Ghost<3,long int> gg(2);
+	Ghost<3,double> gv(0.01);
+
+	size_t bc_v[3] = {NON_PERIODIC,NON_PERIODIC,NON_PERIODIC};
+
+	typedef vector_dist<3,double,aggregate<double>> vector;
+	typedef grid_dist_id<3,double,aggregate<double>> grid;
+
+	vector vd(0,domain,bc_v,gv);
+	grid_dist_id<3,double,aggregate<double>> gd(vd.getDecomposition(),sz,gg);
+
+	// interpolate
+	interpolate<vector,grid,mp4_kernel<double>> inte(vd,gd);
+
+	// decomposition
+	auto & dec = vd.getDecomposition();
+
+	int nl = dec.getNLocalSub();
+
+	for (int i = 0 ; i < nl ; i++)
+	{
+		int  nll = dec.getLocalNIGhost(i);
+		for (int j = 0 ; j < nll ; j++)
+		{
+			auto ibx = dec.getLocalIGhostBox(i,j);
+			int x = dec.getLocalIGhostSub(i,j);
+			auto bx = dec.getSubDomain(x);
+
+			Point<3,double> p;
+			for (int s = 0; s < 3 ; s++)
+			{
+				Point<3,double> p;
+				for (int s1 = 0; s1 < 3 ; s1++)
+				{
+					p.get(s1) = (ibx.getHigh(s1) - ibx.getLow(s1)) / 2.0 + ibx.getLow(s1);
+				}
+
+				if (ibx.getLow(s) == bx.getHigh(s))
+				{
+					p.get(s) = ibx.getLow(s);
+					int sub = inte.getSub(p);
+					BOOST_REQUIRE_EQUAL(sub,i);
+				}
+				else if (ibx.getHigh(s) == bx.getLow(s))
+				{
+					p.get(s) = ibx.getHigh(s);
+					int sub = inte.getSub(p);
+					BOOST_REQUIRE_EQUAL(sub,x);
+				}
+			}
+		}
+	}
 }
 
 BOOST_AUTO_TEST_CASE( interpolation_full_test_3D )
@@ -389,7 +503,7 @@ BOOST_AUTO_TEST_CASE( interpolation_full_test_3D )
 	// Reset the grid
 
 	// Reset the grid
-	interp_test<3,double>(gd,vd,false);
+	interp_test<3,double,mp4_kernel<float>>(gd,vd,false,2);
 
 	auto & v_cl = create_vcluster();
 	double mg[3];

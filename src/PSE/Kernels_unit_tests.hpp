@@ -15,6 +15,7 @@
 
 BOOST_AUTO_TEST_SUITE( pse_kernels_unit_tests )
 
+/*
 BOOST_AUTO_TEST_CASE( pse_ker )
 {
 	Vcluster<> & v_cl = create_vcluster();
@@ -122,6 +123,7 @@ BOOST_AUTO_TEST_CASE( pse_ker )
 		}
 	}
 }
+*/
 
 BOOST_AUTO_TEST_SUITE_END()
 
