@@ -209,7 +209,6 @@ install(FILES DCPSE/Dcpse.hpp
 		DCPSE/DCPSE_op/DCPSE_Solver.cuh
 		DCPSE/DcpseDiagonalScalingMatrix.hpp
 		DCPSE/DcpseRhs.hpp
-		DCPSE/DcpseRhs.cuh
 		DCPSE/Monomial.hpp
 		DCPSE/Monomial.cuh
 		DCPSE/MonomialBasis.hpp
@@ -217,7 +216,6 @@ install(FILES DCPSE/Dcpse.hpp
 		DCPSE/SupportBuilder.cuh
 		DCPSE/SupportBuilder.hpp
 		DCPSE/Vandermonde.hpp
-		DCPSE/Vandermonde.cuh
 		DCPSE/VandermondeRowBuilder.hpp
 		DESTINATION openfpm_numerics/include/DCPSE
 		COMPONENT OpenFPM)

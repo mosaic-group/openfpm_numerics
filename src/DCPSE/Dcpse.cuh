@@ -64,7 +64,7 @@ private:
     openfpm::vector_custd<T> localEpsInvPow; // Each MPI rank has just access to the local ones
     openfpm::vector_custd<T> calcKernels;
 
-    std::map<size_t, size_t> origToLocalKeys;
+    openfpm::vector<size_t> subsetKeyPid;
 
     vector_type & particles;
     double rCut;
@@ -119,6 +119,7 @@ public:
             differentialSignature(differentialSignature),
             differentialOrder(Monomial<dim>(differentialSignature).order()),
             monomialBasis(differentialSignature.asArray(), convergenceOrder),
+            subsetKeyPid(other.subsetKeyPid),
             supportRefs(other.supportRefs),
             supportKeys1D(other.supportKeys1D),
             kerOffsets(other.kerOffsets),
@@ -370,7 +371,7 @@ public:
             sign = -1;
         }
 
-        size_t localKey = origToLocalKeys[key.getKey()];
+        size_t localKey = subsetKeyPid.get(key.getKey());
 
         double eps = localEps.get(localKey);
         double epsInvPow = localEpsInvPow.get(localKey);
@@ -429,7 +430,7 @@ public:
             sign = -1;
         }
 
-        size_t localKey = origToLocalKeys[key.getKey()];
+        size_t localKey = subsetKeyPid.get(key.getKey());
 
         double eps = localEps.get(localKey);
         double epsInvPow = localEpsInvPow(localKey);
@@ -477,6 +478,7 @@ public:
         localEps.clear();
         localEpsInvPow.clear();
         calcKernels.clear();
+        subsetKeyPid.clear();
 
         initializeStaticSize(particles, convergenceOrder, rCut, supportSizeFactor);
     }
@@ -493,6 +495,7 @@ private:
         SupportBuilder<vector_type> supportBuilder(particles, differentialSignature, rCut);
         unsigned int requiredSupportSize = monomialBasis.size();
 
+        subsetKeyPid.resize(particles.size_local_orig());
         if (!isSharedSupport)
             supportRefs.resize(particles.size_local());
         localEps.resize(particles.size_local());
@@ -507,7 +510,7 @@ private:
         auto it = particles.getDomainIterator();
         while (it.isNext()) {
             size_t localSupportSize;
-            auto key_o = it.get(); origToLocalKeys[particles.getOriginKey(key_o).getKey()] = key_o.getKey();
+            auto key_o = it.get(); subsetKeyPid.get(particles.getOriginKey(key_o).getKey()) = key_o.getKey();
 
             if (!isSharedSupport){
                 auto key_o = particles.getOriginKey(it.get());
@@ -563,6 +566,7 @@ private:
         SupportBuilder<vector_type> supportBuilder(particles, differentialSignature, rCut);
         unsigned int requiredSupportSize = monomialBasis.size();
 
+        subsetKeyPid.resize(particles.size_local_orig());
         if (!isSharedSupport)
             supportRefs.resize(particles.size_local());
         localEps.resize(particles.size_local());
@@ -577,7 +581,7 @@ private:
         auto it = particles.getDomainIterator();
         while (it.isNext()) {
             size_t localSupportSize;
-            auto key_o = it.get(); origToLocalKeys[particles.getOriginKey(key_o).getKey()] = key_o.getKey();
+            auto key_o = it.get(); subsetKeyPid.get(particles.getOriginKey(key_o).getKey()) = key_o.getKey();
 
             if (!isSharedSupport){
                 auto key_o = particles.getOriginKey(it.get());
@@ -634,6 +638,7 @@ private:
         this->supportSizeFactor=supportSizeFactor;
         this->convergenceOrder=convergenceOrder;
 
+        subsetKeyPid.resize(particles.size_local_orig());
         if (!isSharedSupport)
             supportRefs.resize(particles.size_local());
         localEps.resize(particles.size_local());
@@ -644,7 +649,7 @@ std::chrono::high_resolution_clock::time_point t1 = std::chrono::high_resolution
 
         if (opt==support_options::RADIUS) {
             while (it.isNext()) {
-                auto key_o = it.get(); origToLocalKeys[particles.getOriginKey(key_o).getKey()] = key_o.getKey();
+                auto key_o = it.get(); subsetKeyPid.get(particles.getOriginKey(key_o).getKey()) = key_o.getKey();
 
                 if (!isSharedSupport)
                     supportRefs.get(key_o.getKey()) = key_o.getKey();
@@ -664,7 +669,7 @@ std::chrono::high_resolution_clock::time_point t1 = std::chrono::high_resolution
 
             while (it.isNext()) {
                 if (!isSharedSupport){
-                    auto key_o = it.get(); origToLocalKeys[particles.getOriginKey(key_o).getKey()] = key_o.getKey();
+                    auto key_o = it.get(); subsetKeyPid.get(particles.getOriginKey(key_o).getKey()) = key_o.getKey();
 
                     Support support = supportBuilder.getSupport(it, requiredSupportSize, opt);
                     supportRefs.get(key_o.getKey()) = key_o.getKey();
@@ -709,6 +714,7 @@ std::cout << "Support building took " << time_span2.count() * 1000. << " millise
         this->supportSizeFactor=supportSizeFactor;
         this->convergenceOrder=convergenceOrder;
 
+        subsetKeyPid.resize(particles.size_local_orig());
         if (!isSharedSupport)
             supportRefs.resize(particles.size_local());
         localEps.resize(particles.size_local());
@@ -719,7 +725,7 @@ std::chrono::high_resolution_clock::time_point t1 = std::chrono::high_resolution
 
         if (opt==support_options::RADIUS) {
             while (it.isNext()) {
-                auto key_o = it.get(); origToLocalKeys[particles.getOriginKey(key_o).getKey()] = key_o.getKey();
+                auto key_o = it.get(); subsetKeyPid.get(particles.getOriginKey(key_o).getKey()) = key_o.getKey();
 
                 if (!isSharedSupport)
                     supportRefs.get(key_o.getKey()) = key_o.getKey();
@@ -740,7 +746,7 @@ std::chrono::high_resolution_clock::time_point t1 = std::chrono::high_resolution
 
             while (it.isNext()) {
                 if (!isSharedSupport){
-                    auto key_o = it.get(); origToLocalKeys[particles.getOriginKey(key_o).getKey()] = key_o.getKey();
+                    auto key_o = it.get(); subsetKeyPid.get(particles.getOriginKey(key_o).getKey()) = key_o.getKey();
 
                     Support support = supportBuilder.getSupport(it, requiredSupportSize, opt);
                     supportRefs.get(key_o.getKey()) = key_o.getKey();
