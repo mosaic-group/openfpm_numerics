@@ -372,7 +372,6 @@ public:
         }
 
         size_t localKey = subsetKeyPid.get(key.getKey());
-
         double eps = localEps.get(localKey);
         double epsInvPow = localEpsInvPow.get(localKey);
 
@@ -384,7 +383,6 @@ public:
             std::cerr<<__FILE__<<":"<<__LINE__<<" Error: You forgot a DCPSE operator update after map."<<std::endl;
         }
 #endif
-
 
         expr_type Dfxp = 0;
         size_t xpK = supportRefs.get(localKey);
@@ -431,7 +429,6 @@ public:
         }
 
         size_t localKey = subsetKeyPid.get(key.getKey());
-
         double eps = localEps.get(localKey);
         double epsInvPow = localEpsInvPow(localKey);
 
@@ -492,37 +489,37 @@ private:
 #ifdef SE_CLASS1
         this->update_ctr=particles.getMapCtr();
 #endif
-        SupportBuilder<vector_type> supportBuilder(particles, differentialSignature, rCut);
-        unsigned int requiredSupportSize = monomialBasis.size();
 
-        subsetKeyPid.resize(particles.size_local_orig());
-        if (!isSharedSupport)
+        if (!isSharedSupport) {
+            subsetKeyPid.resize(particles.size_local_orig());
             supportRefs.resize(particles.size_local());
+        }
         localEps.resize(particles.size_local());
         localEpsInvPow.resize(particles.size_local());
         kerOffsets.resize(particles.size_local()+1);
 
-        // need to resize supportKeys1D to yet unknown supportKeysTotalN
-        // add() takes too long
-        openfpm::vector<openfpm::vector<size_t>> tempSupportKeys(supportRefs.size());
         const T condVTOL = 1e2;
 
-        auto it = particles.getDomainIterator();
-        while (it.isNext()) {
-            size_t localSupportSize;
-            auto key_o = it.get(); subsetKeyPid.get(particles.getOriginKey(key_o).getKey()) = key_o.getKey();
+        if (!isSharedSupport) {
+            SupportBuilder<vector_type> supportBuilder(particles, differentialSignature, rCut);
+            unsigned int requiredSupportSize = monomialBasis.size();
+            // need to resize supportKeys1D to yet unknown supportKeysTotalN
+            // add() takes too long
+            openfpm::vector<openfpm::vector<size_t>> tempSupportKeys(supportRefs.size());
 
-            if (!isSharedSupport){
+            auto it = particles.getDomainIterator();
+            while (it.isNext()) {
                 auto key_o = particles.getOriginKey(it.get());
+                subsetKeyPid.get(key_o.getKey()) = it.get().getKey();
 
                 Support support = supportBuilder.getSupport(it, requiredSupportSize, opt);
                 supportRefs.get(key_o.getKey()) = key_o.getKey();
                 tempSupportKeys.get(key_o.getKey()) = support.getKeys();
                 kerOffsets.get(key_o.getKey()) = supportKeysTotalN;
 
-                if (maxSupportSize < support.size()) maxSupportSize = support.size();
+                if (maxSupportSize < support.size())
+                    maxSupportSize = support.size();
                 supportKeysTotalN += support.size();
-
 
                 EMatrix<T, Eigen::Dynamic, Eigen::Dynamic> V(support.size(), monomialBasis.size());
                 // Vandermonde matrix computation
@@ -538,11 +535,10 @@ private:
                     std::cout << "INFO: Increasing, requiredSupportSize = " << requiredSupportSize << std::endl; // debug
                     continue;
                 } else requiredSupportSize = monomialBasis.size();
-            }
-            ++it;
-        }
 
-        if (!isSharedSupport){
+                ++it;
+            }
+
             kerOffsets.get(supportRefs.size()) = supportKeysTotalN;
             supportKeys1D.resize(supportKeysTotalN);
 
@@ -563,37 +559,37 @@ private:
 #ifdef SE_CLASS1
         this->update_ctr=particles.getMapCtr();
 #endif
-        SupportBuilder<vector_type> supportBuilder(particles, differentialSignature, rCut);
-        unsigned int requiredSupportSize = monomialBasis.size();
 
-        subsetKeyPid.resize(particles.size_local_orig());
-        if (!isSharedSupport)
+        if (!isSharedSupport) {
+            subsetKeyPid.resize(particles.size_local_orig());
             supportRefs.resize(particles.size_local());
+        }
         localEps.resize(particles.size_local());
         localEpsInvPow.resize(particles.size_local());
         kerOffsets.resize(particles.size_local()+1);
 
-        // need to resize supportKeys1D to yet unknown supportKeysTotalN
-        // add() takes too long
-        openfpm::vector<openfpm::vector<size_t>> tempSupportKeys(supportRefs.size());
         const T condVTOL = 1e2;
 
-        auto it = particles.getDomainIterator();
-        while (it.isNext()) {
-            size_t localSupportSize;
-            auto key_o = it.get(); subsetKeyPid.get(particles.getOriginKey(key_o).getKey()) = key_o.getKey();
+        if (!isSharedSupport) {
+            SupportBuilder<vector_type> supportBuilder(particles, differentialSignature, rCut);
+            unsigned int requiredSupportSize = monomialBasis.size();
+            // need to resize supportKeys1D to yet unknown supportKeysTotalN
+            // add() takes too long
+            openfpm::vector<openfpm::vector<size_t>> tempSupportKeys(supportRefs.size());
 
-            if (!isSharedSupport){
+            auto it = particles.getDomainIterator();
+            while (it.isNext()) {
                 auto key_o = particles.getOriginKey(it.get());
+                subsetKeyPid.get(key_o.getKey()) = it.get().getKey();
 
                 Support support = supportBuilder.getSupport(it, requiredSupportSize, opt);
                 supportRefs.get(key_o.getKey()) = key_o.getKey();
                 tempSupportKeys.get(key_o.getKey()) = support.getKeys();
                 kerOffsets.get(key_o.getKey()) = supportKeysTotalN;
 
-                if (maxSupportSize < support.size()) maxSupportSize = support.size();
+                if (maxSupportSize < support.size())
+                    maxSupportSize = support.size();
                 supportKeysTotalN += support.size();
-
 
                 EMatrix<T, Eigen::Dynamic, Eigen::Dynamic> V(support.size(), monomialBasis.size());
                 // Vandermonde matrix computation
@@ -609,11 +605,10 @@ private:
                     std::cout << "INFO: Increasing, requiredSupportSize = " << requiredSupportSize << std::endl; // debug
                     continue;
                 } else requiredSupportSize = monomialBasis.size();
-            }
-            ++it;
-        }
 
-        if (!isSharedSupport){
+                ++it;
+            }
+
             kerOffsets.get(supportRefs.size()) = supportKeysTotalN;
             supportKeys1D.resize(supportKeysTotalN);
 
@@ -638,9 +633,10 @@ private:
         this->supportSizeFactor=supportSizeFactor;
         this->convergenceOrder=convergenceOrder;
 
-        subsetKeyPid.resize(particles.size_local_orig());
-        if (!isSharedSupport)
+        if (!isSharedSupport) {
+            subsetKeyPid.resize(particles.size_local_orig());
             supportRefs.resize(particles.size_local());
+        }
         localEps.resize(particles.size_local());
         localEpsInvPow.resize(particles.size_local());
 
@@ -648,27 +644,26 @@ std::chrono::high_resolution_clock::time_point t1 = std::chrono::high_resolution
         auto it = particles.getDomainIterator();
 
         if (opt==support_options::RADIUS) {
-            while (it.isNext()) {
-                auto key_o = it.get(); subsetKeyPid.get(particles.getOriginKey(key_o).getKey()) = key_o.getKey();
-
-                if (!isSharedSupport)
+            if (!isSharedSupport) {
+                while (it.isNext()) {
+                    auto key_o = it.get(); subsetKeyPid.get(particles.getOriginKey(key_o).getKey()) = key_o.getKey();
                     supportRefs.get(key_o.getKey()) = key_o.getKey();
-                ++it;
+                    ++it;
+                }
+
+                SupportBuilderGPU<vector_type> supportBuilder(particles, rCut);
+                supportBuilder.getSupport(supportRefs.size(), kerOffsets, supportKeys1D, maxSupportSize, supportKeysTotalN);
             }
-
-            SupportBuilderGPU<vector_type> supportBuilder(particles, differentialSignature, rCut);
-            supportBuilder.getSupport(supportRefs.size(), kerOffsets, supportKeys1D, maxSupportSize, supportKeysTotalN);
         } else {
-            size_t requiredSupportSize = monomialBasis.size() * supportSizeFactor;
-            SupportBuilder<vector_type> supportBuilder(particles, differentialSignature, rCut);
+            if (!isSharedSupport){
+                openfpm::vector<openfpm::vector<size_t>> tempSupportKeys(supportRefs.size());
+                size_t requiredSupportSize = monomialBasis.size() * supportSizeFactor;
+                // need to resize supportKeys1D to yet unknown supportKeysTotalN
+                // add() takes too long
+                SupportBuilder<vector_type> supportBuilder(particles, differentialSignature, rCut);
+                kerOffsets.resize(supportRefs.size()+1);
 
-            kerOffsets.resize(supportRefs.size()+1);
-            // need to resize supportKeys1D to yet unknown supportKeysTotalN
-            // add() takes too long
-            openfpm::vector<openfpm::vector<size_t>> tempSupportKeys(supportRefs.size());
-
-            while (it.isNext()) {
-                if (!isSharedSupport){
+                while (it.isNext()) {
                     auto key_o = it.get(); subsetKeyPid.get(particles.getOriginKey(key_o).getKey()) = key_o.getKey();
 
                     Support support = supportBuilder.getSupport(it, requiredSupportSize, opt);
@@ -678,11 +673,9 @@ std::chrono::high_resolution_clock::time_point t1 = std::chrono::high_resolution
 
                     if (maxSupportSize < support.size()) maxSupportSize = support.size();
                     supportKeysTotalN += support.size();
+                    ++it;
                 }
-                ++it;
-            }
 
-            if (!isSharedSupport){
                 kerOffsets.get(supportRefs.size()) = supportKeysTotalN;
                 supportKeys1D.resize(supportKeysTotalN);
 
@@ -714,9 +707,10 @@ std::cout << "Support building took " << time_span2.count() * 1000. << " millise
         this->supportSizeFactor=supportSizeFactor;
         this->convergenceOrder=convergenceOrder;
 
-        subsetKeyPid.resize(particles.size_local_orig());
-        if (!isSharedSupport)
+        if (!isSharedSupport) {
+            subsetKeyPid.resize(particles.size_local_orig());
             supportRefs.resize(particles.size_local());
+        }
         localEps.resize(particles.size_local());
         localEpsInvPow.resize(particles.size_local());
 
@@ -724,28 +718,26 @@ std::chrono::high_resolution_clock::time_point t1 = std::chrono::high_resolution
         auto it = particles.getDomainIterator();
 
         if (opt==support_options::RADIUS) {
-            while (it.isNext()) {
-                auto key_o = it.get(); subsetKeyPid.get(particles.getOriginKey(key_o).getKey()) = key_o.getKey();
-
-                if (!isSharedSupport)
+            if (!isSharedSupport) {
+                while (it.isNext()) {
+                    auto key_o = it.get(); subsetKeyPid.get(particles.getOriginKey(key_o).getKey()) = key_o.getKey();
                     supportRefs.get(key_o.getKey()) = key_o.getKey();
-                ++it;
+                    ++it;
+                }
+
+                SupportBuilderGPU<vector_type> supportBuilder(particles, rCut);
+                supportBuilder.getSupport(supportRefs.size(), kerOffsets, supportKeys1D, maxSupportSize, supportKeysTotalN);
             }
-
-            SupportBuilderGPU<vector_type> supportBuilder(particles, differentialSignature, rCut);
-            supportBuilder.getSupport(supportRefs.size(), kerOffsets, supportKeys1D, maxSupportSize, supportKeysTotalN);
-
         } else {
-            size_t requiredSupportSize = monomialBasis.size() * supportSizeFactor;
-            SupportBuilder<vector_type> supportBuilder(particles, differentialSignature, rCut);
+            if (!isSharedSupport){
+                openfpm::vector<openfpm::vector<size_t>> tempSupportKeys(supportRefs.size());
+                size_t requiredSupportSize = monomialBasis.size() * supportSizeFactor;
+                // need to resize supportKeys1D to yet unknown supportKeysTotalN
+                // add() takes too long
+                SupportBuilder<vector_type> supportBuilder(particles, differentialSignature, rCut);
+                kerOffsets.resize(supportRefs.size()+1);
 
-            kerOffsets.resize(supportRefs.size()+1);
-            // need to resize supportKeys1D to yet unknown supportKeysTotalN
-            // add() takes too long
-            openfpm::vector<openfpm::vector<size_t>> tempSupportKeys(supportRefs.size());
-
-            while (it.isNext()) {
-                if (!isSharedSupport){
+                while (it.isNext()) {
                     auto key_o = it.get(); subsetKeyPid.get(particles.getOriginKey(key_o).getKey()) = key_o.getKey();
 
                     Support support = supportBuilder.getSupport(it, requiredSupportSize, opt);
@@ -755,11 +747,9 @@ std::chrono::high_resolution_clock::time_point t1 = std::chrono::high_resolution
 
                     if (maxSupportSize < support.size()) maxSupportSize = support.size();
                     supportKeysTotalN += support.size();
+                    ++it;
                 }
-                ++it;
-            }
 
-            if (!isSharedSupport){
                 kerOffsets.get(supportRefs.size()) = supportKeysTotalN;
                 supportKeys1D.resize(supportKeysTotalN);
 

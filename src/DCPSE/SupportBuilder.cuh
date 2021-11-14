@@ -103,15 +103,11 @@ class SupportBuilderGPU
 {
 private:
     vector_type &domain;
-    const Point<vector_type::dims, unsigned int> differentialSignature;
     typename vector_type::stype rCut;
 
 public:
-    SupportBuilderGPU(vector_type &domain, Point<vector_type::dims, unsigned int> differentialSignature, typename vector_type::stype rCut)
-        : domain(domain), differentialSignature(differentialSignature), rCut(rCut) {}
-
-    SupportBuilderGPU(vector_type &domain, unsigned int differentialSignature[vector_type::dims], typename vector_type::stype rCut) 
-        : SupportBuilderGPU(domain, Point<vector_type::dims, unsigned int>(differentialSignature), rCut) {}
+    SupportBuilderGPU(vector_type &domain, typename vector_type::stype rCut)
+        : domain(domain), rCut(rCut) {}
 
     void getSupport(size_t N, openfpm::vector_custd<size_t>& kerOffsets, openfpm::vector_custd<size_t>& supportKeys1D, 
         size_t& maxSupport, size_t& supportKeysTotalN)
