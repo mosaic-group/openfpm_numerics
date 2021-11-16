@@ -48,8 +48,6 @@ find_package(PETSc)
 find_package(HDF5)
 find_package(Eigen3)
 find_package(LibHilbert)
-find_package(Metis)
-find_package(ParMetis)
 find_package(TinyObjLoader )
 find_package(BLAS)
 find_package(LAPACK)
@@ -173,6 +171,10 @@ file(WRITE mpi_include "-I${MPI_C_INCLUDE_DIRS}")
 file(WRITE mpi_libs "${MPI_C_LINK_FLAGS} ${MPI_C_LIBRARIES}")
 
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/src/config/config_cmake.h.in ${CMAKE_CURRENT_SOURCE_DIR}/src/config/config.h)
+
+if (CUDA_ON_BACKEND STREQUAL "CUDA")
+        enable_language(CUDA)
+endif()
 
 add_subdirectory (src)
 
