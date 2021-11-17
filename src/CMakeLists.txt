@@ -54,6 +54,8 @@ add_executable(numerics ${OPENFPM_INIT_FILE} ${CUDA_SOURCES}
 #		level_set/redistancing_Sussman/tests/convergence_test.cpp
 		)
 
+	set_property(TARGET numerics PROPERTY CUDA_ARCHITECTURES OFF)
+
 add_dependencies(numerics ofpmmemory)
 add_dependencies(numerics vcluster)
 
