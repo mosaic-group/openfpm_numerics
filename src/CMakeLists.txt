@@ -20,7 +20,56 @@ if (NOT CUDA_ON_BACKEND STREQUAL "None")
 					 Operators/Vector/vector_dist_operators_apply_kernel_unit_tests.cu)
 endif()
 
-add_executable(numerics ${OPENFPM_INIT_FILE} ${CUDA_SOURCES}
+if ( CUDA_ON_BACKEND STREQUAL "HIP" AND HIP_FOUND )
+
+        list(APPEND HIP_HIPCC_FLAGS ${CMAKE_CXX_FLAGS_DEBUG})
+
+        if (CMAKE_BUILD_TYPE STREQUAL "Debug")
+                list(APPEND HIP_HIPCC_FLAGS -O0)
+        endif()
+
+        list(APPEND HIP_HIPCC_FLAGS -D__NVCC__ -D__HIP__  -DCUDART_VERSION=11000 -D__CUDACC__ -D__CUDACC_VER_MAJOR__=11 -D__CUDACC_VER_MINOR__=0 -D__CUDACC_VER_BUILD__=0 --std=c++14)
+        set_source_files_properties(${CUDA_SOURCES} PROPERTIES LANGUAGE CXX)
+
+
+        hip_add_executable(numerics ${OPENFPM_INIT_FILE} ${CUDA_SOURCES}
+                OdeIntegrators/tests/OdeIntegratores_base_tests.cpp
+                DCPSE/DCPSE_op/tests/DCPSE_op_subset_test.cpp
+                DCPSE/DCPSE_op/tests/DCPSE_op_test_base_tests
+                FiniteDifference/FD_Solver_test.cpp
+                FiniteDifference/FD_op_Tests.cpp
+                DCPSE/DCPSE_op/tests/DCPSE_op_test3d.cpp
+	        DCPSE/DCPSE_op/tests/DCPSE_op_Solver_test.cpp
+	        DCPSE/DCPSE_op/tests/DCPSE_op_test_temporal.cpp
+	        DCPSE/tests/Dcpse_unit_tests.cpp
+	        DCPSE/tests/DcpseRhs_unit_tests.cpp
+	        DCPSE/tests/MonomialBasis_unit_tests.cpp
+	        DCPSE/tests/Support_unit_tests.cpp
+	        DCPSE/tests/Vandermonde_unit_tests.cpp
+                                                main.cpp
+                                                Matrix/SparseMatrix_unit_tests.cpp
+                                                interpolation/interpolation_unit_tests.cpp
+                                                Vector/Vector_unit_tests.cpp
+                                                Solvers/petsc_solver_unit_tests.cpp
+                                                FiniteDifference/FDScheme_unit_tests.cpp
+                                                FiniteDifference/eq_unit_test_3d.cpp
+                                                FiniteDifference/eq_unit_test.cpp
+                                                FiniteDifference/tests/Eno_Weno_unit_test.cpp
+                                                FiniteDifference/tests/Upwind_gradient_unit_test.cpp
+                                                FiniteDifference/tests/FD_simple_unit_test.cpp
+                                                Operators/Vector/vector_dist_operators_unit_tests.cpp
+                                                Operators/Vector/vector_dist_operators_apply_kernel_unit_tests.cpp
+                                                ../../src/lib/pdata.cpp
+                                                BoundaryConditions/tests/method_of_images_cylinder_unit_test.cpp
+#               level_set/closest_point/closest_point_unit_tests.cpp
+#               level_set/redistancing_Sussman/tests/redistancingSussman_unit_test.cpp
+#               level_set/redistancing_Sussman/tests/convergence_test.cpp
+                )
+
+
+else()
+
+	add_executable(numerics ${OPENFPM_INIT_FILE} ${CUDA_SOURCES}
 		OdeIntegrators/tests/OdeIntegratores_base_tests.cpp
 		DCPSE/DCPSE_op/tests/DCPSE_op_subset_test.cpp
 		DCPSE/DCPSE_op/tests/DCPSE_op_test_base_tests
@@ -56,8 +105,15 @@ add_executable(numerics ${OPENFPM_INIT_FILE} ${CUDA_SOURCES}
 
 	set_property(TARGET numerics PROPERTY CUDA_ARCHITECTURES OFF)
 
-add_dependencies(numerics ofpmmemory)
-add_dependencies(numerics vcluster)
+endif()
+
+if (HIP_FOUND)
+        add_dependencies(numerics ofpmmemory_dl)
+        add_dependencies(numerics vcluster_dl)
+else()
+	add_dependencies(numerics ofpmmemory)
+	add_dependencies(numerics vcluster)
+endif()
 
 ###########################
 if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
@@ -114,8 +170,13 @@ if(PETSC_FOUND)
 	target_include_directories (numerics PUBLIC ${PETSC_INCLUDES})
 	target_link_libraries(numerics ${PETSC_LIBRARIES})
 endif()
-target_link_libraries(numerics vcluster)
-target_link_libraries(numerics ofpmmemory)
+if (HIP_FOUND)
+        target_link_libraries(numerics vcluster_dl)
+        target_link_libraries(numerics ofpmmemory_dl)
+else()
+	target_link_libraries(numerics vcluster)
+	target_link_libraries(numerics ofpmmemory)
+endif()
 if(SuiteSparse_FOUND)
 	target_include_directories (numerics PUBLIC ${SuiteSparse_INCLUDE_DIRS})
         target_link_libraries(numerics ${SuiteSparse_LIBRARIES})

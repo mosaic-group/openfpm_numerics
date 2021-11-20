@@ -10,6 +10,7 @@
 
 #include "Space/Shape/Point.hpp"
 #include "util/cuda_launch.hpp"
+#include <utility>
 
 constexpr unsigned int PROP_POS =(unsigned int)-1;
 
@@ -227,19 +228,31 @@ struct get_vector_dist_expression_op<1,false>
 	}
 
 	template<unsigned int prop, typename exp_type, typename vector_type>
-	__device__ __host__ inline static void assign(exp_type & o1, vector_type & v, const vect_dist_key_dx & key)
+	__device__ __host__ inline static void assign(exp_type & o1, vector_type & v, const vect_dist_key_dx & key, const vect_dist_key_dx & key_orig, const int (& comp)[1])
 	{
 		printf("ERROR: Slicer, the expression is incorrect, please check it\n");
 	}
 
 	template<unsigned int prop, typename exp_type, typename vector_type>
-	__device__ __host__ inline static void assign(exp_type & o1, vector_type & v, const unsigned int & key)
+	__device__ __host__ inline static void assign(exp_type & o1, vector_type & v, const unsigned int & key, const vect_dist_key_dx & key_orig, const int (& comp)[1])
 	{
 		printf("ERROR: Slicer, the expression is incorrect, please check it\n");
 	}
 
+        template<unsigned int prop,typename exp_type, typename vector_type>
+        __device__ __host__ inline static void assign(exp_type & o1, vector_type & v, const vect_dist_key_dx & key, const vect_dist_key_dx & key_orig, const Point<1,int> & comp)
+        {
+                printf("ERROR: Slicer, the expression is incorrect, please check it\n");
+        }
+
+        template<unsigned int prop,typename exp_type, typename vector_type>
+        __device__ __host__ inline static void assign(exp_type & o1, vector_type & v, const unsigned int & key, const unsigned int & key_orig, const Point<1,int> & comp)
+        {
+                printf("ERROR: Slicer, the expression is incorrect, please check it\n");
+        }
+
 	template<unsigned int prop, typename vector_type>
-	inline static void assign_double(double d, vector_type & v, const vect_dist_key_dx & key)
+	inline static void assign_double(double d, vector_type & v, const vect_dist_key_dx & key, const int (& comp)[1])
 	{
 		printf("ERROR: Slicer, the expression is incorrect, please check it\n");
 	}
@@ -428,10 +441,28 @@ __global__ void compute_expr_ker(vector vd, expr v_exp)
 	pos_or_propL_ker<vector,prp>::value(vd,p) = v_exp.value(p);
 }
 
+namespace openfpm
+{
+
+  template<typename _Tp, typename _Up = _Tp&&>
+    __device__ __host__ _Up
+    __declval(int);
+
+  template<typename _Tp>
+    __device__ __host__ _Tp
+    __declval(long);
+
+  template<typename _Tp>
+    __device__ __host__ auto declval() noexcept -> decltype(__declval<_Tp>(0))
+    {
+      return __declval<_Tp>(0);
+    }
+}
+
 template<unsigned int prp, unsigned int n, typename vector, typename expr>
 __global__ void compute_expr_ker_slice(vector vd, expr v_exp, Point<n,int> comp)
 {
-	typedef typename std::remove_const<typename std::remove_reference<decltype(pos_or_propL<vector,prp>::value_type(std::declval<vector>(),vect_dist_key_dx(0)))>::type>::type property_act;
+	typedef typename std::remove_const<typename std::remove_reference<decltype(pos_or_propL<vector,prp>::value_type(openfpm::declval<vector>(),vect_dist_key_dx(0)))>::type>::type property_act;
 
 	unsigned int p = threadIdx.x + blockIdx.x * blockDim.x;
 
