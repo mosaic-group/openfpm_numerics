@@ -168,7 +168,6 @@ endif()
 
 file(WRITE error_code "0")
 file(WRITE cuda_lib "${CUDA_cudart_static_LIBRARY} ${CUDA_cudadevrt_LIBRARY}")
-file(WRITE cuda_include "-I${CUDA_INCLUDE_DIRS}")
 file(WRITE mpi_include "-I${MPI_C_INCLUDE_DIRS}")
 file(WRITE mpi_libs "${MPI_C_LINK_FLAGS} ${MPI_C_LIBRARIES}")
 
