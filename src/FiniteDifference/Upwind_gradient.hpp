@@ -25,7 +25,7 @@
 
 // Include OpenFPM header files
 #include "Grid/grid_dist_id.hpp"
-#include "FD_order1.hpp"
+#include "FD_simple.hpp"
 #include "Eno_Weno.hpp"
 
 /**@brief Upwinding: For a specific dimension, from the forward and backward gradient find the upwind side.
