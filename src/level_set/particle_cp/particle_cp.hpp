@@ -215,8 +215,23 @@ private:
 			Point<2, double> xa = vd_s.getPos(a);
 			int neib = 0;
 			
-			// order limit 4 corresponds to bicubic basis functions
-			MonomialBasis<2> m(4);
+			unsigned int degrees[2];
+			degrees[0] = 1;
+			degrees[1] = 1;
+			MonomialBasis<2> m(degrees, 1);
+
+			if (redistOptions.polynomial_degree == "quadratic")
+			{
+				//unsigned int degrees[2];
+				//degrees[0] = 1;
+				//degrees[1] = 1;
+				//MonomialBasis<2> m(degrees, 1);
+			}
+			else //bicubic
+			{
+				//MonomialBasis<2> m(4);
+			}
+
 			// std::cout<<"m size"<<m.size()<<std::endl;
 			VandermondeRowBuilder<2, double> vrb(m);
 
@@ -253,7 +268,7 @@ private:
 			EMatrix<double, Eigen::Dynamic, 1> c(m.size(), 1);
 			c = V.completeOrthogonalDecomposition().solve(phi);
 
-			for (int k = 0; k<16; k++)
+			for (int k = 0; k<m.size(); k++)
 			{
 				vd_s.template getProp<interpol_coeff>(a)[k] = c[k];
 			}
@@ -264,7 +279,7 @@ private:
 				EMatrix<double, Eigen::Dynamic, 1> xaa(2,1);
 				xaa[0] = xa[0];
 				xaa[1] = xa[1];
-				double curvature = get_dpdxdx(xaa, c) + get_dpdydy(xaa, c);
+				//double curvature = get_dpdxdx(xaa, c) + get_dpdydy(xaa, c);
 				// matlab debugging stuff:
 				//std::cout<<std::setprecision(16)<<"A = ["<<V<<"];"<<std::endl;
 				//std::cout<<"tempcond = cond(A);\ncondnumber = condnumber + tempcond;"<<std::endl;
@@ -274,7 +289,7 @@ private:
 				std::cout<<"num neibs: "<<num_neibs_a<<std::endl;
 				std::cout<<"x: "<<xa[0]<<" "<<xa[1]<<std::endl;
 				std::cout<<"COEFF: "<<c<<std::endl;
-				std::cout<<"KAPPA: "<<curvature<<std::endl;
+				//std::cout<<"KAPPA: "<<curvature<<std::endl;
 				std::cout<<"Vmat\n"<<V<<std::endl;
 			}
 
@@ -289,6 +304,9 @@ private:
 		auto part = vd_in.getDomainIterator(); //todo: include the sampling radius somewhere (bandwidth)
 		vd_s.updateCellList(NN_s);
 		int verbose = 0;
+		int msize;
+		if(redistOptions.polynomial_degree == "quadratic") msize = 6;
+		else msize = 16;
 		while (part.isNext())
 		{
 			vect_dist_key_dx a = part.get();
@@ -313,7 +331,7 @@ private:
 			double dpdxdy = 0;
 			double dpdydx = 0;
 
-			EMatrix<double, Eigen::Dynamic, 1> c(16, 1);
+			EMatrix<double, Eigen::Dynamic, 1> c(msize, 1);
 			EMatrix<double, Eigen::Dynamic, 1> nabla_f(3, 1); // 3 = ndim + 1
 			EMatrix<double, Eigen::Dynamic, Eigen::Dynamic> H(3, 3);
 
@@ -354,7 +372,7 @@ private:
 			x[0] = vd_s.getPos(b_min)[0];
 			x[1] = vd_s.getPos(b_min)[1];
 			// take the interpolation polynomial of the particle closest to the surface
-			for (int k = 0 ; k < 16 ; k++)
+			for (int k = 0 ; k < msize ; k++)
 			{
 				//vd.getProp<interpol_coeff>(a)[k] = vd.getProp<interp_coeff>( vd_s.getProp<0>(b_min) )[k];
 				c[k] = vd_s.template getProp<interpol_coeff>(b_min)[k];
@@ -367,7 +385,7 @@ private:
 					std::cout<<std::setprecision(16)<<"VERBOSE%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%:"<<std::endl;
 					std::cout<<"xa: "<<xa[0]<<", "<<xa[1]<<"\nx_0: "<<x[0]<<", "<<x[1]<<"\nc: "<<c<<std::endl;
 					std::cout<<"phi(x_0): "<<val<<std::endl;
-					std::cout<<"interpol_i(x_0) = "<<get_p(x, c)<<std::endl;
+					std::cout<<"interpol_i(x_0) = "<<get_p(x, c, redistOptions.polynomial_degree)<<std::endl;
 				}
 
 			EMatrix<double, Eigen::Dynamic, 1> xax = x - xa;
@@ -378,20 +396,20 @@ private:
 			{
 				// do optimisation //
 				// gather required values //
-				dpdx = get_dpdx(x, c);
-				dpdy = get_dpdy(x, c);
+				dpdx = get_dpdx(x, c, redistOptions.polynomial_degree);
+				dpdy = get_dpdy(x, c, redistOptions.polynomial_degree);
 				if (k == 0)
 				{
 					lambda = (-xax[0]*dpdx - xax[1]*dpdy)/(dpdx*dpdx + dpdy*dpdy);
 				}
-				dpdxdx = get_dpdxdx(x, c);
-				dpdydy = get_dpdydy(x, c);
-				dpdxdy = get_dpdxdy(x, c);
+				dpdxdx = get_dpdxdx(x, c, redistOptions.polynomial_degree);
+				dpdydy = get_dpdydy(x, c, redistOptions.polynomial_degree);
+				dpdxdy = get_dpdxdy(x, c, redistOptions.polynomial_degree);
 				dpdydx = dpdxdy;
 				// Assemble gradient //
 				nabla_f[0] = xax[0] + lambda*dpdx;
 				nabla_f[1] = xax[1] + lambda*dpdy;
-				nabla_f[2] = get_p(x, c);
+				nabla_f[2] = get_p(x, c, redistOptions.polynomial_degree);
 				// Assemble Hessian matrix //
 				H(0, 0) = 1 + lambda*dpdxdx;
 				H(0, 1) = lambda*dpdydx;
@@ -433,8 +451,8 @@ private:
 			if(verbose)
 			{
 				std::cout<<"x_final: "<<x[0]<<", "<<x[1]<<std::endl;
-				std::cout<<"p(x_final) :"<<get_p(x, c)<<std::endl;
-				std::cout<<"\nabla p(x_final)"<<get_dpdx(x, c)<<", "<<get_dpdy(x, c)<<std::endl;
+				std::cout<<"p(x_final) :"<<get_p(x, c, redistOptions.polynomial_degree)<<std::endl;
+				std::cout<<"\nabla p(x_final)"<<get_dpdx(x, c, redistOptions.polynomial_degree)<<", "<<get_dpdy(x, c, redistOptions.polynomial_degree)<<std::endl;
 			}
 
 			//std::cout<<"c:\n"<<vd.getProp<interpol_coeff>(a)<<"\nmin_sdf: "<<vd.getProp<min_sdf>(a)<<" , min_sdf_x: "<<vd.getProp<min_sdf_x>(a)<<std::endl;
@@ -444,46 +462,88 @@ private:
 		
 	}
 	
-	inline double get_p(EMatrix<double, Eigen::Dynamic, 1> xvector, EMatrix<double, Eigen::Dynamic, 1> c)
+	inline double get_p(EMatrix<double, Eigen::Dynamic, 1> xvector, EMatrix<double, Eigen::Dynamic, 1> c, std::string polynomialdegree)
 	{
 		const double x = xvector[0];
 		const double y = xvector[1];
-		return(c[0] + c[1]*x + c[2]*x*x + c[3]*x*x*x + c[4]*y + c[5]*x*y + c[6]*x*x*y + c[7]*x*x*x*y + c[8]*y*y + c[9]*x*y*y + c[10]*x*x*y*y + c[11]*x*x*x*y*y +c[12]*y*y*y + c[13]*x*y*y*y + c[14]*x*x*y*y*y + c[15]*x*x*x*y*y*y);
+		if (polynomialdegree == "bicubic")
+		{
+				return(c[0] + c[1]*x + c[2]*x*x + c[3]*x*x*x + c[4]*y + c[5]*x*y + c[6]*x*x*y + c[7]*x*x*x*y + c[8]*y*y + c[9]*x*y*y + c[10]*x*x*y*y + c[11]*x*x*x*y*y +c[12]*y*y*y + c[13]*x*y*y*y + c[14]*x*x*y*y*y + c[15]*x*x*x*y*y*y);
+		}
+		if (polynomialdegree == "quadratic")
+		{
+				return(c[0] + c[1]*x + c[2]*x*x + c[3]*y + c[4]*x*y + c[5]*y*y);
+		}
 	}
 
-	inline double get_dpdx(EMatrix<double, Eigen::Dynamic, 1> xvector, EMatrix<double, Eigen::Dynamic, 1> c)
+	inline double get_dpdx(EMatrix<double, Eigen::Dynamic, 1> xvector, EMatrix<double, Eigen::Dynamic, 1> c, std::string polynomialdegree)
 	{	
 		const double x = xvector[0];
 		const double y = xvector[1];
-		return(c[1] + 2*c[2]*x + 3*c[3]*x*x + c[5]*y + 2*c[6]*x*y + 3*c[7]*x*x*y + c[9]*y*y + 2*c[10]*x*y*y + 3*c[11]*x*x*y*y + c[13]*y*y*y + 2*c[14]*x*y*y*y + 3*c[15]*x*x*y*y*y);
+		if (polynomialdegree == "bicubic")
+		{
+				return(c[1] + 2*c[2]*x + 3*c[3]*x*x + c[5]*y + 2*c[6]*x*y + 3*c[7]*x*x*y + c[9]*y*y + 2*c[10]*x*y*y + 3*c[11]*x*x*y*y + c[13]*y*y*y + 2*c[14]*x*y*y*y + 3*c[15]*x*x*y*y*y);
+		}
+		if (polynomialdegree == "quadratic")
+		{
+				return(c[1] + 2*c[2]*x + c[4]*y);
+		}
 	}
 
-	inline double get_dpdy(EMatrix<double, Eigen::Dynamic, 1> xvector, EMatrix<double, Eigen::Dynamic, 1> c)
+	inline double get_dpdy(EMatrix<double, Eigen::Dynamic, 1> xvector, EMatrix<double, Eigen::Dynamic, 1> c, std::string polynomialdegree)
 	{	
 		const double x = xvector[0];
 		const double y = xvector[1];
-		return(c[4] + c[5]*x + c[6]*x*x + c[7]*x*x*x + 2*c[8]*y + 2*c[9]*x*y + 2*c[10]*x*x*y + 2*c[11]*x*x*x*y + 3*c[12]*y*y + 3*c[13]*x*y*y + 3*c[14]*x*x*y*y + 3*c[15]*x*x*x*y*y);
+		if (polynomialdegree == "bicubic")
+		{
+				return(c[4] + c[5]*x + c[6]*x*x + c[7]*x*x*x + 2*c[8]*y + 2*c[9]*x*y + 2*c[10]*x*x*y + 2*c[11]*x*x*x*y + 3*c[12]*y*y + 3*c[13]*x*y*y + 3*c[14]*x*x*y*y + 3*c[15]*x*x*x*y*y);
+		}
+		if (polynomialdegree == "quadratic")
+		{
+				return(c[3] + c[4]*x + 2*c[5]*y);
+		}
 	}
 
-	inline double get_dpdxdx(EMatrix<double, Eigen::Dynamic, 1> xvector, EMatrix<double, Eigen::Dynamic, 1> c)
+	inline double get_dpdxdx(EMatrix<double, Eigen::Dynamic, 1> xvector, EMatrix<double, Eigen::Dynamic, 1> c, std::string polynomialdegree)
 	{
 		const double x = xvector[0];
 		const double y = xvector[1];
-		return(2*c[2] + 6*c[3]*x + 2*c[6]*y + 6*c[7]*x*y + 2*c[10]*y*y + 6*c[11]*y*y*x + 2*c[14]*y*y*y + 6*c[15]*y*y*y*x);
+		if (polynomialdegree == "bicubic")
+		{
+				return(2*c[2] + 6*c[3]*x + 2*c[6]*y + 6*c[7]*x*y + 2*c[10]*y*y + 6*c[11]*y*y*x + 2*c[14]*y*y*y + 6*c[15]*y*y*y*x);
+		}
+		if (polynomialdegree == "quadratic")
+		{
+				return(2*c[2]);
+		}
 	}
 
-	inline double get_dpdydy(EMatrix<double, Eigen::Dynamic, 1> xvector, EMatrix<double, Eigen::Dynamic, 1> c)
+	inline double get_dpdydy(EMatrix<double, Eigen::Dynamic, 1> xvector, EMatrix<double, Eigen::Dynamic, 1> c, std::string polynomialdegree)
 	{
 		const double x = xvector[0];
 		const double y = xvector[1];
-		return(2*c[8] + 2*c[9]*x + 2*c[10]*x*x + 2*c[11]*x*x*x + 6*c[12]*y + 6*c[13]*x*y + 6*c[14]*x*x*y + 6*c[15]*x*x*x*y);
+		if (polynomialdegree == "bicubic")
+		{
+				return(2*c[8] + 2*c[9]*x + 2*c[10]*x*x + 2*c[11]*x*x*x + 6*c[12]*y + 6*c[13]*x*y + 6*c[14]*x*x*y + 6*c[15]*x*x*x*y);
+		}
+		if (polynomialdegree == "quadratic")
+		{
+				return(2*c[5]);
+		}
 	}
 
-	inline double get_dpdxdy(EMatrix<double, Eigen::Dynamic, 1> xvector, EMatrix<double, Eigen::Dynamic, 1> c)
+	inline double get_dpdxdy(EMatrix<double, Eigen::Dynamic, 1> xvector, EMatrix<double, Eigen::Dynamic, 1> c, std::string polynomialdegree)
 	{
 		const double x = xvector[0];
 		const double y = xvector[1];
-		return(c[5] + 2*c[6]*x + 3*c[7]*x*x + 2*c[9]*y + 4*c[10]*x*y + 6*c[11]*x*x*y + 3*c[13]*y*y + 6*c[14]*x*y*y + 9*c[15]*x*x*y*y);
+		if (polynomialdegree == "bicubic")
+		{
+				return(c[5] + 2*c[6]*x + 3*c[7]*x*x + 2*c[9]*y + 4*c[10]*x*y + 6*c[11]*x*x*y + 3*c[13]*y*y + 6*c[14]*x*y*y + 9*c[15]*x*x*y*y);
+		}
+		if (polynomialdegree == "quadratic")
+		{
+				return(c[4]);
+		}
 	}
 	
 };
