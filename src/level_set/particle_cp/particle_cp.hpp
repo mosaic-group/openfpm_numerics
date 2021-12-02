@@ -188,7 +188,7 @@ private:
 	
 	void interpolate_sdf_field()
 	{
-		int verbose = 0;
+		int verbose = 1;
 		auto NN_s = vd_s.getCellList(sqrt(r_cutoff2));
 		vd_s.updateCellList(NN_s);
 		auto part = vd_s.getDomainIterator();
@@ -217,6 +217,7 @@ private:
 			
 			unsigned int degrees[2];
 			degrees[0] = 1;
+<<<<<<< Updated upstream
 			degrees[1] = 1;
 			MonomialBasis<2> m(degrees, 1);
 
@@ -232,6 +233,12 @@ private:
 				//MonomialBasis<2> m(4);
 			}
 
+=======
+			degrees[1] = 2;
+			// order limit 4 corresponds to bicubic basis functions m(4)
+			//MonomialBasis<2> m(degrees,1);
+			MonomialBasis<2> m(3);
+>>>>>>> Stashed changes
 			// std::cout<<"m size"<<m.size()<<std::endl;
 			VandermondeRowBuilder<2, double> vrb(m);
 
@@ -253,9 +260,9 @@ private:
 				}
 
 				// debug given data
-				// std::cout<<std::setprecision(15)<<xb[0]<<"\t"<<xb[1]<<"\t"<<vd.getProp<sdf>(b)<<std::endl;
-				//xb[0] = 0.1;
-				//xb[1] = 0.5;
+				//std::cout<<std::setprecision(15)<<xb[0]<<"\t"<<xb[1]<<"\t"<<vd.getProp<sdf>(b)<<std::endl;
+				xb[0] = 0.1;
+				xb[1] = 0.5;
 				
 				// Fill phi-vector from the right hand side
 				phi[neib] = vd_s.template getProp<vd_s_sdf>(b);
@@ -266,14 +273,20 @@ private:
 			}
 
 			EMatrix<double, Eigen::Dynamic, 1> c(m.size(), 1);
+			std::cout<<"testinghere,..."<<std::endl;
 			c = V.completeOrthogonalDecomposition().solve(phi);
+<<<<<<< Updated upstream
 
+=======
+			std::cout<<"testinghere,..."<<std::endl;
+>>>>>>> Stashed changes
 			for (int k = 0; k<m.size(); k++)
 			{
+				std::cout<<"testinghere,..."<<k<<std::endl;
 				vd_s.template getProp<interpol_coeff>(a)[k] = c[k];
 			}
+			std::cout<<"testinghere,..."<<std::endl;
 
-			//if ((print || (curvature > 100000.0)) && (vd.getProp<surf_flag>(a) == 1))
 			if (verbose)
 			{
 				EMatrix<double, Eigen::Dynamic, 1> xaa(2,1);
