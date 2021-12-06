@@ -131,7 +131,6 @@ private:
 	            double r2 = norm2(dr);
 
 	            if ((sqrt(r2) < (1.3*redistOptions.H)) && !vd_in.template getProp<vd_in_close_part>(bkey) && (sgn_a != sgn_b)) isclose = 1;
-
 	            //int isclose = (abs(vd_in.template getProp<vd_in_sdf>(akey)) < (redistOptions.H/2.0 + 1e-8));
 
 	            if (r2 < r_cutoff2)
@@ -188,7 +187,7 @@ private:
 	
 	void interpolate_sdf_field()
 	{
-		int verbose = 1;
+		int verbose = 0;
 		auto NN_s = vd_s.getCellList(sqrt(r_cutoff2));
 		vd_s.updateCellList(NN_s);
 		auto part = vd_s.getDomainIterator();
@@ -217,9 +216,9 @@ private:
 			
 			unsigned int degrees[2];
 			degrees[0] = 1;
-<<<<<<< Updated upstream
 			degrees[1] = 1;
 			MonomialBasis<2> m(degrees, 1);
+			//MonomialBasis<2> m(4);
 
 			if (redistOptions.polynomial_degree == "quadratic")
 			{
@@ -233,12 +232,6 @@ private:
 				//MonomialBasis<2> m(4);
 			}
 
-=======
-			degrees[1] = 2;
-			// order limit 4 corresponds to bicubic basis functions m(4)
-			//MonomialBasis<2> m(degrees,1);
-			MonomialBasis<2> m(3);
->>>>>>> Stashed changes
 			// std::cout<<"m size"<<m.size()<<std::endl;
 			VandermondeRowBuilder<2, double> vrb(m);
 
@@ -261,8 +254,8 @@ private:
 
 				// debug given data
 				//std::cout<<std::setprecision(15)<<xb[0]<<"\t"<<xb[1]<<"\t"<<vd.getProp<sdf>(b)<<std::endl;
-				xb[0] = 0.1;
-				xb[1] = 0.5;
+				//xb[0] = 0.1;
+				//xb[1] = 0.5;
 				
 				// Fill phi-vector from the right hand side
 				phi[neib] = vd_s.template getProp<vd_s_sdf>(b);
@@ -273,19 +266,13 @@ private:
 			}
 
 			EMatrix<double, Eigen::Dynamic, 1> c(m.size(), 1);
-			std::cout<<"testinghere,..."<<std::endl;
-			c = V.completeOrthogonalDecomposition().solve(phi);
-<<<<<<< Updated upstream
 
-=======
-			std::cout<<"testinghere,..."<<std::endl;
->>>>>>> Stashed changes
+			c = V.completeOrthogonalDecomposition().solve(phi);
+
 			for (int k = 0; k<m.size(); k++)
 			{
-				std::cout<<"testinghere,..."<<k<<std::endl;
 				vd_s.template getProp<interpol_coeff>(a)[k] = c[k];
 			}
-			std::cout<<"testinghere,..."<<std::endl;
 
 			if (verbose)
 			{
@@ -384,6 +371,10 @@ private:
 			val = vd_s.template getProp<vd_s_sdf>(b_min);
 			x[0] = vd_s.getPos(b_min)[0];
 			x[1] = vd_s.getPos(b_min)[1];
+
+			EMatrix<double, Eigen::Dynamic, 1> x00(2,1);
+			x00[0] = x[0];
+			x00[1] = x[1];
 			// take the interpolation polynomial of the particle closest to the surface
 			for (int k = 0 ; k < msize ; k++)
 			{
@@ -391,7 +382,7 @@ private:
 				c[k] = vd_s.template getProp<interpol_coeff>(b_min)[k];
 			}
 
-			//if (a.getKey() == 78) verbose = 1;
+			if (a.getKey() == 32290) verbose = 1;
 
 			if(verbose)
 				{
@@ -465,16 +456,23 @@ private:
 			{
 				std::cout<<"x_final: "<<x[0]<<", "<<x[1]<<std::endl;
 				std::cout<<"p(x_final) :"<<get_p(x, c, redistOptions.polynomial_degree)<<std::endl;
-				std::cout<<"\nabla p(x_final)"<<get_dpdx(x, c, redistOptions.polynomial_degree)<<", "<<get_dpdy(x, c, redistOptions.polynomial_degree)<<std::endl;
+				std::cout<<"nabla p(x_final)"<<get_dpdx(x, c, redistOptions.polynomial_degree)<<", "<<get_dpdy(x, c, redistOptions.polynomial_degree)<<std::endl;
 			}
 
 			//std::cout<<"c:\n"<<vd.getProp<interpol_coeff>(a)<<"\nmin_sdf: "<<vd.getProp<min_sdf>(a)<<" , min_sdf_x: "<<vd.getProp<min_sdf_x>(a)<<std::endl;
 			verbose = 0;
+			if (((abs(x00[0] - x[0]))>sqrt(r_cutoff2))||((abs(x00[1] - x[1]))>sqrt(r_cutoff2)))
+			{
+				std::cout<<"straying out of local neighborhood.."<<std::endl;
+				std::cout<<"computed sdf: "<<vd_in.template getProp<vd_in_sdf>(a)<<std::endl;
+				std::cout<<"analytical value: "<<vd_in.template getProp<8>(a)<<", diff: "<<abs(vd_in.template getProp<vd_in_sdf>(a) - vd_in.template getProp<8>(a))<<std::endl;
+			}
 			++part;
 		}
 		
 	}
 	
+	//todo: template these
 	inline double get_p(EMatrix<double, Eigen::Dynamic, 1> xvector, EMatrix<double, Eigen::Dynamic, 1> c, std::string polynomialdegree)
 	{
 		const double x = xvector[0];
