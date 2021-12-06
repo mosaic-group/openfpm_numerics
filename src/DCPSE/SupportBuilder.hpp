@@ -40,7 +40,7 @@ public:
     :domainFrom(domainFrom),
      domainTo(domainTo),
     differentialSignature(differentialSignature),
-    rCut(rCut)
+    rCut(rCut),is_interpolation(is_interpolation)
     {
         cellList = domainFrom.getCellList(rCut);
     }
