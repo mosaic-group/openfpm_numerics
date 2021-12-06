@@ -53,6 +53,12 @@ public:
 	{
 	    return keys;
 	}
+
+    openfpm::vector_std<size_t> &getKeys()
+	{
+	    return keys;
+	}
+
 };
 
 
