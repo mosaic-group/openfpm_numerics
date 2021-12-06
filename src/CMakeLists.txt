@@ -50,7 +50,7 @@ add_executable(numerics ${OPENFPM_INIT_FILE} ${CUDA_SOURCES}
 #		level_set/closest_point/closest_point_unit_tests.cpp
 #		level_set/redistancing_Sussman/tests/redistancingSussman_unit_test.cpp
 #		level_set/redistancing_Sussman/tests/convergence_test.cpp
-		)
+        DCPSE/DCPSE_op/tests/DCPSE_op_Surface_tests.cpp)
 
 add_dependencies(numerics ofpmmemory)
 add_dependencies(numerics vcluster)

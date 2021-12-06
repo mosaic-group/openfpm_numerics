@@ -1,6 +1,7 @@
 //
-// Created by tommaso on 29/03/19.
-// Modified by Abhinav and Pietro
+// DCPSE Created by tommaso on 29/03/19.
+// Modified, Updated and Maintained by Abhinav and Pietro
+//Surface Operators by Abhinav Singh on 07/10/2021
 #ifndef OPENFPM_PDATA_DCPSE_HPP
 #define OPENFPM_PDATA_DCPSE_HPP
 
@@ -14,6 +15,9 @@
 #include "Vandermonde.hpp"
 #include "DcpseDiagonalScalingMatrix.hpp"
 #include "DcpseRhs.hpp"
+#include "hash_map/hopscotch_map.h"
+
+template<unsigned int N> struct value_t {};
 
 template<bool cond>
 struct is_scalar {
@@ -63,16 +67,113 @@ private:
     openfpm::vector<T> localEps; // Each MPI rank has just access to the local ones
     openfpm::vector<T> localEpsInvPow; // Each MPI rank has just access to the local ones
 
-    openfpm::vector<size_t> kerOffsets;
+    openfpm::vector<size_t> kerOffsets,accKerOffsets;
     openfpm::vector<T> calcKernels;
+    openfpm::vector<T> accCalcKernels;
 
     vector_type & particlesFrom;
     vector_type2 & particlesTo;
-    double rCut;
-    unsigned int convergenceOrder;
-    double supportSizeFactor;
+    double rCut,supportSizeFactor,nSpacing;
+    unsigned int convergenceOrder,nCount;
+
+    bool isSurfaceDerivative=false;
+    size_t initialParticleSize;
+
 
     support_options opt;
+
+    template<unsigned int NORMAL_ID>
+    void createNormalParticles(vector_type &particles)
+    {
+        initialParticleSize=particles.size_local();
+        auto it = particles.getDomainIterator();
+        while(it.isNext()){
+            auto key=it.get();
+            Point<dim,T> xp=particles.getPos(key), Normals=particles.template getProp<NORMAL_ID>(key);
+            for(int i=1;i<=nCount;i++){
+                particles.addAtEnd();
+                for(size_t j=0;j<dim;j++)
+                {particles.getLastPosEnd()[j]=xp[j]+i*nSpacing*Normals[j];}
+                particles.addAtEnd();
+                for(size_t j=0;j<dim;j++)
+                {particles.getLastPosEnd()[j]=xp[j]-i*nSpacing*Normals[j];}
+            }
+            ++it;
+        }
+    }
+
+    void accumulateAndDeleteNormalParticles(vector_type &particles)
+    {
+        tsl::hopscotch_map<size_t, size_t> nMap;
+        auto it = particles.getDomainIterator();
+        auto supportsIt = localSupports.begin();
+        openfpm::vector_std<size_t> supportBuffer;
+        accCalcKernels.clear();
+        accKerOffsets.clear();
+        //accCalcKernels.resize(initialParticleSize);
+        //accCalcKernels.fill(0);
+        accKerOffsets.resize(initialParticleSize);
+        accKerOffsets.fill(-1);
+        while(it.isNext()){
+            supportBuffer.clear();
+            nMap.clear();
+            auto key=it.get();
+            Support support = *supportsIt;
+            size_t xpK = support.getReferencePointKey();
+            size_t kerOff = kerOffsets.get(xpK);
+            auto &keys = support.getKeys();
+            //accCalcKernels.get(accCalcKernels.size()-1)=0;
+            T refCoeff=0;
+            //accKerOffsets.add();
+            //accKerOffsets.get(accKerOffsets.size()-1)=accCalcKernels.size();
+            accKerOffsets.get(xpK)=accCalcKernels.size();
+            for (int i = 0 ; i < keys.size() ; i++)
+            {
+                size_t xqK = keys.get(i);
+                int real_particle=(xqK-initialParticleSize)/(2.*nCount);
+                if(real_particle<0)
+                {
+                    real_particle=xqK;
+                    supportBuffer.add();
+                    supportBuffer.get(supportBuffer.size()-1)=real_particle;
+                }
+                auto found=nMap.find(real_particle);
+                if(found!=nMap.end()){
+                    if(real_particle==xpK)
+                    {
+                     refCoeff += calcKernels.get(kerOff+i);
+                    }
+                    else{
+                    accCalcKernels.get(nMap[real_particle])+=calcKernels.get(kerOff+i);
+                    }
+                }
+                else{
+                    if(real_particle==xpK)
+                    {
+                     refCoeff += calcKernels.get(kerOff+i);
+                    }
+                    else{
+                        accCalcKernels.add();
+                        accCalcKernels.get(accCalcKernels.size()-1)=calcKernels.get(kerOff+i);
+                        nMap[real_particle]=accCalcKernels.size()-1;
+                    }
+                }
+            }
+            accCalcKernels.add();
+            accCalcKernels.get(accCalcKernels.size()-1)=refCoeff;
+            keys.swap(supportBuffer);
+            localSupports.get(xpK) = support;
+            ++supportsIt;
+            ++it;
+        }
+        particles.resizeAtEnd(initialParticleSize);
+        localEps.resize(initialParticleSize);
+        localEpsInvPow.resize(initialParticleSize);
+        localSupports.resize(initialParticleSize);
+        calcKernels.swap(accCalcKernels);
+        kerOffsets.swap(accKerOffsets);
+    }
+
 
 public:
 #ifdef SE_CLASS1
@@ -107,6 +208,42 @@ public:
         {
             initializeStaticSize(particles, particles, convergenceOrder, rCut, supportSizeFactor);
         }
+    }
+
+    //Surface DCPSE Constructor
+    template<unsigned int NORMAL_ID>
+    Dcpse(vector_type &particles,
+          Point<dim, unsigned int> differentialSignature,
+          unsigned int convergenceOrder,
+          T rCut,
+          T nSpacing,
+          value_t< NORMAL_ID >,
+          support_options opt = support_options::RADIUS)
+		:particlesFrom(particles),
+         particlesTo(particles),
+            differentialSignature(differentialSignature),
+            differentialOrder(Monomial<dim>(differentialSignature).order()),
+            monomialBasis(differentialSignature.asArray(), convergenceOrder),
+            opt(opt),isSurfaceDerivative(true),nSpacing(nSpacing),nCount(rCut/nSpacing)
+    {
+        // This
+        particles.ghost_get_subset();
+        createNormalParticles<NORMAL_ID>(particles);
+        initializeStaticSize(particles, particles, convergenceOrder, rCut, supportSizeFactor);
+
+        //particles.write("Sparticles");
+        DrawKernel<0>(particles,0);
+        particles.write("Sparticles");
+        auto it=particles.getDomainIterator();
+        while(it.isNext())
+        {
+            particles.template getProp<0>(it.get())=0;
+            ++it;
+        }
+        accumulateAndDeleteNormalParticles(particles);
+        DrawKernel<0>(particles,0);
+        particles.write("Sparticles2");
+
     }
 
     Dcpse(vector_type &particles,
@@ -509,6 +646,63 @@ public:
         // Store Dfxp in the right position
         return Dfxp;
     }
+
+
+    /**
+     * Computes the value of the Surface differential operator for one particle for o1 representing a scalar
+     *
+     * \param key particle
+     * \param o1 source property
+     * \return the selected derivative
+     *
+     */
+    template<typename op_type>
+    auto computeSurfaceDifferentialOperator(const vect_dist_key_dx &key,
+                                     op_type &o1) -> decltype(is_scalar<std::is_fundamental<decltype(o1.value(
+            key))>::value>::analyze(key, o1)) {
+
+        typedef decltype(is_scalar<std::is_fundamental<decltype(o1.value(key))>::value>::analyze(key, o1)) expr_type;
+
+        T sign = 1.0;
+        if (differentialOrder % 2 == 0) {
+            sign = -1;
+        }
+
+        double eps = localEps.get(key.getKey());
+        double epsInvPow = localEpsInvPow.get(key.getKey());
+
+        auto &particles = o1.getVector();
+
+#ifdef SE_CLASS1
+        if(particles.getMapCtr()!=this->getUpdateCtr())
+        {
+            std::cerr<<__FILE__<<":"<<__LINE__<<" Error: You forgot a DCPSE operator update after map."<<std::endl;
+        }
+#endif
+
+        expr_type Dfxp = 0;
+        Support support = localSupports.get(key.getKey());
+        size_t xpK = support.getReferencePointKey();
+        //Point<dim, T> xp = particles.getPos(xpK);
+        expr_type fxp = sign * o1.value(key);
+        size_t kerOff = kerOffsets.get(xpK);
+        auto & keys = support.getKeys();
+        for (int i = 0 ; i < keys.size() ; i++)
+        {
+            size_t xqK = keys.get(i);
+            expr_type fxq = o1.value(vect_dist_key_dx(xqK));
+            Dfxp = Dfxp + (fxq + fxp) * calcKernels.get(kerOff+i);
+        }
+        //additional contribution of particles normal to reference Particle
+        Dfxp = Dfxp + (o1.value(key)+fxp) * calcKernels.get(kerOff+keys.size());
+        Dfxp = Dfxp * epsInvPow;
+        //
+        //T trueDfxp = particles.template getProp<2>(xpK);
+        // Store Dfxp in the right position
+        return Dfxp;
+    }
+
+
     void initializeUpdate(vector_type &particlesFrom,vector_type2 &particlesTo)
     {
 #ifdef SE_CLASS1
@@ -704,7 +898,6 @@ private:
             ++it;
         }
     }
-
 
     T computeKernel(Point<dim, T> x, EMatrix<T, Eigen::Dynamic, 1> & a) const {
         T res = 0;
