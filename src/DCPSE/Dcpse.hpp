@@ -230,20 +230,7 @@ public:
         particles.ghost_get_subset();
         createNormalParticles<NORMAL_ID>(particles);
         initializeStaticSize(particles, particles, convergenceOrder, rCut, supportSizeFactor);
-
-        //particles.write("Sparticles");
-        DrawKernel<0>(particles,0);
-        particles.write("Sparticles");
-        auto it=particles.getDomainIterator();
-        while(it.isNext())
-        {
-            particles.template getProp<0>(it.get())=0;
-            ++it;
-        }
         accumulateAndDeleteNormalParticles(particles);
-        DrawKernel<0>(particles,0);
-        particles.write("Sparticles2");
-
     }
 
     Dcpse(vector_type &particles,
