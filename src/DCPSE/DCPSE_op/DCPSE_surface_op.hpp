@@ -67,7 +67,7 @@ public:
      *
      * \param parts particle set
      */
-    template<unsigned int NORMAL_ID,typename particles_type>
+    template<typename particles_type>
     void update(particles_type &particles) {
         auto dcpse_temp = (Dcpse<particles_type::dims, particles_type> *) dcpse;
         dcpse_temp->createNormalParticles<NORMAL_ID>(particles);
@@ -136,7 +136,7 @@ public:
      *
      * \param parts particle set
      */
-    template<unsigned int NORMAL_ID,typename particles_type>
+    template<typename particles_type>
     void update(particles_type &particles) {
         auto dcpse_temp = (Dcpse<particles_type::dims, particles_type> *) dcpse;
         dcpse_temp->createNormalParticles<NORMAL_ID>(particles);
@@ -206,10 +206,9 @@ public:
      *
      * \param parts particle set
      */
-    template<unsigned int NORMAL_ID,typename particles_type>
+    template<typename particles_type>
     void update(particles_type &particles) {
         auto dcpse_temp = (Dcpse<particles_type::dims, particles_type> *) dcpse;
-        createNormalParticles<NORMAL_ID>(particles);
         dcpse_temp->createNormalParticles<NORMAL_ID>(particles);
         dcpse_temp->initializeUpdate(particles);
         dcpse_temp->accumulateAndDeleteNormalParticles(particles);
@@ -277,7 +276,7 @@ public:
      *
      * \param parts particle set
      */
-    template<unsigned int NORMAL_ID,typename particles_type>
+    template<typename particles_type>
     void update(particles_type &particles) {
         auto dcpse_temp = (Dcpse<particles_type::dims, particles_type> *) dcpse;
         dcpse_temp->createNormalParticles<NORMAL_ID>(particles);
@@ -348,7 +347,7 @@ public:
      *
      * \param parts particle set
      */
-    template<unsigned int NORMAL_ID,typename particles_type>
+    template<typename particles_type>
     void update(particles_type &particles) {
         auto dcpse_temp = (Dcpse<particles_type::dims, particles_type> *) dcpse;
         dcpse_temp->createNormalParticles<NORMAL_ID>(particles);
@@ -419,7 +418,7 @@ public:
      * \param parts particle set
      */
     template<typename particles_type>
-    void update(unsigned int NORMAL_ID,particles_type &particles) {
+    void update(particles_type &particles) {
         auto dcpse_temp = (Dcpse<particles_type::dims, particles_type> *) dcpse;
         dcpse_temp->createNormalParticles<NORMAL_ID>(particles);
         dcpse_temp->initializeUpdate(particles);
@@ -489,7 +488,7 @@ public:
      *
      * \param parts particle set
      */
-    template<unsigned int NORMAL_ID,typename particles_type>
+    template<typename particles_type>
     void update(particles_type &particles) {
         auto dcpse_temp = (Dcpse<particles_type::dims, particles_type> *) dcpse;
         dcpse_temp->createNormalParticles<NORMAL_ID>(particles);
@@ -561,7 +560,7 @@ public:
      *
      * \param parts particle set
      */
-    template<unsigned int NORMAL_ID,typename particles_type>
+    template<typename particles_type>
     void update(particles_type &particles) {
         auto dcpse_temp = (Dcpse<particles_type::dims, particles_type> *) dcpse;
         dcpse_temp->createNormalParticles<NORMAL_ID>(particles);
@@ -633,7 +632,7 @@ public:
      *
      * \param parts particle set
      */
-    template<unsigned int NORMAL_ID,typename particles_type>
+    template<typename particles_type>
     void update(particles_type &particles) {
         auto dcpse_temp = (Dcpse<particles_type::dims, particles_type> *) dcpse;
         dcpse_temp->createNormalParticles<NORMAL_ID>(particles);
