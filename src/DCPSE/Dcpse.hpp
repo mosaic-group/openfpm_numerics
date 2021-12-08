@@ -85,8 +85,9 @@ private:
     template<unsigned int NORMAL_ID>
     void createNormalParticles(vector_type &particles)
     {
-        initialParticleSize=particles.size_local();
-        auto it = particles.getDomainIterator();
+        particles.template ghost_get<NORMAL_ID>(SKIP_LABELLING);
+        initialParticleSize=particles.size_local_with_ghost();
+        auto it = particles.getDomainAndGhostIterator();
         while(it.isNext()){
             auto key=it.get();
             Point<dim,T> xp=particles.getPos(key), Normals=particles.template getProp<NORMAL_ID>(key);
@@ -144,7 +145,7 @@ private:
                      refCoeff += calcKernels.get(kerOff+i);
                     }
                     else{
-                    accCalcKernels.get(nMap[real_particle])+=calcKernels.get(kerOff+i);
+                    accCalcKernels.get(found->second)+=calcKernels.get(kerOff+i);
                     }
                 }
                 else{
@@ -198,8 +199,7 @@ public:
             monomialBasis(differentialSignature.asArray(), convergenceOrder),
             opt(opt)
     {
-        // This 
-        particles.ghost_get_subset();
+        particles.ghost_get_subset();         // This communicates which ghost particles to be excluded from support
         if (supportSizeFactor < 1) 
         {
             initializeAdaptive(particles, particles, convergenceOrder, rCut);
@@ -226,8 +226,7 @@ public:
             monomialBasis(differentialSignature.asArray(), convergenceOrder),
             opt(opt),isSurfaceDerivative(true),nSpacing(nSpacing),nCount(rCut/nSpacing)
     {
-        // This
-        particles.ghost_get_subset();
+        particles.ghost_get_subset();         // This communicates which ghost particles to be excluded from support
         createNormalParticles<NORMAL_ID>(particles);
         initializeStaticSize(particles, particles, convergenceOrder, rCut, supportSizeFactor);
         accumulateAndDeleteNormalParticles(particles);
