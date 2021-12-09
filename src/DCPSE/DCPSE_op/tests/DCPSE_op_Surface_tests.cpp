@@ -24,10 +24,9 @@
 
 BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
     BOOST_AUTO_TEST_CASE(dcpse_surface_simple) {
-
         double boxP1{-1.5}, boxP2{1.5};
         double boxSize{boxP2 - boxP1};
-        size_t n=81;
+        size_t n=256;
         size_t sz[2] = {n,n};
         double grid_spacing{boxSize/(sz[0]-1)};
         double rCut{3.9 * grid_spacing};
@@ -60,7 +59,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
         BOOST_TEST_MESSAGE("Sync domain across processors...");
 
         Sparticles.ghost_get<0,3>();
-        Sparticles.write("Sparticles");
+        //Sparticles.write("Sparticles");
         //Here template parameters are Normal property no.
         SurfaceDerivative_xx<2> SDxx(Sparticles, 2, rCut,grid_spacing);
         SurfaceDerivative_yy<2> SDyy(Sparticles, 2, rCut,grid_spacing);
@@ -80,7 +79,6 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
         double worst = 0.0;
         while (it2.isNext()) {
             auto p = it2.get();
-
             if (fabs(Sparticles.getProp<1>(p) - Sparticles.getProp<0>(p)) > worst) {
                 worst = fabs(Sparticles.getProp<1>(p) - Sparticles.getProp<0>(p));
             }
@@ -88,9 +86,9 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
             ++it2;
         }
         Sparticles.deleteGhost();
-        Sparticles.write("Sparticles");
+        std::cout<<v_cl.rank()<<":WORST:"<<worst<<std::endl;
+        //Sparticles.write("Sparticles");
         BOOST_REQUIRE(worst < 0.03);
-
 }
     BOOST_AUTO_TEST_CASE(dcpse_surface_circle) {
 
@@ -140,7 +138,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
         BOOST_TEST_MESSAGE("Sync domain across processors...");
 
         Sparticles.ghost_get<0,3>();
-        Sparticles.write("Sparticles");
+        //Sparticles.write("Sparticles");
         //Here template parameters are Normal property no.
         SurfaceDerivative_xx<2> SDxx(Sparticles, 2, rCut,grid_spacing);
         SurfaceDerivative_yy<2> SDyy(Sparticles, 2, rCut,grid_spacing);
@@ -172,8 +170,8 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
             ++it2;
         }
         Sparticles.deleteGhost();
-        Sparticles.write("Sparticles");
-        std::cout<<worst;
+        //Sparticles.write("Sparticles");
+        //std::cout<<worst;
         BOOST_REQUIRE(worst < 0.03);
 }
     BOOST_AUTO_TEST_CASE(dcpse_surface_solver_circle) {
@@ -229,7 +227,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
         BOOST_TEST_MESSAGE("Sync domain across processors...");
 
         Sparticles.ghost_get<0>();
-        Sparticles.write("Sparticles");
+        //Sparticles.write("Sparticles");
         vector_dist_subset<2, double, aggregate<double,double,double[2],double,double[2],double>> Sparticles_bulk(Sparticles,0);
         vector_dist_subset<2, double, aggregate<double,double,double[2],double,double[2],double>> Sparticles_boundary(Sparticles,1);
         auto & bulk=Sparticles_bulk.getIds();
@@ -257,8 +255,8 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
             ++it2;
         }
         Sparticles.deleteGhost();
-        Sparticles.write("Sparticles");
-        std::cout<<worst;
+        //Sparticles.write("Sparticles");
+        //std::cout<<worst;
         BOOST_REQUIRE(worst < 0.03);
 }
 
