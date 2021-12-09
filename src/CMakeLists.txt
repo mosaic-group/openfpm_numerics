@@ -221,7 +221,6 @@ install(FILES DCPSE/Dcpse.hpp
 		DCPSE/Vandermonde.cuh
 		DCPSE/VandermondeRowBuilder.hpp
 		DCPSE/DcpseInterpolation.hpp
-		DCPSE/DCPSE_op/DCPSE_surface_op.hpp
 		DESTINATION openfpm_numerics/include/DCPSE
 		COMPONENT OpenFPM)
 
@@ -236,6 +235,7 @@ install(FILES util/eq_solve_common.hpp
 install(FILES DCPSE/DCPSE_op/DCPSE_op.hpp
 		DCPSE/DCPSE_op/DCPSE_Solver.hpp
 		DCPSE/DCPSE_op/EqnsStruct.hpp
+		DCPSE/DCPSE_op/DCPSE_surface_op.hpp
 		DESTINATION openfpm_numerics/include/DCPSE/DCPSE_op
 		COMPONENT OpenFPM)
 

@@ -5,7 +5,7 @@
 #ifndef OPENFPM_PDATA_DCPSE_SURFACE_OP_HPP
 #define OPENFPM_PDATA_DCPSE_SURFACE_OP_HPP
 
-#include "DCPSE_op.hpp"
+#include "DCPSE/DCPSE_op/DCPSE_op.hpp"
 
 template<unsigned int NORMAL_ID>
 class SurfaceDerivative_x {
