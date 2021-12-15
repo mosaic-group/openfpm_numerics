@@ -37,13 +37,14 @@ typedef vector_dist<2, double, aggregate<vect_dist_key_dx, int, int, int, double
 //												flag for distinguishing closest particles to surface, for which the interpolation has to be done
 struct Redist_options
 {
-	size_t max_iter = 1000;			// params for the Newton algorithm for the solution of the constrained optimization problem
+	size_t max_iter = 1000;				// params for the Newton algorithm for the solution of the constrained optimization problem
 	double incremental_tolerance = 1e-7;
 	
-	double H;						// interparticle spacing
-	double r_cutoff_factor = 2.6;	// radius of neighbors to consider during interpolation, as factor of H
+	double H;							// interparticle spacing
+	double r_cutoff_factor = 2.6;		// radius of neighbors to consider during interpolation, as factor of H
 	double sampling_radius;
 	std::string polynomial_degree = "bicubic";
+	double barrier_coefficient = 0.0;	// coefficient for barrier term in optimisation
 };
 
 template <typename particles_in_type>
@@ -154,8 +155,6 @@ private:
 	            
 			}
 
-			if (akey.getKey() == 9313) std::cout<<surfaceflag<<std::endl;
-
 			if (surfaceflag)
 			{
 
@@ -202,30 +201,19 @@ private:
 				++part;
 				continue;
 			}
-			
-//			if (vd_s.template getProp<surf_flag>(a) != 1)
-//			{
-//				std::cout<<"vd_s contains particles that are not surface particles.."<<std::endl;
-//				++part;	//todo: maybe just hand over the vd_s when its ready
-//				continue;//this way only vd_s would have to carry num_neibs and interpol_coeff
-//			}
 
 			const int num_neibs_a = vd_s.template getProp<num_neibs>(a);
 			Point<2, double> xa = vd_s.getPos(a);
 			int neib = 0;
-			
-			unsigned int degrees[2];
-			degrees[0] = 1;
-			degrees[1] = 1;
-			MonomialBasis<2> m(degrees, 1);
-			//MonomialBasis<2> m(4);
+
+			MonomialBasis<2> m(4);
 
 			if (redistOptions.polynomial_degree == "quadratic")
 			{
-				//unsigned int degrees[2];
-				//degrees[0] = 1;
-				//degrees[1] = 1;
-				//MonomialBasis<2> m(degrees, 1);
+				unsigned int degrees[2];
+				degrees[0] = 1;
+				degrees[1] = 1;
+				m = MonomialBasis<2>(degrees, 1);
 			}
 			else //bicubic
 			{
@@ -337,7 +325,6 @@ private:
 
 			Point<2,double> xaa = vd_in.getPos(a);
 			//auto Np = NN_s.template getNNIterator<NO_CHECK>(NN.getCell(vd.getPos(a)));
-			//auto Np = NN_s.template getNNIterator<NO_CHECK>(NN.getCell(vd.getPos(a)));
 			//vd_s.updateCellList(NN_s);
 			auto Np = vd_s.getDomainIterator();
 			double distance = 1000000.0;
@@ -375,14 +362,18 @@ private:
 			EMatrix<double, Eigen::Dynamic, 1> x00(2,1);
 			x00[0] = x[0];
 			x00[1] = x[1];
-			// take the interpolation polynomial of the particle closest to the surface
+			EMatrix<double, Eigen::Dynamic, 1> x00x(2,1);
+			x00x[0] = 0.0;
+			x00x[1] = 0.0;
+
+			// take the interpolation polynomial of the sample particle closest to the query particle
 			for (int k = 0 ; k < msize ; k++)
 			{
 				//vd.getProp<interpol_coeff>(a)[k] = vd.getProp<interp_coeff>( vd_s.getProp<0>(b_min) )[k];
 				c[k] = vd_s.template getProp<interpol_coeff>(b_min)[k];
 			}
 
-			if (a.getKey() == 32290) verbose = 1;
+			//if (a.getKey() == 32290) verbose = 1;
 
 			if(verbose)
 				{
@@ -395,6 +386,11 @@ private:
 			EMatrix<double, Eigen::Dynamic, 1> xax = x - xa;
 
 			int k = 0;
+
+			// barrier method initialisation
+			double barrier = 0.0;
+			double barrier2 = 0.0;
+			double barrier3 = 0.0;
 
 			while((norm_dx > redistOptions.incremental_tolerance) && (k<redistOptions.max_iter))
 			{
@@ -410,6 +406,7 @@ private:
 				dpdydy = get_dpdydy(x, c, redistOptions.polynomial_degree);
 				dpdxdy = get_dpdxdy(x, c, redistOptions.polynomial_degree);
 				dpdydx = dpdxdy;
+
 				// Assemble gradient //
 				nabla_f[0] = xax[0] + lambda*dpdx;
 				nabla_f[1] = xax[1] + lambda*dpdy;
@@ -424,10 +421,28 @@ private:
 				H(2, 0) = dpdx;
 				H(2, 1) = dpdy;
 				H(2, 2) = 0;
+
+				// barrier method //
+				if (redistOptions.barrier_coefficient)
+				{
+					x00x = x - x00;
+					barrier = 0.5*(x00x[0]*x00x[0] + x00x[1]*x00x[1] - r_cutoff2);
+					//std::cout<<barrier<<std::endl;
+					barrier2 = barrier*barrier;
+					barrier3 = barrier2*barrier;
+
+					// Add to gradient //
+					nabla_f[0] -= redistOptions.barrier_coefficient*x00x[0]/barrier2;
+					nabla_f[1] -= redistOptions.barrier_coefficient*x00x[1]/barrier2;
+					// Add to Hessian matrix //
+					H(0, 0) += redistOptions.barrier_coefficient*(-barrier + 2*x00x[0]*x00x[0])/barrier3;
+					H(0, 1) += redistOptions.barrier_coefficient*2*x00x[0]*x00x[1]/barrier3;
+					H(1, 0) += redistOptions.barrier_coefficient*2*x00x[0]*x00x[1]/barrier3;
+					H(1, 1) += redistOptions.barrier_coefficient*(-barrier + 2*x00x[1]*x00x[1])/barrier3;
+				}
+
 				// compute and add increment // 
-				//std::cout<<H.inverse()<<std::endl;
 				dx = - H.inverse()*nabla_f;
-				//std::cout<<dx<<std::endl;
 				x[0] = x[0] + dx[0];
 				x[1] = x[1] + dx[1];
 				lambda = lambda + dx[2];
@@ -435,20 +450,23 @@ private:
 				xax = x - xa;
 				norm_dx = dx.norm();
 
-				//std::cout<<"H:\n"<<H<<"\nH_inv:\n"<<H_inv<<std::endl;	
-				//std::cout<<"x:"<<x[0]<<"\nc:"<<std::endl;
-				//std::cout<<c<<std::endl;
-				//std::cout<<dpdx<<std::endl;
 				++k;
+
+
 				if(verbose)
-					{
-						//std::cout<<"k = "<<k<<std::endl;
-						//std::cout<<"x_k = "<<x[0]<<", "<<x[1]<<std::endl;
+				{
+					std::cout<<"dx: "<<dx[0]<<", "<<dx[1]<<std::endl;
+					std::cout<<"H:\n"<<H<<"\nH_inv:\n"<<H.inverse()<<std::endl;
+					std::cout<<"x:"<<x[0]<<", "<<x[1]<<"\nc:"<<std::endl;
+					std::cout<<c<<std::endl;
+					std::cout<<"dpdx: "<<dpdx<<std::endl;
+					std::cout<<"k = "<<k<<std::endl;
+					std::cout<<"x_k = "<<x[0]<<", "<<x[1]<<std::endl;
 					std::cout<<x[0]<<", "<<x[1]<<std::endl;
-					}
+				}
 			}
 	//		debug optimisation
-	//		std::cout<<"p(x) = "<<get_p(x, c)<<std::endl;
+
 	//		std::cout<<"old sdf: "<<vd.getProp<sdf>(a)<<std::endl;
 			vd_in.template getProp<vd_in_sdf>(a) = return_sign(vd_in.template getProp<vd_in_sdf>(a))*xax.norm();
 			//std::cout<<"new sdf: "<<vd.getProp<sdf>(a)<<std::endl;
@@ -458,15 +476,16 @@ private:
 				std::cout<<"p(x_final) :"<<get_p(x, c, redistOptions.polynomial_degree)<<std::endl;
 				std::cout<<"nabla p(x_final)"<<get_dpdx(x, c, redistOptions.polynomial_degree)<<", "<<get_dpdy(x, c, redistOptions.polynomial_degree)<<std::endl;
 			}
-
+			if (k == redistOptions.max_iter) std::cout<<"Warning: Newton algorithm has reached maximum number of iterations, does not converge."<<std::endl;
 			//std::cout<<"c:\n"<<vd.getProp<interpol_coeff>(a)<<"\nmin_sdf: "<<vd.getProp<min_sdf>(a)<<" , min_sdf_x: "<<vd.getProp<min_sdf_x>(a)<<std::endl;
 			verbose = 0;
-			if (((abs(x00[0] - x[0]))>sqrt(r_cutoff2))||((abs(x00[1] - x[1]))>sqrt(r_cutoff2)))
+			if (false)//if (((abs(x00[0] - x[0]))>sqrt(r_cutoff2))||((abs(x00[1] - x[1]))>sqrt(r_cutoff2)))
 			{
 				std::cout<<"straying out of local neighborhood.."<<std::endl;
 				std::cout<<"computed sdf: "<<vd_in.template getProp<vd_in_sdf>(a)<<std::endl;
 				std::cout<<"analytical value: "<<vd_in.template getProp<8>(a)<<", diff: "<<abs(vd_in.template getProp<vd_in_sdf>(a) - vd_in.template getProp<8>(a))<<std::endl;
 			}
+
 			++part;
 		}
 		
