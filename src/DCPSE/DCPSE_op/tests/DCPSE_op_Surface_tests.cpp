@@ -348,7 +348,6 @@ BOOST_AUTO_TEST_CASE(dcpse_surface_sphere) {
   SurfaceDerivative_yy<2> Sdyy{Sparticles,2,rCut,grid_spacing_surf};
   SurfaceDerivative_zz<2> Sdzz{Sparticles,2,rCut,grid_spacing_surf};
   //Laplace_Beltrami<2> SLap{Sparticles,2,rCut,grid_spacing_surf};
-  Sdxx.DrawKernel<5>(Sparticles,0);
   //Sdyy.DrawKernel<5>(Sparticles,0);
   //Sdzz.DrawKernel<5>(Sparticles,0);
 /*  std::cout<<"SDXX:"<<std::endl;
@@ -358,7 +357,7 @@ BOOST_AUTO_TEST_CASE(dcpse_surface_sphere) {
   std::cout<<"SDZZ:"<<std::endl;
   Sdzz.checkMomenta(Sparticles);*/
 
-
+  Sparticles.ghost_get<3>();
   Df=(Sdxx(f)+Sdyy(f)+Sdzz(f));
   //Df=SLap(f);
   auto it3 = Sparticles.getDomainIterator();
@@ -372,8 +371,8 @@ BOOST_AUTO_TEST_CASE(dcpse_surface_sphere) {
       ++it3;
   }
         Sparticles.deleteGhost();
-        //Sparticles.write("Sparticles");
-        //std::cout<<worst;
+        Sparticles.write("Sparticles");
+        std::cout<<worst;
         BOOST_REQUIRE(worst < 0.03);
 }
 
@@ -493,7 +492,7 @@ BOOST_AUTO_TEST_CASE(dcpse_surface_sphere_old) {
 
   //Laplace_Beltrami<2> SLap{Sparticles,2,rCut,grid_spacing_surf};
   //SLap.DrawKernel<5>(Sparticles,73);
-  Sdxx.DrawKernel<5>(Sparticles,0);
+  //Sdxx.DrawKernel<5>(Sparticles,0);
   //Sdyy.DrawKernel<5>(Sparticles,0);
   //Sdzz.DrawKernel<5>(Sparticles,0);
 /*  std::cout<<"SDXX:"<<std::endl;
@@ -503,7 +502,7 @@ BOOST_AUTO_TEST_CASE(dcpse_surface_sphere_old) {
   std::cout<<"SDZZ:"<<std::endl;
   Sdzz.checkMomenta(Sparticles);*/
 
-
+  Sparticles.ghost_get<3>();
   Df=(Sdxx(f)+Sdyy(f)+Sdzz(f));
   //Df=SLap(f);
   //auto it3 = Sparticles_bulk.getDomainIterator();
