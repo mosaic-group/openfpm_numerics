@@ -81,7 +81,7 @@ private:
 
 
     support_options opt;
-
+public:
     template<unsigned int NORMAL_ID>
     void createNormalParticles(vector_type &particles)
     {
@@ -111,8 +111,6 @@ private:
         openfpm::vector_std<size_t> supportBuffer;
         accCalcKernels.clear();
         accKerOffsets.clear();
-        //accCalcKernels.resize(initialParticleSize);
-        //accCalcKernels.fill(0);
         accKerOffsets.resize(initialParticleSize);
         accKerOffsets.fill(-1);
         while(it.isNext()){
@@ -123,45 +121,27 @@ private:
             size_t xpK = support.getReferencePointKey();
             size_t kerOff = kerOffsets.get(xpK);
             auto &keys = support.getKeys();
-            //accCalcKernels.get(accCalcKernels.size()-1)=0;
-            T refCoeff=0;
-            //accKerOffsets.add();
-            //accKerOffsets.get(accKerOffsets.size()-1)=accCalcKernels.size();
             accKerOffsets.get(xpK)=accCalcKernels.size();
             for (int i = 0 ; i < keys.size() ; i++)
             {
                 size_t xqK = keys.get(i);
                 int real_particle=(xqK-initialParticleSize)/(2.*nCount);
                 if(real_particle<0)
-                {
-                    real_particle=xqK;
-                    supportBuffer.add();
-                    supportBuffer.get(supportBuffer.size()-1)=real_particle;
-                }
+                    {
+                        real_particle=xqK;
+                    }
                 auto found=nMap.find(real_particle);
                 if(found!=nMap.end()){
-                    if(real_particle==xpK)
-                    {
-                     refCoeff += calcKernels.get(kerOff+i);
-                    }
-                    else{
                     accCalcKernels.get(found->second)+=calcKernels.get(kerOff+i);
-                    }
                 }
                 else{
-                    if(real_particle==xpK)
-                    {
-                     refCoeff += calcKernels.get(kerOff+i);
-                    }
-                    else{
-                        accCalcKernels.add();
-                        accCalcKernels.get(accCalcKernels.size()-1)=calcKernels.get(kerOff+i);
-                        nMap[real_particle]=accCalcKernels.size()-1;
-                    }
+                    supportBuffer.add();
+                    supportBuffer.get(supportBuffer.size()-1)=real_particle;
+                    accCalcKernels.add();
+                    accCalcKernels.get(accCalcKernels.size()-1)=calcKernels.get(kerOff+i);
+                    nMap[real_particle]=accCalcKernels.size()-1;
                 }
             }
-            accCalcKernels.add();
-            accCalcKernels.get(accCalcKernels.size()-1)=refCoeff;
             keys.swap(supportBuffer);
             localSupports.get(xpK) = support;
             ++supportsIt;
@@ -175,8 +155,6 @@ private:
         kerOffsets.swap(accKerOffsets);
     }
 
-
-public:
 #ifdef SE_CLASS1
     int getUpdateCtr() const
     {
@@ -224,10 +202,11 @@ public:
             differentialSignature(differentialSignature),
             differentialOrder(Monomial<dim>(differentialSignature).order()),
             monomialBasis(differentialSignature.asArray(), convergenceOrder),
-            opt(opt),isSurfaceDerivative(true),nSpacing(nSpacing),nCount(rCut/nSpacing)
+            opt(opt),isSurfaceDerivative(true),nSpacing(nSpacing),nCount(floor(rCut/nSpacing))
     {
         particles.ghost_get_subset();         // This communicates which ghost particles to be excluded from support
         createNormalParticles<NORMAL_ID>(particles);
+        particles.write("With Normal");
         initializeStaticSize(particles, particles, convergenceOrder, rCut, supportSizeFactor);
         accumulateAndDeleteNormalParticles(particles);
     }
@@ -422,9 +401,9 @@ public:
             ++epsIt;
         }
 
-        for (int i = 0 ; i < momenta.size() ; i++)
+        for (size_t i = 0 ; i < momenta.size() ; i++)
         {
-            std::cout << "MOMENTA: " << monomialBasis.getElements(i) << "Min: " << momenta.template get<0>(i) << "  " << "Max: " << momenta.template get<1>(i) << std::endl;
+            std::cout << "MOMENTA: " << monomialBasis.getElement(i) << "Min: " << momenta.template get<0>(i) << "  " << "Max: " << momenta.template get<1>(i) << std::endl;
         }
     }
 
