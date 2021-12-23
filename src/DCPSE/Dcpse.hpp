@@ -206,7 +206,9 @@ public:
     {
         particles.ghost_get_subset();         // This communicates which ghost particles to be excluded from support
         createNormalParticles<NORMAL_ID>(particles);
-        particles.write("With Normal");
+#ifdef SE_CLASS1
+        particles.write("WithNormalParticlesQC");
+#endif
         initializeStaticSize(particles, particles, convergenceOrder, rCut, supportSizeFactor);
         accumulateAndDeleteNormalParticles(particles);
     }
