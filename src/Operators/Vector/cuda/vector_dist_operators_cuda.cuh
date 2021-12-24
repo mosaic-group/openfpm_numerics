@@ -12,6 +12,29 @@
 #include "util/cuda_launch.hpp"
 #include <utility>
 
+#ifdef SE_CLASS1
+template<bool is_subset>
+struct SubsetSelector_impl{
+    template<typename particle_type,typename subset_type>
+    static void check(particle_type &particles,subset_type &particle_subset)
+    {
+    }
+};
+
+template<>
+struct SubsetSelector_impl<true>
+{
+    template<typename particle_type,typename subset_type>
+    static void check(particle_type &particles,subset_type &particle_subset){
+
+        if(particles.getMapCtr()!=particle_subset.getUpdateCtr())
+        {
+            std::cerr<<__FILE__<<":"<<__LINE__<<" Error: You forgot a subset update after map."<<std::endl;
+        }
+    }
+};
+#endif
+
 constexpr unsigned int PROP_POS =(unsigned int)-1;
 
 /*! \brief selector for position or properties left side expression
