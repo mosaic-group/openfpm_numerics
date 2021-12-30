@@ -26,9 +26,9 @@
  * @return Time step.
  */
 template <typename grid_type>
-double get_time_step_CFL(grid_type &grid)
+typename grid_type::stype get_time_step_CFL(grid_type &grid)
 {
-	double sum = 0;
+	typename grid_type::stype sum = 0.0;
 	for (size_t d = 0; d < grid_type::dims; d++)
 	{
 		sum += 1.0 / (grid.spacing(d) * grid.spacing(d));
@@ -47,9 +47,9 @@ double get_time_step_CFL(grid_type &grid)
  * @return Time step.
  */
 template <typename grid_type>
-double get_time_step_CFL(grid_type & grid, double u [grid_type::dims], double C)
+typename grid_type::stype get_time_step_CFL(grid_type & grid, typename grid_type::stype u [grid_type::dims], typename grid_type::stype C)
 {
-	double sum = 0;
+	typename grid_type::stype sum = 0;
 	for (size_t d = 0; d < grid_type::dims; d++)
 	{
 		sum += u[d] / grid.spacing(d);
@@ -66,9 +66,9 @@ double get_time_step_CFL(grid_type & grid, double u [grid_type::dims], double C)
  * @return Time step.
  */
 template <typename grid_type>
-double get_time_step_CFL(grid_type & grid, double u, double C)
+typename grid_type::stype get_time_step_CFL(grid_type & grid, typename grid_type::stype u, typename grid_type::stype C)
 {
-	double sum = 0;
+	typename grid_type::stype sum = 0;
 	for (size_t d = 0; d < grid_type::dims; d++)
 	{
 		sum += u / grid.spacing(d);
@@ -149,9 +149,9 @@ void copy_gridTogrid(const grid_source_type & grid_sc, grid_dest_type & grid_ds,
  * @return Double variable that contains the value of the biggest spacing.
  */
 template <typename grid_type>
-double get_biggest_spacing(grid_type & grid)
+typename grid_type::stype get_biggest_spacing(grid_type & grid)
 {
-	double h_max = 0;
+	typename grid_type::stype h_max = 0;
 	for (size_t d = 0; d < grid_type::dims; d++)
 	{
 		if (grid.spacing(d) > h_max) h_max = grid.spacing(d);
@@ -167,9 +167,9 @@ double get_biggest_spacing(grid_type & grid)
  * @return Double variable that contains the value of the smallest spacing.
  */
 template <typename grid_type>
-double get_smallest_spacing(grid_type & grid)
+typename grid_type::stype get_smallest_spacing(grid_type & grid)
 {
-	double spacing [grid_type::dims];
+	typename grid_type::stype spacing [grid_type::dims];
 	for (size_t d = 0; d < grid_type::dims; d++)
 	{
 		spacing[d] = grid.spacing(d);
@@ -188,10 +188,10 @@ double get_smallest_spacing(grid_type & grid)
  * @return Double variable that contains the sum over all grid nodes of the difference between the value stored at \p
  *         Prop1 and the value stored at \p Prop2.
  */
-template <size_t Prop1, size_t Prop2, typename grid_type>
-double average_difference(grid_type & grid)
+template <size_t Prop1, size_t Prop2, typename prop_type, typename grid_type>
+prop_type average_difference(grid_type & grid)
 {
-	double total_diff = 0;
+	prop_type total_diff = 0;
 	auto dom = grid.getDomainIterator();
 	while (dom.isNext())
 	{
@@ -209,10 +209,10 @@ double average_difference(grid_type & grid)
  * @param grid Input OpenFPM grid.
  * @return Double variable that contains the maximum value of property \p Prop in \p grid.
  */
-template <size_t Prop, typename grid_type>
-double get_max_val(grid_type & grid)
+template <size_t Prop, typename prop_type, typename grid_type>
+prop_type get_max_val(grid_type & grid)
 {
-	double max_value = std::numeric_limits<double>::lowest();
+	prop_type max_value = std::numeric_limits<prop_type>::lowest();
 	auto dom = grid.getDomainIterator();
 	while(dom.isNext())
 	{
@@ -233,10 +233,10 @@ double get_max_val(grid_type & grid)
  * @param grid Input OpenFPM grid.
  * @return Double variable that contains the minimum value of property \p Prop in \p grid.
  */
-template <size_t Prop, typename grid_type>
-double get_min_val(grid_type & grid)
+template <size_t Prop, typename prop_type, typename grid_type>
+prop_type get_min_val(grid_type & grid)
 {
-	double min_value = std::numeric_limits<double>::max();
+	prop_type min_value = std::numeric_limits<prop_type>::max();
 	auto dom = grid.getDomainIterator();
 	while(dom.isNext())
 	{
@@ -277,14 +277,14 @@ void init_sign_prop(grid_type & grid)
  * @tparam gridtype Type of input grid.
  * @param grid Grid, on which the magnitude of gradient should be computed.
  */
-template <size_t Vector_in, size_t Magnitude_out, typename gridtype>
+template <size_t Vector_in, size_t Magnitude_out, typename magnitude_type, typename gridtype>
 void get_vector_magnitude(gridtype & grid)
 {
 	grid.template ghost_get<Vector_in>();
 	auto dom = grid.getDomainGhostIterator();
 	while(dom.isNext())
 	{
-		double sum = 0;
+		magnitude_type sum = 0;
 		auto key = dom.get();
 		for(size_t d = 0; d < gridtype::dims; d++)
 		{
