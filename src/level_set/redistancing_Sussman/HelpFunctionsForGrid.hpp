@@ -188,11 +188,12 @@ typename grid_type::stype get_smallest_spacing(grid_type & grid)
  * @return Double variable that contains the sum over all grid nodes of the difference between the value stored at \p
  *         Prop1 and the value stored at \p Prop2.
  */
-template <size_t Prop1, size_t Prop2, typename prop_type, typename grid_type>
-prop_type average_difference(grid_type & grid)
+template <size_t Prop1, size_t Prop2, typename grid_type>
+auto average_difference(grid_type & grid)
 {
-	prop_type total_diff = 0;
 	auto dom = grid.getDomainIterator();
+	typedef typename std::decay_t<decltype(grid.template get<Prop1>(dom.get()))> prop_type;
+	prop_type total_diff = 0;
 	while (dom.isNext())
 	{
 		auto key = dom.get();
@@ -209,11 +210,12 @@ prop_type average_difference(grid_type & grid)
  * @param grid Input OpenFPM grid.
  * @return Double variable that contains the maximum value of property \p Prop in \p grid.
  */
-template <size_t Prop, typename prop_type, typename grid_type>
-prop_type get_max_val(grid_type & grid)
+template <size_t Prop, typename grid_type>
+auto get_max_val(grid_type & grid)
 {
-	prop_type max_value = std::numeric_limits<prop_type>::lowest();
 	auto dom = grid.getDomainIterator();
+	typedef typename std::decay_t<decltype(grid.template get<Prop>(dom.get()))> prop_type;
+	prop_type max_value = std::numeric_limits<prop_type>::lowest();
 	while(dom.isNext())
 	{
 		auto key = dom.get();
@@ -233,11 +235,12 @@ prop_type get_max_val(grid_type & grid)
  * @param grid Input OpenFPM grid.
  * @return Double variable that contains the minimum value of property \p Prop in \p grid.
  */
-template <size_t Prop, typename prop_type, typename grid_type>
-prop_type get_min_val(grid_type & grid)
+template <size_t Prop, typename grid_type>
+auto get_min_val(grid_type & grid)
 {
-	prop_type min_value = std::numeric_limits<prop_type>::max();
 	auto dom = grid.getDomainIterator();
+	typedef typename std::decay_t<decltype(grid.template get<Prop>(dom.get()))> prop_type;
+	prop_type min_value = std::numeric_limits<prop_type>::max();
 	while(dom.isNext())
 	{
 		auto key = dom.get();
