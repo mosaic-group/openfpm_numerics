@@ -51,7 +51,7 @@ BOOST_AUTO_TEST_SUITE(RedistancingSussmanTestSuite)
 		init_grid_with_sphere<Phi_0_grid>(g_dist, radius, center[x], center[y], center[z]); // Initialize sphere onto grid
 		
 		
-		Redist_options redist_options;
+		Redist_options<phi_type> redist_options;
 		redist_options.min_iter                             = 1e4;
 		redist_options.max_iter                             = 1e4;
 		

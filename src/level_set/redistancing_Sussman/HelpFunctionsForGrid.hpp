@@ -295,4 +295,22 @@ void get_vector_magnitude(gridtype & grid)
 	}
 }
 
+/**@brief Computes the magnitude of the gradient (L2-norm of gradient vector).
+ *
+ * @tparam Phi_grad_in Size_t index of property that contains the gradient.
+ * @tparam gridtype Type of input grid.
+ * @param grid Grid, on which the magnitude of gradient should be computed.
+ */
+template <size_t Vector_in, typename magnitude_type, typename key_type, typename gridtype>
+magnitude_type get_vector_magnitude(gridtype & grid, key_type & key)
+{
+	magnitude_type sum = 0;
+	for(size_t d = 0; d < gridtype::dims; d++)
+	{
+		sum += grid.template get<Vector_in> (key)[d] * grid.template get<Vector_in> (key)[d];
+	}
+	return sqrt(sum);
+}
+
+
 #endif //REDISTANCING_SUSSMAN_HELPFUNCTIONSFORGRID_HPP
