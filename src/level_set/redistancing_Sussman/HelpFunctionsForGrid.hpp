@@ -16,6 +16,8 @@
 #include <limits>
 
 #include "HelpFunctions.hpp"
+#include "VCluster/VCluster.hpp"
+#include "Grid/grid_dist_id.hpp"
 
 /**@brief Computes the time step for the iterative re-distancing fulfilling CFL condition.
  *
