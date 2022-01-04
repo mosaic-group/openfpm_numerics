@@ -82,8 +82,8 @@ BOOST_AUTO_TEST_SUITE(EnoWenoTestSuite)
 			get_relative_error<df_gaussian, ENO_minus, Error_minus>(g_dist);
 			
 			{
-				L_norms lNorms;
-				lNorms = get_l_norms_grid<Error_plus>(g_dist);
+				LNorms<double> lNorms;
+				lNorms.get_l_norms_grid<Error_plus>(g_dist);
 				BOOST_CHECK_MESSAGE(lNorms.l2   < l2_norms_ENO[count] + 0.000001, "Checking L2-norm ENO");
 				BOOST_CHECK_MESSAGE(lNorms.linf < linf_norms_ENO[count] + 0.000001, "Checking Linf-norm "
 				                                                                             "ENO");
@@ -91,12 +91,11 @@ BOOST_AUTO_TEST_SUITE(EnoWenoTestSuite)
 			}
 			
 			{
-				L_norms lNorms;
-				lNorms = get_l_norms_grid<Error_minus>(g_dist);
+				LNorms<double> lNorms;
+				lNorms.get_l_norms_grid<Error_minus>(g_dist);
 				BOOST_CHECK_MESSAGE(lNorms.l2   < l2_norms_ENO[count] + 0.000001, "Checking L2-norm ENO");
 				BOOST_CHECK_MESSAGE(lNorms.linf < linf_norms_ENO[count] + 0.000001, "Checking Linf-norm "
 				                                                                             "ENO");
-//				write_lnorms_to_file(N, lNorms, "l_norms_ENO_minus", "./");
 			}
 //			g_dist.write("grid_gaussian_ENO_1D_N" + std::to_string(N), FORMAT_BINARY);
 			count++;
@@ -156,8 +155,8 @@ BOOST_AUTO_TEST_SUITE(EnoWenoTestSuite)
 			get_relative_error<df_gaussian, WENO_minus, Error_minus>(g_dist);
 			
 			{
-				L_norms lNorms;
-				lNorms = get_l_norms_grid<Error_plus>(g_dist);
+				LNorms<double> lNorms;
+				lNorms.get_l_norms_grid<Error_plus>(g_dist);
 				BOOST_CHECK_MESSAGE(lNorms.l2   < l2_norms_WENO[count] + 0.000001, "Checking L2-norm WENO");
 				BOOST_CHECK_MESSAGE(lNorms.linf < linf_norms_WENO[count] + 0.000001, "Checking Linf-norm "
 																							  "WENO");
@@ -165,8 +164,8 @@ BOOST_AUTO_TEST_SUITE(EnoWenoTestSuite)
 			}
 			
 			{
-				L_norms lNorms;
-				lNorms = get_l_norms_grid<Error_minus>(g_dist);
+				LNorms<double> lNorms;
+				lNorms.get_l_norms_grid<Error_minus>(g_dist);
 				BOOST_CHECK_MESSAGE(lNorms.l2   < l2_norms_WENO[count] + 0.000001, "Checking L2-norm WENO");
 				BOOST_CHECK_MESSAGE(lNorms.linf < linf_norms_WENO[count] + 0.000001, "Checking Linf-norm "
 				                                                                              "WENO");
@@ -227,8 +226,8 @@ BOOST_AUTO_TEST_SUITE(EnoWenoTestSuite)
 			get_relative_error<df_gaussian, ENO_minus, Error_minus>(g_dist);
 			
 			{
-				L_norms lNorms;
-				lNorms = get_l_norms_grid<Error_plus>(g_dist);
+				LNorms<double> lNorms;
+				lNorms.get_l_norms_grid<Error_plus>(g_dist);
 				BOOST_CHECK_MESSAGE(lNorms.l2   < l2_norms_ENO[count] + 0.000001, "Checking L2-norm ENO");
 				BOOST_CHECK_MESSAGE(lNorms.linf < linf_norms_ENO[count] + 0.000001, "Checking Linf-norm "
 				                                                                              "ENO");
@@ -236,12 +235,11 @@ BOOST_AUTO_TEST_SUITE(EnoWenoTestSuite)
 			}
 			
 			{
-				L_norms lNorms;
-				lNorms = get_l_norms_grid<Error_minus>(g_dist);
+				LNorms<double> lNorms;
+				lNorms.get_l_norms_grid<Error_minus>(g_dist);
 				BOOST_CHECK_MESSAGE(lNorms.l2   < l2_norms_ENO[count] + 0.000001, "Checking L2-norm ENO");
 				BOOST_CHECK_MESSAGE(lNorms.linf < linf_norms_ENO[count] + 0.000001, "Checking Linf-norm "
 				                                                                             "ENO");
-//				write_lnorms_to_file(N, lNorms, "l_norms_3D_ENO_minus", "./");
 			}
 //			g_dist.write("grid_gaussian_3D_N" + std::to_string(N), FORMAT_BINARY);
 			count++;
@@ -297,21 +295,19 @@ BOOST_AUTO_TEST_SUITE(EnoWenoTestSuite)
 			get_relative_error<df_gaussian, WENO_minus, Error_minus>(g_dist);
 			
 			{
-				L_norms lNorms;
-				lNorms = get_l_norms_grid<Error_plus>(g_dist);
+				LNorms<double> lNorms;
+				lNorms.get_l_norms_grid<Error_plus>(g_dist);
 				BOOST_CHECK_MESSAGE(lNorms.l2   < l2_norms_WENO[count] + 0.000001, "Checking L2-norm WENO");
 				BOOST_CHECK_MESSAGE(lNorms.linf < linf_norms_WENO[count] + 0.000001, "Checking Linf-norm "
 				                                                                    "WENO");
-//				write_lnorms_to_file(N, lNorms, "l_norms_3D_WENO_plus", "./");
 			}
 			
 			{
-				L_norms lNorms;
-				lNorms = get_l_norms_grid<Error_minus>(g_dist);
+				LNorms<double> lNorms;
+				lNorms.get_l_norms_grid<Error_minus>(g_dist);
 				BOOST_CHECK_MESSAGE(lNorms.l2   < l2_norms_WENO[count] + 0.000001, "Checking L2-norm WENO");
 				BOOST_CHECK_MESSAGE(lNorms.linf < linf_norms_WENO[count] + 0.000001, "Checking Linf-norm "
 				                                                                    "WENO");
-//				write_lnorms_to_file(N, lNorms, "l_norms_3D_WENO_minus", "./");
 			}
 //			g_dist.write("grid_gaussian_3D_N" + std::to_string(N), FORMAT_BINARY);
 			count++;
