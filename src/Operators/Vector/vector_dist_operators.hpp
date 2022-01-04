@@ -1416,7 +1416,7 @@ struct switcher_get_v<vector,comp_dev>
 	}
 };
 
-
+/*template<unsigned int, bool is_valid>
 struct get_vector_dist_expression_op
 {
 	template<typename exp_type>
@@ -1503,7 +1503,10 @@ struct get_vector_dist_expression_op<2,true>
 	{
 		pos_or_propL<vector_type,prop>::value(v,key)[comp[0]][comp[1]] = d;
 	}
-};
+};*/
+
+
+
 #ifdef SE_CLASS1
 template<bool is_subset>
 struct SubsetSelector_impl{
