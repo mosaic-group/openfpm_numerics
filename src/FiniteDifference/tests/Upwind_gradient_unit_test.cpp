@@ -74,11 +74,11 @@ BOOST_AUTO_TEST_SUITE(UpwindGradientTestSuite)
 			// Get the error between analytical and numerical solution
 			get_relative_error<df_upwind, df_gaussian, Error>(g_dist);
 			
-			L_norms lNorms;
-			lNorms = get_l_norms_grid<Error>(g_dist);
+			LNorms<double> lNorms;
+			lNorms.get_l_norms_grid<Error>(g_dist);
 			// std::cout << N << ", " << lNorms.l2 << ", " << lNorms.linf << std::endl;
 			
-			write_lnorms_to_file(N, lNorms, "l_norms_upwindGrad_convOrder_" + std::to_string(convergence_order), ""
+			lNorms.write_to_file(N, 6, "l_norms_upwindGrad_convOrder_" + std::to_string(convergence_order), ""
 																							"./");
 			// if(N==128) g_dist.write("grid_gaussian_upwindGradient_N" + std::to_string(N), FORMAT_BINARY);
 			
@@ -145,11 +145,11 @@ BOOST_AUTO_TEST_SUITE(UpwindGradientTestSuite)
 			// Get the error between analytical and numerical solution
 			get_relative_error<df_upwind, df_gaussian, Error>(g_dist);
 			
-			L_norms lNorms;
-			lNorms = get_l_norms_grid<Error>(g_dist);
+			LNorms<double> lNorms;
+			lNorms.get_l_norms_grid<Error>(g_dist);
 //			std::cout << N << ", " << lNorms.l2 << ", " << lNorms.linf << std::endl;
 			
-//			write_lnorms_to_file(N, lNorms, "l_norms_upwindGrad_convOrder_" + std::to_string(convergence_order), ""
+//			lNorms.write_to_file(N, 6, "l_norms_upwindGrad_convOrder_" + std::to_string(convergence_order), ""
 //			                                                                                                     "./");
 //			if(N==128) g_dist.write("grid_gaussian_upwindGradient_N" + std::to_string(N), FORMAT_BINARY);
 			
@@ -213,11 +213,11 @@ BOOST_AUTO_TEST_SUITE(UpwindGradientTestSuite)
 			// Get the error between analytical and numerical solution
 			get_relative_error<df_upwind, df_gaussian, Error>(g_dist);
 			
-			L_norms lNorms;
-			lNorms = get_l_norms_grid<Error>(g_dist);
+			LNorms<double> lNorms;
+			lNorms.get_l_norms_grid<Error>(g_dist);
 //			std::cout << N << ", " << lNorms.l2 << ", " << lNorms.linf << std::endl;
 			
-//			write_lnorms_to_file(N, lNorms, "l_norms_upwindGrad_convOrder_" + std::to_string(convergence_order), ""
+//			lNorms.write_to_file(N, 6, "l_norms_upwindGrad_convOrder_" + std::to_string(convergence_order), ""
 //			                                                                                                     "./");
 //			if(N==128) g_dist.write("grid_gaussian_upwindGradient_N" + std::to_string(N), FORMAT_BINARY);
 			
@@ -280,9 +280,10 @@ BOOST_AUTO_TEST_SUITE(UpwindGradientTestSuite)
 					// Get the error between analytical and numerical solution
 					get_relative_error<df_upwind, df_gaussian, Error>(g_dist);
 					
-					L_norms lNorms;
-					lNorms = get_l_norms_grid<Error>(g_dist);
-//					write_lnorms_to_file(N, lNorms, "l_norms_upwindGrad_3D_convOrder_" + std::to_string(convergence_order), ""
+					LNorms<double> lNorms;
+					lNorms.get_l_norms_grid<Error>(g_dist);
+//					lNorms.write_to_file(N, 6, "l_norms_upwindGrad_3D_convOrder_" + std::to_string(convergence_order)
+//					, ""
 //					                                                                                                        "./");
 //					g_dist.write("grid_gaussian_upwindGradient_N" + std::to_string(N) + "_order" + std::to_string
 //					(convergence_order), FORMAT_BINARY);

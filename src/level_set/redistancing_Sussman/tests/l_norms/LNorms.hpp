@@ -27,13 +27,6 @@
 
 #include "level_set/redistancing_Sussman/HelpFunctions.hpp" // for printing to_string_with_precision
 
-/**@brief Structure that bundles the two variables for L_2 and L_infinity norm.
- */
-struct L_norms
-{
-	double l2;   ///< Double variable that is supposed to contain the L_2 norm.
-	double linf; ///< Double variable that is supposed to contain the L_infinity norm.
-};
 /**@brief At each grid node, the absolute error is computed and stored in another property.
  *
  * @details The absolute error is computed as:
@@ -50,7 +43,16 @@ template <size_t PropNumeric, size_t PropAnalytic, size_t Error, typename gridty
 void get_absolute_error(gridtype & grid)
 {
 	auto dom = grid.getDomainIterator();
-	while(dom.isNext())
+	typedef typename std::remove_const_t<std::remove_reference_t<decltype(
+	grid.template get<PropNumeric>(dom.get()))>> numeric_type;
+	typedef typename std::remove_const_t<std::remove_reference_t<decltype(
+	grid.template get<PropAnalytic>(dom.get()))>> analytic_type;
+	
+	if(!(std::is_same<numeric_type, analytic_type>::value))
+	{
+		std::cout << "Type of numerical and analytical solution must be the same! Aborting..." << std::endl;
+		abort();
+	}	while(dom.isNext())
 	{
 		auto key = dom.get();
 		grid.template getProp<Error> (key) = abs(grid.template getProp<PropAnalytic> (key) - (grid.template getProp<PropNumeric> (key)));
@@ -72,8 +74,18 @@ void get_absolute_error(gridtype & grid)
 template <size_t PropNumeric, size_t PropAnalytic, size_t Error, typename gridtype>
 void get_relative_error(gridtype & grid)
 {
-	const double EPSILON = std::numeric_limits<double>::epsilon();
 	auto dom = grid.getDomainIterator();
+	typedef typename std::remove_const_t<std::remove_reference_t<decltype(
+	grid.template get<PropNumeric>(dom.get()))>> numeric_type;
+	typedef typename std::remove_const_t<std::remove_reference_t<decltype(
+	grid.template get<PropAnalytic>(dom.get()))>> analytic_type;
+	
+	if(!(std::is_same<numeric_type, analytic_type>::value))
+	{
+		std::cout << "Type of numerical and analytical solution must be the same! Aborting..." << std::endl;
+		abort();
+	}
+	
 	while(dom.isNext())
 	{
 		auto key = dom.get();
@@ -82,6 +94,21 @@ void get_relative_error(gridtype & grid)
 		++dom;
 	}
 }
+
+/**@brief Class for computing relative/absolute errors and l2/l_infinity norm for distributed grids and vectors
+ *
+ * @tparam lnorm_type Desired return type for l-norm.
+ */
+template <typename lnorm_type>
+class LNorms
+{
+public:
+	LNorms(){};
+	// Member variables
+	lnorm_type l2;
+	lnorm_type linf;
+	
+	// Member functions
 /**@brief Computes the L_2 and L_infinity norm on the basis of the precomputed error on a grid.
  *
  * @tparam Error Index of grid property that contains the error.
@@ -89,27 +116,30 @@ void get_relative_error(gridtype & grid)
  * @param grid Input OpenFPM grid. Can be of any dimension.
  * @return Object of type L_norms that contains #L_norms::l2 and #L_norms::linf.
  */
-template <size_t Error, typename gridtype>
-L_norms get_l_norms_grid(gridtype & grid)
-{
-	double maxError = 0;
-	double sumErrorSq = 0;
-	auto dom = grid.getDomainIterator();
-	while(dom.isNext())
+	template <size_t Error, typename gridtype>
+	void get_l_norms_grid(gridtype & grid)
 	{
-		auto key = dom.get();
-		sumErrorSq += grid.template getProp<Error> (key) * grid.template getProp<Error> (key);
-		if (grid.template getProp<Error> (key) > maxError) maxError = grid.template getProp<Error> (key); // update maxError
-		++dom;
+		auto dom = grid.getDomainIterator();
+		typedef typename std::remove_const_t<std::remove_reference_t<decltype(
+		grid.template get<Error>(dom.get()))>> error_type;
+		
+		error_type maxError = 0;
+		error_type sumErrorSq = 0;
+		
+		while(dom.isNext())
+		{
+			auto key = dom.get();
+			sumErrorSq += grid.template getProp<Error> (key) * grid.template getProp<Error> (key);
+			if (grid.template getProp<Error> (key) > maxError) maxError = grid.template getProp<Error> (key); // update maxError
+			++dom;
+		}
+		auto &v_cl = create_vcluster();
+		v_cl.sum(sumErrorSq);
+		v_cl.max(maxError);
+		v_cl.execute();
+		l2 = (lnorm_type) sqrt( sumErrorSq / (error_type)grid.size());
+		linf = (lnorm_type) maxError;
 	}
-	auto &v_cl = create_vcluster();
-	v_cl.sum(sumErrorSq);
-	v_cl.max(maxError);
-	v_cl.execute();
-	double l2 = sqrt( sumErrorSq / (double)grid.size());
-	double linf = maxError;
-	return {l2, linf};
-}
 /**@brief Computes the L_2 and L_infinity norm on the basis of the precomputed error on a particle vector.
  *
  * @tparam Error Index of grid property that contains the error.
@@ -117,30 +147,32 @@ L_norms get_l_norms_grid(gridtype & grid)
  * @param vd Input particle vector.
  * @return Object of type L_norms that contains #L_norms::l2 and #L_norms::linf.
  */
-template <size_t Error, typename vectortype>
-L_norms get_l_norms_vector(vectortype & vd)
-{
-	double maxError = 0;
-	double sumErrorSq = 0;
-	auto dom = vd.getDomainIterator();
-	double count = 0;
-	while(dom.isNext())
+	template <size_t Error, typename vectortype>
+	void get_l_norms_vector(vectortype & vd)
 	{
-		auto key = dom.get();
-		sumErrorSq += vd.template getProp<Error> (key) * vd.template getProp<Error> (key);
-		if (vd.template getProp<Error> (key) > maxError) maxError = vd.template getProp<Error> (key); // update maxError
-		++dom;
-		++count;
+		auto dom = vd.getDomainIterator();
+		typedef typename std::remove_const_t<std::remove_reference_t<decltype(
+		vd.template getProp<Error>(dom.get()))>> error_type;
+		
+		error_type maxError = 0;
+		error_type sumErrorSq = 0;
+		int count = 0;
+		while(dom.isNext())
+		{
+			auto key = dom.get();
+			sumErrorSq += vd.template getProp<Error> (key) * vd.template getProp<Error> (key);
+			if (vd.template getProp<Error> (key) > maxError) maxError = vd.template getProp<Error> (key); // update maxError
+			++dom;
+			++count;
+		}
+		auto &v_cl = create_vcluster();
+		v_cl.sum(sumErrorSq);
+		v_cl.sum(count);
+		v_cl.max(maxError);
+		v_cl.execute();
+		l2 = (lnorm_type) sqrt( sumErrorSq / (error_type)count);
+		linf = (lnorm_type) maxError;
 	}
-	auto &v_cl = create_vcluster();
-	v_cl.sum(sumErrorSq);
-	v_cl.sum(count);
-	v_cl.max(maxError);
-	v_cl.execute();
-	double l2 = sqrt( sumErrorSq / (double)count);
-	double linf = maxError;
-	return {l2, linf};
-}
 /**@brief Writes the N (number of grid points on a square grid) and L-norms as strings to a csv-file.
  *
  * @param N Size_t variable that contains the grid size in number of grid points in one dimension for an NxN(xN) grid
@@ -149,22 +181,33 @@ L_norms get_l_norms_vector(vectortype & vd)
  *                 written to.
  * @param path_output Std::string containing the path where the output csv file should be saved.
  */
-static void write_lnorms_to_file(size_t N, L_norms l_norms, std::string filename, std::string path_output)
-{
-	auto &v_cl = create_vcluster();
-	if (v_cl.rank() == 0)
+	void write_to_file(const size_t N, const int precision,
+	                                 const std::string & filename, const std::string & path_output)
 	{
-		std::string path_output_lnorm = path_output + "/" + filename + ".csv";
-		create_file_if_not_exist(path_output_lnorm);
-		
-		std::ofstream l_out;
-		l_out.open(path_output_lnorm, std::ios_base::app); // append instead of overwrite
-		l_out << std::to_string(N)
-		<< ',' << to_string_with_precision(l_norms.l2, 15)
-		<< ',' << to_string_with_precision(l_norms.linf, 15) << std::endl;
-		l_out.close();
+		auto &v_cl = create_vcluster();
+		if (v_cl.rank() == 0)
+		{
+			std::string path_output_lnorm = path_output + "/" + filename + ".csv";
+			create_file_if_not_exist(path_output_lnorm);
+			
+			std::ofstream l_out;
+			l_out.open(path_output_lnorm, std::ios_base::app); // append instead of overwrite
+			l_out << std::to_string(N)
+					<< ',' << to_string_with_precision(l2, precision)
+					<< ',' << to_string_with_precision(linf, precision) << std::endl;
+			l_out.close();
+		}
 	}
-}
+
+private:
+
+
+};
+
+
+
+
+
 
 
 

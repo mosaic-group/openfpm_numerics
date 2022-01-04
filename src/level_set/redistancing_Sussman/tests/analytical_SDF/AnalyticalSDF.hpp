@@ -39,11 +39,17 @@
  * @return Double variable that contains the exact solution for the signed distance function of a given point in a
  *         sphere of given radius, where the SDF has positive values inside and negative values outside the sphere.
  */
-template <typename point_type, typename radius_type, typename center_type>
-double get_analytic_sdf_sphere(point_type coords, radius_type radius,
-                               center_type center_x=0, center_type center_y=0, center_type center_z=0)
+template <typename point_type, typename space_type>
+space_type get_analytic_sdf_sphere(point_type coords, space_type radius,
+                                   space_type center_x=0, space_type center_y=0, space_type center_z=0)
 {
-	const double X = coords.get(0), Y = coords.get(1), Z = coords.get(2);
+	typedef typename std::remove_const_t<std::remove_reference_t<decltype(coords.get(0))>> coord_type;
+	if(!(std::is_same<space_type, coord_type>::value))
+	{
+		std::cout << "Radius-, Center- and Space-type of grid must be the same! Aborting..." << std::endl;
+		abort();
+	}
+	const space_type X = coords.get(0), Y = coords.get(1), Z = coords.get(2);
 	return (radius -
 	sqrt((X - center_x) * (X - center_x)
 	+ (Y - center_y) * (Y - center_y)
@@ -64,15 +70,21 @@ double get_analytic_sdf_sphere(point_type coords, radius_type radius,
  * @param center_z Double z-coordinate of sphere center.
 
  */
-template <size_t SDF_exact, typename grid_type, typename radius_type, typename center_type>
-void init_analytic_sdf_sphere(grid_type & grid, radius_type radius, center_type center_x=0, center_type center_y=0,
-                              center_type center_z=0)
+template <size_t SDF_exact, typename grid_type, typename space_type>
+void init_analytic_sdf_sphere(grid_type & grid, space_type radius, space_type center_x=0, space_type center_y=0,
+                              space_type center_z=0)
 {
+	if(!(std::is_same<typename grid_type::stype, space_type>::value))
+	{
+		std::cout << "Radius-, Center- and Space-type of grid must be the same! Aborting..." << std::endl;
+		abort();
+	}
+	
 	auto dom = grid.getDomainIterator();
 	while(dom.isNext())
 	{
 		auto key = dom.get();
-		Point<grid_type::dims, double> coords = grid.getPos(key);
+		Point<grid_type::dims, typename grid_type::stype> coords = grid.getPos(key);
 		grid.template getProp<SDF_exact>(key) = get_analytic_sdf_sphere(coords, radius, center_x,
 		                                                                center_y, center_z);
 		++dom;
@@ -97,11 +109,17 @@ void init_analytic_sdf_sphere(grid_type & grid, radius_type radius, center_type 
  * @return Double variable that contains the exact solution for the signed distance function of a given point in a
  *         sphere of given radius, where the SDF has positive values inside and negative values outside the sphere.
  */
-template <typename point_type, typename radius_type, typename center_type>
-double get_analytic_sdf_circle(point_type coords, radius_type radius,
-                               center_type center_x=0, center_type center_y=0)
+template <typename point_type, typename space_type>
+space_type get_analytic_sdf_circle(point_type coords, space_type radius,
+                               space_type center_x=0, space_type center_y=0)
 {
-	const double X = coords.get(0), Y = coords.get(1);
+	typedef typename std::remove_const_t<std::remove_reference_t<decltype(coords.get(0))>> coord_type;
+	if(!(std::is_same<space_type, coord_type>::value))
+	{
+		std::cout << "Radius-, Center- and Space-type of grid must be the same! Aborting..." << std::endl;
+		abort();
+	}
+	const space_type X = coords.get(0), Y = coords.get(1);
 	return (radius -
 			sqrt((X - center_x) * (X - center_x)
 					     + (Y - center_y) * (Y - center_y)));
@@ -120,14 +138,19 @@ double get_analytic_sdf_circle(point_type coords, radius_type radius,
  * @param center_x X-coordinate of the circle center.
  * @param center_y Y-coordinate of the circle center.
  */
-template <size_t SDF_exact, typename grid_type, typename radius_type, typename center_type>
-void init_analytic_sdf_circle(grid_type & grid, radius_type radius, center_type center_x=0, center_type center_y=0)
+template <size_t SDF_exact, typename grid_type, typename space_type>
+void init_analytic_sdf_circle(grid_type & grid, space_type radius, space_type center_x=0, space_type center_y=0)
 {
+	if(!(std::is_same<typename grid_type::stype, space_type>::value))
+	{
+		std::cout << "Radius-, Center- and Space-type of grid must be the same! Aborting..." << std::endl;
+		abort();
+	}
 	auto dom = grid.getDomainIterator();
 	while(dom.isNext())
 	{
 		auto key = dom.get();
-		Point<grid_type::dims, double> coords = grid.getPos(key);
+		Point<grid_type::dims, typename grid_type::stype> coords = grid.getPos(key);
 		grid.template getProp<SDF_exact>(key) = get_analytic_sdf_circle(coords, radius, center_x,
 		                                                                center_y);
 		++dom;

@@ -93,8 +93,8 @@ BOOST_AUTO_TEST_SUITE(RedistancingSussmanTestSuite)
 		narrowBand.get_narrow_band_copy_specific_property<SDF_sussman_grid, Error_grid, Error_vd>(g_dist,
 		                                                                                          vd_narrow_band);
 		// Compute the L_2- and L_infinity-norm and save to file
-		L_norms lNorms_vd;
-		lNorms_vd = get_l_norms_vector<0>(vd_narrow_band);
+		LNorms<phi_type> lNorms_vd;
+		lNorms_vd.get_l_norms_vector<Error_vd>(vd_narrow_band);
 		std::cout << lNorms_vd.l2 << ", " << lNorms_vd.linf << std::endl;
 		
 		// l-norms original implementation of 1st order upwinding:

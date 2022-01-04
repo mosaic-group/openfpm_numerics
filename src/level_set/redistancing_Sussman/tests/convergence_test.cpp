@@ -122,9 +122,9 @@ BOOST_AUTO_TEST_SUITE(ConvergenceTestSuite)
 //			    vd_narrow_band.write("vd_error_N" + std::to_string(N), FORMAT_BINARY);
 //				vd_narrow_band.save("test_data/output/vd_nb8p_error" + std::to_string(N) + ".bin");
 				// Compute the L_2- and L_infinity-norm and save to file
-				L_norms lNorms_vd;
-				lNorms_vd = get_l_norms_vector<Error_vd>(vd_narrow_band);
-				write_lnorms_to_file(N, lNorms_vd, "l_norms_", "./");
+				LNorms<phi_type> lNorms_vd;
+				lNorms_vd.get_l_norms_vector<Error_vd>(vd_narrow_band);
+				lNorms_vd.write_to_file(N, 6, "l_norms_", "./");
 			}
 			
 		}
@@ -209,9 +209,9 @@ BOOST_AUTO_TEST_SUITE(ConvergenceTestSuite)
 //				std::to_string(order), FORMAT_BINARY);
 //				vd_narrow_band.save("test_data/output/vd_nb8p_error" + std::to_string(N) + ".bin");
 				// Compute the L_2- and L_infinity-norm and save to file
-				L_norms lNorms_vd;
-				lNorms_vd = get_l_norms_vector<Error_vd>(vd_narrow_band);
-				write_lnorms_to_file(N, lNorms_vd, "l_norms_vd_absError_8p_order" + std::to_string(order), "./");
+				LNorms<phi_type> lNorms_vd;
+				lNorms_vd.get_l_norms_vector<Error_vd>(vd_narrow_band);
+				lNorms_vd.write_to_file(N, 6, "l_norms_vd_absError_8p_order" + std::to_string(order), "./");
 				
 //				switch(order)
 //				{
