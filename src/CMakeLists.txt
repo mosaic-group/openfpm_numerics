@@ -63,7 +63,7 @@ if ( CUDA_ON_BACKEND STREQUAL "HIP" AND HIP_FOUND )
 #                                                BoundaryConditions/tests/method_of_images_cylinder_unit_test.cpp
 #               level_set/closest_point/closest_point_unit_tests.cpp
                level_set/redistancing_Sussman/tests/redistancingSussman_unit_test.cpp
-               level_set/redistancing_Sussman/tests/convergence_test.cpp
+#               level_set/redistancing_Sussman/tests/convergence_test.cpp
                 )
 
 
@@ -92,15 +92,18 @@ else()
 #						FiniteDifference/eq_unit_test_3d.cpp
 #						FiniteDifference/eq_unit_test.cpp
 #						FiniteDifference/tests/Eno_Weno_unit_test.cpp
-#						FiniteDifference/tests/Upwind_gradient_unit_test.cpp
-#						FiniteDifference/tests/FD_simple_unit_test.cpp
+						FiniteDifference/tests/Upwind_gradient_unit_test.cpp
+						FiniteDifference/tests/FD_simple_unit_test.cpp
 #						Operators/Vector/vector_dist_operators_unit_tests.cpp
 #						Operators/Vector/vector_dist_operators_apply_kernel_unit_tests.cpp
 #						../../src/lib/pdata.cpp
 #						BoundaryConditions/tests/method_of_images_cylinder_unit_test.cpp
-#		level_set/closest_point/closest_point_unit_tests.cpp
-		level_set/redistancing_Sussman/tests/redistancingSussman_unit_test.cpp
-		level_set/redistancing_Sussman/tests/convergence_test.cpp
+#		    level_set/closest_point/closest_point_unit_tests.cpp
+			level_set/redistancing_Sussman/tests/redistancingSussman_unit_test.cpp
+			level_set/redistancing_Sussman/tests/redistancingSussman_fast_unit_test.cpp
+			level_set/redistancing_Sussman/tests/convergence_test.cpp
+			level_set/redistancing_Sussman/tests/help_functions_unit_test.cpp
+			level_set/redistancing_Sussman/tests/narrowBand_unit_test.cpp
 		)
 
 	set_property(TARGET numerics PROPERTY CUDA_ARCHITECTURES OFF)

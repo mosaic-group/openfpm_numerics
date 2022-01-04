@@ -12,7 +12,7 @@
  * @file AnalyticalSDF.hpp
  *
  * @brief Header file containing functions that compute the analytical solution of the signed distance function (SDF)
- *        for a 3D sphere and a 2D circle of defined radius on a grid.
+ *        for a 3D sphere and a 2D disk of defined radius on a grid.
  *
  * @author Justina Stark
  * @date October 2020
@@ -21,6 +21,9 @@
 #define ANALYTICAL_SDF_HPP
 
 #include <iostream>
+#include "Vector/vector_dist.hpp"
+#include "Grid/grid_dist_id.hpp"
+
 /**@brief Computes the analytical signed distance function of a sphere for a given point in space.
  *
  * @details At the center of the sphere, \a &phi;_SDF_analytic = \a Radius. Moving outwards from the center on, the
@@ -30,13 +33,13 @@
  * @f[ \phi_{SDF}(x, y, z) = R - \sqrt{((x-a)^2 + (y-b)^2 + (z-c)^2)} @f]
  *
  * @tparam point_type Template type of OpenFPM Point<dimension, type>.
- * @tparam radius_type Template type of radius.
+ * @tparam space_type Template type of radius.
  * @param coords Point_type coordinates of point.
- * @param radius Radius_type radius of the sphere.
- * @param center_x Double x-coordinate of sphere center.
- * @param center_y Double y-coordinate of sphere center.
- * @param center_z Double z-coordinate of sphere center.
- * @return Double variable that contains the exact solution for the signed distance function of a given point in a
+ * @param radius Space_type radius of the sphere.
+ * @param center_x Space_type x-coordinate of sphere center.
+ * @param center_y Space_type y-coordinate of sphere center.
+ * @param center_z Space_type z-coordinate of sphere center.
+ * @return Space_type variable that contains the exact solution for the signed distance function of a given point in a
  *         sphere of given radius, where the SDF has positive values inside and negative values outside the sphere.
  */
 template <typename point_type, typename space_type>
@@ -61,13 +64,13 @@ space_type get_analytic_sdf_sphere(point_type coords, space_type radius,
  * @details Solves the exact SDF for each grid nodes and writes the solution to a given property.
  *
  * @tparam SDF_exact Index of property where the anaytical solution for the SDF should be written to.
- * @tparam grid_type Inferred type of the input grid.
- * @tparam radius_type Inferred type of radius the sphere is supposed to have.
+ * @tparam grid_type Template type of the input grid.
+ * @tparam space_type Template type of radius the sphere is supposed to have.
  * @param grid Input OpenFPM grid.
  * @param radius Radius of the filled sphere.
- * @param center_x Double x-coordinate of sphere center.
- * @param center_y Double y-coordinate of sphere center.
- * @param center_z Double z-coordinate of sphere center.
+ * @param center_x Space_type x-coordinate of sphere center.
+ * @param center_y Space_type y-coordinate of sphere center.
+ * @param center_z Space_type z-coordinate of sphere center.
 
  */
 template <size_t SDF_exact, typename grid_type, typename space_type>
@@ -100,13 +103,13 @@ void init_analytic_sdf_sphere(grid_type & grid, space_type radius, space_type ce
  * @f[ \phi_{SDF}(x, y, z) = R - \sqrt{((x-a)^2 + (y-b)^2 + (z-c)^2)} @f]
  *
  * @tparam point_type Template type of OpenFPM Point<dimension, type>.
- * @tparam radius_type Template type of radius.
+ * @tparam space_type Template type of radius.
  * @param coords Point_type coordinates of point.
- * @param radius Radius_type radius of the sphere.
- * @param center_x Double x-coordinate of sphere center.
- * @param center_y Double y-coordinate of sphere center.
- * @param center_z Double z-coordinate of sphere center.
- * @return Double variable that contains the exact solution for the signed distance function of a given point in a
+ * @param radius Space_type radius of the sphere.
+ * @param center_x Space_type x-coordinate of sphere center.
+ * @param center_y Space_type y-coordinate of sphere center.
+ * @param center_z Space_type z-coordinate of sphere center.
+ * @return Space_type variable that contains the exact solution for the signed distance function of a given point in a
  *         sphere of given radius, where the SDF has positive values inside and negative values outside the sphere.
  */
 template <typename point_type, typename space_type>
@@ -130,9 +133,8 @@ space_type get_analytic_sdf_circle(point_type coords, space_type radius,
  * @details Solves the exact SDF for each grid nodes and writes the solution to a given property.
  *
  * @tparam SDF_exact Index of property where the anaytical solution for the SDF should be written to.
- * @tparam grid_type Inferred type of the input grid.
- * @tparam radius_type Inferred type of radius the circle is supposed to have.
- * @tparam center_type Inferred type of the center coordinates.
+ * @tparam grid_type Template type of the input grid.
+ * @tparam space_type Template type of radius and center coordinates.
  * @param grid Input OpenFPM grid.
  * @param radius Radius of the filled circle.
  * @param center_x X-coordinate of the circle center.

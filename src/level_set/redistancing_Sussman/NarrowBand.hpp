@@ -36,7 +36,7 @@
 /**@brief Class for getting the narrow band around the interface
  * @file NarrowBand.hpp
  * @class NarrowBand
- * @tparam grid_in_type Inferred type of input grid that stores the signed distance function Phi_SDF.
+ * @tparam grid_in_type Template type of input grid that stores the signed distance function Phi_SDF.
  */
 template <typename grid_in_type, typename phi_type>
 class NarrowBand
@@ -115,8 +115,8 @@ public:
 	 *
 	 * @tparam Phi_SDF_grid Index of property storing the signed distance function in the input grid.
 	 * @tparam Phi_SDF_vd Index of property that should store the SDF in the narrow band particle vector.
-	 * @tparam vector_type Inferred type of the particle vector.
-	 * @tparam grid_type Inferred type of the grid storing the SDF.
+	 * @tparam vector_type Template type of the particle vector.
+	 * @tparam grid_type Template type of the grid storing the SDF.
 	 *
 	 * @param grid Grid of arb. dims. storing the SDF (result of redistancing).
 	 * @param vd Empty vector with same spatial scaling (box) as the grid.
@@ -149,8 +149,8 @@ public:
 	 * @tparam Phi_SDF_grid Index of property storing the signed distance function in the input grid.
 	 * @tparam Phi_SDF_vd Index of property that should store the SDF in the narrow band particle vector.
 	 * @tparam Phi_grad Index of property that should store the gradient of phi in the narrow band particle vector.
-	 * @tparam vector_type Inferred type of the particle vector.
-	 * @tparam grid_type Inferred type of the grid storing the SDF.
+	 * @tparam vector_type Template type of the particle vector.
+	 * @tparam grid_type Template type of the grid storing the SDF.
 	 *
 	 * @param grid Grid of arb. dims. storing the SDF (result of redistancing).
 	 * @param vd Empty vector with same spatial scaling (box) as the grid.
@@ -186,8 +186,8 @@ public:
 	 * @tparam Phi_SDF_vd Index of property that should store the SDF in the narrow band particle vector.
 	 * @tparam Phi_grad Index of property that should store the gradient of phi in the narrow band particle vector.
 	 * @tparam Phi_magnOfGrad Index of property that should store the gradient magnitude of Phi.
-	 * @tparam vector_type Inferred type of the particle vector.
-	 * @tparam grid_type Inferred type of the grid storing the SDF.
+	 * @tparam vector_type Template type of the particle vector.
+	 * @tparam grid_type Template type of the grid storing the SDF.
 	 *
 	 * @param grid Grid of arb. dims. storing the SDF (result of redistancing).
 	 * @param vd Empty vector with same spatial scaling (box) as the grid.
@@ -225,8 +225,8 @@ public:
 	 * be a scalar).
 	 * @tparam Prop1_vd Index of particle property, where grid property should be copied to (prop. value must be a
 	 * scalar).
-	 * @tparam vector_type Inferred type of the particle vector.
-	 * @tparam grid_type Inferred type of the grid storing the SDF.
+	 * @tparam vector_type Template type of the particle vector.
+	 * @tparam grid_type Template type of the grid storing the SDF.
 	 *
 	 * @param grid Grid of arb. dims. storing the SDF (result of redistancing) and any arbitrary other (scalar)
 	 * property.
@@ -263,8 +263,8 @@ public:
 	 * @tparam Index1Vd Index of 1st scalar property on particle to which value from grid should be copied to.
 	 * @tparam Index2Vd Index of 2nd scalar property on particle to which value from grid should be copied to.
 	 * @tparam Index3Vd Index of 3rd scalar property on particle to which value from grid should be copied to.
-	 * @tparam vector_type Inferred type of the particle vector.
-	 * @tparam grid_type Inferred type of the grid storing the SDF.
+	 * @tparam vector_type Template type of the particle vector.
+	 * @tparam grid_type Template type of the grid storing the SDF.
 	 *
 	 * @param grid Grid of arb. dims. storing the SDF (result of redistancing) and any arbitrary other (scalar)
 	 * property.
@@ -360,10 +360,12 @@ private:
 	}
 	/**@brief Checks if a value for Phi_SDF lays within the narrow band.
 	 *
+	 * @tparam T Template type of parameter Phi.
 	 * @param Phi Value of the signed distance function Phi_SDF.
 	 * @return True, if point lays within the narrow band; False if not.
 	 */
-	bool within_narrow_band(double Phi)
+	template<typename T>
+	bool within_narrow_band(T Phi)
 	{
 		return (Phi >= b_low && Phi <= b_up);
 	}

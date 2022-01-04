@@ -33,7 +33,7 @@
  * @param dplus: Gradient approximated using RHS neighbors.
  * @param dminus: Gradient approximated using LHS neighbors.
  * @param sign: Sign of the velocity with which the wave front is moving.
- * @return Scalar double upwind gradient approximation in the dimension given.
+ * @return Scalar upwind gradient approximation in the dimension given.
  */
 template <typename field_type>
 static field_type upwinding(field_type dplus, field_type dminus, int sign)

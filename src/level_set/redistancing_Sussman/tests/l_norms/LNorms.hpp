@@ -36,7 +36,7 @@
  * @tparam PropNumeric Index of grid property that contains the numerical value.
  * @tparam PropAnalytic Index of grid property that contains the analytical (exact) value.
  * @tparam Error Index of grid property where the computed error should be written to.
- * @tparam gridtype Inferred type of the input grid.
+ * @tparam gridtype Template type of the input grid.
  * @param grid Input OpenFPM grid. Can be of any dimension.
  */
 template <size_t PropNumeric, size_t PropAnalytic, size_t Error, typename gridtype>
@@ -68,7 +68,7 @@ void get_absolute_error(gridtype & grid)
  * @tparam PropNumeric Index of grid property that contains the numerical value.
  * @tparam PropAnalytic Index of grid property that contains the analytical (exact) value.
  * @tparam Error Index of grid property where the computed error should be written to.
- * @tparam gridtype Inferred type of the input grid.
+ * @tparam gridtype Template type of the input grid.
  * @param grid Input OpenFPM grid. Can be of any dimension.
  */
 template <size_t PropNumeric, size_t PropAnalytic, size_t Error, typename gridtype>
@@ -95,27 +95,26 @@ void get_relative_error(gridtype & grid)
 	}
 }
 
-/**@brief Class for computing relative/absolute errors and l2/l_infinity norm for distributed grids and vectors
+/**@brief Class for computing the l2/l_infinity norm for distributed grids and vectors based on given errors.
  *
- * @tparam lnorm_type Desired return type for l-norm.
+ * @tparam lnorm_type Return type for l-norm.
  */
 template <typename lnorm_type>
 class LNorms
 {
 public:
-	LNorms(){};
+	LNorms() = default;
 	// Member variables
-	lnorm_type l2;
-	lnorm_type linf;
+	lnorm_type l2; // L2 norm
+	lnorm_type linf; // L_infinity norm
 	
 	// Member functions
-/**@brief Computes the L_2 and L_infinity norm on the basis of the precomputed error on a grid.
- *
- * @tparam Error Index of grid property that contains the error.
- * @tparam gridtype Inferred type of the input grid.
- * @param grid Input OpenFPM grid. Can be of any dimension.
- * @return Object of type L_norms that contains #L_norms::l2 and #L_norms::linf.
- */
+	/**@brief Computes the L_2 and L_infinity norm on the basis of the precomputed error on a grid.
+	 *
+	 * @tparam Error Index of grid property that contains the error.
+	 * @tparam gridtype Template type of the input grid.
+	 * @param grid Input OpenFPM grid. Can be of any dimension.
+	 */
 	template <size_t Error, typename gridtype>
 	void get_l_norms_grid(gridtype & grid)
 	{
@@ -140,13 +139,12 @@ public:
 		l2 = (lnorm_type) sqrt( sumErrorSq / (error_type)grid.size());
 		linf = (lnorm_type) maxError;
 	}
-/**@brief Computes the L_2 and L_infinity norm on the basis of the precomputed error on a particle vector.
- *
- * @tparam Error Index of grid property that contains the error.
- * @tparam vectortype Inferred type of the input particle vector.
- * @param vd Input particle vector.
- * @return Object of type L_norms that contains #L_norms::l2 and #L_norms::linf.
- */
+	/**@brief Computes the L_2 and L_infinity norm on the basis of the precomputed error on a particle vector.
+	 *
+	 * @tparam Error Index of grid property that contains the error.
+	 * @tparam vectortype Template type of the input particle vector.
+	 * @param vd Input particle vector.
+	 */
 	template <size_t Error, typename vectortype>
 	void get_l_norms_vector(vectortype & vd)
 	{
@@ -173,16 +171,18 @@ public:
 		l2 = (lnorm_type) sqrt( sumErrorSq / (error_type)count);
 		linf = (lnorm_type) maxError;
 	}
-/**@brief Writes the N (number of grid points on a square grid) and L-norms as strings to a csv-file.
- *
- * @param N Size_t variable that contains the grid size in number of grid points in one dimension for an NxN(xN) grid
- * @param l_norms Object of type L_norms that contains #L_norms::l2 and #L_norms::linf.
- * @param filename Std::string containing the name of the csv file (without the .csv) to which the l-norms should be
- *                 written to.
- * @param path_output Std::string containing the path where the output csv file should be saved.
- */
-	void write_to_file(const size_t N, const int precision,
-	                                 const std::string & filename, const std::string & path_output)
+	/**@brief Writes the N (number of grid points on a square grid) and L-norms as strings to a csv-file.
+	 *
+	 * @param N Size_t variable that contains the grid size in number of grid points in one dimension for an NxN(xN) grid
+	 * @param precision Precision in number of digits after the points for writing of the l-norms to file.
+	 * @param filename Std::string containing the name of the csv file (without the .csv) to which the l-norms should be
+	 *                 written to.
+	 * @param path_output Std::string containing the path where the output csv file should be saved.
+	 */
+	 void write_to_file(const size_t N,
+						const int precision,
+						const std::string & filename,
+						const std::string & path_output)
 	{
 		auto &v_cl = create_vcluster();
 		if (v_cl.rank() == 0)

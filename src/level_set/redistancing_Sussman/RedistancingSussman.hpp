@@ -156,7 +156,7 @@ struct DistFromSol
 /**@brief Class for reinitializing a level-set function into a signed distance function using Sussman redistancing.
  * @file RedistancingSussman.hpp
  * @class RedistancingSussman
- * @tparam grid_in_type Inferred type of input grid, which stores the initial level-set function Phi_0.
+ * @tparam grid_in_type Template type of input grid, which stores the initial level-set function Phi_0.
  */
 template <typename grid_in_type, typename phi_type>
 class RedistancingSussman
