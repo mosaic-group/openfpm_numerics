@@ -88,7 +88,7 @@ BOOST_AUTO_TEST_SUITE(RedistancingSussmanTestSuite)
 		vd_type vd_narrow_band(0, box, bc, ghost_vd);
 		vd_narrow_band.setPropNames({"error"});
 		size_t narrow_band_width = 8;
-		NarrowBand<grid_in_type> narrowBand(g_dist, narrow_band_width); // Instantiation of NarrowBand class
+		NarrowBand<grid_in_type, phi_type> narrowBand(g_dist, narrow_band_width); // Instantiation of NarrowBand class
 		const size_t Error_vd = 0;
 		narrowBand.get_narrow_band_copy_specific_property<SDF_sussman_grid, Error_grid, Error_vd>(g_dist,
 		                                                                                          vd_narrow_band);
@@ -110,6 +110,7 @@ BOOST_AUTO_TEST_SUITE(RedistancingSussmanTestSuite)
 		BOOST_CHECK(lNorms_vd.linf < 0.06307 + EPSILON);
 		
 	}
+	
 
 BOOST_AUTO_TEST_SUITE_END()
 

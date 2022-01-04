@@ -38,7 +38,7 @@
  * @class NarrowBand
  * @tparam grid_in_type Inferred type of input grid that stores the signed distance function Phi_SDF.
  */
-template <typename grid_in_type>
+template <typename grid_in_type, typename phi_type>
 class NarrowBand
 {
 public:
@@ -66,6 +66,18 @@ public:
 	{
 		set_bounds(thickness, grid_in);
 	}
+	/** @brief Constructor taking the thickness of the narrow band as physical width in space in order to initialize the
+     * lower and upper bound for the narrow band. Initializes the temporary internal grid.
+	 *
+     * @param grid_in Input grid with min. 1 property: Phi_SDF.
+     * @param thickness Width of narrow band as physical width.
+     */
+	NarrowBand(const grid_in_type & grid_in,
+	           float thickness)    // thickness as physical width
+			: g_temp(grid_in.getDecomposition(), grid_in.getGridInfoVoid().getSize(), Ghost<grid_in_type::dims, long int>(3))
+	{
+		set_bounds(thickness, grid_in);
+	}
 	/** @brief Constructor taking the inside and outside physical width of the narrow band in order to initialize the
 	 * lower and upper bound for the narrow band. Initializes the temporary internal grid.
 	 *
@@ -73,9 +85,10 @@ public:
 	 * @param width_outside Extension of narrow band as physical width inside of object (Phi > 0).
 	 * @param width_inside Extension of narrow band as physical width outside of object (Phi < 0).
 	 */
+	template<typename width_type>
 	NarrowBand(const grid_in_type & grid_in,
-	           double width_outside,     // physical width of nb inside of object -> Phi > 0
-	           double width_inside)     // physical width nb outside of object -> Phi < 0
+	           width_type width_outside,     // physical width of nb inside of object -> Phi > 0
+	           width_type width_inside)     // physical width nb outside of object -> Phi < 0
 			: g_temp(grid_in.getDecomposition(), grid_in.getGridInfoVoid().getSize(), Ghost<grid_in_type::dims, long int>(3))
 	{
 		set_bounds(width_outside, width_inside, grid_in);
@@ -84,7 +97,7 @@ public:
 	 *
 	 * @details The properties are Phi_SDF (result from redistancing), gradient of Phi, and sign of Phi_SDF (for the upwinding).
 	 * */
-	typedef aggregate<double, Point<grid_in_type::dims, double>, int> props_temp;
+	typedef aggregate<phi_type, phi_type[grid_in_type::dims], int> props_temp;
 	/** @brief Type definition for the temporary grid.
 	 */
 	typedef grid_dist_id<grid_in_type::dims, typename grid_in_type::stype, props_temp> g_temp_type;
@@ -198,8 +211,8 @@ public:
 					vd.getLastPos()[d] = grid.getPos(key)[d];
 					vd.template getLastProp<Phi_grad>()[d] = g_temp.template get<Phi_grad_temp>(key)[d];
 				}
-				vd.template getLastProp<Phi_SDF_vd>()     = grid.template get<Phi_SDF_grid>(key);
-				vd.template getLastProp<Phi_magnOfGrad>() = g_temp.template get<Phi_grad_temp>(key).norm();
+				vd.template getLastProp<Phi_SDF_vd>()      = g_temp.template get<Phi_SDF_temp>(key);
+				vd.template getLastProp<Phi_magnOfGrad>()  = get_vector_magnitude<Phi_grad_temp>(g_temp, key);
 			}
 			++dom;
 		}
@@ -290,28 +303,29 @@ private:
 	static const size_t Phi_grad_temp       = 1; ///< Property index of gradient of Phi on the temporary grid.
 	static const size_t Phi_sign_temp       = 2; ///< Property index of sign of Phi on the temporary grid.
 	
-	double b_low;   ///< Narrow band extension towards the object outside.
-	double b_up;    ///< Narrow band extension towards the object inside.
-	
-	const double EPSILON = std::numeric_limits<double>::epsilon();
+	phi_type b_low;   ///< Narrow band extension towards the object outside.
+	phi_type b_up;    ///< Narrow band extension towards the object inside.
 	
 	/** @brief Set the member variable NarrowBand::b_low and NarrowBand::b_up.
 	 *
 	 * @param thickness Thickness of narrow band in number of grid points.
 	 * @param grid_in Input grid storing the signed distance function Phi_SDF (redistancing output).
 	 */
-	void set_bounds(size_t thickness, const grid_in_type & grid_in)
+	void set_bounds(const size_t thickness, const grid_in_type & grid_in)
 	{
-		b_low   = - ceil((double)thickness / 2.0) * get_biggest_spacing(grid_in) - EPSILON;
-		b_up    =   ceil((double)thickness / 2.0) * get_biggest_spacing(grid_in) + EPSILON;
+		const phi_type EPSILON = std::numeric_limits<phi_type>::epsilon();
+		b_low   = - ceil((phi_type)thickness / 2.0) * get_biggest_spacing(grid_in) - EPSILON;
+		b_up    =   ceil((phi_type)thickness / 2.0) * get_biggest_spacing(grid_in) + EPSILON;
 	}
 	/** @brief Set the member variable NarrowBand::b_low and NarrowBand::b_up.
 	 *
 	 * @param thickness Thickness of narrow band as physical width.
 	 * @param grid_in Input grid storing the signed distance function Phi_SDF (redistancing output).
 	 */
-	void set_bounds(double thickness, const grid_in_type & grid_in)
+	template<typename thickness_type>
+	void set_bounds(const thickness_type thickness, const grid_in_type & grid_in)
 	{
+		const thickness_type EPSILON = std::numeric_limits<thickness_type>::epsilon();
 		b_low   = - thickness / 2.0 - EPSILON;
 		b_up    =   thickness / 2.0 + EPSILON;
 	}
@@ -321,8 +335,10 @@ private:
 	 * @param upper_bound Extension of narrow band as physical width outside of object (Phi < 0).
 	 * @param grid_in Input grid storing the signed distance function Phi_SDF (redistancing output).
 	 */
-	void set_bounds(double lower_bound, double upper_bound, const grid_in_type & grid_in)
+	template<typename width_type>
+	void set_bounds(width_type lower_bound, width_type upper_bound, const grid_in_type & grid_in)
 	{
+		const width_type EPSILON = std::numeric_limits<width_type>::epsilon();
 		b_low   =   lower_bound - EPSILON;
 		b_up    =   upper_bound + EPSILON;
 	}

@@ -115,7 +115,8 @@ BOOST_AUTO_TEST_SUITE(ConvergenceTestSuite)
 				const size_t Error_vd = 0;
 				// Compute the L_2- and L_infinity-norm and save to file
 				size_t narrow_band_width = redist_options.width_NB_in_grid_points - 2;
-				NarrowBand<grid_in_type> narrowBand_points(g_dist, narrow_band_width); // Instantiation of NarrowBand class
+				NarrowBand<grid_in_type, phi_type> narrowBand_points(g_dist, narrow_band_width); // Instantiation of
+				// NarrowBand class
 				narrowBand_points.get_narrow_band_copy_specific_property<SDF_sussman_grid, Error_grid, Error_vd>(g_dist,
 				                                                                                                 vd_narrow_band);
 //			    vd_narrow_band.write("vd_error_N" + std::to_string(N), FORMAT_BINARY);
@@ -201,7 +202,7 @@ BOOST_AUTO_TEST_SUITE(ConvergenceTestSuite)
 				const size_t Error_vd = 0;
 				// Compute the L_2- and L_infinity-norm and save to file
 				size_t narrow_band_width = 8;
-				NarrowBand<grid_in_type> narrowBand_points(g_dist, narrow_band_width); // Instantiation of NarrowBand class
+				NarrowBand<grid_in_type, phi_type> narrowBand_points(g_dist, narrow_band_width); // Instantiation of NarrowBand class
 				narrowBand_points.get_narrow_band_copy_specific_property<SDF_sussman_grid, Error_grid, Error_vd>(g_dist,
 				                                                                                                 vd_narrow_band);
 //				vd_narrow_band.write("vd_nb8p_error_N" + std::to_string(N) + "_order" +

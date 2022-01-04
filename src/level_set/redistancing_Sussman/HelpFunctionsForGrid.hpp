@@ -304,10 +304,12 @@ void get_vector_magnitude(gridtype & grid)
  * @tparam gridtype Type of input grid.
  * @param grid Grid, on which the magnitude of gradient should be computed.
  */
-template <size_t Vector_in, typename magnitude_type, typename key_type, typename gridtype>
-magnitude_type get_vector_magnitude(gridtype & grid, key_type & key)
+template <size_t Vector_in, typename key_type, typename gridtype>
+auto get_vector_magnitude(gridtype & grid, key_type & key)
 {
-	magnitude_type sum = 0;
+	typedef typename std::remove_const_t<std::remove_reference_t<decltype(grid.template get<Vector_in>(key)[0])>>
+	prop_type;
+	prop_type sum = 0;
 	for(size_t d = 0; d < gridtype::dims; d++)
 	{
 		sum += grid.template get<Vector_in> (key)[d] * grid.template get<Vector_in> (key)[d];

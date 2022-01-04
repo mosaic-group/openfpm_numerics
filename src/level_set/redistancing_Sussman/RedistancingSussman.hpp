@@ -309,7 +309,7 @@ private:
 	template<size_t Phi_0_in>
 	void init_temp_grid()
 	{
-		phi_type min_value = get_min_val<Phi_0_in, phi_type>(r_grid_in); // get minimum Phi_0 value on the input grid
+		phi_type min_value = get_min_val<Phi_0_in>(r_grid_in); // get minimum Phi_0 value on the input grid
 		init_grid_and_ghost<Phi_n_temp>(g_temp, min_value); // init. Phi_n_temp (incl. ghost) with min. Phi_0
 		copy_gridTogrid<Phi_0_in, Phi_n_temp>(r_grid_in, g_temp); // Copy Phi_0 from the input grid to Phi_n_temp
 	}
@@ -343,7 +343,7 @@ private:
 		{
 			auto key = dom.get();
 			const phi_type phi_n = grid.template get<Phi_n_temp>(key);
-			const phi_type phi_n_magnOfGrad = get_vector_magnitude<Phi_grad_temp, phi_type>(grid, key);
+			const phi_type phi_n_magnOfGrad = get_vector_magnitude<Phi_grad_temp>(grid, key);
 			phi_type epsilon = phi_n_magnOfGrad * grid.getSpacing()[0];
 			grid.template get<Phi_n_temp>(key) = get_phi_nplus1(phi_n, phi_n_magnOfGrad, time_step,
 			                                                         smooth_S(phi_n, epsilon));
@@ -379,7 +379,7 @@ private:
 			if (lays_inside_NB(grid.template get<Phi_n_temp>(key)))
 			{
 				count++;
-				phi_type phi_n_magnOfGrad = get_vector_magnitude<Phi_grad_temp, phi_type>(grid, key);
+				phi_type phi_n_magnOfGrad = get_vector_magnitude<Phi_grad_temp>(grid, key);
 				phi_type epsilon = phi_n_magnOfGrad * grid.getSpacing()[0];
 				phi_type phi_nplus1 = get_phi_nplus1(grid.template get<Phi_n_temp>(key), phi_n_magnOfGrad, time_step,
 				                                   smooth_S(grid.template get<Phi_n_temp>(key), epsilon));
