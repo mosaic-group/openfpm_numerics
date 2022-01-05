@@ -487,6 +487,13 @@ private:
 			{
 				print_out_iteration_change_residual(grid, i);
 			}
+			if (redistOptions.save_temp_grid)
+			{
+				get_upwind_gradient<Phi_n_temp, Phi_0_sign_temp, Phi_grad_temp>(g_temp, order_upwind_gradient, true);
+				g_temp.setPropNames({"Phi_Sussman_Out", "Phi_upwind_gradient", "Phi_0_sign_temp"});
+				g_temp.save("g_temp_redistancing_iteration_" + std::to_string(i) + ".hdf5"); // HDF5 file
+				// g_temp.write_frame("g_temp_redistancing_iteration", i, FORMAT_BINARY); // VTK file
+			}
 			if (i >= redistOptions.min_iter)
 			{
 				if (steady_state_NB(grid))
@@ -512,8 +519,8 @@ private:
 		{
 			get_upwind_gradient<Phi_n_temp, Phi_0_sign_temp, Phi_grad_temp>(g_temp, order_upwind_gradient, true);
 			g_temp.setPropNames({"Phi_Sussman_Out", "Phi_upwind_gradient", "Phi_0_sign_temp"});
-			g_temp.save("g_temp_redistancing.hdf5"); // HDF5 file
-			g_temp.write("g_temp_redistancing", FORMAT_BINARY); // VTK file
+			g_temp.save("g_temp_redistancing_final.hdf5"); // HDF5 file
+			// g_temp.write("g_temp_redistancing_final", FORMAT_BINARY); // VTK file
 		}
 	}
 };

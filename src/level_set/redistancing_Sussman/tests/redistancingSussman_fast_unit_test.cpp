@@ -151,6 +151,8 @@ BOOST_AUTO_TEST_SUITE(RedistancingSussmanFastTestSuite)
 		redist_options.print_current_iterChangeResidual     = true;
 		redist_options.print_steadyState_iter               = true;
 		
+		redist_options.save_temp_grid                       = false;
+		
 		RedistancingSussman<grid_in_type, phi_type> redist_obj(g_dist, redist_options);   // Instantiation of
 		
 		std::cout << "Automatically found timestep is " << redist_obj.get_time_step() << std::endl;
