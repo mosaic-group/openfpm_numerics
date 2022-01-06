@@ -120,7 +120,6 @@ private:
 			vect_dist_key_dx min_sdf_key = akey;
 			vd_in.template getProp<vd_in_close_part>(akey) = 0;
 			int isclose = 0;
-			if (akey.getKey() == 9313) std::cout<<xa[0]<<", "<<xa[1]<<std::endl;
 
 			auto Np = NN.template getNNIterator<NO_CHECK>(NN.getCell(vd_in.getPos(akey)));
 			while (Np.isNext())
@@ -131,7 +130,8 @@ private:
 	            Point<2,double> dr = xa - xb;
 	            double r2 = norm2(dr);
 
-	            if ((sqrt(r2) < (1.3*redistOptions.H)) && !vd_in.template getProp<vd_in_close_part>(bkey) && (sgn_a != sgn_b)) isclose = 1;
+	            //if ((sqrt(r2) < (1.3*redistOptions.H)) && !vd_in.template getProp<vd_in_close_part>(bkey) && (sgn_a != sgn_b)) isclose = 1;
+	            if ((sqrt(r2) < (1.3*redistOptions.H)) && (sgn_a != sgn_b)) isclose = 1;
 	            //int isclose = (abs(vd_in.template getProp<vd_in_sdf>(akey)) < (redistOptions.H/2.0 + 1e-8));
 
 	            if (r2 < r_cutoff2)
@@ -373,7 +373,7 @@ private:
 				c[k] = vd_s.template getProp<interpol_coeff>(b_min)[k];
 			}
 
-			//if (a.getKey() == 32290) verbose = 1;
+			if (a.getKey() == 23180) verbose = 1;
 
 			if(verbose)
 				{
@@ -455,13 +455,13 @@ private:
 
 				if(verbose)
 				{
-					std::cout<<"dx: "<<dx[0]<<", "<<dx[1]<<std::endl;
-					std::cout<<"H:\n"<<H<<"\nH_inv:\n"<<H.inverse()<<std::endl;
-					std::cout<<"x:"<<x[0]<<", "<<x[1]<<"\nc:"<<std::endl;
-					std::cout<<c<<std::endl;
-					std::cout<<"dpdx: "<<dpdx<<std::endl;
-					std::cout<<"k = "<<k<<std::endl;
-					std::cout<<"x_k = "<<x[0]<<", "<<x[1]<<std::endl;
+//					std::cout<<"dx: "<<dx[0]<<", "<<dx[1]<<std::endl;
+//					std::cout<<"H:\n"<<H<<"\nH_inv:\n"<<H.inverse()<<std::endl;
+//					std::cout<<"x:"<<x[0]<<", "<<x[1]<<"\nc:"<<std::endl;
+//					std::cout<<c<<std::endl;
+//					std::cout<<"dpdx: "<<dpdx<<std::endl;
+//					std::cout<<"k = "<<k<<std::endl;
+//					std::cout<<"x_k = "<<x[0]<<", "<<x[1]<<std::endl;
 					std::cout<<x[0]<<", "<<x[1]<<std::endl;
 				}
 			}
@@ -479,7 +479,7 @@ private:
 			if (k == redistOptions.max_iter) std::cout<<"Warning: Newton algorithm has reached maximum number of iterations, does not converge."<<std::endl;
 			//std::cout<<"c:\n"<<vd.getProp<interpol_coeff>(a)<<"\nmin_sdf: "<<vd.getProp<min_sdf>(a)<<" , min_sdf_x: "<<vd.getProp<min_sdf_x>(a)<<std::endl;
 			verbose = 0;
-			if (false)//if (((abs(x00[0] - x[0]))>sqrt(r_cutoff2))||((abs(x00[1] - x[1]))>sqrt(r_cutoff2)))
+			if (((abs(x00[0] - x[0]))>sqrt(r_cutoff2))||((abs(x00[1] - x[1]))>sqrt(r_cutoff2)))
 			{
 				std::cout<<"straying out of local neighborhood.."<<std::endl;
 				std::cout<<"computed sdf: "<<vd_in.template getProp<vd_in_sdf>(a)<<std::endl;
