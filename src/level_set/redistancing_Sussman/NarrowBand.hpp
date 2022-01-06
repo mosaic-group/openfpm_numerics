@@ -38,7 +38,7 @@
  * @class NarrowBand
  * @tparam grid_in_type Template type of input grid that stores the signed distance function Phi_SDF.
  */
-template <typename grid_in_type, typename phi_type>
+template <typename grid_in_type, typename phi_type=double>
 class NarrowBand
 {
 public:

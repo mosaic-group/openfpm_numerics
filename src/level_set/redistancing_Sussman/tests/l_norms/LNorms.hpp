@@ -99,11 +99,15 @@ void get_relative_error(gridtype & grid)
  *
  * @tparam lnorm_type Return type for l-norm.
  */
-template <typename lnorm_type>
+template <typename lnorm_type=double>
 class LNorms
 {
 public:
-	LNorms() = default;
+	LNorms()
+	{
+		l2 = 0;
+		linf = 0;
+	}
 	// Member variables
 	lnorm_type l2; // L2 norm
 	lnorm_type linf; // L_infinity norm

@@ -47,7 +47,6 @@
 //#include "ComputeGradient.hpp"
 #include "FiniteDifference/Upwind_gradient.hpp"
 
-
 /** @brief Optional convergence criterium checking the total change.
  *
  * @details The change between the current and the previous iterations is computed as sum over all the If
@@ -56,7 +55,7 @@
  * between the iterations is considered and the
  * redistancing finishes when the Conv_tol_change.value (or the max-iteration) is reached.
  */
-template <typename phi_type>
+template <typename phi_type=double>
 struct Conv_tol_change
 {
 	bool check = true; 	///< If true, the total change of Phi (see DistFromSol::change)
@@ -72,7 +71,7 @@ struct Conv_tol_change
  * @details If Conv_tol_residual.check = true, the residual, that is abs(magnitude gradient of phi - 1), is considered
  * and the redistancing finishes when the Conv_tol_residual.value (or the max-iteration) is reached.
  */
-template <typename phi_type>
+template <typename phi_type=double>
 struct Conv_tol_residual
 {
 	bool check = true; ///< If true, the residual of Phi (see DistFromSol::residual) is considered and the
@@ -114,7 +113,7 @@ struct Conv_tol_residual
  * @param save_temp_grid: If true, save the temporary grid as hdf5 that can be reloaded onto a grid
  
  */
-template <typename phi_type>
+template <typename phi_type=double>
 struct Redist_options
 {
 	size_t min_iter = 1e5;
@@ -136,7 +135,7 @@ struct Redist_options
  *
  * @see RedistancingSussman::get_residual_and_change_NB()
  */
-template <typename phi_type>
+template <typename phi_type=double>
 struct DistFromSol
 {
 	phi_type change;   	///< Variable that contains the absolute value of the change of \a &phi; between the
@@ -158,7 +157,7 @@ struct DistFromSol
  * @class RedistancingSussman
  * @tparam grid_in_type Template type of input grid, which stores the initial level-set function Phi_0.
  */
-template <typename grid_in_type, typename phi_type>
+template <typename grid_in_type, typename phi_type=double>
 class RedistancingSussman
 {
 public:
@@ -198,8 +197,7 @@ public:
 	/**
 	 * @brief Create temporary grid, which is only used inside the class for the redistancing.
 	 *
-	 * @details The temporary grid stores the following 4 properties:
-	 * the initial (input) Phi_0 (will be updated by Phi_{n+1} after each redistancing step),
+	 * @details The temporary grid stores the following 3 properties:
 	 * Phi_{n+1}(received from redistancing),
 	 * gradient of Phi_{n+1},
 	 * sign of the original input Phi_0 (for the upwinding).
