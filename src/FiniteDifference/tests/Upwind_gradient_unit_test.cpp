@@ -76,13 +76,7 @@ BOOST_AUTO_TEST_SUITE(UpwindGradientTestSuite)
 			
 			LNorms<double> lNorms;
 			lNorms.get_l_norms_grid<Error>(g_dist);
-			// std::cout << N << ", " << lNorms.l2 << ", " << lNorms.linf << std::endl;
 			
-//			lNorms.write_to_file(N, 6, "l_norms_upwindGrad_convOrder_" + std::to_string(convergence_order), ""
-																							"./");
-			// if(N==128) g_dist.write("grid_gaussian_upwindGradient_N" + std::to_string(N), FORMAT_BINARY);
-			
-			//0.389541847481952
 			if (N==32) BOOST_CHECK_MESSAGE(lNorms.l2 <= 0.38954184748195 + EPSILON, "Checking L2-norm upwind gradient "
 																				"order " + std::to_string
 																				(convergence_order));
