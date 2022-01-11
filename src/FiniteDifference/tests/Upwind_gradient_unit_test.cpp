@@ -78,7 +78,7 @@ BOOST_AUTO_TEST_SUITE(UpwindGradientTestSuite)
 			lNorms.get_l_norms_grid<Error>(g_dist);
 			// std::cout << N << ", " << lNorms.l2 << ", " << lNorms.linf << std::endl;
 			
-			lNorms.write_to_file(N, 6, "l_norms_upwindGrad_convOrder_" + std::to_string(convergence_order), ""
+//			lNorms.write_to_file(N, 6, "l_norms_upwindGrad_convOrder_" + std::to_string(convergence_order), ""
 																							"./");
 			// if(N==128) g_dist.write("grid_gaussian_upwindGradient_N" + std::to_string(N), FORMAT_BINARY);
 			
