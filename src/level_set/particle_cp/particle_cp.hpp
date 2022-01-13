@@ -38,13 +38,18 @@ typedef vector_dist<2, double, aggregate<vect_dist_key_dx, int, int, int, double
 struct Redist_options
 {
 	size_t max_iter = 1000;				// params for the Newton algorithm for the solution of the constrained optimization problem
-	double incremental_tolerance = 1e-7;
+	double tolerance = 1e-11;
 	
 	double H;							// interparticle spacing
 	double r_cutoff_factor = 2.6;		// radius of neighbors to consider during interpolation, as factor of H
 	double sampling_radius;
 	std::string polynomial_degree = "bicubic";
 	double barrier_coefficient = 0.0;	// coefficient for barrier term in optimisation
+	double armijo_tau = 0.0;			// armijo line search parameters
+	double armijo_c = 0.0;
+	double support_prevent = 0.0;		// prevention parameter if support may be left
+	int fail_projection = 0;			// prevention projection if support may be left
+	int init_project = 0;
 };
 
 template <typename particles_in_type>
@@ -131,7 +136,7 @@ private:
 	            double r2 = norm2(dr);
 
 	            //if ((sqrt(r2) < (1.3*redistOptions.H)) && !vd_in.template getProp<vd_in_close_part>(bkey) && (sgn_a != sgn_b)) isclose = 1;
-	            if ((sqrt(r2) < (1.3*redistOptions.H)) && (sgn_a != sgn_b)) isclose = 1;
+	            if ((sqrt(r2) < (1.5*redistOptions.H)) && (sgn_a != sgn_b)) isclose = 1;
 	            //int isclose = (abs(vd_in.template getProp<vd_in_sdf>(akey)) < (redistOptions.H/2.0 + 1e-8));
 
 	            if (r2 < r_cutoff2)
@@ -312,6 +317,7 @@ private:
 			double lambda = 0.0;
 			double norm_dx = dx.norm();
 
+			double p = 0;
 			double dpdx = 0;
 			double dpdy = 0;
 			double dpdxdx = 0;
@@ -373,7 +379,8 @@ private:
 				c[k] = vd_s.template getProp<interpol_coeff>(b_min)[k];
 			}
 
-			if (a.getKey() == 23180) verbose = 1;
+			//if (a.getKey() == 2620) verbose = 1;
+			if (a.getKey() == 54) verbose = 1;
 
 			if(verbose)
 				{
@@ -392,26 +399,46 @@ private:
 			double barrier2 = 0.0;
 			double barrier3 = 0.0;
 
-			while((norm_dx > redistOptions.incremental_tolerance) && (k<redistOptions.max_iter))
+			// calculations needed specifically for k == 0
+			p = get_p(x, c, redistOptions.polynomial_degree);
+			dpdx = get_dpdx(x, c, redistOptions.polynomial_degree);
+			dpdy = get_dpdy(x, c, redistOptions.polynomial_degree);
+			lambda = (-xax[0]*dpdx - xax[1]*dpdy)/(dpdx*dpdx + dpdy*dpdy);
+
+			nabla_f[0] = xax[0] + lambda*dpdx;
+			nabla_f[1] = xax[1] + lambda*dpdy;
+			nabla_f[2] = p;
+
+			// possibly start off with a Newton-style projection towards the interface
+			if (redistOptions.init_project)
 			{
-				// do optimisation //
-				// gather required values //
+				while(p > redistOptions.tolerance)
+				{
+					dpdx = get_dpdx(x, c, redistOptions.polynomial_degree);
+					dpdy = get_dpdy(x, c, redistOptions.polynomial_degree);
+					p = get_p(x, c, redistOptions.polynomial_degree);
+					double grad_p_mag2 = dpdx*dpdx + dpdy*dpdy;
+
+					x[0] = x[0] - p*dpdx/grad_p_mag2;
+					x[1] = x[1] - p*dpdy/grad_p_mag2;
+				}
 				dpdx = get_dpdx(x, c, redistOptions.polynomial_degree);
 				dpdy = get_dpdy(x, c, redistOptions.polynomial_degree);
-				if (k == 0)
-				{
-					lambda = (-xax[0]*dpdx - xax[1]*dpdy)/(dpdx*dpdx + dpdy*dpdy);
-				}
+				xax = x - xa;
+				lambda = (-xax[0]*dpdx - xax[1]*dpdy)/(dpdx*dpdx + dpdy*dpdy);
+			}
+
+			while((norm_dx > redistOptions.tolerance) && (k<redistOptions.max_iter))
+			{
+				// do optimisation //
+
+				// gather required values //
 				dpdxdx = get_dpdxdx(x, c, redistOptions.polynomial_degree);
 				dpdydy = get_dpdydy(x, c, redistOptions.polynomial_degree);
 				dpdxdy = get_dpdxdy(x, c, redistOptions.polynomial_degree);
 				dpdydx = dpdxdy;
 
-				// Assemble gradient //
-				nabla_f[0] = xax[0] + lambda*dpdx;
-				nabla_f[1] = xax[1] + lambda*dpdy;
-				nabla_f[2] = get_p(x, c, redistOptions.polynomial_degree);
-				// Assemble Hessian matrix //
+				// Assemble Hessian matrix, grad f has been computed at the end of the last iteration //
 				H(0, 0) = 1 + lambda*dpdxdx;
 				H(0, 1) = lambda*dpdydx;
 				H(1, 0) = lambda*dpdxdy;
@@ -443,15 +470,106 @@ private:
 
 				// compute and add increment // 
 				dx = - H.inverse()*nabla_f;
+
+				// Armijo rule
+				if (redistOptions.armijo_tau)
+				{
+					double alpha_armijo = 1.0;
+					double t_armijo = -redistOptions.armijo_c*(nabla_f[0]*dx[0] + nabla_f[1]*dx[1] + nabla_f[2]*dx[2]);
+					// int k_armijo = 0;
+					double f = 0.5*(x - xa).norm()*(x - xa).norm() + lambda*get_p(x, c, redistOptions.polynomial_degree);
+					EMatrix<double, Eigen::Dynamic, 1> x_armijo(2,1);
+					x_armijo[0] = x[0] + alpha_armijo*dx[0];
+					x_armijo[1] = x[1] + alpha_armijo*dx[1];
+					double lambda_armijo = lambda + alpha_armijo*dx[2];
+					double f_armijo = 0.5*(xa - x_armijo).norm()*(xa - x_armijo).norm() + lambda_armijo*get_p(x_armijo, c, redistOptions.polynomial_degree);
+					if (verbose) std::cout<<"start armijo\n"<<"x: "<<x[0]<<", "<<x[1]<<"\ndx: "<<dx[0]<<", "<<dx[1]<<"\nt: "<<t_armijo<<"\nf: "<<f<<"\nf_armijo: "<<f_armijo<<std::endl;
+					while((f - f_armijo) < alpha_armijo*t_armijo)
+					{
+						alpha_armijo = redistOptions.armijo_tau*alpha_armijo;
+
+						x_armijo[0] = x[0] + alpha_armijo*dx[0];
+						x_armijo[1] = x[1] + alpha_armijo*dx[1];
+						lambda_armijo = lambda + alpha_armijo*dx[2];
+						f_armijo = 0.5*(xa - x_armijo).norm()*(xa - x_armijo).norm() + lambda_armijo*get_p(x_armijo, c, redistOptions.polynomial_degree);
+						//std::cout<<alpha_armijo<<std::endl;
+						if (verbose) std::cout<<"\narmijo++\n"<<"x: "<<x[0]<<", "<<x[1]<<"\ndx: "<<dx[0]<<", "<<dx[1]<<"\nt: "<<t_armijo<<"\nf: "<<f<<"\nf_armijo: "<<f_armijo<<"\ndiff f: "<<f-f_armijo<<"\n&&&&&&&&&&&&&&&&&&&&&&&&&"<<std::endl;
+					}
+					dx = alpha_armijo*dx;
+				}
+
+				// prevent Newton algorithm from leaving the support radius by projecting towards zero level-set
+				if (redistOptions.fail_projection)
+				{
+					if ((x[0] + dx[0] - x00[0])*(x[0] + dx[0] - x00[0]) + (x[1] + dx[1] - x00[1])*(x[1] + dx[1] - x00[1]) > r_cutoff2)
+					{
+						EMatrix<double, Eigen::Dynamic, 1> x_interm(2,1);
+						x_interm[0] = 1e16;
+						x_interm[1] = 1e16;
+						double dpdx_interm;
+						double dpdy_interm;
+						double grad_p_mag_interm2;
+						double p_interm;
+						int j = 0;
+
+						while ((x_interm - x00).norm() > sqrt(r_cutoff2))
+						{
+							dx = redistOptions.support_prevent*dx;
+							if(j == 0) x_interm = x;
+							dpdx_interm = get_dpdx(x_interm, c, redistOptions.polynomial_degree);
+							dpdy_interm = get_dpdy(x_interm, c, redistOptions.polynomial_degree);
+							grad_p_mag_interm2 = dpdx_interm*dpdx_interm + dpdy_interm*dpdy_interm;
+							p_interm = get_p(x_interm, c, redistOptions.polynomial_degree);
+							x_interm[0] = x_interm[0] - redistOptions.support_prevent*p_interm*dpdx_interm/grad_p_mag_interm2;
+							x_interm[1] = x_interm[1] - redistOptions.support_prevent*p_interm*dpdy_interm/grad_p_mag_interm2;
+							++j;
+							if (a.getKey() == 12)
+							{
+								//std::cout<<"p: "<<p_interm<<" r: "<<(x_interm - x00).norm()<<" j: "<<j<<std::endl;
+							}
+						}
+						x[0] = 0.0;
+						x[1] = 0.0;
+						lambda = 0.0;
+						dx[0] = x_interm[0];
+						dx[1] = x_interm[1];
+						xax = x_interm - xa;
+						dx[2] = (-xax[0]*dpdx_interm - xax[1]*dpdy_interm)/grad_p_mag_interm2;
+					}
+				}
+
+				// prevent Newton algorithm from leaving the support radius by scaling step size
+				if(redistOptions.support_prevent)
+				{
+					while (((x[0] + dx[0] - x00[0])*(x[0] + dx[0] - x00[0]) + (x[1] + dx[1] - x00[1])*(x[1] + dx[1] - x00[1])) > r_cutoff2)
+					{
+						dx = redistOptions.support_prevent*dx;
+						double rand_degree = 2*M_PI*rand()/(RAND_MAX + 1.);
+						double dx_old = dx[0];
+						double dy_old = dx[1];
+						dx[0] = cos(rand_degree)*dx_old - sin(rand_degree)*dy_old;
+						dx[1] = sin(rand_degree)*dx_old + cos(rand_degree)*dy_old;
+					}
+				}
+
+				// apply increment and compute new iteration values
 				x[0] = x[0] + dx[0];
 				x[1] = x[1] + dx[1];
 				lambda = lambda + dx[2];
-				// compute exit criterion and prepare xax
+
+				// prepare values for next iteration and update the exit criterion
 				xax = x - xa;
-				norm_dx = dx.norm();
+				p = get_p(x, c, redistOptions.polynomial_degree);
+				dpdx = get_dpdx(x, c, redistOptions.polynomial_degree);
+				dpdy = get_dpdy(x, c, redistOptions.polynomial_degree);
+				nabla_f[0] = xax[0] + lambda*dpdx;
+				nabla_f[1] = xax[1] + lambda*dpdy;
+				nabla_f[2] = p;
+
+				//norm_dx = dx.norm(); // alternative criterion: incremental tolerance
+				norm_dx = nabla_f.norm();
 
 				++k;
-
 
 				if(verbose)
 				{
@@ -490,7 +608,7 @@ private:
 		}
 		
 	}
-	
+
 	//todo: template these
 	inline double get_p(EMatrix<double, Eigen::Dynamic, 1> xvector, EMatrix<double, Eigen::Dynamic, 1> c, std::string polynomialdegree)
 	{
