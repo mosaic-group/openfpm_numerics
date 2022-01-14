@@ -33,11 +33,12 @@
  * @param dplus: Gradient approximated using RHS neighbors.
  * @param dminus: Gradient approximated using LHS neighbors.
  * @param sign: Sign of the velocity with which the wave front is moving.
- * @return Scalar double upwind gradient approximation in the dimension given.
+ * @return Scalar upwind gradient approximation in the dimension given.
  */
-static double upwinding(double dplus, double dminus, int sign)
+template <typename field_type>
+static field_type upwinding(field_type dplus, field_type dminus, int sign)
 {
-	double grad_upwind = 0;
+	field_type grad_upwind = 0.0;
 	if (dplus * sign < 0
 			&& (dminus + dplus) * sign < 0) grad_upwind = dplus;
 	
@@ -66,9 +67,12 @@ static double upwinding(double dplus, double dminus, int sign)
  * @return Upwind finite difference in one dimension of the property under index Field on the current node with index key.
  */
 template <size_t Field, size_t Sign, typename gridtype, typename keytype>
-double FD_upwind(gridtype &grid, keytype &key, size_t d, size_t order)
+auto FD_upwind(gridtype &grid, keytype &key, size_t d, size_t order)
 {
-	double dplus = 0, dminus = 0;
+//	std::cout << boost::typeindex::type_id_with_cvr<std::decay_t<decltype(first_node)>>() << std::endl;
+	
+	typedef typename std::decay_t<decltype(grid.template get<Field>(key))> field_type;
+	field_type dplus = 0.0, dminus = 0.0;
 	int sign_phi0 = grid.template get<Sign> (key);
 	
 	switch(order)

@@ -605,12 +605,12 @@ namespace FD
 		 * \return itself
 		 *
 		 */
-		template<unsigned int prp2> grid & operator=(const grid_dist_expression<prp2,grid,NORM_EXPRESSION> & g_exp)
+		template<unsigned int prp2,typename grid_type> grid & operator=(const grid_dist_expression<prp2,grid_type,NORM_EXPRESSION> & g_exp)
 		{
 			g_exp.init();
 
 			comb<grid::dims> s_pos;
-			s_pos.zero;
+			s_pos.zero();
 
 			auto it = g.getDomainIterator();
 
@@ -1877,7 +1877,258 @@ namespace FD
 		return exp_g;
 	}
 
+
+////// Specialization for temporal FD_expressions
+
+	template<unsigned int dim>
+	struct gdb_ext_plus_g_info
+	{
+		grid_sm<dim,void> & ginfo_v;
+
+		openfpm::vector<GBoxes<dim>> & gdb_ext;
+	};
+
+	template<unsigned int dim>
+	class grid_dist_expression_iterator_to_make_algebra_work
+	{
+		//! Grid informations object without type
+		grid_sm<dim,void> & ginfo_v;
+
+		//! The grid
+		openfpm::vector<grid_cpu<dim,aggregate<double>>> & loc_grid;
+
+		openfpm::vector<GBoxes<dim>> & gdb_ext;
+
+		typedef grid_cpu<dim,aggregate<double>> device_grid;
+
+	public:
+
+		grid_dist_expression_iterator_to_make_algebra_work(openfpm::vector<grid_cpu<dim,aggregate<double>>> & loc_grid,
+															openfpm::vector<GBoxes<dim>> & gdb_ext,
+															grid_sm<dim,void> & ginfo_v)
+		:loc_grid(loc_grid),gdb_ext(gdb_ext),ginfo_v(ginfo_v)
+		{}
+
+		gdb_ext_plus_g_info<dim> size()
+		{
+			return gdb_ext_plus_g_info<dim>{ginfo_v,gdb_ext};
+		}
+
+        //Need more treatment for staggered (c_where based on exp)
+		template<unsigned int prp>
+        inline auto get(grid_dist_key_dx<dim> & key) -> decltype(loc_grid.get(key.getSub()).template get<0>(key.getKey()))
+        {
+            return loc_grid.get(key.getSub()).template get<0>(key.getKey());
+        }
+
+		void resize(const gdb_ext_plus_g_info<dim> & input)
+		{
+			size_t Nloc_grid = input.gdb_ext.size();
+
+			loc_grid.resize(Nloc_grid);
+
+			for (int i = 0 ; i < Nloc_grid; i++)
+			{
+				size_t sz[dim];
+
+				for (int j = 0 ; j < dim ; j++)	{sz[j] = input.gdb_ext.get(i).GDbox.getKP2().get(j) + 1;}
+
+				loc_grid.get(i).resize(sz);
+			}
+
+			gdb_ext = input.gdb_ext;
+			ginfo_v = input.ginfo_v;
+		}
+
+		grid_dist_iterator<dim,device_grid,
+					   decltype(device_grid::type_of_subiterator()),FREE> getIterator()
+		{
+			grid_key_dx<dim> stop(ginfo_v.getSize());
+			grid_key_dx<dim> one;
+			one.one();
+			stop = stop - one;
+
+			grid_dist_iterator<dim,device_grid,
+								decltype(device_grid::type_of_subiterator()),
+								FREE> it(loc_grid,gdb_ext,stop);
+
+			return it;
+		}
+	};
+
+
+	/*! \brief Main class that encapsulate a grid properties operand to be used for expressions construction
+	 *
+	 * \tparam prp property involved
+	 * \tparam grid involved
+	 *
+	 */
+	template<unsigned int dim>
+	class grid_dist_expression<0,openfpm::vector<grid_cpu<dim,aggregate<double>>>,NORM_EXPRESSION>
+	{
+		//! The grid
+		mutable openfpm::vector<grid_cpu<dim,aggregate<double>>> loc_grid;
+
+		mutable openfpm::vector<GBoxes<dim>> gdb_ext;
+
+		//! Grid informations object without type
+		mutable grid_sm<dim,void> ginfo_v;
+
+		typedef double type_proc;
+
+		template<typename super_general>
+		void operator_equal(super_general & g_exp)
+		{
+			g_exp.init();
+
+			resize(g_exp.getGrid());
+
+			comb<dim> s_pos;
+			s_pos.zero();
+
+			auto it = g_exp.getGrid().getDomainIterator();
+
+			while (it.isNext())
+			{
+				auto key = it.get();
+
+				loc_grid.get(key.getSub()).template get<0>(key.getKey()) = g_exp.value(key,s_pos);
+
+				++it;
+			}
+		}
+
+	public:
+
+		typedef grid_dist_key_dx<dim,grid_key_dx<dim>> index_type;
+
+		//! The type of the internal grid
+		typedef void gtype;
+
+		//! Property id of the point
+		static const unsigned int prop = 0;
+
+		grid_dist_expression()
+		{}
+
+		//! constructor for an external grid
+		template<typename grid>
+		grid_dist_expression(grid & g)
+		{
+			resize(g);
+		}
+
+		template<typename grid>
+		void resize(grid & g)
+		{
+			size_t Nloc_grid = g.getN_loc_grid();
+
+			loc_grid.resize(Nloc_grid);
+
+			for (int i = 0 ; i < Nloc_grid; i++)
+			{
+				loc_grid.get(i).resize(g.get_loc_grid(i).getGrid().getSize());
+			}
+
+			gdb_ext = g.getLocalGridsInfo();
+			ginfo_v = g.getGridInfoVoid();
+		}
+
+		grid_dist_expression_iterator_to_make_algebra_work<dim> getVector() const
+		{
+			return grid_dist_expression_iterator_to_make_algebra_work<dim>(loc_grid,gdb_ext,ginfo_v);
+		}
+
+		/*! \brief This function must be called before value
+		 *
+		 * it initialize the expression if needed
+		 *
+		 */
+		inline void init() const
+		{}
+
+		/*! \brief Evaluate the expression
+		 *
+		 * \param k where to evaluate the expression
+		 *
+		 * \return the result of the expression
+		 *
+		 */
+		inline double value(const grid_dist_key_dx<dim> & k, comb<dim> & c_where) const
+		{
+			return loc_grid.get(k.getSub()).template get<0>(k.getKey());
+		}
+
+		/*! \brief Evaluate the expression
+		 *
+		 * \param k where to evaluate the expression
+		 *
+		 * \return the result of the expression
+		 *
+		 */
+		// template<unsigned int nc>
+		// inline auto value(const grid_dist_key_dx<grid::dims> & k, comb<grid::dims> & c_where, const int (& comp)[nc]) const -> decltype(grid_dist_expression_value_impl<type_proc>::template value_n<prp>(g,k,comp))
+		// {
+		// 	return loc_grid.get(k.getSub()).template get<0>(k.getKey());
+		// }
+
+		/*! \brief Evaluate the expression
+		 *
+		 * \param k where to evaluate the expression
+		 *
+		 * \return the result of the expression
+		 *
+		 */
+		inline double & value_ref(const grid_dist_key_dx<dim> & k, comb<dim> & c_where) const
+		{
+			return loc_grid.get(k.getSub()).template get<0>(k.getKey());
+		}
+
+		/*! \brief Fill the grid property with the evaluated expression
+		 *
+		 * \param v_exp expression to evaluate
+		 *
+		 * \return itself
+		 *
+		 */
+		template<unsigned int prp2, typename grid> const grid & operator=(const grid_dist_expression<prp2,grid,NORM_EXPRESSION> & g_exp)
+		{
+			operator_equal(g_exp);
+
+			return g_exp.getGrid();
+		}
+
+		/*! \brief Fill the grid property with the evaluated expression
+		 *
+		 * \param v_exp expression to evaluate
+		 *
+		 * \return itself
+		 *
+		 */
+		template<typename exp1, typename exp2, typename op> auto operator=(const grid_dist_expression_op<exp1,exp2,op> & g_exp) -> decltype(g_exp.getGrid())
+		{
+			operator_equal(g_exp);
+
+			return g_exp.getGrid();
+		}
+
+        //Need more treatment for staggered (c_where based on exp)
+        inline double get(grid_dist_key_dx<dim> & key)
+        {
+            comb<dim> c_where;
+            c_where.zero();
+            return this->value(key,c_where);
+        }
+
+		int isConstant(){
+		    return false;
+		}
+	};
+
 };
+
+
+template<unsigned int dim, typename T> using texp_g = FD::grid_dist_expression<0,openfpm::vector<grid_cpu<dim,aggregate<T>>>,FD::NORM_EXPRESSION>;
 
 /* \brief sum two distributed grid expression
  *
