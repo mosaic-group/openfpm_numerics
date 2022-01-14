@@ -51,6 +51,7 @@ struct state_type_1d_ofp{
     state_type_1d_ofp(){
     }
     typedef size_t size_type;
+    typedef size_t index_type;
     typedef int is_state_vector;
     aggregate<texp_v<double>> data;
 
@@ -74,6 +75,7 @@ struct state_type_2d_ofp{
     state_type_2d_ofp(){
     }
     typedef size_t size_type;
+    typedef size_t index_type;
     typedef int is_state_vector;
     aggregate<texp_v<double>,texp_v<double>> data;
 
@@ -98,6 +100,7 @@ struct state_type_3d_ofp{
     state_type_3d_ofp(){
     }
     typedef size_t size_type;
+    typedef size_t index_type;
     typedef int is_state_vector;
     aggregate<texp_v<double>,texp_v<double>,texp_v<double>> data;
 
@@ -123,6 +126,7 @@ struct state_type_4d_ofp{
     state_type_4d_ofp(){
     }
     typedef size_t size_type;
+    typedef size_t index_type;
     typedef int is_state_vector;
     aggregate<texp_v<double>,texp_v<double>,texp_v<double>,texp_v<double>> data;
 
@@ -149,6 +153,7 @@ struct state_type_5d_ofp{
     state_type_5d_ofp(){
     }
     typedef size_t size_type;
+    typedef size_t index_type;
     typedef int is_state_vector;
     aggregate<texp_v<double>,texp_v<double>,texp_v<double>,texp_v<double>,texp_v<double>> data;
 
@@ -165,6 +170,32 @@ struct state_type_5d_ofp{
 
     }
 };
+
+template<int counter, typename state_type, typename ... list>
+struct state_type_ofpm_add_elements
+{
+//    typedef aggregate<list ..., texp_v<double>> one_more;
+    typedef typename state_type_ofpm_add_elements<counter-1,state_type, state_type,list ...>::type type;
+};
+
+template<typename state_type, typename ... list>
+struct state_type_ofpm_add_elements<0,state_type,list ...>
+{
+   typedef aggregate<list ...> type; 
+};
+
+template<int n_state, typename state_type>
+struct state_type_ofpm_impl
+{
+    typedef size_t size_type;
+    typedef typename state_type::index_type index_type;
+    typedef int is_state_vector;
+
+    typedef typename state_type_ofpm_add_elements<n_state-1,state_type, state_type>::type type_data;
+
+    type_data data;
+};
+
 
 namespace boost {
     namespace numeric {
