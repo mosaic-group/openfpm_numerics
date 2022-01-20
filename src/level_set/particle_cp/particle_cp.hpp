@@ -31,9 +31,9 @@
 #include "Operators/Vector/vector_dist_operators.hpp"
 #include <chrono>
 
-typedef vector_dist<2, double, aggregate<vect_dist_key_dx, int, int, int, double, double[16]>> particles_surface;
-//											|			   |	  |		|	   |  		|
-//						key to particle in vd	surface flag num neibs	|	  sdf interpolation coefficients
+typedef vector_dist<2, double, aggregate<vect_dist_key_dx, int, int, int, double, double[2], double[16]>> particles_surface;
+//											|			   |	  |		|	   |  		|			  |
+//						key to particle in vd	surface flag num neibs	|	  sdf 	sample version	interpolation coefficients
 //												flag for distinguishing closest particles to surface, for which the interpolation has to be done
 struct Redist_options
 {
@@ -92,7 +92,8 @@ private:
 	static constexpr size_t num_neibs = 2;
 	static constexpr size_t vd_s_close_part = 3;
 	static constexpr size_t vd_s_sdf = 4;
-	static constexpr size_t interpol_coeff = 5;
+	static constexpr size_t vd_s_sample = 5;
+	static constexpr size_t interpol_coeff = 6;
 	static constexpr size_t vd_in_sdf = 0;	//this is needed in the vd_in vector
 	static constexpr size_t vd_in_close_part = 3;
 
@@ -225,6 +226,8 @@ private:
 				//MonomialBasis<2> m(4);
 			}
 
+			if(m.size() > num_neibs_a) std::cout<<"warning: less number of neighbours than required for interpolation"<<std::endl;
+
 			// std::cout<<"m size"<<m.size()<<std::endl;
 			VandermondeRowBuilder<2, double> vrb(m);
 
@@ -267,6 +270,32 @@ private:
 				vd_s.template getProp<interpol_coeff>(a)[k] = c[k];
 			}
 
+			if (true)
+			{
+				double dpdx;
+				double dpdy;
+				double grad_p_mag2;
+				EMatrix<double, Eigen::Dynamic, 1> x(2, 1);
+				x[0] = xa[0];
+				x[1] = xa[1];
+				double p = get_p(x, c, redistOptions.polynomial_degree);
+
+				//while (abs(p) > redistOptions.tolerance)
+				for(int k = 0; k < 3; k++)
+				{
+					dpdx = get_dpdx(x, c, redistOptions.polynomial_degree);
+					dpdy = get_dpdy(x, c, redistOptions.polynomial_degree);
+					grad_p_mag2 = dpdx*dpdx + dpdy*dpdy;
+
+					x[0] = x[0] - p*dpdx/grad_p_mag2;
+					x[1] = x[1] - p*dpdy/grad_p_mag2;
+					p = get_p(x, c, redistOptions.polynomial_degree);
+				}
+				vd_s.template getProp<vd_s_sample>(a)[0] = x[0];
+				vd_s.template getProp<vd_s_sample>(a)[1] = x[1];
+			}
+
+			if (a.getKey() == 2287) verbose = 1;
 			if (verbose)
 			{
 				EMatrix<double, Eigen::Dynamic, 1> xaa(2,1);
@@ -284,6 +313,7 @@ private:
 				std::cout<<"COEFF: "<<c<<std::endl;
 				//std::cout<<"KAPPA: "<<curvature<<std::endl;
 				std::cout<<"Vmat\n"<<V<<std::endl;
+				verbose = 0;
 			}
 
 			++part;
@@ -340,7 +370,8 @@ private:
 			while (Np.isNext())
 			{
 				vect_dist_key_dx b = Np.get();
-				Point<2,double> xbb = vd_s.getPos(b);
+				//Point<2,double> xbb = vd_s.getPos(b);
+				Point<2, double> xbb = vd_s.template getProp<vd_s_sample>(b);
 
 				if (!vd_s.template getProp<vd_s_close_part>(b))
 				{
@@ -362,8 +393,10 @@ private:
 			//x[0] = vd.getPos(vd_s.getProp<0>(b_min))[0];
 			//x[1] = vd.getPos(vd_s.getProp<0>(b_min))[1];
 			val = vd_s.template getProp<vd_s_sdf>(b_min);
-			x[0] = vd_s.getPos(b_min)[0];
-			x[1] = vd_s.getPos(b_min)[1];
+			//x[0] = vd_s.getPos(b_min)[0];
+			//x[1] = vd_s.getPos(b_min)[1];
+			x[0] = vd_s.template getProp<vd_s_sample>(b_min)[0];
+			x[1] = vd_s.template getProp<vd_s_sample>(b_min)[1];
 
 			EMatrix<double, Eigen::Dynamic, 1> x00(2,1);
 			x00[0] = x[0];
@@ -379,13 +412,14 @@ private:
 				c[k] = vd_s.template getProp<interpol_coeff>(b_min)[k];
 			}
 
+			val = get_p(x, c, redistOptions.polynomial_degree);
 			//if (a.getKey() == 2620) verbose = 1;
-			if (a.getKey() == 54) verbose = 1;
+			if (a.getKey() == 727) verbose = 1;
 
 			if(verbose)
 				{
 					std::cout<<std::setprecision(16)<<"VERBOSE%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%:"<<std::endl;
-					std::cout<<"xa: "<<xa[0]<<", "<<xa[1]<<"\nx_0: "<<x[0]<<", "<<x[1]<<"\nc: "<<c<<std::endl;
+					std::cout<<"x_poly: "<<vd_s.getPos(b_min)[0]<<", "<<vd_s.getPos(b_min)[1]<<"\nxa: "<<xa[0]<<", "<<xa[1]<<"\nx_0: "<<x[0]<<", "<<x[1]<<"\nc: "<<c<<std::endl;
 					std::cout<<"phi(x_0): "<<val<<std::endl;
 					std::cout<<"interpol_i(x_0) = "<<get_p(x, c, redistOptions.polynomial_degree)<<std::endl;
 				}
@@ -412,7 +446,7 @@ private:
 			// possibly start off with a Newton-style projection towards the interface
 			if (redistOptions.init_project)
 			{
-				while(p > redistOptions.tolerance)
+				while(abs(p) > redistOptions.tolerance)
 				{
 					dpdx = get_dpdx(x, c, redistOptions.polynomial_degree);
 					dpdy = get_dpdy(x, c, redistOptions.polynomial_degree);
@@ -552,6 +586,13 @@ private:
 					}
 				}
 
+				// prevent Newton algorithm from leaving the support radius by scaling step size
+				while((dx[0]*dx[0] + dx[1]*dx[1]) > 0.25*r_cutoff2)
+				{
+					std::cout<<"invoked"<<std::endl;
+					dx = 0.1*dx;
+				}
+
 				// apply increment and compute new iteration values
 				x[0] = x[0] + dx[0];
 				x[1] = x[1] + dx[1];
@@ -580,7 +621,7 @@ private:
 //					std::cout<<"dpdx: "<<dpdx<<std::endl;
 //					std::cout<<"k = "<<k<<std::endl;
 //					std::cout<<"x_k = "<<x[0]<<", "<<x[1]<<std::endl;
-					std::cout<<x[0]<<", "<<x[1]<<std::endl;
+					std::cout<<x[0]<<", "<<x[1]<<", "<<norm_dx<<std::endl;
 				}
 			}
 	//		debug optimisation
@@ -593,11 +634,12 @@ private:
 				std::cout<<"x_final: "<<x[0]<<", "<<x[1]<<std::endl;
 				std::cout<<"p(x_final) :"<<get_p(x, c, redistOptions.polynomial_degree)<<std::endl;
 				std::cout<<"nabla p(x_final)"<<get_dpdx(x, c, redistOptions.polynomial_degree)<<", "<<get_dpdy(x, c, redistOptions.polynomial_degree)<<std::endl;
+				std::cout<<"lambda: "<<lambda<<std::endl;
 			}
-			if (k == redistOptions.max_iter) std::cout<<"Warning: Newton algorithm has reached maximum number of iterations, does not converge."<<std::endl;
+			if (k == redistOptions.max_iter) std::cout<<"Warning: Newton algorithm has reached maximum number of iterations, does not converge for particle "<<a.getKey()<<std::endl;
 			//std::cout<<"c:\n"<<vd.getProp<interpol_coeff>(a)<<"\nmin_sdf: "<<vd.getProp<min_sdf>(a)<<" , min_sdf_x: "<<vd.getProp<min_sdf_x>(a)<<std::endl;
 			verbose = 0;
-			if (((abs(x00[0] - x[0]))>sqrt(r_cutoff2))||((abs(x00[1] - x[1]))>sqrt(r_cutoff2)))
+			if(false)//if (((abs(x00[0] - x[0]))>sqrt(r_cutoff2))||((abs(x00[1] - x[1]))>sqrt(r_cutoff2)))
 			{
 				std::cout<<"straying out of local neighborhood.."<<std::endl;
 				std::cout<<"computed sdf: "<<vd_in.template getProp<vd_in_sdf>(a)<<std::endl;
