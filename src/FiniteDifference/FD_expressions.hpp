@@ -8,8 +8,33 @@
 #ifndef FD_EXPRESSIONS_HPP_
 #define FD_EXPRESSIONS_HPP_
 
+template<typename T, typename Sfinae = void>
+struct has_getGrid: std::false_type {};
+
+template<typename T>
+struct has_getGrid<T, typename Void<decltype(std::declval<T>().getGrid())>::type > : std::true_type
+{};
+
 namespace FD
 {
+
+	template<bool cond, typename exp1, typename exp2>
+	struct first_or_second
+	{
+		static auto getGrid(const exp1 & o1, const exp2 & o2) -> decltype(o2.getGrid())
+		{
+			return o2.getGrid();
+		}
+	};
+
+	template<typename exp1, typename exp2>
+	struct first_or_second<true,exp1,exp2>
+	{
+		static auto getGrid(const exp1 & o1, const exp2 & o2) -> decltype(o1.getGrid())
+		{
+			return o1.getGrid();
+		}
+	};
 
 	constexpr int NORM_EXPRESSION = 0;
 	constexpr int STAG_EXPRESSION = 1;
@@ -1376,9 +1401,9 @@ namespace FD
 		 * \return the grid
 		 *
 		 */
-		gtype & getGrid()
+		auto getGrid() -> decltype(first_or_second<has_getGrid<exp1>::value,exp1,exp2>::getGrid(o1,o2))
 		{
-			return o1.getGrid();
+			return first_or_second<has_getGrid<exp1>::value,exp1,exp2>::getGrid(o1,o2);
 		}
 
 		/*! \brief Return the grid on which is acting
@@ -1388,9 +1413,9 @@ namespace FD
 		* \return the grid
 		*
 		*/
-		const gtype & getGrid() const
+		auto getGrid() const -> decltype(first_or_second<has_getGrid<exp1>::value,exp1,exp2>::getGrid(o1,o2))
 		{
-			return o1.getGrid();
+			return first_or_second<has_getGrid<exp1>::value,exp1,exp2>::getGrid(o1,o2);
 		}
 
 		template<typename Sys_eqs, typename gmap_type, typename unordered_map_type>
@@ -1886,6 +1911,20 @@ namespace FD
 		grid_sm<dim,void> & ginfo_v;
 
 		openfpm::vector<GBoxes<dim>> & gdb_ext;
+
+		bool operator==(const gdb_ext_plus_g_info & tmp)
+		{
+			bool is_equal = gdb_ext.size() == tmp.gdb_ext.size();
+
+			for (int i = 0 ; i < gdb_ext.size() ; i++)
+			{
+				is_equal &= gdb_ext.get(i) == tmp.gdb_ext.get(i);
+			}
+
+			is_equal &= ginfo_v == tmp.ginfo_v;
+
+			return is_equal;
+		}
 	};
 
 	template<unsigned int dim>
@@ -1902,6 +1941,8 @@ namespace FD
 		typedef grid_cpu<dim,aggregate<double>> device_grid;
 
 	public:
+
+		static constexpr unsigned int dims = dim;
 
 		grid_dist_expression_iterator_to_make_algebra_work(openfpm::vector<grid_cpu<dim,aggregate<double>>> & loc_grid,
 															openfpm::vector<GBoxes<dim>> & gdb_ext,
@@ -1920,6 +1961,61 @@ namespace FD
         {
             return loc_grid.get(key.getSub()).template get<0>(key.getKey());
         }
+
+
+		/*! \brief Return the number of local grid
+		*
+		* \return the number of local grid
+		*
+		*/
+		size_t getN_loc_grid() const
+		{
+			return loc_grid.size();
+		}
+
+		/*! \brief Get the i sub-domain grid
+		*
+		* \param i sub-domain
+		*
+		* \return local grid
+		*
+		*/
+		device_grid & get_loc_grid(size_t i)
+		{
+			return loc_grid.get(i);
+		}
+
+		/*! \brief Get the i sub-domain grid
+		*
+		* \param i sub-domain
+		*
+		* \return local grid
+		*
+		*/
+		const device_grid & get_loc_grid(size_t i) const
+		{
+			return loc_grid.get(i);
+		}
+
+		/*! \brief Get an object containing the grid informations without type
+		*
+		* \return an information object about this grid
+		*
+		*/
+		const grid_sm<dim,void> & getGridInfoVoid() const
+		{
+			return ginfo_v;
+		}
+
+		/*! \brief It return the informations about the local grids
+		*
+		* \return The information about the local grids
+		*
+		*/
+		const openfpm::vector<GBoxes<device_grid::dims>> & getLocalGridsInfo() const
+		{
+			return gdb_ext;
+		}
 
 		void resize(const gdb_ext_plus_g_info<dim> & input)
 		{
@@ -1956,6 +2052,13 @@ namespace FD
 		}
 	};
 
+	template<typename patches>
+	struct grid_patches
+	{
+		static constexpr unsigned int dims = patches::dims;
+
+		openfpm::vector<patches> loc_grid;
+	};
 
 	/*! \brief Main class that encapsulate a grid properties operand to be used for expressions construction
 	 *
@@ -1964,10 +2067,10 @@ namespace FD
 	 *
 	 */
 	template<unsigned int dim>
-	class grid_dist_expression<0,openfpm::vector<grid_cpu<dim,aggregate<double>>>,NORM_EXPRESSION>
+	class grid_dist_expression<0,grid_patches<grid_cpu<dim,aggregate<double>>>,NORM_EXPRESSION>
 	{
 		//! The grid
-		mutable openfpm::vector<grid_cpu<dim,aggregate<double>>> loc_grid;
+		mutable  grid_patches<grid_cpu<dim,aggregate<double>>> data;
 
 		mutable openfpm::vector<GBoxes<dim>> gdb_ext;
 
@@ -1986,13 +2089,13 @@ namespace FD
 			comb<dim> s_pos;
 			s_pos.zero();
 
-			auto it = g_exp.getGrid().getDomainIterator();
+			auto it = this->getVector().getIterator();
 
 			while (it.isNext())
 			{
 				auto key = it.get();
 
-				loc_grid.get(key.getSub()).template get<0>(key.getKey()) = g_exp.value(key,s_pos);
+				data.loc_grid.get(key.getSub()).template get<0>(key.getKey()) = g_exp.value(key,s_pos);
 
 				++it;
 			}
@@ -2000,16 +2103,23 @@ namespace FD
 
 	public:
 
+		static constexpr unsigned int dims = dim;
+
 		typedef grid_dist_key_dx<dim,grid_key_dx<dim>> index_type;
 
 		//! The type of the internal grid
-		typedef void gtype;
+		typedef grid_dist_expression_iterator_to_make_algebra_work<dim> gtype;
 
 		//! Property id of the point
 		static const unsigned int prop = 0;
 
 		grid_dist_expression()
 		{}
+
+		gdb_ext_plus_g_info<dim> size() const
+		{
+			return gdb_ext_plus_g_info<dim>{ginfo_v,gdb_ext};
+		}
 
 		//! constructor for an external grid
 		template<typename grid>
@@ -2023,11 +2133,11 @@ namespace FD
 		{
 			size_t Nloc_grid = g.getN_loc_grid();
 
-			loc_grid.resize(Nloc_grid);
+			data.loc_grid.resize(Nloc_grid);
 
 			for (int i = 0 ; i < Nloc_grid; i++)
 			{
-				loc_grid.get(i).resize(g.get_loc_grid(i).getGrid().getSize());
+				data.loc_grid.get(i).resize(g.get_loc_grid(i).getGrid().getSize());
 			}
 
 			gdb_ext = g.getLocalGridsInfo();
@@ -2036,7 +2146,31 @@ namespace FD
 
 		grid_dist_expression_iterator_to_make_algebra_work<dim> getVector() const
 		{
-			return grid_dist_expression_iterator_to_make_algebra_work<dim>(loc_grid,gdb_ext,ginfo_v);
+			return grid_dist_expression_iterator_to_make_algebra_work<dim>(data.loc_grid,gdb_ext,ginfo_v);
+		}
+
+		/*! \brief Return the grid on which is acting
+		 *
+		 * It return the grid used in getVExpr, to get this object
+		 *
+		 * \return the grid
+		 *
+		 */
+		grid_dist_expression_iterator_to_make_algebra_work<dim> getGrid()
+		{
+			return getVector();
+		}
+
+		/*! \brief Return the grid on which is acting
+		*
+		* It return the grid used in getVExpr, to get this object
+		*
+		* \return the grid
+		*
+		*/
+		const grid_dist_expression_iterator_to_make_algebra_work<dim> getGrid() const
+		{
+			return getVector();
 		}
 
 		/*! \brief This function must be called before value
@@ -2054,9 +2188,9 @@ namespace FD
 		 * \return the result of the expression
 		 *
 		 */
-		inline double value(const grid_dist_key_dx<dim> & k, comb<dim> & c_where) const
+		inline double value(const grid_dist_key_dx<dim> & k, const comb<dim> & c_where = comb<dim>()) const
 		{
-			return loc_grid.get(k.getSub()).template get<0>(k.getKey());
+			return data.loc_grid.get(k.getSub()).template get<0>(k.getKey());
 		}
 
 		/*! \brief Evaluate the expression
@@ -2079,9 +2213,9 @@ namespace FD
 		 * \return the result of the expression
 		 *
 		 */
-		inline double & value_ref(const grid_dist_key_dx<dim> & k, comb<dim> & c_where) const
+		inline double & value_ref(const grid_dist_key_dx<dim> & k, const comb<dim> & c_where = comb<dim>())
 		{
-			return loc_grid.get(k.getSub()).template get<0>(k.getKey());
+			return data.loc_grid.get(k.getSub()).template get<0>(k.getKey());
 		}
 
 		/*! \brief Fill the grid property with the evaluated expression
@@ -2128,7 +2262,7 @@ namespace FD
 };
 
 
-template<unsigned int dim, typename T> using texp_g = FD::grid_dist_expression<0,openfpm::vector<grid_cpu<dim,aggregate<T>>>,FD::NORM_EXPRESSION>;
+template<unsigned int dim, typename T> using texp_g = FD::grid_dist_expression<0,FD::grid_patches<grid_cpu<dim,aggregate<T>>>,FD::NORM_EXPRESSION>;
 
 /* \brief sum two distributed grid expression
  *
