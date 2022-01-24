@@ -57,6 +57,8 @@ public:
     // 2) The machinery for assembling and solving the linear system for coefficients starts...
     // 3) The user can then call an evaluate(point) method to get the evaluation of the differential operator
     //    on the given point.
+    ////c=HOverEpsilon. Note that the Eps value is computed by <h>/c (<h>=local average spacing for each particle and its support). This factor c is used in the Vandermonde.hpp.
+    double HOverEpsilon=0.9;
 private:
     const Point<dim, unsigned int> differentialSignature;
     const unsigned int differentialOrder;
@@ -731,7 +733,7 @@ private:
 
             // Vandermonde matrix computation
             Vandermonde<dim, T, EMatrix<T, Eigen::Dynamic, Eigen::Dynamic>>
-                    vandermonde(support, monomialBasis,particlesFrom, particlesTo);
+                    vandermonde(support, monomialBasis,particlesFrom, particlesTo,HOverEpsilon);
             vandermonde.getMatrix(V);
 
             T eps = vandermonde.getEps();
@@ -809,6 +811,8 @@ private:
         localEpsInvPow.resize(particlesTo.size_local_orig());
         kerOffsets.resize(particlesTo.size_local_orig());
         kerOffsets.fill(-1);
+        T avgSpacingGlobal=0;
+        size_t Counter=0;
         auto it = particlesTo.getDomainIterator();
         while (it.isNext()) {
             // Get the points in the support of the DCPSE kernel and store the support for reuse
@@ -823,10 +827,11 @@ private:
 
             // Vandermonde matrix computation
             Vandermonde<dim, T, EMatrix<T, Eigen::Dynamic, Eigen::Dynamic>>
-                    vandermonde(support, monomialBasis,particlesFrom,particlesTo);
+                    vandermonde(support, monomialBasis,particlesFrom,particlesTo,HOverEpsilon);
             vandermonde.getMatrix(V);
 
             T eps = vandermonde.getEps();
+            avgSpacingGlobal+=eps;
 
             localEps.get(key_o.getKey()) = eps;
             localEpsInvPow.get(key_o.getKey()) = 1.0 / openfpm::math::intpowlog(eps,differentialOrder);
@@ -863,7 +868,17 @@ private:
             }
             //
             ++it;
+            ++Counter;
         }
+
+        auto & v_cl=create_vcluster();
+        v_cl.sum(avgSpacingGlobal);
+        v_cl.sum(Counter);
+        v_cl.execute();
+        if(v_cl.rank()==0)
+        {std::cout<<"DCPSE Operator Construction Complete. The average spacing <h> is: "<<HOverEpsilon*avgSpacingGlobal/(T(Counter))<<". c="<<HOverEpsilon<<std::endl;}
+
+
     }
 
     T computeKernel(Point<dim, T> x, EMatrix<T, Eigen::Dynamic, 1> & a) const {

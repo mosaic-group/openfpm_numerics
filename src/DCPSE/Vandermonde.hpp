@@ -1,6 +1,6 @@
 //
 // Created by tommaso on 21/03/19.
-//
+// Edited by Abhinav Singh on 24/01/2022
 
 #ifndef OPENFPM_PDATA_VANDERMONDE_HPP
 #define OPENFPM_PDATA_VANDERMONDE_HPP
@@ -16,7 +16,7 @@ private:
     const Point<dim, T> point;
     openfpm::vector_std<Point<dim, T>> offsets;
     const MonomialBasis<dim> monomialBasis;
-    T eps;
+    T eps,HOverEpsilon;
 
 public:
 /*    Vandermonde(const Point<dim, T> &point, const std::vector<Point<dim, T>> &neighbours,
@@ -27,9 +27,9 @@ public:
     Vandermonde(const Support &support,
                 const MonomialBasis<dim> &monomialBasis,
                 const vector_type & particlesFrom,
-                const vector_type2 & particlesTo)
+                const vector_type2 & particlesTo,T HOverEpsilon=0.9)
     : point(particlesTo.getPosOrig(support.getReferencePointKey())),
-                  monomialBasis(monomialBasis)
+                  monomialBasis(monomialBasis),HOverEpsilon(HOverEpsilon)
     {
         initialize(support,particlesFrom,particlesTo);
     }
@@ -69,7 +69,7 @@ private:
             avgNeighbourSpacing += computeAbsSum(offset);
         }
         avgNeighbourSpacing /= offsets.size();
-        eps = factor * avgNeighbourSpacing;
+        eps = avgNeighbourSpacing/factor;
         assert(eps != 0);
     }
 
@@ -102,7 +102,7 @@ private:
         }
         // Compute eps for this point
         //factor here. This is C factor.
-        computeEps(2);
+        computeEps(HOverEpsilon);
     }
 
 };
