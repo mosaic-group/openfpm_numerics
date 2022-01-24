@@ -27,7 +27,7 @@ public:
     Vandermonde(const Support &support,
                 const MonomialBasis<dim> &monomialBasis,
                 const vector_type & particlesFrom,
-                const vector_type2 & particlesTo,T HOverEpsilon=0.9)
+                const vector_type2 & particlesTo,T HOverEpsilon=0.5)    //0.5 for the test
     : point(particlesTo.getPosOrig(support.getReferencePointKey())),
                   monomialBasis(monomialBasis),HOverEpsilon(HOverEpsilon)
     {
