@@ -100,7 +100,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
         //std::cin>>n;
         size_t sz[2] = {n,n};
         double grid_spacing{boxSize/(sz[0]-1)};
-        double rCut{3.9 * grid_spacing};
+        double rCut{5.1 * grid_spacing};
 
         Box<2,double> domain{{boxP1,boxP1},{boxP2,boxP2}};
         size_t bc[2] = {NON_PERIODIC,NON_PERIODIC};
