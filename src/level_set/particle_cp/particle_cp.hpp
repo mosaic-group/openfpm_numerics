@@ -221,9 +221,12 @@ private:
 				degrees[1] = 1;
 				m = MonomialBasis<2>(degrees, 1);
 			}
-			else //bicubic
+			else if (redistOptions.polynomial_degree == "taylor4")
 			{
-				//MonomialBasis<2> m(4);
+				unsigned int degrees[2];
+				degrees[0] = 1;
+				degrees[1] = 1;
+				m = MonomialBasis<2>(degrees, 3);
 			}
 
 			if(m.size() > num_neibs_a) std::cout<<"warning: less number of neighbours than required for interpolation"<<std::endl;
@@ -270,32 +273,31 @@ private:
 				vd_s.template getProp<interpol_coeff>(a)[k] = c[k];
 			}
 
-			if (true)
+			double dpdx;
+			double dpdy;
+			double grad_p_mag2;
+			double incr;
+			EMatrix<double, Eigen::Dynamic, 1> x(2, 1);
+			x[0] = xa[0];
+			x[1] = xa[1];
+			double p = get_p(x, c, redistOptions.polynomial_degree);
+			while (abs(p) > redistOptions.tolerance)
+			//for(int k = 0; k < 3; k++)
+			//while(incr > 0.01*redistOptions.H)
 			{
-				double dpdx;
-				double dpdy;
-				double grad_p_mag2;
-				EMatrix<double, Eigen::Dynamic, 1> x(2, 1);
-				x[0] = xa[0];
-				x[1] = xa[1];
-				double p = get_p(x, c, redistOptions.polynomial_degree);
+				dpdx = get_dpdx(x, c, redistOptions.polynomial_degree);
+				dpdy = get_dpdy(x, c, redistOptions.polynomial_degree);
+				grad_p_mag2 = dpdx*dpdx + dpdy*dpdy;
 
-				//while (abs(p) > redistOptions.tolerance)
-				for(int k = 0; k < 3; k++)
-				{
-					dpdx = get_dpdx(x, c, redistOptions.polynomial_degree);
-					dpdy = get_dpdy(x, c, redistOptions.polynomial_degree);
-					grad_p_mag2 = dpdx*dpdx + dpdy*dpdy;
-
-					x[0] = x[0] - p*dpdx/grad_p_mag2;
-					x[1] = x[1] - p*dpdy/grad_p_mag2;
-					p = get_p(x, c, redistOptions.polynomial_degree);
-				}
-				vd_s.template getProp<vd_s_sample>(a)[0] = x[0];
-				vd_s.template getProp<vd_s_sample>(a)[1] = x[1];
+				x[0] = x[0] - p*dpdx/grad_p_mag2;
+				x[1] = x[1] - p*dpdy/grad_p_mag2;
+				p = get_p(x, c, redistOptions.polynomial_degree);
+				incr = sqrt(p*p*dpdx*dpdx/(grad_p_mag2*grad_p_mag2) + p*p*dpdy*dpdy/(grad_p_mag2*grad_p_mag2));
 			}
+			vd_s.template getProp<vd_s_sample>(a)[0] = x[0];
+			vd_s.template getProp<vd_s_sample>(a)[1] = x[1];
 
-			if (a.getKey() == 2287) verbose = 1;
+			if (a.getKey() == 5424) verbose = 1;
 			if (verbose)
 			{
 				EMatrix<double, Eigen::Dynamic, 1> xaa(2,1);
@@ -307,6 +309,7 @@ private:
 				//std::cout<<"tempcond = cond(A);\ncondnumber = condnumber + tempcond;"<<std::endl;
 				//std::cout<<"k = k + 1;\nif(tempcond>maxcond)\nmaxcond = tempcond;\nend"<<std::endl;
 				//std::cout<<"if(tempcond<mincond)\nmincond = tempcond;\nend"<<std::endl;
+				std::cout<<"number of coefficients is: "<<m.size()<<std::endl;
 				std::cout<<"PHI: \n"<<phi<<std::endl;
 				std::cout<<"num neibs: "<<num_neibs_a<<std::endl;
 				std::cout<<"x: "<<xa[0]<<" "<<xa[1]<<std::endl;
@@ -329,7 +332,10 @@ private:
 		int verbose = 0;
 		int msize;
 		if(redistOptions.polynomial_degree == "quadratic") msize = 6;
-		else msize = 16;
+		else if(redistOptions.polynomial_degree == "bicubic") msize = 16;
+		else if(redistOptions.polynomial_degree == "taylor4") msize = 15;
+		else msize = 1; //todo: make this throw an error
+
 		while (part.isNext())
 		{
 			vect_dist_key_dx a = part.get();
@@ -414,7 +420,7 @@ private:
 
 			val = get_p(x, c, redistOptions.polynomial_degree);
 			//if (a.getKey() == 2620) verbose = 1;
-			if (a.getKey() == 727) verbose = 1;
+			if (a.getKey() == 2425) verbose = 1;
 
 			if(verbose)
 				{
@@ -639,7 +645,7 @@ private:
 			if (k == redistOptions.max_iter) std::cout<<"Warning: Newton algorithm has reached maximum number of iterations, does not converge for particle "<<a.getKey()<<std::endl;
 			//std::cout<<"c:\n"<<vd.getProp<interpol_coeff>(a)<<"\nmin_sdf: "<<vd.getProp<min_sdf>(a)<<" , min_sdf_x: "<<vd.getProp<min_sdf_x>(a)<<std::endl;
 			verbose = 0;
-			if(false)//if (((abs(x00[0] - x[0]))>sqrt(r_cutoff2))||((abs(x00[1] - x[1]))>sqrt(r_cutoff2)))
+			if (((abs(x00[0] - x[0]))>sqrt(r_cutoff2))||((abs(x00[1] - x[1]))>sqrt(r_cutoff2)))
 			{
 				std::cout<<"straying out of local neighborhood.."<<std::endl;
 				std::cout<<"computed sdf: "<<vd_in.template getProp<vd_in_sdf>(a)<<std::endl;
@@ -664,6 +670,10 @@ private:
 		{
 				return(c[0] + c[1]*x + c[2]*x*x + c[3]*y + c[4]*x*y + c[5]*y*y);
 		}
+		if (polynomialdegree == "taylor4")
+		{
+				return(c[0] + c[1]*x + c[2]*x*x + c[3]*x*x*x + c[4]*x*x*x*x + c[5]*y + c[6]*x*y + c[7]*x*x*y + c[8]*x*x*x*y + c[9]*y*y + c[10]*y*y*x + c[11]*x*x*y*y + c[12]*y*y*y + c[13]*y*y*y*x + c[14]*y*y*y*y);
+		}
 	}
 
 	inline double get_dpdx(EMatrix<double, Eigen::Dynamic, 1> xvector, EMatrix<double, Eigen::Dynamic, 1> c, std::string polynomialdegree)
@@ -677,6 +687,10 @@ private:
 		if (polynomialdegree == "quadratic")
 		{
 				return(c[1] + 2*c[2]*x + c[4]*y);
+		}
+		if (polynomialdegree == "taylor4")
+		{
+				return(c[1] + 2*c[2]*x + 3*c[3]*x*x + 4*c[4]*x*x*x + c[6]*y + 2*c[7]*x*y + 3*c[8]*x*x*y + c[10]*y*y + 2*c[11]*x*y*y + c[13]*y*y*y);
 		}
 	}
 
@@ -692,6 +706,10 @@ private:
 		{
 				return(c[3] + c[4]*x + 2*c[5]*y);
 		}
+		if (polynomialdegree == "taylor4")
+		{
+				return(c[5] + c[6]*x + c[7]*x*x + c[8]*x*x*x + 2*c[9]*y + 2*c[10]*x*y + 2*c[11]*x*x*y + 3*c[12]*y*y + 3*c[13]*y*y*x + 4*c[14]*y*y*y);
+		}
 	}
 
 	inline double get_dpdxdx(EMatrix<double, Eigen::Dynamic, 1> xvector, EMatrix<double, Eigen::Dynamic, 1> c, std::string polynomialdegree)
@@ -705,6 +723,10 @@ private:
 		if (polynomialdegree == "quadratic")
 		{
 				return(2*c[2]);
+		}
+		if (polynomialdegree == "taylor4")
+		{
+				return(2*c[2] + 6*c[3]*x + 12*c[4]*x*x + 2*c[7]*y + 6*c[8]*x*y + 2*c[11]*y*y);
 		}
 	}
 
@@ -720,6 +742,10 @@ private:
 		{
 				return(2*c[5]);
 		}
+		if (polynomialdegree == "taylor4")
+		{
+				return(2*c[9] + 2*c[10]*x + 2*c[11]*x*x + 6*c[12]*y + 6*c[13]*x*y + 12*c[14]*y*y);
+		}
 	}
 
 	inline double get_dpdxdy(EMatrix<double, Eigen::Dynamic, 1> xvector, EMatrix<double, Eigen::Dynamic, 1> c, std::string polynomialdegree)
@@ -733,6 +759,10 @@ private:
 		if (polynomialdegree == "quadratic")
 		{
 				return(c[4]);
+		}
+		if (polynomialdegree == "taylor4")
+		{
+				return(c[6] + 2*c[7]*x + 3*c[8]*x*x + 2*c[10]*y +4*c[11]*x*y + 3*c[13]*y*y);
 		}
 	}
 	
