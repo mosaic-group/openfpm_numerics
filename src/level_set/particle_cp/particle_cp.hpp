@@ -190,6 +190,9 @@ private:
 
 	}
 	
+	// todo: maybe detection could be forgone and the interpolation could start off immidiately.
+	// the detection and decision whether to include as a sample point or not could be done
+	// within the loop itself.
 	void interpolate_sdf_field()
 	{
 		int verbose = 0;
@@ -197,6 +200,7 @@ private:
 		vd_s.updateCellList(NN_s);
 		auto part = vd_s.getDomainIterator();
 
+		// iterate over particles that will get an interpolation polynomial and generate a sample point
 		while (part.isNext())
 		{
 			vect_dist_key_dx a = part.get();
@@ -208,7 +212,7 @@ private:
 				continue;
 			}
 
-			const int num_neibs_a = vd_s.template getProp<num_neibs>(a);
+			const int num_neibs_a = vd_s.template getProp<num_neibs>(a); //change this to nonconstant if interpolation instead of least-squares shall be done
 			Point<2, double> xa = vd_s.getPos(a);
 			int neib = 0;
 
@@ -230,6 +234,7 @@ private:
 			}
 
 			if(m.size() > num_neibs_a) std::cout<<"warning: less number of neighbours than required for interpolation"<<std::endl;
+			//num_neibs_a = m.size(); // decomment this for interpolation instead of least-squares
 
 			// std::cout<<"m size"<<m.size()<<std::endl;
 			VandermondeRowBuilder<2, double> vrb(m);
@@ -238,7 +243,7 @@ private:
 			EMatrix<double, Eigen::Dynamic, 1> phi(num_neibs_a, 1);
 
 			auto Np = NN_s.template getNNIterator<NO_CHECK>(NN_s.getCell(vd_s.getPos(a)));
-			while(Np.isNext())
+			while(Np.isNext())// && (neib < m.size())) //decomment this for interpolation instead of least-squares
 			{
 				vect_dist_key_dx b = Np.get();
 				Point<2, double> xb = vd_s.getPos(b);
@@ -273,6 +278,9 @@ private:
 				vd_s.template getProp<interpol_coeff>(a)[k] = c[k];
 			}
 
+
+			// after interpolation coefficients have been computed and stored,
+			// perform Newton-style projections towards the interface in order to obtain a sample
 			double dpdx;
 			double dpdy;
 			double grad_p_mag2;
@@ -281,9 +289,11 @@ private:
 			x[0] = xa[0];
 			x[1] = xa[1];
 			double p = get_p(x, c, redistOptions.polynomial_degree);
-			while (abs(p) > redistOptions.tolerance)
+			int k = 0;
+
 			//for(int k = 0; k < 3; k++)
 			//while(incr > 0.01*redistOptions.H)
+			while ((abs(p) > redistOptions.tolerance) && (k < redistOptions.max_iter))
 			{
 				dpdx = get_dpdx(x, c, redistOptions.polynomial_degree);
 				dpdy = get_dpdy(x, c, redistOptions.polynomial_degree);
@@ -292,12 +302,14 @@ private:
 				x[0] = x[0] - p*dpdx/grad_p_mag2;
 				x[1] = x[1] - p*dpdy/grad_p_mag2;
 				p = get_p(x, c, redistOptions.polynomial_degree);
-				incr = sqrt(p*p*dpdx*dpdx/(grad_p_mag2*grad_p_mag2) + p*p*dpdy*dpdy/(grad_p_mag2*grad_p_mag2));
+				//incr = sqrt(p*p*dpdx*dpdx/(grad_p_mag2*grad_p_mag2) + p*p*dpdy*dpdy/(grad_p_mag2*grad_p_mag2));
+				++k;
 			}
+			if (k == redistOptions.max_iter) std::cout<<"Warning: Newton-style projections towards the interface do not satisfy given tolerance."<<std::endl;
 			vd_s.template getProp<vd_s_sample>(a)[0] = x[0];
 			vd_s.template getProp<vd_s_sample>(a)[1] = x[1];
 
-			if (a.getKey() == 5424) verbose = 1;
+			//if (a.getKey() == 5424) verbose = 1;
 			if (verbose)
 			{
 				EMatrix<double, Eigen::Dynamic, 1> xaa(2,1);
@@ -305,18 +317,19 @@ private:
 				xaa[1] = xa[1];
 				//double curvature = get_dpdxdx(xaa, c) + get_dpdydy(xaa, c);
 				// matlab debugging stuff:
-				//std::cout<<std::setprecision(16)<<"A = ["<<V<<"];"<<std::endl;
-				//std::cout<<"tempcond = cond(A);\ncondnumber = condnumber + tempcond;"<<std::endl;
-				//std::cout<<"k = k + 1;\nif(tempcond>maxcond)\nmaxcond = tempcond;\nend"<<std::endl;
-				//std::cout<<"if(tempcond<mincond)\nmincond = tempcond;\nend"<<std::endl;
-				std::cout<<"number of coefficients is: "<<m.size()<<std::endl;
-				std::cout<<"PHI: \n"<<phi<<std::endl;
-				std::cout<<"num neibs: "<<num_neibs_a<<std::endl;
-				std::cout<<"x: "<<xa[0]<<" "<<xa[1]<<std::endl;
-				std::cout<<"COEFF: "<<c<<std::endl;
+				//std::cout<<"p = "<<a.getKey()<<";"<<std::endl;
+				std::cout<<std::setprecision(16)<<"A = ["<<V<<"];"<<std::endl;
+				std::cout<<"tempcond = cond(A);\ncondnumber = condnumber + tempcond;"<<std::endl;
+				std::cout<<"k = k + 1;\nif(tempcond>maxcond)\nmaxcond = tempcond;\nend"<<std::endl;
+				std::cout<<"if(tempcond<mincond)\nmincond = tempcond;\nend"<<std::endl;
+				//std::cout<<"number of coefficients is: "<<m.size()<<std::endl;
+				//std::cout<<"PHI: \n"<<phi<<std::endl;
+				//std::cout<<"num neibs: "<<num_neibs_a<<std::endl;
+				//std::cout<<"x: "<<xa[0]<<" "<<xa[1]<<std::endl;
+				//std::cout<<"COEFF: "<<c<<std::endl;
 				//std::cout<<"KAPPA: "<<curvature<<std::endl;
-				std::cout<<"Vmat\n"<<V<<std::endl;
-				verbose = 0;
+				//std::cout<<"Vmat\n"<<V<<std::endl;
+				//verbose = 0;
 			}
 
 			++part;
