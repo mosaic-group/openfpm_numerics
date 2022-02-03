@@ -12,10 +12,12 @@
  * to implicitly defined surfaces." Communications in Applied Mathematics and Computational Science 9.1 (2014):
  * 107-141.
  * Within this file, it has been extended so that it also works on arbitrarily distributed particles. It mainly
- * consists of two steps: Firstly, an interpolation of the old signed-distance function values which yields
- * a polynomial whose zero level-set reconstructs the surface. Secondly, a subsequent optimisation in order to
- * determine the closest point on the surface to a given query point, allowing for an update of the signed
- * distance function
+ * consists of these steps: Firstly, the particle distribution is assessed and a subset is determined, which will
+ * provide a set of sample points. For these, an interpolation of the old signed-distance function values in their
+ * support yields a polynomial whose zero level-set reconstructs the surface. The interpolation polynomials are
+ * then used to create a collection of sample points on the interface. Finally, a Newton-optimisation is performed
+ * in order to determine the closest point on the surface to a given query point, allowing for an update of the
+ * signed distance function.
  *
  *
  * @author Lennart J. Schulze
@@ -41,9 +43,9 @@ struct Redist_options
 	double tolerance = 1e-11;
 	
 	double H;							// interparticle spacing
-	double r_cutoff_factor = 2.6;		// radius of neighbors to consider during interpolation, as factor of H
+	double r_cutoff_factor = 2.5;		// radius of neighbors to consider during interpolation, as factor of H
 	double sampling_radius;
-	std::string polynomial_degree = "bicubic";
+	std::string polynomial_degree = "taylor4";
 	double barrier_coefficient = 0.0;	// coefficient for barrier term in optimisation
 	double armijo_tau = 0.0;			// armijo line search parameters
 	double armijo_c = 0.0;
@@ -109,6 +111,15 @@ private:
 		return 0;
 	}
 
+
+	// this function lays the groundwork for the interpolation step. It classifies particles according to two possible classes:
+	// (a)	close particles: These particles are close to the surface and will be the central particle in the subsequent interpolation step.
+	//		After the interpolation step, they will also be projected on the surface. The resulting position on the surface will be referred to as a sample point,
+	//		which will provide the initial guesses for the final Newton optimization, which finds the exact closest-point towards any given query point.
+	//		Further, the number of neighbors in the support of close particles are stored, to efficiently initialize the Vandermonde matrix in the interpolation.
+	// (b)	surface particles: These particles have particles in their support radius, which are close particles (a). In order to compute the interpolation
+	//		polynomials for (a), these particles need to be stored. An alternative would be to find the relevant particles in the original particle vector.
+
 	void detect_surface_particles()
 	{
 		auto NN = vd_in.getCellList(sqrt(r_cutoff2) + redistOptions.H);
@@ -136,50 +147,36 @@ private:
 	            Point<2,double> dr = xa - xb;
 	            double r2 = norm2(dr);
 
+	            // check if the particle will provide a polynomial interpolation and a sample point on the interface
 	            //if ((sqrt(r2) < (1.3*redistOptions.H)) && !vd_in.template getProp<vd_in_close_part>(bkey) && (sgn_a != sgn_b)) isclose = 1;
 	            if ((sqrt(r2) < (1.5*redistOptions.H)) && (sgn_a != sgn_b)) isclose = 1;
-	            //int isclose = (abs(vd_in.template getProp<vd_in_sdf>(akey)) < (redistOptions.H/2.0 + 1e-8));
 
-	            if (r2 < r_cutoff2)
-	            {
-	            	++num_neibs_a;
+	            // count how many particles are in the neighborhood and will be part of the interpolation
+	            if (r2 < r_cutoff2)	++num_neibs_a;
 
-	            	//if (abs(abs(vd_in.template getProp<vd_in_sdf>(bkey)) - min_sdf) < 1e-8)
-	            	if (((abs(vd_in.template getProp<vd_in_sdf>(bkey)) - min_sdf) < -1e-8) && !isclose)
-	            	{
-	            		//std::cout<<"diff in abs sdf values: "<<abs(vd_in.template getProp<vd_in_sdf>(bkey)) - min_sdf<<std::endl;
-	            		min_sdf = abs(vd_in.template getProp<vd_in_sdf>(bkey));
-	            		min_sdf_key = bkey;
-	            	}
-	            }
-
-	            if ((r2 < (r_cutoff2 + 2*redistOptions.r_cutoff_factor*redistOptions.H + redistOptions.H*redistOptions.H)) && (sgn_a != sgn_b))
-	            {
-	            	surfaceflag = 1;
-	            }
+	            // decide whether this particle will be required for any interpolation. This is the case if it has a different sign in its slightly extended neighborhood
+	            // its up for debate if this is stable or not. Possibly, this could be avoided by simply using vd_in in the interpolation step.
+	            if ((sqrt(r2) < ((redistOptions.r_cutoff_factor + 1.5)*redistOptions.H)) && (sgn_a != sgn_b))	surfaceflag = 1;
 	            ++Np;
 	            
 			}
 
-			if (surfaceflag)
-			{
-
+			if (surfaceflag) // these particles will play a role in the subsequent interpolation: Either they carry interpolation polynomials,
+			{				 // or they will be taken into account in interpolation
 				vd_s.add();
 				vd_s.getLastPos()[0] = vd_in.getPos(akey)[0];
 				vd_s.getLastPos()[1] = vd_in.getPos(akey)[1];
 				vd_s.template getLastProp<vd_s_sdf>() = vd_in.template getProp<vd_in_sdf>(akey);
 				vd_s.template getLastProp<num_neibs>() = num_neibs_a;
 
-				//vd_in.template getProp<vd_in_close_part>(min_sdf_key) = 1;
-
 				//if (min_sdf_key.getKey() == akey.getKey())
-				if (isclose)
+				if (isclose) // these guys will carry an interpolation polynomial and a resulting sample point
 				{
 					vd_s.template getLastProp<vd_s_close_part>() = 1;
 					vd_in.template getProp<vd_in_close_part>(akey) = 1;	// use this for the optimization step
 					//std::cout<<"adding particles to interpolation problem..."<<std::endl;
 				}
-				else
+				else		// these guys will not carry an interpolation polynomial
 				{
 					vd_s.template getLastProp<vd_s_close_part>() = 0;
 					vd_in.template getProp<vd_in_close_part>(akey) = 0;	// use this for the optimization step
@@ -205,17 +202,24 @@ private:
 		{
 			vect_dist_key_dx a = part.get();
 			
+			// only the close particles (a) will get the full treatment (interpolation + projection)
 			if (vd_s.template getProp<vd_s_close_part>(a) != 1)
 			{
-				//std::cout<<"vd_s contains particles that are not closest particles.."<<std::endl;
 				++part;
 				continue;
 			}
 
-			const int num_neibs_a = vd_s.template getProp<num_neibs>(a); //change this to nonconstant if interpolation instead of least-squares shall be done
+			const int num_neibs_a = vd_s.template getProp<num_neibs>(a);
 			Point<2, double> xa = vd_s.getPos(a);
 			int neib = 0;
 
+			// initialize monomial basis functions m, Vandermonde row builder vrb, Vandermonde matrix V, the right-hand
+			// side vector phi and the solution vector that contains the coefficients of the interpolation polynomial, c.
+
+			// The functions called here are originally from the DCPSE work by Tommaso. I did not fully comprehend what is
+			// happening inside them, and I kind of made it work for Taylor quadratic, bicubic and Taylor 4 interpolation.
+			// Possibly, the evaluation of p, dpdx, ... that I implemented could be substituted by the infrastructure that is
+			// part of the MonomialBasis used here in the interpolation.
 			MonomialBasis<2> m(4);
 
 			if (redistOptions.polynomial_degree == "quadratic")
@@ -234,16 +238,17 @@ private:
 			}
 
 			if(m.size() > num_neibs_a) std::cout<<"warning: less number of neighbours than required for interpolation"<<std::endl;
-			//num_neibs_a = m.size(); // decomment this for interpolation instead of least-squares
 
-			// std::cout<<"m size"<<m.size()<<std::endl;
 			VandermondeRowBuilder<2, double> vrb(m);
 
 			EMatrix<double, Eigen::Dynamic,Eigen::Dynamic> V(num_neibs_a, m.size());
 			EMatrix<double, Eigen::Dynamic, 1> phi(num_neibs_a, 1);
+			EMatrix<double, Eigen::Dynamic, 1> c(m.size(), 1);
 
+			// iterate over the support of the central particle, in order to build the Vandermonde matrix and the
+			// right-hand side vector
 			auto Np = NN_s.template getNNIterator<NO_CHECK>(NN_s.getCell(vd_s.getPos(a)));
-			while(Np.isNext())// && (neib < m.size())) //decomment this for interpolation instead of least-squares
+			while(Np.isNext())
 			{
 				vect_dist_key_dx b = Np.get();
 				Point<2, double> xb = vd_s.getPos(b);
@@ -269,30 +274,38 @@ private:
 				++Np;
 			}
 
-			EMatrix<double, Eigen::Dynamic, 1> c(m.size(), 1);
-
+			// solve the system of equations using an orthogonal decomposition (if I am not mistaken, this is
+			// a solid choice for an overdetermined system of equations with a bad conditioning, which is usually
+			// the case for the Vandermonde matrices.
 			c = V.completeOrthogonalDecomposition().solve(phi);
 
+			// store the coefficients at the particle
 			for (int k = 0; k<m.size(); k++)
 			{
 				vd_s.template getProp<interpol_coeff>(a)[k] = c[k];
 			}
 
 
-			// after interpolation coefficients have been computed and stored,
-			// perform Newton-style projections towards the interface in order to obtain a sample
+			// after interpolation coefficients have been computed and stored, perform Newton-style projections
+			// towards the interface in order to obtain a sample.
+			// initialise derivatives of the interpolation polynomial and an interim position vector x. The iterations
+			// start at the central particle x_a.
+
+			// double incr; // this is an optional variable in case the iterations are aborted depending on the magnitude
+							// of the increment instead of the magnitude of the polynomial value and the number of iterations.
 			double dpdx;
 			double dpdy;
 			double grad_p_mag2;
-			double incr;
+
 			EMatrix<double, Eigen::Dynamic, 1> x(2, 1);
 			x[0] = xa[0];
 			x[1] = xa[1];
 			double p = get_p(x, c, redistOptions.polynomial_degree);
 			int k = 0;
 
-			//for(int k = 0; k < 3; k++)
-			//while(incr > 0.01*redistOptions.H)
+			// do the projections.
+			// for(int k = 0; k < 3; k++)
+			// while(incr > 0.01*redistOptions.H)
 			while ((abs(p) > redistOptions.tolerance) && (k < redistOptions.max_iter))
 			{
 				dpdx = get_dpdx(x, c, redistOptions.polynomial_degree);
@@ -305,10 +318,14 @@ private:
 				//incr = sqrt(p*p*dpdx*dpdx/(grad_p_mag2*grad_p_mag2) + p*p*dpdy*dpdy/(grad_p_mag2*grad_p_mag2));
 				++k;
 			}
+
 			if (k == redistOptions.max_iter) std::cout<<"Warning: Newton-style projections towards the interface do not satisfy given tolerance."<<std::endl;
+
+			// store the resulting sample point on the surface at the central particle.
 			vd_s.template getProp<vd_s_sample>(a)[0] = x[0];
 			vd_s.template getProp<vd_s_sample>(a)[1] = x[1];
 
+			// debugging stuff:
 			//if (a.getKey() == 5424) verbose = 1;
 			if (verbose)
 			{
@@ -337,8 +354,20 @@ private:
 
 	}
 	
+	// This function now finds the exact closest point on the surface to any given particle.
+	// For this, it iterates through all particles in the input vector (since all need to be redistanced),
+	// and finds the closest sample point on the surface. Then, it uses this sample point as an initial guess
+	// for a subsequent optimization problem, which finds the exact closest point on the surface.
+	// The optimization problem is formulated as follows: Find the point in space with the minimal distance to
+	// the given query particle, with the constraint that it needs to lie on the surface. It is realized with a
+	// Lagrange multiplier that ensures that the solution lies on the surface, i.e. p(x)=0.
+	// The polynomial that is used for checking if the constraint is fulfilled is the interpolation polynomial
+	// carried by the sample point.
+
 	void find_closest_point()
-	{	// iterate over all particles, i.e. do closest point optimisation for all particles //
+	{
+		// iterate over all particles, i.e. do closest point optimisation for all particles, and initialize
+		// all relevant variables.
 		auto NN_s = vd_s.getCellList(redistOptions.sampling_radius);
 		auto part = vd_in.getDomainIterator(); //todo: include the sampling radius somewhere (bandwidth)
 		vd_s.updateCellList(NN_s);
@@ -349,23 +378,27 @@ private:
 		else if(redistOptions.polynomial_degree == "taylor4") msize = 15;
 		else msize = 1; //todo: make this throw an error
 
+		// do iteration over all query particles
 		while (part.isNext())
 		{
 			vect_dist_key_dx a = part.get();
 
-			// initialise all variables
+			// initialise all variables specific to the query particle
 			EMatrix<double, Eigen::Dynamic, 1> xa(2,1);
 			xa[0] = vd_in.getPos(a)[0];
 			xa[1] = vd_in.getPos(a)[1];
 			double val;
+			// spatial variable that is optimized
 			EMatrix<double, Eigen::Dynamic, 1> x(2,1);
+			// Increment variable containing the increment of 2 spatial variables + 1 Lagrange multiplier
 			EMatrix<double, Eigen::Dynamic, 1> dx(3, 1);
 			dx[0] = 1.0;
 			dx[1] = 1.0;
 			dx[2] = 1.0;
+			// Lagrange multiplier lambda
 			double lambda = 0.0;
-			double norm_dx = dx.norm();
-
+			// values regarding the gradient of the Lagrangian and the Hessian of the Lagrangian, which contain
+			// derivatives of the constraint function also.
 			double p = 0;
 			double dpdx = 0;
 			double dpdy = 0;
@@ -375,31 +408,43 @@ private:
 			double dpdydx = 0;
 
 			EMatrix<double, Eigen::Dynamic, 1> c(msize, 1);
-			EMatrix<double, Eigen::Dynamic, 1> nabla_f(3, 1); // 3 = ndim + 1
+			// f(x, lambda) is the Lagrangian, initialize its gradient and Hessian
+			EMatrix<double, Eigen::Dynamic, 1> nabla_f(3, 1);
 			EMatrix<double, Eigen::Dynamic, Eigen::Dynamic> H(3, 3);
 
+			// Initialise variables for searching the closest sample point. Note that this is not a very elegant
+			// solution to initialise another x_a vector, but it is done because of the two different types EMatrix and
+			// point vector, and can probably be made nicer.
 			Point<2,double> xaa = vd_in.getPos(a);
 			//auto Np = NN_s.template getNNIterator<NO_CHECK>(NN.getCell(vd.getPos(a)));
 			//vd_s.updateCellList(NN_s);
+
+			// Now we will iterate over the sample points, which means iterating over vd_s.
 			auto Np = vd_s.getDomainIterator();
+			// distance is the the minimum distance to be beaten
 			double distance = 1000000.0;
+			// dist_calc is the variable for the distance that is computed per sample point
 			double dist_calc = 1000000000.0;
+			// b_min is the handle referring to the particle that carries the sample point with the minimum distance so far
 			decltype(a) b_min = a;
 
 			while (Np.isNext())
 			{
 				vect_dist_key_dx b = Np.get();
-				//Point<2,double> xbb = vd_s.getPos(b);
-				Point<2, double> xbb = vd_s.template getProp<vd_s_sample>(b);
 
+				// only go for particles (a) that carry sample points
 				if (!vd_s.template getProp<vd_s_close_part>(b))
 				{
-					//std::cout<<"vd s contains particles that are not closest in a surface neighborhood..."<<std::endl;
 					++Np;
 					continue;
 				}
+
+				Point<2, double> xbb = vd_s.template getProp<vd_s_sample>(b);
+
+				// compute the distance towards the sample point and check if it the closest so far. If yes, store the new
+				// closest distance to be beaten and store the handle
 				dist_calc = abs(xbb.distance(xaa));
-				//if(verbose)std::cout<<dist_calc<<std::endl;
+
 				if (dist_calc < distance)
 				{
 					distance = dist_calc;
@@ -408,15 +453,14 @@ private:
 				++Np;
 			}
 
-			// set x0 to the particle closest to the surface
-			//x[0] = vd.getPos(vd_s.getProp<0>(b_min))[0];
-			//x[1] = vd.getPos(vd_s.getProp<0>(b_min))[1];
-			val = vd_s.template getProp<vd_s_sdf>(b_min);
-			//x[0] = vd_s.getPos(b_min)[0];
-			//x[1] = vd_s.getPos(b_min)[1];
+			// set x0 to the sample point which was closest to the query particle
 			x[0] = vd_s.template getProp<vd_s_sample>(b_min)[0];
 			x[1] = vd_s.template getProp<vd_s_sample>(b_min)[1];
 
+			// these two variables are mainly required for optional subroutines in the optimization procedure and for
+			// warnings if the solution strays far from the neighborhood. While the latter is sensible, the optional
+			// subroutines haven't proven to be especially useful so far, so one should consider throwing them out.
+			// (Armijo, barrier, random step when step is too big)
 			EMatrix<double, Eigen::Dynamic, 1> x00(2,1);
 			x00[0] = x[0];
 			x00[1] = x[1];
@@ -427,24 +471,23 @@ private:
 			// take the interpolation polynomial of the sample particle closest to the query particle
 			for (int k = 0 ; k < msize ; k++)
 			{
-				//vd.getProp<interpol_coeff>(a)[k] = vd.getProp<interp_coeff>( vd_s.getProp<0>(b_min) )[k];
 				c[k] = vd_s.template getProp<interpol_coeff>(b_min)[k];
 			}
 
-			val = get_p(x, c, redistOptions.polynomial_degree);
-			//if (a.getKey() == 2620) verbose = 1;
+			// debugging stuff
 			if (a.getKey() == 2425) verbose = 1;
-
 			if(verbose)
 				{
+					val = get_p(x, c, redistOptions.polynomial_degree);
 					std::cout<<std::setprecision(16)<<"VERBOSE%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%:"<<std::endl;
 					std::cout<<"x_poly: "<<vd_s.getPos(b_min)[0]<<", "<<vd_s.getPos(b_min)[1]<<"\nxa: "<<xa[0]<<", "<<xa[1]<<"\nx_0: "<<x[0]<<", "<<x[1]<<"\nc: "<<c<<std::endl;
 					std::cout<<"phi(x_0): "<<val<<std::endl;
 					std::cout<<"interpol_i(x_0) = "<<get_p(x, c, redistOptions.polynomial_degree)<<std::endl;
 				}
 
+			// variable containing updated distance at iteration k
 			EMatrix<double, Eigen::Dynamic, 1> xax = x - xa;
-
+			// iteration counter k
 			int k = 0;
 
 			// barrier method initialisation
@@ -456,13 +499,19 @@ private:
 			p = get_p(x, c, redistOptions.polynomial_degree);
 			dpdx = get_dpdx(x, c, redistOptions.polynomial_degree);
 			dpdy = get_dpdy(x, c, redistOptions.polynomial_degree);
+			// this guess for the Lagrange multiplier is taken from the original paper by Saye and can be done since
+			// p is approximately zero at the sample point.
 			lambda = (-xax[0]*dpdx - xax[1]*dpdy)/(dpdx*dpdx + dpdy*dpdy);
 
 			nabla_f[0] = xax[0] + lambda*dpdx;
 			nabla_f[1] = xax[1] + lambda*dpdy;
 			nabla_f[2] = p;
+			// The exit criterion for the Newton optimization is on the magnitude of the gradient of the Lagrangian,
+			// which is zero at a solution.
+			double nabla_f_norm = nabla_f.norm();
 
-			// possibly start off with a Newton-style projection towards the interface
+			// possibly start off with a Newton-style projection towards the interface. This is pretty much entirely
+			// obsolete since we start off with a sample point on the interface anyways. Can be removed.
 			if (redistOptions.init_project)
 			{
 				while(abs(p) > redistOptions.tolerance)
@@ -481,17 +530,17 @@ private:
 				lambda = (-xax[0]*dpdx - xax[1]*dpdy)/(dpdx*dpdx + dpdy*dpdy);
 			}
 
-			while((norm_dx > redistOptions.tolerance) && (k<redistOptions.max_iter))
-			{
-				// do optimisation //
 
-				// gather required values //
+			// Do Newton iterations.
+			while((nabla_f_norm > redistOptions.tolerance) && (k<redistOptions.max_iter))
+			{
+				// gather required derivative values
 				dpdxdx = get_dpdxdx(x, c, redistOptions.polynomial_degree);
 				dpdydy = get_dpdydy(x, c, redistOptions.polynomial_degree);
 				dpdxdy = get_dpdxdy(x, c, redistOptions.polynomial_degree);
 				dpdydx = dpdxdy;
 
-				// Assemble Hessian matrix, grad f has been computed at the end of the last iteration //
+				// Assemble Hessian matrix, grad f has been computed at the end of the last iteration.
 				H(0, 0) = 1 + lambda*dpdxdx;
 				H(0, 1) = lambda*dpdydx;
 				H(1, 0) = lambda*dpdxdy;
@@ -502,7 +551,7 @@ private:
 				H(2, 1) = dpdy;
 				H(2, 2) = 0;
 
-				// barrier method //
+				// barrier method
 				if (redistOptions.barrier_coefficient)
 				{
 					x00x = x - x00;
@@ -511,17 +560,17 @@ private:
 					barrier2 = barrier*barrier;
 					barrier3 = barrier2*barrier;
 
-					// Add to gradient //
+					// Add to gradient
 					nabla_f[0] -= redistOptions.barrier_coefficient*x00x[0]/barrier2;
 					nabla_f[1] -= redistOptions.barrier_coefficient*x00x[1]/barrier2;
-					// Add to Hessian matrix //
+					// Add to Hessian matrix
 					H(0, 0) += redistOptions.barrier_coefficient*(-barrier + 2*x00x[0]*x00x[0])/barrier3;
 					H(0, 1) += redistOptions.barrier_coefficient*2*x00x[0]*x00x[1]/barrier3;
 					H(1, 0) += redistOptions.barrier_coefficient*2*x00x[0]*x00x[1]/barrier3;
 					H(1, 1) += redistOptions.barrier_coefficient*(-barrier + 2*x00x[1]*x00x[1])/barrier3;
 				}
 
-				// compute and add increment // 
+				// compute Newton increment
 				dx = - H.inverse()*nabla_f;
 
 				// Armijo rule
@@ -605,7 +654,9 @@ private:
 					}
 				}
 
-				// prevent Newton algorithm from leaving the support radius by scaling step size
+				// prevent Newton algorithm from leaving the support radius by scaling step size. This is pretty much
+				// the only subroutine that should stay. It is invoked in case the increment exceeds 50% of the cutoff
+				// radius and simply scales the step length down to 10% until it does not exceed 50% of the cutoff radius.
 				while((dx[0]*dx[0] + dx[1]*dx[1]) > 0.25*r_cutoff2)
 				{
 					std::cout<<"invoked"<<std::endl;
@@ -627,7 +678,7 @@ private:
 				nabla_f[2] = p;
 
 				//norm_dx = dx.norm(); // alternative criterion: incremental tolerance
-				norm_dx = nabla_f.norm();
+				nabla_f_norm = nabla_f.norm();
 
 				++k;
 
@@ -640,24 +691,34 @@ private:
 //					std::cout<<"dpdx: "<<dpdx<<std::endl;
 //					std::cout<<"k = "<<k<<std::endl;
 //					std::cout<<"x_k = "<<x[0]<<", "<<x[1]<<std::endl;
-					std::cout<<x[0]<<", "<<x[1]<<", "<<norm_dx<<std::endl;
+					std::cout<<x[0]<<", "<<x[1]<<", "<<nabla_f_norm<<std::endl;
 				}
 			}
-	//		debug optimisation
 
-	//		std::cout<<"old sdf: "<<vd.getProp<sdf>(a)<<std::endl;
+			// Check if the Newton algorithm achieved the required accuracy within the allowed number of iterations.
+			// If not, throw a warning, but proceed as usual (even if the accuracy dictated by the user cannot be reached,
+			// the result can still be very good.
+			if (k == redistOptions.max_iter) std::cout<<"Warning: Newton algorithm has reached maximum number of iterations, does not converge for particle "<<a.getKey()<<std::endl;
+
+			// And finally, compute the new sdf value as the distance of the query particle x_a and the result of the
+			// optimization scheme x. We conserve the initial sign of the sdf, since the particle moves with the phase
+			// and does not cross the interface.
 			vd_in.template getProp<vd_in_sdf>(a) = return_sign(vd_in.template getProp<vd_in_sdf>(a))*xax.norm();
-			//std::cout<<"new sdf: "<<vd.getProp<sdf>(a)<<std::endl;
+
+			// debug optimisation
 			if(verbose)
 			{
+				//std::cout<<"new sdf: "<<vd.getProp<sdf>(a)<<std::endl;
+				//std::cout<<"c:\n"<<vd.getProp<interpol_coeff>(a)<<"\nmin_sdf: "<<vd.getProp<min_sdf>(a)<<" , min_sdf_x: "<<vd.getProp<min_sdf_x>(a)<<std::endl;
 				std::cout<<"x_final: "<<x[0]<<", "<<x[1]<<std::endl;
 				std::cout<<"p(x_final) :"<<get_p(x, c, redistOptions.polynomial_degree)<<std::endl;
 				std::cout<<"nabla p(x_final)"<<get_dpdx(x, c, redistOptions.polynomial_degree)<<", "<<get_dpdy(x, c, redistOptions.polynomial_degree)<<std::endl;
 				std::cout<<"lambda: "<<lambda<<std::endl;
 			}
-			if (k == redistOptions.max_iter) std::cout<<"Warning: Newton algorithm has reached maximum number of iterations, does not converge for particle "<<a.getKey()<<std::endl;
-			//std::cout<<"c:\n"<<vd.getProp<interpol_coeff>(a)<<"\nmin_sdf: "<<vd.getProp<min_sdf>(a)<<" , min_sdf_x: "<<vd.getProp<min_sdf_x>(a)<<std::endl;
 			verbose = 0;
+
+			// if the Newton scheme nevertheless strayed from its support, throw a warning. For future todo's, one could
+			// try using the interpolation polynomial of the neigboring sample point then.
 			if (((abs(x00[0] - x[0]))>sqrt(r_cutoff2))||((abs(x00[1] - x[1]))>sqrt(r_cutoff2)))
 			{
 				std::cout<<"straying out of local neighborhood.."<<std::endl;
