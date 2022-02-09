@@ -33,9 +33,9 @@
 #include "Operators/Vector/vector_dist_operators.hpp"
 #include <chrono>
 
-typedef vector_dist<2, double, aggregate<vect_dist_key_dx, int, int, int, double, double[2], double[16]>> particles_surface;
-//											|			   |	  |		|	   |  		|			  |
-//						key to particle in vd	surface flag num neibs	|	  sdf 	sample version	interpolation coefficients
+template<unsigned int dim, unsigned int n_c> using particles_surface = vector_dist<dim, double, aggregate<int, int, double, double[dim], double[n_c]>>;
+//																										  |		|	   |  		|			  |
+//																									 num neibs	|	  sdf 	sample version	interpolation coefficients
 //												flag for distinguishing closest particles to surface, for which the interpolation has to be done
 struct Redist_options
 {
@@ -54,7 +54,14 @@ struct Redist_options
 	int init_project = 0;
 };
 
-template <typename particles_in_type>
+// Add new polynomial degrees here in case new interpolation schemes are implemented.
+// Template typenames for initialization of vd_s
+struct quadratic {};
+struct bicubic {};
+struct taylor4 {};
+
+
+template <typename particles_in_type, typename polynomial_degree>
 class particle_cp_redistancing
 {
 public:
@@ -64,6 +71,10 @@ public:
 																					  r_cutoff2(redistOptions.r_cutoff_factor*redistOptions.r_cutoff_factor*redistOptions.H*redistOptions.H)
 	{
 		// do constructor things
+		if (std::is_same<polynomial_degree,quadratic>::value) redistOptions.polynomial_degree = "quadratic";
+		else if (std::is_same<polynomial_degree,bicubic>::value) redistOptions.polynomial_degree = "bicubic";
+		else if (std::is_same<polynomial_degree,taylor4>::value) redistOptions.polynomial_degree = "taylor4";
+		else throw std::invalid_argument("Invalid polynomial degree given. Valid choices currently are quadratic, bicubic and taylor4.");
 	}
 	
 	void run_redistancing()
@@ -72,38 +83,42 @@ public:
 		std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
 		detect_surface_particles();
 		std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
-		std::cout << "Time difference for detection= " << std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count() << "[µs]" << std::endl;
+		std::cout << "Time difference for detection = " << std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count() << "[µs]" << std::endl;
 
 		std::cout<<"interpolating..."<<std::endl;
 		begin = std::chrono::steady_clock::now();
 		interpolate_sdf_field();
 		end = std::chrono::steady_clock::now();
-		std::cout << "Time difference for interpolation= " << std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count() << "[µs]" << std::endl;
+		std::cout << "Time difference for interpolation = " << std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count() << "[µs]" << std::endl;
 
 		std::cout<<"optimizing..."<<std::endl;
 		begin = std::chrono::steady_clock::now();
 		find_closest_point();
 		end = std::chrono::steady_clock::now();
-		std::cout << "Time difference for optimization= " << std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count() << "[µs]" << std::endl;
+		std::cout << "Time difference for optimization = " << std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count() << "[µs]" << std::endl;
 		std::cout<<"finishing..."<<std::endl;
 	}
 	
 private:
-	static constexpr size_t vdkey = 0;		//todo: this should be dispensable as well by adding the interesting properties to vd_s
-	static constexpr size_t surf_flag = 1;	//todo: get rid of this flag as well, as no non-surface_flag particles should be in vd_s anyways
-	static constexpr size_t num_neibs = 2;
-	static constexpr size_t vd_s_close_part = 3;
-	static constexpr size_t vd_s_sdf = 4;
-	static constexpr size_t vd_s_sample = 5;
-	static constexpr size_t interpol_coeff = 6;
-	static constexpr size_t vd_in_sdf = 0;	//this is needed in the vd_in vector
-	static constexpr size_t vd_in_close_part = 3;
+	static constexpr size_t num_neibs = 0;
+	static constexpr size_t vd_s_close_part = 1;
+	static constexpr size_t vd_s_sdf = 2;
+	static constexpr size_t vd_s_sample = 3;
+	static constexpr size_t interpol_coeff = 4;
+	static constexpr size_t vd_in_sdf = 0;			// this is really required in the vd_in vector, so users need to know about it.
+	static constexpr size_t vd_in_close_part = 3;	// this is not needed by the method, but more for debugging purposes, as it shows all particles for which
+													// interpolation and sampling is performed.
 
 	Redist_options redistOptions;
 	particles_in_type &vd_in;
-	particles_surface vd_s;
+	static constexpr unsigned int dim = particles_in_type::dims;
+	static constexpr unsigned int n_c = (dim == 2 && std::is_same<polynomial_degree,quadratic>::value) ? 6 :
+										(dim == 2 && std::is_same<polynomial_degree,bicubic>::value) ? 16 :
+										(dim == 2 && std::is_same<polynomial_degree,taylor4>::value) ? 15 :
+										(dim == 3 && std::is_same<polynomial_degree,taylor4>::value) ? 35 : 1;
+
+	particles_surface<dim, n_c> vd_s;
 	double r_cutoff2;
-	static constexpr int dim = particles_in_type::dims;
 
 
 
@@ -126,8 +141,9 @@ private:
 
 	void detect_surface_particles()
 	{
+		vd_in.template ghost_get<vd_in_sdf>();
+
 		auto NN = vd_in.getCellList(sqrt(r_cutoff2) + redistOptions.H);
-		vd_in.updateCellList(NN);
 		auto part = vd_in.getDomainIterator();
 
 		while (part.isNext())
@@ -195,6 +211,7 @@ private:
 	// within the loop itself.
 	void interpolate_sdf_field()
 	{
+		vd_s.template ghost_get<vd_s_sdf>();
 		int verbose = 0;
 		auto NN_s = vd_s.getCellList(sqrt(r_cutoff2));
 		vd_s.updateCellList(NN_s);
@@ -235,7 +252,9 @@ private:
 			{
 				unsigned int degrees[dim];
 				for(int k = 0; k < dim; k++) degrees[k] = 1;
-				m = MonomialBasis<dim>(degrees, 3);
+				unsigned int degrees_2 = 3;
+				if (dim == 3) degrees_2 = 2;
+				m = MonomialBasis<dim>(degrees, degrees_2);
 			}
 			else if (redistOptions.polynomial_degree == "bicubic")
 			{
@@ -270,7 +289,7 @@ private:
 				//std::cout<<std::setprecision(15)<<xb[0]<<"\t"<<xb[1]<<"\t"<<vd.getProp<sdf>(b)<<std::endl;
 				//xb[0] = 0.1;
 				//xb[1] = 0.5;
-				//xb[2] = 1.0;
+				//xb[2] = 3.0;
 				
 				// Fill phi-vector from the right hand side
 				phi[neib] = vd_s.template getProp<vd_s_sdf>(b);
@@ -328,9 +347,10 @@ private:
 
 			// debugging stuff:
 			//if (a.getKey() == 5424) verbose = 1;
-			//verbose = 0;
+			//verbose = 1;
 			if (verbose)
 			{
+				std::cout<<"VERBOSEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE"<<std::endl;
 				EMatrix<double, Eigen::Dynamic, 1> xaa(dim,1);
 				for(int k = 0; k < dim; k++) xaa[k] = xa[k];
 				//double curvature = get_dpdxdx(xaa, c) + get_dpdydy(xaa, c);
@@ -369,14 +389,21 @@ private:
 	{
 		// iterate over all particles, i.e. do closest point optimisation for all particles, and initialize
 		// all relevant variables.
+
+		vd_s.template ghost_get<vd_s_close_part,vd_s_sample,interpol_coeff>();
+
 		auto NN_s = vd_s.getCellList(redistOptions.sampling_radius);
 		auto part = vd_in.getDomainIterator(); //todo: include the sampling radius somewhere (bandwidth)
-		vd_s.updateCellList(NN_s);
+
 		int verbose = 0;
 		int msize;
 		if(redistOptions.polynomial_degree == "quadratic") msize = 6;
 		else if(redistOptions.polynomial_degree == "bicubic") msize = 16;
-		else if(redistOptions.polynomial_degree == "taylor4") msize = 15;
+		else if(redistOptions.polynomial_degree == "taylor4")
+			{
+				if (dim == 2) msize = 15;
+				else msize = 35;
+			}
 		else throw std::invalid_argument("Received unknown polynomial degree.");
 
 		// do iteration over all query particles
@@ -479,7 +506,7 @@ private:
 			for (int k = 0 ; k < msize ; k++) c[k] = vd_s.template getProp<interpol_coeff>(b_min)[k];
 
 			// debugging stuff
-			if (a.getKey() == 2425) verbose = 1;
+			//if (a.getKey() == 2425) verbose = 1;
 			if(verbose)
 				{
 					val = get_p(x, c, redistOptions.polynomial_degree);
@@ -656,9 +683,14 @@ private:
 				// prevent Newton algorithm from leaving the support radius by scaling step size. This is pretty much
 				// the only subroutine that should stay. It is invoked in case the increment exceeds 50% of the cutoff
 				// radius and simply scales the step length down to 10% until it does not exceed 50% of the cutoff radius.
+
 				while((dx.dot(dx)) > 0.25*r_cutoff2)
 				{
-					std::cout<<"invoked"<<std::endl;
+					auto & v_cl = create_vcluster();
+
+					std::cout<<"invoked " << a.getKey() << "  " << v_cl.rank() << "   " <<std::endl;
+
+
 					dx = 0.1*dx;
 				}
 
@@ -756,7 +788,9 @@ private:
 			const double z = xvector[2];
 			if (polynomialdegree == "taylor4")
 			{
-				//implement 3D taylor4
+				return(c[0] + c[1]*x + c[2]*x*x + c[3]*x*x*x + c[4]*x*x*x*x + c[5]*y + c[6]*x*y + c[7]*x*x*y + c[8]*x*x*x*y + c[9]*y*y + c[10]*y*y*x + c[11]*x*x*y*y + c[12]*y*y*y + c[13]*y*y*y*x + c[14]*y*y*y*y
+							+ c[15]*z + c[16]*x*z + c[17]*x*x*z + c[18]*x*x*x*z + c[19]*y*z + c[20]*x*y*z + c[21]*x*x*y*z + c[22]*y*y*z + c[23]*x*y*y*z + c[24]*y*y*y*z + c[25]*z*z + c[26]*x*z*z + c[27]*x*x*z*z
+							+ c[28]*y*z*z + c[29]*x*y*z*z + c[30]*y*y*z*z + c[31]*z*z*z + c[32]*x*z*z*z + c[33]*y*z*z*z + c[34]*z*z*z*z);
 			}
 		}
 		else throw std::invalid_argument("received unknown input dimension. Spatial variable needs to be either 2D or 3D.");
@@ -789,9 +823,15 @@ private:
 		}
 		else if (dim == 3)
 		{
+			const double z = xvector[2];
 			if (polynomialdegree == "taylor4")
 			{
-				//implement 3D taylor 4
+				grad_p[0] = c[1] + 2*c[2]*x + 3*c[3]*x*x + 4*c[4]*x*x*x + c[6]*y + 2*c[7]*x*y + 3*c[8]*x*x*y + c[10]*y*y + 2*c[11]*x*y*y + c[13]*y*y*y
+								+ c[16]*z + 2*c[17]*x*z + 3*c[18]*x*x*z + c[20]*y*z + 2*c[21]*x*y*z + c[23]*y*y*z + c[26]*z*z + 2*c[27]*x*z*z + c[29]*y*z*z + c[32]*z*z*z;
+				grad_p[1] = c[5] + c[6]*x + c[7]*x*x + c[8]*x*x*x + 2*c[9]*y + 2*c[10]*x*y + 2*c[11]*x*x*y + 3*c[12]*y*y + 3*c[13]*y*y*x + 4*c[14]*y*y*y
+								+ c[19]*z + c[20]*x*z + c[21]*x*x*z + 2*c[22]*y*z + 2*c[23]*x*y*z + 3*c[24]*y*y*z + c[28]*z*z + c[29]*x*z*z + 2*c[30]*y*z*z + c[33]*z*z*z;
+				grad_p[2] = c[15] + c[16]*x + c[17]*x*x + c[18]*x*x*x + c[19]*y + c[20]*x*y + c[21]*x*x*y + c[22]*y*y + c[23]*x*y*y + c[24]*y*y*y
+								+ 2*c[25]*z + 2*c[26]*x*z + 2*c[27]*x*x*z + 2*c[28]*y*z + 2*c[29]*x*y*z + 2*c[30]*y*y*z + 3*c[31]*z*z + 3*c[32]*x*z*z + 3*c[33]*y*z*z + 4*c[34]*z*z*z;
 			}
 		}
 		else throw std::invalid_argument("received unknown input dimension. Spatial variable needs to be either 2D or 3D.");
@@ -833,9 +873,25 @@ private:
 		}
 		else if (dim == 3)
 		{
+			const double z = xvector[2];
 			if (polynomialdegree == "taylor4")
 			{
-				//implement 3D taylor 4
+				H_p(0, 0) = 2*c[2] + 6*c[3]*x + 12*c[4]*x*x + 2*c[7]*y + 6*c[8]*x*y + 2*c[11]*y*y
+							+ 2*c[17]*z + 6*c[18]*x*z + 2*c[21]*y*z + 2*c[27]*z*z;
+				H_p(1, 1) = 2*c[9] + 2*c[10]*x + 2*c[11]*x*x + 6*c[12]*y + 6*c[13]*x*y + 12*c[14]*y*y
+							+ 2*c[22]*z + 2*c[23]*x*z + 6*c[24]*y*z + 2*c[30]*z*z;
+				H_p(2, 2) = 2*c[25] + 2*c[26]*x + 2*c[27]*x*x + 2*c[28]*y + 2*c[29]*x*y + 2*c[30]*y*y
+							+ 6*c[31]*z + 6*c[32]*x*z + 6*c[33]*y*z + 12*c[34]*z*z;
+
+				H_p(0, 1) = c[6] + 2*c[7]*x + 3*c[8]*x*x + 2*c[10]*y +4*c[11]*x*y + 3*c[13]*y*y
+							+ c[20]*z + 2*c[21]*x*z + 2*c[23]*y*z + c[29]*z*z;
+				H_p(0, 2) = c[16] + 2*c[17]*x + 3*c[18]*x*x + c[20]*y + 2*c[21]*x*y + c[23]*y*y
+							+ 2*c[26]*z + 4*c[27]*x*z + 2*c[29]*y*z + 3*c[32]*z*z;
+				H_p(1, 2) = c[19] + c[20]*x + c[21]*x*x + c[22]*y + 2*c[23]*x*y + 3*c[24]*y*y
+							+ 2*c[28]*z + 2*c[29]*x*z + 4*c[30]*y*z + 3*c[33]*z*z;
+				H_p(1, 0) = H_p(0, 1);
+				H_p(2, 0) = H_p(0, 2);
+				H_p(2, 1) = H_p(1, 2);
 			}
 		}
 		else throw std::invalid_argument("received unknown input dimension. Spatial variable needs to be either 2D or 3D.");
