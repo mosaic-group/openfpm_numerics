@@ -39,13 +39,12 @@ template<unsigned int dim, unsigned int n_c> using particles_surface = vector_di
 //												flag for distinguishing closest particles to surface, for which the interpolation has to be done
 struct Redist_options
 {
-	size_t max_iter = 1000;				// params for the Newton algorithm for the solution of the constrained optimization problem
-	double tolerance = 1e-11;
+	size_t max_iter = 1000;				// params for the Newton algorithm for the solution of the constrained
+	double tolerance = 1e-11;			// optimization problem, and for the projection of the sample points on the interface
 	
 	double H;							// interparticle spacing
 	double r_cutoff_factor = 2.5;		// radius of neighbors to consider during interpolation, as factor of H
 	double sampling_radius;
-	std::string polynomial_degree = "taylor4";
 	double barrier_coefficient = 0.0;	// coefficient for barrier term in optimisation
 	double armijo_tau = 0.0;			// armijo line search parameters
 	double armijo_c = 0.0;
@@ -71,9 +70,9 @@ public:
 																					  r_cutoff2(redistOptions.r_cutoff_factor*redistOptions.r_cutoff_factor*redistOptions.H*redistOptions.H)
 	{
 		// do constructor things
-		if (std::is_same<polynomial_degree,quadratic>::value) redistOptions.polynomial_degree = "quadratic";
-		else if (std::is_same<polynomial_degree,bicubic>::value) redistOptions.polynomial_degree = "bicubic";
-		else if (std::is_same<polynomial_degree,taylor4>::value) redistOptions.polynomial_degree = "taylor4";
+		if (std::is_same<polynomial_degree,quadratic>::value) polynomialDegree = "quadratic";
+		else if (std::is_same<polynomial_degree,bicubic>::value) polynomialDegree = "bicubic";
+		else if (std::is_same<polynomial_degree,taylor4>::value) polynomialDegree = "taylor4";
 		else throw std::invalid_argument("Invalid polynomial degree given. Valid choices currently are quadratic, bicubic and taylor4.");
 	}
 	
@@ -85,7 +84,7 @@ public:
 		std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
 		std::cout << "Time difference for detection = " << std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count() << "[µs]" << std::endl;
 
-		std::cout<<"interpolating..."<<std::endl;
+		std::cout<<"interpolating with "<<polynomialDegree<<"..."<<std::endl;
 		begin = std::chrono::steady_clock::now();
 		interpolate_sdf_field();
 		end = std::chrono::steady_clock::now();
@@ -119,6 +118,7 @@ private:
 
 	particles_surface<dim, n_c> vd_s;
 	double r_cutoff2;
+	std::string polynomialDegree;
 
 
 
@@ -242,13 +242,13 @@ private:
 			// part of the MonomialBasis used here in the interpolation.
 			MonomialBasis<dim> m(4);
 
-			if (redistOptions.polynomial_degree == "quadratic")
+			if (polynomialDegree == "quadratic")
 			{
 				unsigned int degrees[dim];
 				for(int k = 0; k < dim; k++) degrees[k] = 1;
 				m = MonomialBasis<dim>(degrees, 1);
 			}
-			else if (redistOptions.polynomial_degree == "taylor4")
+			else if (polynomialDegree == "taylor4")
 			{
 				unsigned int degrees[dim];
 				for(int k = 0; k < dim; k++) degrees[k] = 1;
@@ -256,7 +256,7 @@ private:
 				if (dim == 3) degrees_2 = 2;
 				m = MonomialBasis<dim>(degrees, degrees_2);
 			}
-			else if (redistOptions.polynomial_degree == "bicubic")
+			else if (polynomialDegree == "bicubic")
 			{
 				// do nothing as it has already been initialized like this
 			}
@@ -310,7 +310,6 @@ private:
 				vd_s.template getProp<interpol_coeff>(a)[k] = c[k];
 			}
 
-
 			// after interpolation coefficients have been computed and stored, perform Newton-style projections
 			// towards the interface in order to obtain a sample.
 			// initialise derivatives of the interpolation polynomial and an interim position vector x. The iterations
@@ -323,7 +322,7 @@ private:
 
 			EMatrix<double, Eigen::Dynamic, 1> x(dim, 1);
 			for(int k = 0; k < dim; k++) x[k] = xa[k];
-			double p = get_p(x, c, redistOptions.polynomial_degree);
+			double p = get_p(x, c, polynomialDegree);
 			int k_project = 0;
 
 			// do the projections.
@@ -331,11 +330,11 @@ private:
 			// while(incr > 0.01*redistOptions.H)
 			while ((abs(p) > redistOptions.tolerance) && (k_project < redistOptions.max_iter))
 			{
-				grad_p = get_grad_p(x, c, redistOptions.polynomial_degree);
+				grad_p = get_grad_p(x, c, polynomialDegree);
 				grad_p_mag2 = grad_p.dot(grad_p);
 
 				x = x - p*grad_p/grad_p_mag2;
-				p = get_p(x, c, redistOptions.polynomial_degree);
+				p = get_p(x, c, polynomialDegree);
 				//incr = sqrt(p*p*dpdx*dpdx/(grad_p_mag2*grad_p_mag2) + p*p*dpdy*dpdy/(grad_p_mag2*grad_p_mag2));
 				++k_project;
 			}
@@ -350,7 +349,7 @@ private:
 			//verbose = 1;
 			if (verbose)
 			{
-				std::cout<<"VERBOSEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE"<<std::endl;
+				std::cout<<"VERBOSE"<<std::endl;
 				EMatrix<double, Eigen::Dynamic, 1> xaa(dim,1);
 				for(int k = 0; k < dim; k++) xaa[k] = xa[k];
 				//double curvature = get_dpdxdx(xaa, c) + get_dpdydy(xaa, c);
@@ -396,15 +395,6 @@ private:
 		auto part = vd_in.getDomainIterator(); //todo: include the sampling radius somewhere (bandwidth)
 
 		int verbose = 0;
-		int msize;
-		if(redistOptions.polynomial_degree == "quadratic") msize = 6;
-		else if(redistOptions.polynomial_degree == "bicubic") msize = 16;
-		else if(redistOptions.polynomial_degree == "taylor4")
-			{
-				if (dim == 2) msize = 15;
-				else msize = 35;
-			}
-		else throw std::invalid_argument("Received unknown polynomial degree.");
 
 		// do iteration over all query particles
 		while (part.isNext())
@@ -436,8 +426,8 @@ private:
 				for(int l = 0; l < dim; l++) H_p(k, l) = 0.0;
 			}
 
-			EMatrix<double, Eigen::Dynamic, 1> c(msize, 1);
-			for (int k = 0; k < msize; k++) c[k] = 0.0;
+			EMatrix<double, Eigen::Dynamic, 1> c(n_c, 1);
+			for (int k = 0; k < n_c; k++) c[k] = 0.0;
 
 			// f(x, lambda) is the Lagrangian, initialize its gradient and Hessian
 			EMatrix<double, Eigen::Dynamic, 1> nabla_f(dim + 1, 1);
@@ -452,11 +442,10 @@ private:
 			// solution to initialise another x_a vector, but it is done because of the two different types EMatrix and
 			// point vector, and can probably be made nicer.
 			Point<dim, double> xaa = vd_in.getPos(a);
-			//auto Np = NN_s.template getNNIterator<NO_CHECK>(NN.getCell(vd.getPos(a)));
-			//vd_s.updateCellList(NN_s);
 
 			// Now we will iterate over the sample points, which means iterating over vd_s.
-			auto Np = vd_s.getDomainIterator();
+			auto Np = NN_s.template getNNIterator<NO_CHECK>(NN_s.getCell(vd_in.getPos(a)));
+
 			// distance is the the minimum distance to be beaten
 			double distance = 1000000.0;
 			// dist_calc is the variable for the distance that is computed per sample point
@@ -503,18 +492,18 @@ private:
 			for(int k = 0; k < dim; k++) x00x[k] = 0.0;
 
 			// take the interpolation polynomial of the sample particle closest to the query particle
-			for (int k = 0 ; k < msize ; k++) c[k] = vd_s.template getProp<interpol_coeff>(b_min)[k];
+			for (int k = 0 ; k < n_c ; k++) c[k] = vd_s.template getProp<interpol_coeff>(b_min)[k];
 
 			// debugging stuff
 			//if (a.getKey() == 2425) verbose = 1;
 			if(verbose)
-				{
-					val = get_p(x, c, redistOptions.polynomial_degree);
-					std::cout<<std::setprecision(16)<<"VERBOSE%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%:"<<std::endl;
-					std::cout<<"x_poly: "<<vd_s.getPos(b_min)[0]<<", "<<vd_s.getPos(b_min)[1]<<"\nxa: "<<xa[0]<<", "<<xa[1]<<"\nx_0: "<<x[0]<<", "<<x[1]<<"\nc: "<<c<<std::endl;
-					std::cout<<"phi(x_0): "<<val<<std::endl;
-					std::cout<<"interpol_i(x_0) = "<<get_p(x, c, redistOptions.polynomial_degree)<<std::endl;
-				}
+			{
+				val = get_p(x, c, polynomialDegree);
+				std::cout<<std::setprecision(16)<<"VERBOSE%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%:"<<std::endl;
+				std::cout<<"x_poly: "<<vd_s.getPos(b_min)[0]<<", "<<vd_s.getPos(b_min)[1]<<"\nxa: "<<xa[0]<<", "<<xa[1]<<"\nx_0: "<<x[0]<<", "<<x[1]<<"\nc: "<<c<<std::endl;
+				std::cout<<"phi(x_0): "<<val<<std::endl;
+				std::cout<<"interpol_i(x_0) = "<<get_p(x, c, polynomialDegree)<<std::endl;
+			}
 
 			// variable containing updated distance at iteration k
 			EMatrix<double, Eigen::Dynamic, 1> xax = x - xa;
@@ -527,8 +516,8 @@ private:
 			double barrier3 = 0.0;
 
 			// calculations needed specifically for k_newton == 0
-			p = get_p(x, c, redistOptions.polynomial_degree);
-			grad_p = get_grad_p(x, c, redistOptions.polynomial_degree);
+			p = get_p(x, c, polynomialDegree);
+			grad_p = get_grad_p(x, c, polynomialDegree);
 
 			// this guess for the Lagrange multiplier is taken from the original paper by Saye and can be done since
 			// p is approximately zero at the sample point.
@@ -549,26 +538,58 @@ private:
 //			{
 //				while(abs(p) > redistOptions.tolerance)
 //				{
-//					dpdx = get_dpdx(x, c, redistOptions.polynomial_degree);
-//					dpdy = get_dpdy(x, c, redistOptions.polynomial_degree);
-//					p = get_p(x, c, redistOptions.polynomial_degree);
+//					dpdx = get_dpdx(x, c, polynomialDegree);
+//					dpdy = get_dpdy(x, c, polynomialDegree);
+//					p = get_p(x, c, polynomialDegree);
 //					double grad_p_mag2 = dpdx*dpdx + dpdy*dpdy;
 //
 //					x[0] = x[0] - p*dpdx/grad_p_mag2;
 //					x[1] = x[1] - p*dpdy/grad_p_mag2;
 //				}
-//				dpdx = get_dpdx(x, c, redistOptions.polynomial_degree);
-//				dpdy = get_dpdy(x, c, redistOptions.polynomial_degree);
+//				dpdx = get_dpdx(x, c, polynomialDegree);
+//				dpdy = get_dpdy(x, c, polynomialDegree);
 //				xax = x - xa;
 //				lambda = (-xax[0]*dpdx - xax[1]*dpdy)/(dpdx*dpdx + dpdy*dpdy);
 //			}
 
 
+			/////// parallel DEBUG ////////////////////////
+			if (false)
+			{
+				//Box<dim,double> detect({ -0.613708, 0.165925, -0.0531703},{ -0.613706, 0.165927, -0.0531701});
+				Box<dim,double> detect({ -0.613708, 0.165925},{ -0.613706, 0.165927});
+
+				Point<dim,double> pp = vd_in.getPos(a);
+
+				if (detect.isInside(pp))
+				{
+					std::cout<<"xa:  \n"<<xa<< std::endl;
+					std::cout<<"x:  \n"<<x<<std::endl;
+					std::cout<<"sample key bmin: "<<b_min.getKey()<<std::endl;
+					std::cout<<"c:  \n"<<c<<std::endl;
+					std::cout<<"key: "<<a.getKey()<<std::endl;
+				}
+
+				auto & v_cl = create_vcluster();
+
+				if (a.getKey() == 131 && v_cl.rank() == 1)
+				{
+					std::cout<<"xa:  \n"<<xa<< std::endl;
+					std::cout<<"x:  \n"<<x<<std::endl;
+					std::cout<<"sample key bmin: "<<b_min.getKey()<<std::endl;
+					std::cout<<"c:  \n"<<c<<std::endl;
+				}
+
+				if ((abs(x[0] + 0.6659)<0.0005)&&(abs(x[1] - 0.2223)<0.0005)&&(abs(x[2] + 0.0594)<0.0005)) std::cout<<"its there and x = \n"<<x
+						<<"\nbmin key is "<<b_min.getKey()<<" and the processor is "<<v_cl.rank()<<std::endl;
+			}
+			//////////////////////////////
+
 			// Do Newton iterations.
 			while((nabla_f_norm > redistOptions.tolerance) && (k_newton<redistOptions.max_iter))
 			{
 				// gather required derivative values
-				H_p = get_H_p(x, c, redistOptions.polynomial_degree);
+				H_p = get_H_p(x, c, polynomialDegree);
 
 				// Assemble Hessian matrix, grad f has been computed at the end of the last iteration.
 				H_f(Eigen::seq(0, dim - 1), Eigen::seq(0, dim - 1)) = lambda*H_p;
@@ -605,12 +626,12 @@ private:
 					double alpha_armijo = 1.0;
 					double t_armijo = -redistOptions.armijo_c*(nabla_f[0]*dx[0] + nabla_f[1]*dx[1] + nabla_f[2]*dx[2]);
 					// int k_armijo = 0;
-					double f = 0.5*(x - xa).norm()*(x - xa).norm() + lambda*get_p(x, c, redistOptions.polynomial_degree);
+					double f = 0.5*(x - xa).norm()*(x - xa).norm() + lambda*get_p(x, c, polynomialDegree);
 					EMatrix<double, Eigen::Dynamic, 1> x_armijo(2,1);
 					x_armijo[0] = x[0] + alpha_armijo*dx[0];
 					x_armijo[1] = x[1] + alpha_armijo*dx[1];
 					double lambda_armijo = lambda + alpha_armijo*dx[2];
-					double f_armijo = 0.5*(xa - x_armijo).norm()*(xa - x_armijo).norm() + lambda_armijo*get_p(x_armijo, c, redistOptions.polynomial_degree);
+					double f_armijo = 0.5*(xa - x_armijo).norm()*(xa - x_armijo).norm() + lambda_armijo*get_p(x_armijo, c, polynomialDegree);
 					if (verbose) std::cout<<"start armijo\n"<<"x: "<<x[0]<<", "<<x[1]<<"\ndx: "<<dx[0]<<", "<<dx[1]<<"\nt: "<<t_armijo<<"\nf: "<<f<<"\nf_armijo: "<<f_armijo<<std::endl;
 					while((f - f_armijo) < alpha_armijo*t_armijo)
 					{
@@ -619,7 +640,7 @@ private:
 						x_armijo[0] = x[0] + alpha_armijo*dx[0];
 						x_armijo[1] = x[1] + alpha_armijo*dx[1];
 						lambda_armijo = lambda + alpha_armijo*dx[2];
-						f_armijo = 0.5*(xa - x_armijo).norm()*(xa - x_armijo).norm() + lambda_armijo*get_p(x_armijo, c, redistOptions.polynomial_degree);
+						f_armijo = 0.5*(xa - x_armijo).norm()*(xa - x_armijo).norm() + lambda_armijo*get_p(x_armijo, c, polynomialDegree);
 						//std::cout<<alpha_armijo<<std::endl;
 						if (verbose) std::cout<<"\narmijo++\n"<<"x: "<<x[0]<<", "<<x[1]<<"\ndx: "<<dx[0]<<", "<<dx[1]<<"\nt: "<<t_armijo<<"\nf: "<<f<<"\nf_armijo: "<<f_armijo<<"\ndiff f: "<<f-f_armijo<<"\n&&&&&&&&&&&&&&&&&&&&&&&&&"<<std::endl;
 					}
@@ -644,10 +665,10 @@ private:
 						{
 							dx = redistOptions.support_prevent*dx;
 							if(j == 0) x_interm = x;
-							dpdx_interm = get_dpdx(x_interm, c, redistOptions.polynomial_degree);
-							dpdy_interm = get_dpdy(x_interm, c, redistOptions.polynomial_degree);
+							dpdx_interm = get_dpdx(x_interm, c, polynomialDegree);
+							dpdy_interm = get_dpdy(x_interm, c, polynomialDegree);
 							grad_p_mag_interm2 = dpdx_interm*dpdx_interm + dpdy_interm*dpdy_interm;
-							p_interm = get_p(x_interm, c, redistOptions.polynomial_degree);
+							p_interm = get_p(x_interm, c, polynomialDegree);
 							x_interm[0] = x_interm[0] - redistOptions.support_prevent*p_interm*dpdx_interm/grad_p_mag_interm2;
 							x_interm[1] = x_interm[1] - redistOptions.support_prevent*p_interm*dpdy_interm/grad_p_mag_interm2;
 							++j;
@@ -700,8 +721,8 @@ private:
 
 				// prepare values for next iteration and update the exit criterion
 				xax = x - xa;
-				p = get_p(x, c, redistOptions.polynomial_degree);
-				grad_p = get_grad_p(x, c, redistOptions.polynomial_degree);
+				p = get_p(x, c, polynomialDegree);
+				grad_p = get_grad_p(x, c, polynomialDegree);
 				nabla_f(Eigen::seq(0, dim - 1)) = xax + lambda*grad_p;
 				nabla_f[dim] = p;
 
@@ -739,8 +760,8 @@ private:
 				//std::cout<<"new sdf: "<<vd.getProp<sdf>(a)<<std::endl;
 				//std::cout<<"c:\n"<<vd.getProp<interpol_coeff>(a)<<"\nmin_sdf: "<<vd.getProp<min_sdf>(a)<<" , min_sdf_x: "<<vd.getProp<min_sdf_x>(a)<<std::endl;
 				std::cout<<"x_final: "<<x[0]<<", "<<x[1]<<std::endl;
-				std::cout<<"p(x_final) :"<<get_p(x, c, redistOptions.polynomial_degree)<<std::endl;
-				std::cout<<"nabla p(x_final)"<<get_dpdx(x, c, redistOptions.polynomial_degree)<<", "<<get_dpdy(x, c, redistOptions.polynomial_degree)<<std::endl;
+				std::cout<<"p(x_final) :"<<get_p(x, c, polynomialDegree)<<std::endl;
+				std::cout<<"nabla p(x_final)"<<get_dpdx(x, c, polynomialDegree)<<", "<<get_dpdy(x, c, polynomialDegree)<<std::endl;
 				std::cout<<"lambda: "<<lambda<<std::endl;
 			}
 			verbose = 0;
