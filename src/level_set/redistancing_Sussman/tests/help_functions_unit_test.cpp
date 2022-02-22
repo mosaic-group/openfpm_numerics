@@ -23,18 +23,27 @@ BOOST_AUTO_TEST_SUITE(HelpFunctionsTestSuite)
 		const size_t sz[grid_dim] = {32};
 		grid_type g_dist(sz, box, ghost);
 		
-		double i = 3.3;
+		// Each processor assigns smaller_value to the first grid node in its domain
+		double smaller_value = 0.1;
 		auto dom = g_dist.getDomainIterator();
+		auto key_0 = dom.get();
+		g_dist.template get<Field>(key_0) = smaller_value;
+		++dom;
+		
+		// Afterwards we loop over the other grid nodes and assign them another bigger number
+		double bigger_value = 0.5;
 		while(dom.isNext())
 		{
-			i -= 0.1;
 			auto key = dom.get();
-			g_dist.template get<Field>(key) = i;
+			g_dist.template get<Field>(key) = bigger_value;
 			++dom;
 		}
-		auto correct_value = i;
+		
+		// Now we check if get_min_value returns smaller_value
 		auto min_value = get_min_val<Field>(g_dist);
-		BOOST_CHECK_MESSAGE(min_value == correct_value, "Checking if minimum value stored in grid is returned.");
+		double tolerance = 1e-12;
+		BOOST_CHECK_MESSAGE(isApproxEqual(min_value, smaller_value, tolerance), "Checking if smallest value stored in grid "
+																		  "is returned.");
 	}
 	
 	BOOST_AUTO_TEST_CASE(get_max_val_test)
@@ -49,17 +58,27 @@ BOOST_AUTO_TEST_SUITE(HelpFunctionsTestSuite)
 		const size_t sz[grid_dim] = {32};
 		grid_type g_dist(sz, box, ghost);
 		
-		double i = 0.0;
+		// Each processor assigns smaller_value to the first grid node in its domain
+		double smaller_value = 0.1;
 		auto dom = g_dist.getDomainIterator();
+		auto key_0 = dom.get();
+		g_dist.template get<Field>(key_0) = smaller_value;
+		++dom;
+		
+		// Afterwards we loop over the other grid nodes and assign them another bigger number
+		double bigger_value = 0.5;
 		while(dom.isNext())
 		{
-			i += 0.1;
 			auto key = dom.get();
-			g_dist.template get<Field>(key) = i;
+			g_dist.template get<Field>(key) = bigger_value;
 			++dom;
 		}
-		auto correct_value = i;
+		
+		// Now we check if get_max_value returns bigger_value
 		auto max_value = get_max_val<Field>(g_dist);
-		BOOST_CHECK_MESSAGE(max_value == correct_value, "Checking if maximum value stored in grid is returned.");
+		double tolerance = 1e-12;
+		BOOST_CHECK_MESSAGE(isApproxEqual(max_value, bigger_value, tolerance), "Checking if smallest value stored in "
+																			   "grid "
+																		  "is returned.");
 	}
 BOOST_AUTO_TEST_SUITE_END()

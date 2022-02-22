@@ -76,13 +76,7 @@ BOOST_AUTO_TEST_SUITE(UpwindGradientTestSuite)
 			
 			LNorms<double> lNorms;
 			lNorms.get_l_norms_grid<Error>(g_dist);
-			// std::cout << N << ", " << lNorms.l2 << ", " << lNorms.linf << std::endl;
 			
-			lNorms.write_to_file(N, 6, "l_norms_upwindGrad_convOrder_" + std::to_string(convergence_order), ""
-																							"./");
-			// if(N==128) g_dist.write("grid_gaussian_upwindGradient_N" + std::to_string(N), FORMAT_BINARY);
-			
-			//0.389541847481952
 			if (N==32) BOOST_CHECK_MESSAGE(lNorms.l2 <= 0.38954184748195 + EPSILON, "Checking L2-norm upwind gradient "
 																				"order " + std::to_string
 																				(convergence_order));
@@ -147,11 +141,6 @@ BOOST_AUTO_TEST_SUITE(UpwindGradientTestSuite)
 			
 			LNorms<double> lNorms;
 			lNorms.get_l_norms_grid<Error>(g_dist);
-//			std::cout << N << ", " << lNorms.l2 << ", " << lNorms.linf << std::endl;
-			
-//			lNorms.write_to_file(N, 6, "l_norms_upwindGrad_convOrder_" + std::to_string(convergence_order), ""
-//			                                                                                                     "./");
-//			if(N==128) g_dist.write("grid_gaussian_upwindGradient_N" + std::to_string(N), FORMAT_BINARY);
 			
 			if (N==32) BOOST_CHECK_MESSAGE(lNorms.l2 <= 0.08667855716144 + EPSILON, "Checking L2-norm upwind gradient "
 																				"order "
@@ -215,12 +204,7 @@ BOOST_AUTO_TEST_SUITE(UpwindGradientTestSuite)
 			
 			LNorms<double> lNorms;
 			lNorms.get_l_norms_grid<Error>(g_dist);
-//			std::cout << N << ", " << lNorms.l2 << ", " << lNorms.linf << std::endl;
-			
-//			lNorms.write_to_file(N, 6, "l_norms_upwindGrad_convOrder_" + std::to_string(convergence_order), ""
-//			                                                                                                     "./");
-//			if(N==128) g_dist.write("grid_gaussian_upwindGradient_N" + std::to_string(N), FORMAT_BINARY);
-			
+
 			if (N==32) BOOST_CHECK_MESSAGE(lNorms.l2 <= 0.03215172234342 + EPSILON, "Checking L2-norm upwind gradient "
 																				"order "
 						+ std::to_string(convergence_order));
@@ -282,12 +266,7 @@ BOOST_AUTO_TEST_SUITE(UpwindGradientTestSuite)
 					
 					LNorms<double> lNorms;
 					lNorms.get_l_norms_grid<Error>(g_dist);
-//					lNorms.write_to_file(N, 6, "l_norms_upwindGrad_3D_convOrder_" + std::to_string(convergence_order)
-//					, ""
-//					                                                                                                        "./");
-//					g_dist.write("grid_gaussian_upwindGradient_N" + std::to_string(N) + "_order" + std::to_string
-//					(convergence_order), FORMAT_BINARY);
-					
+
 					if(N==32)
 					{
 						switch(convergence_order)

@@ -14,6 +14,7 @@
 BOOST_AUTO_TEST_SUITE(NarrowBandTestSuite)
 	BOOST_AUTO_TEST_CASE(NarrowBand_unit_sphere)
 	{
+		auto & v_cl = create_vcluster();
 		typedef double phi_type;
 		const size_t dims = 3;
 		// some indices
@@ -58,13 +59,14 @@ BOOST_AUTO_TEST_SUITE(NarrowBandTestSuite)
 		size_t narrow_band_width = 8;
 		NarrowBand<grid_in_type, phi_type> narrowBand(g_dist, narrow_band_width); // Instantiation of NarrowBand class
 		narrowBand.get_narrow_band<SDF_exact_grid, SDF_vd, Gradient_vd, magnOfGrad_vd>(g_dist, vd_narrow_band);
-
-		int npnt = vd_narrow_band.size_local();
-		auto & v_cl = create_vcluster();
-		v_cl.sum(npnt);
-		v_cl.execute();
-
-
-		BOOST_CHECK(npnt == 6568);
+		
+		size_t narrow_band_size = vd_narrow_band.size_local();
+		if (v_cl.size() > 1)
+		{
+			v_cl.sum(narrow_band_size);
+			v_cl.execute();
+		}
+		
+		BOOST_CHECK(narrow_band_size == 6568);
 	}
 BOOST_AUTO_TEST_SUITE_END()
