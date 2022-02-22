@@ -59,6 +59,12 @@ BOOST_AUTO_TEST_SUITE(NarrowBandTestSuite)
 		NarrowBand<grid_in_type, phi_type> narrowBand(g_dist, narrow_band_width); // Instantiation of NarrowBand class
 		narrowBand.get_narrow_band<SDF_exact_grid, SDF_vd, Gradient_vd, magnOfGrad_vd>(g_dist, vd_narrow_band);
 
-		BOOST_CHECK(vd_narrow_band.size_local() == 6568);
+		int npnt = vd_narrow_band.size_local();
+		auto & v_cl = create_vcluster();
+		v_cl.sum(npnt);
+		v_cl.execute();
+
+
+		BOOST_CHECK(npnt == 6568);
 	}
 BOOST_AUTO_TEST_SUITE_END()
