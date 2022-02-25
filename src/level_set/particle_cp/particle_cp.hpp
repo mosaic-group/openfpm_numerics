@@ -791,52 +791,25 @@ private:
 			if (redistOptions.compute_curvatures)
 			{
 				H_p = get_H_p(x, c, polynomialDegree);
-				vd_in.template getProp<vd_in_curvature>(a) = 0.0;
-
+				// debug:
 				//std::cout<<"^^^^^^^^^^^^^^^^^x\n"<<x<<"\n&&&&&&&&&&&&&nabla_p\n"<<grad_p<<"\n*****************Hessian_p:\n"<<H_p<<std::endl;
 				//std::cout<<"analytical hessian:"<<std::endl;
 				//std::cout<<1-x(0)*x(0)<<", "<<x(0)*x(1)<<", "<<x(0)*x(2)<<std::endl;
 				//std::cout<<x(0)*x(1)<<", "<<1-x(1)*x(1)<<", "<<x(1)*x(2)<<std::endl;
 				//std::cout<<x(0)*x(2)<<", "<<x(1)*x(2)<<", "<<1-x(2)*x(2)<<std::endl;
 
-				std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
 				// divergence of normalized gradient field:
 				if (dim == 2)
 				{
 					vd_in.template getProp<vd_in_curvature>(a) = (H_p(0,0)*grad_p(1)*grad_p(1) - 2*grad_p(1)*grad_p(0)*H_p(0,1) + H_p(1,1)*grad_p(0)*grad_p(0))/std::pow(sqrt(grad_p(0)*grad_p(0) + grad_p(1)*grad_p(1)),3);
 				}
 				else if (dim == 3)
-				{
-					vd_in.template getProp<vd_in_curvature>(a) = \
-					((H_p(1,1) + H_p(2,2))*std::pow(grad_p(0), 2) + (H_p(0,0) + H_p(2,2))*std::pow(grad_p(1), 2) + (H_p(0,0) + H_p(1,1))*std::pow(grad_p(2), 2) \
+				{	// Mean curvature is 0.5*fluid mechanical curvature (see https://link.springer.com/article/10.1007/s00466-021-02128-9)
+					vd_in.template getProp<vd_in_curvature>(a) = 0.5*
+					((H_p(1,1) + H_p(2,2))*std::pow(grad_p(0), 2) + (H_p(0,0) + H_p(2,2))*std::pow(grad_p(1), 2) + (H_p(0,0) + H_p(1,1))*std::pow(grad_p(2), 2)
 					- 2*grad_p(0)*grad_p(1)*H_p(0,1) - 2*grad_p(0)*grad_p(2)*H_p(0,2) - 2*grad_p(1)*grad_p(2)*H_p(1,2))*std::pow(std::pow(grad_p(0), 2) + std::pow(grad_p(1), 2) + std::pow(grad_p(2), 2), -1.5);
 					//std::cout<<"&&&&&curvature:\n"<<vd_in.template getProp<vd_in_curvature>(a)<<std::endl;
 				}
-				std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
-				std::cout << "Time difference for divergence = " << std::chrono::duration_cast<std::chrono::nanoseconds>(end - begin).count() << "[ms]" << std::endl;
-				begin = std::chrono::steady_clock::now();
-				// trace of projection of Hessian into tangential plane
-				if (dim == 2) std::cout<<"Not implemented so far"<<std::endl;
-				else if ((dim == 3) && (true))
-				{
-					const double grad_p_norm = grad_p.norm();
-					EMatrixXd proj_matrix = grad_p_norm*grad_p_norm*EMatrixXd::Identity(dim, dim) - grad_p*grad_p.transpose();
-					EMatrixXd proj_Hessian(dim, dim);
-
-					proj_Hessian = proj_matrix*H_p*proj_matrix*1/pow(grad_p_norm, 5);
-					vd_in.template getProp<vd_in_curvature>(a) = proj_Hessian.trace();
-					vd_in.template getProp<vd_in_curvature>(a) = 0.5*vd_in.template getProp<vd_in_curvature>(a);
-					//std::cout<<proj_Hessian.trace()<<std::endl;
-					//vd_in.template getProp<vd_in_curvature>(a) = proj_Hessian(0,0)*(grad_p_norm*grad_p_norm - grad_p(0)*grad_p(0)) - proj_Hessian(0,1)*grad_p(0)*grad_p(1) - proj_Hessian(0,2)*grad_p(0)*grad_p(2)
-					//		- proj_Hessian(1,0)*grad_p(0)*grad_p(1) + proj_Hessian(1,1)*(grad_p_norm*grad_p_norm - grad_p(1)*grad_p(1)) - proj_Hessian(1,2)*grad_p(1)*grad_p(2)
-					//		- proj_Hessian(2,0)*grad_p(0)*grad_p(2) - proj_Hessian(2,1)*grad_p(1)*grad_p(2) + proj_Hessian(2,2)*(grad_p_norm*grad_p_norm - grad_p(2)*grad_p(2));
-					//vd_in.template getProp<vd_in_curvature>(a) = 0.5*((grad_p.transpose()*H_p)*grad_p - grad_p_norm*grad_p_norm*H_p.trace())/(grad_p_norm*grad_p_norm*grad_p_norm);
-					//vd_in.template getProp<vd_in_curvature>(a) = grad_p*H_p*grad_p.transpose();
-					//std::cout<<vd_in.template getProp<vd_in_curvature>(a)<<std::endl;
-
-				}
-				end = std::chrono::steady_clock::now();
-				std::cout << "Time difference for projection = " << std::chrono::duration_cast<std::chrono::nanoseconds>(end - begin).count() << "[ms]" << std::endl;
 
 			}
 			++part;
