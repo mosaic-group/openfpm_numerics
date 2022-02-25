@@ -51,6 +51,8 @@ struct Redist_options
 	double support_prevent = 0.0;		// prevention parameter if support may be left
 	int fail_projection = 0;			// prevention projection if support may be left
 	int init_project = 0;
+	int compute_normals = 0;
+	int compute_curvatures = 0;
 };
 
 // Add new polynomial degrees here in case new interpolation schemes are implemented.
@@ -78,26 +80,34 @@ public:
 	
 	void run_redistancing()
 	{
-		std::cout<<"detecting..."<<std::endl;
 		std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
 		detect_surface_particles();
 		std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
 		std::cout << "Time difference for detection = " << std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count() << "[µs]" << std::endl;
 
-		std::cout<<"interpolating with "<<polynomialDegree<<"..."<<std::endl;
 		begin = std::chrono::steady_clock::now();
 		interpolate_sdf_field();
 		end = std::chrono::steady_clock::now();
-		std::cout << "Time difference for interpolation = " << std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count() << "[µs]" << std::endl;
+		std::cout << "Time difference for "<<polynomialDegree<<" interpolation = " << std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count() << "[µs]" << std::endl;
 
-		std::cout<<"optimizing..."<<std::endl;
 		begin = std::chrono::steady_clock::now();
-		find_closest_point();
+		find_closest_point(vd_in, vd_s);
 		end = std::chrono::steady_clock::now();
 		std::cout << "Time difference for optimization = " << std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count() << "[µs]" << std::endl;
-		std::cout<<"finishing..."<<std::endl;
 	}
 	
+	void run_optimization()
+	{
+		find_closest_point(vd_in, vd_s);
+	}
+
+//	particles_surface<dim, n_c> return_surface_particles()
+//	{
+//		return(vd_s);
+//	}
+
+	int run_redistancing_with_remeshing_check(){}
+
 private:
 	static constexpr size_t num_neibs = 0;
 	static constexpr size_t vd_s_close_part = 1;
@@ -107,6 +117,8 @@ private:
 	static constexpr size_t vd_in_sdf = 0;			// this is really required in the vd_in vector, so users need to know about it.
 	static constexpr size_t vd_in_close_part = 3;	// this is not needed by the method, but more for debugging purposes, as it shows all particles for which
 													// interpolation and sampling is performed.
+	static constexpr size_t vd_in_normal = 1;
+	static constexpr size_t vd_in_curvature = 2;
 
 	Redist_options redistOptions;
 	particles_in_type &vd_in;
@@ -384,7 +396,7 @@ private:
 	// The polynomial that is used for checking if the constraint is fulfilled is the interpolation polynomial
 	// carried by the sample point.
 
-	void find_closest_point()
+	void find_closest_point(particles_in_type& vd_in, particles_surface<dim, n_c> & vd_s)
 	{
 		// iterate over all particles, i.e. do closest point optimisation for all particles, and initialize
 		// all relevant variables.
@@ -709,7 +721,7 @@ private:
 				{
 					auto & v_cl = create_vcluster();
 
-					std::cout<<"invoked " << a.getKey() << "  " << v_cl.rank() << "   " <<std::endl;
+					std::cout<<"Step size limitation invoked for particle " << a.getKey() << " on processor " << v_cl.rank() << "   " <<std::endl;
 
 
 					dx = 0.1*dx;
@@ -775,6 +787,58 @@ private:
 				std::cout<<"analytical value: "<<vd_in.template getProp<8>(a)<<", diff: "<<abs(vd_in.template getProp<vd_in_sdf>(a) - vd_in.template getProp<8>(a))<<std::endl;
 			}
 
+			if (redistOptions.compute_normals) for(int k = 0; k<dim; k++) vd_in.template getProp<vd_in_normal>(a)[k] = grad_p(k);
+			if (redistOptions.compute_curvatures)
+			{
+				H_p = get_H_p(x, c, polynomialDegree);
+				vd_in.template getProp<vd_in_curvature>(a) = 0.0;
+
+				//std::cout<<"^^^^^^^^^^^^^^^^^x\n"<<x<<"\n&&&&&&&&&&&&&nabla_p\n"<<grad_p<<"\n*****************Hessian_p:\n"<<H_p<<std::endl;
+				//std::cout<<"analytical hessian:"<<std::endl;
+				//std::cout<<1-x(0)*x(0)<<", "<<x(0)*x(1)<<", "<<x(0)*x(2)<<std::endl;
+				//std::cout<<x(0)*x(1)<<", "<<1-x(1)*x(1)<<", "<<x(1)*x(2)<<std::endl;
+				//std::cout<<x(0)*x(2)<<", "<<x(1)*x(2)<<", "<<1-x(2)*x(2)<<std::endl;
+
+				std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
+				// divergence of normalized gradient field:
+				if (dim == 2)
+				{
+					vd_in.template getProp<vd_in_curvature>(a) = (H_p(0,0)*grad_p(1)*grad_p(1) - 2*grad_p(1)*grad_p(0)*H_p(0,1) + H_p(1,1)*grad_p(0)*grad_p(0))/std::pow(sqrt(grad_p(0)*grad_p(0) + grad_p(1)*grad_p(1)),3);
+				}
+				else if (dim == 3)
+				{
+					vd_in.template getProp<vd_in_curvature>(a) = \
+					((H_p(1,1) + H_p(2,2))*std::pow(grad_p(0), 2) + (H_p(0,0) + H_p(2,2))*std::pow(grad_p(1), 2) + (H_p(0,0) + H_p(1,1))*std::pow(grad_p(2), 2) \
+					- 2*grad_p(0)*grad_p(1)*H_p(0,1) - 2*grad_p(0)*grad_p(2)*H_p(0,2) - 2*grad_p(1)*grad_p(2)*H_p(1,2))*std::pow(std::pow(grad_p(0), 2) + std::pow(grad_p(1), 2) + std::pow(grad_p(2), 2), -1.5);
+					//std::cout<<"&&&&&curvature:\n"<<vd_in.template getProp<vd_in_curvature>(a)<<std::endl;
+				}
+				std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
+				std::cout << "Time difference for divergence = " << std::chrono::duration_cast<std::chrono::nanoseconds>(end - begin).count() << "[ms]" << std::endl;
+				begin = std::chrono::steady_clock::now();
+				// trace of projection of Hessian into tangential plane
+				if (dim == 2) std::cout<<"Not implemented so far"<<std::endl;
+				else if ((dim == 3) && (true))
+				{
+					const double grad_p_norm = grad_p.norm();
+					EMatrixXd proj_matrix = grad_p_norm*grad_p_norm*EMatrixXd::Identity(dim, dim) - grad_p*grad_p.transpose();
+					EMatrixXd proj_Hessian(dim, dim);
+
+					proj_Hessian = proj_matrix*H_p*proj_matrix*1/pow(grad_p_norm, 5);
+					vd_in.template getProp<vd_in_curvature>(a) = proj_Hessian.trace();
+					vd_in.template getProp<vd_in_curvature>(a) = 0.5*vd_in.template getProp<vd_in_curvature>(a);
+					//std::cout<<proj_Hessian.trace()<<std::endl;
+					//vd_in.template getProp<vd_in_curvature>(a) = proj_Hessian(0,0)*(grad_p_norm*grad_p_norm - grad_p(0)*grad_p(0)) - proj_Hessian(0,1)*grad_p(0)*grad_p(1) - proj_Hessian(0,2)*grad_p(0)*grad_p(2)
+					//		- proj_Hessian(1,0)*grad_p(0)*grad_p(1) + proj_Hessian(1,1)*(grad_p_norm*grad_p_norm - grad_p(1)*grad_p(1)) - proj_Hessian(1,2)*grad_p(1)*grad_p(2)
+					//		- proj_Hessian(2,0)*grad_p(0)*grad_p(2) - proj_Hessian(2,1)*grad_p(1)*grad_p(2) + proj_Hessian(2,2)*(grad_p_norm*grad_p_norm - grad_p(2)*grad_p(2));
+					//vd_in.template getProp<vd_in_curvature>(a) = 0.5*((grad_p.transpose()*H_p)*grad_p - grad_p_norm*grad_p_norm*H_p.trace())/(grad_p_norm*grad_p_norm*grad_p_norm);
+					//vd_in.template getProp<vd_in_curvature>(a) = grad_p*H_p*grad_p.transpose();
+					//std::cout<<vd_in.template getProp<vd_in_curvature>(a)<<std::endl;
+
+				}
+				end = std::chrono::steady_clock::now();
+				std::cout << "Time difference for projection = " << std::chrono::duration_cast<std::chrono::nanoseconds>(end - begin).count() << "[ms]" << std::endl;
+
+			}
 			++part;
 		}
 		
@@ -904,12 +968,12 @@ private:
 				H_p(2, 2) = 2*c[25] + 2*c[26]*x + 2*c[27]*x*x + 2*c[28]*y + 2*c[29]*x*y + 2*c[30]*y*y
 							+ 6*c[31]*z + 6*c[32]*x*z + 6*c[33]*y*z + 12*c[34]*z*z;
 
-				H_p(0, 1) = c[6] + 2*c[7]*x + 3*c[8]*x*x + 2*c[10]*y +4*c[11]*x*y + 3*c[13]*y*y
-							+ c[20]*z + 2*c[21]*x*z + 2*c[23]*y*z + c[29]*z*z;
-				H_p(0, 2) = c[16] + 2*c[17]*x + 3*c[18]*x*x + c[20]*y + 2*c[21]*x*y + c[23]*y*y
-							+ 2*c[26]*z + 4*c[27]*x*z + 2*c[29]*y*z + 3*c[32]*z*z;
-				H_p(1, 2) = c[19] + c[20]*x + c[21]*x*x + c[22]*y + 2*c[23]*x*y + 3*c[24]*y*y
-							+ 2*c[28]*z + 2*c[29]*x*z + 4*c[30]*y*z + 3*c[33]*z*z;
+				H_p(0, 1) = (c[6] + 2*c[7]*x + 3*c[8]*x*x + 2*c[10]*y +4*c[11]*x*y + 3*c[13]*y*y
+							+ c[20]*z + 2*c[21]*x*z + 2*c[23]*y*z + c[29]*z*z);
+				H_p(0, 2) = (c[16] + 2*c[17]*x + 3*c[18]*x*x + c[20]*y + 2*c[21]*x*y + c[23]*y*y
+							+ 2*c[26]*z + 4*c[27]*x*z + 2*c[29]*y*z + 3*c[32]*z*z);
+				H_p(1, 2) = (c[19] + c[20]*x + c[21]*x*x + 2*c[22]*y + 2*c[23]*x*y + 3*c[24]*y*y
+							+ 2*c[28]*z + 2*c[29]*x*z + 4*c[30]*y*z + 3*c[33]*z*z);
 				H_p(1, 0) = H_p(0, 1);
 				H_p(2, 0) = H_p(0, 2);
 				H_p(2, 1) = H_p(1, 2);
@@ -1018,3 +1082,4 @@ private:
 	}
 	
 };
+
