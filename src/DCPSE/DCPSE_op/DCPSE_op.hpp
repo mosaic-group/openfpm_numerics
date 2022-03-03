@@ -2060,6 +2060,173 @@ public:
     }
 };
 
+
+template<template<unsigned int, typename, typename...> class Dcpse_type = Dcpse>
+class Derivative_xxxx_T {
+
+    void *dcpse;
+
+public:
+
+    template<typename particles_type>
+    Derivative_xxxx_T(particles_type &parts, unsigned int ord, typename particles_type::stype rCut,
+                   double oversampling_factor = dcpse_oversampling_factor,
+                   support_options opt = support_options::RADIUS) {
+        Point<particles_type::dims, unsigned int> p;
+        p.zero();
+        p.get(0) = 4;
+        p.get(1) = 0;
+
+        dcpse = new Dcpse_type<particles_type::dims, particles_type>(parts, p, ord, rCut, oversampling_factor, opt);
+    }
+
+    template<typename operand_type>
+
+    vector_dist_expression_op<operand_type, Dcpse_type<operand_type::vtype::dims, typename operand_type::vtype>, VECT_DCPSE>
+    operator()(operand_type arg) {
+        typedef Dcpse_type<operand_type::vtype::dims, typename operand_type::vtype> dcpse_type;
+
+        return vector_dist_expression_op<operand_type, dcpse_type, VECT_DCPSE>(arg, *(dcpse_type *) dcpse);
+    }
+
+    template<typename particles_type>
+    void checkMomenta(particles_type &particles) {
+        auto dcpse_temp = (Dcpse_type<particles_type::dims, particles_type> *) dcpse;
+        dcpse_temp->checkMomenta(particles);
+
+    }
+
+    template<unsigned int prp, typename particles_type>
+    void DrawKernel(particles_type &particles, int k) {
+        auto dcpse_temp = (Dcpse_type<particles_type::dims, particles_type> *) dcpse;
+        dcpse_temp->template DrawKernel<prp>(particles, k);
+
+    }
+
+    /*! \brief Method for Updating the DCPSE Operator by recomputing DCPSE Kernels.
+     *
+     *
+     * \param parts particle set
+     */
+    template<typename particles_type>
+    void update(particles_type &particles) {
+        auto dcpse_temp = (Dcpse_type<particles_type::dims, particles_type> *) dcpse;
+        dcpse_temp->initializeUpdate(particles);
+
+    }
+};
+
+
+template<template<unsigned int, typename, typename...> class Dcpse_type = Dcpse>
+class Derivative_yyyy_T {
+
+    void *dcpse;
+
+public:
+
+    template<typename particles_type>
+    Derivative_yyyy_T(particles_type &parts, unsigned int ord, typename particles_type::stype rCut,
+                   double oversampling_factor = dcpse_oversampling_factor,
+                   support_options opt = support_options::RADIUS) {
+        Point<particles_type::dims, unsigned int> p;
+        p.zero();
+        p.get(0) = 0;
+        p.get(1) = 4;
+
+        dcpse = new Dcpse_type<particles_type::dims, particles_type>(parts, p, ord, rCut, oversampling_factor, opt);
+    }
+
+    template<typename operand_type>
+
+    vector_dist_expression_op<operand_type, Dcpse_type<operand_type::vtype::dims, typename operand_type::vtype>, VECT_DCPSE>
+    operator()(operand_type arg) {
+        typedef Dcpse_type<operand_type::vtype::dims, typename operand_type::vtype> dcpse_type;
+
+        return vector_dist_expression_op<operand_type, dcpse_type, VECT_DCPSE>(arg, *(dcpse_type *) dcpse);
+    }
+
+    template<typename particles_type>
+    void checkMomenta(particles_type &particles) {
+        auto dcpse_temp = (Dcpse_type<particles_type::dims, particles_type> *) dcpse;
+        dcpse_temp->checkMomenta(particles);
+
+    }
+
+    template<unsigned int prp, typename particles_type>
+    void DrawKernel(particles_type &particles, int k) {
+        auto dcpse_temp = (Dcpse_type<particles_type::dims, particles_type> *) dcpse;
+        dcpse_temp->template DrawKernel<prp>(particles, k);
+
+    }
+
+    /*! \brief Method for Updating the DCPSE Operator by recomputing DCPSE Kernels.
+     *
+     *
+     * \param parts particle set
+     */
+    template<typename particles_type>
+    void update(particles_type &particles) {
+        auto dcpse_temp = (Dcpse_type<particles_type::dims, particles_type> *) dcpse;
+        dcpse_temp->initializeUpdate(particles);
+
+    }
+};
+
+template<template<unsigned int, typename, typename...> class Dcpse_type = Dcpse>
+class Derivative_xxyy_T {
+
+    void *dcpse;
+
+public:
+
+    template<typename particles_type>
+    Derivative_xxyy_T(particles_type &parts, unsigned int ord, typename particles_type::stype rCut,
+                   double oversampling_factor = dcpse_oversampling_factor,
+                   support_options opt = support_options::RADIUS) {
+        Point<particles_type::dims, unsigned int> p;
+        p.zero();
+        p.get(0) = 2;
+        p.get(1) = 2;
+
+        dcpse = new Dcpse_type<particles_type::dims, particles_type>(parts, p, ord, rCut, oversampling_factor, opt);
+    }
+
+    template<typename operand_type>
+
+    vector_dist_expression_op<operand_type, Dcpse_type<operand_type::vtype::dims, typename operand_type::vtype>, VECT_DCPSE>
+    operator()(operand_type arg) {
+        typedef Dcpse_type<operand_type::vtype::dims, typename operand_type::vtype> dcpse_type;
+
+        return vector_dist_expression_op<operand_type, dcpse_type, VECT_DCPSE>(arg, *(dcpse_type *) dcpse);
+    }
+
+    template<typename particles_type>
+    void checkMomenta(particles_type &particles) {
+        auto dcpse_temp = (Dcpse_type<particles_type::dims, particles_type> *) dcpse;
+        dcpse_temp->checkMomenta(particles);
+
+    }
+
+    template<unsigned int prp, typename particles_type>
+    void DrawKernel(particles_type &particles, int k) {
+        auto dcpse_temp = (Dcpse_type<particles_type::dims, particles_type> *) dcpse;
+        dcpse_temp->template DrawKernel<prp>(particles, k);
+
+    }
+
+    /*! \brief Method for Updating the DCPSE Operator by recomputing DCPSE Kernels.
+     *
+     *
+     * \param parts particle set
+     */
+    template<typename particles_type>
+    void update(particles_type &particles) {
+        auto dcpse_temp = (Dcpse_type<particles_type::dims, particles_type> *) dcpse;
+        dcpse_temp->initializeUpdate(particles);
+
+    }
+};
+
 //typedef PPInterpolation_T<Dcpse> PPInterpolation;
 typedef Derivative_x_T<Dcpse> Derivative_x;
 typedef Derivative_y_T<Dcpse> Derivative_y;
@@ -2079,6 +2246,9 @@ typedef Derivative_xxx_T<Dcpse> Derivative_xxx;
 typedef Derivative_xxy_T<Dcpse> Derivative_xxy;
 typedef Derivative_yyx_T<Dcpse> Derivative_yyx;
 typedef Derivative_yyy_T<Dcpse> Derivative_yyy;
+typedef Derivative_xxxx_T<Dcpse> Derivative_xxxx;
+typedef Derivative_yyyy_T<Dcpse> Derivative_yyyy;
+typedef Derivative_xxyy_T<Dcpse> Derivative_xxyy;
 
 #if defined(__NVCC__)
 typedef Derivative_x_T<Dcpse_gpu> Derivative_x_gpu;

@@ -303,12 +303,14 @@ public:
     template<unsigned int prp1,unsigned int prp2>
     void p2p()
     {
+        typedef typename std::remove_reference<decltype(particlesTo.template getProp<prp2>(0))>::type T2;
+
         auto it = particlesTo.getDomainIterator();
         auto supportsIt = localSupports.begin();
         auto epsItInvPow = localEpsInvPow.begin();
         while (it.isNext()){
             double epsInvPow = *epsItInvPow;
-            T Dfxp = 0;
+            T2 Dfxp = 0;
             Support support = *supportsIt;
             size_t xpK = support.getReferencePointKey();
             //Point<dim, typename vector_type::stype> xp = particlesTo.getPos(xpK);
@@ -318,10 +320,10 @@ public:
             for (int i = 0 ; i < keys.size() ; i++)
             {
                 size_t xqK = keys.get(i);
-                T fxq = particlesFrom.template getProp<prp1>(xqK);
+                T2 fxq = particlesFrom.template getProp<prp1>(xqK);
                 Dfxp += fxq * calcKernels.get(kerOff+i);
             }
-            Dfxp *= epsInvPow;
+            Dfxp = epsInvPow*Dfxp;
             //
             //T trueDfxp = particles.template getProp<2>(xpK);
             // Store Dfxp in the right position
@@ -332,6 +334,8 @@ public:
             ++epsItInvPow;
         }
     }
+
+
 
     void checkMomenta(vector_type &particles)
     {

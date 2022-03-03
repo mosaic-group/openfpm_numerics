@@ -371,8 +371,8 @@ BOOST_AUTO_TEST_CASE(dcpse_surface_sphere) {
       ++it3;
   }
         Sparticles.deleteGhost();
-        Sparticles.write("Sparticles");
-        std::cout<<worst;
+        //Sparticles.write("Sparticles");
+        //std::cout<<worst;
         BOOST_REQUIRE(worst < 0.03);
 }
 

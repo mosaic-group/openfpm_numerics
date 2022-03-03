@@ -220,8 +220,8 @@ BOOST_AUTO_TEST_CASE(dcpse_op_tests) {
         domain2.ghost_get<0>();
 
         PPInterpolation<vector_dist,vector_dist> Fx(domain2,domain, 2, rCut);
-        auto v = getV<1>(domain);
-        auto P = getV<0>(domain);
+        //auto v = getV<1>(domain);
+        //auto P = getV<0>(domain);
         Fx.p2p<0,1>();
         auto it2 = domain.getDomainIterator();
         double worst = 0.0;
@@ -353,7 +353,7 @@ BOOST_AUTO_TEST_CASE(dcpse_op_tests) {
             domain.getLastPos()[0] = x;//+ gaussian(rng);
             mem_id k1 = key.get(1);
             double y = k1 * spacing[1];
-            domain.getLastPos()[1] = y;//+gaussian(rng);
+                domain.getLastPos()[1] = y;//+gaussian(rng);
             // Here fill the function value
             domain.template getLastProp<1>()[0] = sin(domain.getLastPos()[0]) + sin(domain.getLastPos()[1]);
             domain.template getLastProp<1>()[1] = cos(domain.getLastPos()[0]) + cos(domain.getLastPos()[1]);
