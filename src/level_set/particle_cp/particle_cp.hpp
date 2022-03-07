@@ -787,7 +787,50 @@ private:
 				std::cout<<"analytical value: "<<vd_in.template getProp<8>(a)<<", diff: "<<abs(vd_in.template getProp<vd_in_sdf>(a) - vd_in.template getProp<8>(a))<<std::endl;
 			}
 
-			if (redistOptions.compute_normals) for(int k = 0; k<dim; k++) vd_in.template getProp<vd_in_normal>(a)[k] = grad_p(k);
+			int debug_error = 1;
+			if (redistOptions.compute_normals)
+			{
+				for(int k = 0; k<dim; k++) vd_in.template getProp<vd_in_normal>(a)[k] = return_sign(vd_in.template getProp<vd_in_sdf>(a))*grad_p(k)*1/grad_p.norm();
+				EMatrix<double, Eigen::Dynamic, 1> normal(dim, 1);
+				normal = (xa - x)/(xa - x).norm();
+				//for (int k = 0; k<dim; k++) vd_in.template getProp<vd_in_normal>(a)[k] = normal(k);
+
+				if (debug_error)
+				{
+					double A = 0.75;
+					double B = 0.5;
+					double C = 0.5;
+					double xcp_analytical;
+					double ycp_analytical;
+					double zcp_analytical;
+
+					double dist = DistancePointEllipsoid(A, B, C, abs(xa[0]), abs(xa[1]), abs(xa[2]), xcp_analytical, ycp_analytical, zcp_analytical);
+
+					xcp_analytical = return_sign(xa[0])*xcp_analytical;
+					ycp_analytical = return_sign(xa[1])*ycp_analytical;
+					zcp_analytical = return_sign(xa[2])*zcp_analytical;
+					EMatrix<double, Eigen::Dynamic, 1> cp_analytical(dim, 1);
+					EMatrix<double, Eigen::Dynamic, 1> query_point(dim, 1);
+
+					for(int k = 0; k<dim; k++) query_point[k] = xa[k];
+					cp_analytical[0] = xcp_analytical;
+					cp_analytical[1] = ycp_analytical;
+					cp_analytical[2] = zcp_analytical;
+
+
+					EMatrix<double, Eigen::Dynamic, 1> norm_analytical(dim, 1);
+					norm_analytical[0] = 2*xcp_analytical/(A*A);
+					norm_analytical[1] = 2*ycp_analytical/(B*B);
+					norm_analytical[2] = 2*zcp_analytical/(C*C);
+					norm_analytical = return_sign(vd_in.template getProp<vd_in_sdf>(a))*norm_analytical/norm_analytical.norm();
+					// store analytical normal
+					for(int k = 0; k<dim; k++) vd_in.template getProp<9>(a)[k] = norm_analytical[k];
+					// store analytical curvature
+					vd_in.template getProp<10>(a) = (std::abs(xcp_analytical*xcp_analytical + ycp_analytical*ycp_analytical + zcp_analytical*zcp_analytical - A*A - B*B - C*C))/(2*A*A*B*B*C*C*std::pow(xcp_analytical*xcp_analytical/std::pow(A, 4) + ycp_analytical*ycp_analytical/std::pow(B, 4) + zcp_analytical*zcp_analytical/std::pow(C, 4), 1.5));
+					vd_in.template getProp<11>(a) = (x - cp_analytical).norm();
+				}
+			}
+
 			if (redistOptions.compute_curvatures)
 			{
 				H_p = get_H_p(x, c, polynomialDegree);
@@ -1053,6 +1096,175 @@ private:
 				return(c[6] + 2*c[7]*x + 3*c[8]*x*x + 2*c[10]*y +4*c[11]*x*y + 3*c[13]*y*y);
 		}
 	}
-	
+
+
+
+	// stuff for error analysis, NOT part of the method
+	double GetRoot ( double r0 , double z0 , double z1 , double g )
+	    {
+		const int maxIter = 100;
+	        double n0 = r0*z0;
+	        double s0 = z1 - 1;
+	        double s1 = ( g < 0 ? 0 : sqrt(n0*n0+z1*z1) - 1 ) ;
+	        double s = 0;
+	        for ( int i = 0; i < maxIter; ++i ){
+	            s = ( s0 + s1 ) / 2 ;
+	            if ( s == s0 || s == s1 ) {break; }
+	            double ratio0 = n0 /( s + r0 );
+	            double ratio1 = z1 /( s + 1 );
+	            g = ratio0*ratio0 + ratio1*ratio1 - 1 ;
+	            if (g > 0) {s0 = s;} else if (g < 0) {s1 = s ;} else {break ;}
+	            if (i == maxIter) std::cout<<"GetRoot does not converge."<<std::endl;
+	        }
+	        return s;
+	    }
+
+	double GetRoot(double r0, double r1, double z0, double z1, double z2, double g)
+	{
+		const int maxIter = 100;
+		double n0 = r0*z0;
+		double n1 = r1*z1;
+		double s0 = z2 - 1;
+		double s1 = (g < 0 ? 0 : sqrt(n0*n0 + n1*n1 + z2*z2) - 1) ;
+		double s = s;
+		for(int i = 0 ; i < maxIter ; ++i )
+		{
+			s = ( s0 + s1 ) / 2 ;
+			if ( s == s0 || s == s1 ) {break; }
+			double ratio0 = n0 / ( s + r0 );
+			double ratio1 = n1 / ( s + r1 );
+			double ratio2 = z2 / ( s + 1 );
+			g = ratio0*ratio0 + ratio1*ratio1 +ratio2*ratio2 - 1;
+			if ( g > 0 ) { s0 = s ;}
+			else if ( g < 0 ) { s1 = s ; }
+			else {break;}
+			if (i == maxIter) std::cout<<"GetRoot does not converge."<<std::endl;
+		}
+		return (s);
+	}
+
+	double DistancePointEllipse(double e0, double e1, double y0, double y1, double& x0, double& x1)
+	    {
+	        double distance;
+	        if ( y1 > 0){
+	            if ( y0 > 0){
+	                double z0 = y0 / e0;
+	                double z1 = y1 / e1;
+	                double g = z0*z0+z1*z1 - 1;
+	                if ( g != 0){
+	                    double r0 = (e0/e1)*(e0/e1);
+	                    double sbar = GetRoot(r0 , z0 , z1 , g);
+	                    x0 = r0 * y0 /( sbar + r0 );
+	                    x1 = y1 /( sbar + 1 );
+	                    distance = sqrt( (x0-y0)*(x0-y0) + (x1-y1)*(x1-y1) );
+	                    }else{
+	                        x0 = y0;
+	                        x1 = y1;
+	                        distance = 0;
+	                    }
+	                }
+	                else // y0 == 0
+	                    {x0 = 0 ; x1 = e1 ; distance = abs( y1 - e1 );}
+	        }else{ // y1 == 0
+	            double numer0 = e0*y0 , denom0 = e0*e0 - e1*e1;
+	            if ( numer0 < denom0 ){
+	                    double xde0 = numer0/denom0;
+	                    x0 = e0*xde0 ; x1 = e1*sqrt(1 - xde0*xde0 );
+	                    distance = sqrt( (x0-y0)*(x0-y0) + x1*x1 );
+	                }else{
+	                    x0 = e0;
+	                    x1 = 0;
+	                    distance = abs( y0 - e0 );
+	            }
+	        }
+	        return distance;
+	    }
+
+	double DistancePointEllipsoid(double e0, double e1, double e2, double y0, double y1, double y2, double& x0, double& x1, double& x2)
+	{
+		double distance;
+		if( y2 > 0 )
+		{
+			if( y1 > 0 )
+			{
+				if( y0 > 0 )
+				{
+					double z0 = y0 / e0;
+					double z1 = y1 / e1;
+					double z2 = y2 / e2;
+					double g = z0*z0 + z1*z1 + z2*z2 - 1 ;
+					if( g != 0 )
+					{
+						double r0 = (e0/e2)*(e0/e2);
+						double r1 = (e1/e2)*(e1/e2);
+						double sbar = GetRoot ( r0 , r1 , z0 , z1 , z2 , g );
+						x0 = r0 *y0 / ( sbar + r0 );
+						x1 = r1 *y1 / ( sbar + r1 );
+						x2 = y2 / ( sbar + 1 );
+						distance = sqrt( (x0 - y0)*(x0 - y0) + (x1 - y1)*(x1 - y1) + (x2 - y2)*(x2 - y2));
+					}
+					else
+					{
+						x0 = y0;
+						x1 = y1;
+						x2 = y2;
+						distance = 0;
+					}
+				}
+				else // y0 == 0
+				{
+					x0 = 0;
+					distance = DistancePointEllipse( e1 , e2 , y1 , y2, x1, x2);
+				}
+			}
+			else // y1 == 0
+			{
+				if( y0 > 0 )
+				{
+					x1 = 0;
+					distance = DistancePointEllipse( e0 , e2 , y0 , y2, x0, x2);
+				}
+				else // y0 == 0
+				{
+					x0 = 0;
+					x1 = 0;
+					x2 = e2;
+					distance = abs(y2 - e2);
+				}
+			}
+		}
+		else // y2 == 0
+		{
+			double denom0 = e0*e0 - e2*e2;
+			double denom1 = e1*e1 - e2*e2;
+			double numer0 = e0*y0;
+			double numer1 = e1*y1;
+			bool computed = false;
+			if((numer0 < denom0) && (numer1 < denom1))
+			{
+				double xde0 = numer0/denom0;
+				double xde1 = numer1/denom1 ;
+				double xde0sqr = xde0 *xde0;
+				double xde1sqr = xde1 * xde1 ;
+				double discr = 1 - xde0sqr - xde1sqr;
+				if( discr > 0 )
+				{
+					x0 = e0*xde0;
+					x1 = e1*xde1;
+					x2 = e2*sqrt(discr);
+					distance = sqrt((x0 - y0)*(x0 - y0) + (x1 - y1)*(x1 - y1) + x2*x2);
+					computed = true;
+				}
+			}
+			if( !computed )
+			{
+				x2 = 0;
+				distance = DistancePointEllipse(e0 , e1 , y0 , y1, x0, x1);
+			}
+		}
+		return distance;
+	}
+// end stuff for error analysis
+
 };
 
