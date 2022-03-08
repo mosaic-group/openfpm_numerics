@@ -45,12 +45,7 @@ struct Redist_options
 	double H;							// interparticle spacing
 	double r_cutoff_factor = 2.5;		// radius of neighbors to consider during interpolation, as factor of H
 	double sampling_radius;
-	double barrier_coefficient = 0.0;	// coefficient for barrier term in optimisation
-	double armijo_tau = 0.0;			// armijo line search parameters
-	double armijo_c = 0.0;
-	double support_prevent = 0.0;		// prevention parameter if support may be left
-	int fail_projection = 0;			// prevention projection if support may be left
-	int init_project = 0;
+
 	int compute_normals = 0;
 	int compute_curvatures = 0;
 };
@@ -133,15 +128,12 @@ private:
 	std::string polynomialDegree;
 
 
-
-
 	int return_sign(double phi)
 	{
 		if (phi > 0) return 1;
 		if (phi < 0) return -1;
 		return 0;
 	}
-
 
 	// this function lays the groundwork for the interpolation step. It classifies particles according to two possible classes:
 	// (a)	close particles: These particles are close to the surface and will be the central particle in the subsequent interpolation step.
@@ -544,59 +536,6 @@ private:
 			// which is zero at a solution.
 			double nabla_f_norm = nabla_f.norm();
 
-			// possibly start off with a Newton-style projection towards the interface. This is pretty much entirely
-			// obsolete since we start off with a sample point on the interface anyways. Can be removed.
-//			if (redistOptions.init_project)
-//			{
-//				while(abs(p) > redistOptions.tolerance)
-//				{
-//					dpdx = get_dpdx(x, c, polynomialDegree);
-//					dpdy = get_dpdy(x, c, polynomialDegree);
-//					p = get_p(x, c, polynomialDegree);
-//					double grad_p_mag2 = dpdx*dpdx + dpdy*dpdy;
-//
-//					x[0] = x[0] - p*dpdx/grad_p_mag2;
-//					x[1] = x[1] - p*dpdy/grad_p_mag2;
-//				}
-//				dpdx = get_dpdx(x, c, polynomialDegree);
-//				dpdy = get_dpdy(x, c, polynomialDegree);
-//				xax = x - xa;
-//				lambda = (-xax[0]*dpdx - xax[1]*dpdy)/(dpdx*dpdx + dpdy*dpdy);
-//			}
-
-
-			/////// parallel DEBUG ////////////////////////
-			if (false)
-			{
-				//Box<dim,double> detect({ -0.613708, 0.165925, -0.0531703},{ -0.613706, 0.165927, -0.0531701});
-				Box<dim,double> detect({ -0.613708, 0.165925},{ -0.613706, 0.165927});
-
-				Point<dim,double> pp = vd_in.getPos(a);
-
-				if (detect.isInside(pp))
-				{
-					std::cout<<"xa:  \n"<<xa<< std::endl;
-					std::cout<<"x:  \n"<<x<<std::endl;
-					std::cout<<"sample key bmin: "<<b_min.getKey()<<std::endl;
-					std::cout<<"c:  \n"<<c<<std::endl;
-					std::cout<<"key: "<<a.getKey()<<std::endl;
-				}
-
-				auto & v_cl = create_vcluster();
-
-				if (a.getKey() == 131 && v_cl.rank() == 1)
-				{
-					std::cout<<"xa:  \n"<<xa<< std::endl;
-					std::cout<<"x:  \n"<<x<<std::endl;
-					std::cout<<"sample key bmin: "<<b_min.getKey()<<std::endl;
-					std::cout<<"c:  \n"<<c<<std::endl;
-				}
-
-				if ((abs(x[0] + 0.6659)<0.0005)&&(abs(x[1] - 0.2223)<0.0005)&&(abs(x[2] + 0.0594)<0.0005)) std::cout<<"its there and x = \n"<<x
-						<<"\nbmin key is "<<b_min.getKey()<<" and the processor is "<<v_cl.rank()<<std::endl;
-			}
-			//////////////////////////////
-
 			// Do Newton iterations.
 			while((nabla_f_norm > redistOptions.tolerance) && (k_newton<redistOptions.max_iter))
 			{
@@ -610,108 +549,8 @@ private:
 				H_f(dim, Eigen::seq(0, dim - 1)) = grad_p.transpose();
 				H_f(dim, dim) = 0.0;
 
-				// barrier method
-				if (redistOptions.barrier_coefficient)
-				{
-					x00x = x - x00;
-					barrier = 0.5*(x00x[0]*x00x[0] + x00x[1]*x00x[1] - r_cutoff2);
-					//std::cout<<barrier<<std::endl;
-					barrier2 = barrier*barrier;
-					barrier3 = barrier2*barrier;
-
-					// Add to gradient
-					nabla_f[0] -= redistOptions.barrier_coefficient*x00x[0]/barrier2;
-					nabla_f[1] -= redistOptions.barrier_coefficient*x00x[1]/barrier2;
-					// Add to Hessian matrix
-					H_f(0, 0) += redistOptions.barrier_coefficient*(-barrier + 2*x00x[0]*x00x[0])/barrier3;
-					H_f(0, 1) += redistOptions.barrier_coefficient*2*x00x[0]*x00x[1]/barrier3;
-					H_f(1, 0) += redistOptions.barrier_coefficient*2*x00x[0]*x00x[1]/barrier3;
-					H_f(1, 1) += redistOptions.barrier_coefficient*(-barrier + 2*x00x[1]*x00x[1])/barrier3;
-				}
-
 				// compute Newton increment
 				dx = - H_f.inverse()*nabla_f;
-
-				// Armijo rule
-				if (redistOptions.armijo_tau)
-				{
-					double alpha_armijo = 1.0;
-					double t_armijo = -redistOptions.armijo_c*(nabla_f[0]*dx[0] + nabla_f[1]*dx[1] + nabla_f[2]*dx[2]);
-					// int k_armijo = 0;
-					double f = 0.5*(x - xa).norm()*(x - xa).norm() + lambda*get_p(x, c, polynomialDegree);
-					EMatrix<double, Eigen::Dynamic, 1> x_armijo(2,1);
-					x_armijo[0] = x[0] + alpha_armijo*dx[0];
-					x_armijo[1] = x[1] + alpha_armijo*dx[1];
-					double lambda_armijo = lambda + alpha_armijo*dx[2];
-					double f_armijo = 0.5*(xa - x_armijo).norm()*(xa - x_armijo).norm() + lambda_armijo*get_p(x_armijo, c, polynomialDegree);
-					if (verbose) std::cout<<"start armijo\n"<<"x: "<<x[0]<<", "<<x[1]<<"\ndx: "<<dx[0]<<", "<<dx[1]<<"\nt: "<<t_armijo<<"\nf: "<<f<<"\nf_armijo: "<<f_armijo<<std::endl;
-					while((f - f_armijo) < alpha_armijo*t_armijo)
-					{
-						alpha_armijo = redistOptions.armijo_tau*alpha_armijo;
-
-						x_armijo[0] = x[0] + alpha_armijo*dx[0];
-						x_armijo[1] = x[1] + alpha_armijo*dx[1];
-						lambda_armijo = lambda + alpha_armijo*dx[2];
-						f_armijo = 0.5*(xa - x_armijo).norm()*(xa - x_armijo).norm() + lambda_armijo*get_p(x_armijo, c, polynomialDegree);
-						//std::cout<<alpha_armijo<<std::endl;
-						if (verbose) std::cout<<"\narmijo++\n"<<"x: "<<x[0]<<", "<<x[1]<<"\ndx: "<<dx[0]<<", "<<dx[1]<<"\nt: "<<t_armijo<<"\nf: "<<f<<"\nf_armijo: "<<f_armijo<<"\ndiff f: "<<f-f_armijo<<"\n&&&&&&&&&&&&&&&&&&&&&&&&&"<<std::endl;
-					}
-					dx = alpha_armijo*dx;
-				}
-
-				// prevent Newton algorithm from leaving the support radius by projecting towards zero level-set
-				if (redistOptions.fail_projection)
-				{
-					if ((x[0] + dx[0] - x00[0])*(x[0] + dx[0] - x00[0]) + (x[1] + dx[1] - x00[1])*(x[1] + dx[1] - x00[1]) > r_cutoff2)
-					{
-						EMatrix<double, Eigen::Dynamic, 1> x_interm(2,1);
-						x_interm[0] = 1e16;
-						x_interm[1] = 1e16;
-						double dpdx_interm;
-						double dpdy_interm;
-						double grad_p_mag_interm2;
-						double p_interm;
-						int j = 0;
-
-						while ((x_interm - x00).norm() > sqrt(r_cutoff2))
-						{
-							dx = redistOptions.support_prevent*dx;
-							if(j == 0) x_interm = x;
-							dpdx_interm = get_dpdx(x_interm, c, polynomialDegree);
-							dpdy_interm = get_dpdy(x_interm, c, polynomialDegree);
-							grad_p_mag_interm2 = dpdx_interm*dpdx_interm + dpdy_interm*dpdy_interm;
-							p_interm = get_p(x_interm, c, polynomialDegree);
-							x_interm[0] = x_interm[0] - redistOptions.support_prevent*p_interm*dpdx_interm/grad_p_mag_interm2;
-							x_interm[1] = x_interm[1] - redistOptions.support_prevent*p_interm*dpdy_interm/grad_p_mag_interm2;
-							++j;
-							if (a.getKey() == 12)
-							{
-								//std::cout<<"p: "<<p_interm<<" r: "<<(x_interm - x00).norm()<<" j: "<<j<<std::endl;
-							}
-						}
-						x[0] = 0.0;
-						x[1] = 0.0;
-						lambda = 0.0;
-						dx[0] = x_interm[0];
-						dx[1] = x_interm[1];
-						xax = x_interm - xa;
-						dx[2] = (-xax[0]*dpdx_interm - xax[1]*dpdy_interm)/grad_p_mag_interm2;
-					}
-				}
-
-				// prevent Newton algorithm from leaving the support radius by scaling step size and randomly turning the step direction
-				if(redistOptions.support_prevent)
-				{
-					while (((x[0] + dx[0] - x00[0])*(x[0] + dx[0] - x00[0]) + (x[1] + dx[1] - x00[1])*(x[1] + dx[1] - x00[1])) > r_cutoff2)
-					{
-						dx = redistOptions.support_prevent*dx;
-						double rand_degree = 2*M_PI*rand()/(RAND_MAX + 1.);
-						double dx_old = dx[0];
-						double dy_old = dx[1];
-						dx[0] = cos(rand_degree)*dx_old - sin(rand_degree)*dy_old;
-						dx[1] = sin(rand_degree)*dx_old + cos(rand_degree)*dy_old;
-					}
-				}
 
 				// prevent Newton algorithm from leaving the support radius by scaling step size. This is pretty much
 				// the only subroutine that should stay. It is invoked in case the increment exceeds 50% of the cutoff
@@ -722,7 +561,6 @@ private:
 					auto & v_cl = create_vcluster();
 
 					std::cout<<"Step size limitation invoked for particle " << a.getKey() << " on processor " << v_cl.rank() << "   " <<std::endl;
-
 
 					dx = 0.1*dx;
 				}
@@ -773,7 +611,7 @@ private:
 				//std::cout<<"c:\n"<<vd.getProp<interpol_coeff>(a)<<"\nmin_sdf: "<<vd.getProp<min_sdf>(a)<<" , min_sdf_x: "<<vd.getProp<min_sdf_x>(a)<<std::endl;
 				std::cout<<"x_final: "<<x[0]<<", "<<x[1]<<std::endl;
 				std::cout<<"p(x_final) :"<<get_p(x, c, polynomialDegree)<<std::endl;
-				std::cout<<"nabla p(x_final)"<<get_dpdx(x, c, polynomialDegree)<<", "<<get_dpdy(x, c, polynomialDegree)<<std::endl;
+				std::cout<<"nabla p(x_final)"<<get_grad_p(x, c, polynomialDegree)<<std::endl;
 				std::cout<<"lambda: "<<lambda<<std::endl;
 			}
 			verbose = 0;
@@ -787,60 +625,14 @@ private:
 				std::cout<<"analytical value: "<<vd_in.template getProp<8>(a)<<", diff: "<<abs(vd_in.template getProp<vd_in_sdf>(a) - vd_in.template getProp<8>(a))<<std::endl;
 			}
 
-			int debug_error = 1;
 			if (redistOptions.compute_normals)
 			{
 				for(int k = 0; k<dim; k++) vd_in.template getProp<vd_in_normal>(a)[k] = return_sign(vd_in.template getProp<vd_in_sdf>(a))*grad_p(k)*1/grad_p.norm();
-				EMatrix<double, Eigen::Dynamic, 1> normal(dim, 1);
-				normal = (xa - x)/(xa - x).norm();
-				//for (int k = 0; k<dim; k++) vd_in.template getProp<vd_in_normal>(a)[k] = normal(k);
-
-				if (debug_error)
-				{
-					double A = 0.75;
-					double B = 0.5;
-					double C = 0.5;
-					double xcp_analytical;
-					double ycp_analytical;
-					double zcp_analytical;
-
-					double dist = DistancePointEllipsoid(A, B, C, abs(xa[0]), abs(xa[1]), abs(xa[2]), xcp_analytical, ycp_analytical, zcp_analytical);
-
-					xcp_analytical = return_sign(xa[0])*xcp_analytical;
-					ycp_analytical = return_sign(xa[1])*ycp_analytical;
-					zcp_analytical = return_sign(xa[2])*zcp_analytical;
-					EMatrix<double, Eigen::Dynamic, 1> cp_analytical(dim, 1);
-					EMatrix<double, Eigen::Dynamic, 1> query_point(dim, 1);
-
-					for(int k = 0; k<dim; k++) query_point[k] = xa[k];
-					cp_analytical[0] = xcp_analytical;
-					cp_analytical[1] = ycp_analytical;
-					cp_analytical[2] = zcp_analytical;
-
-
-					EMatrix<double, Eigen::Dynamic, 1> norm_analytical(dim, 1);
-					norm_analytical[0] = 2*xcp_analytical/(A*A);
-					norm_analytical[1] = 2*ycp_analytical/(B*B);
-					norm_analytical[2] = 2*zcp_analytical/(C*C);
-					norm_analytical = return_sign(vd_in.template getProp<vd_in_sdf>(a))*norm_analytical/norm_analytical.norm();
-					// store analytical normal
-					for(int k = 0; k<dim; k++) vd_in.template getProp<9>(a)[k] = norm_analytical[k];
-					// store analytical curvature
-					vd_in.template getProp<10>(a) = (std::abs(xcp_analytical*xcp_analytical + ycp_analytical*ycp_analytical + zcp_analytical*zcp_analytical - A*A - B*B - C*C))/(2*A*A*B*B*C*C*std::pow(xcp_analytical*xcp_analytical/std::pow(A, 4) + ycp_analytical*ycp_analytical/std::pow(B, 4) + zcp_analytical*zcp_analytical/std::pow(C, 4), 1.5));
-					vd_in.template getProp<11>(a) = (x - cp_analytical).norm();
-				}
 			}
 
 			if (redistOptions.compute_curvatures)
 			{
 				H_p = get_H_p(x, c, polynomialDegree);
-				// debug:
-				//std::cout<<"^^^^^^^^^^^^^^^^^x\n"<<x<<"\n&&&&&&&&&&&&&nabla_p\n"<<grad_p<<"\n*****************Hessian_p:\n"<<H_p<<std::endl;
-				//std::cout<<"analytical hessian:"<<std::endl;
-				//std::cout<<1-x(0)*x(0)<<", "<<x(0)*x(1)<<", "<<x(0)*x(2)<<std::endl;
-				//std::cout<<x(0)*x(1)<<", "<<1-x(1)*x(1)<<", "<<x(1)*x(2)<<std::endl;
-				//std::cout<<x(0)*x(2)<<", "<<x(1)*x(2)<<", "<<1-x(2)*x(2)<<std::endl;
-
 				// divergence of normalized gradient field:
 				if (dim == 2)
 				{
@@ -851,7 +643,6 @@ private:
 					vd_in.template getProp<vd_in_curvature>(a) = 0.5*
 					((H_p(1,1) + H_p(2,2))*std::pow(grad_p(0), 2) + (H_p(0,0) + H_p(2,2))*std::pow(grad_p(1), 2) + (H_p(0,0) + H_p(1,1))*std::pow(grad_p(2), 2)
 					- 2*grad_p(0)*grad_p(1)*H_p(0,1) - 2*grad_p(0)*grad_p(2)*H_p(0,2) - 2*grad_p(1)*grad_p(2)*H_p(1,2))*std::pow(std::pow(grad_p(0), 2) + std::pow(grad_p(1), 2) + std::pow(grad_p(2), 2), -1.5);
-					//std::cout<<"&&&&&curvature:\n"<<vd_in.template getProp<vd_in_curvature>(a)<<std::endl;
 				}
 
 			}
@@ -859,8 +650,6 @@ private:
 		}
 		
 	}
-
-
 
 	//todo: template these?
 	inline double get_p(EMatrix<double, Eigen::Dynamic, 1> xvector, EMatrix<double, Eigen::Dynamic, 1> c, std::string polynomialdegree)
@@ -893,6 +682,7 @@ private:
 							+ c[15]*z + c[16]*x*z + c[17]*x*x*z + c[18]*x*x*x*z + c[19]*y*z + c[20]*x*y*z + c[21]*x*x*y*z + c[22]*y*y*z + c[23]*x*y*y*z + c[24]*y*y*y*z + c[25]*z*z + c[26]*x*z*z + c[27]*x*x*z*z
 							+ c[28]*y*z*z + c[29]*x*y*z*z + c[30]*y*y*z*z + c[31]*z*z*z + c[32]*x*z*z*z + c[33]*y*z*z*z + c[34]*z*z*z*z);
 			}
+			else throw std::invalid_argument("received unknown polynomial degree");
 		}
 		else throw std::invalid_argument("received unknown input dimension. Spatial variable needs to be either 2D or 3D.");
 	}
@@ -1000,271 +790,6 @@ private:
 		return(H_p);
 
 	}
-
-
-
-
-
-	// old material that hopefully is not needed anymore:
-
-	inline double get_dpdx(EMatrix<double, Eigen::Dynamic, 1> xvector, EMatrix<double, Eigen::Dynamic, 1> c, std::string polynomialdegree)
-	{	
-		const double x = xvector[0];
-		const double y = xvector[1];
-		if (polynomialdegree == "bicubic")
-		{
-				return(c[1] + 2*c[2]*x + 3*c[3]*x*x + c[5]*y + 2*c[6]*x*y + 3*c[7]*x*x*y + c[9]*y*y + 2*c[10]*x*y*y + 3*c[11]*x*x*y*y + c[13]*y*y*y + 2*c[14]*x*y*y*y + 3*c[15]*x*x*y*y*y);
-		}
-		if (polynomialdegree == "quadratic")
-		{
-				return(c[1] + 2*c[2]*x + c[4]*y);
-		}
-		if (polynomialdegree == "taylor4")
-		{
-				return(c[1] + 2*c[2]*x + 3*c[3]*x*x + 4*c[4]*x*x*x + c[6]*y + 2*c[7]*x*y + 3*c[8]*x*x*y + c[10]*y*y + 2*c[11]*x*y*y + c[13]*y*y*y);
-		}
-	}
-
-	inline double get_dpdy(EMatrix<double, Eigen::Dynamic, 1> xvector, EMatrix<double, Eigen::Dynamic, 1> c, std::string polynomialdegree)
-	{	
-		const double x = xvector[0];
-		const double y = xvector[1];
-		if (polynomialdegree == "bicubic")
-		{
-				return(c[4] + c[5]*x + c[6]*x*x + c[7]*x*x*x + 2*c[8]*y + 2*c[9]*x*y + 2*c[10]*x*x*y + 2*c[11]*x*x*x*y + 3*c[12]*y*y + 3*c[13]*x*y*y + 3*c[14]*x*x*y*y + 3*c[15]*x*x*x*y*y);
-		}
-		if (polynomialdegree == "quadratic")
-		{
-				return(c[3] + c[4]*x + 2*c[5]*y);
-		}
-		if (polynomialdegree == "taylor4")
-		{
-				return(c[5] + c[6]*x + c[7]*x*x + c[8]*x*x*x + 2*c[9]*y + 2*c[10]*x*y + 2*c[11]*x*x*y + 3*c[12]*y*y + 3*c[13]*y*y*x + 4*c[14]*y*y*y);
-		}
-	}
-
-	inline double get_dpdxdx(EMatrix<double, Eigen::Dynamic, 1> xvector, EMatrix<double, Eigen::Dynamic, 1> c, std::string polynomialdegree)
-	{
-		const double x = xvector[0];
-		const double y = xvector[1];
-		if (polynomialdegree == "bicubic")
-		{
-				return(2*c[2] + 6*c[3]*x + 2*c[6]*y + 6*c[7]*x*y + 2*c[10]*y*y + 6*c[11]*y*y*x + 2*c[14]*y*y*y + 6*c[15]*y*y*y*x);
-		}
-		if (polynomialdegree == "quadratic")
-		{
-				return(2*c[2]);
-		}
-		if (polynomialdegree == "taylor4")
-		{
-				return(2*c[2] + 6*c[3]*x + 12*c[4]*x*x + 2*c[7]*y + 6*c[8]*x*y + 2*c[11]*y*y);
-		}
-	}
-
-	inline double get_dpdydy(EMatrix<double, Eigen::Dynamic, 1> xvector, EMatrix<double, Eigen::Dynamic, 1> c, std::string polynomialdegree)
-	{
-		const double x = xvector[0];
-		const double y = xvector[1];
-		if (polynomialdegree == "bicubic")
-		{
-				return(2*c[8] + 2*c[9]*x + 2*c[10]*x*x + 2*c[11]*x*x*x + 6*c[12]*y + 6*c[13]*x*y + 6*c[14]*x*x*y + 6*c[15]*x*x*x*y);
-		}
-		if (polynomialdegree == "quadratic")
-		{
-				return(2*c[5]);
-		}
-		if (polynomialdegree == "taylor4")
-		{
-				return(2*c[9] + 2*c[10]*x + 2*c[11]*x*x + 6*c[12]*y + 6*c[13]*x*y + 12*c[14]*y*y);
-		}
-	}
-
-	inline double get_dpdxdy(EMatrix<double, Eigen::Dynamic, 1> xvector, EMatrix<double, Eigen::Dynamic, 1> c, std::string polynomialdegree)
-	{
-		const double x = xvector[0];
-		const double y = xvector[1];
-		if (polynomialdegree == "bicubic")
-		{
-				return(c[5] + 2*c[6]*x + 3*c[7]*x*x + 2*c[9]*y + 4*c[10]*x*y + 6*c[11]*x*x*y + 3*c[13]*y*y + 6*c[14]*x*y*y + 9*c[15]*x*x*y*y);
-		}
-		if (polynomialdegree == "quadratic")
-		{
-				return(c[4]);
-		}
-		if (polynomialdegree == "taylor4")
-		{
-				return(c[6] + 2*c[7]*x + 3*c[8]*x*x + 2*c[10]*y +4*c[11]*x*y + 3*c[13]*y*y);
-		}
-	}
-
-
-
-	// stuff for error analysis, NOT part of the method
-	double GetRoot ( double r0 , double z0 , double z1 , double g )
-	    {
-		const int maxIter = 100;
-	        double n0 = r0*z0;
-	        double s0 = z1 - 1;
-	        double s1 = ( g < 0 ? 0 : sqrt(n0*n0+z1*z1) - 1 ) ;
-	        double s = 0;
-	        for ( int i = 0; i < maxIter; ++i ){
-	            s = ( s0 + s1 ) / 2 ;
-	            if ( s == s0 || s == s1 ) {break; }
-	            double ratio0 = n0 /( s + r0 );
-	            double ratio1 = z1 /( s + 1 );
-	            g = ratio0*ratio0 + ratio1*ratio1 - 1 ;
-	            if (g > 0) {s0 = s;} else if (g < 0) {s1 = s ;} else {break ;}
-	            if (i == maxIter) std::cout<<"GetRoot does not converge."<<std::endl;
-	        }
-	        return s;
-	    }
-
-	double GetRoot(double r0, double r1, double z0, double z1, double z2, double g)
-	{
-		const int maxIter = 100;
-		double n0 = r0*z0;
-		double n1 = r1*z1;
-		double s0 = z2 - 1;
-		double s1 = (g < 0 ? 0 : sqrt(n0*n0 + n1*n1 + z2*z2) - 1) ;
-		double s = s;
-		for(int i = 0 ; i < maxIter ; ++i )
-		{
-			s = ( s0 + s1 ) / 2 ;
-			if ( s == s0 || s == s1 ) {break; }
-			double ratio0 = n0 / ( s + r0 );
-			double ratio1 = n1 / ( s + r1 );
-			double ratio2 = z2 / ( s + 1 );
-			g = ratio0*ratio0 + ratio1*ratio1 +ratio2*ratio2 - 1;
-			if ( g > 0 ) { s0 = s ;}
-			else if ( g < 0 ) { s1 = s ; }
-			else {break;}
-			if (i == maxIter) std::cout<<"GetRoot does not converge."<<std::endl;
-		}
-		return (s);
-	}
-
-	double DistancePointEllipse(double e0, double e1, double y0, double y1, double& x0, double& x1)
-	    {
-	        double distance;
-	        if ( y1 > 0){
-	            if ( y0 > 0){
-	                double z0 = y0 / e0;
-	                double z1 = y1 / e1;
-	                double g = z0*z0+z1*z1 - 1;
-	                if ( g != 0){
-	                    double r0 = (e0/e1)*(e0/e1);
-	                    double sbar = GetRoot(r0 , z0 , z1 , g);
-	                    x0 = r0 * y0 /( sbar + r0 );
-	                    x1 = y1 /( sbar + 1 );
-	                    distance = sqrt( (x0-y0)*(x0-y0) + (x1-y1)*(x1-y1) );
-	                    }else{
-	                        x0 = y0;
-	                        x1 = y1;
-	                        distance = 0;
-	                    }
-	                }
-	                else // y0 == 0
-	                    {x0 = 0 ; x1 = e1 ; distance = abs( y1 - e1 );}
-	        }else{ // y1 == 0
-	            double numer0 = e0*y0 , denom0 = e0*e0 - e1*e1;
-	            if ( numer0 < denom0 ){
-	                    double xde0 = numer0/denom0;
-	                    x0 = e0*xde0 ; x1 = e1*sqrt(1 - xde0*xde0 );
-	                    distance = sqrt( (x0-y0)*(x0-y0) + x1*x1 );
-	                }else{
-	                    x0 = e0;
-	                    x1 = 0;
-	                    distance = abs( y0 - e0 );
-	            }
-	        }
-	        return distance;
-	    }
-
-	double DistancePointEllipsoid(double e0, double e1, double e2, double y0, double y1, double y2, double& x0, double& x1, double& x2)
-	{
-		double distance;
-		if( y2 > 0 )
-		{
-			if( y1 > 0 )
-			{
-				if( y0 > 0 )
-				{
-					double z0 = y0 / e0;
-					double z1 = y1 / e1;
-					double z2 = y2 / e2;
-					double g = z0*z0 + z1*z1 + z2*z2 - 1 ;
-					if( g != 0 )
-					{
-						double r0 = (e0/e2)*(e0/e2);
-						double r1 = (e1/e2)*(e1/e2);
-						double sbar = GetRoot ( r0 , r1 , z0 , z1 , z2 , g );
-						x0 = r0 *y0 / ( sbar + r0 );
-						x1 = r1 *y1 / ( sbar + r1 );
-						x2 = y2 / ( sbar + 1 );
-						distance = sqrt( (x0 - y0)*(x0 - y0) + (x1 - y1)*(x1 - y1) + (x2 - y2)*(x2 - y2));
-					}
-					else
-					{
-						x0 = y0;
-						x1 = y1;
-						x2 = y2;
-						distance = 0;
-					}
-				}
-				else // y0 == 0
-				{
-					x0 = 0;
-					distance = DistancePointEllipse( e1 , e2 , y1 , y2, x1, x2);
-				}
-			}
-			else // y1 == 0
-			{
-				if( y0 > 0 )
-				{
-					x1 = 0;
-					distance = DistancePointEllipse( e0 , e2 , y0 , y2, x0, x2);
-				}
-				else // y0 == 0
-				{
-					x0 = 0;
-					x1 = 0;
-					x2 = e2;
-					distance = abs(y2 - e2);
-				}
-			}
-		}
-		else // y2 == 0
-		{
-			double denom0 = e0*e0 - e2*e2;
-			double denom1 = e1*e1 - e2*e2;
-			double numer0 = e0*y0;
-			double numer1 = e1*y1;
-			bool computed = false;
-			if((numer0 < denom0) && (numer1 < denom1))
-			{
-				double xde0 = numer0/denom0;
-				double xde1 = numer1/denom1 ;
-				double xde0sqr = xde0 *xde0;
-				double xde1sqr = xde1 * xde1 ;
-				double discr = 1 - xde0sqr - xde1sqr;
-				if( discr > 0 )
-				{
-					x0 = e0*xde0;
-					x1 = e1*xde1;
-					x2 = e2*sqrt(discr);
-					distance = sqrt((x0 - y0)*(x0 - y0) + (x1 - y1)*(x1 - y1) + x2*x2);
-					computed = true;
-				}
-			}
-			if( !computed )
-			{
-				x2 = 0;
-				distance = DistancePointEllipse(e0 , e1 , y0 , y1, x0, x1);
-			}
-		}
-		return distance;
-	}
-// end stuff for error analysis
 
 };
 
