@@ -73,8 +73,8 @@ BOOST_AUTO_TEST_SUITE(FDOrder1TestSuite)
 //			get_absolute_error<NumericalGradient, AnalyticalGradient, Error>(g_dist);
 			get_relative_error<NumericalGradient, AnalyticalGradient, Error>(g_dist);
 			
-			L_norms lNorms;
-			lNorms = get_l_norms_grid<Error>(g_dist);
+			LNorms<double> lNorms;
+			lNorms.get_l_norms_grid<Error>(g_dist);
 			BOOST_CHECK_MESSAGE(lNorms.l2   < l2_norms[count] + 0.00001 + EPSILON, "Checking L2-norm forward FD");
 //			write_lnorms_to_file(N, lNorms, "l_norms_FDfwd", "./");
 			std::cout << N << ", " << lNorms.l2 << ", " << lNorms.linf << std::endl;
@@ -134,8 +134,8 @@ BOOST_AUTO_TEST_SUITE(FDOrder1TestSuite)
 //			get_absolute_error<NumericalGradient, AnalyticalGradient, Error>(g_dist);
 			get_relative_error<NumericalGradient, AnalyticalGradient, Error>(g_dist);
 			
-			L_norms lNorms;
-			lNorms = get_l_norms_grid<Error>(g_dist);
+			LNorms<double> lNorms;
+			lNorms.get_l_norms_grid<Error>(g_dist);
 			BOOST_CHECK_MESSAGE(lNorms.l2   < l2_norms[count] + 0.00001 + EPSILON, "Checking L2-norm backward FD");
 //			write_lnorms_to_file(N, lNorms, "l_norms_FDbwd", "./");
 			std::cout << N << ", " << lNorms.l2 << ", " << lNorms.linf << std::endl;
@@ -195,8 +195,8 @@ BOOST_AUTO_TEST_SUITE(FDOrder1TestSuite)
 //			get_absolute_error<NumericalGradient, AnalyticalGradient, Error>(g_dist);
 			get_relative_error<NumericalGradient, AnalyticalGradient, Error>(g_dist);
 			
-			L_norms lNorms;
-			lNorms = get_l_norms_grid<Error>(g_dist);
+			LNorms<double> lNorms;
+			lNorms.get_l_norms_grid<Error>(g_dist);
 			BOOST_CHECK_MESSAGE(lNorms.l2   < l2_norms[count] + 0.00001 + EPSILON, "Checking L2-norm central FD");
 //			write_lnorms_to_file(N, lNorms, "l_norms_FDbwd", "./");
 			std::cout << N << ", " << lNorms.l2 << ", " << lNorms.linf << std::endl;

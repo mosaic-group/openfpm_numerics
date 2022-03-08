@@ -599,8 +599,8 @@ BOOST_AUTO_TEST_CASE( fd_test_use_staggered_position)
 	grid_key_dx<2> key22(2,2);
 	grid_key_dx<2> key1515(15,15);
 
-	comb<2> vx_c[] = {{0,-1}};
-	comb<2> vy_c[] = {{-1,0}};
+	comb<2> vx_c[] = {{(char)0,(char)-1}};
+	comb<2> vy_c[] = {{(char)-1,(char)0}};
 
 	grid_key_dx<2> key_ret_vx_x = D<x,Field<V,syss_nn>,syss_nn>::position(key00,ginfo,vx_c);
 	grid_key_dx<2> key_ret_vx_y = D<y,Field<V,syss_nn>,syss_nn>::position(key00,ginfo,vx_c);

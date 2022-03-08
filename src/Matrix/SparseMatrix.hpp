@@ -8,7 +8,7 @@
 #ifndef OPENFPM_NUMERICS_SRC_MATRIX_SPARSEMATRIX_HPP_
 #define OPENFPM_NUMERICS_SRC_MATRIX_SPARSEMATRIX_HPP_
 
-#include "config/config.h"
+#include "config.h"
 #include "util/linalgebra_lib.hpp"
 #include "Vector/map_vector.hpp"
 #include "VCluster/VCluster.hpp"

@@ -47,7 +47,6 @@
 //#include "ComputeGradient.hpp"
 #include "FiniteDifference/Upwind_gradient.hpp"
 
-
 /** @brief Optional convergence criterium checking the total change.
  *
  * @details The change between the current and the previous iterations is computed as sum over all the If
@@ -56,13 +55,14 @@
  * between the iterations is considered and the
  * redistancing finishes when the Conv_tol_change.value (or the max-iteration) is reached.
  */
+template <typename phi_type=double>
 struct Conv_tol_change
 {
 	bool check = true; 	///< If true, the total change of Phi (see DistFromSol::change)
 	///< between the iterations is considered and the redistancing finishes when the Conv_tol_change.value (or the
 	///< max-iteration) is reached. If false, the change is not considered as steady-state
 	///< criterion. Default: true.
-	double value = 1e-15; 	///< Double variable that stores the tolerance value for the change at which the iterative
+	phi_type value = 1e-15; 	///< Variable that stores the tolerance value for the change at which the iterative
 	///< redistancing process is considered as steady-state. (see also DistFromSol::change)
 };
 
@@ -71,12 +71,13 @@ struct Conv_tol_change
  * @details If Conv_tol_residual.check = true, the residual, that is abs(magnitude gradient of phi - 1), is considered
  * and the redistancing finishes when the Conv_tol_residual.value (or the max-iteration) is reached.
  */
+template <typename phi_type=double>
 struct Conv_tol_residual
 {
 	bool check = true; ///< If true, the residual of Phi (see DistFromSol::residual) is considered and the
 	///< redistancing finishes when the Conv_tol_residual.value (or the
 	///< max-iteration) is reached. If false, the change is not considered as steady-state criterion. Default: true.
-	double value = 1e-3; 		///< Double variable that stores the tolerance value for the residual at which the
+	phi_type value = 1e-3; 		///< Variable that stores the tolerance value for the residual at which the
 	///< iterative redistancing process is considered as steady-state. (see also
 	///< DistFromSol::residual)
 };
@@ -112,13 +113,14 @@ struct Conv_tol_residual
  * @param save_temp_grid: If true, save the temporary grid as hdf5 that can be reloaded onto a grid
  
  */
+template <typename phi_type=double>
 struct Redist_options
 {
 	size_t min_iter = 1e5;
 	size_t max_iter = 1e12;
 	
-	Conv_tol_change convTolChange;
-	Conv_tol_residual convTolResidual;
+	Conv_tol_change<phi_type> convTolChange;
+	Conv_tol_residual<phi_type> convTolResidual;
 	
 	size_t interval_check_convergence = 100;
 	size_t width_NB_in_grid_points = 8;
@@ -133,15 +135,16 @@ struct Redist_options
  *
  * @see RedistancingSussman::get_residual_and_change_NB()
  */
+template <typename phi_type=double>
 struct DistFromSol
 {
-	double change;   	///< Double variable that contains the absolute value of the change of \a &phi; between the
+	phi_type change;   	///< Variable that contains the absolute value of the change of \a &phi; between the
 	///< current
 	///< iteration \a i and the previous iteration \a i-1: @f[ abs( \phi_i - \phi_{i-1} ) @f] It is
 	///< computed for all grid
 	///< points that lie within the narrow band and normalized to the number of grid points that
 	///< lie in that narrow band.
-	double residual; 	///< Double variable that contains the absolute value of how far the gradient magnitude of
+	phi_type residual; 	///< Variable that contains the absolute value of how far the gradient magnitude of
 	///< the current \a &phi; of iteration number \a i is away from being equal to 1: @f[ abs(|\nabla\phi_i| - 1 ) @f]
 	///< It is computed for all grid points that lie within the narrow band and
 	///< normalized to the number of grid points that lie in that narrow band.
@@ -152,9 +155,9 @@ struct DistFromSol
 /**@brief Class for reinitializing a level-set function into a signed distance function using Sussman redistancing.
  * @file RedistancingSussman.hpp
  * @class RedistancingSussman
- * @tparam grid_in_type Inferred type of input grid, which stores the initial level-set function Phi_0.
+ * @tparam grid_in_type Template type of input grid, which stores the initial level-set function Phi_0.
  */
-template <typename grid_in_type>
+template <typename grid_in_type, typename phi_type=double>
 class RedistancingSussman
 {
 public:
@@ -166,7 +169,7 @@ public:
 	 * @param redistOptions User defined options for the Sussman redistancing process
 	 *
 	 */
-	RedistancingSussman(grid_in_type &grid_in, Redist_options &redistOptions) : redistOptions(redistOptions),
+	RedistancingSussman(grid_in_type &grid_in, Redist_options<phi_type> &redistOptions) : redistOptions(redistOptions),
 	                                                                            r_grid_in(grid_in),
 	                                                                            g_temp(grid_in.getDecomposition(),
 	                                                                                   grid_in.getGridInfoVoid().getSize(),
@@ -186,7 +189,7 @@ public:
 	 * gradient of Phi_{n+1},
 	 * sign of the original input Phi_0 (for the upwinding).
 	 */
-	typedef aggregate<double, Point<grid_in_type::dims, double>, int>
+	typedef aggregate<phi_type, phi_type[grid_in_type::dims], int>
 	        props_temp;
 	/** @brief Type definition for the temporary grid.
 	 */
@@ -194,8 +197,7 @@ public:
 	/**
 	 * @brief Create temporary grid, which is only used inside the class for the redistancing.
 	 *
-	 * @details The temporary grid stores the following 4 properties:
-	 * the initial (input) Phi_0 (will be updated by Phi_{n+1} after each redistancing step),
+	 * @details The temporary grid stores the following 3 properties:
 	 * Phi_{n+1}(received from redistancing),
 	 * gradient of Phi_{n+1},
 	 * sign of the original input Phi_0 (for the upwinding).
@@ -208,11 +210,12 @@ public:
 	 * having more properties. Computes the gradients. Runs the redistancing on the internal temporary grid. Copies
 	 * resulting signed distance function to the Phi_SDF_out property of the input grid.
 	 */
-	template<size_t Phi_0_in, size_t Phi_SDF_out> void run_redistancing()
+	template <size_t Phi_0_in, size_t Phi_SDF_out>
+	void run_redistancing()
 	{
 		init_temp_grid<Phi_0_in>();
-		init_sign_prop<Phi_n_temp, Phi_0_sign_temp>(
-				g_temp); // initialize Phi_0_sign_temp with the sign of the initial (pre-redistancing) Phi_0
+		init_sign_prop<Phi_n_temp, Phi_0_sign_temp>(g_temp); // Initialize Phi_0_sign_temp with the sign of the
+		// initial (pre-redistancing) Phi_0
 		// Get initial gradients
 		get_upwind_gradient<Phi_n_temp, Phi_0_sign_temp, Phi_grad_temp>(g_temp, order_upwind_gradient, true);
 		iterative_redistancing(g_temp); // Do the redistancing on the temporary grid
@@ -235,7 +238,7 @@ public:
 	/** @brief Access the artificial timestep (private member) which will be used for the iterative redistancing.
 	 * @see get_time_step_CFL(g_temp_type &grid), set_user_time_step()
 	 */
-	double get_time_step()
+	auto get_time_step()
 	{
 		/// This timestep is computed according to the grid spacing fulfilling the CFL condition.
 		return time_step;
@@ -246,12 +249,12 @@ public:
 		return final_iter;
 	}
 	
-	double get_finalChange()
+	auto get_finalChange()
 	{
 		return distFromSol.change;
 	}
 	
-	double get_finalResidual()
+	auto get_finalResidual()
 	{
 		return distFromSol.residual;
 	}
@@ -268,18 +271,19 @@ private:
 	static constexpr size_t Phi_0_sign_temp     = 2; ///< Property index of sign of initial (input) Phi_0 (temp. grid).
 	
 	//	Member variables
-	Redist_options redistOptions; ///< Instantiate redistancing options.
+	Redist_options<phi_type> redistOptions; ///< Instantiate redistancing options.
 	grid_in_type &r_grid_in; ///< Define reference to input grid.
 	
-	DistFromSol distFromSol; ///< Instantiate distance from solution in terms of change, residual, numb. point in NB.
+	DistFromSol<phi_type> distFromSol; ///< Instantiate distance from solution in terms of change, residual, numb.
+	// point in NB.
 	int final_iter = 0; ///< Will be set to the final iteration when redistancing ends.
 	
 	/// Transform the half-bandwidth in no_of_grid_points into physical half-bandwidth kappa.
-	double kappa = ceil(redistOptions.width_NB_in_grid_points / 2.0) * get_biggest_spacing(g_temp);
+	phi_type kappa = ceil(redistOptions.width_NB_in_grid_points / 2.0) * get_biggest_spacing(g_temp);
 	/**@brief Artificial timestep for the redistancing iterations.
 	 * @see get_time_step_CFL(g_temp_type &grid), get_time_step(), set_user_time_step()
 	 */
-	double time_step;
+	typename grid_in_type::stype time_step;
 	int order_upwind_gradient;
 	//	Member functions
 #ifdef SE_CLASS1
@@ -303,7 +307,7 @@ private:
 	template<size_t Phi_0_in>
 	void init_temp_grid()
 	{
-		double min_value = get_min_val<Phi_0_in>(r_grid_in); // get minimum Phi_0 value on the input grid
+		phi_type min_value = get_min_val<Phi_0_in>(r_grid_in); // get minimum Phi_0 value on the input grid
 		init_grid_and_ghost<Phi_n_temp>(g_temp, min_value); // init. Phi_n_temp (incl. ghost) with min. Phi_0
 		copy_gridTogrid<Phi_0_in, Phi_n_temp>(r_grid_in, g_temp); // Copy Phi_0 from the input grid to Phi_n_temp
 	}
@@ -318,7 +322,8 @@ private:
 	 * @return Phi_n+1 which is the Phi of the next time step on current node.
 	 *
 	 */
-	double get_phi_nplus1(double phi_n, double phi_n_magnOfGrad, double dt, double sgn_phi_n)
+	phi_type get_phi_nplus1(phi_type phi_n, phi_type phi_n_magnOfGrad, typename grid_in_type::stype dt, phi_type
+	sgn_phi_n)
 	{
 		return phi_n + dt * sgn_phi_n * (1 - phi_n_magnOfGrad);
 	}
@@ -335,9 +340,9 @@ private:
 		while (dom.isNext())
 		{
 			auto key = dom.get();
-			const double phi_n = grid.template get<Phi_n_temp>(key);
-			const double phi_n_magnOfGrad = grid.template get<Phi_grad_temp>(key).norm();
-			double epsilon = phi_n_magnOfGrad * grid.getSpacing()[0];
+			const phi_type phi_n = grid.template get<Phi_n_temp>(key);
+			const phi_type phi_n_magnOfGrad = get_vector_magnitude<Phi_grad_temp>(grid, key);
+			phi_type epsilon = phi_n_magnOfGrad * grid.getSpacing()[0];
 			grid.template get<Phi_n_temp>(key) = get_phi_nplus1(phi_n, phi_n_magnOfGrad, time_step,
 			                                                         smooth_S(phi_n, epsilon));
 			++dom;
@@ -350,7 +355,7 @@ private:
 	 *
 	 * @return True, if node lays within nb., false, if the distance to the interface is > kappa.
 	 */
-	bool lays_inside_NB(double Phi)
+	bool lays_inside_NB(phi_type Phi)
 	{
 		return (abs(Phi) <= kappa);
 	}
@@ -362,8 +367,8 @@ private:
 	 */
 	void update_distFromSol(g_temp_type &grid)
 	{
-		double max_residual = 0;
-		double max_change = 0;
+		phi_type max_residual = 0;
+		phi_type max_change = 0;
 		int count = 0;
 		auto dom = grid.getDomainIterator();
 		while (dom.isNext())
@@ -372,9 +377,9 @@ private:
 			if (lays_inside_NB(grid.template get<Phi_n_temp>(key)))
 			{
 				count++;
-				double phi_n_magnOfGrad = grid.template get<Phi_grad_temp>(key).norm();
-				double epsilon = phi_n_magnOfGrad * grid.getSpacing()[0];
-				double phi_nplus1 = get_phi_nplus1(grid.template get<Phi_n_temp>(key), phi_n_magnOfGrad, time_step,
+				phi_type phi_n_magnOfGrad = get_vector_magnitude<Phi_grad_temp>(grid, key);
+				phi_type epsilon = phi_n_magnOfGrad * grid.getSpacing()[0];
+				phi_type phi_nplus1 = get_phi_nplus1(grid.template get<Phi_n_temp>(key), phi_n_magnOfGrad, time_step,
 				                                   smooth_S(grid.template get<Phi_n_temp>(key), epsilon));
 				
 				if (abs(phi_nplus1 - grid.template get<Phi_n_temp>(key)) > max_change)
@@ -480,6 +485,13 @@ private:
 			{
 				print_out_iteration_change_residual(grid, i);
 			}
+			if (redistOptions.save_temp_grid)
+			{
+				get_upwind_gradient<Phi_n_temp, Phi_0_sign_temp, Phi_grad_temp>(g_temp, order_upwind_gradient, true);
+				g_temp.setPropNames({"Phi_Sussman_Out", "Phi_upwind_gradient", "Phi_0_sign_temp"});
+				g_temp.save("g_temp_redistancing_iteration_" + std::to_string(i) + ".hdf5"); // HDF5 file
+				// g_temp.write_frame("g_temp_redistancing_iteration", i, FORMAT_BINARY); // VTK file
+			}
 			if (i >= redistOptions.min_iter)
 			{
 				if (steady_state_NB(grid))
@@ -505,8 +517,8 @@ private:
 		{
 			get_upwind_gradient<Phi_n_temp, Phi_0_sign_temp, Phi_grad_temp>(g_temp, order_upwind_gradient, true);
 			g_temp.setPropNames({"Phi_Sussman_Out", "Phi_upwind_gradient", "Phi_0_sign_temp"});
-			g_temp.save("g_temp_redistancing.hdf5"); // HDF5 file
-			g_temp.write("g_temp_redistancing", FORMAT_BINARY); // VTK file
+			g_temp.save("g_temp_redistancing_final.hdf5"); // HDF5 file
+			// g_temp.write("g_temp_redistancing_final", FORMAT_BINARY); // VTK file
 		}
 	}
 };

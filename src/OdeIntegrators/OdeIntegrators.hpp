@@ -16,10 +16,12 @@ struct has_state_vector: std::false_type {};
 template<typename T>
 struct has_state_vector<T, typename Void< typename T::is_state_vector>::type> : std::true_type
 {};
+
+
 namespace boost{
     template<class T,class Enabler=typename std::enable_if<has_state_vector<T>::value>::type>
-    inline size_t
-    size(const T& rng)
+    inline auto
+    size(const T& rng) -> decltype(rng.size())
     {
         return rng.size();
     }
@@ -27,6 +29,7 @@ namespace boost{
 
 #include <boost/numeric/odeint.hpp>
 #include "Operators/Vector/vector_dist_operators.hpp"
+#include "FiniteDifference/FD_expressions.hpp"
 #include "OdeIntegrators/boost_vector_algebra_ofp.hpp"
 
 namespace boost { namespace numeric { namespace odeint {
@@ -51,6 +54,7 @@ struct state_type_1d_ofp{
     state_type_1d_ofp(){
     }
     typedef size_t size_type;
+    typedef size_t index_type;
     typedef int is_state_vector;
     aggregate<texp_v<double>> data;
 
@@ -74,6 +78,7 @@ struct state_type_2d_ofp{
     state_type_2d_ofp(){
     }
     typedef size_t size_type;
+    typedef size_t index_type;
     typedef int is_state_vector;
     aggregate<texp_v<double>,texp_v<double>> data;
 
@@ -98,6 +103,7 @@ struct state_type_3d_ofp{
     state_type_3d_ofp(){
     }
     typedef size_t size_type;
+    typedef size_t index_type;
     typedef int is_state_vector;
     aggregate<texp_v<double>,texp_v<double>,texp_v<double>> data;
 
@@ -123,6 +129,7 @@ struct state_type_4d_ofp{
     state_type_4d_ofp(){
     }
     typedef size_t size_type;
+    typedef size_t index_type;
     typedef int is_state_vector;
     aggregate<texp_v<double>,texp_v<double>,texp_v<double>,texp_v<double>> data;
 
@@ -149,6 +156,7 @@ struct state_type_5d_ofp{
     state_type_5d_ofp(){
     }
     typedef size_t size_type;
+    typedef size_t index_type;
     typedef int is_state_vector;
     aggregate<texp_v<double>,texp_v<double>,texp_v<double>,texp_v<double>,texp_v<double>> data;
 
@@ -166,9 +174,62 @@ struct state_type_5d_ofp{
     }
 };
 
+template<int counter, typename state_type, typename ... list>
+struct state_type_ofpm_add_elements
+{
+//    typedef aggregate<list ..., texp_v<double>> one_more;
+    typedef typename state_type_ofpm_add_elements<counter-1,state_type, state_type,list ...>::type type;
+};
+
+template<typename state_type, typename ... list>
+struct state_type_ofpm_add_elements<0,state_type,list ...>
+{
+   typedef aggregate<list ...> type; 
+};
+
+template<int n_state, typename state_type>
+struct state_type_ofpm_impl
+{
+    typedef FD::gdb_ext_plus_g_info<state_type::dims> size_type;
+    typedef typename state_type::index_type index_type;
+    typedef int is_state_vector;
+
+    typedef typename state_type_ofpm_add_elements<n_state-1,state_type, state_type>::type type_data;
+
+    type_data data;
+
+    FD::gdb_ext_plus_g_info<state_type::dims> size() const
+    { 
+        return data.template get<0>().size(); 
+    }
+
+
+    void resize(const FD::gdb_ext_plus_g_info<state_type::dims> & rsz_obj)
+    {
+        // to fill
+    }
+};
+
+
 namespace boost {
+
+    // template<typename state_type>
+    // struct range_size<const state_type_ofpm_impl<3,state_type>>
+    // {
+    //     typedef FD::gdb_ext_plus_g_info<state_type::dims> type;
+    // };
+
+    // template<typename state_type>
+    // struct range_size<const state_type_ofpm_impl<1,state_type>>
+    // {
+    //     typedef FD::gdb_ext_plus_g_info<state_type::dims> type;
+    // };
+
     namespace numeric {
         namespace odeint {
+
+            // FOR particles
+
             template<>
             struct is_resizeable<state_type_1d_ofp> {
             typedef boost::true_type type;
@@ -225,6 +286,98 @@ namespace boost {
 
             template<>
             struct vector_space_norm_inf<state_type_5d_ofp>
+            {
+                typedef double result_type;
+            };
+
+            // For GRIDs
+
+            template<typename state_type>
+            struct is_resizeable<state_type_ofpm_impl<1,state_type> > {
+            typedef boost::true_type type;
+            static const bool value = type::value;
+            };
+
+            template<typename state_type>
+            struct is_resizeable<state_type_ofpm_impl<2,state_type> > {
+            typedef boost::true_type type;
+            static const bool value = type::value;
+            };
+
+            template<typename state_type>
+            struct is_resizeable<state_type_ofpm_impl<3,state_type> > {
+            typedef boost::true_type type;
+            static const bool value = type::value;
+            };
+
+            template<typename state_type>
+            struct is_resizeable<state_type_ofpm_impl<4,state_type> > {
+            typedef boost::true_type type;
+            static const bool value = type::value;
+            };
+
+            template<typename state_type>
+            struct is_resizeable<state_type_ofpm_impl<5,state_type> > {
+            typedef boost::true_type type;
+            static const bool value = type::value;
+            };
+
+/*            template<>
+            struct is_resizeable<state_type_2d_ofp> {
+                typedef boost::true_type type;
+                static const bool value = type::value;
+            };
+
+            template<>
+            struct is_resizeable<state_type_3d_ofp> {
+                typedef boost::true_type type;
+                static const bool value = type::value;
+            };
+            template<>
+            struct is_resizeable<state_type_4d_ofp> {
+                typedef boost::true_type type;
+                static const bool value = type::value;
+            };
+            template<>
+            struct is_resizeable<state_type_5d_ofp> {
+                typedef boost::true_type type;
+                static const bool value = type::value;
+            };*/
+
+
+
+/*      //      template<unsigned int nprp, typename state_type>
+            struct vector_space_norm_inf<state_type_ofpm_impl<nprp,state_type>>
+            {
+                typedef double result_type;
+            };*/
+
+            template<typename state_type>
+            struct vector_space_norm_inf<state_type_ofpm_impl<1,state_type>>
+            {
+                typedef double result_type;
+            };
+
+            template<typename state_type>
+            struct vector_space_norm_inf<state_type_ofpm_impl<2,state_type>>
+            {
+                typedef double result_type;
+            };
+
+            template<typename state_type>
+            struct vector_space_norm_inf<state_type_ofpm_impl<3,state_type>>
+            {
+                typedef double result_type;
+            };
+
+            template<typename state_type>
+            struct vector_space_norm_inf<state_type_ofpm_impl<4,state_type>>
+            {
+                typedef double result_type;
+            };
+
+            template<typename state_type>
+            struct vector_space_norm_inf<state_type_ofpm_impl<5,state_type>>
             {
                 typedef double result_type;
             };

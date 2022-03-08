@@ -464,7 +464,6 @@ BOOST_AUTO_TEST_CASE(odeint_base_test3)
     BOOST_REQUIRE_EQUAL(worst,worst2);
 }
 
-
 #ifdef HAVE_EIGEN
 
 BOOST_AUTO_TEST_CASE(dcpse_op_react_diff_test) {
