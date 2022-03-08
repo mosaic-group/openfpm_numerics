@@ -781,7 +781,8 @@ public:
 
 
 	//! return the result of the expression
-	template<typename r_type=typename std::remove_reference<decltype(-(o1.value(vect_dist_key_dx(0))))>::type > inline r_type value(const vect_dist_key_dx & key) const
+	template<typename r_type=typename std::remove_reference<decltype(-(o1.value(vect_dist_key_dx(0))))>::type > 
+	__device__ __host__  inline r_type value(const vect_dist_key_dx & key) const
 	{
 		return -(o1.value(key));
 	}
@@ -967,7 +968,31 @@ public:
 	 * \return the result of the expression
 	 *
 	 */
-	__device__ inline auto value(const unsigned int & k) const -> decltype(pos_or_propR<vector,prp>::value(v.v,k))
+	__host__ __device__ inline auto value(const vect_dist_key_dx & k) -> decltype(pos_or_propR<vector,prp>::value(v.v,k))
+	{
+		return pos_or_propR<vector,prp>::value(v.v,k);
+	}
+
+	/*! \brief Evaluate the expression
+	 *
+	 * \param k where to evaluate the expression
+	 *
+	 * \return the result of the expression
+	 *
+	 */
+	__device__ __host__ inline auto value(const unsigned int & k) const -> decltype(pos_or_propR<vector,prp>::value(v.v,k))
+	{
+		return pos_or_propR<vector,prp>::value(v.v,k);
+	}
+
+	/*! \brief Evaluate the expression
+	 *
+	 * \param k where to evaluate the expression
+	 *
+	 * \return the result of the expression
+	 *
+	 */
+	__device__ __host__ inline auto value(const unsigned int & k) -> decltype(pos_or_propR<vector,prp>::value(v.v,k))
 	{
 		return pos_or_propR<vector,prp>::value(v.v,k);
 	}
@@ -1391,117 +1416,6 @@ struct switcher_get_v<vector,comp_dev>
 	}
 };
 
-template<unsigned int, bool is_valid>
-struct get_vector_dist_expression_op
-{
-	template<typename exp_type>
-	inline static auto get(exp_type & o1, const vect_dist_key_dx & key) -> decltype(o1.value(vect_dist_key_dx(0)))
-	{
-		return o1.value(key);
-	}
-
-	template<unsigned int prop, typename exp_type, typename vector_type>
-	inline static void assign(exp_type & o1, vector_type & v, const vect_dist_key_dx & key, const vect_dist_key_dx & key_orig)
-	{
-		pos_or_propL<vector_type,exp_type::prop>::value(v,key) = o1.value(key_orig);
-	}
-
-	template<unsigned int prop, typename vector_type>
-	inline static void assign_double(double d, vector_type & v, const vect_dist_key_dx & key)
-	{
-		pos_or_propL<vector_type,prop>::value(v,key) = d;
-	}
-};
-
-template<>
-struct get_vector_dist_expression_op<1,false>
-{
-	template<typename exp_type>
-	static int get(exp_type & o1, const vect_dist_key_dx & key, const int (& comp)[1])
-	{
-		printf("ERROR: Slicer, the expression is incorrect, please check it\n");
-		return 0;
-	}
-
-	template<unsigned int prop, typename exp_type, typename vector_type>
-	inline static void assign(exp_type & o1, vector_type & v, const vect_dist_key_dx & key)
-	{
-		printf("ERROR: Slicer, the expression is incorrect, please check it\n");
-	}
-
-	template<unsigned int prop, typename vector_type>
-	inline static void assign_double(double d, vector_type & v, const vect_dist_key_dx & key)
-	{
-		printf("ERROR: Slicer, the expression is incorrect, please check it\n");
-	}
-};
-
-template<>
-struct get_vector_dist_expression_op<1,true>
-{
-	template<typename exp_type>
-	static auto get(exp_type & o1, const vect_dist_key_dx & key, const int (& comp)[1]) -> decltype(o1.value(vect_dist_key_dx(0))[0])
-	{
-		return o1.value(key)[comp[0]];
-	}
-
-	template<unsigned int prop,typename exp_type, typename vector_type>
-	inline static void assign(exp_type & o1, vector_type & v, const vect_dist_key_dx & key, const vect_dist_key_dx & key_orig, const int (& comp)[1])
-	{
-		pos_or_propL<vector_type,prop>::value(v,key)[comp[0]] = o1.value(key_orig);
-	}
-
-	template<unsigned int prop, typename vector_type>
-	inline static void assign_double(double d, vector_type & v, const vect_dist_key_dx & key, const int (& comp)[1])
-	{
-		pos_or_propL<vector_type,prop>::value(v,key)[comp[0]] = d;
-	}
-};
-
-template<>
-struct get_vector_dist_expression_op<2,true>
-{
-	template<typename exp_type>
-	static auto get(exp_type & o1, const vect_dist_key_dx & key, const int (& comp)[2]) -> decltype(o1.value(vect_dist_key_dx(0))[0][0])
-	{
-		return o1.value(key)[comp[0]][comp[1]];
-	}
-
-	template<unsigned int prop,typename exp_type, typename vector_type>
-	inline static void assign(exp_type & o1, vector_type & v, const vect_dist_key_dx & key, const vect_dist_key_dx & key_orig, const int (& comp)[2])
-	{
-		pos_or_propL<vector_type,prop>::value(v,key)[comp[0]][comp[1]] = o1.value(key_orig);
-	}
-
-	template<unsigned int prop, typename vector_type>
-	inline static void assign_double(double d, vector_type & v, const vect_dist_key_dx & key, const int (& comp)[2])
-	{
-		pos_or_propL<vector_type,prop>::value(v,key)[comp[0]][comp[1]] = d;
-	}
-};
-#ifdef SE_CLASS1
-template<bool is_subset>
-struct SubsetSelector_impl{
-    template<typename particle_type,typename subset_type>
-    static void check(particle_type &particles,subset_type &particle_subset)
-    {
-    }
-};
-
-template<>
-struct SubsetSelector_impl<true>
-{
-    template<typename particle_type,typename subset_type>
-    static void check(particle_type &particles,subset_type &particle_subset){
-
-        if(particles.getMapCtr()!=particle_subset.getUpdateCtr())
-        {
-            std::cerr<<__FILE__<<":"<<__LINE__<<" Error: You forgot a subset update after map."<<std::endl;
-        }
-    }
-};
-#endif
-
 /*! \brief it take an expression and create the negatove of this expression
  *
  *
@@ -1551,7 +1465,7 @@ public:
     * \return the vector
     *
     */
-    const vtype & getVector() const
+    __device__ __host__ const vtype & getVector() const
     {
         return o1.getVector();
     }
@@ -1563,7 +1477,7 @@ public:
     * \return the vector
     *
     */
-    vtype & getVector()
+    __device__ __host__ vtype & getVector()
     {
         return o1.getVector();
     }
@@ -1576,7 +1490,7 @@ public:
 
 	//! property on which this view is acting
 	//typedef typename boost::mpl::at<typename vtype::value_type::type,boost::mpl::int_<exp1::prop>>::type property_act;
-	typedef typename std::remove_const<typename std::remove_reference<decltype(pos_or_propL<vtype,exp1::prop>::value_type(std::declval<vtype>(),vect_dist_key_dx(0)))>::type>::type property_act;
+	typedef typename pos_or_propL<vtype,exp1::prop>::property_act property_act;
 
 	/*! \brief Return the result of the expression
 	 *
@@ -1588,7 +1502,22 @@ public:
 	 *
 	 *
 	 */
-	inline auto value(const vect_dist_key_dx & key) const -> decltype(get_vector_dist_expression_op<n,n == rank_gen<property_act>::type::value>::get(o1,vect_dist_key_dx(0),comp))
+	__host__ __device__ inline auto value(const vect_dist_key_dx & key) const -> decltype(get_vector_dist_expression_op<n,n == rank_gen<property_act>::type::value>::get(o1,vect_dist_key_dx(0),comp))
+	{
+		return get_vector_dist_expression_op<n,n == rank_gen<property_act>::type::value>::get(o1,key,comp);
+	}
+
+	/*! \brief Return the result of the expression
+	 *
+	 * \note this function must be deactivated on transitional objects. Suppose we are slicing a tensor of rank 2
+	 *            an object of rank 1 is implicitly created for such object we have to deactivate this function
+	 *            because ill-formed
+	 *
+	 * \param key point where to evaluate
+	 *
+	 *
+	 */
+	__host__ __device__ inline auto value(const vect_dist_key_dx & key) -> decltype(get_vector_dist_expression_op<n,n == rank_gen<property_act>::type::value>::get(o1,vect_dist_key_dx(0),comp))
 	{
 		return get_vector_dist_expression_op<n,n == rank_gen<property_act>::type::value>::get(o1,key,comp);
 	}
@@ -1710,28 +1639,26 @@ public:
 	 */
 	template<typename exp1_, typename exp2_, unsigned int op> vtype & operator=(const vector_dist_expression_op<exp1_,exp2_,op> & v_exp)
 	{
-		v_exp.init();
+        if (v_exp.getVector().isSubset() == true)
+        {
+            std::cout << __FILE__ << ":" << __LINE__ << " error on the right hand side of the expression you have to use non-subset properties" << std::endl;
+            return this->getVector();
+        }
 
-		auto & v = getVector();
-#ifdef SE_CLASS1
-        auto &v2=v_exp.getVector();
-
-        SubsetSelector_impl<std::remove_reference<decltype(v)>::type::is_it_a_subset::value>::check(v2,v);
-#endif
-
-		auto it = v.getDomainIterator();
-
-		while (it.isNext())
+		if (has_vector_kernel<vtype>::type::value == false)
 		{
-			auto key = it.get();
-			auto key_orig = v.getOriginKey(key);
-
-			get_vector_dist_expression_op<n,n == rank_gen<property_act>::type::value>::template assign<exp1::prop>(v_exp,v,key,key_orig,comp);
-
-			++it;
+			vector_dist_op_compute_op<exp1::prop,false,vector_dist_expression_comp_sel<comp_host,
+																	   	  has_vector_kernel<vtype>::type::value>::type::value>
+			::compute_expr_slice(o1.getVector(),v_exp,comp);
+		}
+		else
+		{
+			vector_dist_op_compute_op<exp1::prop,false,vector_dist_expression_comp_sel<comp_dev,
+		   	  	  	  	  	  	  	  	  	  	  	  	  	  	  	  	  has_vector_kernel<vtype>::type::value>::type::value>
+			::compute_expr_slice(o1.getVector(),v_exp,comp);
 		}
 
-		return v;
+		return this->getVector();
 	}
 
 	/*! \brief Fill the vector property with the double
@@ -2023,10 +1950,44 @@ operator+(const vector_dist_expression<prp1,v1> & va, double d)
  *
  */
 template<unsigned int prp1 , typename v1>
+inline vector_dist_expression_op<vector_dist_expression<prp1,v1>,vector_dist_expression<0,float>,VECT_SUM>
+operator+(const vector_dist_expression<prp1,v1> & va, float d)
+{
+	vector_dist_expression_op<vector_dist_expression<prp1,v1>,vector_dist_expression<0,float>,VECT_SUM> exp_sum(va,vector_dist_expression<0,float>(d));
+
+	return exp_sum;
+}
+
+/* \brief sum two distributed vector expression
+ *
+ * \param va vector expression one
+ * \param vb vector expression two
+ *
+ * \return an object that encapsulate the expression
+ *
+ */
+template<unsigned int prp1 , typename v1>
 inline vector_dist_expression_op<vector_dist_expression<0,double>,vector_dist_expression<prp1,v1>,VECT_SUM>
 operator+(double d, const vector_dist_expression<prp1,v1> & vb)
 {
 	vector_dist_expression_op<vector_dist_expression<0,double>,vector_dist_expression<prp1,v1>,VECT_SUM> exp_sum(vector_dist_expression<0,double>(d),vb);
+
+	return exp_sum;
+}
+
+/* \brief sum two distributed vector expression
+ *
+ * \param va vector expression one
+ * \param vb vector expression two
+ *
+ * \return an object that encapsulate the expression
+ *
+ */
+template<unsigned int prp1 , typename v1>
+inline vector_dist_expression_op<vector_dist_expression<0,float>,vector_dist_expression<prp1,v1>,VECT_SUM>
+operator+(float d, const vector_dist_expression<prp1,v1> & vb)
+{
+	vector_dist_expression_op<vector_dist_expression<0,float>,vector_dist_expression<prp1,v1>,VECT_SUM> exp_sum(vector_dist_expression<0,float>(d),vb);
 
 	return exp_sum;
 }
@@ -2048,6 +2009,22 @@ operator+(const vector_dist_expression_op<exp1,exp2,op1> & va, double d)
 	return exp_sum;
 }
 
+/* \brief sum two distributed vector expression
+ *
+ * \param va vector expression one
+ * \param vb vector expression two
+ *
+ * \return an object that encapsulate the expression
+ *
+ */
+template<typename exp1 , typename exp2, unsigned int op1>
+inline vector_dist_expression_op<vector_dist_expression_op<exp1,exp2,op1>,vector_dist_expression<0,float>,VECT_SUM>
+operator+(const vector_dist_expression_op<exp1,exp2,op1> & va, float d)
+{
+	vector_dist_expression_op<vector_dist_expression_op<exp1,exp2,op1>,vector_dist_expression<0,float>,VECT_SUM> exp_sum(va,vector_dist_expression<0,float>(d));
+
+	return exp_sum;
+}
 
 /* \brief subtract two distributed vector expression
  *
@@ -2177,10 +2154,44 @@ operator-(const vector_dist_expression<prp1,v1> & va, double d)
  *
  */
 template<unsigned int prp1, typename v1>
+inline vector_dist_expression_op<vector_dist_expression<prp1,v1>,vector_dist_expression<0,float>,VECT_SUB>
+operator-(const vector_dist_expression<prp1,v1> & va, float d)
+{
+	vector_dist_expression_op<vector_dist_expression<prp1,v1>,vector_dist_expression<0,float>,VECT_SUB> exp_sum(va,vector_dist_expression<0,float>(d));
+
+	return exp_sum;
+}
+
+/* \brief subtract two distributed vector expression
+ *
+ * \param va vector expression one
+ * \param vb vector expression two
+ *
+ * \return an object that encapsulate the expression
+ *
+ */
+template<unsigned int prp1, typename v1>
 inline vector_dist_expression_op<vector_dist_expression<0,double>,vector_dist_expression<prp1,v1>,VECT_SUB>
 operator-(double d, const vector_dist_expression<prp1,v1> & vb)
 {
 	vector_dist_expression_op<vector_dist_expression<0,double>,vector_dist_expression<prp1,v1>,VECT_SUB> exp_sum(vector_dist_expression<0,double>(d),vb);
+
+	return exp_sum;
+}
+
+/* \brief subtract two distributed vector expression
+ *
+ * \param va vector expression one
+ * \param vb vector expression two
+ *
+ * \return an object that encapsulate the expression
+ *
+ */
+template<unsigned int prp1, typename v1>
+inline vector_dist_expression_op<vector_dist_expression<0,float>,vector_dist_expression<prp1,v1>,VECT_SUB>
+operator-(float d, const vector_dist_expression<prp1,v1> & vb)
+{
+	vector_dist_expression_op<vector_dist_expression<0,float>,vector_dist_expression<prp1,v1>,VECT_SUB> exp_sum(vector_dist_expression<0,float>(d),vb);
 
 	return exp_sum;
 }
@@ -2211,10 +2222,44 @@ operator*(double d, const vector_dist_expression<p2,v2> & vb)
  *
  */
 template<unsigned int p2, typename v2>
+inline vector_dist_expression_op<vector_dist_expression<0,float>,vector_dist_expression<p2,v2>,VECT_MUL>
+operator*(float d, const vector_dist_expression<p2,v2> & vb)
+{
+	vector_dist_expression_op<vector_dist_expression<0,float>,vector_dist_expression<p2,v2>,VECT_MUL> exp_sum(vector_dist_expression<0,float>(d),vb);
+
+	return exp_sum;
+}
+
+/* \brief Multiply two distributed vector expression
+ *
+ * \param va vector expression one
+ * \param vb vector expression two
+ *
+ * \return an object that encapsulate the expression
+ *
+ */
+template<unsigned int p2, typename v2>
 inline vector_dist_expression_op<vector_dist_expression<p2,v2>,vector_dist_expression<0,double>,VECT_MUL>
 operator*(const vector_dist_expression<p2,v2> & va, double d)
 {
 	vector_dist_expression_op<vector_dist_expression<p2,v2>,vector_dist_expression<0,double>,VECT_MUL> exp_sum(va,vector_dist_expression<0,double>(d));
+
+	return exp_sum;
+}
+
+/* \brief Multiply two distributed vector expression
+ *
+ * \param va vector expression one
+ * \param vb vector expression two
+ *
+ * \return an object that encapsulate the expression
+ *
+ */
+template<unsigned int p2, typename v2>
+inline vector_dist_expression_op<vector_dist_expression<p2,v2>,vector_dist_expression<0,float>,VECT_MUL>
+operator*(const vector_dist_expression<p2,v2> & va, float d)
+{
+	vector_dist_expression_op<vector_dist_expression<p2,v2>,vector_dist_expression<0,float>,VECT_MUL> exp_sum(va,vector_dist_expression<0,float>(d));
 
 	return exp_sum;
 }
@@ -2306,6 +2351,23 @@ operator*(const vector_dist_expression_op<exp1,exp2,op1> & va, double d)
 
 /* \brief Multiply a distributed vector expression by a number
  *
+ * \param va vector expression
+ * \param d number
+ *
+ * \return an object that encapsulate the expression
+ *
+ */
+template<typename exp1 , typename exp2, unsigned int op1>
+inline vector_dist_expression_op<vector_dist_expression_op<exp1,exp2,op1>,vector_dist_expression<0,float>,VECT_MUL>
+operator*(const vector_dist_expression_op<exp1,exp2,op1> & va, float d)
+{
+	vector_dist_expression_op<vector_dist_expression_op<exp1,exp2,op1>,vector_dist_expression<0,float>,VECT_MUL> exp_sum(va,vector_dist_expression<0,float>(d));
+
+	return exp_sum;
+}
+
+/* \brief Multiply a distributed vector expression by a number
+ *
  * \param d number
  * \param vb vector expression
  *
@@ -2317,6 +2379,23 @@ inline vector_dist_expression_op<vector_dist_expression<0,double>,vector_dist_ex
 operator*(double d, const vector_dist_expression_op<exp1,exp2,op1> & vb)
 {
 	vector_dist_expression_op<vector_dist_expression<0,double>,vector_dist_expression_op<exp1,exp2,op1>,VECT_MUL> exp_sum(vector_dist_expression<0,double>(d),vb);
+
+	return exp_sum;
+}
+
+/* \brief Multiply a distributed vector expression by a number
+ *
+ * \param d number
+ * \param vb vector expression
+ *
+ * \return an object that encapsulate the expression
+ *
+ */
+template<typename exp1 , typename exp2, unsigned int op1>
+inline vector_dist_expression_op<vector_dist_expression<0,float>,vector_dist_expression_op<exp1,exp2,op1>,VECT_MUL>
+operator*(float d, const vector_dist_expression_op<exp1,exp2,op1> & vb)
+{
+	vector_dist_expression_op<vector_dist_expression<0,float>,vector_dist_expression_op<exp1,exp2,op1>,VECT_MUL> exp_sum(vector_dist_expression<0,float>(d),vb);
 
 	return exp_sum;
 }
@@ -2338,6 +2417,22 @@ operator/(const vector_dist_expression_op<exp1,exp2,op1> & va, double d)
 	return exp_sum;
 }
 
+/* \brief Divide two distributed vector expression
+ *
+ * \param va vector expression one
+ * \param vb vector expression two
+ *
+ * \return an object that encapsulate the expression
+ *
+ */
+template<typename exp1, typename exp2, unsigned int op1>
+inline vector_dist_expression_op<vector_dist_expression_op<exp1,exp2,op1>,vector_dist_expression<0,float>,VECT_DIV>
+operator/(const vector_dist_expression_op<exp1,exp2,op1> & va, float d)
+{
+	vector_dist_expression_op<vector_dist_expression_op<exp1,exp2,op1>,vector_dist_expression<0,float>,VECT_DIV> exp_sum(va,vector_dist_expression<0,float>(d));
+
+	return exp_sum;
+}
 
 /* \brief Divide two distributed vector expression
  *
@@ -2352,6 +2447,23 @@ inline vector_dist_expression_op<vector_dist_expression_op<exp1,exp2,op1>,vector
 operator/(double d, const vector_dist_expression_op<exp1,exp2,op1> & va)
 {
 	vector_dist_expression_op<vector_dist_expression_op<exp1,exp2,op1>,vector_dist_expression<0,double>,VECT_DIV> exp_sum(vector_dist_expression<0,double>(d),va);
+
+	return exp_sum;
+}
+
+/* \brief Divide two distributed vector expression
+ *
+ * \param va vector expression one
+ * \param vb vector expression two
+ *
+ * \return an object that encapsulate the expression
+ *
+ */
+template<typename exp1, typename exp2, unsigned int op1>
+inline vector_dist_expression_op<vector_dist_expression_op<exp1,exp2,op1>,vector_dist_expression<0,float>,VECT_DIV>
+operator/(float d, const vector_dist_expression_op<exp1,exp2,op1> & va)
+{
+	vector_dist_expression_op<vector_dist_expression_op<exp1,exp2,op1>,vector_dist_expression<0,float>,VECT_DIV> exp_sum(vector_dist_expression<0,float>(d),va);
 
 	return exp_sum;
 }
@@ -2382,10 +2494,44 @@ operator/(const vector_dist_expression<prp1,v1> & va, double d)
  *
  */
 template<unsigned int prp1, typename v1>
+inline vector_dist_expression_op<vector_dist_expression<prp1,v1>,vector_dist_expression<0,float>,VECT_DIV>
+operator/(const vector_dist_expression<prp1,v1> & va, float d)
+{
+	vector_dist_expression_op<vector_dist_expression<prp1,v1>,vector_dist_expression<0,float>,VECT_DIV> exp_sum(va,vector_dist_expression<0,float>(d));
+
+	return exp_sum;
+}
+
+/* \brief Divide two distributed vector expression
+ *
+ * \param va vector expression one
+ * \param vb vector expression two
+ *
+ * \return an object that encapsulate the expression
+ *
+ */
+template<unsigned int prp1, typename v1>
 inline vector_dist_expression_op<vector_dist_expression<0,double>,vector_dist_expression<prp1,v1>,VECT_DIV>
 operator/(double d, const vector_dist_expression<prp1,v1> & va)
 {
 	vector_dist_expression_op<vector_dist_expression<0,double>,vector_dist_expression<prp1,v1>,VECT_DIV> exp_sum(vector_dist_expression<0,double>(d),va);
+
+	return exp_sum;
+}
+
+/* \brief Divide two distributed vector expression
+ *
+ * \param va vector expression one
+ * \param vb vector expression two
+ *
+ * \return an object that encapsulate the expression
+ *
+ */
+template<unsigned int prp1, typename v1>
+inline vector_dist_expression_op<vector_dist_expression<0,float>,vector_dist_expression<prp1,v1>,VECT_DIV>
+operator/(float d, const vector_dist_expression<prp1,v1> & va)
+{
+	vector_dist_expression_op<vector_dist_expression<0,float>,vector_dist_expression<prp1,v1>,VECT_DIV> exp_sum(vector_dist_expression<0,float>(d),va);
 
 	return exp_sum;
 }

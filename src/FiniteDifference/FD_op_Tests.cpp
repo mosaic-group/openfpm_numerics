@@ -275,13 +275,13 @@ BOOST_AUTO_TEST_SUITE(fd_op_suite_tests)
 
         staggered_grid_dist<2, double, aggregate<double, double>> domain(sz, box,ghost,bc);
 
-        comb<2> c({-1,-1});
+        comb<2> c({(char)-1,(char)-1});
         openfpm::vector<comb<2>> lc;
         lc.add(c);
 
         domain.setStagPosition<phi_>(lc);
 
-        comb<2> c2({0,-1});
+        comb<2> c2({(char)0,(char)-1});
         lc.clear();
         lc.add(c2);
 
@@ -346,13 +346,13 @@ BOOST_AUTO_TEST_SUITE(fd_op_suite_tests)
 
         staggered_grid_dist<2, double, aggregate<double, double>> domain(sz, box,ghost,bc);
 
-        comb<2> c({-1,-1});
+        comb<2> c({(char)-1,(char)-1});
         openfpm::vector<comb<2>> lc;
         lc.add(c);
 
         domain.setStagPosition<phi_>(lc);
 
-        comb<2> c2({0,-1});
+        comb<2> c2({(char)0,(char)-1});
         lc.clear();
         lc.add(c2);
 

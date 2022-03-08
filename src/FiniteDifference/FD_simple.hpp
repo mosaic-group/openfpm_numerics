@@ -18,7 +18,7 @@
  * @return Forward finite difference for the property under index Field on the current node with index key.
  */
 template <size_t Field, typename gridtype, typename keytype>
-double FD_forward(gridtype & grid, keytype & key, size_t d)
+auto FD_forward(gridtype & grid, keytype & key, size_t d)
 {
 	return (grid.template get<Field> (key.move(d, 1)) - grid.template get<Field> (key)) / grid.getSpacing()[d];
 }
@@ -33,7 +33,7 @@ double FD_forward(gridtype & grid, keytype & key, size_t d)
  * @return Backward finite difference for the property under index Field on the current node with index key.
  */
 template <size_t Field, typename gridtype, typename keytype>
-double FD_backward(gridtype & grid, keytype & key, size_t d)
+auto FD_backward(gridtype & grid, keytype & key, size_t d)
 {
 	return (grid.template get<Field> (key) - grid.template get<Field> (key.move(d, -1))) / grid.getSpacing()[d];
 }
@@ -50,7 +50,7 @@ double FD_backward(gridtype & grid, keytype & key, size_t d)
  * @return Partial central finite difference for dimension d of Field on the current node with index key.
  */
 template <size_t Field, typename gridtype, typename keytype>
-double FD_central(gridtype & grid, keytype & key, size_t d)
+auto FD_central(gridtype & grid, keytype & key, size_t d)
 {
 	return (grid.template get<Field>(key.move(d, 1))
 			- grid.template get<Field>(key.move(d, -1)))
