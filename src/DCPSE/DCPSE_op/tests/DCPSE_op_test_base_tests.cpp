@@ -23,6 +23,7 @@
 #include "Operators/Vector/vector_dist_operators.hpp"
 #include "Vector/vector_dist_subset.hpp"
 #include "../EqnsStruct.hpp"
+#include "DCPSE/DcpseInterpolation.hpp"
 
 BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
 BOOST_AUTO_TEST_CASE(dcpse_op_tests) {
@@ -94,6 +95,149 @@ BOOST_AUTO_TEST_CASE(dcpse_op_tests) {
         domain.deleteGhost();
         BOOST_REQUIRE(worst < 0.03);
 
+    }
+
+    BOOST_AUTO_TEST_CASE(dcpse_op_tests_fa) {
+        size_t edgeSemiSize = 40;
+        const size_t sz[2] = {2 * edgeSemiSize, 2 * edgeSemiSize};
+        Box<2, double> box({0, 0}, {2 * M_PI, 2 * M_PI});
+        size_t bc[2] = {NON_PERIODIC, NON_PERIODIC};
+        double spacing[2];
+        spacing[0] = 2 * M_PI / (sz[0] - 1);
+        spacing[1] = 2 * M_PI / (sz[1] - 1);
+        Ghost<2, double> ghost(spacing[0] * 3.9);
+        double rCut = 3.9 * spacing[0];
+        BOOST_TEST_MESSAGE("Init vector_dist...");
+        double sigma2 = spacing[0] * spacing[1] / (2 * 4);
+
+        typedef vector_dist<2, double, aggregate<double, double, double, VectorS<2, double>, VectorS<2, double>>> vector_type;
+
+        vector_type domain(0, box,bc,ghost);
+
+        //Init_DCPSE(domain)
+        BOOST_TEST_MESSAGE("Init domain...");
+
+        auto it = domain.getGridIterator(sz);
+        size_t pointId = 0;
+        size_t counter = 0;
+        double minNormOne = 999;
+        while (it.isNext()) {
+            domain.add();
+            auto key = it.get();
+            mem_id k0 = key.get(0);
+            double x = k0 * spacing[0];
+            domain.getLastPos()[0] = x;//+ gaussian(rng);
+            mem_id k1 = key.get(1);
+            double y = k1 * spacing[1];
+            domain.getLastPos()[1] = y;//+gaussian(rng);
+            // Here fill the function value
+            domain.template getLastProp<0>() = sin(domain.getLastPos()[0]) + sin(domain.getLastPos()[1]);
+            domain.template getLastProp<2>() = cos(domain.getLastPos()[0]) + cos(domain.getLastPos()[1]);
+            ++counter;
+            ++it;
+        }
+        BOOST_TEST_MESSAGE("Sync domain across processors...");
+
+        domain.map();
+        domain.ghost_get<0>();
+
+        PPInterpolation<vector_type,vector_type> Fx(domain,domain, 2, rCut);
+        auto v = getV<1>(domain);
+        auto P = getV<0>(domain);
+
+        Fx.p2p<0,1>();
+        auto it2 = domain.getDomainIterator();
+        double worst = 0.0;
+        while (it2.isNext()) {
+            auto p = it2.get();
+            if (fabs(domain.getProp<1>(p) - domain.getProp<0>(p)) > worst) {
+                worst = fabs(domain.getProp<1>(p) - domain.getProp<0>(p));
+            }
+            ++it2;
+        }
+        //std::cout<<"Worst:"<<worst<<std::endl;
+        domain.deleteGhost();
+        //domain.write("test");
+        BOOST_REQUIRE(worst < 0.03);
+    }
+
+    BOOST_AUTO_TEST_CASE(dcpse_op_tests_mfa) {
+        size_t edgeSemiSize = 40;
+        const size_t sz[2] = {2 * edgeSemiSize, 2 * edgeSemiSize};
+        Box<2, double> box({0, 0}, {2 * M_PI, 2 * M_PI});
+        size_t bc[2] = {NON_PERIODIC, NON_PERIODIC};
+        double spacing[2];
+        spacing[0] = 2 * M_PI / (sz[0] - 1);
+        spacing[1] = 2 * M_PI / (sz[1] - 1);
+        Ghost<2, double> ghost(spacing[0] * 3.9);
+        double rCut = 3.9 * spacing[0];
+        BOOST_TEST_MESSAGE("Init vector_dist...");
+        double sigma2 = spacing[0] * spacing[1] / ( 4);
+        std::normal_distribution<> gaussian{0, sigma2};
+        std::mt19937 rng{6666666};
+        typedef vector_dist<2, double, aggregate<double, double, double, VectorS<2, double>, VectorS<2, double>>> vector_dist;
+
+        vector_dist domain(0, box,bc,ghost);
+        vector_dist domain2(domain.getDecomposition(),0);
+
+        //Init_DCPSE(domain)
+        BOOST_TEST_MESSAGE("Init domain...");
+
+        auto it = domain.getGridIterator(sz);
+        size_t pointId = 0;
+        size_t counter = 0;
+        double minNormOne = 999;
+        while (it.isNext()) {
+            domain.add();
+            domain2.add();
+            auto key = it.get();
+            mem_id k0 = key.get(0);
+            mem_id k1 = key.get(1);
+            double x = k0 * spacing[0];
+            double y = k1 * spacing[1];
+            domain.getLastPos()[0] = x;//+ gaussian(rng);
+            domain.getLastPos()[1] = y;//+gaussian(rng);
+            if(x!=0 && y!=0 && x!=box.getHigh(0) && y!=box.getHigh(1)){
+                domain2.getLastPos()[0] = x+ gaussian(rng);
+                domain2.getLastPos()[1] = y+ gaussian(rng);
+            }
+            else{
+                domain2.getLastPos()[0] = x;
+                domain2.getLastPos()[1] = y;
+            }
+            // Here fill the function value
+            domain.template getLastProp<0>() = sin(domain.getLastPos()[0]) + sin(domain.getLastPos()[1]);
+            domain.template getLastProp<1>() = 0.0;
+            domain2.template getLastProp<0>() = sin(domain2.getLastPos()[0]) + sin(domain2.getLastPos()[1]);
+            ++counter;
+            ++it;
+        }
+        BOOST_TEST_MESSAGE("Sync domain across processors...");
+
+        domain.map();
+        domain2.map();
+        domain.ghost_get<0>();
+        domain2.ghost_get<0>();
+
+        PPInterpolation<vector_dist,vector_dist> Fx(domain2,domain, 2, rCut);
+        //auto v = getV<1>(domain);
+        //auto P = getV<0>(domain);
+        Fx.p2p<0,1>();
+        auto it2 = domain.getDomainIterator();
+        double worst = 0.0;
+        while (it2.isNext()) {
+            auto p = it2.get();
+            //domain.template getProp<2>(p) = domain.getProp<1>(p) - domain.getProp<0>(p);
+            if (fabs(domain.getProp<1>(p) - domain.getProp<0>(p)) > worst) {
+                worst = fabs(domain.getProp<1>(p) - domain.getProp<0>(p));
+            }
+            ++it2;
+        }
+        //std::cout<<"Worst:"<<worst<<std::endl;
+        domain.deleteGhost();
+        //domain.write("test1");
+        //domain2.write("test2");
+        BOOST_REQUIRE(worst < 0.03);
     }
 
 
@@ -209,7 +353,7 @@ BOOST_AUTO_TEST_CASE(dcpse_op_tests) {
             domain.getLastPos()[0] = x;//+ gaussian(rng);
             mem_id k1 = key.get(1);
             double y = k1 * spacing[1];
-            domain.getLastPos()[1] = y;//+gaussian(rng);
+                domain.getLastPos()[1] = y;//+gaussian(rng);
             // Here fill the function value
             domain.template getLastProp<1>()[0] = sin(domain.getLastPos()[0]) + sin(domain.getLastPos()[1]);
             domain.template getLastProp<1>()[1] = cos(domain.getLastPos()[0]) + cos(domain.getLastPos()[1]);

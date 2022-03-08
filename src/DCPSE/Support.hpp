@@ -18,15 +18,20 @@ class Support
 private:
 
     size_t referencePointKey;
-    std::vector<size_t> keys;
+    openfpm::vector_std<size_t> keys;
 
 public:
 
     Support() {};
 
-    Support(const size_t &referencePoint, const std::vector<size_t> &keys)
+    Support(const size_t &referencePoint, const openfpm::vector_std<size_t> &keys)
             :referencePointKey(referencePoint),
               keys(keys)
+              {}
+
+    Support(const size_t &referencePoint, const std::vector<size_t> &keys)
+            :referencePointKey(referencePoint),
+              keys(keys.begin(), keys.end())
               {}
 
     Support(const Support &other)
@@ -44,10 +49,16 @@ public:
         return referencePointKey;
     }
 
-    const std::vector<size_t> &getKeys() const
+    const openfpm::vector_std<size_t> &getKeys() const
 	{
 	    return keys;
 	}
+
+    openfpm::vector_std<size_t> &getKeys()
+	{
+	    return keys;
+	}
+
 };
 
 

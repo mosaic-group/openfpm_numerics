@@ -14,6 +14,7 @@ endif()
 
 if (CUDA_FOUND)
 	set(CUDA_SOURCES Operators/Vector/vector_dist_operators_unit_tests.cu
+					 DCPSE/DCPSE_op/tests/DCPSE_op_Solver_test.cu
 					 Operators/Vector/vector_dist_operators_apply_kernel_unit_tests.cu)
 endif()
 
@@ -49,7 +50,7 @@ add_executable(numerics ${OPENFPM_INIT_FILE} ${CUDA_SOURCES}
 		level_set/closest_point/closest_point_unit_tests.cpp
 #		level_set/redistancing_Sussman/tests/redistancingSussman_unit_test.cpp
 #		level_set/redistancing_Sussman/tests/convergence_test.cpp
-		)
+        DCPSE/DCPSE_op/tests/DCPSE_op_Surface_tests.cpp)
 
 add_dependencies(numerics ofpmmemory)
 add_dependencies(numerics vcluster)
@@ -74,6 +75,7 @@ if(CUDA_FOUND)
         if (TEST_COVERAGE)
                 target_compile_options(numerics PRIVATE $<$<COMPILE_LANGUAGE:CUDA>: -Xcompiler "-fprofile-arcs -ftest-coverage" >)
         endif()
+    target_link_libraries(numerics -lcublas)
 endif()
 
 target_include_directories (numerics PUBLIC ${CUDA_INCLUDE_DIRS})
@@ -206,14 +208,21 @@ install(FILES Operators/Vector/cuda/vector_dist_operators_cuda.cuh
 	      COMPONENT OpenFPM)
 
 install(FILES DCPSE/Dcpse.hpp
+		DCPSE/Dcpse.cuh
+		DCPSE/DCPSE_op/DCPSE_Solver.cuh
 		DCPSE/DcpseDiagonalScalingMatrix.hpp
 		DCPSE/DcpseRhs.hpp
+		DCPSE/DcpseRhs.cuh
 		DCPSE/Monomial.hpp
+		DCPSE/Monomial.cuh
 		DCPSE/MonomialBasis.hpp
 		DCPSE/Support.hpp
+		DCPSE/SupportBuilder.cuh
 		DCPSE/SupportBuilder.hpp
 		DCPSE/Vandermonde.hpp
+		DCPSE/Vandermonde.cuh
 		DCPSE/VandermondeRowBuilder.hpp
+		DCPSE/DcpseInterpolation.hpp
 		DESTINATION openfpm_numerics/include/DCPSE
 		COMPONENT OpenFPM)
 
@@ -228,6 +237,7 @@ install(FILES util/eq_solve_common.hpp
 install(FILES DCPSE/DCPSE_op/DCPSE_op.hpp
 		DCPSE/DCPSE_op/DCPSE_Solver.hpp
 		DCPSE/DCPSE_op/EqnsStruct.hpp
+		DCPSE/DCPSE_op/DCPSE_surface_op.hpp
 		DESTINATION openfpm_numerics/include/DCPSE/DCPSE_op
 		COMPONENT OpenFPM)
 

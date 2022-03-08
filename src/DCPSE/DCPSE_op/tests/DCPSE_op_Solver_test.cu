@@ -1,18 +1,13 @@
 /*
- * DCPSE_op_Solver_test.cpp
+ * DCPSE_op_Solver_test.cu
  *
  *  Created on: Jan 7, 2020
- *      Author: Abhinav Singh, Pietro Incardona
+ *      Author: Abhinav Singh, Pietro Incardona, Serhii
  *
  */
-#include "config.h"
-#ifdef HAVE_EIGEN
-#ifdef HAVE_PETSC
-
-
 #define BOOST_MPL_CFG_NO_PREPROCESSED_HEADERS
 #define BOOST_MPL_LIMIT_VECTOR_SIZE 40
-
+#include "config.h"
 
 
 #define BOOST_TEST_DYN_LINK
@@ -22,12 +17,134 @@
 #include <iostream>
 #include "../DCPSE_op.hpp"
 #include "../DCPSE_Solver.hpp"
+#include "../DCPSE_Solver.cuh"
 #include "Operators/Vector/vector_dist_operators.hpp"
 #include "Vector/vector_dist_subset.hpp"
 #include "../EqnsStruct.hpp"
 #include "Decomposition/Distribution/SpaceDistribution.hpp"
 
-BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
+BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests_cu)
+
+BOOST_AUTO_TEST_CASE(dcpse_op_vec3d_gpu) {
+//  int rank;
+//  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+        size_t edgeSemiSize = 257;
+        const size_t sz[3] = {edgeSemiSize,  edgeSemiSize,edgeSemiSize};
+        Box<3, double> box({0, 0,0}, {1,1,1});
+        size_t bc[3] = {NON_PERIODIC, NON_PERIODIC, NON_PERIODIC};
+        double spacing = box.getHigh(0) / (sz[0] - 1);
+        double rCut = 3.1 * spacing;
+        Ghost<3, double> ghost(rCut);
+        BOOST_TEST_MESSAGE("Init vector_dist...");
+        double sigma2 = spacing * spacing/ (2 * 4);
+
+        vector_dist_gpu<3, double, aggregate<double, VectorS<3, double>, VectorS<3, double>, VectorS<3, double>, VectorS<3, double>,double,double>> domain(
+        0, box, bc, ghost);
+
+        //Init_DCPSE(domain)
+        BOOST_TEST_MESSAGE("Init domain...");
+
+        auto it = domain.getGridIterator(sz);
+        size_t pointId = 0;
+        size_t counter = 0;
+        double minNormOne = 999;
+        while (it.isNext()) {
+            domain.add();
+            auto key = it.get();
+            mem_id k0 = key.get(0);
+            double x = k0 * spacing;
+            domain.getLastPos()[0] = x;//+ gaussian(rng);
+            mem_id k1 = key.get(1);
+            double y = k1 * spacing;
+            domain.getLastPos()[1] = y;//+gaussian(rng);
+            mem_id k2 = key.get(2);
+            double z = k2 * spacing;
+            domain.getLastPos()[2] = z;//+gaussian(rng);
+            // Here fill the function value
+            domain.template getLastProp<0>()    = sin(domain.getLastPos()[0]) + sin(domain.getLastPos()[1]) + sin(domain.getLastPos()[2]) ;
+            domain.template getLastProp<1>()[0] = cos(domain.getLastPos()[0]);
+            domain.template getLastProp<1>()[1] = cos(domain.getLastPos()[1]) ;
+            domain.template getLastProp<1>()[2] = cos(domain.getLastPos()[2]);
+            // Here fill the validation value for Df/Dx
+            domain.template getLastProp<2>()[0] = 0;//cos(domain.getLastPos()[0]);//+cos(domain.getLastPos()[1]);
+            domain.template getLastProp<2>()[1] = 0;//-sin(domain.getLastPos()[0]);//+cos(domain.getLastPos()[1]);
+            domain.template getLastProp<3>()[0] = 0;//cos(domain.getLastPos()[0]);//+cos(domain.getLastPos()[1]);
+            domain.template getLastProp<3>()[1] = 0;//-sin(domain.getLastPos()[0]);//+cos(domain.getLastPos()[1]);
+            domain.template getLastProp<3>()[2] = 0;
+
+            domain.template getLastProp<4>()[0] = -cos(domain.getLastPos()[0]) * sin(domain.getLastPos()[0]);
+            domain.template getLastProp<4>()[1] = -cos(domain.getLastPos()[1]) * sin(domain.getLastPos()[1]);
+            domain.template getLastProp<4>()[2] = -cos(domain.getLastPos()[2]) * sin(domain.getLastPos()[2]);
+
+
+            /*  domain.template getLastProp<4>()[0] = cos(domain.getLastPos()[0]) * (sin(domain.getLastPos()[0]) + sin(domain.getLastPos()[1])) +
+                                                    cos(domain.getLastPos()[1]) * (cos(domain.getLastPos()[0]) + cos(domain.getLastPos()[1]));
+              domain.template getLastProp<4>()[1] = -sin(domain.getLastPos()[0]) * (sin(domain.getLastPos()[0]) + sin(domain.getLastPos()[1])) -
+                                                    sin(domain.getLastPos()[1]) * (cos(domain.getLastPos()[0]) + cos(domain.getLastPos()[1]));
+              domain.template getLastProp<4>()[2] = -sin(domain.getLastPos()[0]) * (sin(domain.getLastPos()[0]) + sin(domain.getLastPos()[1])) -
+                                                    sin(domain.getLastPos()[1]) * (cos(domain.getLastPos()[0]) + cos(domain.getLastPos()[1]));*/
+            domain.template getLastProp<5>()    = cos(domain.getLastPos()[0]) * cos(domain.getLastPos()[0])+cos(domain.getLastPos()[1]) * cos(domain.getLastPos()[1])+cos(domain.getLastPos()[2]) * cos(domain.getLastPos()[2]) ;
+            ++counter;
+            ++it;
+        }
+        BOOST_TEST_MESSAGE("Sync domain across processors...");
+
+        domain.map();
+        domain.ghost_get<0>();
+
+        Advection_gpu Adv(domain, 2, rCut, 1.9,support_options::RADIUS);
+        auto v = getV<1>(domain);
+        auto P = getV<0>(domain);
+        auto dv = getV<3>(domain);
+        auto dP = getV<6>(domain);
+
+
+//        typedef boost::mpl::int_<std::is_fundamental<point_expression_op<Point<2U, double>, point_expression<double>, Point<2U, double>, 3>>::value>::blabla blabla;
+//        std::is_fundamental<decltype(o1.value(key))>
+
+        domain.ghost_get<1>();
+        dv = Adv(v, v);
+        auto it2 = domain.getDomainIterator();
+
+        double worst1 = 0.0;
+
+        while (it2.isNext()) {
+            auto p = it2.get();
+
+            if (fabs(domain.getProp<3>(p)[1] - domain.getProp<4>(p)[1]) > worst1) {
+                worst1 = fabs(domain.getProp<3>(p)[1] - domain.getProp<4>(p)[1]);
+
+            }
+
+            ++it2;
+        }
+        //std::cout << "Maximum Error in component 2: " << worst1 << std::endl;
+        BOOST_REQUIRE(worst1 < 0.03);
+
+        //Adv.checkMomenta(domain);
+        //Adv.DrawKernel<2>(domain,0);
+
+        //domain.deleteGhost();
+
+        dP = Adv(v, P);//+Dy(P);
+        auto it3 = domain.getDomainIterator();
+
+        double worst2 = 0.0;
+
+        while (it3.isNext()) {
+            auto p = it3.get();
+            if (fabs(domain.getProp<6>(p) - domain.getProp<5>(p)) > worst2) {
+                worst2 = fabs(domain.getProp<6>(p) - domain.getProp<5>(p));
+
+            }
+
+            ++it3;
+        }
+        domain.deleteGhost();
+        BOOST_REQUIRE(worst2 < 0.03);
+
+
+}
 
     BOOST_AUTO_TEST_CASE(dcpse_op_solver) {
 //  int rank;
@@ -37,10 +154,10 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
         size_t bc[2] = {NON_PERIODIC, NON_PERIODIC};
         double spacing = box.getHigh(0) / (sz[0] - 1);
         Ghost<2, double> ghost(spacing * 3);
-        double rCut = 2.0 * spacing;
+        double rCut = 3.1 * spacing;
         BOOST_TEST_MESSAGE("Init vector_dist...");
 
-        vector_dist<2, double, aggregate<double,double,double,double>> domain(0, box, bc, ghost);
+        vector_dist_gpu<2, double, aggregate<double,double,double,double>> domain(0, box, bc, ghost);
 
 
         //Init_DCPSE(domain)
@@ -63,9 +180,9 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
         domain.map();
         domain.ghost_get<0>();
 
-        Laplacian Lap(domain, 2, rCut, 2,support_options::N_PARTICLES);
+        Laplacian_gpu Lap(domain, 2, rCut);
 
-        DCPSE_scheme<equations2d1,decltype(domain)> Solver(domain);
+        DCPSE_scheme_gpu<equations2d1_gpu,decltype(domain)> Solver( domain);
 
         openfpm::vector<aggregate<int>> bulk;
         openfpm::vector<aggregate<int>> up_p;
@@ -194,7 +311,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
         double rCut = 3.1 * spacing;
         BOOST_TEST_MESSAGE("Init vector_dist...");
 
-        vector_dist<2, double, aggregate<double,double,double,double,double,double>> domain(0, box, bc, ghost);
+        vector_dist_gpu<2, double, aggregate<double,double,double,double,double,double>> domain(0, box, bc, ghost);
 
 
         //Init_DCPSE(domain)
@@ -224,16 +341,16 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
 
         while (it.isNext())
         {
-        	auto k = it.get();
+            auto k = it.get();
 
-        	Point<2,double> xp = domain.getPos(k);
+            Point<2,double> xp = domain.getPos(k);
 
-        	if (bx.isInside(xp) == true)
-        	{
-        		rem.add(k.getKey());
-        	}
+            if (bx.isInside(xp) == true)
+            {
+                rem.add(k.getKey());
+            }
 
-        	++it;
+            ++it;
         }
 
         domain.remove(rem);
@@ -263,16 +380,16 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
 
         while (it.isNext())
         {
-        	auto k = it.get();
+            auto k = it.get();
 
-        	Point<2,double> xp = domain.getPos(k);
+            Point<2,double> xp = domain.getPos(k);
 
-        	if (bx.isInside(xp) == true)
-        	{
-        		rem.add(k.getKey());
-        	}
+            if (bx.isInside(xp) == true)
+            {
+                rem.add(k.getKey());
+            }
 
-        	++it;
+            ++it;
         }
 
         domain.remove(rem);
@@ -298,9 +415,10 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
         domain.map();
         domain.ghost_get<0>();
 
-        Derivative_x Dx(domain, 2, rCut/3.0 ,1.9,support_options::N_PARTICLES);
-        Derivative_y Dy(domain, 2, rCut/3.0,1.9,support_options::N_PARTICLES);
-        Laplacian Lap(domain, 2, rCut/3.0 ,1.9,support_options::N_PARTICLES);
+        Derivative_x_gpu Dx(domain, 2, rCut / 3.0 ,1.9/*,support_options::RADIUS*/);
+        Derivative_y_gpu Dy(domain, 2, rCut / 3.0 ,1.9/*,support_options::RADIUS*/);
+        Laplacian_gpu Lap(domain, 2, rCut / 3.0 ,1.9/*,support_options::RADIUS*/);
+
 
         openfpm::vector<aggregate<int>> bulk;
         openfpm::vector<aggregate<int>> up_p;
@@ -381,7 +499,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
 
         domain.ghost_get<1,3>();
 
-        DCPSE_scheme<equations2d1,decltype(domain)> Solver( domain);
+        DCPSE_scheme_gpu<equations2d1_gpu,decltype(domain)> Solver( domain);
         auto Poisson = Lap(v);
         auto D_x = Dx(v);
         auto D_y = Dy(v);
@@ -434,7 +552,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
     BOOST_AUTO_TEST_CASE(dcpse_poisson_Dirichlet_anal) {
 //  int rank;
 //  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-        const size_t sz[2] = {81,81};
+        const size_t sz[2] = {200,200};
         Box<2, double> box({0, 0}, {1, 1});
         size_t bc[2] = {NON_PERIODIC, NON_PERIODIC};
         double spacing = box.getHigh(0) / (sz[0] - 1);
@@ -442,7 +560,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
         double rCut = 3.1 * spacing;
         BOOST_TEST_MESSAGE("Init vector_dist...");
 
-        vector_dist<2, double, aggregate<double,double,double,double,double,double>> domain(0, box, bc, ghost);
+        vector_dist_gpu<2, double, aggregate<double,double,double,double,double,double>> domain(0, box, bc, ghost);
 
 
         //Init_DCPSE(domain)
@@ -465,9 +583,9 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
         domain.map();
         domain.ghost_get<0>();
 
-        Derivative_x Dx(domain, 2, rCut,1.9,support_options::RADIUS);
-        Derivative_y Dy(domain, 2, rCut,1.9,support_options::RADIUS);
-        Laplacian Lap(domain, 2, rCut, 1.9,support_options::RADIUS);
+        Derivative_x_gpu Dx(domain, 2, rCut,1.9,support_options::RADIUS);
+        Derivative_y_gpu Dy(domain, 2, rCut,1.9,support_options::RADIUS);
+        Laplacian_gpu Lap(domain, 2, rCut, 1.9,support_options::RADIUS);
 
         openfpm::vector<aggregate<int>> bulk;
         openfpm::vector<aggregate<int>> bulkF;
@@ -556,7 +674,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
             }
             ++it2;
         }
-        DCPSE_scheme<equations2d1,decltype(domain)> Solver( domain);
+        DCPSE_scheme_gpu<equations2d1_gpu,decltype(domain)> Solver( domain);
         auto Poisson = Lap(v);
         auto D_x = Dx(v);
         auto D_y = Dy(v);
@@ -618,7 +736,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
         double rCut = 3.1 * spacing;
         BOOST_TEST_MESSAGE("Init vector_dist...");
 
-        vector_dist<2, double, aggregate<double,double,double,double,double,VectorS<2, double>>> domain(0, box, bc, ghost);
+        vector_dist_gpu<2, double, aggregate<double,double,double,double,double,VectorS<2, double>>> domain(0, box, bc, ghost);
 
         //Init_DCPSE(domain)
         BOOST_TEST_MESSAGE("Init domain...");
@@ -641,9 +759,9 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
         domain.ghost_get<0>();
 
 
-        Laplacian Lap(domain, 2, rCut, 1.9, support_options::RADIUS);
+        Laplacian_gpu Lap(domain, 2, rCut, 1.9, support_options::RADIUS);
 
-        DCPSE_scheme<equations2d1p,decltype(domain)> Solver( domain);
+        DCPSE_scheme_gpu<equations2d1p_gpu,decltype(domain)> Solver( domain);
 
         openfpm::vector<aggregate<int>> bulk;
         openfpm::vector<aggregate<int>> up_p;
@@ -742,10 +860,10 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
         size_t bc[2] = {NON_PERIODIC, NON_PERIODIC};
         double spacing = box.getHigh(0) / (sz[0] - 1);
         Ghost<2, double> ghost(spacing * 3);
-        double rCut = 2.0 * spacing;
+        double rCut = 3.1 * spacing;
         BOOST_TEST_MESSAGE("Init vector_dist...");
 
-        vector_dist<2, double, aggregate<double,double,double,double,double,VectorS<2, double>>> domain(0, box, bc, ghost);
+        vector_dist_gpu<2, double, aggregate<double,double,double,double,double,VectorS<2, double>>> domain(0, box, bc, ghost);
 
 
         //Init_DCPSE(domain)
@@ -768,10 +886,10 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
         domain.map();
         domain.ghost_get<0>();
 
-        Derivative_y Dy(domain, 2, rCut,2,support_options::N_PARTICLES);
-        Laplacian Lap(domain, 2, rCut, 3,support_options::N_PARTICLES);
+        Derivative_y_gpu Dy(domain, 2, rCut);
+        Laplacian_gpu Lap(domain, 2, rCut);
 
-        DCPSE_scheme<equations2d1,decltype(domain)> Solver(domain);
+        DCPSE_scheme_gpu<equations2d1_gpu,decltype(domain)> Solver(domain);
 
         openfpm::vector<aggregate<int>> bulk;
         openfpm::vector<aggregate<int>> up_p;
@@ -854,7 +972,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
         Solver.impose(v, r_p, 0);
 
         Solver.solve_with_solver(pet_sol,sol);
-		domain.ghost_get<2>();
+        domain.ghost_get<2>();
 
         anasol=Lap(sol);
         double worst1 = 0.0;
@@ -891,7 +1009,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
         Ghost<2, double> ghost(spacing * 3.1);
         BOOST_TEST_MESSAGE("Init vector_dist...");
 
-        vector_dist<2, double, aggregate<double,double,double,double,double>> domain(0, box, bc, ghost);
+        vector_dist_gpu<2, double, aggregate<double,double,double,double,double>> domain(0, box, bc, ghost);
 
 
         //Init_DCPSE(domain)
@@ -915,9 +1033,9 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
         domain.map();
         domain.ghost_get<0>();
 
-        Derivative_x Dx(domain, 2, rCut,1.9,support_options::N_PARTICLES);
-        Derivative_y Dy(domain, 2, rCut,1.9,support_options::N_PARTICLES);
-        Laplacian Lap(domain, 2, rCut, 1.9,support_options::N_PARTICLES);
+        Derivative_x_gpu Dx(domain, 2, rCut);
+        Derivative_y_gpu Dy(domain, 2, rCut);
+        Laplacian_gpu Lap(domain, 2, rCut);
         petsc_solver<double> solver;
         solver.setRestart(500);
         solver.setSolver(KSPGMRES);
@@ -992,7 +1110,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
             ++it2;
         }
 
-        DCPSE_scheme<equations2d1,decltype(domain)> Solver(domain,options_solver::LAGRANGE_MULTIPLIER);
+        DCPSE_scheme_gpu<equations2d1_gpu,decltype(domain)> Solver(domain,options_solver::LAGRANGE_MULTIPLIER);
         auto Poisson = -Lap(v);
         auto D_x = Dx(v);
         auto D_y = Dy(v);
@@ -1001,24 +1119,6 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
         Solver.impose(-D_y, dw_p, prop_id<1>());
         Solver.impose(-D_x, l_p, prop_id<1>());
         Solver.impose(D_x, r_p, prop_id<1>());
-
-        Solver.reset_b();
-        Solver.impose_b(bulk, prop_id<1>());
-        Solver.impose_b(up_p, prop_id<1>());
-        Solver.impose_b(dw_p, prop_id<1>());
-        Solver.impose_b(l_p, prop_id<1>());
-        Solver.impose_b(r_p, prop_id<1>());
-
-        Solver.solve_with_solver(solver,sol);
-
-
-        Solver.reset_b();
-        Solver.impose_b(bulk, prop_id<1>());
-        Solver.impose_b(up_p, prop_id<1>());
-        Solver.impose_b(dw_p, prop_id<1>());
-        Solver.impose_b(l_p, prop_id<1>());
-        Solver.impose_b(r_p, prop_id<1>());
-
         Solver.solve_with_solver(solver,sol);
 
 //       Solver.solve(sol);
@@ -1052,7 +1152,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
         Ghost<2, double> ghost(rCut);
         BOOST_TEST_MESSAGE("Init vector_dist...");
 
-        vector_dist<2, double, aggregate<VectorS<2, double>,VectorS<2, double>,VectorS<2, double>,VectorS<2, double>,VectorS<2, double>,VectorS<2, double>>> domain(0, box, bc, ghost);
+        vector_dist_gpu<2, double, aggregate<VectorS<2, double>,VectorS<2, double>,VectorS<2, double>,VectorS<2, double>,VectorS<2, double>,VectorS<2, double>>> domain(0, box, bc, ghost);
 
 
         //Init_DCPSE(domain)
@@ -1075,9 +1175,9 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
         domain.map();
         domain.ghost_get<0>();
 
-        Derivative_x Dx(domain, 2, rCut,1.9,support_options::RADIUS);
-        Derivative_y Dy(domain, 2, rCut,1.9,support_options::RADIUS);
-        Laplacian Lap(domain, 2, rCut,1.9,support_options::RADIUS);
+        Derivative_x_gpu Dx(domain, 2, rCut,1.9,support_options::RADIUS);
+        Derivative_y_gpu Dy(domain, 2, rCut,1.9,support_options::RADIUS);
+        Laplacian_gpu Lap(domain, 2, rCut,1.9,support_options::RADIUS);
 
 
         openfpm::vector<aggregate<int>> bulk;
@@ -1180,7 +1280,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
         vx.setId(0);
         vy.setId(1);
 
-        DCPSE_scheme<equations2d2,decltype(domain)> Solver(domain);
+        DCPSE_scheme_gpu<equations2d2_gpu,decltype(domain)> Solver( domain);
         auto Poisson0 = Lap(v[0]);
         auto Poisson1 = Lap(v[1]);
         //auto D_x = Dx(v[1]);
@@ -1229,6 +1329,5 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
 
 
 BOOST_AUTO_TEST_SUITE_END()
-#endif
-#endif
+
 
