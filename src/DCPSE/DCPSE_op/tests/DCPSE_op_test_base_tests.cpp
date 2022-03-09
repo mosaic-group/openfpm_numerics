@@ -61,7 +61,7 @@ BOOST_AUTO_TEST_CASE(dcpse_op_tests) {
             domain.getLastPos()[1] = y;//+gaussian(rng);
             // Here fill the function value
             domain.template getLastProp<0>() = sin(domain.getLastPos()[0]) + sin(domain.getLastPos()[1]);
-            domain.template getLastProp<2>() = cos(domain.getLastPos()[0]) + cos(domain.getLastPos()[1]);
+            domain.template getLastProp<2>() = 2*cos(domain.getLastPos()[0]) + cos(domain.getLastPos()[1]);
             ++counter;
             ++it;
         }
@@ -77,7 +77,7 @@ BOOST_AUTO_TEST_CASE(dcpse_op_tests) {
         auto v = getV<1>(domain);
         auto P = getV<0>(domain);
 
-        v = Dx(P) + Dy(P);
+        v = 2*Dx(P) + Dy(P);
         auto it2 = domain.getDomainIterator();
 
         double worst = 0.0;
