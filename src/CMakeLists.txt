@@ -15,6 +15,7 @@ endif()
 if (CUDA_FOUND)
 	set(CUDA_SOURCES Operators/Vector/vector_dist_operators_unit_tests.cu
 					 DCPSE/DCPSE_op/tests/DCPSE_op_Solver_test.cu
+					 DCPSE/DCPSE_op/tests/DCPSE_op_subset_test.cu
 					 Operators/Vector/vector_dist_operators_apply_kernel_unit_tests.cu)
 endif()
 
@@ -209,7 +210,6 @@ install(FILES DCPSE/Dcpse.hpp
 		DCPSE/DCPSE_op/DCPSE_Solver.cuh
 		DCPSE/DcpseDiagonalScalingMatrix.hpp
 		DCPSE/DcpseRhs.hpp
-		DCPSE/DcpseRhs.cuh
 		DCPSE/Monomial.hpp
 		DCPSE/Monomial.cuh
 		DCPSE/MonomialBasis.hpp
@@ -217,7 +217,6 @@ install(FILES DCPSE/Dcpse.hpp
 		DCPSE/SupportBuilder.cuh
 		DCPSE/SupportBuilder.hpp
 		DCPSE/Vandermonde.hpp
-		DCPSE/Vandermonde.cuh
 		DCPSE/VandermondeRowBuilder.hpp
 		DESTINATION openfpm_numerics/include/DCPSE
 		COMPONENT OpenFPM)

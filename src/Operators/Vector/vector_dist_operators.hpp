@@ -9,6 +9,7 @@
 #define OPENFPM_NUMERICS_SRC_OPERATORS_VECTOR_VECTOR_DIST_OPERATORS_HPP_
 
 #include "Vector/vector_dist.hpp"
+#include "Vector/vector_dist_subset.hpp"
 #include "lib/pdata.hpp"
 #include "cuda/vector_dist_operators_cuda.cuh"
 
@@ -967,7 +968,7 @@ public:
 	 * \return the result of the expression
 	 *
 	 */
-	__device__ inline auto value(const unsigned int & k) const -> decltype(pos_or_propR<vector,prp>::value(v.v,k))
+	__host__ __device__ inline auto value(const unsigned int & k) const -> decltype(pos_or_propR<vector,prp>::value(v.v,k))
 	{
 		return pos_or_propR<vector,prp>::value(v.v,k);
 	}
@@ -1575,8 +1576,7 @@ public:
 	}
 
 	//! property on which this view is acting
-	//typedef typename boost::mpl::at<typename vtype::value_type::type,boost::mpl::int_<exp1::prop>>::type property_act;
-	typedef typename std::remove_const<typename std::remove_reference<decltype(pos_or_propL<vtype,exp1::prop>::value_type(std::declval<vtype>(),vect_dist_key_dx(0)))>::type>::type property_act;
+	typedef typename pos_or_propL<vtype,exp1::prop>::prop_type property_act;
 
 	/*! \brief Return the result of the expression
 	 *

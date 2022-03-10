@@ -20,6 +20,8 @@ constexpr unsigned int PROP_POS =(unsigned int)-1;
 template <typename vector, unsigned int prp>
 struct pos_or_propL
 {
+	typedef typename boost::mpl::at<typename vector::value_type::type, boost::mpl::int_<prp>>::type prop_type;
+
 	//! return the value (position or property) of the particle k in the vector v
 	static inline auto value(vector & v, const vect_dist_key_dx & k) -> decltype(v.template getProp<prp>(k))
 	{
@@ -61,6 +63,8 @@ struct pos_or_propL_ker
 template <typename vector>
 struct pos_or_propL<vector,PROP_POS>
 {
+	typedef Point<vector::dims,typename vector::stype> prop_type;
+
 #ifdef SE_CLASS3
 
 	//! return the value (position or property) of the particle k in the vector v

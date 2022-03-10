@@ -64,6 +64,8 @@ private:
     openfpm::vector_custd<T> localEpsInvPow; // Each MPI rank has just access to the local ones
     openfpm::vector_custd<T> calcKernels;
 
+    openfpm::vector<size_t> subsetKeyPid;
+
     vector_type & particles;
     double rCut;
     unsigned int convergenceOrder;
@@ -117,6 +119,7 @@ public:
             differentialSignature(differentialSignature),
             differentialOrder(Monomial<dim>(differentialSignature).order()),
             monomialBasis(differentialSignature.asArray(), convergenceOrder),
+            subsetKeyPid(other.subsetKeyPid),
             supportRefs(other.supportRefs),
             supportKeys1D(other.supportKeys1D),
             kerOffsets(other.kerOffsets),
@@ -195,7 +198,7 @@ public:
             momenta.template get<1>(i) = -3000000000.0;
         }
 
-        size_t N = particles.size_local_orig();
+        size_t N = particles.size_local();
         for (size_t j = 0; j < N; ++j)
         {
             double eps = localEps.get(j);
@@ -215,7 +218,7 @@ public:
             for (int i = 0; i < supportKeysSize; i++)
             {
                 size_t xqK = supportKeys[i];
-                Point<dim, T> xq = particles.getPosOrig(xqK);
+                Point<dim, T> xq = particles.getPos(xqK);
                 Point<dim, T> normalizedArg = (xp - xq) / eps;
 
                 auto ker = calcKernels.get(kerOff+i);
@@ -269,7 +272,7 @@ public:
             sign = -1;
         }
 
-        size_t N = particles.size_local_orig();
+        size_t N = particles.size_local();
         for (size_t j = 0; j < N; ++j)
         {
             double epsInvPow = localEpsInvPow.get(j);
@@ -368,8 +371,9 @@ public:
             sign = -1;
         }
 
-        double eps = localEps.get(key.getKey());
-        double epsInvPow = localEpsInvPow.get(key.getKey());
+        size_t localKey = subsetKeyPid.get(key.getKey());
+        double eps = localEps.get(localKey);
+        double epsInvPow = localEpsInvPow.get(localKey);
 
         auto &particles = o1.getVector();
 
@@ -381,13 +385,13 @@ public:
 #endif
 
         expr_type Dfxp = 0;
-        size_t xpK = supportRefs.get(key.getKey());
+        size_t xpK = supportRefs.get(localKey);
         Point<dim, T> xp = particles.getPos(xpK);
         expr_type fxp = sign * o1.value(key);
         size_t kerOff = kerOffsets.get(xpK);
 
-        size_t  supportKeysSize = kerOffsets.get(key.getKey()+1)-kerOffsets.get(key.getKey());
-        size_t* supportKeys = &((size_t*)supportKeys1D.getPointer())[kerOffsets.get(key.getKey())];
+        size_t  supportKeysSize = kerOffsets.get(localKey+1)-kerOffsets.get(localKey);
+        size_t* supportKeys = &((size_t*)supportKeys1D.getPointer())[kerOffsets.get(localKey)];
 
         for (int i = 0; i < supportKeysSize; i++)
         {
@@ -396,8 +400,8 @@ public:
             Dfxp = Dfxp + (fxq + fxp) * calcKernels.get(kerOff+i);
         }
         Dfxp = Dfxp * epsInvPow;
-        //
-        //T trueDfxp = particles.template getProp<2>(xpK);
+
+        // T trueDfxp = particles.template getProp<2>(xpK);
         // Store Dfxp in the right position
         return Dfxp;
     }
@@ -424,8 +428,9 @@ public:
             sign = -1;
         }
 
-        double eps = localEps.get(key.getKey());
-        double epsInvPow = localEpsInvPow(key.getKey());
+        size_t localKey = subsetKeyPid.get(key.getKey());
+        double eps = localEps.get(localKey);
+        double epsInvPow = localEpsInvPow(localKey);
 
         auto &particles = o1.getVector();
 
@@ -437,13 +442,13 @@ public:
 #endif
 
         expr_type Dfxp = 0;
-        size_t xpK = supportRefs.get(key.getKey());
+        size_t xpK = supportRefs.get(localKey);
 
         Point<dim, T> xp = particles.getPos(xpK);
         expr_type fxp = sign * o1.value(key)[i];
         size_t kerOff = kerOffsets.get(xpK);
-        size_t  supportKeysSize = kerOffsets.get(key.getKey()+1)-kerOffsets.get(key.getKey());
-        size_t* supportKeys = &((size_t*)supportKeys1D.getPointer())[kerOffsets.get(key.getKey())];
+        size_t  supportKeysSize = kerOffsets.get(localKey+1)-kerOffsets.get(localKey);
+        size_t* supportKeys = &((size_t*)supportKeys1D.getPointer())[kerOffsets.get(localKey)];
 
         for (int j = 0; j < supportKeysSize; j++)
         {
@@ -470,6 +475,7 @@ public:
         localEps.clear();
         localEpsInvPow.clear();
         calcKernels.clear();
+        subsetKeyPid.clear();
 
         initializeStaticSize(particles, convergenceOrder, rCut, supportSizeFactor);
     }
@@ -483,37 +489,37 @@ private:
 #ifdef SE_CLASS1
         this->update_ctr=particles.getMapCtr();
 #endif
-        SupportBuilder<vector_type> supportBuilder(particles, differentialSignature, rCut);
-        unsigned int requiredSupportSize = monomialBasis.size();
 
-        if (!isSharedSupport)
-            supportRefs.resize(particles.size_local_orig());
-        localEps.resize(particles.size_local_orig());
-        localEpsInvPow.resize(particles.size_local_orig());
-        kerOffsets.resize(particles.size_local_orig()+1);
+        if (!isSharedSupport) {
+            subsetKeyPid.resize(particles.size_local_orig());
+            supportRefs.resize(particles.size_local());
+        }
+        localEps.resize(particles.size_local());
+        localEpsInvPow.resize(particles.size_local());
+        kerOffsets.resize(particles.size_local()+1);
 
-        // need to resize supportKeys1D to yet unknown supportKeysTotalN
-        // add() takes too long
-        openfpm::vector<openfpm::vector<size_t>> tempSupportKeys(supportRefs.size());
         const T condVTOL = 1e2;
 
-        auto it = particles.getDomainIterator();
-        while (it.isNext()) {
-            size_t sz;
-            auto key_o = particles.getOriginKey(it.get());
+        if (!isSharedSupport) {
+            SupportBuilder<vector_type> supportBuilder(particles, differentialSignature, rCut);
+            unsigned int requiredSupportSize = monomialBasis.size();
+            // need to resize supportKeys1D to yet unknown supportKeysTotalN
+            // add() takes too long
+            openfpm::vector<openfpm::vector<size_t>> tempSupportKeys(supportRefs.size());
 
-
-            if (!isSharedSupport){
+            auto it = particles.getDomainIterator();
+            while (it.isNext()) {
                 auto key_o = particles.getOriginKey(it.get());
+                subsetKeyPid.get(key_o.getKey()) = it.get().getKey();
 
                 Support support = supportBuilder.getSupport(it, requiredSupportSize, opt);
-                supportRefs.get(key_o.getKey()) = support.getReferencePointKey();
+                supportRefs.get(key_o.getKey()) = key_o.getKey();
                 tempSupportKeys.get(key_o.getKey()) = support.getKeys();
                 kerOffsets.get(key_o.getKey()) = supportKeysTotalN;
 
-                if (maxSupportSize < support.size()) maxSupportSize = support.size();
+                if (maxSupportSize < support.size())
+                    maxSupportSize = support.size();
                 supportKeysTotalN += support.size();
-
 
                 EMatrix<T, Eigen::Dynamic, Eigen::Dynamic> V(support.size(), monomialBasis.size());
                 // Vandermonde matrix computation
@@ -529,11 +535,10 @@ private:
                     std::cout << "INFO: Increasing, requiredSupportSize = " << requiredSupportSize << std::endl; // debug
                     continue;
                 } else requiredSupportSize = monomialBasis.size();
-            }
-            ++it;
-        }
 
-        if (!isSharedSupport){
+                ++it;
+            }
+
             kerOffsets.get(supportRefs.size()) = supportKeysTotalN;
             supportKeys1D.resize(supportKeysTotalN);
 
@@ -554,37 +559,37 @@ private:
 #ifdef SE_CLASS1
         this->update_ctr=particles.getMapCtr();
 #endif
-        SupportBuilder<vector_type> supportBuilder(particles, differentialSignature, rCut);
-        unsigned int requiredSupportSize = monomialBasis.size();
 
-        if (!isSharedSupport)
-            supportRefs.resize(particles.size_local_orig());
-        localEps.resize(particles.size_local_orig());
-        localEpsInvPow.resize(particles.size_local_orig());
-        kerOffsets.resize(particles.size_local_orig()+1);
+        if (!isSharedSupport) {
+            subsetKeyPid.resize(particles.size_local_orig());
+            supportRefs.resize(particles.size_local());
+        }
+        localEps.resize(particles.size_local());
+        localEpsInvPow.resize(particles.size_local());
+        kerOffsets.resize(particles.size_local()+1);
 
-        // need to resize supportKeys1D to yet unknown supportKeysTotalN
-        // add() takes too long
-        openfpm::vector<openfpm::vector<size_t>> tempSupportKeys(supportRefs.size());
         const T condVTOL = 1e2;
 
-        auto it = particles.getDomainIterator();
-        while (it.isNext()) {
-            size_t sz;
-            auto key_o = particles.getOriginKey(it.get());
+        if (!isSharedSupport) {
+            SupportBuilder<vector_type> supportBuilder(particles, differentialSignature, rCut);
+            unsigned int requiredSupportSize = monomialBasis.size();
+            // need to resize supportKeys1D to yet unknown supportKeysTotalN
+            // add() takes too long
+            openfpm::vector<openfpm::vector<size_t>> tempSupportKeys(supportRefs.size());
 
-
-            if (!isSharedSupport){
+            auto it = particles.getDomainIterator();
+            while (it.isNext()) {
                 auto key_o = particles.getOriginKey(it.get());
+                subsetKeyPid.get(key_o.getKey()) = it.get().getKey();
 
                 Support support = supportBuilder.getSupport(it, requiredSupportSize, opt);
-                supportRefs.get(key_o.getKey()) = support.getReferencePointKey();
+                supportRefs.get(key_o.getKey()) = key_o.getKey();
                 tempSupportKeys.get(key_o.getKey()) = support.getKeys();
                 kerOffsets.get(key_o.getKey()) = supportKeysTotalN;
 
-                if (maxSupportSize < support.size()) maxSupportSize = support.size();
+                if (maxSupportSize < support.size())
+                    maxSupportSize = support.size();
                 supportKeysTotalN += support.size();
-
 
                 EMatrix<T, Eigen::Dynamic, Eigen::Dynamic> V(support.size(), monomialBasis.size());
                 // Vandermonde matrix computation
@@ -600,11 +605,10 @@ private:
                     std::cout << "INFO: Increasing, requiredSupportSize = " << requiredSupportSize << std::endl; // debug
                     continue;
                 } else requiredSupportSize = monomialBasis.size();
-            }
-            ++it;
-        }
 
-        if (!isSharedSupport){
+                ++it;
+            }
+
             kerOffsets.get(supportRefs.size()) = supportKeysTotalN;
             supportKeys1D.resize(supportKeysTotalN);
 
@@ -629,51 +633,49 @@ private:
         this->supportSizeFactor=supportSizeFactor;
         this->convergenceOrder=convergenceOrder;
 
-        if (!isSharedSupport)
-            supportRefs.resize(particles.size_local_orig());
-        localEps.resize(particles.size_local_orig());
-        localEpsInvPow.resize(particles.size_local_orig());
+        if (!isSharedSupport) {
+            subsetKeyPid.resize(particles.size_local_orig());
+            supportRefs.resize(particles.size_local());
+        }
+        localEps.resize(particles.size_local());
+        localEpsInvPow.resize(particles.size_local());
 
 std::chrono::high_resolution_clock::time_point t1 = std::chrono::high_resolution_clock::now();
         auto it = particles.getDomainIterator();
 
         if (opt==support_options::RADIUS) {
-            while (it.isNext()) {
-                auto key_o = particles.getOriginKey(it.get());
-
-                if (!isSharedSupport)
+            if (!isSharedSupport) {
+                while (it.isNext()) {
+                    auto key_o = it.get(); subsetKeyPid.get(particles.getOriginKey(key_o).getKey()) = key_o.getKey();
                     supportRefs.get(key_o.getKey()) = key_o.getKey();
-                ++it;
+                    ++it;
+                }
+
+                SupportBuilderGPU<vector_type> supportBuilder(particles, rCut);
+                supportBuilder.getSupport(supportRefs.size(), kerOffsets, supportKeys1D, maxSupportSize, supportKeysTotalN);
             }
-
-            SupportBuilderGPU<vector_type> supportBuilder(particles, differentialSignature, rCut);
-            supportBuilder.getSupport(supportRefs.size(), kerOffsets, supportKeys1D, maxSupportSize, supportKeysTotalN);
-
         } else {
-            size_t requiredSupportSize = monomialBasis.size() * supportSizeFactor;
-            SupportBuilder<vector_type> supportBuilder(particles, differentialSignature, rCut);
+            if (!isSharedSupport){
+                openfpm::vector<openfpm::vector<size_t>> tempSupportKeys(supportRefs.size());
+                size_t requiredSupportSize = monomialBasis.size() * supportSizeFactor;
+                // need to resize supportKeys1D to yet unknown supportKeysTotalN
+                // add() takes too long
+                SupportBuilder<vector_type> supportBuilder(particles, differentialSignature, rCut);
+                kerOffsets.resize(supportRefs.size()+1);
 
-            kerOffsets.resize(supportRefs.size()+1);
-            // need to resize supportKeys1D to yet unknown supportKeysTotalN
-            // add() takes too long
-            openfpm::vector<openfpm::vector<size_t>> tempSupportKeys(supportRefs.size());
-
-            while (it.isNext()) {
-                if (!isSharedSupport){
-                    auto key_o = particles.getOriginKey(it.get());
+                while (it.isNext()) {
+                    auto key_o = it.get(); subsetKeyPid.get(particles.getOriginKey(key_o).getKey()) = key_o.getKey();
 
                     Support support = supportBuilder.getSupport(it, requiredSupportSize, opt);
-                    supportRefs.get(key_o.getKey()) = support.getReferencePointKey();
+                    supportRefs.get(key_o.getKey()) = key_o.getKey();
                     tempSupportKeys.get(key_o.getKey()) = support.getKeys();
                     kerOffsets.get(key_o.getKey()) = supportKeysTotalN;
 
                     if (maxSupportSize < support.size()) maxSupportSize = support.size();
                     supportKeysTotalN += support.size();
+                    ++it;
                 }
-                ++it;
-            }
 
-            if (!isSharedSupport){
                 kerOffsets.get(supportRefs.size()) = supportKeysTotalN;
                 supportKeys1D.resize(supportKeysTotalN);
 
@@ -705,52 +707,49 @@ std::cout << "Support building took " << time_span2.count() * 1000. << " millise
         this->supportSizeFactor=supportSizeFactor;
         this->convergenceOrder=convergenceOrder;
 
-        if (!isSharedSupport)
-            supportRefs.resize(particles.size_local_orig());
-
-        localEps.resize(particles.size_local_orig());
-        localEpsInvPow.resize(particles.size_local_orig());
+        if (!isSharedSupport) {
+            subsetKeyPid.resize(particles.size_local_orig());
+            supportRefs.resize(particles.size_local());
+        }
+        localEps.resize(particles.size_local());
+        localEpsInvPow.resize(particles.size_local());
 
 std::chrono::high_resolution_clock::time_point t1 = std::chrono::high_resolution_clock::now();
         auto it = particles.getDomainIterator();
 
         if (opt==support_options::RADIUS) {
-            while (it.isNext()) {
-                auto key_o = particles.getOriginKey(it.get());
-
-                if (!isSharedSupport)
+            if (!isSharedSupport) {
+                while (it.isNext()) {
+                    auto key_o = it.get(); subsetKeyPid.get(particles.getOriginKey(key_o).getKey()) = key_o.getKey();
                     supportRefs.get(key_o.getKey()) = key_o.getKey();
-                ++it;
+                    ++it;
+                }
+
+                SupportBuilderGPU<vector_type> supportBuilder(particles, rCut);
+                supportBuilder.getSupport(supportRefs.size(), kerOffsets, supportKeys1D, maxSupportSize, supportKeysTotalN);
             }
-
-            SupportBuilderGPU<vector_type> supportBuilder(particles, differentialSignature, rCut);
-            supportBuilder.getSupport(supportRefs.size(), kerOffsets, supportKeys1D, maxSupportSize, supportKeysTotalN);
-
         } else {
-            size_t requiredSupportSize = monomialBasis.size() * supportSizeFactor;
-            SupportBuilder<vector_type> supportBuilder(particles, differentialSignature, rCut);
+            if (!isSharedSupport){
+                openfpm::vector<openfpm::vector<size_t>> tempSupportKeys(supportRefs.size());
+                size_t requiredSupportSize = monomialBasis.size() * supportSizeFactor;
+                // need to resize supportKeys1D to yet unknown supportKeysTotalN
+                // add() takes too long
+                SupportBuilder<vector_type> supportBuilder(particles, differentialSignature, rCut);
+                kerOffsets.resize(supportRefs.size()+1);
 
-            kerOffsets.resize(supportRefs.size()+1);
-            // need to resize supportKeys1D to yet unknown supportKeysTotalN
-            // add() takes too long
-            openfpm::vector<openfpm::vector<size_t>> tempSupportKeys(supportRefs.size());
-
-            while (it.isNext()) {
-                if (!isSharedSupport){
-                    auto key_o = particles.getOriginKey(it.get());
+                while (it.isNext()) {
+                    auto key_o = it.get(); subsetKeyPid.get(particles.getOriginKey(key_o).getKey()) = key_o.getKey();
 
                     Support support = supportBuilder.getSupport(it, requiredSupportSize, opt);
-                    supportRefs.get(key_o.getKey()) = support.getReferencePointKey();
+                    supportRefs.get(key_o.getKey()) = key_o.getKey();
                     tempSupportKeys.get(key_o.getKey()) = support.getKeys();
                     kerOffsets.get(key_o.getKey()) = supportKeysTotalN;
 
                     if (maxSupportSize < support.size()) maxSupportSize = support.size();
                     supportKeysTotalN += support.size();
+                    ++it;
                 }
-                ++it;
-            }
 
-            if (!isSharedSupport){
                 kerOffsets.get(supportRefs.size()) = supportKeysTotalN;
                 supportKeys1D.resize(supportKeysTotalN);
 
@@ -870,9 +869,8 @@ std::cout << "Support building took " << time_span2.count() * 1000. << " millise
     }
 
     T computeKernel(Point<dim, T> x, EMatrix<T, Eigen::Dynamic, 1> & a) const {
-        T res = 0;
         unsigned int counter = 0;
-        T expFactor = exp(-norm2(x));
+        T res = 0, expFactor = exp(-norm2(x));
 
         size_t N = monomialBasis.getElements().size();
         for (size_t i = 0; i < N; ++i)
@@ -891,9 +889,8 @@ std::cout << "Support building took " << time_span2.count() * 1000. << " millise
     // template <unsigned int a_dim>
     // T computeKernel(Point<dim, T> x, const T (& a) [a_dim]) const {
     T computeKernel(Point<dim, T> x, const T* a) const {
-        T res = 0;
         unsigned int counter = 0;
-        T expFactor = exp(-norm2(x));
+        T res = 0, expFactor = exp(-norm2(x));
 
         size_t N = monomialBasis.getElements().size();
         for (size_t i = 0; i < N; ++i)
@@ -953,8 +950,9 @@ __global__ void assembleLocalMatrices_gpu(
 
         T FACTOR = 2, avgNeighbourSpacing = 0;
         for (int i = 0 ; i < supportKeysSize; i++) {
-            Point<dim,T> off = xa; off -= particles.getPos(supportKeys[i]);
-            avgNeighbourSpacing += norm(off);
+            Point<dim,T> off = xa; off -= particles.getPosOrig(supportKeys[i]);
+            for (size_t j = 0; j < dim; ++j)
+                avgNeighbourSpacing += fabs(off.value(j));
         }
 
         avgNeighbourSpacing /= supportKeysSize;
@@ -968,7 +966,7 @@ __global__ void assembleLocalMatrices_gpu(
         // EMatrix<T, Eigen::Dynamic, Eigen::Dynamic> B = E * V;
         for (int i = 0; i < supportKeysSize; ++i)
             for (int j = 0; j < monomialBasisSize; ++j) {
-                Point<dim,T> off = xa; off -= particles.getPos(supportKeys[i]);
+                Point<dim,T> off = xa; off -= particles.getPosOrig(supportKeys[i]);
                 const Monomial_gpu<dim>& m = basisElements.get(j);
 
                 T V_ij = m.evaluate(off) / pow(eps, m.order());
@@ -1012,7 +1010,7 @@ __global__ void calcKernels_gpu(particles_type particles, monomialBasis_type mon
     for (size_t j = 0; j < supportKeysSize; ++j)
     {
         size_t xqK = supportKeys[j];
-        Point<dim, T> xq = particles.getPos(xqK);
+        Point<dim, T> xq = particles.getPosOrig(xqK);
         Point<dim, T> offNorm = (xa - xq) / eps;
         T expFactor = exp(-norm2(offNorm));
 
