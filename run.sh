@@ -5,7 +5,7 @@
 #cd openfpm_numerics
 
 workspace=$1
-hostname=$2
+hostname=$(cat hostname)
 nproc=$3
 ntask_per_node=$5
 nodes=$4
@@ -14,6 +14,10 @@ branch=$7
 echo "Directory: $workspace"
 echo "Machine: $hostname"
 echo "Branch name: $branch"
+
+if [ x"$hostname" == x"cifarm-centos-node"  ]; then
+        mpi_options="--allow-run-as-root"
+fi
 
 # Get the branch of pdata
 
