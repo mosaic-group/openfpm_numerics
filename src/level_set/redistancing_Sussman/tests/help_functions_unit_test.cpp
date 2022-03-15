@@ -43,8 +43,8 @@ BOOST_AUTO_TEST_SUITE(HelpFunctionsTestSuite)
 		auto min_value = get_min_val<Field>(g_dist);
 		double tolerance = 1e-12;
 //BOOST_CHECK_MESSAGE(isApproxEqual(min_value, smaller_value, tolerance), "Checking if smallest value stored "
-		"in grid "
-																		  "is returned.");
+//		"in grid "
+//																		  "is returned.");
 	}
 	
 	BOOST_AUTO_TEST_CASE(get_max_val_test)
@@ -79,7 +79,7 @@ BOOST_AUTO_TEST_SUITE(HelpFunctionsTestSuite)
 		auto max_value = get_max_val<Field>(g_dist);
 		double tolerance = 1e-12;
 //		BOOST_CHECK_MESSAGE(isApproxEqual(max_value, bigger_value, tolerance), "Checking if smallest value stored in "
-																			   "grid "
-																		  "is returned.");
+//																			   "grid "
+//																		  "is returned.");
 	}
 BOOST_AUTO_TEST_SUITE_END()
