@@ -63,7 +63,7 @@ if ( CUDA_ON_BACKEND STREQUAL "HIP" AND HIP_FOUND )
 #               BoundaryConditions/tests/method_of_images_cylinder_unit_test.cpp
 #		        level_set/closest_point/closest_point_unit_tests.cpp
 		        level_set/redistancing_Sussman/tests/redistancingSussman_fast_unit_test.cpp
-#		        level_set/redistancing_Sussman/tests/help_functions_unit_test.cpp
+		        level_set/redistancing_Sussman/tests/help_functions_unit_test.cpp
 		        level_set/redistancing_Sussman/tests/narrowBand_unit_test.cpp
 #               level_set/redistancing_Sussman/tests/redistancingSussman_unit_test.cpp
 #		        level_set/redistancing_Sussman/tests/convergence_test.cpp
@@ -103,7 +103,7 @@ else()
 #			BoundaryConditions/tests/method_of_images_cylinder_unit_test.cpp
 #		    level_set/closest_point/closest_point_unit_tests.cpp
 			level_set/redistancing_Sussman/tests/redistancingSussman_fast_unit_test.cpp
-#			level_set/redistancing_Sussman/tests/help_functions_unit_test.cpp
+			level_set/redistancing_Sussman/tests/help_functions_unit_test.cpp
 			level_set/redistancing_Sussman/tests/narrowBand_unit_test.cpp
 #			level_set/redistancing_Sussman/tests/redistancingSussman_unit_test.cpp
 #			level_set/redistancing_Sussman/tests/convergence_test.cpp
