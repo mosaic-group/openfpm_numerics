@@ -31,7 +31,6 @@ BOOST_AUTO_TEST_SUITE(NarrowBandTestSuite)
 
 
 		size_t N = 32;
-		const double dt = 0.000165334;
 		const size_t sz[dims] = {N, N, N};
 		const double radius = 1.0;
 		const double box_lower = 0.0;

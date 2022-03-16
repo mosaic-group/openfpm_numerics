@@ -263,8 +263,6 @@ BOOST_AUTO_TEST_SUITE(RedistancingSussmanFastTestSuite)
 		LNorms<> lNorms_vd;
 		lNorms_vd.get_l_norms_vector<Error_vd>(vd_narrow_band);
 		std::cout << lNorms_vd.l2 << ", " << lNorms_vd.linf << std::endl;
-//		int precision = 6;
-//		lNorms_vd.write_to_file(N, precision, "l_norms.csv", path_output);
 
 //	    N = 32, precision = double, 1e3 iterations
 //		Automatically found timestep is 0.00277489

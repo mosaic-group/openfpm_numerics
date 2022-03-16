@@ -70,15 +70,12 @@ BOOST_AUTO_TEST_SUITE(FDOrder1TestSuite)
 			}
 			
 			// Get the error between analytical and numerical solution
-//			get_absolute_error<NumericalGradient, AnalyticalGradient, Error>(g_dist);
 			get_relative_error<NumericalGradient, AnalyticalGradient, Error>(g_dist);
 			
 			LNorms<double> lNorms;
 			lNorms.get_l_norms_grid<Error>(g_dist);
 			BOOST_CHECK_MESSAGE(lNorms.l2   < l2_norms[count] + 0.00001 + EPSILON, "Checking L2-norm forward FD");
-//			write_lnorms_to_file(N, lNorms, "l_norms_FDfwd", "./");
 			std::cout << N << ", " << lNorms.l2 << ", " << lNorms.linf << std::endl;
-//			if (N==128) g_dist.write("grid_gaussian_FDfwd_N" + std::to_string(N), FORMAT_BINARY);
 		}
 	}
 	BOOST_AUTO_TEST_CASE(Backward_difference_1D_test)
@@ -131,15 +128,12 @@ BOOST_AUTO_TEST_SUITE(FDOrder1TestSuite)
 			}
 			
 			// Get the error between analytical and numerical solution
-//			get_absolute_error<NumericalGradient, AnalyticalGradient, Error>(g_dist);
 			get_relative_error<NumericalGradient, AnalyticalGradient, Error>(g_dist);
 			
 			LNorms<double> lNorms;
 			lNorms.get_l_norms_grid<Error>(g_dist);
 			BOOST_CHECK_MESSAGE(lNorms.l2   < l2_norms[count] + 0.00001 + EPSILON, "Checking L2-norm backward FD");
-//			write_lnorms_to_file(N, lNorms, "l_norms_FDbwd", "./");
 			std::cout << N << ", " << lNorms.l2 << ", " << lNorms.linf << std::endl;
-//			if (N==128) g_dist.write("grid_gaussian_FDbwd_N" + std::to_string(N), FORMAT_BINARY);
 		}
 	}
 	BOOST_AUTO_TEST_CASE(Central_difference_1D_test)
@@ -192,15 +186,12 @@ BOOST_AUTO_TEST_SUITE(FDOrder1TestSuite)
 			}
 			
 			// Get the error between analytical and numerical solution
-//			get_absolute_error<NumericalGradient, AnalyticalGradient, Error>(g_dist);
 			get_relative_error<NumericalGradient, AnalyticalGradient, Error>(g_dist);
 			
 			LNorms<double> lNorms;
 			lNorms.get_l_norms_grid<Error>(g_dist);
 			BOOST_CHECK_MESSAGE(lNorms.l2   < l2_norms[count] + 0.00001 + EPSILON, "Checking L2-norm central FD");
-//			write_lnorms_to_file(N, lNorms, "l_norms_FDbwd", "./");
 			std::cout << N << ", " << lNorms.l2 << ", " << lNorms.linf << std::endl;
-//			if (N==128) g_dist.write("grid_gaussian_FDbwd_N" + std::to_string(N), FORMAT_BINARY);
 		}
 	}
 BOOST_AUTO_TEST_SUITE_END()
