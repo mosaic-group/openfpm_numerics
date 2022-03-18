@@ -726,6 +726,26 @@ public:
 
     }
 
+    /*! \brief Method for Saving the DCPSE Operator.
+     *
+     * \param parts particle set
+     * \param file name for data to be saved.
+     */
+    template<typename particles_type>
+    void save(particles_type &particles, const std::string &file) {
+        auto dcpse_temp = (Dcpse_type<particles_type::dims, particles_type> *) dcpse;
+        dcpse_temp->save(file);
+    }
+    /*! \brief Method for Loading the DCPSE Operator.
+     *
+     * \param parts particle set
+     * \param file name for data to be loaded from.
+     */
+    template<typename particles_type>
+    void load(particles_type &particles, const std::string &file) {
+        auto dcpse_temp = (Dcpse_type<particles_type::dims, particles_type> *) dcpse;
+        dcpse_temp->load(file);
+    }
     /*! \brief Method for Updating the DCPSE Operator by recomputing DCPSE Kernels.
      *
      *
@@ -810,6 +830,26 @@ public:
 
     }
 
+    /*! \brief Method for Saving the DCPSE Operator.
+     *
+     * \param parts particle set
+     * \param file name for data to be saved.
+     */
+    template<typename particles_type>
+    void save(particles_type &particles, const std::string &file) {
+        auto dcpse_temp = (Dcpse_type<particles_type::dims, particles_type> *) dcpse;
+        dcpse_temp->save(file);
+    }
+    /*! \brief Method for Loading the DCPSE Operator.
+     *
+     * \param parts particle set
+     * \param file name for data to be loaded from.
+     */
+    template<typename particles_type>
+    void load(particles_type &particles, const std::string &file) {
+        auto dcpse_temp = (Dcpse_type<particles_type::dims, particles_type> *) dcpse;
+        dcpse_temp->load(file);
+    }
     /*! \brief Method for Updating the DCPSE Operator by recomputing DCPSE Kernels.
      *
      *
@@ -877,6 +917,26 @@ public:
         return vector_dist_expression_op<operand_type, dcpse_type, VECT_DCPSE>(arg, *(dcpse_type *) dcpse);
     }
 
+    /*! \brief Method for Saving the DCPSE Operator.
+     *
+     * \param parts particle set
+     * \param file name for data to be saved.
+     */
+    template<typename particles_type>
+    void save(particles_type &particles, const std::string &file) {
+        auto dcpse_temp = (Dcpse_type<particles_type::dims, particles_type> *) dcpse;
+        dcpse_temp->save(file);
+    }
+    /*! \brief Method for Loading the DCPSE Operator.
+     *
+     * \param parts particle set
+     * \param file name for data to be loaded from.
+     */
+    template<typename particles_type>
+    void load(particles_type &particles, const std::string &file) {
+        auto dcpse_temp = (Dcpse_type<particles_type::dims, particles_type> *) dcpse;
+        dcpse_temp->load(file);
+    }
     /*! \brief Method for Updating the DCPSE Operator by recomputing DCPSE Kernels.
      *
      *
@@ -1419,6 +1479,26 @@ public:
 
     }
 
+    /*! \brief Method for Saving the DCPSE Operator.
+     *
+     * \param parts particle set
+     * \param file name for data to be saved.
+     */
+    template<typename particles_type>
+    void save(particles_type &particles, const std::string &file) {
+        auto dcpse_temp = (Dcpse_type<particles_type::dims, particles_type> *) dcpse;
+        dcpse_temp->save(file);
+    }
+    /*! \brief Method for Loading the DCPSE Operator.
+     *
+     * \param parts particle set
+     * \param file name for data to be loaded from.
+     */
+    template<typename particles_type>
+    void load(particles_type &particles, const std::string &file) {
+        auto dcpse_temp = (Dcpse_type<particles_type::dims, particles_type> *) dcpse;
+        dcpse_temp->load(file);
+    }
     /*! \brief Method for Updating the DCPSE Operator by recomputing DCPSE Kernels.
      *
      *
@@ -1501,6 +1581,26 @@ public:
 
     }
 
+    /*! \brief Method for Saving the DCPSE Operator.
+     *
+     * \param parts particle set
+     * \param file name for data to be saved.
+     */
+    template<typename particles_type>
+    void save(particles_type &particles, const std::string &file) {
+        auto dcpse_temp = (Dcpse_type<particles_type::dims, particles_type> *) dcpse;
+        dcpse_temp->save(file);
+    }
+    /*! \brief Method for Loading the DCPSE Operator.
+     *
+     * \param parts particle set
+     * \param file name for data to be loaded from.
+     */
+    template<typename particles_type>
+    void load(particles_type &particles, const std::string &file) {
+        auto dcpse_temp = (Dcpse_type<particles_type::dims, particles_type> *) dcpse;
+        dcpse_temp->load(file);
+    }
     /*! \brief Method for Updating the DCPSE Operator by recomputing DCPSE Kernels.
      *
      *
@@ -1583,6 +1683,26 @@ public:
 
     }
 
+    /*! \brief Method for Saving the DCPSE Operator.
+     *
+     * \param parts particle set
+     * \param file name for data to be saved.
+     */
+    template<typename particles_type>
+    void save(particles_type &particles, const std::string &file) {
+        auto dcpse_temp = (Dcpse_type<particles_type::dims, particles_type> *) dcpse;
+        dcpse_temp->save(file);
+    }
+    /*! \brief Method for Loading the DCPSE Operator.
+     *
+     * \param parts particle set
+     * \param file name for data to be loaded from.
+     */
+    template<typename particles_type>
+    void load(particles_type &particles, const std::string &file) {
+        auto dcpse_temp = (Dcpse_type<particles_type::dims, particles_type> *) dcpse;
+        dcpse_temp->load(file);
+    }
     /*! \brief Method for Updating the DCPSE Operator by recomputing DCPSE Kernels.
      *
      *
@@ -1665,6 +1785,26 @@ public:
 
     }
 
+    /*! \brief Method for Saving the DCPSE Operator.
+     *
+     * \param parts particle set
+     * \param file name for data to be saved.
+     */
+    template<typename particles_type>
+    void save(particles_type &particles, const std::string &file) {
+        auto dcpse_temp = (Dcpse_type<particles_type::dims, particles_type> *) dcpse;
+        dcpse_temp->save(file);
+    }
+    /*! \brief Method for Loading the DCPSE Operator.
+     *
+     * \param parts particle set
+     * \param file name for data to be loaded from.
+     */
+    template<typename particles_type>
+    void load(particles_type &particles, const std::string &file) {
+        auto dcpse_temp = (Dcpse_type<particles_type::dims, particles_type> *) dcpse;
+        dcpse_temp->load(file);
+    }
     /*! \brief Method for Updating the DCPSE Operator by recomputing DCPSE Kernels.
      *
      *
@@ -1747,6 +1887,26 @@ public:
 
     }
 
+    /*! \brief Method for Saving the DCPSE Operator.
+     *
+     * \param parts particle set
+     * \param file name for data to be saved.
+     */
+    template<typename particles_type>
+    void save(particles_type &particles, const std::string &file) {
+        auto dcpse_temp = (Dcpse_type<particles_type::dims, particles_type> *) dcpse;
+        dcpse_temp->save(file);
+    }
+    /*! \brief Method for Loading the DCPSE Operator.
+     *
+     * \param parts particle set
+     * \param file name for data to be loaded from.
+     */
+    template<typename particles_type>
+    void load(particles_type &particles, const std::string &file) {
+        auto dcpse_temp = (Dcpse_type<particles_type::dims, particles_type> *) dcpse;
+        dcpse_temp->load(file);
+    }
     /*! \brief Method for Updating the DCPSE Operator by recomputing DCPSE Kernels.
      *
      *
@@ -1827,6 +1987,26 @@ public:
 
     }
 
+    /*! \brief Method for Saving the DCPSE Operator.
+     *
+     * \param parts particle set
+     * \param file name for data to be saved.
+     */
+    template<typename particles_type>
+    void save(particles_type &particles, const std::string &file) {
+        auto dcpse_temp = (Dcpse_type<particles_type::dims, particles_type> *) dcpse;
+        dcpse_temp->save(file);
+    }
+    /*! \brief Method for Loading the DCPSE Operator.
+     *
+     * \param parts particle set
+     * \param file name for data to be loaded from.
+     */
+    template<typename particles_type>
+    void load(particles_type &particles, const std::string &file) {
+        auto dcpse_temp = (Dcpse_type<particles_type::dims, particles_type> *) dcpse;
+        dcpse_temp->load(file);
+    }
     /*! \brief Method for Updating the DCPSE Operator by recomputing DCPSE Kernels.
      *
      *
@@ -1882,6 +2062,26 @@ public:
 
     }
 
+    /*! \brief Method for Saving the DCPSE Operator.
+     *
+     * \param parts particle set
+     * \param file name for data to be saved.
+     */
+    template<typename particles_type>
+    void save(particles_type &particles, const std::string &file) {
+        auto dcpse_temp = (Dcpse_type<particles_type::dims, particles_type> *) dcpse;
+        dcpse_temp->save(file);
+    }
+    /*! \brief Method for Loading the DCPSE Operator.
+     *
+     * \param parts particle set
+     * \param file name for data to be loaded from.
+     */
+    template<typename particles_type>
+    void load(particles_type &particles, const std::string &file) {
+        auto dcpse_temp = (Dcpse_type<particles_type::dims, particles_type> *) dcpse;
+        dcpse_temp->load(file);
+    }
     /*! \brief Method for Updating the DCPSE Operator by recomputing DCPSE Kernels.
      *
      *
@@ -1937,6 +2137,26 @@ public:
 
     }
 
+    /*! \brief Method for Saving the DCPSE Operator.
+     *
+     * \param parts particle set
+     * \param file name for data to be saved.
+     */
+    template<typename particles_type>
+    void save(particles_type &particles, const std::string &file) {
+        auto dcpse_temp = (Dcpse_type<particles_type::dims, particles_type> *) dcpse;
+        dcpse_temp->save(file);
+    }
+    /*! \brief Method for Loading the DCPSE Operator.
+     *
+     * \param parts particle set
+     * \param file name for data to be loaded from.
+     */
+    template<typename particles_type>
+    void load(particles_type &particles, const std::string &file) {
+        auto dcpse_temp = (Dcpse_type<particles_type::dims, particles_type> *) dcpse;
+        dcpse_temp->load(file);
+    }
     /*! \brief Method for Updating the DCPSE Operator by recomputing DCPSE Kernels.
      *
      *
@@ -1992,6 +2212,26 @@ public:
 
     }
 
+    /*! \brief Method for Saving the DCPSE Operator.
+     *
+     * \param parts particle set
+     * \param file name for data to be saved.
+     */
+    template<typename particles_type>
+    void save(particles_type &particles, const std::string &file) {
+        auto dcpse_temp = (Dcpse_type<particles_type::dims, particles_type> *) dcpse;
+        dcpse_temp->save(file);
+    }
+    /*! \brief Method for Loading the DCPSE Operator.
+     *
+     * \param parts particle set
+     * \param file name for data to be loaded from.
+     */
+    template<typename particles_type>
+    void load(particles_type &particles, const std::string &file) {
+        auto dcpse_temp = (Dcpse_type<particles_type::dims, particles_type> *) dcpse;
+        dcpse_temp->load(file);
+    }
     /*! \brief Method for Updating the DCPSE Operator by recomputing DCPSE Kernels.
      *
      *
@@ -2047,6 +2287,26 @@ public:
 
     }
 
+    /*! \brief Method for Saving the DCPSE Operator.
+     *
+     * \param parts particle set
+     * \param file name for data to be saved.
+     */
+    template<typename particles_type>
+    void save(particles_type &particles, const std::string &file) {
+        auto dcpse_temp = (Dcpse_type<particles_type::dims, particles_type> *) dcpse;
+        dcpse_temp->save(file);
+    }
+    /*! \brief Method for Loading the DCPSE Operator.
+     *
+     * \param parts particle set
+     * \param file name for data to be loaded from.
+     */
+    template<typename particles_type>
+    void load(particles_type &particles, const std::string &file) {
+        auto dcpse_temp = (Dcpse_type<particles_type::dims, particles_type> *) dcpse;
+        dcpse_temp->load(file);
+    }
     /*! \brief Method for Updating the DCPSE Operator by recomputing DCPSE Kernels.
      *
      *
@@ -2103,6 +2363,26 @@ public:
 
     }
 
+    /*! \brief Method for Saving the DCPSE Operator.
+     *
+     * \param parts particle set
+     * \param file name for data to be saved.
+     */
+    template<typename particles_type>
+    void save(particles_type &particles, const std::string &file) {
+        auto dcpse_temp = (Dcpse_type<particles_type::dims, particles_type> *) dcpse;
+        dcpse_temp->save(file);
+    }
+    /*! \brief Method for Loading the DCPSE Operator.
+     *
+     * \param parts particle set
+     * \param file name for data to be loaded from.
+     */
+    template<typename particles_type>
+    void load(particles_type &particles, const std::string &file) {
+        auto dcpse_temp = (Dcpse_type<particles_type::dims, particles_type> *) dcpse;
+        dcpse_temp->load(file);
+    }
     /*! \brief Method for Updating the DCPSE Operator by recomputing DCPSE Kernels.
      *
      *
@@ -2159,6 +2439,26 @@ public:
 
     }
 
+    /*! \brief Method for Saving the DCPSE Operator.
+     *
+     * \param parts particle set
+     * \param file name for data to be saved.
+     */
+    template<typename particles_type>
+    void save(particles_type &particles, const std::string &file) {
+        auto dcpse_temp = (Dcpse_type<particles_type::dims, particles_type> *) dcpse;
+        dcpse_temp->save(file);
+    }
+    /*! \brief Method for Loading the DCPSE Operator.
+     *
+     * \param parts particle set
+     * \param file name for data to be loaded from.
+     */
+    template<typename particles_type>
+    void load(particles_type &particles, const std::string &file) {
+        auto dcpse_temp = (Dcpse_type<particles_type::dims, particles_type> *) dcpse;
+        dcpse_temp->load(file);
+    }
     /*! \brief Method for Updating the DCPSE Operator by recomputing DCPSE Kernels.
      *
      *
@@ -2214,6 +2514,26 @@ public:
 
     }
 
+    /*! \brief Method for Saving the DCPSE Operator.
+     *
+     * \param parts particle set
+     * \param file name for data to be saved.
+     */
+    template<typename particles_type>
+    void save(particles_type &particles, const std::string &file) {
+        auto dcpse_temp = (Dcpse_type<particles_type::dims, particles_type> *) dcpse;
+        dcpse_temp->save(file);
+    }
+    /*! \brief Method for Loading the DCPSE Operator.
+     *
+     * \param parts particle set
+     * \param file name for data to be loaded from.
+     */
+    template<typename particles_type>
+    void load(particles_type &particles, const std::string &file) {
+        auto dcpse_temp = (Dcpse_type<particles_type::dims, particles_type> *) dcpse;
+        dcpse_temp->load(file);
+    }
     /*! \brief Method for Updating the DCPSE Operator by recomputing DCPSE Kernels.
      *
      *
