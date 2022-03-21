@@ -59,6 +59,34 @@ public:
 	    return keys;
 	}
 
+    static bool pack()
+    {
+        return true;
+    }
+
+    static bool packRequest()
+    {
+        return true;
+    }
+
+    template<int ... prp> inline void packRequest(size_t & req) const
+    {
+        req += sizeof(size_t);
+        keys.packRequest(req);
+    }
+
+    template<int ... prp> inline void pack(ExtPreAlloc<HeapMemory> & mem, Pack_stat & sts) const
+    {
+        Packer<size_t,HeapMemory>::pack(mem,referencePointKey,sts);
+        keys.template pack<prp ...>(mem,sts);
+    }
+
+    template<unsigned int ... prp, typename MemType> inline void unpack(ExtPreAlloc<MemType> & mem, Unpack_stat & ps)
+    {
+        Unpacker<size_t,MemType>::unpack(mem,referencePointKey,ps);
+        keys.template unpack<prp ...>(mem,ps);
+    }
+
 };
 
 
