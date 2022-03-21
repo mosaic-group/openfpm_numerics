@@ -168,6 +168,73 @@ BOOST_AUTO_TEST_CASE(dcpse_op_tests) {
         BOOST_REQUIRE(worst < 0.03);
     }
 
+    BOOST_AUTO_TEST_CASE(dcpse_op_save_load2) {
+        size_t edgeSemiSize = 40;
+        const size_t sz[2] = {2 * edgeSemiSize, 2 * edgeSemiSize};
+        Box<2, double> box({0, 0}, {2 * M_PI, 2 * M_PI});
+        size_t bc[2] = {NON_PERIODIC, NON_PERIODIC};
+        double spacing[2];
+        spacing[0] = 2 * M_PI / (sz[0] - 1);
+        spacing[1] = 2 * M_PI / (sz[1] - 1);
+        Ghost<2, double> ghost(spacing[0] * 3.9);
+        double rCut = 3.9 * spacing[0];
+        BOOST_TEST_MESSAGE("Init vector_dist...");
+        double sigma2 = spacing[0] * spacing[1] / (2 * 4);
+
+        vector_dist<2, double, aggregate<double, double, double, VectorS<2, double>, VectorS<2, double>>> domain(0, box,
+                                                                                                                 bc,
+                                                                                                                 ghost);
+
+        //Init_DCPSE(domain)
+        BOOST_TEST_MESSAGE("Init domain...");
+
+        auto it = domain.getGridIterator(sz);
+        size_t pointId = 0;
+        size_t counter = 0;
+        double minNormOne = 999;
+        while (it.isNext()) {
+            domain.add();
+            auto key = it.get();
+            mem_id k0 = key.get(0);
+            double x = k0 * spacing[0];
+            domain.getLastPos()[0] = x;//+ gaussian(rng);
+            mem_id k1 = key.get(1);
+            double y = k1 * spacing[1];
+            domain.getLastPos()[1] = y;//+gaussian(rng);
+            // Here fill the function value
+            domain.template getLastProp<0>() = sin(domain.getLastPos()[0]) + sin(domain.getLastPos()[1]);
+            domain.template getLastProp<2>() = 2*cos(domain.getLastPos()[0]) + cos(domain.getLastPos()[1]);
+            ++counter;
+            ++it;
+        }
+        BOOST_TEST_MESSAGE("Sync domain across processors...");
+
+        domain.map();
+        domain.ghost_get<0>();
+        auto v = getV<1>(domain);
+        auto v2 = getV<3>(domain);
+        auto P = getV<0>(domain);
+        Derivative_x DxLoaded(domain, 2, rCut,1,support_options::LOAD);
+        Derivative_y DyLoaded(domain, 2, rCut,1,support_options::LOAD);
+        DxLoaded.load(domain,"DX_test");
+        DyLoaded.load(domain,"DY_test");
+        v= 2*DxLoaded(P)+DyLoaded(P);
+        auto it2 = domain.getDomainIterator();
+        double worst = 0.0;
+        while (it2.isNext()) {
+            auto p = it2.get();
+
+            if (fabs(domain.getProp<1>(p) - domain.getProp<2>(p)) > worst) {
+                worst = fabs(domain.getProp<1>(p) - domain.getProp<2>(p));
+            }
+
+            ++it2;
+        }
+        domain.deleteGhost();
+        //std::cout<<worst;
+        BOOST_REQUIRE(worst < 0.03);
+    }
+
     BOOST_AUTO_TEST_CASE(dcpse_op_tests_fa) {
         size_t edgeSemiSize = 40;
         const size_t sz[2] = {2 * edgeSemiSize, 2 * edgeSemiSize};
