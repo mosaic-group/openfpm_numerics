@@ -295,7 +295,7 @@ BOOST_AUTO_TEST_CASE(dcpse_op_tests) {
         }
         //std::cout<<"Worst:"<<worst<<std::endl;
         domain.deleteGhost();
-        //domain.write("test");
+        //domain.write_frame("test",0,0.024,BINARY);
         BOOST_REQUIRE(worst < 0.03);
     }
 
