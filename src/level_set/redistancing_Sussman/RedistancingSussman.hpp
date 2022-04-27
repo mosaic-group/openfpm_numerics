@@ -116,14 +116,14 @@ struct Conv_tol_residual
 template <typename phi_type=double>
 struct Redist_options
 {
-	size_t min_iter = 1e5;
-	size_t max_iter = 1e12;
+	size_t min_iter = 1e3;
+	size_t max_iter = 1e6;
 	
 	Conv_tol_change<phi_type> convTolChange;
 	Conv_tol_residual<phi_type> convTolResidual;
 	
 	size_t interval_check_convergence = 100;
-	size_t width_NB_in_grid_points = 8;
+	size_t width_NB_in_grid_points = 2;
 	bool print_current_iterChangeResidual = false;
 	bool print_steadyState_iter = true;
 	bool save_temp_grid = false;
