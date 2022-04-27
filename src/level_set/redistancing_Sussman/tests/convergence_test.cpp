@@ -114,8 +114,7 @@ BOOST_AUTO_TEST_SUITE(ConvergenceTestSuite)
 				vd_narrow_band.setPropNames({"error"});
 				const size_t Error_vd = 0;
 				// Compute the L_2- and L_infinity-norm and save to file
-				size_t narrow_band_width = redist_options.width_NB_in_grid_points - 2;
-				NarrowBand<grid_in_type, phi_type> narrowBand_points(g_dist, narrow_band_width); // Instantiation of
+				NarrowBand<grid_in_type, phi_type> narrowBand_points(g_dist, redist_options.width_NB_in_grid_points ); // Instantiation of
 				// NarrowBand class
 				narrowBand_points.get_narrow_band_copy_specific_property<SDF_sussman_grid, Error_grid, Error_vd>(g_dist,
 				                                                                                                 vd_narrow_band);
@@ -163,8 +162,8 @@ BOOST_AUTO_TEST_SUITE(ConvergenceTestSuite)
 			int order = 1;
 			{
 				Redist_options<phi_type> redist_options;
-				redist_options.min_iter                             = 1e4;
-				redist_options.max_iter                             = 1e4;
+				redist_options.min_iter                             = 1e3;
+				redist_options.max_iter                             = 1e3;
 				
 				// set both convergence criteria to false s.t. termination only when max_iterations reached
 				redist_options.convTolChange.check                  = false;    // define here which of the convergence criteria above should be used. If both are true, termination only occurs when both are fulfilled or when iter > max_iter
@@ -172,14 +171,15 @@ BOOST_AUTO_TEST_SUITE(ConvergenceTestSuite)
 				
 				redist_options.interval_check_convergence           = 100;        // interval of #iterations at which
 				// convergence is checked (default: 100)
-				redist_options.width_NB_in_grid_points              = 8;        // width of narrow band in number of grid points. Must be at least 4, in order to have at least 2 grid points on each side of the interface. (default: 4)
+				redist_options.width_NB_in_grid_points              = 4;        // width of narrow band in number of
+				// grid points. Must be at least 4, in order to have at least 2 grid points on each side of the interface. (default: 4)
 				redist_options.print_current_iterChangeResidual     = true;     // if true, prints out every current iteration + corresponding change from the previous iteration + residual from SDF (default: false)
 				redist_options.print_steadyState_iter               = true;     // if true, prints out the final iteration number when steady state was reached + final change + residual (default: true)
 				
 				RedistancingSussman<grid_in_type, phi_type> redist_obj(g_dist, redist_options);   // Instantiation of
 				// Sussman-redistancing class
-				redist_obj.set_user_time_step(dt);
-				std::cout << "dt set to = " << dt << std::endl;
+				//redist_obj.set_user_time_step(dt);
+				//std::cout << "dt set to = " << dt << std::endl;
 				// Run the redistancing. in the <> brackets provide property-index where 1.) your initial Phi is stored and 2.) where the resulting SDF should be written to.
 				redist_obj.run_redistancing<Phi_0_grid, SDF_sussman_grid>();
 				
@@ -201,33 +201,36 @@ BOOST_AUTO_TEST_SUITE(ConvergenceTestSuite)
 				vd_narrow_band.setPropNames({"error"});
 				const size_t Error_vd = 0;
 				// Compute the L_2- and L_infinity-norm and save to file
-				size_t narrow_band_width = 8;
-				NarrowBand<grid_in_type, phi_type> narrowBand_points(g_dist, narrow_band_width); // Instantiation of NarrowBand class
+				NarrowBand<grid_in_type, phi_type> narrowBand_points(g_dist, redist_options.width_NB_in_grid_points); // Instantiation of NarrowBand class
 				narrowBand_points.get_narrow_band_copy_specific_property<SDF_sussman_grid, Error_grid, Error_vd>(g_dist,
 				                                                                                                 vd_narrow_band);
-//				vd_narrow_band.write("vd_nb8p_error_N" + std::to_string(N) + "_order" +
-//				std::to_string(order), FORMAT_BINARY);
+				vd_narrow_band.write("vd_nb4p_error_N" + std::to_string(N) + "_order" +
+				std::to_string(order), FORMAT_BINARY);
 //				vd_narrow_band.save("test_data/output/vd_nb8p_error" + std::to_string(N) + ".bin");
 				// Compute the L_2- and L_infinity-norm and save to file
 				LNorms<phi_type> lNorms_vd;
 				lNorms_vd.get_l_norms_vector<Error_vd>(vd_narrow_band);
-				lNorms_vd.write_to_file(N, 6, "l_norms_vd_absError_8p_order" + std::to_string(order), "./");
+				lNorms_vd.write_to_file(N, 6, "l_norms_vd_absError_4p_order" + std::to_string(order), "./");
 				
-//				switch(order)
-//				{
-//					case 1:
-//						BOOST_CHECK(lNorms_vd.l2   < 0.03369 + EPSILON);
-//						BOOST_CHECK(lNorms_vd.linf < 0.06307 + EPSILON);
-//						break;
-//					case 3:
-//						BOOST_CHECK(lNorms_vd.l2   < 0.02794 + EPSILON);
-//						BOOST_CHECK(lNorms_vd.linf < 0.0586704 + EPSILON);
-//						break;
-//					case 5:
-//						BOOST_CHECK(lNorms_vd.l2   < 0.0187199 + EPSILON);
-//						BOOST_CHECK(lNorms_vd.linf < 0.0367638 + EPSILON);
-//						break;
-//				}
+//				32,0.044692,0.066994
+//				64,0.010542,0.018396
+//				128,0.003301,0.009491
+
+				switch(N)
+				{
+					case 32:
+						BOOST_CHECK(lNorms_vd.l2   < 0.044693);
+						BOOST_CHECK(lNorms_vd.linf < 0.066995);
+						break;
+					case 64:
+						BOOST_CHECK(lNorms_vd.l2   < 0.010543);
+						BOOST_CHECK(lNorms_vd.linf < 0.018397);
+						break;
+					case 128:
+						BOOST_CHECK(lNorms_vd.l2   < 0.003302);
+						BOOST_CHECK(lNorms_vd.linf < 0.009492);
+						break;
+				}
 			
 			}
 		}

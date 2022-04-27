@@ -175,7 +175,8 @@ public:
 	                                                                                   grid_in.getGridInfoVoid().getSize(),
 	                                                                                   Ghost<grid_in_type::dims, long int>(3))
 	{
-		time_step = get_time_step_CFL(grid_in);
+		// Get timestep fulfilling CFL condition for velocity=1.0 and courant number=0.1
+		time_step = get_time_step_CFL(grid_in, 1.0, 0.1);
 		order_upwind_gradient = 1;
 #ifdef SE_CLASS1
 		assure_minimal_thickness_of_NB();
