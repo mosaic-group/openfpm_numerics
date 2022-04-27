@@ -27,9 +27,9 @@ BOOST_AUTO_TEST_SUITE(ConvergenceTestSuite)
 		space_type sum = 0;
 		for (int d = 0; d < dims; d++)
 		{
-			sum += 1 / (dx * dx);
+			sum += 1 / dx;
 		}
-		return 0.5 / sum;
+		return 0.1 / sum;
 	}
 
 	BOOST_AUTO_TEST_CASE(RedistancingSussman_convergence_test_1D)
@@ -144,7 +144,6 @@ BOOST_AUTO_TEST_SUITE(ConvergenceTestSuite)
 		
 		for (size_t N=32; N <=128; N*=2)
 		{
-			const space_type dt = 0.000165334;
 			const size_t sz[grid_dim] = {N, N, N};
 			const space_type radius = 1.0;
 			const space_type box_lower = 0.0;
