@@ -80,4 +80,28 @@ BOOST_AUTO_TEST_SUITE(HelpFunctionsTestSuite)
 		BOOST_CHECK_MESSAGE(isApproxEqual(max_value, bigger_value, tolerance), "Checking if biggest value stored in "
 																			   "grid is returned.");
 	}
+	
+	BOOST_AUTO_TEST_CASE(get_time_step_cfl_test)
+	{
+		// get_time_step_CFL(grid_type & grid, typename grid_type::stype u [grid_type::dims], typename grid_type::stype C)
+		const size_t grid_dim  = 1;
+		const double box_lower = 0.0;
+		double box_upper = 0.1;
+		while(box_upper < 1e3)
+		{
+			Box<grid_dim, double> box({box_lower}, {box_upper});
+			Ghost<grid_dim, long int> ghost(3);
+			typedef aggregate<double> props;
+			typedef grid_dist_id<grid_dim, double, props> grid_type;
+			const size_t sz[grid_dim] = {10};
+			grid_type g_dist(sz, box, ghost);
+			
+			auto dt = get_time_step_CFL(g_dist, 1.0, 0.9);
+			std::cout << "dt = " << dt << ", dx = " << g_dist.spacing(0) << std::endl;
+			BOOST_CHECK_MESSAGE(dt < g_dist.spacing(0), "Check if dt < dx");
+			
+			box_upper *= 10.0;
+		}
+		
+	}
 BOOST_AUTO_TEST_SUITE_END()
