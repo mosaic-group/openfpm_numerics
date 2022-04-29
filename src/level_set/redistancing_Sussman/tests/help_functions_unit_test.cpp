@@ -20,7 +20,7 @@ BOOST_AUTO_TEST_SUITE(HelpFunctionsTestSuite)
 		Ghost<grid_dim, long int> ghost(3);
 		typedef aggregate<double> props;
 		typedef grid_dist_id<grid_dim, double, props> grid_type;
-		const size_t sz[grid_dim] = {32};
+		const size_t sz[grid_dim] = {10};
 		grid_type g_dist(sz, box, ghost);
 		
 		// Each processor assigns smaller_value to the first grid node in its domain
@@ -42,9 +42,8 @@ BOOST_AUTO_TEST_SUITE(HelpFunctionsTestSuite)
 		// Now we check if get_min_value returns smaller_value
 		auto min_value = get_min_val<Field>(g_dist);
 		double tolerance = 1e-12;
-//BOOST_CHECK_MESSAGE(isApproxEqual(min_value, smaller_value, tolerance), "Checking if smallest value stored "
-//		"in grid "
-//																		  "is returned.");
+		BOOST_CHECK_MESSAGE(isApproxEqual(min_value, smaller_value, tolerance), "Checking if smallest value stored "
+				"in grid is returned.");
 	}
 	
 	BOOST_AUTO_TEST_CASE(get_max_val_test)
@@ -56,7 +55,7 @@ BOOST_AUTO_TEST_SUITE(HelpFunctionsTestSuite)
 		Ghost<grid_dim, long int> ghost(3);
 		typedef aggregate<double> props;
 		typedef grid_dist_id<grid_dim, double, props> grid_type;
-		const size_t sz[grid_dim] = {32};
+		const size_t sz[grid_dim] = {10};
 		grid_type g_dist(sz, box, ghost);
 		
 		// Each processor assigns smaller_value to the first grid node in its domain
@@ -78,8 +77,7 @@ BOOST_AUTO_TEST_SUITE(HelpFunctionsTestSuite)
 		// Now we check if get_max_value returns bigger_value
 		auto max_value = get_max_val<Field>(g_dist);
 		double tolerance = 1e-12;
-//		BOOST_CHECK_MESSAGE(isApproxEqual(max_value, bigger_value, tolerance), "Checking if smallest value stored in "
-//																			   "grid "
-//																		  "is returned.");
+		BOOST_CHECK_MESSAGE(isApproxEqual(max_value, bigger_value, tolerance), "Checking if biggest value stored in "
+																			   "grid is returned.");
 	}
 BOOST_AUTO_TEST_SUITE_END()
