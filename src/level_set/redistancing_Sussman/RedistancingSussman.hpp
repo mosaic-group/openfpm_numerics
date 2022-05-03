@@ -116,14 +116,14 @@ struct Conv_tol_residual
 template <typename phi_type=double>
 struct Redist_options
 {
-	size_t min_iter = 1e5;
-	size_t max_iter = 1e12;
+	size_t min_iter = 1e3;
+	size_t max_iter = 1e6;
 	
 	Conv_tol_change<phi_type> convTolChange;
 	Conv_tol_residual<phi_type> convTolResidual;
 	
 	size_t interval_check_convergence = 100;
-	size_t width_NB_in_grid_points = 8;
+	size_t width_NB_in_grid_points = 2;
 	bool print_current_iterChangeResidual = false;
 	bool print_steadyState_iter = true;
 	bool save_temp_grid = false;
@@ -175,7 +175,8 @@ public:
 	                                                                                   grid_in.getGridInfoVoid().getSize(),
 	                                                                                   Ghost<grid_in_type::dims, long int>(3))
 	{
-		time_step = get_time_step_CFL(grid_in);
+		// Get timestep fulfilling CFL condition for velocity=1.0 and courant number=0.1
+		time_step = get_time_step_CFL(grid_in, 1.0, 0.1);
 		order_upwind_gradient = 1;
 #ifdef SE_CLASS1
 		assure_minimal_thickness_of_NB();

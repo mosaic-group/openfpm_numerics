@@ -19,31 +19,14 @@
 #include "VCluster/VCluster.hpp"
 #include "Grid/grid_dist_id.hpp"
 
-/**@brief Computes the time step for the iterative re-distancing fulfilling CFL condition.
- *
- * @tparam grid_type Template type of the input grid.
- * @param grid Input OpenFPM grid.
- * @return Time step.
- */
-template <typename grid_type>
-typename grid_type::stype get_time_step_CFL(grid_type &grid)
-{
-	typename grid_type::stype sum = 0.0;
-	for (size_t d = 0; d < grid_type::dims; d++)
-	{
-		sum += 1.0 / (grid.spacing(d) * grid.spacing(d));
-	}
-	return 0.5 / sum;
-}
 
-#if 0
 /**@brief Computes the time step size fulfilling CFL condition according to https://www.cfd-online
  * .com/Wiki/Courant–Friedrichs–Lewy_condition for arbitrary dimensionality.
  *
  * @tparam grid_type Template type of the input grid.
  * @param grid Input OpenFPM grid.
  * @param u Array of size grid_type::dims containing the velocity in each dimension.
- * @param Cmax Courant number.
+ * @param C Courant number.
  * @return Time step.
  */
 template <typename grid_type>
@@ -62,7 +45,7 @@ typename grid_type::stype get_time_step_CFL(grid_type & grid, typename grid_type
  * @tparam grid_type Template type of the input grid.
  * @param grid Input OpenFPM grid.
  * @param u Velocity of propagating wave if isotropic for each direction.
- * @param Cmax Courant number.
+ * @param C Courant number.
  * @return Time step.
  */
 template <typename grid_type>
@@ -75,7 +58,7 @@ typename grid_type::stype get_time_step_CFL(grid_type & grid, typename grid_type
 	}
 	return C / sum;
 }
-#endif
+
 /**@brief Initializes given property \p Prop of an OpenFPM grid including ghost layer with a given value from \p
  * init_value.
  *
