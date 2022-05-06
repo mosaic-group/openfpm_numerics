@@ -48,6 +48,8 @@ struct Redist_options
 
 	int compute_normals = 0;
 	int compute_curvatures = 0;
+
+	int write_sdf = 1;
 };
 
 // Add new polynomial degrees here in case new interpolation schemes are implemented.
@@ -75,20 +77,21 @@ public:
 	
 	void run_redistancing()
 	{
-		std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
+		//std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
 		detect_surface_particles();
-		std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
-		std::cout << "Time difference for detection = " << std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count() << "[µs]" << std::endl;
+		//std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
+		//std::cout << "Time difference for detection = " << std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count() << "[µs]" << std::endl;
 
-		begin = std::chrono::steady_clock::now();
+		//begin = std::chrono::steady_clock::now();
 		interpolate_sdf_field();
-		end = std::chrono::steady_clock::now();
-		std::cout << "Time difference for "<<polynomialDegree<<" interpolation = " << std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count() << "[µs]" << std::endl;
+		//end = std::chrono::steady_clock::now();
+		//std::cout << "Time difference for "<<polynomialDegree<<" interpolation = " << std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count() << "[µs]" << std::endl;
 
-		begin = std::chrono::steady_clock::now();
+		//begin = std::chrono::steady_clock::now();
 		find_closest_point(vd_in, vd_s);
-		end = std::chrono::steady_clock::now();
-		std::cout << "Time difference for optimization = " << std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count() << "[µs]" << std::endl;
+		//std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
+		//std::cout << "Time difference for optimization = " << std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count() << "[µs]" << std::endl;
+		//std::cout << "Time difference for pcp redistancing = " << std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count() << "[µs]" << std::endl;
 	}
 	
 	void run_optimization()
@@ -123,6 +126,9 @@ private:
 										(dim == 2 && std::is_same<polynomial_degree,taylor4>::value) ? 15 :
 										(dim == 3 && std::is_same<polynomial_degree,taylor4>::value) ? 35 : 1;
 
+	int dim_r = dim;
+	int n_c_r = n_c;
+
 	particles_surface<dim, n_c> vd_s;
 	double r_cutoff2;
 	std::string polynomialDegree;
@@ -153,6 +159,12 @@ private:
 		while (part.isNext())
 		{
 			vect_dist_key_dx akey = part.get();
+            // depending on the application this can spare computational effort
+            if (std::abs(vd_in.template getProp<vd_in_sdf>(akey)) > redistOptions.sampling_radius)
+            {
+                ++part;
+                continue;
+            }
 			int surfaceflag = 0;
 			int sgn_a = return_sign(vd_in.template getProp<vd_in_sdf>(akey));
 			Point<dim,double> xa = vd_in.getPos(akey);
@@ -215,6 +227,9 @@ private:
 	// within the loop itself.
 	void interpolate_sdf_field()
 	{
+	    int message_insufficient_support = 0;
+	    int message_projection_fail = 0;
+
 		vd_s.template ghost_get<vd_s_sdf>();
 		int verbose = 0;
 		auto NN_s = vd_s.getCellList(sqrt(r_cutoff2));
@@ -236,7 +251,6 @@ private:
 			const int num_neibs_a = vd_s.template getProp<num_neibs>(a);
 			Point<dim, double> xa = vd_s.getPos(a);
 			int neib = 0;
-
 			// initialize monomial basis functions m, Vandermonde row builder vrb, Vandermonde matrix V, the right-hand
 			// side vector phi and the solution vector that contains the coefficients of the interpolation polynomial, c.
 
@@ -265,7 +279,7 @@ private:
 				// do nothing as it has already been initialized like this
 			}
 
-			if(m.size() > num_neibs_a) std::cout<<"warning: less number of neighbours than required for interpolation for particle "<<a.getKey()<<std::endl;
+			if(m.size() > num_neibs_a) message_insufficient_support = 1;
 
 			VandermondeRowBuilder<dim, double> vrb(m);
 
@@ -276,6 +290,7 @@ private:
 			// iterate over the support of the central particle, in order to build the Vandermonde matrix and the
 			// right-hand side vector
 			auto Np = NN_s.template getNNIterator<NO_CHECK>(NN_s.getCell(vd_s.getPos(a)));
+
 			while(Np.isNext())
 			{
 				vect_dist_key_dx b = Np.get();
@@ -283,24 +298,24 @@ private:
 				Point<dim, double> dr = xa - xb;
 				double r2 = norm2(dr);
 
-				if (r2 > r_cutoff2)
-				{
-					++Np;
-					continue;
-				}
+				if (r2 < r_cutoff2)
+                {
+                    // debug given data
+                    //std::cout<<std::setprecision(15)<<xb[0]<<"\t"<<xb[1]<<"\t"<<vd.getProp<sdf>(b)<<std::endl;
+                    //xb[0] = 0.1;
+                    //xb[1] = 0.5;
+                    //xb[2] = 3.0;
+                    //std::cout<<"hya?"<<std::endl;
+                    // Fill phi-vector from the right hand side
+                    //std::cout<<num_neibs_a<<std::endl;
 
-				// debug given data
-				//std::cout<<std::setprecision(15)<<xb[0]<<"\t"<<xb[1]<<"\t"<<vd.getProp<sdf>(b)<<std::endl;
-				//xb[0] = 0.1;
-				//xb[1] = 0.5;
-				//xb[2] = 3.0;
-				
-				// Fill phi-vector from the right hand side
-				phi[neib] = vd_s.template getProp<vd_s_sdf>(b);
-				vrb.buildRow(V, neib, xb, 1.0);
+                    phi[neib] = vd_s.template getProp<vd_s_sdf>(b);
+                    //std::cout<<"or hya?"<<std::endl;
+                    vrb.buildRow(V, neib, xb, 1.0);
 
-				++neib;
-				++Np;
+                    ++neib;
+                }
+                ++Np;
 			}
 
 			// solve the system of equations using an orthogonal decomposition (if I am not mistaken, this is
@@ -321,10 +336,10 @@ private:
 
 			// double incr; // this is an optional variable in case the iterations are aborted depending on the magnitude
 							// of the increment instead of the magnitude of the polynomial value and the number of iterations.
-			EMatrix<double, Eigen::Dynamic, 1> grad_p(dim, 1);
+			EMatrix<double, Eigen::Dynamic, 1> grad_p(dim_r, 1);
 			double grad_p_mag2;
 
-			EMatrix<double, Eigen::Dynamic, 1> x(dim, 1);
+			EMatrix<double, Eigen::Dynamic, 1> x(dim_r, 1);
 			for(int k = 0; k < dim; k++) x[k] = xa[k];
 			double p = get_p(x, c, polynomialDegree);
 			int k_project = 0;
@@ -343,18 +358,18 @@ private:
 				++k_project;
 			}
 
-			if (k_project == redistOptions.max_iter) std::cout<<"Warning: Newton-style projections towards the interface do not satisfy given tolerance."<<std::endl;
+			if (k_project == redistOptions.max_iter) message_projection_fail = 1;
 
 			// store the resulting sample point on the surface at the central particle.
 			for(int k = 0; k < dim; k++) vd_s.template getProp<vd_s_sample>(a)[k] = x[k];
 
 			// debugging stuff:
 			//if (a.getKey() == 5424) verbose = 1;
-			//verbose = 1;
+			//verbose = 0;
 			if (verbose)
 			{
 				std::cout<<"VERBOSE"<<std::endl;
-				EMatrix<double, Eigen::Dynamic, 1> xaa(dim,1);
+				EMatrix<double, Eigen::Dynamic, 1> xaa(dim_r,1);
 				for(int k = 0; k < dim; k++) xaa[k] = xa[k];
 				//double curvature = get_dpdxdx(xaa, c) + get_dpdydy(xaa, c);
 				// matlab debugging stuff:
@@ -376,6 +391,11 @@ private:
 			++part;
 		}
 
+		if (message_insufficient_support) std::cout<<"Warning: less number of neighbours than required for interpolation"
+                                                     <<" for some particles"<<std::endl;
+        if (message_projection_fail) std::cout<<"Warning: Newton-style projections towards the interface do not satisfy"
+                                                <<" given tolerance for some particles"<<std::endl;
+
 	}
 	
 	// This function now finds the exact closest point on the surface to any given particle.
@@ -396,24 +416,33 @@ private:
 		vd_s.template ghost_get<vd_s_close_part,vd_s_sample,interpol_coeff>();
 
 		auto NN_s = vd_s.getCellList(redistOptions.sampling_radius);
-		auto part = vd_in.getDomainIterator(); //todo: include the sampling radius somewhere (bandwidth)
+		auto part = vd_in.getDomainIterator();
 
 		int verbose = 0;
+		int message_step_limitation = 0;
+		int message_convergence_problem = 0;
 
 		// do iteration over all query particles
 		while (part.isNext())
 		{
 			vect_dist_key_dx a = part.get();
 
+			// this is somewhat usecase
+			if (std::abs(vd_in.template getProp<vd_in_sdf>(a)) > redistOptions.sampling_radius)
+			{
+				++part;
+				continue;
+			}
+
 			// initialise all variables specific to the query particle
-			EMatrix<double, Eigen::Dynamic, 1> xa(dim, 1);
+			EMatrix<double, Eigen::Dynamic, 1> xa(dim_r, 1);
 			for(int k = 0; k < dim; k++) xa[k] = vd_in.getPos(a)[k];
 
 			double val;
 			// spatial variable that is optimized
-			EMatrix<double, Eigen::Dynamic, 1> x(dim,1);
+			EMatrix<double, Eigen::Dynamic, 1> x(dim_r,1);
 			// Increment variable containing the increment of 2 spatial variables + 1 Lagrange multiplier
-			EMatrix<double, Eigen::Dynamic, 1> dx(dim + 1, 1);
+			EMatrix<double, Eigen::Dynamic, 1> dx(dim_r + 1, 1);
 			for(int k = 0; k < (dim + 1); k++) dx[k] = 1.0;
 
 			// Lagrange multiplier lambda
@@ -421,21 +450,21 @@ private:
 			// values regarding the gradient of the Lagrangian and the Hessian of the Lagrangian, which contain
 			// derivatives of the constraint function also.
 			double p = 0;
-			EMatrix<double, Eigen::Dynamic, 1> grad_p(dim, 1);
+			EMatrix<double, Eigen::Dynamic, 1> grad_p(dim_r, 1);
 			for(int k = 0; k < dim; k++) grad_p[k] = 0.0;
 
-			EMatrix<double, Eigen::Dynamic, Eigen::Dynamic> H_p(dim, dim);
+			EMatrix<double, Eigen::Dynamic, Eigen::Dynamic> H_p(dim_r, dim_r);
 			for(int k = 0; k < dim; k++)
 			{
 				for(int l = 0; l < dim; l++) H_p(k, l) = 0.0;
 			}
 
-			EMatrix<double, Eigen::Dynamic, 1> c(n_c, 1);
+			EMatrix<double, Eigen::Dynamic, 1> c(n_c_r, 1);
 			for (int k = 0; k < n_c; k++) c[k] = 0.0;
 
 			// f(x, lambda) is the Lagrangian, initialize its gradient and Hessian
-			EMatrix<double, Eigen::Dynamic, 1> nabla_f(dim + 1, 1);
-			EMatrix<double, Eigen::Dynamic, Eigen::Dynamic> H_f(dim + 1, dim + 1);
+			EMatrix<double, Eigen::Dynamic, 1> nabla_f(dim_r + 1, 1);
+			EMatrix<double, Eigen::Dynamic, Eigen::Dynamic> H_f(dim_r + 1, dim_r + 1);
 			for(int k = 0; k < (dim + 1); k++)
 			{
 				nabla_f[k] = 0.0;
@@ -489,10 +518,10 @@ private:
 			// warnings if the solution strays far from the neighborhood. While the latter is sensible, the optional
 			// subroutines haven't proven to be especially useful so far, so one should consider throwing them out.
 			// (Armijo, barrier, random step when step is too big)
-			EMatrix<double, Eigen::Dynamic, 1> x00(dim,1);
+			EMatrix<double, Eigen::Dynamic, 1> x00(dim_r,1);
 			for(int k = 0; k < dim; k++) x00[k] = x[k];
 
-			EMatrix<double, Eigen::Dynamic, 1> x00x(dim,1);
+			EMatrix<double, Eigen::Dynamic, 1> x00x(dim_r,1);
 			for(int k = 0; k < dim; k++) x00x[k] = 0.0;
 
 			// take the interpolation polynomial of the sample particle closest to the query particle
@@ -513,11 +542,6 @@ private:
 			EMatrix<double, Eigen::Dynamic, 1> xax = x - xa;
 			// iteration counter k
 			int k_newton = 0;
-
-			// barrier method initialisation
-			double barrier = 0.0;
-			double barrier2 = 0.0;
-			double barrier3 = 0.0;
 
 			// calculations needed specifically for k_newton == 0
 			p = get_p(x, c, polynomialDegree);
@@ -543,11 +567,11 @@ private:
 				H_p = get_H_p(x, c, polynomialDegree);
 
 				// Assemble Hessian matrix, grad f has been computed at the end of the last iteration.
-				H_f(Eigen::seq(0, dim - 1), Eigen::seq(0, dim - 1)) = lambda*H_p;
+				H_f(Eigen::seq(0, dim_r - 1), Eigen::seq(0, dim_r - 1)) = lambda*H_p;
 				for(int k = 0; k < dim; k++) H_f(k, k) = H_f(k, k) + 1.0;
-				H_f(Eigen::seq(0, dim - 1), dim) = grad_p;
-				H_f(dim, Eigen::seq(0, dim - 1)) = grad_p.transpose();
-				H_f(dim, dim) = 0.0;
+				H_f(Eigen::seq(0, dim_r - 1), dim_r) = grad_p;
+				H_f(dim_r, Eigen::seq(0, dim_r - 1)) = grad_p.transpose();
+				H_f(dim_r, dim_r) = 0.0;
 
 				// compute Newton increment
 				dx = - H_f.inverse()*nabla_f;
@@ -560,7 +584,7 @@ private:
 				{
 					auto & v_cl = create_vcluster();
 
-					std::cout<<"Step size limitation invoked for particle " << a.getKey() << " on processor " << v_cl.rank() << "   " <<std::endl;
+					message_step_limitation = 1;
 
 					dx = 0.1*dx;
 				}
@@ -597,14 +621,23 @@ private:
 			// Check if the Newton algorithm achieved the required accuracy within the allowed number of iterations.
 			// If not, throw a warning, but proceed as usual (even if the accuracy dictated by the user cannot be reached,
 			// the result can still be very good.
-			if (k_newton == redistOptions.max_iter) std::cout<<"Warning: Newton algorithm has reached maximum number of iterations, does not converge for particle "<<a.getKey()<<std::endl;
+			if (k_newton == redistOptions.max_iter) message_convergence_problem = 1;
 
 			// And finally, compute the new sdf value as the distance of the query particle x_a and the result of the
 			// optimization scheme x. We conserve the initial sign of the sdf, since the particle moves with the phase
 			// and does not cross the interface.
-			vd_in.template getProp<vd_in_sdf>(a) = return_sign(vd_in.template getProp<vd_in_sdf>(a))*xax.norm();
+			if (redistOptions.write_sdf) vd_in.template getProp<vd_in_sdf>(a) = return_sign(vd_in.template getProp<vd_in_sdf>(a))*xax.norm();
 
-			// debug optimisation
+			// This is to avoid loss of mass conservation - in some simulations, a particle can get assigned a 0-sdf, so
+			// that it lies on the surface and cannot be distinguished from the one phase or the other. The reason for
+			// this probably lies in the numerical tolerance. As a quick fix, we introduce an error of the tolerance,
+			// but keep the sign.
+            if ((k_newton == 0) && (xax.norm() < redistOptions.tolerance))
+            {
+                vd_in.template getProp<vd_in_sdf>(a) = return_sign(vd_in.template getProp<vd_in_sdf>(a))*redistOptions.tolerance;
+            }
+
+            // debug optimisation
 			if(verbose)
 			{
 				//std::cout<<"new sdf: "<<vd.getProp<sdf>(a)<<std::endl;
@@ -615,15 +648,6 @@ private:
 				std::cout<<"lambda: "<<lambda<<std::endl;
 			}
 			verbose = 0;
-
-			// if the Newton scheme nevertheless strayed from its support, throw a warning. For future todo's, one could
-			// try using the interpolation polynomial of the neigboring sample point then.
-			if (((abs(x00[0] - x[0]))>sqrt(r_cutoff2))||((abs(x00[1] - x[1]))>sqrt(r_cutoff2)))
-			{
-				std::cout<<"straying out of local neighborhood.."<<std::endl;
-				std::cout<<"computed sdf: "<<vd_in.template getProp<vd_in_sdf>(a)<<std::endl;
-				std::cout<<"analytical value: "<<vd_in.template getProp<8>(a)<<", diff: "<<abs(vd_in.template getProp<vd_in_sdf>(a) - vd_in.template getProp<8>(a))<<std::endl;
-			}
 
 			if (redistOptions.compute_normals)
 			{
@@ -647,6 +671,14 @@ private:
 
 			}
 			++part;
+		}
+		if (message_step_limitation)
+		{
+			std::cout<<"Step size limitation invoked"<<std::endl;
+		}
+		if (message_convergence_problem)
+		{
+			std::cout<<"Warning: Newton algorithm has reached maximum number of iterations, does not converge for some particles"<<std::endl;
 		}
 		
 	}
@@ -691,7 +723,7 @@ private:
 	{
 		const double x = xvector[0];
 		const double y = xvector[1];
-		EMatrix<double, Eigen::Dynamic, 1> grad_p(dim, 1);
+		EMatrix<double, Eigen::Dynamic, 1> grad_p(dim_r, 1);
 
 		if (dim == 2)
 		{
@@ -735,7 +767,7 @@ private:
 	{
 		const double x = xvector[0];
 		const double y = xvector[1];
-		EMatrix<double, Eigen::Dynamic, Eigen::Dynamic> H_p(dim, dim);
+		EMatrix<double, Eigen::Dynamic, Eigen::Dynamic> H_p(dim_r, dim_r);
 
 		if (dim == 2)
 		{
