@@ -128,6 +128,11 @@ if (TEST_COVERAGE)
     target_link_libraries(numerics -lgcov)
 endif()
 
+## Regression
+target_include_directories(numerics PUBLIC /Users/lschulze/minter/src/)
+target_link_libraries(numerics -L/Users/lschulze/minter/build minter)
+##
+
 # Request that particles be built with -std=c++11
 # As this is a public compile feature anything that links to particles
 # will also build with -std=c++11

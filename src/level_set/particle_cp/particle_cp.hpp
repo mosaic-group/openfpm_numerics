@@ -32,6 +32,7 @@
 #include "Draw/DrawParticles.hpp"
 #include "Operators/Vector/vector_dist_operators.hpp"
 #include <chrono>
+#include "regression/regression.hpp"
 
 template<unsigned int dim, unsigned int n_c> using particles_surface = vector_dist<dim, double, aggregate<int, int, double, double[dim], double[n_c]>>;
 //																										  |		|	   |  		|			  |
