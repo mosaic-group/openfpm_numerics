@@ -26,11 +26,11 @@ struct SubsetSelector_impl<true>
 {
     template<typename particle_type,typename subset_type>
     static void check(particle_type &particles,subset_type &particle_subset){
-
-        if(particles.getMapCtr()!=particle_subset.getUpdateCtr())
+        //This getMapCtr needs to be created or fixed for cuda!
+       /* if(particles.getMapCtr()!=particle_subset.getUpdateCtr())
         {
             std::cerr<<__FILE__<<":"<<__LINE__<<" Error: You forgot a subset update after map."<<std::endl;
-        }
+        }*/
     }
 };
 #endif

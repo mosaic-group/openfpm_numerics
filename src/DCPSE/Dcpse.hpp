@@ -75,7 +75,7 @@ private:
 
     vector_type & particlesFrom;
     vector_type2 & particlesTo;
-    double rCut,supportSizeFactor,nSpacing;
+    double rCut,supportSizeFactor=1,nSpacing;
     unsigned int convergenceOrder,nCount;
 
     bool isSurfaceDerivative=false;
