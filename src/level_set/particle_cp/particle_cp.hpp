@@ -32,9 +32,9 @@
 #include "Draw/DrawParticles.hpp"
 #include "Operators/Vector/vector_dist_operators.hpp"
 #include <chrono>
-#include "regression/regression.hpp"
+#include "/Users/lschulze/openfpm_pdata/openfpm_numerics/src/regression/regression.hpp"
 
-template<unsigned int dim, unsigned int n_c> using particles_surface = vector_dist<dim, double, aggregate<int, int, double, double[dim], double[n_c]>>;
+template<unsigned int dim, unsigned int n_c> using particles_surface = vector_dist<dim, double, aggregate<int, int, double, double[dim], double[n_c], minter::PolyModel>>;
 //																										  |		|	   |  		|			  |
 //																									 num neibs	|	  sdf 	sample version	interpolation coefficients
 //												flag for distinguishing closest particles to surface, for which the interpolation has to be done
@@ -51,6 +51,8 @@ struct Redist_options
 	int compute_curvatures = 0;
 
 	int write_sdf = 1;
+
+	int minter = 1;
 };
 
 // Add new polynomial degrees here in case new interpolation schemes are implemented.
@@ -78,20 +80,20 @@ public:
 	
 	void run_redistancing()
 	{
-		//std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
+		std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
 		detect_surface_particles();
-		//std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
-		//std::cout << "Time difference for detection = " << std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count() << "[µs]" << std::endl;
+		std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
+		std::cout << "Time difference for detection = " << std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count() << "[µs]" << std::endl;
 
-		//begin = std::chrono::steady_clock::now();
+		begin = std::chrono::steady_clock::now();
 		interpolate_sdf_field();
-		//end = std::chrono::steady_clock::now();
-		//std::cout << "Time difference for "<<polynomialDegree<<" interpolation = " << std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count() << "[µs]" << std::endl;
+		end = std::chrono::steady_clock::now();
+		std::cout << "Time difference for "<<polynomialDegree<<" interpolation = " << std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count() << "[µs]" << std::endl;
 
-		//begin = std::chrono::steady_clock::now();
+		begin = std::chrono::steady_clock::now();
 		find_closest_point(vd_in, vd_s);
-		//std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
-		//std::cout << "Time difference for optimization = " << std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count() << "[µs]" << std::endl;
+		end = std::chrono::steady_clock::now();
+		std::cout << "Time difference for optimization = " << std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count() << "[µs]" << std::endl;
 		//std::cout << "Time difference for pcp redistancing = " << std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count() << "[µs]" << std::endl;
 	}
 	
@@ -113,6 +115,7 @@ private:
 	static constexpr size_t vd_s_sdf = 2;
 	static constexpr size_t vd_s_sample = 3;
 	static constexpr size_t interpol_coeff = 4;
+	static constexpr size_t vd_s_minter_model = 5;
 	static constexpr size_t vd_in_sdf = 0;			// this is really required in the vd_in vector, so users need to know about it.
 	static constexpr size_t vd_in_close_part = 3;	// this is not needed by the method, but more for debugging purposes, as it shows all particles for which
 													// interpolation and sampling is performed.
@@ -252,6 +255,7 @@ private:
 			const int num_neibs_a = vd_s.template getProp<num_neibs>(a);
 			Point<dim, double> xa = vd_s.getPos(a);
 			int neib = 0;
+            int k_project = 0;
 			// initialize monomial basis functions m, Vandermonde row builder vrb, Vandermonde matrix V, the right-hand
 			// side vector phi and the solution vector that contains the coefficients of the interpolation polynomial, c.
 
@@ -259,48 +263,43 @@ private:
 			// happening inside them, and I kind of made it work for Taylor quadratic, bicubic and Taylor 4 interpolation.
 			// Possibly, the evaluation of p, dpdx, ... that I implemented could be substituted by the infrastructure that is
 			// part of the MonomialBasis used here in the interpolation.
-			MonomialBasis<dim> m(4);
 
-			if (polynomialDegree == "quadratic")
-			{
-				unsigned int degrees[dim];
-				for(int k = 0; k < dim; k++) degrees[k] = 1;
-				m = MonomialBasis<dim>(degrees, 1);
-			}
-			else if (polynomialDegree == "taylor4")
-			{
-				unsigned int degrees[dim];
-				for(int k = 0; k < dim; k++) degrees[k] = 1;
-				unsigned int degrees_2 = 3;
-				if (dim == 3) degrees_2 = 2;
-				m = MonomialBasis<dim>(degrees, degrees_2);
-			}
-			else if (polynomialDegree == "bicubic")
-			{
-				// do nothing as it has already been initialized like this
+			if (!redistOptions.minter){
+			MonomialBasis <dim> m(4);
+
+			if (polynomialDegree == "quadratic") {
+			    unsigned int degrees[dim];
+			    for (int k = 0; k < dim; k++) degrees[k] = 1;
+			    m = MonomialBasis<dim>(degrees, 1);
+			} else if (polynomialDegree == "taylor4") {
+			    unsigned int degrees[dim];
+			    for (int k = 0; k < dim; k++) degrees[k] = 1;
+			    unsigned int degrees_2 = 3;
+			    if (dim == 3) degrees_2 = 2;
+			    m = MonomialBasis<dim>(degrees, degrees_2);
+			} else if (polynomialDegree == "bicubic") {
+			    // do nothing as it has already been initialized like this
 			}
 
-			if(m.size() > num_neibs_a) message_insufficient_support = 1;
+			if (m.size() > num_neibs_a) message_insufficient_support = 1;
 
 			VandermondeRowBuilder<dim, double> vrb(m);
 
-			EMatrix<double, Eigen::Dynamic,Eigen::Dynamic> V(num_neibs_a, m.size());
-			EMatrix<double, Eigen::Dynamic, 1> phi(num_neibs_a, 1);
-			EMatrix<double, Eigen::Dynamic, 1> c(m.size(), 1);
+			EMatrix<double, Eigen::Dynamic, Eigen::Dynamic> V(num_neibs_a, m.size());
+            EMatrix<double, Eigen::Dynamic, 1> phi(num_neibs_a, 1);
+            EMatrix<double, Eigen::Dynamic, 1> c(m.size(), 1);
 
-			// iterate over the support of the central particle, in order to build the Vandermonde matrix and the
-			// right-hand side vector
-			auto Np = NN_s.template getNNIterator<NO_CHECK>(NN_s.getCell(vd_s.getPos(a)));
+            // iterate over the support of the central particle, in order to build the Vandermonde matrix and the
+            // right-hand side vector
+            auto Np = NN_s.template getNNIterator<NO_CHECK>(NN_s.getCell(vd_s.getPos(a)));
 
-			while(Np.isNext())
-			{
-				vect_dist_key_dx b = Np.get();
-				Point<dim, double> xb = vd_s.getPos(b);
-				Point<dim, double> dr = xa - xb;
-				double r2 = norm2(dr);
+            while (Np.isNext()) {
+                vect_dist_key_dx b = Np.get();
+                Point<dim, double> xb = vd_s.getPos(b);
+                Point<dim, double> dr = xa - xb;
+                double r2 = norm2(dr);
 
-				if (r2 < r_cutoff2)
-                {
+                if (r2 < r_cutoff2) {
                     // debug given data
                     //std::cout<<std::setprecision(15)<<xb[0]<<"\t"<<xb[1]<<"\t"<<vd.getProp<sdf>(b)<<std::endl;
                     //xb[0] = 0.1;
@@ -317,18 +316,17 @@ private:
                     ++neib;
                 }
                 ++Np;
-			}
+            }
 
-			// solve the system of equations using an orthogonal decomposition (if I am not mistaken, this is
-			// a solid choice for an overdetermined system of equations with a bad conditioning, which is usually
-			// the case for the Vandermonde matrices.
-			c = V.completeOrthogonalDecomposition().solve(phi);
+            // solve the system of equations using an orthogonal decomposition (if I am not mistaken, this is
+            // a solid choice for an overdetermined system of equations with a bad conditioning, which is usually
+            // the case for the Vandermonde matrices.
+            c = V.completeOrthogonalDecomposition().solve(phi);
 
-			// store the coefficients at the particle
-			for (int k = 0; k<m.size(); k++)
-			{
-				vd_s.template getProp<interpol_coeff>(a)[k] = c[k];
-			}
+            // store the coefficients at the particle
+            for (int k = 0; k < m.size(); k++) {
+                vd_s.template getProp<interpol_coeff>(a)[k] = c[k];
+            }
 
 			// after interpolation coefficients have been computed and stored, perform Newton-style projections
 			// towards the interface in order to obtain a sample.
@@ -343,26 +341,63 @@ private:
 			EMatrix<double, Eigen::Dynamic, 1> x(dim_r, 1);
 			for(int k = 0; k < dim; k++) x[k] = xa[k];
 			double p = get_p(x, c, polynomialDegree);
-			int k_project = 0;
+
+            // std::cout<<"Evaluation with canonical: p = "<<p<<"\nEvaluation with minter: p = "<<p_minter<<std::endl;
+            // std::cout<<"Evaluation gradient with canonical: p = "<<grad_p<<"\nEvaluation gradient with minter: p = "<<grad_p_minter<<std::endl;
 
 			// do the projections.
 			// for(int k = 0; k < 3; k++)
 			// while(incr > 0.01*redistOptions.H)
-			while ((abs(p) > redistOptions.tolerance) && (k_project < redistOptions.max_iter))
+
+                while ((abs(p) > redistOptions.tolerance) && (k_project < redistOptions.max_iter)) {
+                    grad_p = get_grad_p(x, c, polynomialDegree);
+                    grad_p_mag2 = grad_p.dot(grad_p);
+
+                    x = x - p * grad_p / grad_p_mag2;
+                    p = get_p(x, c, polynomialDegree);
+                    //incr = sqrt(p*p*dpdx*dpdx/(grad_p_mag2*grad_p_mag2) + p*p*dpdy*dpdy/(grad_p_mag2*grad_p_mag2));
+                    ++k_project;
+                }
+                //std::cout << "canonical projections yielded\n" << x[0] << ", " << x[1] << ", " << x[2] << "\nafter "
+                //          << k_project << " steps." << std::endl;
+                // store the resulting sample point on the surface at the central particle.
+                for(int k = 0; k < dim; k++) vd_s.template getProp<vd_s_sample>(a)[k] = x[k];
+            }
+
+			if (redistOptions.minter)
 			{
-				grad_p = get_grad_p(x, c, polynomialDegree);
-				grad_p_mag2 = grad_p.dot(grad_p);
+			auto dom = new RegressionDomain<particles_surface<dim, n_c>, decltype(NN_s)>(vd_s, xa, std::sqrt(r_cutoff2), NN_s);
+            //std::cout<<"Number of particles in neighborhood: "<<dom->getNumParticles()<<std::endl;
+            auto model = new RegressionModel<vd_s_sdf, particles_surface<dim, n_c>, decltype(dom)>(vd_s, dom, 4);
+            //vd_s.template getProp<vd_s_minter_model>(a) = model.return_PolyModel();
+            double grad_p_minter_mag2;
+            Point<dim, double> grad_p_minter;
+            Point<dim, double> x_minter = xa;
+            double p_minter = model->eval(x_minter);
+            k_project = 0;
+            while ((abs(p_minter) > redistOptions.tolerance) && (k_project < redistOptions.max_iter))
+            {
+                for(int k=0;k<dim;k++) {
+                    Point<dim, int> derivOrder = 0;
+                    derivOrder[k] = 1;
+                    grad_p_minter[k] = model->deriv(x_minter, derivOrder);
+                }
 
-				x = x - p*grad_p/grad_p_mag2;
-				p = get_p(x, c, polynomialDegree);
-				//incr = sqrt(p*p*dpdx*dpdx/(grad_p_mag2*grad_p_mag2) + p*p*dpdy*dpdy/(grad_p_mag2*grad_p_mag2));
-				++k_project;
-			}
-
+                grad_p_minter_mag2 = grad_p_minter[0]*grad_p_minter[0]+grad_p_minter[1]*grad_p_minter[1]+grad_p_minter[2]*grad_p_minter[2];
+                x_minter = x_minter - p_minter*grad_p_minter/grad_p_minter_mag2;
+                p_minter = model->eval(x_minter);
+                //incr = sqrt(p*p*dpdx*dpdx/(grad_p_mag2*grad_p_mag2) + p*p*dpdy*dpdy/(grad_p_mag2*grad_p_mag2));
+                ++k_project;
+            }
+            // store the resulting sample point on the surface at the central particle.
+            for(int k = 0; k < dim; k++) vd_s.template getProp<vd_s_sample>(a)[k] = x_minter[k];
+            //std::cout<<"minter projections yielded\n"<<x_minter[0]<<", "<<x_minter[1]<<", "<<x_minter[2]<<"\nafter "<<k_project<<" steps."<<std::endl;
+            //std::cout<<"Difference of locations = "<<sqrt((x[0]-x_minter[0])*(x[0]-x_minter[0]) + (x[1]-x_minter[1])*(x[1]-x_minter[1])+(x[2]-x_minter[2])*(x[2]-x_minter[2]))<<std::endl;
+            //std::cout<<"Ellipsoid equation evaluated at canonical x: "<<- 1 + sqrt((x[0]/0.75)*(x[0]/0.75) + (x[1]/0.5)*(x[1]/0.5) + (x[2]/0.5)*(x[2]/0.5))<<std::endl;
+            //std::cout<<"Ellipsoid equation evaluated at minter x: "<<- 1 + sqrt((x_minter[0]/0.75)*(x_minter[0]/0.75) + (x_minter[1]/0.5)*(x_minter[1]/0.5) + (x_minter[2]/0.5)*(x_minter[2]/0.5))<<std::endl;
+            //std::cout<<"################################################################"<<std::endl;
+            }
 			if (k_project == redistOptions.max_iter) message_projection_fail = 1;
-
-			// store the resulting sample point on the surface at the central particle.
-			for(int k = 0; k < dim; k++) vd_s.template getProp<vd_s_sample>(a)[k] = x[k];
 
 			// debugging stuff:
 			//if (a.getKey() == 5424) verbose = 1;
@@ -375,7 +410,7 @@ private:
 				//double curvature = get_dpdxdx(xaa, c) + get_dpdydy(xaa, c);
 				// matlab debugging stuff:
 				//std::cout<<"p = "<<a.getKey()<<";"<<std::endl;
-				std::cout<<std::setprecision(16)<<"A = ["<<V<<"];"<<std::endl;
+				//std::cout<<std::setprecision(16)<<"A = ["<<V<<"];"<<std::endl;
 				//std::cout<<"tempcond = cond(A);\ncondnumber = condnumber + tempcond;"<<std::endl;
 				//std::cout<<"k = k + 1;\nif(tempcond>maxcond)\nmaxcond = tempcond;\nend"<<std::endl;
 				//std::cout<<"if(tempcond<mincond)\nmincond = tempcond;\nend"<<std::endl;
@@ -431,8 +466,8 @@ private:
 			// this is somewhat usecase
 			if (std::abs(vd_in.template getProp<vd_in_sdf>(a)) > redistOptions.sampling_radius)
 			{
-				++part;
-				continue;
+				//++part;
+				//continue;
 			}
 
 			// initialise all variables specific to the query particle
@@ -528,6 +563,13 @@ private:
 			// take the interpolation polynomial of the sample particle closest to the query particle
 			for (int k = 0 ; k < n_c ; k++) c[k] = vd_s.template getProp<interpol_coeff>(b_min)[k];
 
+            //if (redistOptions.minter)
+            auto dom = new RegressionDomain<particles_surface<dim, n_c>, decltype(NN_s)>(vd_s, vd_s.getPos(b_min), std::sqrt(r_cutoff2), NN_s);
+            auto model = new RegressionModel<vd_s_sdf, particles_surface<dim, n_c>, decltype(dom)>(vd_s, dom, 4);
+            Point<dim, int> derivOrder;
+            Point<dim, double> grad_p_minter;
+            //std::cout<<decltype(model)<<std::endl;
+
 			// debugging stuff
 			//if (a.getKey() == 2425) verbose = 1;
 			if(verbose)
@@ -545,8 +587,17 @@ private:
 			int k_newton = 0;
 
 			// calculations needed specifically for k_newton == 0
-			p = get_p(x, c, polynomialDegree);
-			grad_p = get_grad_p(x, c, polynomialDegree);
+			if (!redistOptions.minter)
+			{
+                p = get_p(x, c, polynomialDegree);
+                grad_p = get_grad_p(x, c, polynomialDegree);
+            }
+
+			if (redistOptions.minter)
+            {
+			    p = get_p_minter(x, model);
+                grad_p = get_grad_p_minter(x, model);
+            }
 
 			// this guess for the Lagrange multiplier is taken from the original paper by Saye and can be done since
 			// p is approximately zero at the sample point.
@@ -565,7 +616,8 @@ private:
 			while((nabla_f_norm > redistOptions.tolerance) && (k_newton<redistOptions.max_iter))
 			{
 				// gather required derivative values
-				H_p = get_H_p(x, c, polynomialDegree);
+				if (!redistOptions.minter) H_p = get_H_p(x, c, polynomialDegree);
+				if (redistOptions.minter) H_p = get_H_p_minter(x, model);
 
 				// Assemble Hessian matrix, grad f has been computed at the end of the last iteration.
 				H_f(Eigen::seq(0, dim_r - 1), Eigen::seq(0, dim_r - 1)) = lambda*H_p;
@@ -596,8 +648,16 @@ private:
 
 				// prepare values for next iteration and update the exit criterion
 				xax = x - xa;
-				p = get_p(x, c, polynomialDegree);
-				grad_p = get_grad_p(x, c, polynomialDegree);
+				if (!redistOptions.minter)
+				{
+                    p = get_p(x, c, polynomialDegree);
+                    grad_p = get_grad_p(x, c, polynomialDegree);
+                }
+				if (redistOptions.minter)
+                {
+				    p = get_p_minter(x, model);
+				    grad_p = get_grad_p_minter(x, model);
+                }
 				nabla_f(Eigen::seq(0, dim - 1)) = xax + lambda*grad_p;
 				nabla_f[dim] = p;
 
@@ -687,7 +747,7 @@ private:
 	//todo: template these?
 	inline double get_p(EMatrix<double, Eigen::Dynamic, 1> xvector, EMatrix<double, Eigen::Dynamic, 1> c, std::string polynomialdegree)
 	{
-		const double x = xvector[0];
+	    const double x = xvector[0];
 		const double y = xvector[1];
 
 		if (dim == 2)
@@ -823,6 +883,46 @@ private:
 		return(H_p);
 
 	}
+
+	template <typename RegressionModel> inline double get_p_minter(EMatrix<double, Eigen::Dynamic, 1> xvector, RegressionModel model)
+    {
+        Point<dim, double> x;
+        for(int k=0;k<dim;k++) x[k] = xvector[k];
+        return(model->eval(x));
+    }
+
+	template <typename RegressionModel> inline EMatrix<double, Eigen::Dynamic, 1> get_grad_p_minter(EMatrix<double, Eigen::Dynamic, 1> xvector, RegressionModel model)
+    {
+        EMatrix<double, Eigen::Dynamic, 1> grad_p(dim, 1);
+        Point<dim, int> derivOrder;
+        Point<dim, double> x;
+        for(int k=0;k<dim;k++) x[k] = xvector[k];
+        for(int k=0;k<dim;k++){
+            derivOrder = 0;
+            derivOrder[k] = 1;
+            grad_p[k] = model->deriv(x, derivOrder);
+        }
+        return(grad_p);
+    }
+
+    template <typename RegressionModel> inline EMatrix<double, Eigen::Dynamic, Eigen::Dynamic> get_H_p_minter(EMatrix<double, Eigen::Dynamic, 1> xvector, RegressionModel model)
+    {
+        EMatrix<double, Eigen::Dynamic, Eigen::Dynamic> H_p(dim, dim);
+        Point<dim, int> derivOrder;
+        Point<dim, double> x;
+        for(int k=0;k<dim;k++) x[k] = xvector[k];
+
+        for(int k=0;k<dim;k++){
+            for(int l=0;l<dim;l++)
+            {
+                derivOrder=0;
+                derivOrder[k]++;
+                derivOrder[l]++;
+                H_p(k, l) = model->deriv(x, derivOrder);
+            }
+        }
+        return(H_p);
+    }
 
 };
 
