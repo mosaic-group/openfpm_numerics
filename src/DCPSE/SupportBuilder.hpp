@@ -17,7 +17,8 @@
 enum support_options
 {
     N_PARTICLES,
-    RADIUS
+    RADIUS,
+    LOAD
 };
 
 

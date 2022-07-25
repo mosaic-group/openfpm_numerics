@@ -2039,9 +2039,9 @@ operator+(const vector_dist_expression<prp1,v1> & va, double d)
  * \return an object that encapsulate the expression
  *
  */
-template<unsigned int prp1 , typename v1>
+template<typename T, unsigned int prp1, typename v1, typename sfinae = typename std::enable_if<std::is_same<T,float>::value>::type >
 inline vector_dist_expression_op<vector_dist_expression<prp1,v1>,vector_dist_expression<0,float>,VECT_SUM>
-operator+(const vector_dist_expression<prp1,v1> & va, float d)
+operator+(const vector_dist_expression<prp1,v1> & va, T d)
 {
 	vector_dist_expression_op<vector_dist_expression<prp1,v1>,vector_dist_expression<0,float>,VECT_SUM> exp_sum(va,vector_dist_expression<0,float>(d));
 
@@ -2107,9 +2107,9 @@ operator+(const vector_dist_expression_op<exp1,exp2,op1> & va, double d)
  * \return an object that encapsulate the expression
  *
  */
-template<typename exp1 , typename exp2, unsigned int op1>
+template<typename T, typename exp1 , typename exp2, unsigned int op1, typename sfinae = typename std::enable_if<std::is_same<T,float>::value>::type >
 inline vector_dist_expression_op<vector_dist_expression_op<exp1,exp2,op1>,vector_dist_expression<0,float>,VECT_SUM>
-operator+(const vector_dist_expression_op<exp1,exp2,op1> & va, float d)
+operator+(const vector_dist_expression_op<exp1,exp2,op1> & va, T d)
 {
 	vector_dist_expression_op<vector_dist_expression_op<exp1,exp2,op1>,vector_dist_expression<0,float>,VECT_SUM> exp_sum(va,vector_dist_expression<0,float>(d));
 
@@ -2243,9 +2243,10 @@ operator-(const vector_dist_expression<prp1,v1> & va, double d)
  * \return an object that encapsulate the expression
  *
  */
-template<unsigned int prp1, typename v1>
+//template<unsigned int prp1, typename v1>
+template<typename T, unsigned int prp1,typename v1, typename sfinae = typename std::enable_if<std::is_same<T,float>::value>::type >
 inline vector_dist_expression_op<vector_dist_expression<prp1,v1>,vector_dist_expression<0,float>,VECT_SUB>
-operator-(const vector_dist_expression<prp1,v1> & va, float d)
+operator-(const vector_dist_expression<prp1,v1> & va, T d)
 {
 	vector_dist_expression_op<vector_dist_expression<prp1,v1>,vector_dist_expression<0,float>,VECT_SUB> exp_sum(va,vector_dist_expression<0,float>(d));
 
@@ -2277,9 +2278,9 @@ operator-(double d, const vector_dist_expression<prp1,v1> & vb)
  * \return an object that encapsulate the expression
  *
  */
-template<unsigned int prp1, typename v1>
+template<typename T, unsigned int prp1,typename v1, typename sfinae = typename std::enable_if<std::is_same<T,float>::value>::type >
 inline vector_dist_expression_op<vector_dist_expression<0,float>,vector_dist_expression<prp1,v1>,VECT_SUB>
-operator-(float d, const vector_dist_expression<prp1,v1> & vb)
+operator-(T d, const vector_dist_expression<prp1,v1> & vb)
 {
 	vector_dist_expression_op<vector_dist_expression<0,float>,vector_dist_expression<prp1,v1>,VECT_SUB> exp_sum(vector_dist_expression<0,float>(d),vb);
 
@@ -2311,9 +2312,9 @@ operator*(double d, const vector_dist_expression<p2,v2> & vb)
  * \return an object that encapsulate the expression
  *
  */
-template<unsigned int p2, typename v2>
+template<typename T, unsigned int p2,typename v2, typename sfinae = typename std::enable_if<std::is_same<T,float>::value>::type >
 inline vector_dist_expression_op<vector_dist_expression<0,float>,vector_dist_expression<p2,v2>,VECT_MUL>
-operator*(float d, const vector_dist_expression<p2,v2> & vb)
+operator*(T d, const vector_dist_expression<p2,v2> & vb)
 {
 	vector_dist_expression_op<vector_dist_expression<0,float>,vector_dist_expression<p2,v2>,VECT_MUL> exp_sum(vector_dist_expression<0,float>(d),vb);
 
@@ -2345,9 +2346,9 @@ operator*(const vector_dist_expression<p2,v2> & va, double d)
  * \return an object that encapsulate the expression
  *
  */
-template<unsigned int p2, typename v2>
+template<typename T, unsigned int p2,typename v2, typename sfinae = typename std::enable_if<std::is_same<T,float>::value>::type >
 inline vector_dist_expression_op<vector_dist_expression<p2,v2>,vector_dist_expression<0,float>,VECT_MUL>
-operator*(const vector_dist_expression<p2,v2> & va, float d)
+operator*(const vector_dist_expression<p2,v2> & va, T d)
 {
 	vector_dist_expression_op<vector_dist_expression<p2,v2>,vector_dist_expression<0,float>,VECT_MUL> exp_sum(va,vector_dist_expression<0,float>(d));
 
@@ -2447,9 +2448,9 @@ operator*(const vector_dist_expression_op<exp1,exp2,op1> & va, double d)
  * \return an object that encapsulate the expression
  *
  */
-template<typename exp1 , typename exp2, unsigned int op1>
+template<typename T, typename exp1 , typename exp2, unsigned int op1, typename sfinae = typename std::enable_if<std::is_same<T,float>::value>::type >
 inline vector_dist_expression_op<vector_dist_expression_op<exp1,exp2,op1>,vector_dist_expression<0,float>,VECT_MUL>
-operator*(const vector_dist_expression_op<exp1,exp2,op1> & va, float d)
+operator*(const vector_dist_expression_op<exp1,exp2,op1> & va, T d)
 {
 	vector_dist_expression_op<vector_dist_expression_op<exp1,exp2,op1>,vector_dist_expression<0,float>,VECT_MUL> exp_sum(va,vector_dist_expression<0,float>(d));
 
@@ -2481,9 +2482,9 @@ operator*(double d, const vector_dist_expression_op<exp1,exp2,op1> & vb)
  * \return an object that encapsulate the expression
  *
  */
-template<typename exp1 , typename exp2, unsigned int op1>
+template<typename T, typename exp1 , typename exp2, unsigned int op1, typename sfinae = typename std::enable_if<std::is_same<T,float>::value>::type >
 inline vector_dist_expression_op<vector_dist_expression<0,float>,vector_dist_expression_op<exp1,exp2,op1>,VECT_MUL>
-operator*(float d, const vector_dist_expression_op<exp1,exp2,op1> & vb)
+operator*(T d, const vector_dist_expression_op<exp1,exp2,op1> & vb)
 {
 	vector_dist_expression_op<vector_dist_expression<0,float>,vector_dist_expression_op<exp1,exp2,op1>,VECT_MUL> exp_sum(vector_dist_expression<0,float>(d),vb);
 
@@ -2515,9 +2516,9 @@ operator/(const vector_dist_expression_op<exp1,exp2,op1> & va, double d)
  * \return an object that encapsulate the expression
  *
  */
-template<typename exp1, typename exp2, unsigned int op1>
+template<typename T, typename exp1 , typename exp2, unsigned int op1, typename sfinae = typename std::enable_if<std::is_same<T,float>::value>::type >
 inline vector_dist_expression_op<vector_dist_expression_op<exp1,exp2,op1>,vector_dist_expression<0,float>,VECT_DIV>
-operator/(const vector_dist_expression_op<exp1,exp2,op1> & va, float d)
+operator/(const vector_dist_expression_op<exp1,exp2,op1> & va, T d)
 {
 	vector_dist_expression_op<vector_dist_expression_op<exp1,exp2,op1>,vector_dist_expression<0,float>,VECT_DIV> exp_sum(va,vector_dist_expression<0,float>(d));
 
@@ -2549,9 +2550,9 @@ operator/(double d, const vector_dist_expression_op<exp1,exp2,op1> & va)
  * \return an object that encapsulate the expression
  *
  */
-template<typename exp1, typename exp2, unsigned int op1>
+template<typename T, typename exp1 , typename exp2, unsigned int op1, typename sfinae = typename std::enable_if<std::is_same<T,float>::value>::type >
 inline vector_dist_expression_op<vector_dist_expression_op<exp1,exp2,op1>,vector_dist_expression<0,float>,VECT_DIV>
-operator/(float d, const vector_dist_expression_op<exp1,exp2,op1> & va)
+operator/(T d, const vector_dist_expression_op<exp1,exp2,op1> & va)
 {
 	vector_dist_expression_op<vector_dist_expression_op<exp1,exp2,op1>,vector_dist_expression<0,float>,VECT_DIV> exp_sum(vector_dist_expression<0,float>(d),va);
 
@@ -2583,9 +2584,9 @@ operator/(const vector_dist_expression<prp1,v1> & va, double d)
  * \return an object that encapsulate the expression
  *
  */
-template<unsigned int prp1, typename v1>
+template<typename T, unsigned int prp1,typename v1, typename sfinae = typename std::enable_if<std::is_same<T,float>::value>::type >
 inline vector_dist_expression_op<vector_dist_expression<prp1,v1>,vector_dist_expression<0,float>,VECT_DIV>
-operator/(const vector_dist_expression<prp1,v1> & va, float d)
+operator/(const vector_dist_expression<prp1,v1> & va, T d)
 {
 	vector_dist_expression_op<vector_dist_expression<prp1,v1>,vector_dist_expression<0,float>,VECT_DIV> exp_sum(va,vector_dist_expression<0,float>(d));
 
@@ -2617,9 +2618,9 @@ operator/(double d, const vector_dist_expression<prp1,v1> & va)
  * \return an object that encapsulate the expression
  *
  */
-template<unsigned int prp1, typename v1>
+template<typename T, unsigned int prp1,typename v1, typename sfinae = typename std::enable_if<std::is_same<T,float>::value>::type >
 inline vector_dist_expression_op<vector_dist_expression<0,float>,vector_dist_expression<prp1,v1>,VECT_DIV>
-operator/(float d, const vector_dist_expression<prp1,v1> & va)
+operator/(T d, const vector_dist_expression<prp1,v1> & va)
 {
 	vector_dist_expression_op<vector_dist_expression<0,float>,vector_dist_expression<prp1,v1>,VECT_DIV> exp_sum(vector_dist_expression<0,float>(d),va);
 

@@ -75,7 +75,7 @@ private:
 
     vector_type & particlesFrom;
     vector_type2 & particlesTo;
-    double rCut,supportSizeFactor,nSpacing;
+    double rCut,supportSizeFactor=1,nSpacing;
     unsigned int convergenceOrder,nCount;
 
     bool isSurfaceDerivative=false;
@@ -334,7 +334,89 @@ public:
             ++epsItInvPow;
         }
     }
+    /*! \brief Save the DCPSE computations
+     *
+     */
+    void save(const std::string &file){
+        auto & v_cl=create_vcluster();
+        size_t req = 0;
 
+		Packer<decltype(localSupports),HeapMemory>::packRequest(localSupports,req);
+        Packer<decltype(localEps),HeapMemory>::packRequest(localEps,req);
+        Packer<decltype(localEpsInvPow),HeapMemory>::packRequest(localEpsInvPow,req);
+        Packer<decltype(calcKernels),HeapMemory>::packRequest(calcKernels,req);
+        Packer<decltype(kerOffsets),HeapMemory>::packRequest(kerOffsets,req);
+
+		// allocate the memory
+		HeapMemory pmem;
+		//pmem.allocate(req);
+		ExtPreAlloc<HeapMemory> mem(req,pmem);
+
+		//Packing
+		Pack_stat sts;
+		Packer<decltype(localSupports),HeapMemory>::pack(mem,localSupports,sts);
+        Packer<decltype(localEps),HeapMemory>::pack(mem,localEps,sts);
+        Packer<decltype(localEpsInvPow),HeapMemory>::pack(mem,localEpsInvPow,sts);
+        Packer<decltype(calcKernels),HeapMemory>::pack(mem,calcKernels,sts);
+        Packer<decltype(kerOffsets),HeapMemory>::pack(mem,kerOffsets,sts);
+
+		// Save into a binary file
+	    std::ofstream dump (file+"_"+std::to_string(v_cl.rank()), std::ios::out | std::ios::binary);
+	    if (dump.is_open() == false)
+        {   std::cerr << __FILE__ << ":" << __LINE__ <<" Unable to write since dump is open at rank "<<v_cl.rank()<<std::endl;
+	    	return;
+            }
+	    dump.write ((const char *)pmem.getPointer(), pmem.size());
+	    return;
+    }
+    /*! \brief Load the DCPSE computations
+     *
+     *
+     */
+    void load(const std::string & file)
+	{
+        auto & v_cl=create_vcluster();
+	    std::ifstream fs (file+"_"+std::to_string(v_cl.rank()), std::ios::in | std::ios::binary | std::ios::ate );
+	    if (fs.is_open() == false)
+	    {
+	    	std::cerr << __FILE__ << ":" << __LINE__ << " error, opening file: " << file << std::endl;
+	    	return;
+	    }
+
+	    // take the size of the file
+	    size_t sz = fs.tellg();
+
+	    fs.close();
+
+	    // reopen the file without ios::ate to read
+	    std::ifstream input (file+"_"+std::to_string(v_cl.rank()), std::ios::in | std::ios::binary );
+	    if (input.is_open() == false)
+        {//some message here maybe
+	    	return;}
+
+	    // Create the HeapMemory and the ExtPreAlloc memory
+	    size_t req = 0;
+	    req += sz;
+	    HeapMemory pmem;
+		ExtPreAlloc<HeapMemory> mem(req,pmem);
+
+		mem.allocate(pmem.size());
+
+		// read
+	    input.read((char *)pmem.getPointer(), sz);
+
+	    //close the file
+	    input.close();
+
+		//Unpacking
+		Unpack_stat ps;
+	 	Unpacker<decltype(localSupports),HeapMemory>::unpack(mem,localSupports,ps);
+        Unpacker<decltype(localEps),HeapMemory>::unpack(mem,localEps,ps);
+        Unpacker<decltype(localEpsInvPow),HeapMemory>::unpack(mem,localEpsInvPow,ps);
+        Unpacker<decltype(calcKernels),HeapMemory>::unpack(mem,calcKernels,ps);
+        Unpacker<decltype(kerOffsets),HeapMemory>::unpack(mem,kerOffsets,ps);
+	 	return;
+	}
 
 
     void checkMomenta(vector_type &particles)
@@ -805,6 +887,12 @@ private:
         this->rCut=rCut;
         this->supportSizeFactor=supportSizeFactor;
         this->convergenceOrder=convergenceOrder;
+        auto & v_cl=create_vcluster();
+        if(this->opt==LOAD){
+            if(v_cl.rank()==0)
+            {std::cout<<"Warning: Creating empty DC-PSE operator! Please use update or load to get kernels."<<std::endl;}
+            return;
+        }
         SupportBuilder<vector_type,vector_type2>
                 supportBuilder(particlesFrom,particlesTo, differentialSignature, rCut, differentialOrder == 0);
         unsigned int requiredSupportSize = monomialBasis.size() * supportSizeFactor;
@@ -875,7 +963,6 @@ private:
             ++Counter;
         }
 
-        auto & v_cl=create_vcluster();
         v_cl.sum(avgSpacingGlobal);
         v_cl.sum(Counter);
         v_cl.execute();

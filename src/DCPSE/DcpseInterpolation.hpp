@@ -4,6 +4,7 @@
 
 #ifndef OPENFPM_PDATA_DCPSEINTERPOLATION_HPP
 #define OPENFPM_PDATA_DCPSEINTERPOLATION_HPP
+#include "DCPSE/Dcpse.hpp"
 
 /*! \brief Class for Creating the DCPSE Operator For the function approximation objects and computes DCPSE Kernels.
  *
