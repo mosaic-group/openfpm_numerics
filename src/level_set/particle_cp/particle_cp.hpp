@@ -64,7 +64,7 @@ struct bicubic {};
 struct taylor4 {};
 
 
-template <typename particles_in_type, typename polynomial_degree, unsigned int num_minter_coeffs>
+template <typename particles_in_type, typename polynomial_degree, size_t phi_field, unsigned int num_minter_coeffs>
 class particle_cp_redistancing
 {
 public:
@@ -122,7 +122,7 @@ private:
 	static constexpr size_t vd_s_sample = 3;
 	static constexpr size_t interpol_coeff = 4;
 	static constexpr size_t vd_s_minter_model = 5;
-	static constexpr size_t vd_in_sdf = 0;			// this is really required in the vd_in vector, so users need to know about it.
+	static constexpr size_t vd_in_sdf = phi_field;			// this is really required in the vd_in vector, so users need to know about it.
 	static constexpr size_t vd_in_close_part = 4;	// this is not needed by the method, but more for debugging purposes, as it shows all particles for which
 													// interpolation and sampling is performed.
 	static constexpr size_t vd_in_normal = 1;
@@ -176,8 +176,8 @@ private:
             // depending on the application this can spare computational effort
             if (std::abs(vd_in.template getProp<vd_in_sdf>(akey)) > redistOptions.sampling_radius)
             {
-                ++part;
-                continue;
+                //++part;
+                //continue;
             }
 			int surfaceflag = 0;
 			int sgn_a = return_sign(vd_in.template getProp<vd_in_sdf>(akey));
@@ -386,7 +386,6 @@ private:
             minterModelpcp.computeCoeffs(xa, vd_s, r_cutoff2, num_neibs_a, NN_s);
             minter::PolyModel minterModel = minterModelpcp.return_PolyModel();
             Eigen::VectorXd coeffs(minterModel.return_coeffs());
-
             for (int k = 0; k < n_c; k++) vd_s.template getProp<interpol_coeff>(a)[k] = coeffs[k];
 //            std::cout<<"original coeffs:%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%"<<std::endl;
 //            std::cout<<model->return_PolyModel().coeffs<<std::endl;
@@ -425,18 +424,11 @@ private:
             }
             // store the resulting sample point on the surface at the central particle.
             for(int k = 0; k < dim; k++) vd_s.template getProp<vd_s_sample>(a)[k] = x_minter[k];
-
             //std::cout<<"minter projections yielded\n"<<x_minter[0]<<", "<<x_minter[1]<<", "<<x_minter[2]<<"\nafter "<<k_project<<" steps."<<std::endl;
             //std::cout<<"Difference of locations = "<<sqrt((x[0]-x_minter[0])*(x[0]-x_minter[0]) + (x[1]-x_minter[1])*(x[1]-x_minter[1])+(x[2]-x_minter[2])*(x[2]-x_minter[2]))<<std::endl;
             //std::cout<<"Ellipsoid equation evaluated at canonical x: "<<- 1 + sqrt((x[0]/0.75)*(x[0]/0.75) + (x[1]/0.5)*(x[1]/0.5) + (x[2]/0.5)*(x[2]/0.5))<<std::endl;
             //std::cout<<"Ellipsoid equation evaluated at minter x: "<<- 1 + sqrt((x_minter[0]/0.75)*(x_minter[0]/0.75) + (x_minter[1]/0.5)*(x_minter[1]/0.5) + (x_minter[2]/0.5)*(x_minter[2]/0.5))<<std::endl;
             //std::cout<<"################################################################"<<std::endl;
-            if (abs(-1 + sqrt((x_minter[0]/0.75)*(x_minter[0]/0.75) + (x_minter[1]/0.5)*(x_minter[1]/0.5) + (x_minter[2]/0.5)*(x_minter[2]/0.5))) > 1e-5) {
-                std::cout<<"VERBOSE for particle "<<a.getKey()<<std::endl;
-                std::cout<<"not on ellipsoid equation by "<<abs(-1 + sqrt((x_minter[0]/0.75)*(x_minter[0]/0.75) + (x_minter[1]/0.5)*(x_minter[1]/0.5) + (x_minter[2]/0.5)*(x_minter[2]/0.5)))<<std::endl;
-                std::cout<<"COEFF: "<<coeffs<<std::endl;
-                std::cout<<"sample point computed\n "<<x_minter<<std::endl;
-            }
             }
 			if (k_project == redistOptions.max_iter) message_projection_fail = 1;
 
