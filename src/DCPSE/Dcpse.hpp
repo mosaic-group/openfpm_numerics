@@ -223,7 +223,7 @@ public:
               SupportBuilder<vector_type,vector_type2>
                 supportBuilder(particlesFrom,particlesTo, differentialSignature, rCut, differentialOrder == 0);
 
-                auto it = particlesTo.getDomainIterator();
+                auto it = particlesTo.getDomainAndGhostIterator();
                 while (it.isNext()) {
                     auto key_o = particlesTo.getOriginKey(it.get());
                     Support support = supportBuilder.getSupport(it,1,opt);
