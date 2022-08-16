@@ -72,7 +72,7 @@ private:
     openfpm::vector<size_t> kerOffsets,accKerOffsets;
     openfpm::vector<T> calcKernels;
     openfpm::vector<T> accCalcKernels;
-
+    openfpm::vector<T> nSpacings;
     vector_type & particlesFrom;
     vector_type2 & particlesTo;
     double rCut,supportSizeFactor=1,nSpacing;
@@ -93,6 +93,10 @@ public:
         while(it.isNext()){
             auto key=it.get();
             Point<dim,T> xp=particles.getPos(key), Normals=particles.template getProp<NORMAL_ID>(key);
+            if(opt==support_options::ADAPTIVE_SURFACE)
+            {
+                nSpacing=nSpacings.get(key.getKey());
+            }
             for(int i=1;i<=nCount;i++){
                 particles.addAtEnd();
                 for(size_t j=0;j<dim;j++)
@@ -207,6 +211,27 @@ public:
             opt(opt),isSurfaceDerivative(true),nSpacing(nSpacing),nCount(floor(rCut/nSpacing))
     {
         particles.ghost_get_subset();         // This communicates which ghost particles to be excluded from support
+
+         if(opt==support_options::ADAPTIVE_SURFACE) {
+             supportSizeFactor=nSpacing;
+             if(dim==2){
+                 nCount=3;
+             }
+             else{
+                 nCount=2;
+             }
+              SupportBuilder<vector_type,vector_type2>
+                supportBuilder(particlesFrom,particlesTo, differentialSignature, rCut, differentialOrder == 0);
+
+                auto it = particlesTo.getDomainIterator();
+                while (it.isNext()) {
+                    auto key_o = particlesTo.getOriginKey(it.get());
+                    Support support = supportBuilder.getSupport(it,1,opt);
+                    nSpacings.add(supportBuilder.getLastAvgspacing());
+                    ++it;
+                  }
+
+         }
         createNormalParticles<NORMAL_ID>(particles);
 #ifdef SE_CLASS1
         particles.write("WithNormalParticlesQC");

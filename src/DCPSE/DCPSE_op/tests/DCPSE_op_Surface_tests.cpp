@@ -519,6 +519,345 @@ BOOST_AUTO_TEST_CASE(dcpse_surface_sphere_old) {
         //std::cout<<"Worst: "<<worst<<std::endl;
         BOOST_REQUIRE(worst < 0.03);
 }
+
+/*BOOST_AUTO_TEST_CASE(dcpse_surface_sphere_proj) {
+  auto & v_cl = create_vcluster();
+  timer tt;
+  tt.start();
+  size_t n=512;
+  size_t n_sp=n;
+  // Domain
+  double boxP1{-1.5}, boxP2{1.5};
+  double boxSize{boxP2 - boxP1};
+  size_t sz[3] = {n,n,n};
+  double grid_spacing{boxSize/(sz[0]-1)};
+  double grid_spacing_surf=grid_spacing*30;
+  double rCut{2.5 * grid_spacing_surf};
+
+  Box<3,double> domain{{boxP1,boxP1,boxP1},{boxP2,boxP2,boxP2}};
+  size_t bc[3] = {NON_PERIODIC,NON_PERIODIC,NON_PERIODIC};
+  Ghost<3,double> ghost{rCut + grid_spacing/8.0};
+
+  constexpr int K = 1;
+  // particles
+  vector_dist_ws<3, double, aggregate<VectorS<3,double>,VectorS<3,double>,VectorS<3,double>,VectorS<3,double>,VectorS<3,double>,double>> Sparticles(0, domain,bc,ghost);
+  // 1. particles on the Spherical surface
+  double Golden_angle=M_PI * (3.0 - sqrt(5.0));
+  if (v_cl.rank() == 0) {
+    //std::vector<Vector3f> data;
+    //GenerateSphere(1,data);
+    for(int i=1;i<n_sp;i++)
+        {
+            double y = 1.0 - (i /double(n_sp - 1.0)) * 2.0;
+            double radius = sqrt(1 - y * y);
+            double Golden_theta = Golden_angle * i;
+            double x = cos(Golden_theta) * radius;
+            double z = sin(Golden_theta) * radius;
+            Sparticles.add();
+            Sparticles.getLastPos()[0] = x;
+            Sparticles.getLastPos()[1] = y;
+            Sparticles.getLastPos()[2] = z;
+            double rm=sqrt(x*x+y*y+z*z);
+            Sparticles.getLastProp<2>()[0] = x/rm;
+            Sparticles.getLastProp<2>()[1] = y/rm;
+            Sparticles.getLastProp<2>()[2] = z/rm;
+            Sparticles.getLastProp<4>()[0] = 1.0 ;
+            Sparticles.getLastProp<4>()[1] = std::atan2(sqrt(x*x+y*y),z);
+            Sparticles.getLastProp<4>()[2] = std::atan2(y,x);
+            if(i<=2*(K)+1)
+            {Sparticles.getLastSubset(1);}
+            else
+            {Sparticles.getLastSubset(0);}
+        }
+    //std::cout << "n: " << n << " - grid spacing: " << grid_spacing << " - rCut: " << rCut << "Surf Normal spacing" << grid_spacing<<std::endl;
+  }
+
+  Sparticles.map();
+  Sparticles.ghost_get<3>();
+
+  vector_dist_subset<3,double,aggregate<VectorS<3,double>,VectorS<3,double>,VectorS<3,double>,VectorS<3,double>,VectorS<3,double>,double>> Sparticles_bulk(Sparticles,0);
+  vector_dist_subset<3,double,aggregate<VectorS<3,double>,VectorS<3,double>,VectorS<3,double>,VectorS<3,double>,VectorS<3,double>,double>> Sparticles_boundary(Sparticles,1);
+  auto &bulkIds=Sparticles_bulk.getIds();
+  auto &bdrIds=Sparticles_boundary.getIds();
+  std::unordered_map<const lm,double,key_hash,key_equal> Alm;
+  //Setting max mode l_max
+  //Setting amplitudes to 1
+  for(int l=0;l<=K;l++){
+      for(int m=-l;m<=l;m++){
+          Alm[std::make_tuple(l,m)]=0;
+      }
+  }
+  Alm[std::make_tuple(1,0)]=1;
+  auto it2 = Sparticles.getDomainIterator();
+  while (it2.isNext()) {
+      auto p = it2.get();
+      Point<3, double> xP = Sparticles.getProp<4>(p);
+      *//*double Sum=0;
+      for(int m=-spL;m<=spL;++m)
+      {
+        Sum+=openfpm::math::Y(spL,m,xP[1],xP[2]);
+      }*//*
+      //Sparticles.getProp<ANADF>(p) = Sum;//openfpm::math::Y(K,K,xP[1],xP[2]);openfpm::math::sumY_Scalar<K>(xP[0],xP[1],xP[2],Alm);;
+      Sparticles.getProp<3>(p)[0]=openfpm::math::sumY_Scalar<K>(xP[0],xP[1],xP[2],Alm);
+      Sparticles.getProp<3>(p)[1]=openfpm::math::sumY_Scalar<K>(xP[0],xP[1],xP[2],Alm);
+      Sparticles.getProp<3>(p)[2]=openfpm::math::sumY_Scalar<K>(xP[0],xP[1],xP[2],Alm);
+      Sparticles.getProp<1>(p)[0]=-(K)*(K+1)*openfpm::math::sumY_Scalar<K>(xP[0],xP[1],xP[2],Alm);
+      Sparticles.getProp<1>(p)[1]=-(K)*(K+1)*openfpm::math::sumY_Scalar<K>(xP[0],xP[1],xP[2],Alm);
+      Sparticles.getProp<1>(p)[2]=-(K)*(K+1)*openfpm::math::sumY_Scalar<K>(xP[0],xP[1],xP[2],Alm);
+      ++it2;
+  }
+  auto f=getV<3>(Sparticles);
+  auto Df=getV<0>(Sparticles);
+
+  SurfaceProjectedGradient<2> SGP{Sparticles,2,rCut,grid_spacing_surf};
+
+  Sparticles.ghost_get<3>();
+  Df=SGP(f);
+  //Df=SLap(f);
+  auto it3 = Sparticles.getDomainIterator();
+  double worst = 0.0;
+  while (it3.isNext()) {
+      auto p = it3.get();
+      //Sparticles.getProp<5>(p) = fabs(Sparticles.getProp<1>(p) - Sparticles.getProp<0>(p));
+      if (fabs(Sparticles.getProp<1>(p)[0] - Sparticles.getProp<0>(p)[0]) > worst) {
+          worst = fabs(Sparticles.getProp<1>(p)[0] - Sparticles.getProp<0>(p)[0]);
+      }
+      ++it3;
+  }
+        Sparticles.deleteGhost();
+        //Sparticles.write("Sparticles");
+        //std::cout<<worst;
+        BOOST_REQUIRE(worst < 0.03);
+}*/
+
+
+ BOOST_AUTO_TEST_CASE(dcpse_surface_adaptive) {
+//  int rank;
+//  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+        const size_t sz[3] = {81,81,1};
+        Box<3, double> box({0, 0,-5}, {0.5, 0.5,5});
+        size_t bc[3] = {NON_PERIODIC, NON_PERIODIC,NON_PERIODIC};
+        double spacing = box.getHigh(0) / (sz[0] - 1);
+        Ghost<3, double> ghost(spacing * 3.1);
+        double rCut = 3.1  * spacing;
+        BOOST_TEST_MESSAGE("Init vector_dist...");
+
+        vector_dist<3, double, aggregate<double,double,double,double,double,double,double[3]>> domain(0, box, bc, ghost);
+
+
+        //Init_DCPSE(domain)
+        BOOST_TEST_MESSAGE("Init domain...");
+
+        auto it = domain.getGridIterator(sz);
+        while (it.isNext()) {
+            domain.add();
+
+            auto key = it.get();
+            double x = key.get(0) * it.getSpacing(0);
+            domain.getLastPos()[0] = x;
+            double y = key.get(1) * it.getSpacing(1);
+            domain.getLastPos()[1] = y;
+
+            domain.getLastPos()[2] = 0;
+
+            ++it;
+        }
+
+        // Add multi res patch 1
+
+        {
+        const size_t sz2[3] = {40,40,1};
+        Box<3,double> bx({0.25 + it.getSpacing(0)/4.0,0.25 + it.getSpacing(0)/4.0,-0.5},{sz2[0]*it.getSpacing(0)/2.0 + 0.25 + it.getSpacing(0)/4.0, sz2[1]*it.getSpacing(0)/2.0 + 0.25 + it.getSpacing(0)/4.0,0.5});
+        openfpm::vector<size_t> rem;
+
+        auto it = domain.getDomainIterator();
+
+        while (it.isNext())
+        {
+        	auto k = it.get();
+
+        	Point<3,double> xp = domain.getPos(k);
+
+        	if (bx.isInside(xp) == true)
+        	{
+        		rem.add(k.getKey());
+        	}
+
+        	++it;
+        }
+
+        domain.remove(rem);
+
+        auto it2 = domain.getGridIterator(sz2);
+        while (it2.isNext()) {
+            domain.add();
+
+            auto key = it2.get();
+            double x = key.get(0) * spacing/2.0 + 0.25 + spacing/4.0;
+            domain.getLastPos()[0] = x;
+            double y = key.get(1) * spacing/2.0 + 0.25 + spacing/4.0;
+            domain.getLastPos()[1] = y;
+            domain.getLastPos()[2] = 0;
+
+            ++it2;
+        }
+        }
+
+        // Add multi res patch 2
+
+        {
+        const size_t sz2[3] = {40,40,1};
+        Box<3,double> bx({0.25 + 21.0*spacing/8.0,0.25 + 21.0*spacing/8.0,-5},{sz2[0]*spacing/4.0 + 0.25 + 21.0*spacing/8.0, sz2[1]*spacing/4.0 + 0.25 + 21*spacing/8.0,5});
+        openfpm::vector<size_t> rem;
+
+        auto it = domain.getDomainIterator();
+
+        while (it.isNext())
+        {
+        	auto k = it.get();
+
+        	Point<3,double> xp = domain.getPos(k);
+
+        	if (bx.isInside(xp) == true)
+        	{
+        		rem.add(k.getKey());
+        	}
+
+        	++it;
+        }
+
+        domain.remove(rem);
+
+        auto it2 = domain.getGridIterator(sz2);
+        while (it2.isNext()) {
+            domain.add();
+
+            auto key = it2.get();
+            double x = key.get(0) * spacing/4.0 + 0.25 + 21*spacing/8.0;
+            domain.getLastPos()[0] = x;
+            double y = key.get(1) * spacing/4.0 + 0.25 + 21*spacing/8.0;
+            domain.getLastPos()[1] = y;
+            domain.getLastPos()[2] = 0;
+
+            ++it2;
+        }
+        }
+
+        ///////////////////////
+
+        BOOST_TEST_MESSAGE("Sync domain across processors...");
+
+        domain.map();
+        domain.ghost_get<0>();
+
+        openfpm::vector<aggregate<int>> bulk;
+        openfpm::vector<aggregate<int>> up_p;
+        openfpm::vector<aggregate<int>> dw_p;
+        openfpm::vector<aggregate<int>> l_p;
+        openfpm::vector<aggregate<int>> r_p;
+        openfpm::vector<aggregate<int>> ref_p;
+
+        auto v = getV<0>(domain);
+        auto RHS=getV<1>(domain);
+        auto sol = getV<2>(domain);
+        auto anasol = getV<3>(domain);
+        auto err = getV<4>(domain);
+        auto DCPSE_sol=getV<5>(domain);
+
+        // Here fill me
+
+        Box<3, double> up({box.getLow(0) - spacing / 2.0, box.getHigh(1) - spacing / 2.0,-5},
+                          {box.getHigh(0) + spacing / 2.0, box.getHigh(1) + spacing / 2.0,5});
+
+        Box<3, double> down({box.getLow(0) - spacing / 2.0, box.getLow(1) - spacing / 2.0,-5},
+                            {box.getHigh(0) + spacing / 2.0, box.getLow(1) + spacing / 2.0,5});
+
+        Box<3, double> left({box.getLow(0) - spacing / 2.0, box.getLow(1) + spacing / 2.0,-5},
+                            {box.getLow(0) + spacing / 2.0, box.getHigh(1) - spacing / 2.0,5});
+
+        Box<3, double> right({box.getHigh(0) - spacing / 2.0, box.getLow(1) + spacing / 2.0,-5},
+                             {box.getHigh(0) + spacing / 2.0, box.getHigh(1) - spacing / 2.0,5});
+
+        openfpm::vector<Box<3, double>> boxes;
+        boxes.add(up);
+        boxes.add(down);
+        boxes.add(left);
+        boxes.add(right);
+
+        // Create a writer and write
+        VTKWriter<openfpm::vector<Box<3, double>>, VECTOR_BOX> vtk_box;
+        vtk_box.add(boxes);
+        //vtk_box.write("vtk_box.vtk");
+
+
+        auto it2 = domain.getDomainIterator();
+
+        while (it2.isNext()) {
+            auto p = it2.get();
+            Point<3, double> xp = domain.getPos(p);
+            if (up.isInside(xp) == true) {
+                up_p.add();
+                up_p.last().get<0>() = p.getKey();
+                domain.getProp<1>(p) = -2*M_PI*M_PI*sin(M_PI*xp.get(0))*sin(M_PI*xp.get(1));
+                domain.getProp<3>(p) = sin(M_PI*xp.get(0))*sin(M_PI*xp.get(1));
+            } else if (down.isInside(xp) == true) {
+                dw_p.add();
+                dw_p.last().get<0>() = p.getKey();
+                domain.getProp<1>(p) =  -2*M_PI*M_PI*sin(M_PI*xp.get(0))*sin(M_PI*xp.get(1));
+                domain.getProp<3>(p) = sin(M_PI*xp.get(0))*sin(M_PI*xp.get(1));
+
+            } else if (left.isInside(xp) == true) {
+                l_p.add();
+                l_p.last().get<0>() = p.getKey();
+                domain.getProp<1>(p) =  -2*M_PI*M_PI*sin(M_PI*xp.get(0))*sin(M_PI*xp.get(1));
+                domain.getProp<3>(p) = sin(M_PI*xp.get(0))*sin(M_PI*xp.get(1));
+
+            } else if (right.isInside(xp) == true) {
+                r_p.add();
+                r_p.last().get<0>() = p.getKey();
+                domain.getProp<1>(p) =  -2*M_PI*M_PI*sin(M_PI*xp.get(0))*sin(M_PI*xp.get(1));
+                domain.getProp<3>(p) = sin(M_PI*xp.get(0))*sin(M_PI*xp.get(1));
+
+            } else {
+                bulk.add();
+                bulk.last().get<0>() = p.getKey();
+                domain.getProp<1>(p) =  -2*M_PI*M_PI*sin(M_PI*xp.get(0))*sin(M_PI*xp.get(1));
+                domain.getProp<3>(p) = sin(M_PI*xp.get(0))*sin(M_PI*xp.get(1));
+            }
+            domain.getProp<6>(p)[0] = 0;
+            domain.getProp<6>(p)[1] = 0;
+            domain.getProp<6>(p)[2] = 1;
+
+            ++it2;
+        }
+
+        domain.ghost_get<1,2,3>();
+        SurfaceDerivative_xx<6> Dxx(domain, 2, rCut,6.0,support_options::ADAPTIVE_SURFACE);
+        SurfaceDerivative_yy<6> Dyy(domain, 2, rCut,6.0,support_options::ADAPTIVE_SURFACE);
+        SurfaceDerivative_zz<6> Dzz(domain, 2, rCut,6.0,support_options::ADAPTIVE_SURFACE);
+
+
+        domain.ghost_get<2>();
+        sol=Dxx(anasol)+Dyy(anasol)+Dzz(anasol);
+        domain.ghost_get<5>();
+
+        double worst1 = 0.0;
+
+        for(int j=0;j<bulk.size();j++)
+        {   auto p=bulk.get<0>(j);
+            if (fabs(domain.getProp<1>(p) - domain.getProp<2>(p)) >= worst1) {
+                worst1 = fabs(domain.getProp<1>(p) - domain.getProp<2>(p));
+            }
+            domain.getProp<4>(p) = fabs(domain.getProp<1>(p) - domain.getProp<2>(p));
+
+        }
+        //std::cout << "Maximum Analytic Error: " << worst1 << std::endl;
+
+        //domain.ghost_get<4>();
+        domain.write("Robin_anasol");
+        BOOST_REQUIRE(worst1 < 0.03);
+
+    }
 BOOST_AUTO_TEST_SUITE_END()
 
 #endif

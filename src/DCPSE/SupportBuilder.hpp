@@ -18,7 +18,8 @@ enum support_options
 {
     N_PARTICLES,
     RADIUS,
-    LOAD
+    LOAD,
+    ADAPTIVE_SURFACE
 };
 
 
@@ -30,7 +31,7 @@ private:
     vector_type2 &domainTo;
     decltype(std::declval<vector_type>().getCellList(0.0)) cellList;
     const Point<vector_type::dims, unsigned int> differentialSignature;
-    typename vector_type::stype rCut;
+    typename vector_type::stype rCut,AvgSpacing;
     bool is_interpolation;
 
 public:
@@ -78,6 +79,12 @@ public:
         auto p_o = domainTo.getOriginKey(p.getKey());
         return Support(p_o.getKey(), openfpm::vector_std<size_t>(supportKeys.begin(), supportKeys.end()));
     }
+
+    typename vector_type::stype getLastAvgspacing()
+    {
+        return this->AvgSpacing;
+    }
+
 private:
 
     size_t getCellLinId(const grid_key_dx<vector_type::dims> &cellKey)
@@ -213,10 +220,17 @@ private:
         }
         else
         {   rp.sort();
+            AvgSpacing=rp.get(0).dist;
             for (int i = 0 ; i < requiredSupportSize ; i++)
             {
+                if(opt==support_options::ADAPTIVE_SURFACE && rp.get(i).dist > rCut)
+                {}
+                else{
                 points.push_back(rp.get(i).offset);
+                }
+                //AvgSpacing+=rp.get(i).dist;
             }
+            //AvgSpacing=AvgSpacing/requiredSupportSize;
         }
 
         return points;
