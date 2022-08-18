@@ -232,12 +232,16 @@ public:
                   }
 
          }
-        createNormalParticles<NORMAL_ID>(particles);
+         if(opt!=support_options::LOAD) {
+             createNormalParticles<NORMAL_ID>(particles);
 #ifdef SE_CLASS1
-        particles.write("WithNormalParticlesQC");
+             particles.write("WithNormalParticlesQC");
 #endif
+         }
         initializeStaticSize(particles, particles, convergenceOrder, rCut, supportSizeFactor);
-        accumulateAndDeleteNormalParticles(particles);
+         if(opt!=support_options::LOAD) {
+             accumulateAndDeleteNormalParticles(particles);
+         }
     }
 
     Dcpse(vector_type &particles,
