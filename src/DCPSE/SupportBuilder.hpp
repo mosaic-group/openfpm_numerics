@@ -220,7 +220,7 @@ private:
         }
         else
         {   rp.sort();
-            AvgSpacing=rp.get(0).dist;
+            AvgSpacing=rp.get(1).dist;
             for (int i = 0 ; i < requiredSupportSize ; i++)
             {
                 if(opt==support_options::ADAPTIVE_SURFACE && rp.get(i).dist > rCut)
