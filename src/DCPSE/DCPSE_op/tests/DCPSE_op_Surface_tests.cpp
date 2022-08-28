@@ -731,7 +731,6 @@ BOOST_AUTO_TEST_CASE(dcpse_surface_sphere_old) {
         auto it2 = domain.getGridIterator(sz2);
         while (it2.isNext()) {
             domain.add();
-
             auto key = it2.get();
             double x = key.get(0) * spacing/4.0 + 0.25 + 21*spacing/8.0;
             domain.getLastPos()[0] = x;
@@ -789,7 +788,6 @@ BOOST_AUTO_TEST_CASE(dcpse_surface_sphere_old) {
         vtk_box.add(boxes);
         //vtk_box.write("vtk_box.vtk");
 
-
         auto it2 = domain.getDomainIterator();
 
         while (it2.isNext()) {
@@ -832,9 +830,25 @@ BOOST_AUTO_TEST_CASE(dcpse_surface_sphere_old) {
         }
 
         domain.ghost_get<1,2,3>();
-        SurfaceDerivative_xx<6> Dxx(domain, 2, rCut,6.0,support_options::ADAPTIVE_SURFACE);
-        SurfaceDerivative_yy<6> Dyy(domain, 2, rCut,6.0,support_options::ADAPTIVE_SURFACE);
-        SurfaceDerivative_zz<6> Dzz(domain, 2, rCut,6.0,support_options::ADAPTIVE_SURFACE);
+        SurfaceDerivative_xx<6> Dxx(domain, 2, rCut,1.0,support_options::ADAPTIVE_SURFACE);
+
+/*        v=0;
+        auto itNNN=domain.getDomainIterator();
+        while(itNNN.isNext()){
+            auto p=itNNN.get().getKey();
+            Dxx.DrawKernel<0,decltype(domain)>(domain,p);
+            domain.write_frame("Kernel",p);
+            v=0;
+            ++itNNN;
+        }
+
+*/
+        //Dxx.DrawKernel<5,decltype(domain)>(domain,6161);
+        //domain.write_frame("Kernel",6161);
+
+        SurfaceDerivative_yy<6> Dyy(domain, 2, rCut,1.0,support_options::ADAPTIVE_SURFACE);
+        SurfaceDerivative_zz<6> Dzz(domain, 2, rCut,1.0,support_options::ADAPTIVE_SURFACE);
+
         Dxx.save(domain,"Sdxx_test");
         Dyy.save(domain,"Sdyy_test");
         Dzz.save(domain,"Sdzz_test");
@@ -854,9 +868,8 @@ BOOST_AUTO_TEST_CASE(dcpse_surface_sphere_old) {
 
         }
         //std::cout << "Maximum Analytic Error: " << worst1 << std::endl;
-
         //domain.ghost_get<4>();
-        domain.write("Robin_anasol");
+        //domain.write("Robin_anasol");
         BOOST_REQUIRE(worst1 < 0.03);
 
     }
@@ -1063,9 +1076,9 @@ BOOST_AUTO_TEST_CASE(dcpse_surface_sphere_old) {
         }
 
         domain.ghost_get<1,2,3>();
-        SurfaceDerivative_xx<6> Dxx(domain, 2, rCut,6.0,support_options::LOAD);
-        SurfaceDerivative_yy<6> Dyy(domain, 2, rCut,6.0,support_options::LOAD);
-        SurfaceDerivative_zz<6> Dzz(domain, 2, rCut,6.0,support_options::LOAD);
+        SurfaceDerivative_xx<6> Dxx(domain, 2, rCut,1.0,support_options::LOAD);
+        SurfaceDerivative_yy<6> Dyy(domain, 2, rCut,1.0,support_options::LOAD);
+        SurfaceDerivative_zz<6> Dzz(domain, 2, rCut,1.0,support_options::LOAD);
         Dxx.load(domain,"Sdxx_test");
         Dyy.load(domain,"Sdyy_test");
         Dzz.load(domain,"Sdzz_test");
@@ -1091,6 +1104,8 @@ BOOST_AUTO_TEST_CASE(dcpse_surface_sphere_old) {
         BOOST_REQUIRE(worst1 < 0.03);
 
     }
+
+
 BOOST_AUTO_TEST_SUITE_END()
 
 #endif
