@@ -213,7 +213,6 @@ public:
         particles.ghost_get_subset();         // This communicates which ghost particles to be excluded from support
 
          if(opt==support_options::ADAPTIVE_SURFACE) {
-             supportSizeFactor=nSpacing;
              if(dim==2){
                  nCount=3;
              }
@@ -226,18 +225,22 @@ public:
                 auto it = particlesTo.getDomainAndGhostIterator();
                 while (it.isNext()) {
                     auto key_o = particlesTo.getOriginKey(it.get());
-                    Support support = supportBuilder.getSupport(it,1,opt);
+                    Support support = supportBuilder.getSupport(it,nSpacing,opt);
                     nSpacings.add(supportBuilder.getLastAvgspacing());
                     ++it;
                   }
 
          }
-        createNormalParticles<NORMAL_ID>(particles);
+         if(opt!=support_options::LOAD) {
+             createNormalParticles<NORMAL_ID>(particles);
 #ifdef SE_CLASS1
-        particles.write("WithNormalParticlesQC");
+             particles.write("WithNormalParticlesQC");
 #endif
+         }
         initializeStaticSize(particles, particles, convergenceOrder, rCut, supportSizeFactor);
-        accumulateAndDeleteNormalParticles(particles);
+         if(opt!=support_options::LOAD) {
+             accumulateAndDeleteNormalParticles(particles);
+         }
     }
 
     Dcpse(vector_type &particles,
@@ -720,61 +723,6 @@ public:
             expr_type fxq = o1.value(vect_dist_key_dx(xqK))[i];
             Dfxp = Dfxp + (fxq + fxp) * calcKernels.get(kerOff+j);
         }
-        Dfxp = Dfxp * epsInvPow;
-        //
-        //T trueDfxp = particles.template getProp<2>(xpK);
-        // Store Dfxp in the right position
-        return Dfxp;
-    }
-
-
-    /**
-     * Computes the value of the Surface differential operator for one particle for o1 representing a scalar
-     *
-     * \param key particle
-     * \param o1 source property
-     * \return the selected derivative
-     *
-     */
-    template<typename op_type>
-    auto computeSurfaceDifferentialOperator(const vect_dist_key_dx &key,
-                                     op_type &o1) -> decltype(is_scalar<std::is_fundamental<decltype(o1.value(
-            key))>::value>::analyze(key, o1)) {
-
-        typedef decltype(is_scalar<std::is_fundamental<decltype(o1.value(key))>::value>::analyze(key, o1)) expr_type;
-
-        T sign = 1.0;
-        if (differentialOrder % 2 == 0) {
-            sign = -1;
-        }
-
-        double eps = localEps.get(key.getKey());
-        double epsInvPow = localEpsInvPow.get(key.getKey());
-
-        auto &particles = o1.getVector();
-
-#ifdef SE_CLASS1
-        if(particles.getMapCtr()!=this->getUpdateCtr())
-        {
-            std::cerr<<__FILE__<<":"<<__LINE__<<" Error: You forgot a DCPSE operator update after map."<<std::endl;
-        }
-#endif
-
-        expr_type Dfxp = 0;
-        Support support = localSupports.get(key.getKey());
-        size_t xpK = support.getReferencePointKey();
-        //Point<dim, T> xp = particles.getPos(xpK);
-        expr_type fxp = sign * o1.value(key);
-        size_t kerOff = kerOffsets.get(xpK);
-        auto & keys = support.getKeys();
-        for (int i = 0 ; i < keys.size() ; i++)
-        {
-            size_t xqK = keys.get(i);
-            expr_type fxq = o1.value(vect_dist_key_dx(xqK));
-            Dfxp = Dfxp + (fxq + fxp) * calcKernels.get(kerOff+i);
-        }
-        //additional contribution of particles normal to reference Particle
-        Dfxp = Dfxp + (o1.value(key)+fxp) * calcKernels.get(kerOff+keys.size());
         Dfxp = Dfxp * epsInvPow;
         //
         //T trueDfxp = particles.template getProp<2>(xpK);
