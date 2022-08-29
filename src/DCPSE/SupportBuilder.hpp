@@ -30,7 +30,7 @@ private:
     vector_type2 &domainTo;
     decltype(std::declval<vector_type>().getCellList(0.0)) cellList;
     const Point<vector_type::dims, unsigned int> differentialSignature;
-    typename vector_type::stype rCut, AvgSpacing;
+    typename vector_type::stype rCut, AvgSpacing, AdapFac=1;
     bool is_interpolation;
 
 public:
@@ -84,6 +84,10 @@ public:
 
     typename vector_type::stype getLastAvgspacing() {
         return this->AvgSpacing;
+    }
+
+    void setAdapFac(typename vector_type::stype fac) {
+        this->AdapFac=fac;
     }
 
 private:
@@ -206,7 +210,7 @@ private:
                 }
             }
             for (int i = 0; i < rp.size(); i++) {
-                if (rp.get(i).dist < 3.9 * AvgSpacing) {
+                if (rp.get(i).dist < AdapFac * AvgSpacing) {
                     points.push_back(rp.get(i).offset);
                 }
             }

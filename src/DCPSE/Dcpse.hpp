@@ -75,7 +75,7 @@ private:
     openfpm::vector<T> nSpacings;
     vector_type & particlesFrom;
     vector_type2 & particlesTo;
-    double rCut,supportSizeFactor=1,nSpacing;
+    double rCut,supportSizeFactor=1,nSpacing,AdapFac;
     unsigned int convergenceOrder,nCount;
 
     bool isSurfaceDerivative=false;
@@ -213,19 +213,20 @@ public:
         particles.ghost_get_subset();         // This communicates which ghost particles to be excluded from support
 
          if(opt==support_options::ADAPTIVE_SURFACE) {
+             this->AdapFac=nSpacing;
              if(dim==2){
                  nCount=3;
              }
              else{
                  nCount=2;
              }
-              SupportBuilder<vector_type,vector_type2>
+             SupportBuilder<vector_type,vector_type2>
                 supportBuilder(particlesFrom,particlesTo, differentialSignature, rCut, differentialOrder == 0);
-
+                supportBuilder.setAdapFac(nSpacing);
                 auto it = particlesTo.getDomainAndGhostIterator();
                 while (it.isNext()) {
                     auto key_o = particlesTo.getOriginKey(it.get());
-                    Support support = supportBuilder.getSupport(it,nSpacing,opt);
+                    Support support = supportBuilder.getSupport(it,monomialBasis.size(),opt);
                     nSpacings.add(supportBuilder.getLastAvgspacing());
                     ++it;
                   }
@@ -869,6 +870,7 @@ private:
         SupportBuilder<vector_type,vector_type2>
                 supportBuilder(particlesFrom,particlesTo, differentialSignature, rCut, differentialOrder == 0);
         unsigned int requiredSupportSize = monomialBasis.size() * supportSizeFactor;
+        supportBuilder.setAdapFac(AdapFac);
 
         if (!isSharedLocalSupport)
             localSupports.resize(particlesTo.size_local_orig());
