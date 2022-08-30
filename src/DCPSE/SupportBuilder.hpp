@@ -19,7 +19,7 @@ enum support_options
     N_PARTICLES,
     RADIUS,
     LOAD,
-    ADAPTIVE_SURFACE
+    ADAPTIVE
 };
 
 
@@ -30,7 +30,7 @@ private:
     vector_type2 &domainTo;
     decltype(std::declval<vector_type>().getCellList(0.0)) cellList;
     const Point<vector_type::dims, unsigned int> differentialSignature;
-    typename vector_type::stype rCut, AvgSpacing, AdapFac=1;
+    typename vector_type::stype rCut, MinSpacing, AdapFac=1;
     bool is_interpolation;
 
 public:
@@ -82,8 +82,8 @@ public:
         return Support(p_o.getKey(), openfpm::vector_std<size_t>(supportKeys.begin(), supportKeys.end()));
     }
 
-    typename vector_type::stype getLastAvgspacing() {
-        return this->AvgSpacing;
+    typename vector_type::stype getLastMinspacing() {
+        return this->MinSpacing;
     }
 
     void setAdapFac(typename vector_type::stype fac) {
@@ -113,7 +113,7 @@ private:
 
     void enlargeSetOfCellsUntilSize(std::set<grid_key_dx<vector_type::dims>> &set, unsigned int requiredSize,
                                     support_options opt) {
-        if (opt == support_options::RADIUS || opt == support_options::ADAPTIVE_SURFACE) {
+        if (opt == support_options::RADIUS || opt == support_options::ADAPTIVE) {
             auto cell = *set.begin();
             grid_key_dx<vector_type::dims> middle;
             int n = std::ceil(rCut / cellList.getCellBox().getHigh(0));
@@ -202,15 +202,15 @@ private:
                     }
                     #endif*/
         }
-        else if(opt == support_options::ADAPTIVE_SURFACE) {
-            AvgSpacing = std::numeric_limits<double>::max();
+        else if(opt == support_options::ADAPTIVE) {
+            MinSpacing = std::numeric_limits<double>::max();
             for (int i = 0; i < rp.size(); i++) {
-                if (AvgSpacing > rp.get(i).dist && rp.get(i).dist != 0) {
-                    AvgSpacing = rp.get(i).dist;
+                if (MinSpacing > rp.get(i).dist && rp.get(i).dist != 0) {
+                    MinSpacing = rp.get(i).dist;
                 }
             }
             for (int i = 0; i < rp.size(); i++) {
-                if (rp.get(i).dist < AdapFac * AvgSpacing) {
+                if (rp.get(i).dist < AdapFac * MinSpacing) {
                     points.push_back(rp.get(i).offset);
                 }
             }
@@ -221,7 +221,7 @@ private:
                     points.push_back(rp.get(i).offset);
                 }
             }
-        //AvgSpacing=AvgSpacing/requiredSupportSize
+        //MinSpacing=MinSpacing/requiredSupportSize
         return points;
     }
 

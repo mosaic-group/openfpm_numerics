@@ -16,7 +16,7 @@ private:
     const Point<dim, T> point;
     openfpm::vector_std<Point<dim, T>> offsets;
     const MonomialBasis<dim> monomialBasis;
-    T eps,HOverEpsilon;
+    T eps,HOverEpsilon,minSpacing;
 
 public:
 /*    Vandermonde(const Point<dim, T> &point, const std::vector<Point<dim, T>> &neighbours,
@@ -55,6 +55,10 @@ public:
     {
         return eps;
     }
+    T getMinSpacing()
+    {
+        return minSpacing;
+    }
 
 private:
 
@@ -62,11 +66,17 @@ private:
     void computeEps(T factor)
     {
         T avgNeighbourSpacing = 0;
+        minSpacing=std::numeric_limits<T>::max();
         size_t N = offsets.size();
         for (size_t i = 0; i < N; ++i)
         {
             const auto& offset = offsets.get(i);
+            double dist=norm(offset);
             avgNeighbourSpacing += computeAbsSum(offset);
+            if(minSpacing>dist)
+            {
+                minSpacing=dist;
+            }
         }
         avgNeighbourSpacing /= offsets.size();
         eps = avgNeighbourSpacing/factor;
