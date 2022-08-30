@@ -93,7 +93,7 @@ public:
         while(it.isNext()){
             auto key=it.get();
             Point<dim,T> xp=particles.getPos(key), Normals=particles.template getProp<NORMAL_ID>(key);
-            if(opt==support_options::ADAPTIVE_SURFACE)
+            if(opt==support_options::ADAPTIVE)
             {
                 nSpacing=nSpacings.get(key.getKey());
             }
@@ -212,7 +212,7 @@ public:
     {
         particles.ghost_get_subset();         // This communicates which ghost particles to be excluded from support
 
-         if(opt==support_options::ADAPTIVE_SURFACE) {
+         if(opt==support_options::ADAPTIVE) {
              this->AdapFac=nSpacing;
              if(dim==2){
                  nCount=3;
@@ -227,7 +227,7 @@ public:
                 while (it.isNext()) {
                     auto key_o = particlesTo.getOriginKey(it.get());
                     Support support = supportBuilder.getSupport(it,monomialBasis.size(),opt);
-                    nSpacings.add(supportBuilder.getLastAvgspacing());
+                    nSpacings.add(supportBuilder.getLastMinspacing());
                     ++it;
                   }
 
@@ -878,7 +878,7 @@ private:
         localEpsInvPow.resize(particlesTo.size_local_orig());
         kerOffsets.resize(particlesTo.size_local_orig());
         kerOffsets.fill(-1);
-        T avgSpacingGlobal=0;
+        T avgSpacingGlobal=0,maxSpacingGlobal=0,minSpacingGlobal=std::numeric_limits<T>::max();
         size_t Counter=0;
         auto it = particlesTo.getDomainIterator();
         while (it.isNext()) {
@@ -899,6 +899,15 @@ private:
 
             T eps = vandermonde.getEps();
             avgSpacingGlobal+=eps;
+            T tSpacing = vandermonde.getMinSpacing();
+            if(tSpacing>maxSpacingGlobal)
+            {
+                maxSpacingGlobal=tSpacing;
+            }
+            if(tSpacing<minSpacingGlobal)
+            {
+                minSpacingGlobal=tSpacing;
+            }
 
             localEps.get(key_o.getKey()) = eps;
             localEpsInvPow.get(key_o.getKey()) = 1.0 / openfpm::math::intpowlog(eps,differentialOrder);
@@ -939,12 +948,12 @@ private:
         }
 
         v_cl.sum(avgSpacingGlobal);
+        v_cl.max(maxSpacingGlobal);
+        v_cl.min(minSpacingGlobal);
         v_cl.sum(Counter);
         v_cl.execute();
         if(v_cl.rank()==0)
-        {std::cout<<"DCPSE Operator Construction Complete. The average spacing <h> is: "<<HOverEpsilon*avgSpacingGlobal/(T(Counter))<<". c="<<HOverEpsilon<<std::endl;}
-
-
+        {std::cout<<"DCPSE Operator Construction Complete. The global avg spacing in the support <h> is: "<<HOverEpsilon*avgSpacingGlobal/(T(Counter))<<" (c="<<HOverEpsilon<<"). Min Spacing Range=["<<minSpacingGlobal<<","<<maxSpacingGlobal<<"]."<<std::endl;}
     }
 
     T computeKernel(Point<dim, T> x, EMatrix<T, Eigen::Dynamic, 1> & a) const {
