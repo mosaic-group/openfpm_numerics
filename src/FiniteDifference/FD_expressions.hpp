@@ -1793,7 +1793,7 @@ namespace FD
 		 * \return itself
 		 *
 		 */
-		template<unsigned int prp2, unsigned int impl> gtype & operator=(const grid_dist_expression<prp2,gtype,impl> & v_exp)
+	  template<unsigned int prp2, typename gtype2, unsigned int impl> gtype & operator=(const grid_dist_expression<prp2,gtype2,impl> & v_exp)
 		{
 			v_exp.init();
 
@@ -1801,11 +1801,14 @@ namespace FD
 
 			auto it = g.getDomainIterator();
 
+			comb<gtype::dims> c_where;
+			c_where.zero();
+
 			while (it.isNext())
 			{
 				auto key = it.get();
 
-				get_grid_dist_expression_op<n,n == rank_gen<property_act>::type::value>::template assign<exp1::prop>(v_exp,g,key,comp);
+				get_grid_dist_expression_op<n,n == rank_gen<property_act>::type::value>::template assign<exp1::prop>(v_exp,g,key,c_where,comp);
 
 				++it;
 			}
