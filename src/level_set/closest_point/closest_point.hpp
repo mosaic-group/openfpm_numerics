@@ -31,8 +31,7 @@ constexpr int algoim_padding = 4;
  * @tparam grid_type Type of the grid container
  * 
  */
-
-template<size_t wrapping_field, typename grid_type>
+template<size_t wrapping_field, typename grid_type, typename wrapping_field_type = typename boost::mpl::at<typename grid_type::value_type::type,boost::mpl::int_<wrapping_field>>::type>
 struct AlgoimWrapper
 {
     const static unsigned int dim = grid_type::dims;
@@ -55,7 +54,145 @@ struct AlgoimWrapper
         
         return gd.template get<wrapping_field>(grid_key);
     }
+
+  template<size_t extend_field_temp, int poly_order, typename coord_type, typename dx_type, typename pos_type, typename key_type>
+  void extend(coord_type coord, dx_type dx, pos_type pos, key_type key) {
+
+    using Poly = typename Algoim::StencilPoly<dim, poly_order>::T_Poly;
+    
+    Poly field_poly = Poly(coord, *this, dx);
+    // Extension is first done to the temporary field. Otherwise interpolation will be affected.
+    gd.template get<extend_field_temp>(key) = field_poly(pos);
+  }
+
 };
+
+template<size_t wrapping_field, typename grid_type, typename wrapping_field_type, size_t N1>
+struct AlgoimWrapper<wrapping_field,grid_type,wrapping_field_type[N1]>
+{
+    const static unsigned int dim = grid_type::dims;
+    grid_type &gd;
+    int patch_id;
+  size_t comp_i;
+    AlgoimWrapper(grid_type& ls_grid, const int pid) : gd(ls_grid), patch_id(pid) {}
+
+    //! Call operator for the wrapper.
+    double operator() (const blitz::TinyVector<int, dim> idx) const
+    {
+        long int local_key[dim];
+        
+        auto ghost_offset = gd.getLocalGridsInfo().get(patch_id).Dbox.getKP1();
+
+        for (int d = 0; d < dim; ++d)
+            local_key[d] = idx(d) - algoim_padding;
+
+        // Generate OpenFPM grid_key object from local grid indices
+        grid_dist_key_dx<dim> grid_key(patch_id, grid_key_dx<dim> (local_key) + ghost_offset);
+        
+        return gd.template get<wrapping_field>(grid_key)[comp_i];
+    }
+
+  template<size_t extend_field_temp, int poly_order, typename coord_type, typename dx_type, typename pos_type, typename key_type>
+  void extend(coord_type coord, dx_type dx, pos_type pos, key_type key) {
+
+    using Poly = typename Algoim::StencilPoly<dim, poly_order>::T_Poly;
+    
+    for (int i = 0; i < N1; ++i) {
+      comp_i = i;
+      Poly field_poly = Poly(coord, *this, dx);
+      // Extension is first done to the temporary field. Otherwise interpolation will be affected.
+      gd.template get<extend_field_temp>(key)[i] = field_poly(pos);
+    }
+  }
+};
+
+template<size_t wrapping_field, typename grid_type, typename wrapping_field_type, size_t N1, size_t N2>
+struct AlgoimWrapper<wrapping_field,grid_type,wrapping_field_type[N1][N2]>
+{
+    const static unsigned int dim = grid_type::dims;
+    grid_type &gd;
+    int patch_id;
+  size_t comp_i, comp_j;
+    AlgoimWrapper(grid_type& ls_grid, const int pid) : gd(ls_grid), patch_id(pid) {}
+
+    //! Call operator for the wrapper.
+    double operator() (const blitz::TinyVector<int, dim> idx) const
+    {
+        long int local_key[dim];
+        
+        auto ghost_offset = gd.getLocalGridsInfo().get(patch_id).Dbox.getKP1();
+
+        for (int d = 0; d < dim; ++d)
+            local_key[d] = idx(d) - algoim_padding;
+
+        // Generate OpenFPM grid_key object from local grid indices
+        grid_dist_key_dx<dim> grid_key(patch_id, grid_key_dx<dim> (local_key) + ghost_offset);
+        
+        return gd.template get<wrapping_field>(grid_key)[comp_i][comp_j];
+    }
+
+  template<size_t extend_field_temp, int poly_order, typename coord_type, typename dx_type, typename pos_type, typename key_type>
+  void extend(coord_type coord, dx_type dx, pos_type pos, key_type key) {
+
+    using Poly = typename Algoim::StencilPoly<grid_type::dims, poly_order>::T_Poly;
+
+    for (int i = 0; i < N1; ++i) {
+      for (int j = 0; j < N2; ++j) {
+	comp_i = i;
+	comp_j = j;
+	Poly field_poly = Poly(coord, *this, dx);
+	// Extension is first done to the temporary field. Otherwise interpolation will be affected.
+	gd.template get<extend_field_temp>(key)[i][j] = field_poly(pos);
+      }
+    }
+  }
+};
+
+template<size_t wrapping_field, typename grid_type, typename wrapping_field_type, size_t N1, size_t N2, size_t N3>
+struct AlgoimWrapper<wrapping_field,grid_type,wrapping_field_type[N1][N2][N3]>
+{
+    const static unsigned int dim = grid_type::dims;
+    grid_type &gd;
+    int patch_id;
+  size_t comp_i, comp_j, comp_k;
+    AlgoimWrapper(grid_type& ls_grid, const int pid) : gd(ls_grid), patch_id(pid) {}
+
+    //! Call operator for the wrapper.
+    double operator() (const blitz::TinyVector<int, dim> idx) const
+    {
+        long int local_key[dim];
+        
+        auto ghost_offset = gd.getLocalGridsInfo().get(patch_id).Dbox.getKP1();
+
+        for (int d = 0; d < dim; ++d)
+            local_key[d] = idx(d) - algoim_padding;
+
+        // Generate OpenFPM grid_key object from local grid indices
+        grid_dist_key_dx<dim> grid_key(patch_id, grid_key_dx<dim> (local_key) + ghost_offset);
+        
+        return gd.template get<wrapping_field>(grid_key)[comp_i][comp_j][comp_k];
+    }
+
+  template<size_t extend_field_temp, int poly_order, typename coord_type, typename dx_type, typename pos_type, typename key_type>
+  void extend(coord_type coord, dx_type dx, pos_type pos, key_type key) {
+
+    using Poly = typename Algoim::StencilPoly<grid_type::dims, poly_order>::T_Poly;
+
+    for (int i = 0; i < N1; ++i) {
+      for (int j = 0; j < N2; ++j) {
+	for (int k = 0; k < N3; ++k) {
+	  comp_i = i;
+	  comp_j = j;
+	  comp_k = k;
+	  Poly field_poly = Poly(coord, *this, dx);
+	  // Extension is first done to the temporary field. Otherwise interpolation will be affected.
+	  gd.template get<extend_field_temp>(key)[i][j][k] = field_poly(pos);
+	}
+      }
+    }
+  }
+};
+
 
 /**@brief Computes the closest point coordinate for each grid point within nb_gamma from interface.
  *
@@ -166,7 +303,7 @@ void estimateClosestPoint(grid_type &gd, const double nb_gamma)
  * @tparam grid_type Type of the grid container
  *
  * @param gd The distributed grid containing atleast level set SDF field and closest point coordinates
- * @param nb_gamma The width of the narrow band within which extension is required
+ * @param nb_gamma The width of the narrow band within which extension is required (half band)
  */
 template<size_t phi_field, size_t cp_field, size_t extend_field, size_t extend_field_temp, int poly_order, typename grid_type>
 void extendLSField(grid_type &gd, const double nb_gamma)
@@ -192,7 +329,7 @@ void extendLSField(grid_type &gd, const double nb_gamma)
             p_lo.set_d(d, patches.get(i).Dbox.getLow(d) + patches.get(i).origin[d]);
             p_hi.set_d(d, patches.get(i).Dbox.getHigh(d) + patches.get(i).origin[d]);
         }
-
+	
         auto it = gd.getSubDomainIterator(p_lo, p_hi);
 
         while(it.isNext())
@@ -211,21 +348,23 @@ void extendLSField(grid_type &gd, const double nb_gamma)
                 }
 
                 AlgoimWrapper<extend_field, grid_type> fieldwrap(gd,i);
-                Poly field_poly = Poly(coord, fieldwrap, dx);
-                // Extension is first done to the temporary field. Otherwise interpolation will be affected.
-                gd.template get<extend_field_temp>(key) = field_poly(pos);
+		fieldwrap.template extend<extend_field_temp,poly_order>(coord,dx,pos,key);
+                // Poly field_poly = Poly(coord, fieldwrap, dx);
+                // // Extension is first done to the temporary field. Otherwise interpolation will be affected.
+                // gd.template get<extend_field_temp>(key) = field_poly(pos);
             }
             ++it;
         }
     }
-    
+
     // Copy the results to the actual variable
+    typedef typename boost::mpl::at<typename grid_type::value_type::type,boost::mpl::int_<extend_field>>::type type_to_copy;
     auto it = gd.getDomainIterator();
     while(it.isNext())
     {
         auto key = it.get();
         if(std::abs(gd.template get<phi_field>(key)) < nb_gamma)
-            gd.template get<extend_field>(key) = gd.template get<extend_field_temp>(key);
+	  meta_copy<type_to_copy>::meta_copy_(gd.template get<extend_field_temp>(key),gd.template get<extend_field>(key));
         ++it;
     }
 }
