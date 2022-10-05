@@ -35,7 +35,7 @@ typename grid_type::stype get_time_step_CFL(grid_type & grid, typename grid_type
 	typename grid_type::stype sum = 0;
 	for (size_t d = 0; d < grid_type::dims; d++)
 	{
-		sum += u[d] / grid.spacing(d);
+		sum += abs(u[d]) / grid.spacing(d);
 	}
 	return C / sum;
 }
@@ -54,7 +54,7 @@ typename grid_type::stype get_time_step_CFL(grid_type & grid, typename grid_type
 	typename grid_type::stype sum = 0;
 	for (size_t d = 0; d < grid_type::dims; d++)
 	{
-		sum += u / grid.spacing(d);
+		sum += abs(u) / grid.spacing(d);
 	}
 	return C / sum;
 }
