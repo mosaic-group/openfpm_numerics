@@ -64,7 +64,7 @@ void get_absolute_error(gridtype & grid)
  * @details The relative error is computed as:
  *
  * @f[ Error_{rel} = | 1 - \frac{numerical solution}{analytical solution} | @f]
- *
+ * @f[ Error_{rel} = | \frac{numerical solution - analytical solution}{analytical solution + machine epsilon} | @f]
  * @tparam PropNumeric Index of grid property that contains the numerical value.
  * @tparam PropAnalytic Index of grid property that contains the analytical (exact) value.
  * @tparam Error Index of grid property where the computed error should be written to.
@@ -89,8 +89,9 @@ void get_relative_error(gridtype & grid)
 	while(dom.isNext())
 	{
 		auto key = dom.get();
-		grid.template getProp<Error> (key) = abs( 1 - (grid.template getProp<PropNumeric> (key) / (grid.template
-				getProp<PropAnalytic> (key))) );
+		grid.template getProp<Error> (key) =
+		        abs((grid.template getProp<PropNumeric> (key) - grid.template getProp<PropAnalytic> (key)) /
+					(grid.template getProp<PropAnalytic> (key) + std::numeric_limits<analytic_type>::epsilon()));
 		++dom;
 	}
 }
@@ -143,6 +144,7 @@ public:
 		l2 = (lnorm_type) sqrt( sumErrorSq / (error_type)grid.size());
 		linf = (lnorm_type) maxError;
 	}
+	
 	/**@brief Computes the L_2 and L_infinity norm on the basis of the precomputed error on a particle vector.
 	 *
 	 * @tparam Error Index of grid property that contains the error.
@@ -158,32 +160,70 @@ public:
 		
 		error_type maxError = 0;
 		error_type sumErrorSq = 0;
-		int count = 0;
+		int count_particles = 0;
 		while(dom.isNext())
 		{
 			auto key = dom.get();
 			sumErrorSq += vd.template getProp<Error> (key) * vd.template getProp<Error> (key);
 			if (vd.template getProp<Error> (key) > maxError) maxError = vd.template getProp<Error> (key); // update maxError
 			++dom;
-			++count;
+			++count_particles;
 		}
 		auto &v_cl = create_vcluster();
 		v_cl.sum(sumErrorSq);
-		v_cl.sum(count);
+		v_cl.sum(count_particles);
 		v_cl.max(maxError);
 		v_cl.execute();
-		l2 = (lnorm_type) sqrt( sumErrorSq / (error_type)count);
+		l2 = (lnorm_type) sqrt( sumErrorSq / (error_type)count_particles);
 		linf = (lnorm_type) maxError;
 	}
+	
+/**@brief Computes the L_2 and L_infinity norm from the error stored in a property on sparse grids, grids or
+ * particle vectors.
+ *
+ * @tparam Error Index of grid property that contains the error.
+ * @tparam grid_type Template type of the input data structure: can be a sparse grid, dense grid or particle vector.
+ * @param grid Input sparse grid, dense grid or particle vector.
+ */
+	template <size_t Error, typename grid_type>
+	void get_l_norms(grid_type & grid)
+	{
+		auto dom = grid.getDomainIterator();
+		typedef typename std::remove_const_t<std::remove_reference_t<decltype(
+		grid.template getProp<Error>(dom.get()))>> error_type;
+		
+		error_type maxError = 0;
+		error_type sumErrorSq = 0;
+		int count_points = 0;
+		while(dom.isNext())
+		{
+			auto key = dom.get();
+			sumErrorSq += grid.template getProp<Error> (key) * grid.template getProp<Error> (key);
+			if (grid.template getProp<Error> (key) > maxError) maxError = grid.template getProp<Error> (key); // update maxError
+			++dom;
+			++count_points;
+		}
+		auto &v_cl = create_vcluster();
+		v_cl.sum(sumErrorSq);
+		v_cl.sum(count_points);
+		v_cl.max(maxError);
+		v_cl.execute();
+		l2 = (lnorm_type) sqrt( sumErrorSq / (error_type)count_points);
+		linf = (lnorm_type) maxError;
+	}
+	
+	
 	/**@brief Writes the N (number of grid points on a square grid) and L-norms as strings to a csv-file.
 	 *
-	 * @param N Size_t variable that contains the grid size in number of grid points in one dimension for an NxN(xN) grid
+	 * @tparam T Type of variable that will be written in the first column of the file as reference.
+	 * @param col_0 Type T variable that will be written in the first column of the file as reference.
 	 * @param precision Precision in number of digits after the points for writing of the l-norms to file.
 	 * @param filename Std::string containing the name of the csv file (without the .csv) to which the l-norms should be
 	 *                 written to.
 	 * @param path_output Std::string containing the path where the output csv file should be saved.
 	 */
-	 void write_to_file(const size_t N,
+	 template <typename T>
+	 void write_to_file(const T col_0,
 						const int precision,
 						const std::string & filename,
 						const std::string & path_output)
@@ -196,7 +236,7 @@ public:
 			
 			std::ofstream l_out;
 			l_out.open(path_output_lnorm, std::ios_base::app); // append instead of overwrite
-			l_out << std::to_string(N)
+			l_out << std::to_string(col_0)
 					<< ',' << to_string_with_precision(l2, precision)
 					<< ',' << to_string_with_precision(linf, precision) << std::endl;
 			l_out.close();
