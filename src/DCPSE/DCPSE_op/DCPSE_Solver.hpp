@@ -118,8 +118,8 @@ class DCPSE_scheme {
 
         } else if (opt == options_solver::LAGRANGE_MULTIPLIER) {
             if (v_cl.rank() == v_cl.size() - 1) {
-                b.resize(Sys_eqs::nvar * tot + 1, Sys_eqs::nvar * sz + 1);
-                x_ig.resize(Sys_eqs::nvar * tot + 1, Sys_eqs::nvar * sz + 1);
+                b.resize(Sys_eqs::nvar * (tot + 1), Sys_eqs::nvar * (sz + 1));
+                x_ig.resize(Sys_eqs::nvar * (tot + 1), Sys_eqs::nvar * (sz + 1));
             } else {
                 b.resize(Sys_eqs::nvar * tot + 1, Sys_eqs::nvar * sz);
                 x_ig.resize(Sys_eqs::nvar * tot + 1, Sys_eqs::nvar * sz);
@@ -245,8 +245,9 @@ class DCPSE_scheme {
         // Indicate all the non zero rows
         openfpm::vector<unsigned char> nz_rows;
 
+
         if (v_cl.rank() == v_cl.size()-1 && opt == options_solver::LAGRANGE_MULTIPLIER) {
-            nz_rows.resize(row_b+1);
+            nz_rows.resize(row_b+Sys_eqs::nvar);
             }
         else{
             nz_rows.resize(row_b);
@@ -266,7 +267,7 @@ class DCPSE_scheme {
         if (v_cl.getProcessingUnits() == 1) {
             openfpm::vector<unsigned> nz_cols;
             if (v_cl.rank() == v_cl.size()-1 && opt == options_solver::LAGRANGE_MULTIPLIER) {
-                nz_cols.resize(row_b+1);
+                nz_cols.resize(row_b+Sys_eqs::nvar);
             }
             else{
                 nz_cols.resize(row_b);
@@ -473,7 +474,7 @@ public:
                       " properties " << std::endl;
         };
 #endif
-        auto x = solver.with_constant_nullspace_solve(getA(opt), getB(opt));
+        auto x = solver.with_nullspace_solve(getA(opt), getB(opt));
 
         unsigned int comp = 0;
         copy_nested(x, comp, exps ...);
@@ -756,65 +757,57 @@ public:
                      p_map.size_local() * Sys_eqs::nvar,
                      p_map.size_local() * Sys_eqs::nvar);
         }
-        else if (opt == options_solver::LAGRANGE_MULTIPLIER) {
+        else if (opt == options_solver::LAGRANGE_MULTIPLIER){
             auto &v_cl = create_vcluster();
             openfpm::vector<triplet> &trpl = A.getMatrixTriplets();
 
             if (v_cl.rank() == v_cl.size() - 1) {
-                A.resize(tot * Sys_eqs::nvar + 1, tot * Sys_eqs::nvar + 1,
-                         p_map.size_local() * Sys_eqs::nvar + 1,
-                         p_map.size_local() * Sys_eqs::nvar + 1);
-
-                for (int i = 0; i < tot * Sys_eqs::nvar; i++) {
-                    triplet t1;
-
-                    t1.row() = tot * Sys_eqs::nvar;
-                    t1.col() = i;
-                    t1.value() = 1;
-
-                    trpl.add(t1);
-                }
-
+                A.resize(Sys_eqs::nvar * (tot + 1), Sys_eqs::nvar * (tot + 1),
+                         Sys_eqs::nvar * (p_map.size_local() + 1),
+                         Sys_eqs::nvar * (p_map.size_local() + 1));
+                for (int j = 0; j < Sys_eqs::nvar; j++) {
+                    for (int i = j*tot; i < (j+1)*tot; i++) {
+                        triplet t1;
+                        t1.row() = tot * Sys_eqs::nvar+j;
+                        t1.col() = i;
+                        t1.value() = 1;
+                        trpl.add(t1);
+                    }
                 for (int i = 0; i < p_map.size_local() * Sys_eqs::nvar; i++) {
-                    triplet t2;
-
-                    t2.row() = i + s_pnt * Sys_eqs::nvar;
-                    t2.col() = tot * Sys_eqs::nvar;
-                    t2.value() = 1;
-
-                    trpl.add(t2);
+                    if(tot*j<=i + s_pnt * Sys_eqs::nvar<tot*(j+1)){
+                        triplet t2;
+                        t2.row() = i + s_pnt * Sys_eqs::nvar;
+                        t2.col() = tot * Sys_eqs::nvar+j;
+                        t2.value() = 1;
+                        trpl.add(t2);
+                    }
                 }
-
                 triplet t3;
-
-                t3.col() = tot * Sys_eqs::nvar;
-                t3.row() = tot * Sys_eqs::nvar;
+                t3.col() = tot * Sys_eqs::nvar+j;
+                t3.row() = tot * Sys_eqs::nvar+j;
                 t3.value() = 0;
-
                 trpl.add(t3);
-
+                }
+            }
                 //row_b++;
                 //row++;
-            }
             else {
-                A.resize(tot * Sys_eqs::nvar + 1, tot * Sys_eqs::nvar + 1,
+                A.resize(Sys_eqs::nvar*(tot + 1), Sys_eqs::nvar*(tot + 1),
                          p_map.size_local() * Sys_eqs::nvar,
                          p_map.size_local() * Sys_eqs::nvar);
-
-                for (int i = 0; i < p_map.size_local() * Sys_eqs::nvar; i++) {
-                    triplet t2;
-
-                    t2.row() = i + s_pnt * Sys_eqs::nvar;
-                    t2.col() = tot * Sys_eqs::nvar;
-                    t2.value() = 1;
-
-                    trpl.add(t2);
+                for (int j = 0; j < Sys_eqs::nvar; j++) {
+                    for (int i = p_map.size_local() * j; i < p_map.size_local()*j+1; i++) {
+                        if(tot*j<=i + s_pnt * Sys_eqs::nvar<tot*(j+1)) {
+                            triplet t2;
+                            t2.row() = i + s_pnt * Sys_eqs::nvar;
+                            t2.col() = tot * Sys_eqs::nvar + j;
+                            t2.value() = 1;
+                            trpl.add(t2);
+                        }
+                    }
                 }
             }
-
-
         }
-
         else{
             auto &v_cl = create_vcluster();
             if (v_cl.rank() == v_cl.size() - 1) {
@@ -847,8 +840,8 @@ public:
         if (opt == options_solver::LAGRANGE_MULTIPLIER) {
             auto &v_cl = create_vcluster();
             if (v_cl.rank() == v_cl.size() - 1) {
-
-                b(tot * Sys_eqs::nvar) = 0;
+                for(int j=0;j<Sys_eqs::nvar;j++)
+                {b(tot * Sys_eqs::nvar+j) = 0;}
             }
         }
         return b;
@@ -866,8 +859,8 @@ public:
         if (opt == options_solver::LAGRANGE_MULTIPLIER) {
             auto &v_cl = create_vcluster();
             if (v_cl.rank() == v_cl.size() - 1) {
-
-                x_ig(tot * Sys_eqs::nvar) = 0;
+                for(int j=0;j<Sys_eqs::nvar;j++)
+                    {x_ig(tot * Sys_eqs::nvar+j) = 0;}
             }
         }
         return x_ig;
