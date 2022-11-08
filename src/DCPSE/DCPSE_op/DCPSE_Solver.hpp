@@ -757,7 +757,7 @@ public:
                      p_map.size_local() * Sys_eqs::nvar,
                      p_map.size_local() * Sys_eqs::nvar);
         }
-        else if (opt == options_solver::LAGRANGE_MULTIPLIER){
+        else if (opt == options_solver::LAGRANGE_MULTIPLIER) {
             auto &v_cl = create_vcluster();
             openfpm::vector<triplet> &trpl = A.getMatrixTriplets();
 
@@ -766,44 +766,37 @@ public:
                          Sys_eqs::nvar * (p_map.size_local() + 1),
                          Sys_eqs::nvar * (p_map.size_local() + 1));
                 for (int j = 0; j < Sys_eqs::nvar; j++) {
-                    for (int i = j*tot; i < (j+1)*tot; i++) {
+                    for (int i = 0; i < tot; i++) {
                         triplet t1;
-                        t1.row() = tot * Sys_eqs::nvar+j;
-                        t1.col() = i;
+                        t1.row() = tot * Sys_eqs::nvar + j;
+                        t1.col() = i * Sys_eqs::nvar + j;
                         t1.value() = 1;
                         trpl.add(t1);
                     }
-                for (int i = 0; i < p_map.size_local() * Sys_eqs::nvar; i++) {
-                    if(tot*j<=i + s_pnt * Sys_eqs::nvar<tot*(j+1)){
+                    for (int i = 0; i < p_map.size_local(); i++) {
                         triplet t2;
-                        t2.row() = i + s_pnt * Sys_eqs::nvar;
-                        t2.col() = tot * Sys_eqs::nvar+j;
+                        t2.row() = s_pnt + i * Sys_eqs::nvar + j;
+                        t2.col() = tot * Sys_eqs::nvar + j;
                         t2.value() = 1;
                         trpl.add(t2);
                     }
+                    triplet t3;
+                    t3.col() = tot * Sys_eqs::nvar + j;
+                    t3.row() = tot * Sys_eqs::nvar + j;
+                    t3.value() = 0;
+                    trpl.add(t3);
                 }
-                triplet t3;
-                t3.col() = tot * Sys_eqs::nvar+j;
-                t3.row() = tot * Sys_eqs::nvar+j;
-                t3.value() = 0;
-                trpl.add(t3);
-                }
-            }
-                //row_b++;
-                //row++;
-            else {
-                A.resize(Sys_eqs::nvar*(tot + 1), Sys_eqs::nvar*(tot + 1),
+            } else {
+                A.resize(Sys_eqs::nvar * (tot + 1), Sys_eqs::nvar * (tot + 1),
                          p_map.size_local() * Sys_eqs::nvar,
                          p_map.size_local() * Sys_eqs::nvar);
                 for (int j = 0; j < Sys_eqs::nvar; j++) {
-                    for (int i = p_map.size_local() * j; i < p_map.size_local()*j+1; i++) {
-                        if(tot*j<=i + s_pnt * Sys_eqs::nvar<tot*(j+1)) {
-                            triplet t2;
-                            t2.row() = i + s_pnt * Sys_eqs::nvar;
-                            t2.col() = tot * Sys_eqs::nvar + j;
-                            t2.value() = 1;
-                            trpl.add(t2);
-                        }
+                    for (int i = 0; i < p_map.size_local(); i++) {
+                        triplet t2;
+                        t2.row() = s_pnt + i * Sys_eqs::nvar + j;
+                        t2.col() = tot * Sys_eqs::nvar + j;
+                        t2.value() = 1;
+                        trpl.add(t2);
                     }
                 }
             }
@@ -819,8 +812,8 @@ public:
                 A.resize(tot * Sys_eqs::nvar - offset, tot * Sys_eqs::nvar - offset,
                          p_map.size_local() * Sys_eqs::nvar,
                          p_map.size_local() * Sys_eqs::nvar);
-                }
             }
+        }
 #ifdef SE_CLASS1
         consistency(opt);
 #endif
