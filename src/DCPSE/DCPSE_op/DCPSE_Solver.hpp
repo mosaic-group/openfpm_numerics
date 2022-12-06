@@ -432,6 +432,54 @@ public:
         copy_nested(x, comp, exps ...);
     }
 
+        /*! \brief Successive Solve an equation
+ *
+ *  \warning exp must be a scalar type
+ *
+ * \param Solver Manually created Solver instead from the Equation structure
+ * \param exp where to store the result
+ *
+ */
+    template<typename SolverType, typename ... expr_type>
+    void solve_with_solver_successive(SolverType &solver,expr_type ... exps) {
+#ifdef SE_CLASS1
+
+        if (sizeof...(exps) != Sys_eqs::nvar) {
+            std::cerr << __FILE__ << ":" << __LINE__ << " Error the number of properties you gave does not match the solution in\
+    													dimensionality, I am expecting " << Sys_eqs::nvar <<
+                      " properties " << std::endl;
+        };
+#endif
+        auto x = solver.solve_successive(getB(opt));
+
+        unsigned int comp = 0;
+        copy_nested(x, comp, exps ...);
+    }
+
+    /*! \brief Successive Solve an equation with inital guess
+ *
+ *  \warning exp must be a scalar type
+ *
+ * \param Solver Manually created Solver instead from the Equation structure
+ * \param exp where to store the result
+ *
+ */
+    template<typename SolverType, typename ... expr_type>
+    void solve_with_solver_ig_successive(SolverType &solver,expr_type ... exps) {
+#ifdef SE_CLASS1
+
+        if (sizeof...(exps) != Sys_eqs::nvar) {
+            std::cerr << __FILE__ << ":" << __LINE__ << " Error the number of properties you gave does not match the solution in\
+    													dimensionality, I am expecting " << Sys_eqs::nvar <<
+                      " properties " << std::endl;
+        };
+#endif
+        auto x = solver.solve_successive(get_x_ig(opt),getB(opt));
+
+        unsigned int comp = 0;
+        copy_nested(x, comp, exps ...);
+    }
+
     /*! \brief Solve an equation with a given Nullspace
      *
      *  \warning exp must be a scalar type
