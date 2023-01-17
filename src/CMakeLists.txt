@@ -75,6 +75,7 @@ if ( CUDA_ON_BACKEND STREQUAL "HIP" AND HIP_FOUND )
 else()
 
 	add_executable(numerics ${OPENFPM_INIT_FILE} ${CUDA_SOURCES}
+		regression/regression_test.cpp
 		OdeIntegrators/tests/OdeIntegratores_base_tests.cpp
 		OdeIntegrators/tests/OdeIntegrator_grid_tests.cpp
 		DCPSE/DCPSE_op/tests/DCPSE_op_subset_test.cpp
