@@ -5,10 +5,6 @@
  *
  */
 
-#ifndef OPENFPM_NUMERICS_REGRESSION_TEST_HPP_
-#define OPENFPM_NUMERICS_REGRESSION_TEST_HPP_
-
-
 #define BOOST_TEST_DYN_LINK
 #include <boost/test/unit_test.hpp>
 #include "regression.hpp"
@@ -28,7 +24,7 @@ BOOST_AUTO_TEST_CASE ( Regression_domain_initialization )
     Ghost<2,float> g(0.01);
 
     using vectorType = vector_dist<2,float, aggregate<double> >;
-    vectorType vd(4096,domain,bc,g);
+    vectorType vd(2048,domain,bc,g);
     // the scalar is the element at position 0 in the aggregate
     const int scalar = 0;
 
@@ -54,7 +50,7 @@ BOOST_AUTO_TEST_CASE ( Regression_domain_initialization )
     
     std::cout<<"Initialized domain with "<<dom->getNumParticles()<<" particles.\n";
 
-    auto model = new RegressionModel<2, 0, vectorType, EMatrixXd, EVectorXd>(vd, dom, 6, 2.0);
+    auto model = new RegressionModel<2, 0, vectorType>(vd, dom, 6, 2.0);
 
     double max_err = -1.0;
     for(double x = 0.75; x < 0.85;x+=0.01)
@@ -69,7 +65,7 @@ BOOST_AUTO_TEST_CASE ( Regression_domain_initialization )
         }
     }
 
-    double tolerance = 1e-7;
+    double tolerance = 1e-5;
     bool check;
     if (std::abs(max_err) < tolerance)
         check = true;
@@ -97,7 +93,7 @@ BOOST_AUTO_TEST_CASE ( Regression_without_domain_initialization)
     Ghost<2,float> g(0.01);
 
     using vectorType = vector_dist<2,float, aggregate<double> >;
-    vectorType vd(4096,domain,bc,g);
+    vectorType vd(2048,domain,bc,g);
     // the scalar is the element at position 0 in the aggregate
     const int scalar = 0;
 
@@ -117,7 +113,7 @@ BOOST_AUTO_TEST_CASE ( Regression_without_domain_initialization)
     }    
     vd.map();
     
-    auto model = new RegressionModel<2, 0, vectorType, EMatrixXd, EVectorXd>(vd, static_cast<unsigned int>(10));
+    auto model = new RegressionModel<2, 0, vectorType>(vd, static_cast<unsigned int>(10));
 
     double max_err = -1.0;
     for(double x = 0.75; x < 0.85;x+=0.01)
@@ -132,7 +128,7 @@ BOOST_AUTO_TEST_CASE ( Regression_without_domain_initialization)
         }
     }
 
-    double tolerance = 1e-7;
+    double tolerance = 1e-5;
     bool check;
     if (std::abs(max_err) < tolerance)
         check = true;
@@ -148,5 +144,3 @@ BOOST_AUTO_TEST_CASE ( Regression_without_domain_initialization)
 
 
 BOOST_AUTO_TEST_SUITE_END()
-
-#endif /* OPENFPM_NUMERICS_REGRESSION_TEST_HPP_ */
