@@ -15,12 +15,13 @@
 #include "minter.h"
 
 
-template<int spatial_dim, typename vector_type, typename MatType = EMatrixXd, typename VecType = EVectorXd>
+template<int spatial_dim, typename MatType = EMatrixXd, typename VecType = EVectorXd>
 class PolyLevelset
 {
     minter::LevelsetPoly<spatial_dim, MatType, VecType> *model;
     
 public:
+    template<typename vector_type>
     PolyLevelset(vector_type &vd, double tol)
     {
         constexpr int dim = vector_type::dims;
@@ -50,8 +51,9 @@ public:
             delete model;
     }
 
-    // TODO: Make the return types more generic
-    double eval(Point<vector_type::dims, typename vector_type::stype> pos)
+    // T : Point<vector_type::dims, typename vector_type::stype>
+    template<typename T>
+    double eval(T pos)
     {
         int dim = pos.dims;
         MatType point(1,dim);
@@ -61,8 +63,10 @@ public:
         return model->eval(point)(0);
     }
 
-    double deriv(Point<vector_type::dims, typename vector_type::stype> pos, \
-        Point<vector_type::dims, int> deriv_order)
+    // T1 : Point<vector_type::dims, typename vector_type::stype>
+    // T2 : Point<vector_type::dims, int>
+    template<typename T1, typename T2>
+    double deriv(T1 pos, T2 deriv_order)
     {
         int dim = pos.dims;
         MatType point(1,dim);
@@ -76,14 +80,16 @@ public:
         return model->deriv_eval(point, order)(0);
     }
 
-    Point<vector_type::dims, typename vector_type::stype> estimate_normals_at(Point<vector_type::dims, typename vector_type::stype> pos)
+    // T : Point<vector_type::dims, typename vector_type::stype>
+    template<typename T>
+    T estimate_normals_at(T pos)
     {
         int dim = pos.dims;
         MatType point(1,dim);
         for(int j = 0;j < dim;++j)
             point(0,j) = pos.get(j);
 
-        Point<vector_type::dims, typename vector_type::stype> normal;
+        T normal;
         auto normal_minter = model->estimate_normals_at(point);
 
         for(int j = 0;j < dim;++j)
@@ -92,7 +98,9 @@ public:
         return normal;
     }
 
-    double estimate_mean_curvature_at(Point<vector_type::dims, typename vector_type::stype> pos)
+    // T : Point<vector_type::dims, typename vector_type::stype>
+    template<typename T>
+    double estimate_mean_curvature_at(T pos)
     {
         int dim = pos.dims;
         MatType point(1,dim);

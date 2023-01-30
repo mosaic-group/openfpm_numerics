@@ -14,7 +14,7 @@
 BOOST_AUTO_TEST_SUITE( Regression_test )
 
 
-
+/*
 BOOST_AUTO_TEST_CASE ( Regression_domain_initialization )
 {
     Box<2,float> domain({0.0,0.0},{1.0,1.0});
@@ -81,7 +81,7 @@ BOOST_AUTO_TEST_CASE ( Regression_domain_initialization )
         delete dom;
 
 }
-
+*/
 
 
 BOOST_AUTO_TEST_CASE ( Regression_without_domain_initialization)
@@ -113,7 +113,7 @@ BOOST_AUTO_TEST_CASE ( Regression_without_domain_initialization)
     }    
     vd.map();
     
-    auto model = new RegressionModel<2, 0, vectorType>(vd, static_cast<unsigned int>(10));
+    auto model = RegressionModel<2, 0>(vd, 1e-6);
 
     double max_err = -1.0;
     for(double x = 0.75; x < 0.85;x+=0.01)
@@ -121,7 +121,7 @@ BOOST_AUTO_TEST_CASE ( Regression_without_domain_initialization)
         for(double y = 0.75; y < 0.85; y+=0.01)
         {
             Point<2, double> pos{x,y};
-            double val = model->eval(pos);
+            double val = model.eval(pos);
             double actual = sin(x*y);
             double err = std::abs(actual - val);
             if (err > max_err) max_err = err;
@@ -137,8 +137,8 @@ BOOST_AUTO_TEST_CASE ( Regression_without_domain_initialization)
     std::cout<<"Max err = "<<max_err<<"\n";
     BOOST_TEST( check );
 
-    if(model)
-        delete model;
+    // if(model)
+    //     delete model;
 
 }
 

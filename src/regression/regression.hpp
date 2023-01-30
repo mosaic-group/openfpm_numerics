@@ -47,7 +47,7 @@ public:
 	}
 };
 
-template<int spatial_dim, unsigned int prp_id, typename vector_type, typename MatType = EMatrixXd, typename VecType = EVectorXd>
+template<int spatial_dim, unsigned int prp_id, typename MatType = EMatrixXd, typename VecType = EVectorXd>
 class RegressionModel
 {
 
@@ -55,7 +55,7 @@ public:
 	minter::PolyModel<spatial_dim, MatType, VecType> *model = nullptr;
 	minter::PolyModel<spatial_dim, MatType, VecType> *deriv_model[spatial_dim];
 	
-	template<typename dom_type>
+	template<typename vector_type, typename dom_type>
 	RegressionModel(vector_type &vd, dom_type &domain, unsigned int poly_degree, float lp_degree = 2.0)
 	{
 		int num_particles = domain->getNumParticles();
@@ -82,6 +82,7 @@ public:
 
 	
 	// Constructor for all points in a proc (domain + ghost) and a specified poly_degree
+	template<typename vector_type>
 	RegressionModel(vector_type &vd, unsigned int poly_degree, float lp_degree = 2.0)
 	{
 		int num_particles = vd.size_local_with_ghost();
@@ -112,6 +113,7 @@ public:
 	}
 
 	// Constructor for all points in a proc (domain + ghost) within a tolerance
+	template<typename vector_type>
 	RegressionModel(vector_type &vd, double tolerance)
 	{
 		int num_particles = vd.size_local_with_ghost();
@@ -180,7 +182,8 @@ public:
 		}
 	}
 
-	double eval(Point<vector_type::dims, typename vector_type::stype> pos)
+	template<typename T> // Typical: Point<vector_type::dims, typename vector_type::stype> 
+	double eval(T pos)
 	{
 		int dim = pos.dims;
 		MatType point(1,dim);
@@ -190,8 +193,10 @@ public:
 		return model->eval(point)(0);
 	}
 
-	double deriv(Point<vector_type::dims, typename vector_type::stype> pos, \
-		Point<vector_type::dims, int> deriv_order)
+	// T1 : Point<vector_type::dims, typename vector_type::stype>
+	// T2 : Point<vector_type::dims, int>
+	template<typename T1, typename T2> 
+	double deriv(T1 pos, T2 deriv_order)
 	{
 
 		int dim = pos.dims;
@@ -216,9 +221,11 @@ public:
 		}
 	}
 
-	Point<vector_type::dims, typename vector_type::stype> eval_grad(Point<vector_type::dims, typename vector_type::stype> pos)
+	// T: Point<vector_type::dims, typename vector_type::stype>
+	template<typename T>
+	T eval_grad(T pos)
 	{
-		Point<vector_type::dims, typename vector_type::stype> res;
+		T res;
 
 		if(!deriv_model[0])
 			compute_grad();

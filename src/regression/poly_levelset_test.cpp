@@ -18,15 +18,15 @@ BOOST_AUTO_TEST_SUITE( Regression_test )
 
 BOOST_AUTO_TEST_CASE ( PolyLevelset_Sphere )
 {
-    Box<3,float> domain({-2.0,-2.0,-2.0},{2.0,2.0,2.0});
+    Box<3,double> domain({-2.0,-2.0,-2.0},{2.0,2.0,2.0});
 
     // Here we define the boundary conditions of our problem
     size_t bc[3]={PERIODIC,PERIODIC,PERIODIC};
 
     // extended boundary around the domain, and the processor domain
-    Ghost<3,float> g(0.01);
+    Ghost<3,double> g(0.01);
 
-    using vectorType = vector_dist<3,float, aggregate<double, double> >;
+    using vectorType = vector_dist<3,double, aggregate<double, double> >;
 
     vectorType vd(1024,domain,bc,g);
 
@@ -52,14 +52,15 @@ BOOST_AUTO_TEST_CASE ( PolyLevelset_Sphere )
     }    
     vd.map();
     
-    auto model = new PolyLevelset<3, vectorType>(vd, 1e-4);
+    auto model = PolyLevelset<3>(vd, 1e-4);
 
     double max_err = -1.0;
     auto it2 = vd.getDomainIterator();
     while (it2.isNext())
     {
         auto key = it2.get();
-        vd.template getProp<mean_curvature>(key) = model->estimate_mean_curvature_at(vd.getPos(key));
+        Point<3, double> pos = {vd.getPos(key)[0], vd.getPos(key)[1], vd.getPos(key)[2]};
+        vd.template getProp<mean_curvature>(key) = model.estimate_mean_curvature_at(pos);
         // vd.template getProp<gauss_curvature>(key) = model->estimate_gauss_curvature_at(vd.getPos(key));
 
         double val = vd.getProp<mean_curvature>(key);
@@ -80,8 +81,8 @@ BOOST_AUTO_TEST_CASE ( PolyLevelset_Sphere )
     std::cout<<"Max err (poly level) = "<<max_err<<"\n";
     BOOST_TEST( check );
 
-    if(model)
-        delete model;
+    // if(model)
+    //     delete model;
 
 }
 
