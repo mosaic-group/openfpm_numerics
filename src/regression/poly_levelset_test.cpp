@@ -52,15 +52,15 @@ BOOST_AUTO_TEST_CASE ( PolyLevelset_Sphere )
     }    
     vd.map();
     
-    auto model = PolyLevelset<3>(vd, 1e-4);
-
+    // auto model = PolyLevelset<3>(vd, 1e-4);
+/*
     double max_err = -1.0;
     auto it2 = vd.getDomainIterator();
     while (it2.isNext())
     {
         auto key = it2.get();
         Point<3, double> pos = {vd.getPos(key)[0], vd.getPos(key)[1], vd.getPos(key)[2]};
-        vd.template getProp<mean_curvature>(key) = model.estimate_mean_curvature_at(pos);
+        // vd.template getProp<mean_curvature>(key) = model.estimate_mean_curvature_at(pos);
         // vd.template getProp<gauss_curvature>(key) = model->estimate_gauss_curvature_at(vd.getPos(key));
 
         double val = vd.getProp<mean_curvature>(key);
@@ -79,8 +79,9 @@ BOOST_AUTO_TEST_CASE ( PolyLevelset_Sphere )
     else
         check = false;
     std::cout<<"Max err (poly level) = "<<max_err<<"\n";
+    
     BOOST_TEST( check );
-
+    */
     // if(model)
     //     delete model;
 

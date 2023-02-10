@@ -11,31 +11,41 @@
 #include "Vector/map_vector.hpp"
 #include "Space/Shape/Point.hpp"
 #include "DMatrix/EMatrix.hpp"
-
+#include "DCPSE/SupportBuilder.hpp"
 #include "minter.h"
 
+/*
+
 template<typename vector_type, typename NN_type>
-class RegressionDomain
+class RegressionSupport
 {
 	openfpm::vector_std<size_t> keys;
 	
 public:
 
-	RegressionDomain(vector_type &vd, Point<vector_type::dims, typename vector_type::stype> pos, typename vector_type::stype size, NN_type &NN)
+	template<typename iterator_type>
+	RegressionSupport(vector_type &vd, iterator_type itPoint, unsigned int requiredSize, support_options opt, NN_type &cellList)
 	{
-		// Not efficient to compute cell list each time.
-        //auto NN = vd.getCellList(size);
-        auto Np = NN.template getNNIterator(NN.getCell(pos));
-     	
-        while(Np.isNext())
-        {
-        	auto key = Np.get();
-        	if (pos.distance(vd.getPos(key)) < size)
-            	keys.add(key);
-            ++Np;
-        }
-	}
+		// Get spatial position from point iterator
+        vect_dist_key_dx p = itPoint.get();
+        vect_dist_key_dx pOrig = itPoint.getOrig();
+        Point<vector_type::dims, typename vector_type::stype> pos = vd.getPos(p.getKey());
 
+		// Get cell containing current point and add it to the set of cell keys
+        grid_key_dx<vector_type::dims> curCellKey = cellList.getCellGrid(
+                pos); // Here get the key of the cell where the current point is
+        std::set<grid_key_dx<vector_type::dims>> supportCells;
+        supportCells.insert(curCellKey);
+
+        // Make sure to consider a set of cells providing enough points for the support
+        enlargeSetOfCellsUntilSize(supportCells, requiredSize + 1,
+                                   opt, cellList); // NOTE: this +1 is because we then remove the point itself
+
+        // Now return all the points from the support into a vector
+
+        keys = getPointsInSetOfCells(supportCells, p, pOrig, requiredSize, opt);
+	}
+	
 	auto getKeys()
 	{
 		return keys;
@@ -46,6 +56,7 @@ public:
 		return keys.size();
 	}
 };
+*/
 
 template<int spatial_dim, unsigned int prp_id, typename MatType = EMatrixXd, typename VecType = EVectorXd>
 class RegressionModel
@@ -158,7 +169,7 @@ public:
 	    		if (err > error)
 	    			error = err;
 	    	}
-	    	std::cout<<"Fit of degree "<<poly_degree<<" with error = "<<error<<std::endl;
+	    	// std::cout<<"Fit of degree "<<poly_degree<<" with error = "<<error<<std::endl;
 
 	    }while(error > tolerance);
 
@@ -235,6 +246,7 @@ public:
 
 		return res;
 	}
+
 };
 
 
