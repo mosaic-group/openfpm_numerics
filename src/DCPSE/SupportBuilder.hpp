@@ -19,7 +19,8 @@ enum support_options
     N_PARTICLES,
     RADIUS,
     LOAD,
-    ADAPTIVE
+    ADAPTIVE,
+    AT_LEAST_N_PARTICLES
 };
 
 

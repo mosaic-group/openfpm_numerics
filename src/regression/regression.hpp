@@ -12,38 +12,38 @@
 #include "Space/Shape/Point.hpp"
 #include "DMatrix/EMatrix.hpp"
 #include "DCPSE/SupportBuilder.hpp"
-#include "minter.h"
+#include "/Users/lschulze/Applications/openfpm_problems/hackathon/minter/include/minter.h"
 
-/*
 
-template<typename vector_type, typename NN_type>
+template<typename vector_type_support, typename NN_type>
 class RegressionSupport
 {
-	openfpm::vector_std<size_t> keys;
+	std::vector<size_t> keys;
 	
 public:
 
 	template<typename iterator_type>
-	RegressionSupport(vector_type &vd, iterator_type itPoint, unsigned int requiredSize, support_options opt, NN_type &cellList)
+	RegressionSupport(vector_type_support &vd, iterator_type itPoint, unsigned int requiredSize, support_options opt, NN_type &cellList_in) : domain(vd),
+	cellList(cellList_in)
 	{
+		rCut = cellList_in.getCellBox().getHigh(0);
+		std::cout<<rCut<<std::endl;
 		// Get spatial position from point iterator
-        vect_dist_key_dx p = itPoint.get();
-        vect_dist_key_dx pOrig = itPoint.getOrig();
-        Point<vector_type::dims, typename vector_type::stype> pos = vd.getPos(p.getKey());
+		vect_dist_key_dx p = itPoint.get();
+		vect_dist_key_dx pOrig = itPoint.getOrig();
+		Point<vector_type_support::dims, typename vector_type_support::stype> pos = domain.getPos(p.getKey());
 
 		// Get cell containing current point and add it to the set of cell keys
-        grid_key_dx<vector_type::dims> curCellKey = cellList.getCellGrid(
-                pos); // Here get the key of the cell where the current point is
-        std::set<grid_key_dx<vector_type::dims>> supportCells;
-        supportCells.insert(curCellKey);
+		grid_key_dx<vector_type_support::dims> curCellKey = cellList.getCellGrid(pos); // Here get the key of the cell where the current point is
+		std::set<grid_key_dx<vector_type_support::dims>> supportCells;
+        	supportCells.insert(curCellKey);
 
-        // Make sure to consider a set of cells providing enough points for the support
-        enlargeSetOfCellsUntilSize(supportCells, requiredSize + 1,
-                                   opt, cellList); // NOTE: this +1 is because we then remove the point itself
+		// Make sure to consider a set of cells providing enough points for the support
+		enlargeSetOfCellsUntilSize(supportCells, requiredSize + 1,
+                                   opt); // NOTE: this +1 is because we then remove the point itself
 
-        // Now return all the points from the support into a vector
-
-        keys = getPointsInSetOfCells(supportCells, p, pOrig, requiredSize, opt);
+        	// Now return all the points from the support into a vector
+        	keys = getPointsInSetOfCells(supportCells, p, pOrig, requiredSize, opt);
 	}
 	
 	auto getKeys()
@@ -55,8 +55,171 @@ public:
 	{
 		return keys.size();
 	}
+
+private:
+
+	vector_type_support &domain;
+	NN_type &cellList;
+	typename vector_type_support::stype rCut;
+
+
+    	void enlargeSetOfCellsUntilSize(std::set<grid_key_dx<vector_type_support::dims>> &set, unsigned int requiredSize,
+                                    support_options opt) {
+        	if (opt == support_options::RADIUS) {
+            	auto cell = *set.begin();
+            	grid_key_dx<vector_type_support::dims> middle;
+            	int n = std::ceil(rCut / cellList.getCellBox().getHigh(0));
+            	size_t sz[vector_type_support::dims];
+            	for (int i = 0; i < vector_type_support::dims; i++) {
+                	sz[i] = 2 * n + 1;
+                	middle.set_d(i, n);
+            	}
+            	grid_sm<vector_type_support::dims, void> g(sz);
+            	grid_key_dx_iterator<vector_type_support::dims> g_k(g);
+            	while (g_k.isNext()) {
+                	auto key = g_k.get();
+                	key = cell + key - middle;
+                	if (isCellKeyInBounds(key)) {
+                    		set.insert(key);
+                	}
+                	++g_k;
+            	}
+        	}
+	        else if (opt == support_options::AT_LEAST_N_PARTICLES) {
+            	auto cell = *set.begin();
+            	grid_key_dx<vector_type_support::dims> middle;
+            	//int n = std::ceil(rCut / cellList.getCellBox().getHigh(0));
+            	int n = 100;
+		size_t sz[vector_type_support::dims];
+            	for (int i = 0; i < vector_type_support::dims; i++) {
+                	sz[i] = 2 * n + 1;
+                	middle.set_d(i, n);
+            	}
+            	grid_sm<vector_type_support::dims, void> g(sz);
+            	grid_key_dx_iterator<vector_type_support::dims> g_k(g);
+            	while ((g_k.isNext()) && (getNumElementsInSetOfCells(set) < requiredSize)) {
+                	auto key = g_k.get();
+                	key = cell + key - middle;
+                	if (isCellKeyInBounds(key)) {
+                    		set.insert(key);
+                	}
+                	++g_k;
+            	}
+		}
+		else {
+            	while (getNumElementsInSetOfCells(set) <
+                   5.0 * requiredSize) //Why 5*requiredSize? Becasue it can help with adaptive resolutions.
+            	{
+                	auto tmpSet = set;
+                	for (const auto el: tmpSet) {
+                    	for (unsigned int i = 0; i < vector_type_support::dims; ++i) {
+                        	const auto pOneEl = el.move(i, +1);
+                        	const auto mOneEl = el.move(i, -1);
+                        	if (isCellKeyInBounds(pOneEl)) {
+                            	set.insert(pOneEl);
+                        	}
+                        	if (isCellKeyInBounds(mOneEl)) {
+                            	set.insert(mOneEl);
+                        	}
+                    	}
+                	}
+
+            	}	
+		}   	
+    }
+    std::vector<size_t> getPointsInSetOfCells(std::set<grid_key_dx<vector_type_support::dims>> set,
+                                              vect_dist_key_dx &p,
+                                              vect_dist_key_dx &pOrig,
+                                              size_t requiredSupportSize,
+                                              support_options opt) {
+        struct reord {
+            typename vector_type_support::stype dist;
+            size_t offset;
+
+            bool operator<(const reord &p) const { return this->dist < p.dist; }
+        };
+
+        openfpm::vector<reord> rp;
+        std::vector<size_t> points;
+        Point<vector_type_support::dims, typename vector_type_support::stype> xp = domain.getPos(p);
+        for (const auto cellKey: set) {
+            const size_t cellLinId = getCellLinId(cellKey);
+            const size_t elemsInCell = getNumElementsInCell(cellKey);
+            for (size_t k = 0; k < elemsInCell; ++k) {
+                size_t el = cellList.get(cellLinId, k);
+
+                Point<vector_type_support::dims, typename vector_type_support::stype> xq = domain.getPosOrig(el);
+                //points.push_back(el);
+
+                reord pr;
+
+                pr.dist = xp.distance(xq);
+                pr.offset = el;
+                rp.add(pr);
+            }
+        }
+
+        if (opt == support_options::RADIUS) {
+            for (int i = 0; i < rp.size(); i++) {
+                if (rp.get(i).dist < rCut) {
+                    points.push_back(rp.get(i).offset);
+                }
+            }
+            /*      #ifdef SE_CLASS1
+                    if (points.size()<requiredSupportSize)
+                    {
+                        std::cerr<<__FILE__<<":"<<__LINE__<<"Note that the DCPSE neighbourhood doesn't have asked no. particles (Increase the rCut or reduce the over_sampling factor)";
+                        std::cout<<"Particels asked (minimum*oversampling_factor): "<<requiredSupportSize<<". Particles Possible with given options:"<<points.size()<<"."<<std::endl;
+                    }
+                    #endif*/
+        }
+	else if (opt == support_options::AT_LEAST_N_PARTICLES) {
+	    for (int i = 0; i  < rp.size(); i++) points.push_back(rp.get(i).offset);
+	    }
+        else {
+            rp.sort();
+            for (int i = 0; i < requiredSupportSize; i++) {
+                    points.push_back(rp.get(i).offset);
+                }
+            }
+        //MinSpacing=MinSpacing/requiredSupportSize
+        return points;
+    }
+    
+    size_t getCellLinId(const grid_key_dx<vector_type_support::dims> &cellKey) {
+        mem_id id = cellList.getGrid().LinId(cellKey);
+        return static_cast<size_t>(id);
+    }
+
+    size_t getNumElementsInCell(const grid_key_dx<vector_type_support::dims> &cellKey) {
+        const size_t curCellId = getCellLinId(cellKey);
+        size_t numElements = cellList.getNelements(curCellId);
+        return numElements;
+    }
+    size_t getNumElementsInSetOfCells(const std::set<grid_key_dx<vector_type_support::dims>> &set)
+    {
+	    size_t tot = 0;
+	    for (const auto cell : set)
+	    {
+		    tot += getNumElementsInCell(cell);
+	    }
+	    return tot;
+}
+
+    bool isCellKeyInBounds(grid_key_dx<vector_type_support::dims> key)
+    {
+        const size_t *cellGridSize = cellList.getGrid().getSize();
+        for (size_t i = 0; i < vector_type_support::dims; ++i)
+        {
+            if (key.value(i) < 0 || key.value(i) >= cellGridSize[i])
+            {
+                return false;
+            }
+        }
+        return true;
+    }
 };
-*/
+
 
 template<int spatial_dim, unsigned int prp_id, typename MatType = EMatrixXd, typename VecType = EVectorXd>
 class RegressionModel
