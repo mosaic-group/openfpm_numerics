@@ -115,7 +115,6 @@ private:
 			else 
 			{
 				set = temp_set;
-				std::cout<<"Enlarged "<<n<<" times"<<std::endl;
 				break;
 			}
 		}
