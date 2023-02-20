@@ -86,25 +86,39 @@ private:
             	}
         	}
 	        else if (opt == support_options::AT_LEAST_N_PARTICLES) {
+
+		int done = 0;
+		int n = 0;
             	auto cell = *set.begin();
             	grid_key_dx<vector_type_support::dims> middle;
-            	//int n = std::ceil(rCut / cellList.getCellBox().getHigh(0));
-            	int n = 100;
 		size_t sz[vector_type_support::dims];
-            	for (int i = 0; i < vector_type_support::dims; i++) {
-                	sz[i] = 2 * n + 1;
-                	middle.set_d(i, n);
-            	}
-            	grid_sm<vector_type_support::dims, void> g(sz);
-            	grid_key_dx_iterator<vector_type_support::dims> g_k(g);
-            	while ((g_k.isNext()) && (getNumElementsInSetOfCells(set) < requiredSize)) {
-                	auto key = g_k.get();
-                	key = cell + key - middle;
-                	if (isCellKeyInBounds(key)) {
-                    		set.insert(key);
-                	}
-                	++g_k;
-            	}
+		
+		while(true) // loop for the number of cells enlarged per dimension
+		{
+			std::set<grid_key_dx<vector_type_support::dims>> temp_set;
+            		for (int i = 0; i < vector_type_support::dims; i++) {
+                		sz[i] = 2 * n + 1;
+                		middle.set_d(i, n);
+            		}
+
+            		grid_sm<vector_type_support::dims, void> g(sz);
+            		grid_key_dx_iterator<vector_type_support::dims> g_k(g);
+            		while (g_k.isNext()) {
+                		auto key = g_k.get();
+                		key = cell + key - middle;
+                		if (isCellKeyInBounds(key)) {
+                    			temp_set.insert(key);
+                		}
+                		++g_k;
+            		}
+			if (getNumElementsInSetOfCells(temp_set) < requiredSize) n++;
+			else 
+			{
+				set = temp_set;
+				std::cout<<"Enlarged "<<n<<" times"<<std::endl;
+				break;
+			}
+		}
 		}
 		else {
             	while (getNumElementsInSetOfCells(set) <
