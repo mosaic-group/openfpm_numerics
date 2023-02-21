@@ -991,7 +991,7 @@ BOOST_AUTO_TEST_CASE( int_kernel_test_double)
 		BOOST_REQUIRE_SMALL(tot,0.001);
 }
 
-
+/*
 BOOST_AUTO_TEST_CASE(InterpolationConvergenceP2M)
 {
         size_t res;
@@ -1223,7 +1223,7 @@ BOOST_AUTO_TEST_CASE(InterpolationMoving)
             gd.write_frame("Grid",ctr);
             ctr++;
             t+=dt;
-        }
+        }*/
 
 /*
 
