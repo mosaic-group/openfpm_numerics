@@ -1243,7 +1243,7 @@ BOOST_AUTO_TEST_CASE(InterpolationMoving)
  //       domain.deleteGhost();
  //       BOOST_REQUIRE(worst < 0.03);
 
-}
+//}
 BOOST_AUTO_TEST_SUITE_END()
 
 
