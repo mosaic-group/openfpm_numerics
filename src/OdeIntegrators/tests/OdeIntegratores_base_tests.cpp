@@ -16,7 +16,7 @@
 #include "Decomposition/Distribution/SpaceDistribution.hpp"
 #include "OdeIntegrators/OdeIntegrators.hpp"
 #include "DCPSE/DCPSE_op/DCPSE_op.hpp"
-#include "OdeIntegrators/boost_vector_algebra_ofp.hpp"
+#include "OdeIntegrators/vector_algebra_ofp.hpp"
 
 typedef texp_v<double> state_type;
 const double a = 2.8e-4;

@@ -27,7 +27,7 @@ namespace boost{
 
 #include <boost/numeric/odeint.hpp>
 #include "Operators/Vector/vector_dist_operators.hpp"
-#include "OdeIntegrators/boost_vector_algebra_ofp.hpp"
+#include "OdeIntegrators/vector_algebra_ofp.hpp"
 
 namespace boost { namespace numeric { namespace odeint {
 

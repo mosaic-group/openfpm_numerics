@@ -312,7 +312,7 @@ install(FILES DCPSE/DCPSE_op/DCPSE_op.hpp
 		COMPONENT OpenFPM)
 
 install(FILES OdeIntegrators/OdeIntegrators.hpp
-		OdeIntegrators/boost_vector_algebra_ofp.hpp
+        OdeIntegrators/vector_algebra_ofp.hpp
 		DESTINATION openfpm_numerics/include/OdeIntegrators
 		COMPONENT OpenFPM)
 

@@ -2,8 +2,8 @@
 // Created by Abhinav Singh on 18.02.21.
 //
 
-#ifndef OPENFPM_PDATA_BOOST_VECTOR_ALGEBRA_OFP_HPP
-#define OPENFPM_PDATA_BOOST_VECTOR_ALGEBRA_OFP_HPP
+#ifndef OPENFPM_PDATA_VECTOR_ALGEBRA_OFP_HPP
+#define OPENFPM_PDATA_VECTOR_ALGEBRA_OFP_HPP
 
 namespace boost {
     namespace numeric {
@@ -939,4 +939,4 @@ namespace boost {
 
 
 
-#endif //OPENFPM_PDATA_BOOST_VECTOR_ALGEBRA_OFP_HPP
+#endif //OPENFPM_PDATA_VECTOR_ALGEBRA_OFP_HPP
