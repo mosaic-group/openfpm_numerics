@@ -17,7 +17,7 @@ private:
     const monomialBasis_type& monomialBasis;
 
 public:
-    __host__ __device__ DcpseDiagonalScalingMatrix(const monomialBasis_type &monomialBasis) : monomialBasis(monomialBasis) {}
+    DcpseDiagonalScalingMatrix(const monomialBasis_type &monomialBasis) : monomialBasis(monomialBasis) {}
 
     template <typename T, typename MatrixType, typename vector_type, typename vector_type2>
     void buildMatrix(MatrixType &M, Support support, T eps, vector_type & particlesFrom , vector_type2 & particlesTo)
