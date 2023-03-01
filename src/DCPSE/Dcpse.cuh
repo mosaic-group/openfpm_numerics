@@ -501,7 +501,7 @@ private:
         const T condVTOL = 1e2;
 
         if (!isSharedSupport) {
-            SupportBuilder<vector_type> supportBuilder(particles, differentialSignature, rCut);
+            SupportBuilder<vector_type,vector_type> supportBuilder(particles,particles, differentialSignature, rCut,differentialOrder == 0);
             unsigned int requiredSupportSize = monomialBasis.size();
             // need to resize supportKeys1D to yet unknown supportKeysTotalN
             // add() takes too long
@@ -524,7 +524,7 @@ private:
                 EMatrix<T, Eigen::Dynamic, Eigen::Dynamic> V(support.size(), monomialBasis.size());
                 // Vandermonde matrix computation
                 Vandermonde<dim, T, EMatrix<T, Eigen::Dynamic, Eigen::Dynamic>>
-                        vandermonde(support, monomialBasis, particles);
+                        vandermonde(support, monomialBasis, particles,particles);
                 vandermonde.getMatrix(V);
 
                 T condV = conditionNumber(V, condVTOL);
@@ -571,7 +571,7 @@ private:
         const T condVTOL = 1e2;
 
         if (!isSharedSupport) {
-            SupportBuilder<vector_type> supportBuilder(particles, differentialSignature, rCut);
+            SupportBuilder<vector_type,vector_type> supportBuilder(particles, particles, differentialSignature, rCut, differentialOrder == 0);
             unsigned int requiredSupportSize = monomialBasis.size();
             // need to resize supportKeys1D to yet unknown supportKeysTotalN
             // add() takes too long
@@ -660,7 +660,7 @@ std::chrono::high_resolution_clock::time_point t1 = std::chrono::high_resolution
                 size_t requiredSupportSize = monomialBasis.size() * supportSizeFactor;
                 // need to resize supportKeys1D to yet unknown supportKeysTotalN
                 // add() takes too long
-                SupportBuilder<vector_type> supportBuilder(particles, differentialSignature, rCut);
+                SupportBuilder<vector_type,vector_type> supportBuilder(particles, particles, differentialSignature, rCut, differentialOrder == 0);
                 kerOffsets.resize(supportRefs.size()+1);
 
                 while (it.isNext()) {
@@ -734,7 +734,7 @@ std::chrono::high_resolution_clock::time_point t1 = std::chrono::high_resolution
                 size_t requiredSupportSize = monomialBasis.size() * supportSizeFactor;
                 // need to resize supportKeys1D to yet unknown supportKeysTotalN
                 // add() takes too long
-                SupportBuilder<vector_type> supportBuilder(particles, differentialSignature, rCut);
+                SupportBuilder<vector_type,vector_type> supportBuilder(particles, particles, differentialSignature, rCut, differentialOrder == 0);
                 kerOffsets.resize(supportRefs.size()+1);
 
                 while (it.isNext()) {
