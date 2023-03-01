@@ -15,7 +15,9 @@
 #include "Vector/vector_dist_subset.hpp"
 #include "Decomposition/Distribution/SpaceDistribution.hpp"
 #include "OdeIntegrators/OdeIntegrators.hpp"
+#ifdef HAVE_EIGEN
 #include "DCPSE/DCPSE_op/DCPSE_op.hpp"
+#endif
 #include "OdeIntegrators/vector_algebra_ofp.hpp"
 
 typedef texp_v<double> state_type;
@@ -466,7 +468,6 @@ BOOST_AUTO_TEST_CASE(odeint_base_test3)
 
 
 #ifdef HAVE_EIGEN
-
 BOOST_AUTO_TEST_CASE(dcpse_op_react_diff_test) {
         size_t edgeSemiSize = 5;
         const size_t sz[2] = {2 * edgeSemiSize+1, 2 * edgeSemiSize+1};
@@ -568,5 +569,4 @@ BOOST_AUTO_TEST_CASE(dcpse_op_react_diff_test) {
         }
 }
 #endif
-
 BOOST_AUTO_TEST_SUITE_END()

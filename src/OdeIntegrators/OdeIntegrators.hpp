@@ -63,6 +63,29 @@ struct state_type_1d_ofp{
     }
 };
 
+/*! \brief A 1d Odeint and Openfpm compatible structure.
+ *
+ *  Use the method this.data.get<d>() to refer to property of all the particles in the dimension d.
+ *
+ * d starts with 0.
+ *
+ */
+struct state_type_1d_ofp_gpu{
+    state_type_1d_ofp_gpu(){
+    }
+    typedef size_t size_type;
+    typedef int is_state_vector;
+    aggregate<texp_v_gpu<double>> data;
+
+    size_t size() const
+    { return data.get<0>().size(); }
+
+    void resize(size_t n)
+    {
+        data.get<0>().resize(n);
+    }
+};
+
 /*! \brief A 2d Odeint and Openfpm compatible structure.
  *
  *  Use the method this.data.get<d>() to refer to property of all the particles in the dimension d.
@@ -173,6 +196,12 @@ namespace boost {
             struct is_resizeable<state_type_1d_ofp> {
             typedef boost::true_type type;
             static const bool value = type::value;
+            };
+
+            template<>
+            struct is_resizeable<state_type_1d_ofp_gpu> {
+                typedef boost::true_type type;
+                static const bool value = type::value;
             };
 
             template<>
