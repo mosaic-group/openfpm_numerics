@@ -7,6 +7,7 @@
 
 #ifndef DCPSE_OP_HPP_
 #define DCPSE_OP_HPP_
+#ifdef HAVE_EIGEN
 
 #include "Decomposition/CartDecomposition.hpp"
 #include "DCPSE/Dcpse.hpp"
@@ -2664,5 +2665,5 @@ typedef Derivative_yyy_T<Dcpse_gpu> Derivative_yyy_gpu;
 typedef Derivative_G_T<Dcpse_gpu> Derivative_G_gpu;
 #endif
 
-
+#endif /*EIGEN */
 #endif /* DCPSE_OP_HPP_ */

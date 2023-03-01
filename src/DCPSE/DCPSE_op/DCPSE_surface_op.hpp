@@ -4,6 +4,7 @@
 
 #ifndef OPENFPM_PDATA_DCPSE_SURFACE_OP_HPP
 #define OPENFPM_PDATA_DCPSE_SURFACE_OP_HPP
+#ifdef HAVE_EIGEN
 
 #include "DCPSE/DCPSE_op/DCPSE_op.hpp"
 
@@ -1003,5 +1004,5 @@ public:
 
     }
 };
-
+#endif //Eigen
 #endif //OPENFPM_PDATA_DCPSE_SURFACE_OP_HPP
