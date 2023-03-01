@@ -17,7 +17,7 @@ private:
     const monomialBasis_type& monomialBasis;
 
 public:
-    __host__ __device__ DcpseDiagonalScalingMatrix(const monomialBasis_type &monomialBasis) : monomialBasis(monomialBasis) {}
+    DcpseDiagonalScalingMatrix(const monomialBasis_type &monomialBasis) : monomialBasis(monomialBasis) {}
 
     template <typename T, typename MatrixType, typename vector_type, typename vector_type2>
     void buildMatrix(MatrixType &M, Support support, T eps, vector_type & particlesFrom , vector_type2 & particlesTo)
@@ -40,24 +40,6 @@ public:
         	p -= particlesFrom.getPosOrig(pt);
 
             M(i,i) = exp(- norm2(p) / (2.0 * eps * eps));
-        }
-    }
-
-    template <typename T, typename vector_type, typename vector_type2>
-    __host__ __device__ void buildMatrix(T* M, size_t supportRefKey, size_t supportKeysSize, const size_t* supportKeys, T eps, vector_type & particlesFrom, vector_type2 & particlesTo)
-    {
-        // Check that all the dimension constraints are met
-        assert(supportKeysSize >= monomialBasis.size());
-
-        Point<dim,typename vector_type::stype> ref_p = particlesTo.getPos(supportRefKey);
-
-        for (size_t i = 0; i < supportKeysSize; ++i)
-        {
-            size_t pt = supportKeys[i];
-            Point<dim,typename vector_type::stype> p = ref_p;
-            p -= particlesFrom.getPos(pt);
-
-            M[i] = exp(- norm2(p) / (2.0 * eps * eps));
         }
     }
 };

@@ -18,7 +18,8 @@ endif()
 if (NOT CUDA_ON_BACKEND STREQUAL "None")
 	set(CUDA_SOURCES Operators/Vector/vector_dist_operators_unit_tests.cu
 					 DCPSE/DCPSE_op/tests/DCPSE_op_Solver_test.cu
-				 	 OdeIntegrators/tests/Odeintegrators_test_gpu.cu
+			 	 	 OdeIntegrators/tests/Odeintegrators_test_gpu.cu
+					 DCPSE/DCPSE_op/tests/DCPSE_op_subset_test.cu
 					 Operators/Vector/vector_dist_operators_apply_kernel_unit_tests.cu)
 endif()
 
@@ -247,7 +248,7 @@ install(FILES FiniteDifference/Average.hpp
       	      FiniteDifference/FDScheme.hpp 
       	      FiniteDifference/Laplacian.hpp 
       	      FiniteDifference/mul.hpp 
-      	      FiniteDifference/sum.hpp 
+      	      FiniteDifference/sum.hpp
 	      FiniteDifference/Upwind_gradient.hpp
 	      FiniteDifference/Eno_Weno.hpp
               FiniteDifference/FD_op.hpp
@@ -275,7 +276,7 @@ install(FILES Operators/Vector/vector_dist_operators_extensions.hpp
 	       COMPONENT OpenFPM)
 
 install(FILES Operators/Vector/cuda/vector_dist_operators_cuda.cuh
-	      DESTINATION openfpm_numerics/include/Operators/Vector/cuda 
+	      DESTINATION openfpm_numerics/include/Operators/Vector/cuda
 	      COMPONENT OpenFPM)
 
 install(FILES DCPSE/Dcpse.hpp
@@ -283,7 +284,6 @@ install(FILES DCPSE/Dcpse.hpp
 		DCPSE/DCPSE_op/DCPSE_Solver.cuh
 		DCPSE/DcpseDiagonalScalingMatrix.hpp
 		DCPSE/DcpseRhs.hpp
-		DCPSE/DcpseRhs.cuh
 		DCPSE/Monomial.hpp
 		DCPSE/Monomial.cuh
 		DCPSE/MonomialBasis.hpp
@@ -291,7 +291,6 @@ install(FILES DCPSE/Dcpse.hpp
 		DCPSE/SupportBuilder.cuh
 		DCPSE/SupportBuilder.hpp
 		DCPSE/Vandermonde.hpp
-		DCPSE/Vandermonde.cuh
 		DCPSE/VandermondeRowBuilder.hpp
 		DCPSE/DcpseInterpolation.hpp
 		DESTINATION openfpm_numerics/include/DCPSE
@@ -322,7 +321,7 @@ install(FILES Draw/DrawParticles.hpp
       	      Draw/PointIteratorSkin.hpp
 	      Draw/DrawDisk.hpp
 	      Draw/DrawSphere.hpp
-      	      DESTINATION openfpm_numerics/include/Draw 
+      	      DESTINATION openfpm_numerics/include/Draw
 	      COMPONENT OpenFPM)
 
 install(FILES interpolation/interpolation.hpp 

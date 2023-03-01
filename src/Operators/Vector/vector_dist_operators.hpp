@@ -9,6 +9,7 @@
 #define OPENFPM_NUMERICS_SRC_OPERATORS_VECTOR_VECTOR_DIST_OPERATORS_HPP_
 
 #include "Vector/vector_dist.hpp"
+#include "Vector/vector_dist_subset.hpp"
 #include "lib/pdata.hpp"
 #include "cuda/vector_dist_operators_cuda.cuh"
 
@@ -1069,7 +1070,7 @@ public:
                     has_vector_kernel<vector>::type::value>::type::value>
             ::compute_expr(v.v,v_exp);
 
-        
+
 		return v.v;
 	}
 

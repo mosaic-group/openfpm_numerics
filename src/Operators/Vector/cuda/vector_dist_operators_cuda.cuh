@@ -80,7 +80,6 @@ struct pos_or_propL_ker
 };
 
 
-
 /*! \brief selector for position or properties left side
  *
  * \tparam vector type of the original vector
