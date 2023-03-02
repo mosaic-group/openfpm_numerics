@@ -89,7 +89,7 @@ namespace boost {
                     //printf("v2:%f,v3:%f \n",v2.data.template get<T::value>().getVector().template get<0>(p),v3.data.template get<T::value>().getVector().template get<0>(p));
                     //printf("2\n");
                     op(v1.data.template get<T::value>().getVector().template get<0>(p),v2.data.template get<T::value>().getVector().template get<0>(p),v3.data.template get<T::value>().getVector().template get<0>(p));
-                    printf("v1:%f, v2:%f,v3:%f \n",v1.data.template get<T::value>().getVector().template get<0>(p),v2.data.template get<T::value>().getVector().template get<0>(p),v3.data.template get<T::value>().getVector().template get<0>(p));
+                    //printf("v1:%f, v2:%f,v3:%f \n",v1.data.template get<T::value>().getVector().template get<0>(p),v2.data.template get<T::value>().getVector().template get<0>(p),v3.data.template get<T::value>().getVector().template get<0>(p));
 
                 }
             };

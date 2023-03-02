@@ -94,7 +94,7 @@ BOOST_AUTO_TEST_CASE(odeint_base_test_gpu)
             ++it2;
         }
 
-        std::cout<<worst<<std::endl;
+        //std::cout<<worst<<std::endl;
         BOOST_REQUIRE(worst < 1e-6);
 
         x0.data.get<0>()=Init;
@@ -116,7 +116,7 @@ BOOST_AUTO_TEST_CASE(odeint_base_test_gpu)
             }
             ++it3;
         }
-        std::cout<<worst2<<std::endl;
+        //std::cout<<worst2<<std::endl;
         BOOST_REQUIRE(worst < 1e-6);
         BOOST_REQUIRE_EQUAL(worst,worst2);
         }
