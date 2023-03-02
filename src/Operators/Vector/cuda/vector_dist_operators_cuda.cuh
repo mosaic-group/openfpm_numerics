@@ -427,7 +427,7 @@ struct vector_dist_op_compute_op<prp,false,comp_host>
 	}
 };
 
-
+#define NVCC
 #ifdef __NVCC__
 
 template<unsigned int prp, unsigned int dim ,typename vector, typename expr>

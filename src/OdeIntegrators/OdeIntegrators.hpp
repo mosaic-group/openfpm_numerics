@@ -29,6 +29,10 @@ namespace boost{
 #include "Operators/Vector/vector_dist_operators.hpp"
 #include "OdeIntegrators/vector_algebra_ofp.hpp"
 
+#ifdef __NVCC__
+#include "OdeIntegrators/vector_algebra_ofp_gpu.hpp"
+#endif
+
 namespace boost { namespace numeric { namespace odeint {
 
             template<typename T>
@@ -62,7 +66,25 @@ struct state_type_1d_ofp{
         data.get<0>().resize(n);
     }
 };
+/*! \brief A 1d Odeint and Openfpm compatible structure.
+ *
+ *  Use the method this.data.get<d>() to refer to property of all the particles in the dimension d.
+ *
+ * d starts with 0.
+ *
+ */
+struct state_type_1d_ofp_ker{
+    state_type_1d_ofp_ker(){
+    }
+    typedef decltype(std::declval<texp_v_gpu<double>>().getVector().toKernel()) state_kernel;
+    typedef size_t size_type;
+    typedef int is_state_vector;
+    aggregate<state_kernel> data;
 
+    __host__ __device__ size_t size() const
+    { return data.get<0>().size(); }
+
+};
 /*! \brief A 1d Odeint and Openfpm compatible structure.
  *
  *  Use the method this.data.get<d>() to refer to property of all the particles in the dimension d.
@@ -83,6 +105,12 @@ struct state_type_1d_ofp_gpu{
     void resize(size_t n)
     {
         data.get<0>().resize(n);
+    }
+    state_type_1d_ofp_ker toKernel() const
+    {
+        state_type_1d_ofp_ker s1_ker;
+        s1_ker.data.get<0>()=data.get<0>().getVector().toKernel();
+        return s1_ker;
     }
 };
 

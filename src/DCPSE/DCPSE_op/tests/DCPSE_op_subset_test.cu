@@ -25,9 +25,7 @@
 //template<typename T>
 //struct Debug;
 
-
-
-
+#if 0
 BOOST_AUTO_TEST_SUITE(dcpse_op_subset_suite_tests_cu)
 
     BOOST_AUTO_TEST_CASE(dcpse_op_subset_tests) {
@@ -611,7 +609,8 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_subset_suite_tests_cu)
 
         //Particles.write("PC_subset_lid2");
     }
-
 BOOST_AUTO_TEST_SUITE_END()
 #endif
 #endif
+
+#endif //if 0

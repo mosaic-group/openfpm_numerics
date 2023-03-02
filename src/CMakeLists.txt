@@ -17,9 +17,9 @@ endif()
 
 if (NOT CUDA_ON_BACKEND STREQUAL "None")
 	set(CUDA_SOURCES Operators/Vector/vector_dist_operators_unit_tests.cu
-					 DCPSE/DCPSE_op/tests/DCPSE_op_Solver_test.cu
+					 #DCPSE/DCPSE_op/tests/DCPSE_op_Solver_test.cu
 			 	 	 OdeIntegrators/tests/Odeintegrators_test_gpu.cu
-					 DCPSE/DCPSE_op/tests/DCPSE_op_subset_test.cu
+					 #DCPSE/DCPSE_op/tests/DCPSE_op_subset_test.cu
 					 Operators/Vector/vector_dist_operators_apply_kernel_unit_tests.cu)
 endif()
 

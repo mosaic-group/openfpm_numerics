@@ -1085,7 +1085,10 @@ public:
     {
             vector_dist_op_compute_op<prp,false,vector_dist_expression_comp_sel<comp_dev,
                     has_vector_kernel<vector>::type::value>::type::value>
-            ::compute_expr(v.v,v_exp);
+            ::compute_expr(v.v,v_exp.getVector().toKernel());
+        //constexpr bool cond=has_vector_kernel<vector>::type::value || std::is_same<vector,openfpm::vector<aggregate<T>,CudaMemory,memory_traits_inte>>::value;
+        //vector_dist_expression_comp_proxy_sel<!std::is_same<vector,openfpm::vector<aggregate<T>,CudaMemory,memory_traits_inte>>::value>::template compute<cond>(v.v,v_exp);
+
 
         return v.v;
     }
