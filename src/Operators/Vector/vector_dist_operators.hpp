@@ -1266,6 +1266,12 @@ public:
     vector_dist_expression_impl()
     {}
 
+    template<unsigned int prp2, typename vector2>
+    vector_dist_expression_impl(const vector_dist_expression<prp2,vector2> & v_exp)
+    {
+        this->operator=(v_exp);
+    };
+
     template<typename exp1, typename exp2, unsigned int op>
     vector_dist_expression_impl(const vector_dist_expression_op<exp1,exp2,op> & v_exp)
     {
@@ -1445,7 +1451,24 @@ class vector_dist_expression<0,openfpm::vector<aggregate<T>,memory, layout_base>
 {
     typedef openfpm::vector<aggregate<T>,memory, layout_base> vector;
     typedef vector_dist_expression_impl<vector> base;
+
 public:
+    vector_dist_expression()
+    {
+    }
+
+    template<unsigned int prp2, typename vector2>
+    vector_dist_expression(const vector_dist_expression<prp2,vector2> & v_exp)
+            :base(v_exp)
+    {
+    }
+
+    template<typename exp1, typename exp2, unsigned int op>
+    vector_dist_expression(const vector_dist_expression_op<exp1,exp2,op> & v_exp)
+    : base(v_exp)
+    {
+    }
+
     template<unsigned int prp2, typename vector2> vector & operator=(const vector_dist_expression<prp2,vector2> & v_exp)
     {
         return base::operator=(v_exp);
@@ -1469,6 +1492,22 @@ class vector_dist_expression<0,openfpm::vector_gpu<aggregate<T>>> : public vecto
     typedef openfpm::vector_gpu<aggregate<T>> vector;
     typedef vector_dist_expression_impl<vector> base;
 public:
+    vector_dist_expression()
+    {
+    }
+
+    template<unsigned int prp2, typename vector2>
+    vector_dist_expression(const vector_dist_expression<prp2,vector2> & v_exp)
+            :base(v_exp)
+    {
+    }
+
+    template<typename exp1, typename exp2, unsigned int op>
+    vector_dist_expression(const vector_dist_expression_op<exp1,exp2,op> & v_exp)
+            : base(v_exp)
+    {
+    }
+
     template<unsigned int prp2, typename vector2> vector & operator=(const vector_dist_expression<prp2,vector2> & v_exp)
     {
         return base::operator=(v_exp);

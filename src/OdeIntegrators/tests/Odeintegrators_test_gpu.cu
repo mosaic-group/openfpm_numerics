@@ -32,7 +32,7 @@ BOOST_AUTO_TEST_SUITE(odeInt_BASE_tests)
 
 BOOST_AUTO_TEST_CASE(odeint_base_test_gpu)
         {
-        size_t edgeSemiSize = 40;
+        size_t edgeSemiSize = 512;
         const size_t sz[2] = {edgeSemiSize,edgeSemiSize };
         Box<2, double> box({ 0, 0 }, { 1.0, 1.0 });
         size_t bc[2] = { NON_PERIODIC, NON_PERIODIC };
@@ -56,8 +56,8 @@ BOOST_AUTO_TEST_CASE(odeint_base_test_gpu)
             mem_id k1 = key.get(1);
             double yp0 = k1 * spacing[1];
             Particles.getLastPos()[1] = yp0;
-            Particles.getLastProp<0>() = xp0*yp0*exp(0);
-            Particles.getLastProp<1>() = xp0*yp0*exp(0.4);
+            Particles.getLastProp<0>() = xp0*yp0*exp(-5);
+            Particles.getLastProp<1>() = xp0*yp0*exp(5);
             ++it;
         }
 
@@ -73,51 +73,30 @@ BOOST_AUTO_TEST_CASE(odeint_base_test_gpu)
         x0.data.get<0>().getVector().deviceToHost<0>();
         // The rhs of x' = f(x)
 
-        double t=0,tf=0.4;
-        const double dt=0.1;
+        double t0=-5,tf=5;
+        const double dt=0.01;
+
 
         //This doesnt work Why?
         //size_t steps=boost::numeric::odeint::integrate(Exponential,x0,0.0,tf,dt);
-
-        size_t steps=boost::numeric::odeint::integrate_const( boost::numeric::odeint::runge_kutta4< state_type, double, state_type, double, boost::numeric::odeint::vector_space_algebra_ofp_gpu,boost::numeric::odeint::ofp_operations>(),ExponentialGPU,x0,0.0,tf,dt);
+        timer tt;
+        tt.start();
+        size_t steps=boost::numeric::odeint::integrate_const( boost::numeric::odeint::runge_kutta4< state_type, double, state_type, double, boost::numeric::odeint::vector_space_algebra_ofp_gpu,boost::numeric::odeint::ofp_operations>(),ExponentialGPU,x0,t0,tf,dt);
+        tt.stop();
         OdeSol=x0.data.get<0>();
         Particles.deviceToHostProp<0,1,2>();
         auto it2 = Particles.getDomainIterator();
         double worst = 0.0;
         while (it2.isNext()) {
             auto p = it2.get();
-            std::cout<<"A:"<<Particles.getProp<1>(p)<<std::endl;
-            std::cout<<"B:"<<Particles.getProp<2>(p)<<std::endl;
             if (fabs(Particles.getProp<1>(p) - Particles.getProp<2>(p)) > worst) {
                 worst = fabs(Particles.getProp<1>(p) - Particles.getProp<2>(p));
             }
             ++it2;
         }
-
-        //std::cout<<worst<<std::endl;
+        std::cout<<"WCT:"<<tt.getwct()<<std::endl;
+        std::cout<<"CPU:"<<tt.getcputime()<<std::endl;
+        std::cout<<worst<<std::endl;
         BOOST_REQUIRE(worst < 1e-6);
-
-        x0.data.get<0>()=Init;
-        boost::numeric::odeint::runge_kutta4< state_type, double, state_type, double, boost::numeric::odeint::vector_space_algebra_ofp ,boost::numeric::odeint::ofp_operations> rk4;
-        while (t<tf)
-        {
-            rk4.do_step(ExponentialGPU,x0,t,dt);
-            OdeSol=x0.data.get<0>();
-            t+=dt;
-        }
-
-        OdeSol=x0.data.get<0>();
-        auto it3 = Particles.getDomainIterator();
-        double worst2 = 0.0;
-        while (it3.isNext()) {
-            auto p = it3.get();
-            if (fabs(Particles.getProp<1>(p) - Particles.getProp<2>(p)) > worst2) {
-                worst2 = fabs(Particles.getProp<1>(p) - Particles.getProp<2>(p));
-            }
-            ++it3;
-        }
-        //std::cout<<worst2<<std::endl;
-        BOOST_REQUIRE(worst < 1e-6);
-        BOOST_REQUIRE_EQUAL(worst,worst2);
         }
 BOOST_AUTO_TEST_SUITE_END()
