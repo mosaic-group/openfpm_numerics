@@ -14,6 +14,7 @@
 #include "Operators/Vector/vector_dist_operators.hpp"
 #include "OdeIntegrators/OdeIntegrators.hpp"
 //#include "DCPSE/DCPSE_op/DCPSE_op.hpp"
+#ifdef __NVCC__
 
 typedef state_type_1d_ofp_gpu state_type;
 //const double a = 2.8e-4;
@@ -100,3 +101,4 @@ BOOST_AUTO_TEST_CASE(odeint_base_test_gpu)
         BOOST_REQUIRE(worst < 1e-6);
         }
 BOOST_AUTO_TEST_SUITE_END()
+#endif

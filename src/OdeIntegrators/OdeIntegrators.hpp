@@ -31,41 +31,6 @@ namespace boost{
 
 #ifdef __NVCC__
 #include "OdeIntegrators/vector_algebra_ofp_gpu.hpp"
-#endif
-
-namespace boost { namespace numeric { namespace odeint {
-
-            template<typename T>
-            struct is_resizeable< vector_dist_expression<0,openfpm::vector<aggregate<T>> > >
-            {
-                typedef boost::true_type type;
-                static const bool value = type::value;
-            };
-
-        } } }
-
-/*! \brief A 1d Odeint and Openfpm compatible structure.
- *
- *  Use the method this.data.get<d>() to refer to property of all the particles in the dimension d.
- *
- * d starts with 0.
- *
- */
-struct state_type_1d_ofp{
-    state_type_1d_ofp(){
-    }
-    typedef size_t size_type;
-    typedef int is_state_vector;
-    aggregate<texp_v<double>> data;
-
-    size_t size() const
-    { return data.get<0>().size(); }
-
-    void resize(size_t n)
-    {
-        data.get<0>().resize(n);
-    }
-};
 /*! \brief A 1d Odeint and Openfpm compatible structure.
  *
  *  Use the method this.data.get<d>() to refer to property of all the particles in the dimension d.
@@ -111,6 +76,41 @@ struct state_type_1d_ofp_gpu{
         state_type_1d_ofp_ker s1_ker;
         s1_ker.data.get<0>()=data.get<0>().getVector().toKernel();
         return s1_ker;
+    }
+};
+#endif
+
+namespace boost { namespace numeric { namespace odeint {
+
+            template<typename T>
+            struct is_resizeable< vector_dist_expression<0,openfpm::vector<aggregate<T>> > >
+            {
+                typedef boost::true_type type;
+                static const bool value = type::value;
+            };
+
+        } } }
+
+/*! \brief A 1d Odeint and Openfpm compatible structure.
+ *
+ *  Use the method this.data.get<d>() to refer to property of all the particles in the dimension d.
+ *
+ * d starts with 0.
+ *
+ */
+struct state_type_1d_ofp{
+    state_type_1d_ofp(){
+    }
+    typedef size_t size_type;
+    typedef int is_state_vector;
+    aggregate<texp_v<double>> data;
+
+    size_t size() const
+    { return data.get<0>().size(); }
+
+    void resize(size_t n)
+    {
+        data.get<0>().resize(n);
     }
 };
 
@@ -225,13 +225,13 @@ namespace boost {
             typedef boost::true_type type;
             static const bool value = type::value;
             };
-
+#ifdef __NVCC__
             template<>
             struct is_resizeable<state_type_1d_ofp_gpu> {
                 typedef boost::true_type type;
                 static const bool value = type::value;
             };
-
+#endif
             template<>
             struct is_resizeable<state_type_2d_ofp> {
                 typedef boost::true_type type;
