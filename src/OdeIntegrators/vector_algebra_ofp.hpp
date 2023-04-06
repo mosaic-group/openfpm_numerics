@@ -597,7 +597,7 @@ namespace boost {
                 while(it.isNext()){
                     auto p=it.get();
                     //converting to boost vector ids.
-                    for_each_prop1<S1,size_t,Op> cp(s1,p,op);
+                    for_each_prop1<S1,typename S1::index_type,Op> cp(s1,p,op);
                     //creating an iterator on v_ids[0] [1] [2]
                     boost::mpl::for_each_ref<boost::mpl::range_c<int,0,decltype( s1.data)::max_prop>>(cp);
 
@@ -618,7 +618,7 @@ namespace boost {
                 while(it.isNext()){
                     auto p=it.get();
                     //converting to boost vector ids.
-                    for_each_prop2<S1,S2,size_t,Op> cp(s1,s2,p,op);
+                    for_each_prop2<S1,S2,typename S1::index_type,Op> cp(s1,s2,p,op);
                     //creating an iterator on v_ids[0] [1] [2]
                     boost::mpl::for_each_ref<boost::mpl::range_c<int,0,decltype( s1.data)::max_prop>>(cp);
 
@@ -636,10 +636,11 @@ namespace boost {
                 boost::mpl::for_each_ref<boost::mpl::range_c<int,0,decltype( s1.data)::max_prop>>(the_resize);
                 // ToDo : build checks, that the +-*/ operators are well defined
                 auto it=s1.data.template get<0>().getVector().getIterator();
+
                 while(it.isNext()){
                     auto p=it.get();
                     //converting to boost vector ids.
-                    for_each_prop3<S1,S2,S3,size_t,Op> cp(s1,s2,s3,p,op);
+                    for_each_prop3<S1,S2,S3,typename S1::index_type,Op> cp(s1,s2,s3,p,op);
                     //creating an iterator on v_ids[0] [1] [2]
                     boost::mpl::for_each_ref<boost::mpl::range_c<int,0,decltype( s1.data)::max_prop>>(cp);
 
@@ -660,7 +661,7 @@ namespace boost {
                 while(it.isNext()){
                     auto p=it.get();
                     //converting to boost vector ids.
-                    for_each_prop4<S1,S2,S3,S4,size_t,Op> cp(s1,s2,s3,s4,p,op);
+                    for_each_prop4<S1,S2,S3,S4,typename S1::index_type,Op> cp(s1,s2,s3,s4,p,op);
                     //creating an iterator on v_ids[0] [1] [2]
                     boost::mpl::for_each_ref<boost::mpl::range_c<int,0,decltype( s1.data)::max_prop>>(cp);
 
@@ -681,7 +682,7 @@ namespace boost {
                 while(it.isNext()){
                     auto p=it.get();
                     //converting to boost vector ids.
-                    for_each_prop5<S1,S2,S3,S4,S5,size_t,Op> cp(s1,s2,s3,s4,s5,p,op);
+                    for_each_prop5<S1,S2,S3,S4,S5,typename S1::index_type,Op> cp(s1,s2,s3,s4,s5,p,op);
                     //creating an iterator on v_ids[0] [1] [2]
                     boost::mpl::for_each_ref<boost::mpl::range_c<int,0,decltype( s1.data)::max_prop>>(cp);
 
@@ -699,7 +700,7 @@ namespace boost {
                 while(it.isNext()){
                     auto p=it.get();
                     //converting to boost vector ids.
-                    for_each_prop6<S1,S2,S3,S4,S5,S6,size_t,Op> cp(s1,s2,s3,s4,s5,s6,p,op);
+                    for_each_prop6<S1,S2,S3,S4,S5,S6,typename S1::index_type,Op> cp(s1,s2,s3,s4,s5,s6,p,op);
                     //creating an iterator on v_ids[0] [1] [2]
                     boost::mpl::for_each_ref<boost::mpl::range_c<int,0,decltype( s1.data)::max_prop>>(cp);
 
@@ -717,7 +718,7 @@ namespace boost {
                 while(it.isNext()){
                     auto p=it.get();
                     //converting to boost vector ids.
-                    for_each_prop7<S1,S2,S3,S4,S5,S6,S7,size_t,Op> cp(s1,s2,s3,s4,s5,s6,s7,p,op);
+                    for_each_prop7<S1,S2,S3,S4,S5,S6,S7,typename S1::index_type,Op> cp(s1,s2,s3,s4,s5,s6,s7,p,op);
                     //creating an iterator on v_ids[0] [1] [2]
                     boost::mpl::for_each_ref<boost::mpl::range_c<int,0,decltype( s1.data)::max_prop>>(cp);
 
@@ -735,7 +736,7 @@ namespace boost {
                 while(it.isNext()){
                     auto p=it.get();
                     //converting to boost vector ids.
-                    for_each_prop8<S1,S2,S3,S4,S5,S6,S7,S8,size_t,Op> cp(s1,s2,s3,s4,s5,s6,s7,s8,p,op);
+                    for_each_prop8<S1,S2,S3,S4,S5,S6,S7,S8,typename S1::index_type,Op> cp(s1,s2,s3,s4,s5,s6,s7,s8,p,op);
                     //creating an iterator on v_ids[0] [1] [2]
                     boost::mpl::for_each_ref<boost::mpl::range_c<int,0,decltype( s1.data)::max_prop>>(cp);
 
@@ -753,7 +754,7 @@ namespace boost {
                 while(it.isNext()){
                     auto p=it.get();
                     //converting to boost vector ids.
-                    for_each_prop9<S1,S2,S3,S4,S5,S6,S7,S8,S9,size_t,Op> cp(s1,s2,s3,s4,s5,s6,s7,s8,s9,p,op);
+                    for_each_prop9<S1,S2,S3,S4,S5,S6,S7,S8,S9,typename S1::index_type,Op> cp(s1,s2,s3,s4,s5,s6,s7,s8,s9,p,op);
                     //creating an iterator on v_ids[0] [1] [2]
                     boost::mpl::for_each_ref<boost::mpl::range_c<int,0,decltype( s1.data)::max_prop>>(cp);
 
@@ -771,7 +772,7 @@ namespace boost {
                 while(it.isNext()){
                     auto p=it.get();
                     //converting to boost vector ids.
-                    for_each_prop10<S1,S2,S3,S4,S5,S6,S7,S8,S9,S10,size_t,Op> cp(s1,s2,s3,s4,s5,s6,s7,s8,s9,s10,p,op);
+                    for_each_prop10<S1,S2,S3,S4,S5,S6,S7,S8,S9,S10,typename S1::index_type,Op> cp(s1,s2,s3,s4,s5,s6,s7,s8,s9,s10,p,op);
                     //creating an iterator on v_ids[0] [1] [2]
                     boost::mpl::for_each_ref<boost::mpl::range_c<int,0,decltype( s1.data)::max_prop>>(cp);
 
@@ -790,7 +791,7 @@ namespace boost {
                 while(it.isNext()){
                     auto p=it.get();
                     //converting to boost vector ids.
-                    for_each_prop11<S1,S2,S3,S4,S5,S6,S7,S8,S9,S10,S11,size_t,Op> cp(s1,s2,s3,s4,s5,s6,s7,s8,s9,s10,s11,p,op);
+                    for_each_prop11<S1,S2,S3,S4,S5,S6,S7,S8,S9,S10,S11,typename S1::index_type,Op> cp(s1,s2,s3,s4,s5,s6,s7,s8,s9,s10,s11,p,op);
                     //creating an iterator on v_ids[0] [1] [2]
                     boost::mpl::for_each_ref<boost::mpl::range_c<int,0,decltype( s1.data)::max_prop>>(cp);
 
@@ -808,7 +809,7 @@ namespace boost {
                 while(it.isNext()){
                     auto p=it.get();
                     //converting to boost vector ids.
-                    for_each_prop12<S1,S2,S3,S4,S5,S6,S7,S8,S9,S10,S11,S12,size_t,Op> cp(s1,s2,s3,s4,s5,s6,s7,s8,s9,s10,s11,s12,p,op);
+                    for_each_prop12<S1,S2,S3,S4,S5,S6,S7,S8,S9,S10,S11,S12,typename S1::index_type,Op> cp(s1,s2,s3,s4,s5,s6,s7,s8,s9,s10,s11,s12,p,op);
                     //creating an iterator on v_ids[0] [1] [2]
                     boost::mpl::for_each_ref<boost::mpl::range_c<int,0,decltype( s1.data)::max_prop>>(cp);
 
@@ -826,7 +827,7 @@ namespace boost {
                 while(it.isNext()){
                     auto p=it.get();
                     //converting to boost vector ids.
-                    for_each_prop13<S1,S2,S3,S4,S5,S6,S7,S8,S9,S10,S11,S12,S13,size_t,Op> cp(s1,s2,s3,s4,s5,s6,s7,s8,s9,s10,s11,s12,s13,p,op);
+                    for_each_prop13<S1,S2,S3,S4,S5,S6,S7,S8,S9,S10,S11,S12,S13,typename S1::index_type,Op> cp(s1,s2,s3,s4,s5,s6,s7,s8,s9,s10,s11,s12,s13,p,op);
                     //creating an iterator on v_ids[0] [1] [2]
                     boost::mpl::for_each_ref<boost::mpl::range_c<int,0,decltype( s1.data)::max_prop>>(cp);
 
@@ -845,7 +846,7 @@ namespace boost {
                 while(it.isNext()){
                     auto p=it.get();
                     //converting to boost vector ids.
-                    for_each_prop14<S1,S2,S3,S4,S5,S6,S7,S8,S9,S10,S11,S12,S13,S14,size_t,Op> cp(s1,s2,s3,s4,s5,s6,s7,s8,s9,s10,s11,s12,s13,s14,p,op);
+                    for_each_prop14<S1,S2,S3,S4,S5,S6,S7,S8,S9,S10,S11,S12,S13,S14,typename S1::index_type,Op> cp(s1,s2,s3,s4,s5,s6,s7,s8,s9,s10,s11,s12,s13,s14,p,op);
                     //creating an iterator on v_ids[0] [1] [2]
                     boost::mpl::for_each_ref<boost::mpl::range_c<int,0,decltype( s1.data)::max_prop>>(cp);
 
@@ -863,7 +864,7 @@ namespace boost {
                 while(it.isNext()){
                     auto p=it.get();
                     //converting to boost vector ids.
-                    for_each_prop15<S1,S2,S3,S4,S5,S6,S7,S8,S9,S10,S11,S12,S13,S14,S15,size_t,Op> cp(s1,s2,s3,s4,s5,s6,s7,s8,s9,s10,s11,s12,s13,s14,s15,p,op);
+                    for_each_prop15<S1,S2,S3,S4,S5,S6,S7,S8,S9,S10,S11,S12,S13,S14,S15,typename S1::index_type,Op> cp(s1,s2,s3,s4,s5,s6,s7,s8,s9,s10,s11,s12,s13,s14,s15,p,op);
                     //creating an iterator on v_ids[0] [1] [2]
                     boost::mpl::for_each_ref<boost::mpl::range_c<int,0,decltype( s1.data)::max_prop>>(cp);
 
@@ -912,7 +913,7 @@ namespace boost {
                 while(it.isNext()){
                     auto p=it.get();
                     //converting to boost vector ids.
-                    for_each_norm<S,size_t,typename boost::numeric::odeint::vector_space_norm_inf< S >::result_type> cp(s,p,n);
+                    for_each_norm<S,typename S::index_type,typename boost::numeric::odeint::vector_space_norm_inf< S >::result_type> cp(s,p,n);
                     //creating an iterator on v_ids[0] [1] [2]
                     boost::mpl::for_each_ref<boost::mpl::range_c<int,0,decltype(s.data)::max_prop>>(cp);
 

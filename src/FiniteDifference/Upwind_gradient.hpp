@@ -27,12 +27,13 @@
 #include "Grid/grid_dist_id.hpp"
 #include "FD_simple.hpp"
 #include "Eno_Weno.hpp"
+#include "level_set/redistancing_Sussman/HelpFunctions.hpp"
 
 /**@brief Upwinding: For a specific dimension, from the forward and backward gradient find the upwind side.
  *
  * @param dplus: Gradient approximated using RHS neighbors.
  * @param dminus: Gradient approximated using LHS neighbors.
- * @param sign: Sign of the velocity with which the wave front is moving.
+ * @param sign: Sign of current component of the wave front velocity.
  * @return Scalar upwind gradient approximation in the dimension given.
  */
 template <typename field_type>
@@ -50,14 +51,38 @@ static field_type upwinding(field_type dplus, field_type dminus, int sign)
 	return grad_upwind;
 }
 
+/**@brief Returns the sign of a scalar velocity field
+ *
+ * @tparam velocity_type Template type of velocity (scalar).
+ * @param v Velocity of type velocity_type.
+ * @param d Dimension. This is a dummy to simplify call in module #FD_upwind.
+ * @return Sign of velocity #v.
+ */
+template <typename velocity_type>
+inline int get_sign_velocity(velocity_type v, size_t d)
+{
+	return sgn(v);
+}
+
+/**@brief Returns the sign of one component in a vector velocity field
+ *
+ * @tparam velocity_type Template type of velocity (vector).
+ * @param v Velocity of type velocity_type.
+ * @param d Component of velocity vector for which sign should be returned.
+ * @return Sign of component d from velocity #v.
+ */
+template <typename velocity_type>
+inline int get_sign_velocity(velocity_type v[], size_t d)
+{
+	return sgn(v[d]);
+}
 
 /**@brief Get the upwind finite difference of a scalar property on the current grid node.
  *
  * @details Order of accuracy can be 1, 3 or 5.
  *
  * @tparam Field Size_t index of property for which the gradient should be computed.
- * @tparam Sign Size_t index of property that contains the initial sign of that property for which the upwind FD
- *                    should be computed.
+ * @tparam Velocity Size_t index of property that contains the velocity field. Can be scalar or vector field.
  * @tparam gridtype Type of input grid.
  * @tparam keytype Type of key variable.
  * @param grid Grid, on which the gradient should be computed.
@@ -66,14 +91,16 @@ static field_type upwinding(field_type dplus, field_type dminus, int sign)
  * @param order Order of accuracy of the difference scheme. Can be 1, 3 or 5.
  * @return Upwind finite difference in one dimension of the property under index Field on the current node with index key.
  */
-template <size_t Field, size_t Sign, typename gridtype, typename keytype>
+template <size_t Field, size_t Velocity, typename gridtype, typename keytype>
 auto FD_upwind(gridtype &grid, keytype &key, size_t d, size_t order)
 {
 //	std::cout << boost::typeindex::type_id_with_cvr<std::decay_t<decltype(first_node)>>() << std::endl;
 	
 	typedef typename std::decay_t<decltype(grid.template get<Field>(key))> field_type;
 	field_type dplus = 0.0, dminus = 0.0;
-	int sign_phi0 = grid.template get<Sign> (key);
+	
+	// Get the sign of the velocity for the current dimension
+	int sign_velocity = get_sign_velocity(grid.template get<Field>(key), d);
 	
 	switch(order)
 	{
@@ -98,7 +125,7 @@ auto FD_upwind(gridtype &grid, keytype &key, size_t d, size_t order)
 			break;
 	}
 	
-	return upwinding(dplus, dminus, sign_phi0);
+	return upwinding(dplus, dminus, sign_velocity);
 }
 
 
@@ -109,8 +136,7 @@ auto FD_upwind(gridtype &grid, keytype &key, size_t d, size_t order)
  * respectively, depending on the side of the border.
  *
  * @tparam Field Size_t index of property for which the gradient should be computed.
- * @tparam Sign Size_t index of property that contains the initial sign of that property for which the upwind FD
- *                    should be computed.
+ * @tparam Velocity Size_t index of property that contains the velocity field. Can be scalar or vector field.
  * @tparam Gradient Size_t index of property where the gradient result should be stored.
  * @tparam gridtype Type of input grid.
  * @param grid Grid, on which the gradient should be computed.
@@ -119,11 +145,11 @@ auto FD_upwind(gridtype &grid, keytype &key, size_t d, size_t order)
  * @param order Size_t variable, order of accuracy the upwind FD scheme should have. Can be 1, 3 or 5.
  */
 // Use upwinding for inner grid points and one sided backward / forward stencil at border (if one_sided_BC=true)
-template <size_t Field, size_t Sign, size_t Gradient, typename gridtype>
+template <size_t Field, size_t Velocity, size_t Gradient, typename gridtype>
 void upwind_gradient(gridtype & grid, const bool one_sided_BC, size_t order)
 {
 	grid.template ghost_get<Field>(KEEP_PROPERTIES);
-	grid.template ghost_get<Sign>(KEEP_PROPERTIES);
+	grid.template ghost_get<Velocity>(KEEP_PROPERTIES);
 	
 	auto dom = grid.getDomainIterator();
 	
@@ -140,13 +166,13 @@ void upwind_gradient(gridtype & grid, const bool one_sided_BC, size_t order)
 				if (key_g.get(d) > 2 && key_g.get(d) < grid.size(d) - 3) // if point lays with min. 3 nodes distance to
 					// boundary
 				{
-					grid.template get<Gradient> (key) [d] = FD_upwind<Field, Sign>(grid, key, d, order);
+					grid.template get<Gradient> (key) [d] = FD_upwind<Field, Velocity>(grid, key, d, order);
 				}
 					
 					// Grid nodes in stencil-wide vicinity to boundary
 				else if (key_g.get(d) > 0 && key_g.get(d) < grid.size(d) - 1) // if point lays not on the grid boundary
 				{
-					grid.template get<Gradient> (key) [d] = FD_upwind<Field, Sign>(grid, key, d, 1);
+					grid.template get<Gradient> (key) [d] = FD_upwind<Field, Velocity>(grid, key, d, 1);
 				}
 				
 				else if (key_g.get(d) == 0) // if point lays at left boundary, use right sided kernel
@@ -170,7 +196,7 @@ void upwind_gradient(gridtype & grid, const bool one_sided_BC, size_t order)
 			auto key = dom.get();
 			for(size_t d = 0; d < gridtype::dims; d++)
 			{
-				grid.template get<Gradient> (key) [d] = FD_upwind<Field, Sign>(grid, key, d, order);
+				grid.template get<Gradient> (key) [d] = FD_upwind<Field, Velocity>(grid, key, d, order);
 			}
 			++dom;
 		}
@@ -207,17 +233,16 @@ static bool ghost_width_is_sufficient(gridtype & grid, size_t required_width)
 /**@brief Calls #upwind_gradient. Computes upwind gradient of desired order {1, 3, 5} for the whole n-dim grid.
  *
 * @tparam Field Size_t index of property for which the gradient should be computed.
- * @tparam Sign Size_t index of property that contains the initial sign of that property for which the upwind FD
- *                    should be computed / sign of the velocity.
+ * @tparam Velocity Size_t index of property that contains the velocity field. Can be scalar or vector field.
  * @tparam Gradient Size_t index of property where the upwind gradient result should be stored.
  * @tparam gridtype Type of input grid.
  * @param grid Grid, on which the gradient should be computed.
  */
-template <size_t Field_in, size_t Sign, size_t Gradient_out, typename gridtype>
+template <size_t Field_in, size_t Velocity, size_t Gradient_out, typename gridtype>
 void get_upwind_gradient(gridtype & grid, const size_t order=5, const bool one_sided_BC=true)
 {
 	grid.template ghost_get<Field_in>();
-	grid.template ghost_get<Sign>();
+	grid.template ghost_get<Velocity>();
 	
 	if (!one_sided_BC)
 	{
@@ -241,13 +266,13 @@ void get_upwind_gradient(gridtype & grid, const size_t order=5, const bool one_s
 		case 1:
 		case 3:
 		case 5:
-			upwind_gradient<Field_in, Sign, Gradient_out>(grid, one_sided_BC, order);
+			upwind_gradient<Field_in, Velocity, Gradient_out>(grid, one_sided_BC, order);
 			break;
 		default:
 			auto &v_cl = create_vcluster();
 			if (v_cl.rank() == 0) std::cout << "Order of accuracy chosen not valid. Using default order 1." <<
 						std::endl;
-			upwind_gradient<Field_in, Sign, Gradient_out>(grid, one_sided_BC, 1);
+			upwind_gradient<Field_in, Velocity, Gradient_out>(grid, one_sided_BC, 1);
 			break;
 	}
 	

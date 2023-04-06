@@ -17,6 +17,7 @@
 #ifndef __CLOSEST_POINT_HPP__
 #define __CLOSEST_POINT_HPP__
 
+#include "Grid/grid_dist_key.hpp"
 #include "algoim_hocp.hpp"
 
 // Width of extra padding around each grid patch needed to correctly construct kDTree in Algoim.
@@ -26,21 +27,20 @@ constexpr int algoim_padding = 4;
  *
  * @file closest_point.hpp
  * @struct AlgoimWrapper
- * @tparam grid_type Type of the grid container
- * @tparam grid_key_type Type of the key for the grid container
- * @tparam dim Dimension of the space
  * @tparam wrapping_field Property id on the grid for the field to be wrapped
+ * @tparam grid_type Type of the grid container
+ * 
  */
-
-template<typename grid_type, typename grid_key_type, unsigned int dim, size_t wrapping_field>
+template<size_t wrapping_field, typename grid_type, typename wrapping_field_type = typename boost::mpl::at<typename grid_type::value_type::type,boost::mpl::int_<wrapping_field>>::type>
 struct AlgoimWrapper
 {
+    const static unsigned int dim = grid_type::dims;
     grid_type &gd;
     int patch_id;
     AlgoimWrapper(grid_type& ls_grid, const int pid) : gd(ls_grid), patch_id(pid) {}
 
     //! Call operator for the wrapper.
-    double operator() (const blitz::TinyVector<int,dim> idx) const
+    double operator() (const blitz::TinyVector<int, dim> idx) const
     {
         long int local_key[dim];
         
@@ -50,28 +50,168 @@ struct AlgoimWrapper
             local_key[d] = idx(d) - algoim_padding;
 
         // Generate OpenFPM grid_key object from local grid indices
-        grid_key_type grid_key(patch_id, grid_key_dx<dim> (local_key) + ghost_offset);
+        grid_dist_key_dx<dim> grid_key(patch_id, grid_key_dx<dim> (local_key) + ghost_offset);
         
         return gd.template get<wrapping_field>(grid_key);
     }
+
+  template<size_t extend_field_temp, int poly_order, typename coord_type, typename dx_type, typename pos_type, typename key_type>
+  void extend(coord_type coord, dx_type dx, pos_type pos, key_type key) {
+
+    using Poly = typename Algoim::StencilPoly<dim, poly_order>::T_Poly;
+    
+    Poly field_poly = Poly(coord, *this, dx);
+    // Extension is first done to the temporary field. Otherwise interpolation will be affected.
+    gd.template get<extend_field_temp>(key) = field_poly(pos);
+  }
+
 };
+
+template<size_t wrapping_field, typename grid_type, typename wrapping_field_type, size_t N1>
+struct AlgoimWrapper<wrapping_field,grid_type,wrapping_field_type[N1]>
+{
+    const static unsigned int dim = grid_type::dims;
+    grid_type &gd;
+    int patch_id;
+  size_t comp_i;
+    AlgoimWrapper(grid_type& ls_grid, const int pid) : gd(ls_grid), patch_id(pid) {}
+
+    //! Call operator for the wrapper.
+    double operator() (const blitz::TinyVector<int, dim> idx) const
+    {
+        long int local_key[dim];
+        
+        auto ghost_offset = gd.getLocalGridsInfo().get(patch_id).Dbox.getKP1();
+
+        for (int d = 0; d < dim; ++d)
+            local_key[d] = idx(d) - algoim_padding;
+
+        // Generate OpenFPM grid_key object from local grid indices
+        grid_dist_key_dx<dim> grid_key(patch_id, grid_key_dx<dim> (local_key) + ghost_offset);
+        
+        return gd.template get<wrapping_field>(grid_key)[comp_i];
+    }
+
+  template<size_t extend_field_temp, int poly_order, typename coord_type, typename dx_type, typename pos_type, typename key_type>
+  void extend(coord_type coord, dx_type dx, pos_type pos, key_type key) {
+
+    using Poly = typename Algoim::StencilPoly<dim, poly_order>::T_Poly;
+    
+    for (int i = 0; i < N1; ++i) {
+      comp_i = i;
+      Poly field_poly = Poly(coord, *this, dx);
+      // Extension is first done to the temporary field. Otherwise interpolation will be affected.
+      gd.template get<extend_field_temp>(key)[i] = field_poly(pos);
+    }
+  }
+};
+
+template<size_t wrapping_field, typename grid_type, typename wrapping_field_type, size_t N1, size_t N2>
+struct AlgoimWrapper<wrapping_field,grid_type,wrapping_field_type[N1][N2]>
+{
+    const static unsigned int dim = grid_type::dims;
+    grid_type &gd;
+    int patch_id;
+  size_t comp_i, comp_j;
+    AlgoimWrapper(grid_type& ls_grid, const int pid) : gd(ls_grid), patch_id(pid) {}
+
+    //! Call operator for the wrapper.
+    double operator() (const blitz::TinyVector<int, dim> idx) const
+    {
+        long int local_key[dim];
+        
+        auto ghost_offset = gd.getLocalGridsInfo().get(patch_id).Dbox.getKP1();
+
+        for (int d = 0; d < dim; ++d)
+            local_key[d] = idx(d) - algoim_padding;
+
+        // Generate OpenFPM grid_key object from local grid indices
+        grid_dist_key_dx<dim> grid_key(patch_id, grid_key_dx<dim> (local_key) + ghost_offset);
+        
+        return gd.template get<wrapping_field>(grid_key)[comp_i][comp_j];
+    }
+
+  template<size_t extend_field_temp, int poly_order, typename coord_type, typename dx_type, typename pos_type, typename key_type>
+  void extend(coord_type coord, dx_type dx, pos_type pos, key_type key) {
+
+    using Poly = typename Algoim::StencilPoly<grid_type::dims, poly_order>::T_Poly;
+
+    for (int i = 0; i < N1; ++i) {
+      for (int j = 0; j < N2; ++j) {
+	comp_i = i;
+	comp_j = j;
+	Poly field_poly = Poly(coord, *this, dx);
+	// Extension is first done to the temporary field. Otherwise interpolation will be affected.
+	gd.template get<extend_field_temp>(key)[i][j] = field_poly(pos);
+      }
+    }
+  }
+};
+
+template<size_t wrapping_field, typename grid_type, typename wrapping_field_type, size_t N1, size_t N2, size_t N3>
+struct AlgoimWrapper<wrapping_field,grid_type,wrapping_field_type[N1][N2][N3]>
+{
+    const static unsigned int dim = grid_type::dims;
+    grid_type &gd;
+    int patch_id;
+  size_t comp_i, comp_j, comp_k;
+    AlgoimWrapper(grid_type& ls_grid, const int pid) : gd(ls_grid), patch_id(pid) {}
+
+    //! Call operator for the wrapper.
+    double operator() (const blitz::TinyVector<int, dim> idx) const
+    {
+        long int local_key[dim];
+        
+        auto ghost_offset = gd.getLocalGridsInfo().get(patch_id).Dbox.getKP1();
+
+        for (int d = 0; d < dim; ++d)
+            local_key[d] = idx(d) - algoim_padding;
+
+        // Generate OpenFPM grid_key object from local grid indices
+        grid_dist_key_dx<dim> grid_key(patch_id, grid_key_dx<dim> (local_key) + ghost_offset);
+        
+        return gd.template get<wrapping_field>(grid_key)[comp_i][comp_j][comp_k];
+    }
+
+  template<size_t extend_field_temp, int poly_order, typename coord_type, typename dx_type, typename pos_type, typename key_type>
+  void extend(coord_type coord, dx_type dx, pos_type pos, key_type key) {
+
+    using Poly = typename Algoim::StencilPoly<grid_type::dims, poly_order>::T_Poly;
+
+    for (int i = 0; i < N1; ++i) {
+      for (int j = 0; j < N2; ++j) {
+	for (int k = 0; k < N3; ++k) {
+	  comp_i = i;
+	  comp_j = j;
+	  comp_k = k;
+	  Poly field_poly = Poly(coord, *this, dx);
+	  // Extension is first done to the temporary field. Otherwise interpolation will be affected.
+	  gd.template get<extend_field_temp>(key)[i][j][k] = field_poly(pos);
+	}
+      }
+    }
+  }
+};
+
 
 /**@brief Computes the closest point coordinate for each grid point within nb_gamma from interface.
  *
+ * @tparam phi_field Property id on grid for the level set SDF (input)
+ * @tparam cp_field Property id on grid for storing closest point coordinates (output)
+ * @tparam poly_order Type of stencil interpolation (Taylor poly orders between 2 to 5 and Tri/bicubic through -1 is supported)
  * @tparam grid_type Type of the grid container
- * @tparam grid_key_type Type of the key for the grid container
- * @tparam dim Dimension of the space
- * @tparam poly_order Order of the polynomial for stencil interpolation (orders between 2 to 5 is supported)
- * @tparam phi_field Property id on grid for the level set SDF
- * @tparam cp_field Property id on grid for storing closest point coordinates
  *
  * @param gd The distributed grid containing at least level set SDF field and placeholder for closest point coordinates
  * @param nb_gamma The width of the narrow band within which closest point estimation is to be done
+ * 
  */
-template<typename grid_type, typename grid_key_type, unsigned int poly_order, size_t phi_field, size_t cp_field>
+template<size_t phi_field, size_t cp_field, int poly_order, typename grid_type>
 void estimateClosestPoint(grid_type &gd, const double nb_gamma)
 {
     const unsigned int dim = grid_type::dims;
+    // Update the phi field in ghosts
+    gd.template ghost_get<phi_field>(KEEP_PROPERTIES);
+
     // Stencil polynomial type
     using Poly = typename Algoim::StencilPoly<dim, poly_order>::T_Poly;
 
@@ -93,7 +233,7 @@ void estimateClosestPoint(grid_type &gd, const double nb_gamma)
             p_hi.set_d(d, patches.get(i).Dbox.getHigh(d) + patches.get(i).origin[d]);
         }
 
-        AlgoimWrapper<grid_type, grid_key_type, dim, phi_field> phiwrap(gd, i);
+        AlgoimWrapper<phi_field, grid_type> phiwrap(gd, i);
 
         // Find all cells containing the interface and construct the high-order polynomials
         std::vector<Algoim::detail::CellPoly<dim,Poly>> cells;
@@ -111,8 +251,10 @@ void estimateClosestPoint(grid_type &gd, const double nb_gamma)
 
         Algoim::KDTree<double,dim> kdtree(points);
 
+        // In order to ensure that CP is estimated for all points in the narrowband, we add a buffer to the distance check.
+        double nb_gamma_plus_dx = nb_gamma + gd.spacing(0);
         // Pass everything to the closest point computation engine
-        Algoim::ComputeHighOrderCP<dim,Poly> hocp(nb_gamma < std::numeric_limits<double>::max() ? nb_gamma*nb_gamma : std::numeric_limits<double>::max(), // squared bandradius
+        Algoim::ComputeHighOrderCP<dim,Poly> hocp(nb_gamma_plus_dx < std::numeric_limits<double>::max() ? nb_gamma_plus_dx*nb_gamma_plus_dx : std::numeric_limits<double>::max(), // squared bandradius
                                         0.5*blitz::max(dx), // amount that each polynomial overlaps / size of the bounding ball in Newton's method
                                         Algoim::sqr(std::max(1.0e-14, std::pow(blitz::max(dx), Poly::order))), // tolerance to determine convergence
                                         cells, kdtree, points, pointcells, dx, 0.0);
@@ -121,7 +263,7 @@ void estimateClosestPoint(grid_type &gd, const double nb_gamma)
         while(it.isNext())
         {
             auto key = it.get();
-            if(std::abs(gd.template get<phi_field>(key)) <= nb_gamma)
+            if(std::abs(gd.template get<phi_field>(key)) < nb_gamma)
             {
                 auto key_g = gd.getGKey(key);
                 // NOTE: This is not the real grid coordinates, but internal coordinates for algoim
@@ -136,8 +278,13 @@ void estimateClosestPoint(grid_type &gd, const double nb_gamma)
                 }
                 else
                 {
+                    std::cout<<"WARN: Closest point computation fails at : ";
                     for(int d = 0; d < dim; ++d)
+                    {
+                        std::cout<<key_g.get(d)<<" ";
                         gd.template get<cp_field>(key)[d] = -100.0;
+                    }
+                    std::cout<<"\n";
                 }
             }
             ++it;
@@ -148,22 +295,23 @@ void estimateClosestPoint(grid_type &gd, const double nb_gamma)
 
 /**@brief Extends a (scalar) field to within nb_gamma from interface. The grid should have level set SDF and closest point field.
  *
- * @tparam grid_type Type of the grid container
- * @tparam grid_key_type Type of the key for the grid container
- * @tparam dim Dimension of the space
- * @tparam poly_order Order of the polynomial for stencil interpolation
  * @tparam phi_field Property id on grid for the level set SDF
  * @tparam cp_field Property id on grid for storing closest point coordinates
  * @tparam extend_field Property id on grid where the field to be extended resides
  * @tparam extend_field_temp Property id on grid for storing temporary intermediate values
+ * @tparam poly_order Type of stencil interpolation (Taylor poly orders between 2 to 5 and Tri/bicubic through -1 is supported)
+ * @tparam grid_type Type of the grid container
  *
  * @param gd The distributed grid containing atleast level set SDF field and closest point coordinates
- * @param nb_gamma The width of the narrow band within which extension is required
+ * @param nb_gamma The width of the narrow band within which extension is required (half band)
  */
-template<typename grid_type, typename grid_key_type, unsigned int poly_order, size_t phi_field, size_t cp_field, size_t extend_field, size_t extend_field_temp>
+template<size_t phi_field, size_t cp_field, size_t extend_field, size_t extend_field_temp, int poly_order, typename grid_type>
 void extendLSField(grid_type &gd, const double nb_gamma)
 {
     const unsigned int dim = grid_type::dims;
+    // Update the phi and cp fields in ghost
+    gd.template ghost_get<phi_field, cp_field, extend_field>(KEEP_PROPERTIES);
+
     // Stencil polynomial object
     using Poly = typename Algoim::StencilPoly<dim, poly_order>::T_Poly;
     auto &patches = gd.getLocalGridsInfo();
@@ -181,7 +329,7 @@ void extendLSField(grid_type &gd, const double nb_gamma)
             p_lo.set_d(d, patches.get(i).Dbox.getLow(d) + patches.get(i).origin[d]);
             p_hi.set_d(d, patches.get(i).Dbox.getHigh(d) + patches.get(i).origin[d]);
         }
-
+	
         auto it = gd.getSubDomainIterator(p_lo, p_hi);
 
         while(it.isNext())
@@ -199,44 +347,45 @@ void extendLSField(grid_type &gd, const double nb_gamma)
                     pos(d) = cp_d - coord(d)*gd.spacing(d);
                 }
 
-                AlgoimWrapper<grid_type, grid_key_type, dim, extend_field> fieldwrap(gd,i);
-                Poly field_poly = Poly(coord, fieldwrap, dx);
-                // Extension is first done to the temporary field. Otherwise interpolation will be affected.
-                gd.template get<extend_field_temp>(key) = field_poly(pos);
+                AlgoimWrapper<extend_field, grid_type> fieldwrap(gd,i);
+		fieldwrap.template extend<extend_field_temp,poly_order>(coord,dx,pos,key);
+                // Poly field_poly = Poly(coord, fieldwrap, dx);
+                // // Extension is first done to the temporary field. Otherwise interpolation will be affected.
+                // gd.template get<extend_field_temp>(key) = field_poly(pos);
             }
             ++it;
         }
     }
-    
+
     // Copy the results to the actual variable
+    typedef typename boost::mpl::at<typename grid_type::value_type::type,boost::mpl::int_<extend_field>>::type type_to_copy;
     auto it = gd.getDomainIterator();
     while(it.isNext())
     {
         auto key = it.get();
         if(std::abs(gd.template get<phi_field>(key)) < nb_gamma)
-            gd.template get<extend_field>(key) = gd.template get<extend_field_temp>(key);
+	  meta_copy<type_to_copy>::meta_copy_(gd.template get<extend_field_temp>(key),gd.template get<extend_field>(key));
         ++it;
     }
 }
 
 /**@brief Reinitializes the level set Phi field on a grid. The grid should have level set SDF and closest point field.
  *
- * @tparam grid_type Type of the grid container
- * @tparam grid_key_type Type of the key for the grid container
- * @tparam dim Dimension of the space
- * @tparam poly_order Order of the polynomial for stencil interpolation
  * @tparam phi_field Property id on grid for the level set SDF
  * @tparam cp_field Property id on grid for storing closest point coordinates
- *
+ * @tparam grid_type Type of the grid container
+
  * @param gd The distributed grid containing atleast level set SDF field and closest point coordinates
  * @param nb_gamma The width of the narrow band for reinitialization
  */
-template<typename grid_type, typename grid_key_type, unsigned int poly_order, size_t phi_field, size_t cp_field>
+template<size_t phi_field, size_t cp_field, typename grid_type>
 void reinitializeLS(grid_type &gd, const double nb_gamma)
 {
     const unsigned int dim = grid_type::dims;
-    // Stencil polynomial object
-    using Poly = typename Algoim::StencilPoly<dim, poly_order>::T_Poly;
+
+    // Update the cp_field in ghost
+    gd.template ghost_get<cp_field>(KEEP_PROPERTIES);
+
     auto &patches = gd.getLocalGridsInfo();
     blitz::TinyVector<double,dim> dx;
     for(int d = 0; d < dim; ++d)
@@ -271,6 +420,9 @@ void reinitializeLS(grid_type &gd, const double nb_gamma)
                     // NOTE: This is not the real grid coordinates, but internal coordinates used for algoim
                     double patch_pos = (key_g.get(d) - p_lo.get(d) + algoim_padding) * gd.spacing(d);
                     double cp_d = gd.template get<cp_field>(key)[d];
+                    if(cp_d == -100.0)
+                        std::cout<<"WARNING: Requesting closest point on nodes where it was not computed."<<std::endl;
+
                     distance += ((patch_pos - cp_d)*(patch_pos - cp_d));
                 }
                 distance = sqrt(distance);

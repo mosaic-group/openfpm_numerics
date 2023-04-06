@@ -1551,7 +1551,97 @@ struct switcher_get_v<vector,comp_dev>
 	}
 };
 
-/*! \brief it take an expression and create the negatove of this expression
+/*template<unsigned int, bool is_valid>
+struct get_vector_dist_expression_op
+{
+	template<typename exp_type>
+	inline static auto get(exp_type & o1, const vect_dist_key_dx & key) -> decltype(o1.value(vect_dist_key_dx(0)))
+	{
+		return o1.value(key);
+	}
+
+	template<unsigned int prop, typename exp_type, typename vector_type>
+	inline static void assign(exp_type & o1, vector_type & v, const vect_dist_key_dx & key, const vect_dist_key_dx & key_orig)
+	{
+		pos_or_propL<vector_type,exp_type::prop>::value(v,key) = o1.value(key_orig);
+	}
+
+	template<unsigned int prop, typename vector_type>
+	inline static void assign_double(double d, vector_type & v, const vect_dist_key_dx & key)
+	{
+		pos_or_propL<vector_type,prop>::value(v,key) = d;
+	}
+};
+
+template<>
+struct get_vector_dist_expression_op<1,false>
+{
+	template<typename exp_type>
+	static int get(exp_type & o1, const vect_dist_key_dx & key, const int (& comp)[1])
+	{
+		printf("ERROR: Slicer, the expression is incorrect, please check it\n");
+		return 0;
+	}
+
+	template<unsigned int prop, typename exp_type, typename vector_type>
+	inline static void assign(exp_type & o1, vector_type & v, const vect_dist_key_dx & key)
+	{
+		printf("ERROR: Slicer, the expression is incorrect, please check it\n");
+	}
+
+	template<unsigned int prop, typename vector_type>
+	inline static void assign_double(double d, vector_type & v, const vect_dist_key_dx & key)
+	{
+		printf("ERROR: Slicer, the expression is incorrect, please check it\n");
+	}
+};
+
+template<>
+struct get_vector_dist_expression_op<1,true>
+{
+	template<typename exp_type>
+	static auto get(exp_type & o1, const vect_dist_key_dx & key, const int (& comp)[1]) -> decltype(o1.value(vect_dist_key_dx(0))[0])
+	{
+		return o1.value(key)[comp[0]];
+	}
+
+	template<unsigned int prop,typename exp_type, typename vector_type>
+	inline static void assign(exp_type & o1, vector_type & v, const vect_dist_key_dx & key, const vect_dist_key_dx & key_orig, const int (& comp)[1])
+	{
+		pos_or_propL<vector_type,prop>::value(v,key)[comp[0]] = o1.value(key_orig);
+	}
+
+	template<unsigned int prop, typename vector_type>
+	inline static void assign_double(double d, vector_type & v, const vect_dist_key_dx & key, const int (& comp)[1])
+	{
+		pos_or_propL<vector_type,prop>::value(v,key)[comp[0]] = d;
+	}
+};
+
+template<>
+struct get_vector_dist_expression_op<2,true>
+{
+	template<typename exp_type>
+	static auto get(exp_type & o1, const vect_dist_key_dx & key, const int (& comp)[2]) -> decltype(o1.value(vect_dist_key_dx(0))[0][0])
+	{
+		return o1.value(key)[comp[0]][comp[1]];
+	}
+
+	template<unsigned int prop,typename exp_type, typename vector_type>
+	inline static void assign(exp_type & o1, vector_type & v, const vect_dist_key_dx & key, const vect_dist_key_dx & key_orig, const int (& comp)[2])
+	{
+		pos_or_propL<vector_type,prop>::value(v,key)[comp[0]][comp[1]] = o1.value(key_orig);
+	}
+
+	template<unsigned int prop, typename vector_type>
+	inline static void assign_double(double d, vector_type & v, const vect_dist_key_dx & key, const int (& comp)[2])
+	{
+		pos_or_propL<vector_type,prop>::value(v,key)[comp[0]][comp[1]] = d;
+	}
+};*/
+
+
+/*! \brief it take an expression and take the component
  *
  *
  */

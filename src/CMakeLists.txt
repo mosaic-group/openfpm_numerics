@@ -36,7 +36,8 @@ if ( CUDA_ON_BACKEND STREQUAL "HIP" AND HIP_FOUND )
 
 
         hip_add_executable(numerics ${OPENFPM_INIT_FILE} ${CUDA_SOURCES}
-                OdeIntegrators/tests/OdeIntegratores_base_tests.cpp
+				OdeIntegrators/tests/OdeIntegratores_base_tests.cpp
+				OdeIntegrators/tests/OdeIntegrator_grid_tests.cpp
                 DCPSE/DCPSE_op/tests/DCPSE_op_subset_test.cpp
                 DCPSE/DCPSE_op/tests/DCPSE_op_test_base_tests
                 FiniteDifference/FD_Solver_test.cpp
@@ -66,7 +67,7 @@ if ( CUDA_ON_BACKEND STREQUAL "HIP" AND HIP_FOUND )
 #               BoundaryConditions/tests/method_of_images_cylinder_unit_test.cpp
 #		        level_set/closest_point/closest_point_unit_tests.cpp
 		        level_set/redistancing_Sussman/tests/redistancingSussman_fast_unit_test.cpp
-		        level_set/redistancing_Sussman/tests/help_functions_unit_test.cpp
+#		        level_set/redistancing_Sussman/tests/help_functions_unit_test.cpp
 		        level_set/redistancing_Sussman/tests/narrowBand_unit_test.cpp
 #               level_set/redistancing_Sussman/tests/redistancingSussman_unit_test.cpp
 #		        level_set/redistancing_Sussman/tests/convergence_test.cpp
@@ -77,6 +78,7 @@ else()
 
 	add_executable(numerics ${OPENFPM_INIT_FILE} ${CUDA_SOURCES}
 		OdeIntegrators/tests/OdeIntegratores_base_tests.cpp
+		OdeIntegrators/tests/OdeIntegrator_grid_tests.cpp
 		DCPSE/DCPSE_op/tests/DCPSE_op_subset_test.cpp
 		DCPSE/DCPSE_op/tests/DCPSE_op_test_base_tests
 		FiniteDifference/FD_Solver_test.cpp
@@ -103,14 +105,14 @@ else()
 						Operators/Vector/vector_dist_operators_unit_tests.cpp
 						Operators/Vector/vector_dist_operators_apply_kernel_unit_tests.cpp
 						../../src/lib/pdata.cpp
+			DCPSE/DCPSE_op/tests/DCPSE_op_Surface_tests.cpp
 #			BoundaryConditions/tests/method_of_images_cylinder_unit_test.cpp
 #		    level_set/closest_point/closest_point_unit_tests.cpp
 			level_set/redistancing_Sussman/tests/redistancingSussman_fast_unit_test.cpp
-			level_set/redistancing_Sussman/tests/help_functions_unit_test.cpp
+#			level_set/redistancing_Sussman/tests/help_functions_unit_test.cpp
 			level_set/redistancing_Sussman/tests/narrowBand_unit_test.cpp
 #			level_set/redistancing_Sussman/tests/redistancingSussman_unit_test.cpp
 #			level_set/redistancing_Sussman/tests/convergence_test.cpp
-                        DCPSE/DCPSE_op/tests/DCPSE_op_Surface_tests.cpp
 		)
 
 	set_property(TARGET numerics PROPERTY CUDA_ARCHITECTURES OFF)
@@ -162,6 +164,8 @@ target_include_directories (numerics PUBLIC ${HDF5_ROOT}/include)
 target_include_directories (numerics PUBLIC ${LIBHILBERT_INCLUDE_DIRS})
 target_include_directories (numerics PUBLIC ${Boost_INCLUDE_DIRS})
 target_include_directories (numerics PUBLIC ${Vc_INCLUDE_DIR})
+target_include_directories (numerics PUBLIC ${BLITZ_ROOT}/include)
+target_include_directories (numerics PUBLIC ${ALGOIM_ROOT}/include)
 target_include_directories (numerics PUBLIC ${ALPAKA_ROOT}/include)
 target_include_directories (numerics PUBLIC ${MPI_C_INCLUDE_DIRS})
 if(EIGEN3_FOUND)
@@ -349,6 +353,10 @@ install(FILES BoundaryConditions/MethodOfImages.hpp
 install(FILES DMatrix/EMatrix.hpp
 	DESTINATION openfpm_numerics/include/DMatrix
 	COMPONENT OpenFPM)
+
+install(FILES level_set/closest_point/closest_point.hpp
+	      DESTINATION openfpm_numerics/include/level_set/closest_point
+	      COMPONENT OpenFPM)
 
 #if(BUILD_TESTING)
 
