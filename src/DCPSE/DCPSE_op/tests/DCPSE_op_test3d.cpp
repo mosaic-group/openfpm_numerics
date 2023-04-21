@@ -30,7 +30,6 @@
 
 
 BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests3)
-#if 0
     BOOST_AUTO_TEST_CASE(dcpse_op_vec3d) {
 //  int rank;
 //  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
@@ -961,7 +960,6 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests3)
         BOOST_REQUIRE(worst<1e-3);
 
     }
-#endif
 BOOST_AUTO_TEST_SUITE_END()
 
 #endif
