@@ -653,12 +653,12 @@ class petsc_solver<double>
 		PETSC_SAFE_CALL(MatGetLocalSize(A_,&row_loc,&col_loc));
 
 		// We set the Matrix operators
-    PETSC_SAFE_CALL(KSPSetOperators(ksp,A_,A_));
+		PETSC_SAFE_CALL(KSPSetOperators(ksp,A_,A_));
 
-    // if we are on on best solve set-up a monitor function
+		// if we are on on best solve set-up a monitor function
 
-    PETSC_SAFE_CALL(KSPSetFromOptions(ksp));
-    //PETSC_SAFE_CALL(KSPSetUp(ksp));
+		PETSC_SAFE_CALL(KSPSetFromOptions(ksp));
+		PETSC_SAFE_CALL(KSPSetUp(ksp));
 
 		// Solve the system
 		PETSC_SAFE_CALL(KSPSolve(ksp,b_,x_));
@@ -1329,122 +1329,6 @@ public:
 		return x;
 	}
 
-    /*! \brief Here we invert the matrix and solve the system
-     *
-     * \param A sparse matrix
-     * \param b vector
-     * \param x solution and initial guess
-     *
-     * \return true if succeed
-     *
-     */
-    Vector<double,PETSC_BASE> solve(SparseMatrix<double,int,PETSC_BASE> & A, Vector<double,PETSC_BASE> & x, const Vector<double,PETSC_BASE> & b)
-    {
-        Mat & A_ = A.getMat();
-        const Vec & b_ = b.getVec();
-        Vec & x_ = x.getVec();
-
-       /* // We set the size of x according to the Matrix A
-        PetscInt row;
-        PetscInt col;
-        PetscInt row_loc;
-        PetscInt col_loc;*/
-
-        PETSC_SAFE_CALL(KSPSetInitialGuessNonzero(ksp,PETSC_TRUE));
-
-        /*PETSC_SAFE_CALL(MatGetSize(A_,&row,&col));
-        PETSC_SAFE_CALL(MatGetLocalSize(A_,&row_loc,&col_loc));*/
-
-        pre_solve_impl(A_,b_,x_);
-        solve_simple(A_,b_,x_);
-
-        x.update();
-
-        return x;
-
-        /*pre_solve_impl(A_,b_,x_);
-        solve_simple(A_,b_,x_);
-        x.update();
-
-        return true;*/
-    }
-
-    /*! \brief Here we invert the matrix and solve the system with previous operator
-     *
-     * \param A sparse matrix
-     * \param b vector
-     * \param x solution and initial guess
-     *
-     * \return true if succeed
-     *
-     */
-    Vector<double,PETSC_BASE> solve_successive(const Vector<double,PETSC_BASE> & b,bool initial_guess = false)
-    {
-        const Vec & b_ = b.getVec();
-        // We set the size of x according to the Matrix A
-        PetscInt row;
-        PetscInt row_loc;
-
-		PETSC_SAFE_CALL(KSPSetInitialGuessNonzero(ksp,PETSC_FALSE));
-
-        PETSC_SAFE_CALL(VecGetSize(b_,&row));
-        PETSC_SAFE_CALL(VecGetLocalSize(b_,&row_loc));
-        Vector<double,PETSC_BASE> x(row,row_loc);
-		Vec & x_ = x.getVec();
-        PETSC_SAFE_CALL(KSPSetNormType(ksp,KSP_NORM_UNPRECONDITIONED));
-        solve_simple(b_,x_);
-
-        x.update();
-
-        return x;
-
-        /*pre_solve_impl(A_,b_,x_);
-        solve_simple(A_,b_,x_);
-        x.update();
-
-        return true;*/
-    }
-
-    /*! \brief Here we invert the matrix and solve the system with previous operator and initial guess
-     *
-     * \param A sparse matrix
-     * \param b vector
-     * \param x solution and initial guess
-     *
-     * \return true if succeed
-     *
-     */
-    Vector<double,PETSC_BASE> solve_successive(Vector<double,PETSC_BASE> & x, const Vector<double,PETSC_BASE> & b)
-    {
-        const Vec & b_ = b.getVec();
-        Vec & x_ = x.getVec();
-
-       /* // We set the size of x according to the Matrix A
-        PetscInt row;
-        PetscInt col;
-        PetscInt row_loc;
-        PetscInt col_loc;*/
-
-        PETSC_SAFE_CALL(KSPSetInitialGuessNonzero(ksp,PETSC_TRUE));
-
-        /*PETSC_SAFE_CALL(MatGetSize(A_,&row,&col));
-        PETSC_SAFE_CALL(MatGetLocalSize(A_,&row_loc,&col_loc));*/
-
-		PETSC_SAFE_CALL(KSPSetNormType(ksp,KSP_NORM_UNPRECONDITIONED));
-
-        solve_simple(b_,x_);
-
-        x.update();
-
-        return x;
-
-        /*pre_solve_impl(A_,b_,x_);
-        solve_simple(A_,b_,x_);
-        x.update();
-
-        return true;*/
-    }
-
     /*! \brief Here we invert the matrix and solve the system using a Nullspace for Neumann BC
      *
      *  \warning umfpack is not a parallel solver, this function work only with one processor
@@ -1460,7 +1344,7 @@ public:
      * \return the solution
      *
      */
-    Vector<double,PETSC_BASE> with_nullspace_solve(SparseMatrix<double,int,PETSC_BASE> & A, const Vector<double,PETSC_BASE> & b, bool initial_guess = false,bool symmetric = false)
+    Vector<double,PETSC_BASE> with_constant_nullspace_solve(SparseMatrix<double,int,PETSC_BASE> & A, const Vector<double,PETSC_BASE> & b, bool initial_guess = false)
     {
         Mat & A_ = A.getMat();
         const Vec & b_ = b.getVec();
@@ -1470,6 +1354,9 @@ public:
         PetscInt col;
         PetscInt row_loc;
         PetscInt col_loc;
+        MatNullSpace nullspace;
+
+
         PETSC_SAFE_CALL(KSPSetInitialGuessNonzero(ksp,PETSC_FALSE));
         PETSC_SAFE_CALL(MatGetSize(A_,&row,&col));
         PETSC_SAFE_CALL(MatGetLocalSize(A_,&row_loc,&col_loc));
@@ -1478,48 +1365,14 @@ public:
         Vector<double,PETSC_BASE> x(row,row_loc);
         Vec & x_ = x.getVec();
 
-        PETSC_SAFE_CALL(KSPSetFromOptions(ksp));
-        PETSC_SAFE_CALL(KSPSetOperators(ksp,A_,A_));
-        PETSC_SAFE_CALL(KSPSolve(ksp,b_,x_));
-
-        Mat      F, work, V;
-        PetscInt N, rows;
-
-        /* Determine factorability */
-        PETSC_SAFE_CALL(MatGetFactor(A_, MATSOLVERMUMPS, MAT_FACTOR_LU, &F));
-        PETSC_SAFE_CALL(MatGetLocalSize(A_, &rows, NULL));
-
-        /* Set MUMPS options, see MUMPS documentation for more information */
-        PETSC_SAFE_CALL(MatMumpsSetIcntl(F, 24, 1));
-        PETSC_SAFE_CALL(MatMumpsSetIcntl(F, 25, 1));
-
-        /* Perform factorization */
-        PETSC_SAFE_CALL(MatLUFactorSymbolic(F, A_, NULL, NULL, NULL));
-        PETSC_SAFE_CALL(MatLUFactorNumeric(F, A_, NULL));
-
-        /* This is the dimension of the null space */
-        PETSC_SAFE_CALL(MatMumpsGetInfog(F, 28, &N));
-        /* This will contain the null space in the columns */
-        PETSC_SAFE_CALL(MatCreateDense(PETSC_COMM_WORLD, rows, N, PETSC_DETERMINE, PETSC_DETERMINE, NULL, &V));
-        PETSC_SAFE_CALL(MatDuplicate(V, MAT_DO_NOT_COPY_VALUES, &work));
-        PETSC_SAFE_CALL(MatMatSolve(F, work, V));
-
-        std::cout<<"Dimension:" << N;
-        Vec nvec[N];
-        for(int i=0;i<N;i++)
-        {
-            PETSC_SAFE_CALL(MatGetColumnVector(V,nvec[i],i));
-        }
-        MatNullSpace  nullspace;
-
-        PETSC_SAFE_CALL(MatNullSpaceCreate(PETSC_COMM_WORLD,PETSC_TRUE,N,nvec,&nullspace));
-        PETSC_SAFE_CALL(MatSetTransposeNullSpace(A_,nullspace));
-        PETSC_SAFE_CALL(MatSetNullSpace(A_,nullspace));
+        //Removing Null Space from RHS
+        PETSC_SAFE_CALL(MatNullSpaceCreate(PETSC_COMM_WORLD,PETSC_TRUE,0,0,&nullspace));
+        PETSC_SAFE_CALL(MatNullSpaceRemove(nullspace,b_));
         PETSC_SAFE_CALL(MatNullSpaceDestroy(&nullspace));
 
-        PETSC_SAFE_CALL(KSPSetOperators(ksp,A_,A_));
-        PETSC_SAFE_CALL(KSPSetFromOptions(ksp));
-        PETSC_SAFE_CALL(KSPSolve(ksp,b_,x_));
+        pre_solve_impl(A_,b_,x_);
+        solve_simple(A_,b_,x_);
+
         x.update();
 
         return x;
@@ -1564,6 +1417,30 @@ public:
 	solError get_residual_error(const Vector<double,PETSC_BASE> & x, const Vector<double,PETSC_BASE> & b)
 	{
 		return getSolNormError(b.getVec(),x.getVec(),ksp);
+	}
+
+	/*! \brief Here we invert the matrix and solve the system
+	 *
+	 * \param A sparse matrix
+	 * \param b vector
+	 * \param x solution and initial guess
+	 *
+	 * \return true if succeed
+	 *
+	 */
+	bool solve(SparseMatrix<double,int,PETSC_BASE> & A, Vector<double,PETSC_BASE> & x, const Vector<double,PETSC_BASE> & b)
+	{
+		Mat & A_ = A.getMat();
+		const Vec & b_ = b.getVec();
+		Vec & x_ = x.getVec();
+
+		PETSC_SAFE_CALL(KSPSetInitialGuessNonzero(ksp,PETSC_TRUE));
+
+		pre_solve_impl(A_,b_,x_);
+		solve_simple(A_,b_,x_);
+		x.update();
+
+		return true;
 	}
 
 	/*! \brief Here we invert the matrix and solve the system

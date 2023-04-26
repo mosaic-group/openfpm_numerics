@@ -1,6 +1,5 @@
 //
 // Created by tommaso on 22/03/19.
-// Modified by Serhii
 //
 
 #ifndef OPENFPM_PDATA_VANDERMONDEROW_HPP
@@ -8,32 +7,31 @@
 
 #include "MonomialBasis.hpp"
 
-template <unsigned int dim, typename T, typename MonomialBasis_type = MonomialBasis<dim>>
+template <unsigned int dim, typename T>
 class VandermondeRowBuilder
 {
 private:
-    const MonomialBasis_type& monomialBasis;
+    const MonomialBasis<dim> monomialBasis;
 
 public:
-    VandermondeRowBuilder(const MonomialBasis_type &monomialBasis) : monomialBasis(monomialBasis) {}
+    VandermondeRowBuilder(const MonomialBasis<dim> &monomialBasis) : monomialBasis(monomialBasis) {}
 
     template <typename MatrixType>
     void buildRow(MatrixType &M, unsigned int row, Point<dim, T> x, T eps);
 };
 
-template<unsigned int dim, typename T,typename MonomialBasis_type>
+template<unsigned int dim, typename T>
 template <typename MatrixType>
-void VandermondeRowBuilder<dim, T, MonomialBasis_type>::buildRow(MatrixType &M, unsigned int row, Point<dim, T> x, T eps)
+void VandermondeRowBuilder<dim, T>::buildRow(MatrixType &M, unsigned int row, Point<dim, T> x, T eps)
 {
-    auto& basisElements = monomialBasis.getElements();
-
-    for (size_t col = 0; col < basisElements.size(); ++col)
+    unsigned int col = 0;
+    for (auto& basisElement : monomialBasis.getElements())
     {
-        Monomial<dim> m = basisElements.get(col);
+        Monomial<dim> m = monomialBasis.getElement(col);
         M(row, col) = m.evaluate(x);
         M(row, col) /= openfpm::math::intpowlog(eps, m.order());
+        ++col;
     }
 }
-
 
 #endif //OPENFPM_PDATA_VANDERMONDEROW_HPP

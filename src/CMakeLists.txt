@@ -17,9 +17,6 @@ endif()
 
 if (NOT CUDA_ON_BACKEND STREQUAL "None")
 	set(CUDA_SOURCES Operators/Vector/vector_dist_operators_unit_tests.cu
-					 #DCPSE/DCPSE_op/tests/DCPSE_op_Solver_test.cu
-			 	 	 OdeIntegrators/tests/Odeintegrators_test_gpu.cu
-					 #DCPSE/DCPSE_op/tests/DCPSE_op_subset_test.cu
 					 Operators/Vector/vector_dist_operators_apply_kernel_unit_tests.cu)
 endif()
 
@@ -36,8 +33,7 @@ if ( CUDA_ON_BACKEND STREQUAL "HIP" AND HIP_FOUND )
 
 
         hip_add_executable(numerics ${OPENFPM_INIT_FILE} ${CUDA_SOURCES}
-				OdeIntegrators/tests/OdeIntegratores_base_tests.cpp
-				OdeIntegrators/tests/OdeIntegrator_grid_tests.cpp
+                OdeIntegrators/tests/OdeIntegratores_base_tests.cpp
                 DCPSE/DCPSE_op/tests/DCPSE_op_subset_test.cpp
                 DCPSE/DCPSE_op/tests/DCPSE_op_test_base_tests
                 FiniteDifference/FD_Solver_test.cpp
@@ -78,7 +74,6 @@ else()
 
 	add_executable(numerics ${OPENFPM_INIT_FILE} ${CUDA_SOURCES}
 		OdeIntegrators/tests/OdeIntegratores_base_tests.cpp
-		OdeIntegrators/tests/OdeIntegrator_grid_tests.cpp
 		DCPSE/DCPSE_op/tests/DCPSE_op_subset_test.cpp
 		DCPSE/DCPSE_op/tests/DCPSE_op_test_base_tests
 		FiniteDifference/FD_Solver_test.cpp
@@ -105,7 +100,6 @@ else()
 						Operators/Vector/vector_dist_operators_unit_tests.cpp
 						Operators/Vector/vector_dist_operators_apply_kernel_unit_tests.cpp
 						../../src/lib/pdata.cpp
-			DCPSE/DCPSE_op/tests/DCPSE_op_Surface_tests.cpp
 #			BoundaryConditions/tests/method_of_images_cylinder_unit_test.cpp
 #		    level_set/closest_point/closest_point_unit_tests.cpp
 			level_set/redistancing_Sussman/tests/redistancingSussman_fast_unit_test.cpp
@@ -147,7 +141,6 @@ if(CUDA_FOUND)
         if (TEST_COVERAGE)
                 target_compile_options(numerics PRIVATE $<$<COMPILE_LANGUAGE:CUDA>: -Xcompiler "-fprofile-arcs -ftest-coverage" >)
         endif()
-    target_link_libraries(numerics -lcublas)
 endif()
 
 target_include_directories (numerics PUBLIC ${CMAKE_CUDA_TOOLKIT_INCLUDE_DIRECTORIES})
@@ -164,8 +157,6 @@ target_include_directories (numerics PUBLIC ${HDF5_ROOT}/include)
 target_include_directories (numerics PUBLIC ${LIBHILBERT_INCLUDE_DIRS})
 target_include_directories (numerics PUBLIC ${Boost_INCLUDE_DIRS})
 target_include_directories (numerics PUBLIC ${Vc_INCLUDE_DIR})
-target_include_directories (numerics PUBLIC ${BLITZ_ROOT}/include)
-target_include_directories (numerics PUBLIC ${ALGOIM_ROOT}/include)
 target_include_directories (numerics PUBLIC ${ALPAKA_ROOT}/include)
 target_include_directories (numerics PUBLIC ${MPI_C_INCLUDE_DIRS})
 if(EIGEN3_FOUND)
@@ -252,7 +243,7 @@ install(FILES FiniteDifference/Average.hpp
       	      FiniteDifference/FDScheme.hpp 
       	      FiniteDifference/Laplacian.hpp 
       	      FiniteDifference/mul.hpp 
-      	      FiniteDifference/sum.hpp
+      	      FiniteDifference/sum.hpp 
 	      FiniteDifference/Upwind_gradient.hpp
 	      FiniteDifference/Eno_Weno.hpp
               FiniteDifference/FD_op.hpp
@@ -280,23 +271,18 @@ install(FILES Operators/Vector/vector_dist_operators_extensions.hpp
 	       COMPONENT OpenFPM)
 
 install(FILES Operators/Vector/cuda/vector_dist_operators_cuda.cuh
-	      DESTINATION openfpm_numerics/include/Operators/Vector/cuda
+	      DESTINATION openfpm_numerics/include/Operators/Vector/cuda 
 	      COMPONENT OpenFPM)
 
 install(FILES DCPSE/Dcpse.hpp
-		DCPSE/Dcpse.cuh
-		DCPSE/DCPSE_op/DCPSE_Solver.cuh
 		DCPSE/DcpseDiagonalScalingMatrix.hpp
 		DCPSE/DcpseRhs.hpp
 		DCPSE/Monomial.hpp
-		DCPSE/Monomial.cuh
 		DCPSE/MonomialBasis.hpp
 		DCPSE/Support.hpp
-		DCPSE/SupportBuilder.cuh
 		DCPSE/SupportBuilder.hpp
 		DCPSE/Vandermonde.hpp
 		DCPSE/VandermondeRowBuilder.hpp
-		DCPSE/DcpseInterpolation.hpp
 		DESTINATION openfpm_numerics/include/DCPSE
 		COMPONENT OpenFPM)
 
@@ -311,13 +297,11 @@ install(FILES util/eq_solve_common.hpp
 install(FILES DCPSE/DCPSE_op/DCPSE_op.hpp
 		DCPSE/DCPSE_op/DCPSE_Solver.hpp
 		DCPSE/DCPSE_op/EqnsStruct.hpp
-		DCPSE/DCPSE_op/DCPSE_surface_op.hpp
 		DESTINATION openfpm_numerics/include/DCPSE/DCPSE_op
 		COMPONENT OpenFPM)
 
 install(FILES OdeIntegrators/OdeIntegrators.hpp
-        OdeIntegrators/vector_algebra_ofp.hpp
-		OdeIntegrators/vector_algebra_ofp_gpu.hpp
+		OdeIntegrators/boost_vector_algebra_ofp.hpp
 		DESTINATION openfpm_numerics/include/OdeIntegrators
 		COMPONENT OpenFPM)
 
@@ -326,7 +310,7 @@ install(FILES Draw/DrawParticles.hpp
       	      Draw/PointIteratorSkin.hpp
 	      Draw/DrawDisk.hpp
 	      Draw/DrawSphere.hpp
-      	      DESTINATION openfpm_numerics/include/Draw
+      	      DESTINATION openfpm_numerics/include/Draw 
 	      COMPONENT OpenFPM)
 
 install(FILES interpolation/interpolation.hpp 
@@ -353,10 +337,6 @@ install(FILES BoundaryConditions/MethodOfImages.hpp
 install(FILES DMatrix/EMatrix.hpp
 	DESTINATION openfpm_numerics/include/DMatrix
 	COMPONENT OpenFPM)
-
-install(FILES level_set/closest_point/closest_point.hpp
-	      DESTINATION openfpm_numerics/include/level_set/closest_point
-	      COMPONENT OpenFPM)
 
 #if(BUILD_TESTING)
 

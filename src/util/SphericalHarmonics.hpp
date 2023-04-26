@@ -2,8 +2,7 @@
 // Created by Abhinav Singh on 03.11.20.
 //
 
-#ifndef SPHERICALHARMONICS_HPP_
-#define SPHERICALHARMONICS_HPP_
+
 //#include "util/util_debug.hpp"
 #include <boost/math/special_functions/spherical_harmonic.hpp>
 
@@ -205,19 +204,19 @@ namespace openfpm {
         return openfpm::math::DYdPhi(n, m, theta, phi, boost::math::policies::policy<>());
     }
 
-    inline double sph_A1(int l,int  m,double v1, double vr) {
+    double sph_A1(int l,int  m,double v1, double vr) {
         return 0.5 * (1 + l) * (l * v1 - vr);
     }
 
-    inline double sph_A2(int l,int  m,double v1, double vr) {
+    double sph_A2(int l,int  m,double v1, double vr) {
         return 0.5 * ((1 + l) * (-l) * v1 + (l + 3) * vr);
     }
 
-    inline double sph_B(int l, int m,double v2) {
+    double sph_B(int l, int m,double v2) {
         return v2;
     }
 
-    inline double sph_A3(int l,int m,double v1, double vr) {
+    double sph_A3(int l,int m,double v1, double vr) {
         if (m == 1){
             return 0.5 *l* ((1 + l)*v1 - vr)-1.5*sph_A2(l,m,v1,vr);
         }
@@ -226,7 +225,7 @@ namespace openfpm {
         }
     }
 
-    inline double sph_A4(int l,int m,double v1, double vr) {
+    double sph_A4(int l,int m,double v1, double vr) {
         if (m == 1){
             return 0.5* (-l*(1 + l)*v1 + (2-l)*vr)+0.5*sph_A2(l,m,v1,vr);
         }
@@ -247,7 +246,7 @@ namespace openfpm {
      *  \return std::vector containing the spherical harmonic amplitudes (ur,u1,u2,p) for the solution at r for mode l,m.
      *
      */
-    inline std::vector<double> sph_anasol_u(double nu,int l,int m,double vr,double v1,double v2,double r) {
+    std::vector<double> sph_anasol_u(double nu,int l,int m,double vr,double v1,double v2,double r) {
          double ur,u1,u2,p;
          if(l==0)
              {
@@ -364,5 +363,3 @@ namespace openfpm {
 
 }
 }
-
-#endif /* SPHERICALHARMONICS_HPP_ */

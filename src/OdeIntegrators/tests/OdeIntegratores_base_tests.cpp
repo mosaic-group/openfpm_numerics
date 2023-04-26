@@ -15,10 +15,8 @@
 #include "Vector/vector_dist_subset.hpp"
 #include "Decomposition/Distribution/SpaceDistribution.hpp"
 #include "OdeIntegrators/OdeIntegrators.hpp"
-#ifdef HAVE_EIGEN
 #include "DCPSE/DCPSE_op/DCPSE_op.hpp"
-#endif
-#include "OdeIntegrators/vector_algebra_ofp.hpp"
+#include "OdeIntegrators/boost_vector_algebra_ofp.hpp"
 
 typedef texp_v<double> state_type;
 const double a = 2.8e-4;
@@ -95,7 +93,7 @@ void sigmoid( const state_type &x , state_type &dxdt , const double t )
 
 BOOST_AUTO_TEST_SUITE(odeInt_BASE_tests)
 
-BOOST_AUTO_TEST_CASE(odeint_base_test1)
+BOOST_AUTO_TEST_CASE(odeint_base_test1) 
 {
         size_t edgeSemiSize = 40;
         const size_t sz[2] = {edgeSemiSize,edgeSemiSize };
@@ -182,7 +180,7 @@ BOOST_AUTO_TEST_CASE(odeint_base_test1)
         BOOST_REQUIRE_EQUAL(worst,worst2);
 }
 
-BOOST_AUTO_TEST_CASE(odeint_base_test_STRUCT_ofp)
+BOOST_AUTO_TEST_CASE(odeint_base_test_STRUCT_ofp) 
 {
     size_t edgeSemiSize = 40;
     const size_t sz[2] = {edgeSemiSize,edgeSemiSize };
@@ -295,7 +293,7 @@ BOOST_AUTO_TEST_CASE(odeint_base_test_STRUCT_ofp)
 }
 
 
-BOOST_AUTO_TEST_CASE(odeint_base_test2)
+BOOST_AUTO_TEST_CASE(odeint_base_test2) 
 {
     size_t edgeSemiSize = 40;
     const size_t sz[2] = {edgeSemiSize,edgeSemiSize };
@@ -383,7 +381,7 @@ BOOST_AUTO_TEST_CASE(odeint_base_test2)
     BOOST_REQUIRE(worst2 < 1e-6);
 }
 
-BOOST_AUTO_TEST_CASE(odeint_base_test3)
+BOOST_AUTO_TEST_CASE(odeint_base_test3) 
 {
     size_t edgeSemiSize = 40;
     const size_t sz[2] = {edgeSemiSize,edgeSemiSize };
@@ -466,7 +464,9 @@ BOOST_AUTO_TEST_CASE(odeint_base_test3)
     BOOST_REQUIRE_EQUAL(worst,worst2);
 }
 
+
 #ifdef HAVE_EIGEN
+
 BOOST_AUTO_TEST_CASE(dcpse_op_react_diff_test) {
         size_t edgeSemiSize = 5;
         const size_t sz[2] = {2 * edgeSemiSize+1, 2 * edgeSemiSize+1};
@@ -495,7 +495,7 @@ BOOST_AUTO_TEST_CASE(dcpse_op_react_diff_test) {
         size_t pointId = 0;
         size_t counter = 0;
         double minNormOne = 999;
-        while (it.isNext())
+        while (it.isNext()) 
         {
             domain.add();
             auto key = it.get();
@@ -558,7 +558,7 @@ BOOST_AUTO_TEST_CASE(dcpse_op_react_diff_test) {
         if (create_vcluster().rank() == 0)
         {++it2;}
 
-        while (it2.isNext())
+        while (it2.isNext()) 
         {
             auto p = it2.get();
 
@@ -568,4 +568,5 @@ BOOST_AUTO_TEST_CASE(dcpse_op_react_diff_test) {
         }
 }
 #endif
+
 BOOST_AUTO_TEST_SUITE_END()

@@ -18,20 +18,15 @@ class Support
 private:
 
     size_t referencePointKey;
-    openfpm::vector_std<size_t> keys;
+    std::vector<size_t> keys;
 
 public:
 
     Support() {};
 
-    Support(const size_t &referencePoint, const openfpm::vector_std<size_t> &keys)
-            :referencePointKey(referencePoint),
-              keys(keys)
-              {}
-
     Support(const size_t &referencePoint, const std::vector<size_t> &keys)
             :referencePointKey(referencePoint),
-              keys(keys.begin(), keys.end())
+              keys(keys)
               {}
 
     Support(const Support &other)
@@ -49,44 +44,10 @@ public:
         return referencePointKey;
     }
 
-    const openfpm::vector_std<size_t> &getKeys() const
+    const std::vector<size_t> &getKeys() const
 	{
 	    return keys;
 	}
-
-    openfpm::vector_std<size_t> &getKeys()
-	{
-	    return keys;
-	}
-
-    static bool pack()
-    {
-        return true;
-    }
-
-    static bool packRequest()
-    {
-        return true;
-    }
-
-    template<int ... prp> inline void packRequest(size_t & req) const
-    {
-        req += sizeof(size_t);
-        keys.packRequest(req);
-    }
-
-    template<int ... prp> inline void pack(ExtPreAlloc<HeapMemory> & mem, Pack_stat & sts) const
-    {
-        Packer<size_t,HeapMemory>::pack(mem,referencePointKey,sts);
-        keys.template pack<prp ...>(mem,sts);
-    }
-
-    template<unsigned int ... prp, typename MemType> inline void unpack(ExtPreAlloc<MemType> & mem, Unpack_stat & ps)
-    {
-        Unpacker<size_t,MemType>::unpack(mem,referencePointKey,ps);
-        keys.template unpack<prp ...>(mem,ps);
-    }
-
 };
 
 

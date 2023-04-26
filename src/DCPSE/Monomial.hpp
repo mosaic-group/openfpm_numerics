@@ -55,7 +55,6 @@ public:
         return lhs << rhs.scalar << " : " << rhs.exponents.toString();
     }
 
-    __host__ __device__ unsigned int getScalar() const { return scalar; }
 private:
     void updateSum();
 };

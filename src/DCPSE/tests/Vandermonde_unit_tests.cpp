@@ -109,7 +109,7 @@ BOOST_AUTO_TEST_SUITE(Vandermonde_tests)
         Support s(0,keys);
 
         // ...and get the matrix V
-        Vandermonde<2, double, EMatrix<double, Eigen::Dynamic, Eigen::Dynamic>> vandermonde(s, mb, parts,parts);
+        Vandermonde<2, double, EMatrix<double, Eigen::Dynamic, Eigen::Dynamic>> vandermonde(s, mb, parts);
         vandermonde.getMatrix(V);
 
         // Now build the matrix of expected values
@@ -201,7 +201,7 @@ BOOST_AUTO_TEST_SUITE(Vandermonde_tests)
         Support s(0,keys);
 
         // ...and get the matrix V
-        Vandermonde<2, double, EMatrix<double, Eigen::Dynamic, Eigen::Dynamic>> vandermonde(s, mb, parts,parts);
+        Vandermonde<2, double, EMatrix<double, Eigen::Dynamic, Eigen::Dynamic>> vandermonde(s, mb, parts);
         vandermonde.getMatrix(V);
 
         // Now build the matrix of expected values
