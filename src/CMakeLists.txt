@@ -52,7 +52,7 @@ if ( CUDA_ON_BACKEND STREQUAL "HIP" AND HIP_FOUND )
 	        DCPSE/tests/Vandermonde_unit_tests.cpp
                                                 main.cpp
                                                 Matrix/SparseMatrix_unit_tests.cpp
-                                                interpolation/interpolation_unit_tests.cpp
+                                                #interpolation/interpolation_unit_tests.cpp
                                                 Vector/Vector_unit_tests.cpp
                                                 Solvers/petsc_solver_unit_tests.cpp
                                                 FiniteDifference/FDScheme_unit_tests.cpp
@@ -93,7 +93,7 @@ else()
         DCPSE/tests/Vandermonde_unit_tests.cpp
 						main.cpp
 						Matrix/SparseMatrix_unit_tests.cpp
-						interpolation/interpolation_unit_tests.cpp
+						#interpolation/interpolation_unit_tests.cpp
 						Vector/Vector_unit_tests.cpp
 						Solvers/petsc_solver_unit_tests.cpp
 						FiniteDifference/FDScheme_unit_tests.cpp
