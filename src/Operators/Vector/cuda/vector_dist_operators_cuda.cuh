@@ -26,11 +26,11 @@ struct SubsetSelector_impl<true>
 {
     template<typename particle_type,typename subset_type>
     static void check(particle_type &particles,subset_type &particle_subset){
-
-        if(particles.getMapCtr()!=particle_subset.getUpdateCtr())
+        //This getMapCtr needs to be created or fixed for cuda!
+       /* if(particles.getMapCtr()!=particle_subset.getUpdateCtr())
         {
             std::cerr<<__FILE__<<":"<<__LINE__<<" Error: You forgot a subset update after map."<<std::endl;
-        }
+        }*/
     }
 };
 #endif
@@ -78,7 +78,6 @@ struct pos_or_propL_ker
 		return v.template getProp<prp>(k);
 	}
 };
-
 
 
 /*! \brief selector for position or properties left side
@@ -428,7 +427,7 @@ struct vector_dist_op_compute_op<prp,false,comp_host>
 	}
 };
 
-
+#define NVCC
 #ifdef __NVCC__
 
 template<unsigned int prp, unsigned int dim ,typename vector, typename expr>
