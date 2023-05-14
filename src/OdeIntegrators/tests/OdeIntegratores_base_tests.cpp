@@ -86,7 +86,11 @@ void Exponential_struct_ofp2( const state_type_3d_ofp &x , state_type_3d_ofp &dx
 
 void Exponential( const state_type &x , state_type &dxdt , const double t )
 {
+    //timer tt;
+    //tt.start();
     dxdt = x;
+    //tt.stop();
+    //std::cout<<tt.getwct()<<std::endl;
 }
 void sigmoid( const state_type &x , state_type &dxdt , const double t )
 {
@@ -97,7 +101,7 @@ BOOST_AUTO_TEST_SUITE(odeInt_BASE_tests)
 
 BOOST_AUTO_TEST_CASE(odeint_base_test1)
 {
-        size_t edgeSemiSize = 40;
+        size_t edgeSemiSize = 512;
         const size_t sz[2] = {edgeSemiSize,edgeSemiSize };
         Box<2, double> box({ 0, 0 }, { 1.0, 1.0 });
         size_t bc[2] = { NON_PERIODIC, NON_PERIODIC };
@@ -109,7 +113,9 @@ BOOST_AUTO_TEST_CASE(odeint_base_test1)
         BOOST_TEST_MESSAGE("Init vector_dist...");
 
         vector_dist<2, double, aggregate<double, double,double>> Particles(0, box, bc, ghost);
-
+        double t0=-5,tf=5,t;
+        t=t0;
+        const double dt=0.01;
         auto it = Particles.getGridIterator(sz);
         while (it.isNext())
         {
@@ -121,8 +127,8 @@ BOOST_AUTO_TEST_CASE(odeint_base_test1)
             mem_id k1 = key.get(1);
             double yp0 = k1 * spacing[1];
             Particles.getLastPos()[1] = yp0;
-            Particles.getLastProp<0>() = xp0*yp0*exp(0);
-            Particles.getLastProp<1>() = xp0*yp0*exp(0.4);
+            Particles.getLastProp<0>() = xp0*yp0*exp(t0);
+            Particles.getLastProp<1>() = xp0*yp0*exp(tf);
             ++it;
         }
 
@@ -136,14 +142,15 @@ BOOST_AUTO_TEST_CASE(odeint_base_test1)
         x0=Init;
         // The rhs of x' = f(x)
 
-        double t=0,tf=0.4;
-        const double dt=0.1;
+
 
         //This doesnt work Why?
-        //size_t steps=boost::numeric::odeint::integrate(Exponential,x0,0.0,tf,dt);
-
-        size_t steps=boost::numeric::odeint::integrate_const( boost::numeric::odeint::runge_kutta4< state_type >(),Exponential,x0,0.0,tf,dt);
-
+        //size_t steps=boost::numeric::odeint::integrate(Exponential,x0,t,tf,dt);
+        timer tt;
+        tt.start();
+        size_t steps=boost::numeric::odeint::integrate_const( boost::numeric::odeint::runge_kutta4< state_type >(),Exponential,x0,t,tf,dt);
+        tt.stop();
+        std::cout<<"Time taken by CPU:"<<tt.getwct()<<std::endl;
         OdeSol=x0;
         auto it2 = Particles.getDomainIterator();
         double worst = 0.0;
@@ -157,17 +164,18 @@ BOOST_AUTO_TEST_CASE(odeint_base_test1)
 
         //std::cout<<worst<<std::endl;
         BOOST_REQUIRE(worst < 1e-6);
-
+        t=t0;
         x0=Init;
+        //Particles.write("first");
         boost::numeric::odeint::runge_kutta4< state_type > rk4;
-        while (t<tf)
+        for(int i=0;i<floor((tf-t0)/dt+0.5);i++)
         {
             rk4.do_step(Exponential,x0,t,dt);
-            OdeSol=x0;
             t+=dt;
         }
-
+        //std::cout<<"Final TIme:"<<t<<std::endl;
         OdeSol=x0;
+        //Particles.write("second");
         auto it3 = Particles.getDomainIterator();
         double worst2 = 0.0;
         while (it3.isNext()) {

@@ -24,7 +24,11 @@ typedef state_type_1d_ofp_gpu state_type;
 
 void ExponentialGPU( const state_type &x , state_type &dxdt , const double t )
 {
+    //timer tt;
+    //tt.startGPU();
     dxdt.data.get<0>() = x.data.get<0>();
+    //tt.stopGPU();
+    //std::cout<<"GPU Time:"<<tt.getwctGPU()<<std::endl;
     //x.data.get<0>().getVector().deviceToHost<0>();
     //dxdt.data.get<0>().getVector().deviceToHost<0>();
 }
