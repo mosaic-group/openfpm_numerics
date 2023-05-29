@@ -835,14 +835,40 @@ struct vector_dist_expression_comp_proxy_sel
     { vector_dist_op_compute_op<0,false,vector_dist_expression_comp_sel<comp_dev,cond_>::type::value>
         ::compute_expr(v,v_exp);}
 };
+
+template<unsigned int prp, typename vector>
+class vector_dist_expression;
+
+template<typename v_exp>
+struct transform_if_temporal
+{
+    template<typename T>
+    static auto transform(T & v) -> decltype(v)
+    {
+        return v;
+    }
+};
+
+template<typename T>
+struct transform_if_temporal<vector_dist_expression<0,openfpm::vector_gpu<aggregate<T>>>>
+{
+    template<typename T_>
+    static auto transform(T_ & v) -> decltype(v.getVector().toKernel())
+    {
+        return v.getVector().toKernel();
+    }
+};
+
+
 template<>
 struct vector_dist_expression_comp_proxy_sel<false>
 {
     template<bool cond, typename v_type, typename exp_type>
     static void compute(v_type &v, exp_type &v_exp)
     {   auto v_ker=v.toKernel();
+        auto v_exp_transformed = transform_if_temporal<typename std::remove_const<exp_type>::type>::transform(v_exp);
         vector_dist_op_compute_op<0,false,vector_dist_expression_comp_sel<comp_dev,cond>::type::value>
-        ::compute_expr(v_ker,v_exp);}
+        ::compute_expr(v_ker,v_exp_transformed);}
 };
 
 template<typename vector, bool is_ker = has_vector_kernel<vector>::type::value>
@@ -1512,11 +1538,23 @@ public:
     {
         return base::operator=(v_exp);
     }
+
+    vector & operator=(const vector_dist_expression<0,openfpm::vector_gpu<aggregate<T>>> & v_exp)
+    {
+        return base::operator=(v_exp);
+    }
+
+    vector & equalGPU(const vector_dist_expression<0,openfpm::vector_gpu<aggregate<T>>> & v_exp)
+    {
+        return base::operator=(v_exp);
+    }
+
     template<typename exp1, typename exp2, unsigned int op>
     vector & operator=(const vector_dist_expression_op<exp1,exp2,op> & v_exp)
     {
         return base::operator=(v_exp);
     }
+
 
 };
 
