@@ -318,15 +318,8 @@ private:
 				for(int k = 0; k < dim_r; k++) x_debug[k] = 0.25;
 				
 				// do the projections.
-                		while ((abs(p) > redistOptions.tolerance) && (k_project < redistOptions.max_iter)) {
-                    			if (((a.getKey() == 9786) || (a.getKey() == 15403)) && (k_project<4))
-					{
-						std::cout<<"x["<<k_project<<"]:"<<std::endl;
-						std::cout<<x<<std::endl;
-						std::cout<<"p = "<<get_p(x, c, polynomialDegree)<<std::endl;
-						std::cout<<"grad p = "<<std::endl;
-						std::cout<<get_grad_p(x, c, polynomialDegree)<<std::endl;
-					}
+				while ((abs(p) > redistOptions.tolerance) && (k_project < redistOptions.max_iter))
+				{
 					grad_p = get_grad_p(x, c, polynomialDegree);
                     			grad_p_mag2 = grad_p.dot(grad_p);
 
