@@ -800,6 +800,8 @@ public:
  */
     template<typename options>
     typename Sys_eqs::SparseMatrix_type &getA(options opt) {
+        if (A.isMatrixFilled()) return A;
+
         if (opt == options_solver::STANDARD) {
             A.resize(tot * Sys_eqs::nvar, tot * Sys_eqs::nvar,
                      p_map.size_local() * Sys_eqs::nvar,

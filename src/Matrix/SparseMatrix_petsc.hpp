@@ -372,6 +372,17 @@ public:
 		return 0;
 	}
 
+	/*! \brief Return the state of matrix
+	 *
+	 * Returns a bool flag that indicated whether the matrix
+	 * has already been filled via MatSetValues
+	 *
+	 */
+	bool isMatrixFilled()
+	{
+		return m_created;
+	}
+
 	/* Write matrix on vtk
 	 *
 	 * \param out file to write into
