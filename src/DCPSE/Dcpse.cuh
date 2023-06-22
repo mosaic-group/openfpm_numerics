@@ -49,6 +49,8 @@ public:
     // 2) The machinery for assembling and solving the linear system for coefficients starts...
     // 3) The user can then call an evaluate(point) method to get the evaluation of the differential operator
     //    on the given point.
+    ////c=HOverEpsilon. Note that the Eps value is computed by <h>/c (<h>=local average spacing for each particle and its support). This factor c is used in the Vandermonde.hpp.
+    double HOverEpsilon=0.9;
 private:
     const Point<dim, unsigned int> differentialSignature;
     const unsigned int differentialOrder;
@@ -501,7 +503,8 @@ private:
         const T condVTOL = 1e2;
 
         if (!isSharedSupport) {
-            SupportBuilder<vector_type,vector_type> supportBuilder(particles,particles, differentialSignature, rCut,differentialOrder == 0);
+            SupportBuilder<vector_type,vector_type>
+                supportBuilder(particles, particles, differentialSignature, rCut, differentialOrder == 0);
             unsigned int requiredSupportSize = monomialBasis.size();
             // need to resize supportKeys1D to yet unknown supportKeysTotalN
             // add() takes too long
@@ -524,12 +527,11 @@ private:
                 EMatrix<T, Eigen::Dynamic, Eigen::Dynamic> V(support.size(), monomialBasis.size());
                 // Vandermonde matrix computation
                 Vandermonde<dim, T, EMatrix<T, Eigen::Dynamic, Eigen::Dynamic>>
-                        vandermonde(support, monomialBasis, particles,particles);
+                        vandermonde(support, monomialBasis, particles, particles,HOverEpsilon);
                 vandermonde.getMatrix(V);
 
                 T condV = conditionNumber(V, condVTOL);
                 T eps = vandermonde.getEps();
-
                 if (condV > condVTOL) {
                     requiredSupportSize *= 2;
                     std::cout << "INFO: Increasing, requiredSupportSize = " << requiredSupportSize << std::endl; // debug
@@ -571,7 +573,9 @@ private:
         const T condVTOL = 1e2;
 
         if (!isSharedSupport) {
-            SupportBuilder<vector_type,vector_type> supportBuilder(particles, particles, differentialSignature, rCut, differentialOrder == 0);
+            SupportBuilder<vector_type,vector_type>
+                supportBuilder(particles, particles, differentialSignature, rCut, differentialOrder == 0);
+
             unsigned int requiredSupportSize = monomialBasis.size();
             // need to resize supportKeys1D to yet unknown supportKeysTotalN
             // add() takes too long
@@ -594,7 +598,8 @@ private:
                 EMatrix<T, Eigen::Dynamic, Eigen::Dynamic> V(support.size(), monomialBasis.size());
                 // Vandermonde matrix computation
                 Vandermonde<dim, T, EMatrix<T, Eigen::Dynamic, Eigen::Dynamic>>
-                        vandermonde(support, monomialBasis, particles);
+                        vandermonde(support, monomialBasis, particles, particles, HOverEpsilon);
+
                 vandermonde.getMatrix(V);
 
                 T condV = conditionNumber(V, condVTOL);

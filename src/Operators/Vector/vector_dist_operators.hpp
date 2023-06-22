@@ -1002,7 +1002,7 @@ public:
 	 * \return the result of the expression
 	 *
 	 */
-	__device__ __host__ inline auto value(const unsigned int & k) const -> decltype(pos_or_propR<vector,prp>::value(v.v,k))
+	__host__ __device__ inline auto value(const unsigned int & k) const -> decltype(pos_or_propR<vector,prp>::value(v.v,k))
 	{
 		return pos_or_propR<vector,prp>::value(v.v,k);
 	}
@@ -1014,7 +1014,7 @@ public:
 	 * \return the result of the expression
 	 *
 	 */
-	__device__ __host__ inline auto value(const unsigned int & k) -> decltype(pos_or_propR<vector,prp>::value(v.v,k))
+	__host__ __device__  inline auto value(const unsigned int & k) -> decltype(pos_or_propR<vector,prp>::value(v.v,k))
 	{
 		return pos_or_propR<vector,prp>::value(v.v,k);
 	}
