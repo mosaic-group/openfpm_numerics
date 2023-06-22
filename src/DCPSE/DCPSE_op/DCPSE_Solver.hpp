@@ -121,8 +121,8 @@ class DCPSE_scheme {
                 b.resize(Sys_eqs::nvar * (tot + 1), Sys_eqs::nvar * (sz + 1));
                 x_ig.resize(Sys_eqs::nvar * (tot + 1), Sys_eqs::nvar * (sz + 1));
             } else {
-                b.resize(Sys_eqs::nvar * tot + 1, Sys_eqs::nvar * sz);
-                x_ig.resize(Sys_eqs::nvar * tot + 1, Sys_eqs::nvar * sz);
+                b.resize(Sys_eqs::nvar * (tot + 1), Sys_eqs::nvar * sz);
+                x_ig.resize(Sys_eqs::nvar * (tot + 1), Sys_eqs::nvar * sz);
             }
         }
             //Use Custom number of constraints using opt as an integer
@@ -800,6 +800,7 @@ public:
  */
     template<typename options>
     typename Sys_eqs::SparseMatrix_type &getA(options opt) {
+        if (A.isMatrixFilled()) return A;
         if (opt == options_solver::STANDARD) {
             A.resize(tot * Sys_eqs::nvar, tot * Sys_eqs::nvar,
                      p_map.size_local() * Sys_eqs::nvar,
@@ -813,6 +814,7 @@ public:
                 A.resize(Sys_eqs::nvar * (tot + 1), Sys_eqs::nvar * (tot + 1),
                          Sys_eqs::nvar * (p_map.size_local() + 1),
                          Sys_eqs::nvar * (p_map.size_local() + 1));
+
                 for (int j = 0; j < Sys_eqs::nvar; j++) {
                     for (int i = 0; i < tot; i++) {
                         triplet t1;
@@ -823,7 +825,7 @@ public:
                     }
                     for (int i = 0; i < p_map.size_local(); i++) {
                         triplet t2;
-                        t2.row() = s_pnt + i * Sys_eqs::nvar + j;
+                        t2.row() = s_pnt * Sys_eqs::nvar + i * Sys_eqs::nvar + j;
                         t2.col() = tot * Sys_eqs::nvar + j;
                         t2.value() = 1;
                         trpl.add(t2);
@@ -841,7 +843,7 @@ public:
                 for (int j = 0; j < Sys_eqs::nvar; j++) {
                     for (int i = 0; i < p_map.size_local(); i++) {
                         triplet t2;
-                        t2.row() = s_pnt + i * Sys_eqs::nvar + j;
+                        t2.row() = s_pnt * Sys_eqs::nvar + i * Sys_eqs::nvar + j;
                         t2.col() = tot * Sys_eqs::nvar + j;
                         t2.value() = 1;
                         trpl.add(t2);
@@ -986,14 +988,6 @@ public:
             // get the particle
             auto key = it.get();
 
-/*
-            if (key == 298 && create_vcluster().rank() == 1)
-            {
-            	int debug = 0;
-            	debug++;
-            }
-*/
-
             // Calculate the non-zero colums
             typename Sys_eqs::stype coeff = 1.0;
             op.template value_nz<Sys_eqs>(p_map, key, cols, coeff, 0);
@@ -1002,11 +996,11 @@ public:
             bool is_diag = false;
 
             // create the triplet
-            for (auto it = cols.begin(); it != cols.end(); ++it) {
+            for (auto it2 = cols.begin(); it2 != cols.end(); ++it2) {
                 trpl.add();
                 trpl.last().row() = p_map.template getProp<0>(key) * Sys_eqs::nvar + id;
-                trpl.last().col() = it->first;
-                trpl.last().value() = it->second;
+                trpl.last().col() = it2->first;
+                trpl.last().value() = it2->second;
                 if (trpl.last().row() == trpl.last().col())
                 {is_diag = true;}
             }
