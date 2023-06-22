@@ -1011,7 +1011,6 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
 
         Solver.solve_with_solver(solver,sol);
 
-
         Solver.reset_b();
         Solver.impose_b(bulk, prop_id<1>());
         Solver.impose_b(up_p, prop_id<1>());
@@ -1154,10 +1153,6 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
 
             ++it2;
         }
-        int i=0;
-        while(i==0)
-            {sleep(400);}
-
 
         DCPSE_scheme<equations2d2,decltype(domain)> Solver(domain,options_solver::LAGRANGE_MULTIPLIER);
         eq_id vx,vy;
