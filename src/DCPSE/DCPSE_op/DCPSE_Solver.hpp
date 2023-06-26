@@ -35,7 +35,10 @@
  * \param parts Particle set
  *
  */
-template<typename Sys_eqs, typename particles_type>
+template<typename Sys_eqs,
+    typename particles_type,
+    typename Memory = typename Sys_eqs::b_part::Memory_type,
+    template<typename> class layout_base = memory_traits_lin>
 class DCPSE_scheme {
 
     //! type of the sparse matrix
@@ -51,7 +54,11 @@ class DCPSE_scheme {
     typedef typename Sys_eqs::SparseMatrix_type::triplet_type triplet;
 
     //! Distributed grid map
-    typedef vector_dist<Sys_eqs::dims, typename Sys_eqs::stype, aggregate<size_t>> p_map_type;
+    typedef vector_dist< Sys_eqs::dims,
+        typename Sys_eqs::stype, aggregate<size_t>,
+        typename Sys_eqs::b_part::Decomposition_type,
+        typename Sys_eqs::b_part::Memory_type,
+        layout_base> p_map_type;
 
     //! mapping grid
     p_map_type p_map;
@@ -1001,6 +1008,8 @@ public:
     }
 
 };
+
+template<typename Sys_eqs, typename particles_type> using DCPSE_scheme_gpu = DCPSE_scheme<Sys_eqs,particles_type,CudaMemory,memory_traits_inte>;
 
 #include "DCPSE/DCPSE_op/EqnsStruct.hpp"
 #endif //Eigen
