@@ -285,7 +285,6 @@ install(FILES Operators/Vector/cuda/vector_dist_operators_cuda.cuh
 
 install(FILES DCPSE/Dcpse.hpp
 		DCPSE/Dcpse.cuh
-		DCPSE/DCPSE_op/DCPSE_Solver.cuh
 		DCPSE/DcpseDiagonalScalingMatrix.hpp
 		DCPSE/DcpseRhs.hpp
 		DCPSE/Monomial.hpp
