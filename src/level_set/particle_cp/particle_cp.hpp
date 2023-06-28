@@ -25,14 +25,13 @@
  */
 
 #include <math.h>
-#include <sys/_types/_size_t.h>
 #include "Vector/vector_dist.hpp"
 #include "DCPSE/Dcpse.hpp"
 #include "DCPSE/MonomialBasis.hpp"
 #include "Draw/DrawParticles.hpp"
 #include "Operators/Vector/vector_dist_operators.hpp"
 #include <chrono>
-#include "/Users/lschulze/Applications/openFPM_Install_master/openfpm_numerics/include/regression/regression.hpp"
+#include "regression/regression.hpp"
 
 template<unsigned int dim, unsigned int n_c> using particles_surface = vector_dist<dim, double, aggregate<int, int, double, double[dim], double[n_c], EVectorXd>>;
 struct Redist_options
@@ -91,7 +90,7 @@ public:
 	{
 		if (redistOptions.verbose) std::cout<<"Minterpol variable is "<<minterpol<<std::endl;
 		detect_surface_particles();
-
+		
 		interpolate_sdf_field();
 
 		find_closest_point(vd_in, vd_s);
@@ -336,14 +335,14 @@ private:
 			{
 				if(redistOptions.min_num_particles == 0) 
 				{
-					auto regSupport = RegressionSupport(vd_s, part, sqrt(r_cutoff2), RADIUS, NN_s);
-            				if (regSupport.getNumParticles() < n_c) message_insufficient_support = 1;
+            				auto regSupport = RegressionSupport<decltype(vd_s), decltype(NN_s)>(vd_s, part, sqrt(r_cutoff2), RADIUS, NN_s);
+					if (regSupport.getNumParticles() < n_c) message_insufficient_support = 1;
 					minterModelpcp.computeCoeffs(vd_s, regSupport);
 				}
 				else 
 				{
-					auto regSupport = RegressionSupport(vd_s, part, n_c + 3, AT_LEAST_N_PARTICLES, NN_s);
-            				if (regSupport.getNumParticles() < n_c) message_insufficient_support = 1;
+            				auto regSupport = RegressionSupport<decltype(vd_s), decltype(NN_s)>(vd_s, part, n_c + 3, AT_LEAST_N_PARTICLES, NN_s);
+					if (regSupport.getNumParticles() < n_c) message_insufficient_support = 1;
 					minterModelpcp.computeCoeffs(vd_s, regSupport);
 				}
 
@@ -881,4 +880,5 @@ private:
     	}
 
 };
+
 

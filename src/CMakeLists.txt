@@ -271,6 +271,10 @@ install(FILES DMatrix/EMatrix.hpp
 	DESTINATION openfpm_numerics/include/DMatrix
 	COMPONENT OpenFPM)
 
+install(FILES level_set/particle_cp/particle_cp.hpp
+	DESTINATION openfpm_numerics/include/level_set/particle_cp
+	COMPONENT OpenFPM)
+
 #if(BUILD_TESTING)
 
 #  add_executable(particle_test test.cu)
