@@ -89,15 +89,14 @@ BOOST_AUTO_TEST_CASE( ellipsoid )
 	constexpr int cp = 1;
 	constexpr int normal = 2;
 	constexpr int curvature = 3;
-	constexpr int surf_flag = 4;
-	constexpr int ref_cp = 5;
-	typedef vector_dist<3, double, aggregate<double, Point<3, double>, Point<3, double>, double, int, Point<3, double>>> particles;
-	//					 |		|		|		|	|		|
-	//					SDF	closest point		|  	   curvature  surf flag 	|
+	constexpr int ref_cp = 4;
+	typedef vector_dist<3, double, aggregate<double, Point<3, double>, Point<3, double>, double, Point<3, double>>> particles;
+	//					 |		|		|		|		|
+	//					SDF	closest point		|  	   curvature	 	|
 	//								surface normal	   		reference closest point
 
 	particles vd(0, domain, bc, g, DEC_GRAN(512));
-	openfpm::vector<std::string> names({"sdf","cp","normal","curvature","C flag", "ref_cp"});
+	openfpm::vector<std::string> names({"sdf","cp","normal","curvature","ref_cp"});
 	vd.setPropNames(names);
 	EllipseParameters params;
 	for (int k = 0; k < 3; k++) params.origin[k] = 0.0;

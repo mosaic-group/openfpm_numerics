@@ -88,7 +88,12 @@ public:
 	
 	void run_redistancing()
 	{
-		if (redistOptions.verbose) std::cout<<"Minterpol variable is "<<minterpol<<std::endl;
+		if (redistOptions.verbose) 
+		{
+			std::cout<<"Verbose mode. Make sure the vd.getProp<4>(a) is an integer that pcp can write surface flags onto."<<std::endl; 
+			std::cout<<"Minterpol variable is "<<minterpol<<std::endl;
+		}
+
 		detect_surface_particles();
 		
 		interpolate_sdf_field();
@@ -166,7 +171,7 @@ private:
 			int num_neibs_a = 0;
 			double min_sdf = abs(vd_in.template getProp<vd_in_sdf>(akey));
 			vect_dist_key_dx min_sdf_key = akey;
-			vd_in.template getProp<vd_in_close_part>(akey) = 0;
+			if (redistOptions.verbose) vd_in.template getProp<vd_in_close_part>(akey) = 0;
 			int isclose = 0;
 
 			auto Np = NN.template getNNIterator<NO_CHECK>(NN.getCell(xa));
@@ -201,12 +206,12 @@ private:
 				if (isclose) // these guys will carry an interpolation polynomial and a resulting sample point
 				{
 					vd_s.template getLastProp<vd_s_close_part>() = 1;
-					vd_in.template getProp<vd_in_close_part>(akey) = 1; // use this for the optimization step
+					if (redistOptions.verbose) vd_in.template getProp<vd_in_close_part>(akey) = 1;
 				}
 				else // these particles will not carry an interpolation polynomial
 				{
 					vd_s.template getLastProp<vd_s_close_part>() = 0;
-					vd_in.template getProp<vd_in_close_part>(akey) = 0; // use this for the optimization step
+					if (redistOptions.verbose) vd_in.template getProp<vd_in_close_part>(akey) = 0;
 				}
 			}
 			++part;
