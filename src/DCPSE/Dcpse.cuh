@@ -484,9 +484,10 @@ public:
 
 private:
 
+    template <typename U>
     void initializeAdaptive(vector_type &particles,
                             unsigned int convergenceOrder,
-                            double rCut) {
+                            U rCut) {
         // Still need to be tested
 #ifdef SE_CLASS1
         this->update_ctr=particles.getMapCtr();
@@ -505,6 +506,7 @@ private:
         if (!isSharedSupport) {
             SupportBuilder<vector_type,vector_type>
                 supportBuilder(particles, particles, differentialSignature, rCut, differentialOrder == 0);
+
             unsigned int requiredSupportSize = monomialBasis.size();
             // need to resize supportKeys1D to yet unknown supportKeysTotalN
             // add() takes too long
@@ -551,86 +553,14 @@ private:
         }
 
         kerOffsets.hostToDevice(); supportKeys1D.hostToDevice();
-        assembleLocalMatrices(cublasDgetrfBatched, cublasDtrsmBatched);
+        assembleLocalMatrices_t(rCut);
     }
 
-    void initializeAdaptive(vector_type &particles,
-                            unsigned int convergenceOrder,
-                            float rCut) {
-        // Still need to be tested
-#ifdef SE_CLASS1
-        this->update_ctr=particles.getMapCtr();
-#endif
-
-        if (!isSharedSupport) {
-            subsetKeyPid.resize(particles.size_local_orig());
-            supportRefs.resize(particles.size_local());
-        }
-        localEps.resize(particles.size_local());
-        localEpsInvPow.resize(particles.size_local());
-        kerOffsets.resize(particles.size_local()+1);
-
-        const T condVTOL = 1e2;
-
-        if (!isSharedSupport) {
-            SupportBuilder<vector_type,vector_type>
-                supportBuilder(particles, particles, differentialSignature, rCut, differentialOrder == 0);
-
-            unsigned int requiredSupportSize = monomialBasis.size();
-            // need to resize supportKeys1D to yet unknown supportKeysTotalN
-            // add() takes too long
-            openfpm::vector<openfpm::vector<size_t>> tempSupportKeys(supportRefs.size());
-
-            auto it = particles.getDomainIterator();
-            while (it.isNext()) {
-                auto key_o = particles.getOriginKey(it.get());
-                subsetKeyPid.get(key_o.getKey()) = it.get().getKey();
-
-                Support support = supportBuilder.getSupport(it, requiredSupportSize, opt);
-                supportRefs.get(key_o.getKey()) = key_o.getKey();
-                tempSupportKeys.get(key_o.getKey()) = support.getKeys();
-                kerOffsets.get(key_o.getKey()) = supportKeysTotalN;
-
-                if (maxSupportSize < support.size())
-                    maxSupportSize = support.size();
-                supportKeysTotalN += support.size();
-
-                EMatrix<T, Eigen::Dynamic, Eigen::Dynamic> V(support.size(), monomialBasis.size());
-                // Vandermonde matrix computation
-                Vandermonde<dim, T, EMatrix<T, Eigen::Dynamic, Eigen::Dynamic>>
-                        vandermonde(support, monomialBasis, particles, particles, HOverEpsilon);
-
-                vandermonde.getMatrix(V);
-
-                T condV = conditionNumber(V, condVTOL);
-                T eps = vandermonde.getEps();
-
-                if (condV > condVTOL) {
-                    requiredSupportSize *= 2;
-                    std::cout << "INFO: Increasing, requiredSupportSize = " << requiredSupportSize << std::endl; // debug
-                    continue;
-                } else requiredSupportSize = monomialBasis.size();
-
-                ++it;
-            }
-
-            kerOffsets.get(supportRefs.size()) = supportKeysTotalN;
-            supportKeys1D.resize(supportKeysTotalN);
-
-            size_t offset = 0;
-            for (size_t i = 0; i < tempSupportKeys.size(); ++i)
-                for (size_t j = 0; j < tempSupportKeys.get(i).size(); ++j, ++offset)
-                    supportKeys1D.get(offset) = tempSupportKeys.get(i).get(j);
-        }
-
-        kerOffsets.hostToDevice(); supportKeys1D.hostToDevice();
-        assembleLocalMatrices(cublasSgetrfBatched, cublasStrsmBatched);
-    }
-
+    template <typename U>
     void initializeStaticSize(vector_type &particles,
                               unsigned int convergenceOrder,
-                              double rCut,
-                              double supportSizeFactor) {
+                              U rCut,
+                              U supportSizeFactor) {
 #ifdef SE_CLASS1
         this->update_ctr=particles.getMapCtr();
 #endif
@@ -697,82 +627,19 @@ std::chrono::high_resolution_clock::time_point t2 = std::chrono::high_resolution
 std::chrono::duration<double> time_span2 = std::chrono::duration_cast<std::chrono::duration<double>>(t2 - t1);
 std::cout << "Support building took " << time_span2.count() * 1000. << " milliseconds." << std::endl;
 
-        assembleLocalMatrices(cublasDgetrfBatched, cublasDtrsmBatched);
+        assembleLocalMatrices_t(rCut);
     }
 
-    // ad hoc solution to template specialization for float/double
-    void initializeStaticSize(vector_type &particles,
-                              unsigned int convergenceOrder,
-                              float rCut,
-                              float supportSizeFactor) {
-#ifdef SE_CLASS1
-        this->update_ctr=particles.getMapCtr();
-#endif
-        this->rCut=rCut;
-        this->supportSizeFactor=supportSizeFactor;
-        this->convergenceOrder=convergenceOrder;
+    // Cublas subroutine selector: float or double
+    // rCut is needed to overcome limitation of nested template class specialization
+    template <typename U> void assembleLocalMatrices_t(U rCut) {
+        throw std::invalid_argument("DCPSE operator error: CUBLAS supports only float or double"); }
 
-        if (!isSharedSupport) {
-            subsetKeyPid.resize(particles.size_local_orig());
-            supportRefs.resize(particles.size_local());
-        }
-        localEps.resize(particles.size_local());
-        localEpsInvPow.resize(particles.size_local());
+    void assembleLocalMatrices_t(float rCut) {
+        assembleLocalMatrices(cublasSgetrfBatched, cublasStrsmBatched); }
 
-std::chrono::high_resolution_clock::time_point t1 = std::chrono::high_resolution_clock::now();
-        auto it = particles.getDomainIterator();
-
-        if (opt==support_options::RADIUS) {
-            if (!isSharedSupport) {
-                while (it.isNext()) {
-                    auto key_o = it.get(); subsetKeyPid.get(particles.getOriginKey(key_o).getKey()) = key_o.getKey();
-                    supportRefs.get(key_o.getKey()) = key_o.getKey();
-                    ++it;
-                }
-
-                SupportBuilderGPU<vector_type> supportBuilder(particles, rCut);
-                supportBuilder.getSupport(supportRefs.size(), kerOffsets, supportKeys1D, maxSupportSize, supportKeysTotalN);
-            }
-        } else {
-            if (!isSharedSupport){
-                openfpm::vector<openfpm::vector<size_t>> tempSupportKeys(supportRefs.size());
-                size_t requiredSupportSize = monomialBasis.size() * supportSizeFactor;
-                // need to resize supportKeys1D to yet unknown supportKeysTotalN
-                // add() takes too long
-                SupportBuilder<vector_type,vector_type> supportBuilder(particles, particles, differentialSignature, rCut, differentialOrder == 0);
-                kerOffsets.resize(supportRefs.size()+1);
-
-                while (it.isNext()) {
-                    auto key_o = it.get(); subsetKeyPid.get(particles.getOriginKey(key_o).getKey()) = key_o.getKey();
-
-                    Support support = supportBuilder.getSupport(it, requiredSupportSize, opt);
-                    supportRefs.get(key_o.getKey()) = key_o.getKey();
-                    tempSupportKeys.get(key_o.getKey()) = support.getKeys();
-                    kerOffsets.get(key_o.getKey()) = supportKeysTotalN;
-
-                    if (maxSupportSize < support.size()) maxSupportSize = support.size();
-                    supportKeysTotalN += support.size();
-                    ++it;
-                }
-
-                kerOffsets.get(supportRefs.size()) = supportKeysTotalN;
-                supportKeys1D.resize(supportKeysTotalN);
-
-                size_t offset = 0;
-                for (size_t i = 0; i < tempSupportKeys.size(); ++i)
-                    for (size_t j = 0; j < tempSupportKeys.get(i).size(); ++j, ++offset)
-                        supportKeys1D.get(offset) = tempSupportKeys.get(i).get(j);
-            }
-
-            kerOffsets.hostToDevice(); supportKeys1D.hostToDevice();
-        }
-
-std::chrono::high_resolution_clock::time_point t2 = std::chrono::high_resolution_clock::now();
-std::chrono::duration<double> time_span2 = std::chrono::duration_cast<std::chrono::duration<double>>(t2 - t1);
-std::cout << "Support building took " << time_span2.count() * 1000. << " milliseconds." << std::endl;
-
-        assembleLocalMatrices(cublasSgetrfBatched, cublasStrsmBatched);
-    }
+    void assembleLocalMatrices_t(double rCut) {
+        assembleLocalMatrices(cublasDgetrfBatched, cublasDtrsmBatched); }
 
     template<typename cublasLUDec_type, typename cublasTriangSolve_type>
     void assembleLocalMatrices(cublasLUDec_type cublasLUDecFunc, cublasTriangSolve_type cublasTriangSolveFunc) {
