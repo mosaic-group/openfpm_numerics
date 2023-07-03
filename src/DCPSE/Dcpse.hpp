@@ -878,7 +878,7 @@ private:
         localEpsInvPow.resize(particlesTo.size_local_orig());
         kerOffsets.resize(particlesTo.size_local_orig());
         kerOffsets.fill(-1);
-        T avgSpacingGlobal=0,maxSpacingGlobal=0,minSpacingGlobal=std::numeric_limits<T>::max();
+        T avgSpacingGlobal=0,avgSpacingGlobal2=0,maxSpacingGlobal=0,minSpacingGlobal=std::numeric_limits<T>::max();
         size_t Counter=0;
         auto it = particlesTo.getDomainIterator();
         while (it.isNext()) {
@@ -900,6 +900,7 @@ private:
             T eps = vandermonde.getEps();
             avgSpacingGlobal+=eps;
             T tSpacing = vandermonde.getMinSpacing();
+            avgSpacingGlobal2+=tSpacing;
             if(tSpacing>maxSpacingGlobal)
             {
                 maxSpacingGlobal=tSpacing;
@@ -948,12 +949,13 @@ private:
         }
 
         v_cl.sum(avgSpacingGlobal);
+        v_cl.sum(avgSpacingGlobal2);
         v_cl.max(maxSpacingGlobal);
         v_cl.min(minSpacingGlobal);
         v_cl.sum(Counter);
         v_cl.execute();
         if(v_cl.rank()==0)
-        {std::cout<<"DCPSE Operator Construction Complete. The global avg spacing in the support <h> is: "<<HOverEpsilon*avgSpacingGlobal/(T(Counter))<<" (c="<<HOverEpsilon<<"). Min Spacing Range=["<<minSpacingGlobal<<","<<maxSpacingGlobal<<"]."<<std::endl;}
+        {std::cout<<"DCPSE Operator Construction Complete. The global avg spacing in the support <h> is: "<<HOverEpsilon*avgSpacingGlobal/(T(Counter))<<" (c="<<HOverEpsilon<<"). Avg:"<<avgSpacingGlobal2/(T(Counter))<<" Range:["<<minSpacingGlobal<<","<<maxSpacingGlobal<<"]."<<std::endl;}
     }
 
     T computeKernel(Point<dim, T> x, EMatrix<T, Eigen::Dynamic, 1> & a) const {

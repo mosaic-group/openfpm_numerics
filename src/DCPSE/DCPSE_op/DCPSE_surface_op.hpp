@@ -4,6 +4,7 @@
 
 #ifndef OPENFPM_PDATA_DCPSE_SURFACE_OP_HPP
 #define OPENFPM_PDATA_DCPSE_SURFACE_OP_HPP
+#ifdef HAVE_EIGEN
 
 #include "DCPSE/DCPSE_op/DCPSE_op.hpp"
 
@@ -91,7 +92,7 @@ public:
     template<typename particles_type>
     void update(particles_type &particles) {
         auto dcpse_temp = (Dcpse<particles_type::dims, particles_type> *) dcpse;
-        dcpse_temp->createNormalParticles<NORMAL_ID>(particles);
+        dcpse_temp->template createNormalParticles<NORMAL_ID>(particles);
         dcpse_temp->initializeUpdate(particles);
         dcpse_temp->accumulateAndDeleteNormalParticles(particles);
     }
@@ -181,7 +182,7 @@ public:
     template<typename particles_type>
     void update(particles_type &particles) {
         auto dcpse_temp = (Dcpse<particles_type::dims, particles_type> *) dcpse;
-        dcpse_temp->createNormalParticles<NORMAL_ID>(particles);
+        dcpse_temp->template createNormalParticles<NORMAL_ID>(particles);
         dcpse_temp->initializeUpdate(particles);
         dcpse_temp->accumulateAndDeleteNormalParticles(particles);
 
@@ -271,7 +272,7 @@ public:
     template<typename particles_type>
     void update(particles_type &particles) {
         auto dcpse_temp = (Dcpse<particles_type::dims, particles_type> *) dcpse;
-        dcpse_temp->createNormalParticles<NORMAL_ID>(particles);
+        dcpse_temp->template createNormalParticles<NORMAL_ID>(particles);
         dcpse_temp->initializeUpdate(particles);
         dcpse_temp->accumulateAndDeleteNormalParticles(particles);
 
@@ -363,8 +364,8 @@ public:
     template<typename particles_type>
     void update(particles_type &particles) {
         auto dcpse_temp = (Dcpse<particles_type::dims, particles_type> *) dcpse;
-        dcpse_temp->createNormalParticles<NORMAL_ID>(particles);
-        dcpse_temp->createNormalParticles<NORMAL_ID>(particles);
+        dcpse_temp->template createNormalParticles<NORMAL_ID>(particles);
+        dcpse_temp->template createNormalParticles<NORMAL_ID>(particles);
         dcpse_temp->initializeUpdate(particles);
         dcpse_temp->accumulateAndDeleteNormalParticles(particles);
     }
@@ -453,8 +454,8 @@ public:
     template<typename particles_type>
     void update(particles_type &particles) {
         auto dcpse_temp = (Dcpse<particles_type::dims, particles_type> *) dcpse;
-        dcpse_temp->createNormalParticles<NORMAL_ID>(particles);
-        dcpse_temp->createNormalParticles<NORMAL_ID>(particles);
+        dcpse_temp->template createNormalParticles<NORMAL_ID>(particles);
+        dcpse_temp->template createNormalParticles<NORMAL_ID>(particles);
         dcpse_temp->initializeUpdate(particles);
         dcpse_temp->accumulateAndDeleteNormalParticles(particles);
     }
@@ -544,7 +545,7 @@ public:
     template<typename particles_type>
     void update(particles_type &particles) {
         auto dcpse_temp = (Dcpse<particles_type::dims, particles_type> *) dcpse;
-        dcpse_temp->createNormalParticles<NORMAL_ID>(particles);
+        dcpse_temp->template createNormalParticles<NORMAL_ID>(particles);
         dcpse_temp->initializeUpdate(particles);
         dcpse_temp->accumulateAndDeleteNormalParticles(particles);
 
@@ -726,7 +727,7 @@ public:
     template<typename particles_type>
     void update(particles_type &particles) {
         auto dcpse_temp = (Dcpse<particles_type::dims, particles_type> *) dcpse;
-        dcpse_temp->createNormalParticles<NORMAL_ID>(particles);
+        dcpse_temp->template createNormalParticles<NORMAL_ID>(particles);
         dcpse_temp->initializeUpdate(particles);
         dcpse_temp->accumulateAndDeleteNormalParticles(particles);
 
@@ -818,7 +819,7 @@ public:
     template<typename particles_type>
     void update(particles_type &particles) {
         auto dcpse_temp = (Dcpse<particles_type::dims, particles_type> *) dcpse;
-        dcpse_temp->createNormalParticles<NORMAL_ID>(particles);
+        dcpse_temp->template createNormalParticles<NORMAL_ID>(particles);
         dcpse_temp->initializeUpdate(particles);
         dcpse_temp->accumulateAndDeleteNormalParticles(particles);
 
@@ -910,7 +911,7 @@ public:
     template<typename particles_type>
     void update(particles_type &particles) {
         auto dcpse_temp = (Dcpse<particles_type::dims, particles_type> *) dcpse;
-        dcpse_temp->createNormalParticles<NORMAL_ID>(particles);
+        dcpse_temp->template createNormalParticles<NORMAL_ID>(particles);
         dcpse_temp->initializeUpdate(particles);
         dcpse_temp->accumulateAndDeleteNormalParticles(particles);
 
@@ -997,11 +998,11 @@ public:
     template<typename particles_type>
     void update(particles_type &particles) {
         auto dcpse_temp = (Dcpse<particles_type::dims, particles_type> *) dcpse;
-        dcpse_temp->createNormalParticles<NORMAL_ID>(particles);
+        dcpse_temp->template createNormalParticles<NORMAL_ID>(particles);
         dcpse_temp->initializeUpdate(particles);
         dcpse_temp->accumulateAndDeleteNormalParticles(particles);
 
     }
 };
-
+#endif //Eigen
 #endif //OPENFPM_PDATA_DCPSE_SURFACE_OP_HPP

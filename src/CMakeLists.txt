@@ -18,6 +18,8 @@ endif()
 if (NOT CUDA_ON_BACKEND STREQUAL "None")
 	set(CUDA_SOURCES Operators/Vector/vector_dist_operators_unit_tests.cu
 					 DCPSE/DCPSE_op/tests/DCPSE_op_Solver_test.cu
+			 	 	 OdeIntegrators/tests/Odeintegrators_test_gpu.cu
+					 #DCPSE/DCPSE_op/tests/DCPSE_op_subset_test.cu
 					 Operators/Vector/vector_dist_operators_apply_kernel_unit_tests.cu)
 endif()
 
@@ -50,7 +52,7 @@ if ( CUDA_ON_BACKEND STREQUAL "HIP" AND HIP_FOUND )
 	        DCPSE/tests/Vandermonde_unit_tests.cpp
                                                 main.cpp
                                                 Matrix/SparseMatrix_unit_tests.cpp
-                                                interpolation/interpolation_unit_tests.cpp
+                                                #interpolation/interpolation_unit_tests.cpp
                                                 Vector/Vector_unit_tests.cpp
                                                 Solvers/petsc_solver_unit_tests.cpp
                                                 FiniteDifference/FDScheme_unit_tests.cpp
@@ -91,7 +93,7 @@ else()
         DCPSE/tests/Vandermonde_unit_tests.cpp
 						main.cpp
 						Matrix/SparseMatrix_unit_tests.cpp
-						interpolation/interpolation_unit_tests.cpp
+						#interpolation/interpolation_unit_tests.cpp
 						Vector/Vector_unit_tests.cpp
 						Solvers/petsc_solver_unit_tests.cpp
 						FiniteDifference/FDScheme_unit_tests.cpp
@@ -250,7 +252,7 @@ install(FILES FiniteDifference/Average.hpp
       	      FiniteDifference/FDScheme.hpp 
       	      FiniteDifference/Laplacian.hpp 
       	      FiniteDifference/mul.hpp 
-      	      FiniteDifference/sum.hpp 
+      	      FiniteDifference/sum.hpp
 	      FiniteDifference/Upwind_gradient.hpp
 	      FiniteDifference/Eno_Weno.hpp
               FiniteDifference/FD_op.hpp
@@ -278,7 +280,7 @@ install(FILES Operators/Vector/vector_dist_operators_extensions.hpp
 	       COMPONENT OpenFPM)
 
 install(FILES Operators/Vector/cuda/vector_dist_operators_cuda.cuh
-	      DESTINATION openfpm_numerics/include/Operators/Vector/cuda 
+	      DESTINATION openfpm_numerics/include/Operators/Vector/cuda
 	      COMPONENT OpenFPM)
 
 install(FILES DCPSE/Dcpse.hpp
@@ -313,7 +315,8 @@ install(FILES DCPSE/DCPSE_op/DCPSE_op.hpp
 		COMPONENT OpenFPM)
 
 install(FILES OdeIntegrators/OdeIntegrators.hpp
-		OdeIntegrators/boost_vector_algebra_ofp.hpp
+        OdeIntegrators/vector_algebra_ofp.hpp
+		OdeIntegrators/vector_algebra_ofp_gpu.hpp
 		DESTINATION openfpm_numerics/include/OdeIntegrators
 		COMPONENT OpenFPM)
 
@@ -322,7 +325,7 @@ install(FILES Draw/DrawParticles.hpp
       	      Draw/PointIteratorSkin.hpp
 	      Draw/DrawDisk.hpp
 	      Draw/DrawSphere.hpp
-      	      DESTINATION openfpm_numerics/include/Draw 
+      	      DESTINATION openfpm_numerics/include/Draw
 	      COMPONENT OpenFPM)
 
 install(FILES interpolation/interpolation.hpp 

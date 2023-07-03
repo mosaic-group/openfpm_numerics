@@ -30,7 +30,58 @@ namespace boost{
 #include <boost/numeric/odeint.hpp>
 #include "Operators/Vector/vector_dist_operators.hpp"
 #include "FiniteDifference/FD_expressions.hpp"
-#include "OdeIntegrators/boost_vector_algebra_ofp.hpp"
+#include "OdeIntegrators/vector_algebra_ofp.hpp"
+
+#ifdef __NVCC__
+#include "OdeIntegrators/vector_algebra_ofp_gpu.hpp"
+/*! \brief A 1d Odeint and Openfpm compatible structure.
+ *
+ *  Use the method this.data.get<d>() to refer to property of all the particles in the dimension d.
+ *
+ * d starts with 0.
+ *
+ */
+struct state_type_1d_ofp_ker{
+    state_type_1d_ofp_ker(){
+    }
+    typedef decltype(std::declval<texp_v_gpu<double>>().getVector().toKernel()) state_kernel;
+    typedef size_t size_type;
+    typedef int is_state_vector;
+    aggregate<state_kernel> data;
+
+    __host__ __device__ size_t size() const
+    { return data.get<0>().size(); }
+
+};
+/*! \brief A 1d Odeint and Openfpm compatible structure.
+ *
+ *  Use the method this.data.get<d>() to refer to property of all the particles in the dimension d.
+ *
+ * d starts with 0.
+ *
+ */
+struct state_type_1d_ofp_gpu{
+    state_type_1d_ofp_gpu(){
+    }
+    typedef size_t size_type;
+    typedef int is_state_vector;
+    aggregate<texp_v_gpu<double>> data;
+
+    size_t size() const
+    { return data.get<0>().size(); }
+
+    void resize(size_t n)
+    {
+        data.get<0>().resize(n);
+    }
+    state_type_1d_ofp_ker toKernel() const
+    {
+        state_type_1d_ofp_ker s1_ker;
+        s1_ker.data.get<0>()=data.get<0>().getVector().toKernel();
+        return s1_ker;
+    }
+};
+#endif
 
 namespace boost { namespace numeric { namespace odeint {
 
@@ -184,7 +235,7 @@ struct state_type_ofpm_add_elements
 template<typename state_type, typename ... list>
 struct state_type_ofpm_add_elements<0,state_type,list ...>
 {
-   typedef aggregate<list ...> type; 
+   typedef aggregate<list ...> type;
 };
 
 template<int n_state, typename state_type>
@@ -199,8 +250,8 @@ struct state_type_ofpm_impl
     type_data data;
 
     FD::gdb_ext_plus_g_info<state_type::dims> size() const
-    { 
-        return data.template get<0>().size(); 
+    {
+        return data.template get<0>().size();
     }
 
 
@@ -212,19 +263,6 @@ struct state_type_ofpm_impl
 
 
 namespace boost {
-
-    // template<typename state_type>
-    // struct range_size<const state_type_ofpm_impl<3,state_type>>
-    // {
-    //     typedef FD::gdb_ext_plus_g_info<state_type::dims> type;
-    // };
-
-    // template<typename state_type>
-    // struct range_size<const state_type_ofpm_impl<1,state_type>>
-    // {
-    //     typedef FD::gdb_ext_plus_g_info<state_type::dims> type;
-    // };
-
     namespace numeric {
         namespace odeint {
 
@@ -235,7 +273,13 @@ namespace boost {
             typedef boost::true_type type;
             static const bool value = type::value;
             };
-
+#ifdef __NVCC__
+            template<>
+            struct is_resizeable<state_type_1d_ofp_gpu> {
+                typedef boost::true_type type;
+                static const bool value = type::value;
+            };
+#endif
             template<>
             struct is_resizeable<state_type_2d_ofp> {
                 typedef boost::true_type type;

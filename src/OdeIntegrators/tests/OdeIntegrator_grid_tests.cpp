@@ -11,7 +11,6 @@
 #include "config.h"
 #include "Grid/grid_dist_id.hpp"
 #include "OdeIntegrators/OdeIntegrators.hpp"
-#include "OdeIntegrators/boost_vector_algebra_ofp.hpp"
 #include "FiniteDifference/FD_op.hpp"
 #include "util/util_debug.hpp"
 #include "util/common.hpp"

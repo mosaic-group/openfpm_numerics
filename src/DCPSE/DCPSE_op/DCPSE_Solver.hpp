@@ -125,11 +125,11 @@ class DCPSE_scheme {
 
         } else if (opt == options_solver::LAGRANGE_MULTIPLIER) {
             if (v_cl.rank() == v_cl.size() - 1) {
-                b.resize(Sys_eqs::nvar * tot + 1, Sys_eqs::nvar * sz + 1);
-                x_ig.resize(Sys_eqs::nvar * tot + 1, Sys_eqs::nvar * sz + 1);
+                b.resize(Sys_eqs::nvar * (tot + 1), Sys_eqs::nvar * (sz + 1));
+                x_ig.resize(Sys_eqs::nvar * (tot + 1), Sys_eqs::nvar * (sz + 1));
             } else {
-                b.resize(Sys_eqs::nvar * tot + 1, Sys_eqs::nvar * sz);
-                x_ig.resize(Sys_eqs::nvar * tot + 1, Sys_eqs::nvar * sz);
+                b.resize(Sys_eqs::nvar * (tot + 1), Sys_eqs::nvar * sz);
+                x_ig.resize(Sys_eqs::nvar * (tot + 1), Sys_eqs::nvar * sz);
             }
         }
             //Use Custom number of constraints using opt as an integer
@@ -252,8 +252,9 @@ class DCPSE_scheme {
         // Indicate all the non zero rows
         openfpm::vector<unsigned char> nz_rows;
 
+
         if (v_cl.rank() == v_cl.size()-1 && opt == options_solver::LAGRANGE_MULTIPLIER) {
-            nz_rows.resize(row_b+1);
+            nz_rows.resize(row_b+Sys_eqs::nvar);
             }
         else{
             nz_rows.resize(row_b);
@@ -273,7 +274,7 @@ class DCPSE_scheme {
         if (v_cl.getProcessingUnits() == 1) {
             openfpm::vector<unsigned> nz_cols;
             if (v_cl.rank() == v_cl.size()-1 && opt == options_solver::LAGRANGE_MULTIPLIER) {
-                nz_cols.resize(row_b+1);
+                nz_cols.resize(row_b+Sys_eqs::nvar);
             }
             else{
                 nz_cols.resize(row_b);
@@ -438,6 +439,54 @@ public:
         copy_nested(x, comp, exps ...);
     }
 
+        /*! \brief Successive Solve an equation
+ *
+ *  \warning exp must be a scalar type
+ *
+ * \param Solver Manually created Solver instead from the Equation structure
+ * \param exp where to store the result
+ *
+ */
+    template<typename SolverType, typename ... expr_type>
+    void solve_with_solver_successive(SolverType &solver,expr_type ... exps) {
+#ifdef SE_CLASS1
+
+        if (sizeof...(exps) != Sys_eqs::nvar) {
+            std::cerr << __FILE__ << ":" << __LINE__ << " Error the number of properties you gave does not match the solution in\
+    													dimensionality, I am expecting " << Sys_eqs::nvar <<
+                      " properties " << std::endl;
+        };
+#endif
+        auto x = solver.solve_successive(getB(opt));
+
+        unsigned int comp = 0;
+        copy_nested(x, comp, exps ...);
+    }
+
+    /*! \brief Successive Solve an equation with inital guess
+ *
+ *  \warning exp must be a scalar type
+ *
+ * \param Solver Manually created Solver instead from the Equation structure
+ * \param exp where to store the result
+ *
+ */
+    template<typename SolverType, typename ... expr_type>
+    void solve_with_solver_ig_successive(SolverType &solver,expr_type ... exps) {
+#ifdef SE_CLASS1
+
+        if (sizeof...(exps) != Sys_eqs::nvar) {
+            std::cerr << __FILE__ << ":" << __LINE__ << " Error the number of properties you gave does not match the solution in\
+    													dimensionality, I am expecting " << Sys_eqs::nvar <<
+                      " properties " << std::endl;
+        };
+#endif
+        auto x = solver.solve_successive(get_x_ig(opt),getB(opt));
+
+        unsigned int comp = 0;
+        copy_nested(x, comp, exps ...);
+    }
+
     /*! \brief Solve an equation with a given Nullspace
      *
      *  \warning exp must be a scalar type
@@ -480,7 +529,7 @@ public:
                       " properties " << std::endl;
         };
 #endif
-        auto x = solver.with_constant_nullspace_solve(getA(opt), getB(opt));
+        auto x = solver.with_nullspace_solve(getA(opt), getB(opt));
 
         unsigned int comp = 0;
         copy_nested(x, comp, exps ...);
@@ -758,6 +807,7 @@ public:
  */
     template<typename options>
     typename Sys_eqs::SparseMatrix_type &getA(options opt) {
+        if (A.isMatrixFilled()) return A;
         if (opt == options_solver::STANDARD) {
             A.resize(tot * Sys_eqs::nvar, tot * Sys_eqs::nvar,
                      p_map.size_local() * Sys_eqs::nvar,
@@ -768,60 +818,46 @@ public:
             openfpm::vector<triplet> &trpl = A.getMatrixTriplets();
 
             if (v_cl.rank() == v_cl.size() - 1) {
-                A.resize(tot * Sys_eqs::nvar + 1, tot * Sys_eqs::nvar + 1,
-                         p_map.size_local() * Sys_eqs::nvar + 1,
-                         p_map.size_local() * Sys_eqs::nvar + 1);
+                A.resize(Sys_eqs::nvar * (tot + 1), Sys_eqs::nvar * (tot + 1),
+                         Sys_eqs::nvar * (p_map.size_local() + 1),
+                         Sys_eqs::nvar * (p_map.size_local() + 1));
 
-                for (int i = 0; i < tot * Sys_eqs::nvar; i++) {
-                    triplet t1;
-
-                    t1.row() = tot * Sys_eqs::nvar;
-                    t1.col() = i;
-                    t1.value() = 1;
-
-                    trpl.add(t1);
+                for (int j = 0; j < Sys_eqs::nvar; j++) {
+                    for (int i = 0; i < tot; i++) {
+                        triplet t1;
+                        t1.row() = tot * Sys_eqs::nvar + j;
+                        t1.col() = i * Sys_eqs::nvar + j;
+                        t1.value() = 1;
+                        trpl.add(t1);
+                    }
+                    for (int i = 0; i < p_map.size_local(); i++) {
+                        triplet t2;
+                        t2.row() = s_pnt * Sys_eqs::nvar + i * Sys_eqs::nvar + j;
+                        t2.col() = tot * Sys_eqs::nvar + j;
+                        t2.value() = 1;
+                        trpl.add(t2);
+                    }
+                    triplet t3;
+                    t3.col() = tot * Sys_eqs::nvar + j;
+                    t3.row() = tot * Sys_eqs::nvar + j;
+                    t3.value() = 0;
+                    trpl.add(t3);
                 }
-
-                for (int i = 0; i < p_map.size_local() * Sys_eqs::nvar; i++) {
-                    triplet t2;
-
-                    t2.row() = i + s_pnt * Sys_eqs::nvar;
-                    t2.col() = tot * Sys_eqs::nvar;
-                    t2.value() = 1;
-
-                    trpl.add(t2);
-                }
-
-                triplet t3;
-
-                t3.col() = tot * Sys_eqs::nvar;
-                t3.row() = tot * Sys_eqs::nvar;
-                t3.value() = 0;
-
-                trpl.add(t3);
-
-                //row_b++;
-                //row++;
-            }
-            else {
-                A.resize(tot * Sys_eqs::nvar + 1, tot * Sys_eqs::nvar + 1,
+            } else {
+                A.resize(Sys_eqs::nvar * (tot + 1), Sys_eqs::nvar * (tot + 1),
                          p_map.size_local() * Sys_eqs::nvar,
                          p_map.size_local() * Sys_eqs::nvar);
-
-                for (int i = 0; i < p_map.size_local() * Sys_eqs::nvar; i++) {
-                    triplet t2;
-
-                    t2.row() = i + s_pnt * Sys_eqs::nvar;
-                    t2.col() = tot * Sys_eqs::nvar;
-                    t2.value() = 1;
-
-                    trpl.add(t2);
+                for (int j = 0; j < Sys_eqs::nvar; j++) {
+                    for (int i = 0; i < p_map.size_local(); i++) {
+                        triplet t2;
+                        t2.row() = s_pnt * Sys_eqs::nvar + i * Sys_eqs::nvar + j;
+                        t2.col() = tot * Sys_eqs::nvar + j;
+                        t2.value() = 1;
+                        trpl.add(t2);
+                    }
                 }
             }
-
-
         }
-
         else{
             auto &v_cl = create_vcluster();
             if (v_cl.rank() == v_cl.size() - 1) {
@@ -833,8 +869,8 @@ public:
                 A.resize(tot * Sys_eqs::nvar - offset, tot * Sys_eqs::nvar - offset,
                          p_map.size_local() * Sys_eqs::nvar,
                          p_map.size_local() * Sys_eqs::nvar);
-                }
             }
+        }
 #ifdef SE_CLASS1
         consistency(opt);
 #endif
@@ -854,8 +890,8 @@ public:
         if (opt == options_solver::LAGRANGE_MULTIPLIER) {
             auto &v_cl = create_vcluster();
             if (v_cl.rank() == v_cl.size() - 1) {
-
-                b(tot * Sys_eqs::nvar) = 0;
+                for(int j=0;j<Sys_eqs::nvar;j++)
+                {b(tot * Sys_eqs::nvar+j) = 0;}
             }
         }
         return b;
@@ -873,8 +909,8 @@ public:
         if (opt == options_solver::LAGRANGE_MULTIPLIER) {
             auto &v_cl = create_vcluster();
             if (v_cl.rank() == v_cl.size() - 1) {
-
-                x_ig(tot * Sys_eqs::nvar) = 0;
+                for(int j=0;j<Sys_eqs::nvar;j++)
+                    {x_ig(tot * Sys_eqs::nvar+j) = 0;}
             }
         }
         return x_ig;
@@ -959,14 +995,6 @@ public:
             // get the particle
             auto key = it.get();
 
-/*
-            if (key == 298 && create_vcluster().rank() == 1)
-            {
-            	int debug = 0;
-            	debug++;
-            }
-*/
-
             // Calculate the non-zero colums
             typename Sys_eqs::stype coeff = 1.0;
             op.template value_nz<Sys_eqs>(p_map, key, cols, coeff, 0);
@@ -975,11 +1003,11 @@ public:
             bool is_diag = false;
 
             // create the triplet
-            for (auto it = cols.begin(); it != cols.end(); ++it) {
+            for (auto it2 = cols.begin(); it2 != cols.end(); ++it2) {
                 trpl.add();
                 trpl.last().row() = p_map.template getProp<0>(key) * Sys_eqs::nvar + id;
-                trpl.last().col() = it->first;
-                trpl.last().value() = it->second;
+                trpl.last().col() = it2->first;
+                trpl.last().value() = it2->second;
                 if (trpl.last().row() == trpl.last().col())
                 {is_diag = true;}
             }

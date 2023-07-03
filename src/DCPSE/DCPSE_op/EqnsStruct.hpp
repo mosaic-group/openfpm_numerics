@@ -1228,6 +1228,7 @@ struct equations3d3EPz_gpu {
     typedef umfpack_solver<double> solver_type;
 };
 
+
 struct equations3d1Pxy_gpu {
     //! dimensionaly of the equation ( 3D problem ...)
     static const unsigned int dims = 3;

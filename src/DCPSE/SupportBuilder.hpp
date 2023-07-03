@@ -209,6 +209,9 @@ private:
                     MinSpacing = rp.get(i).dist;
                 }
             }
+#ifdef SE_CLASS1
+        assert(MinSpacing !=0 && "You have multiple particles on the same position.");
+#endif
             for (int i = 0; i < rp.size(); i++) {
                 if (rp.get(i).dist < AdapFac * MinSpacing) {
                     points.push_back(rp.get(i).offset);
@@ -221,6 +224,7 @@ private:
                     points.push_back(rp.get(i).offset);
                 }
             }
+
         //MinSpacing=MinSpacing/requiredSupportSize
         return points;
     }

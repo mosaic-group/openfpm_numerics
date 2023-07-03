@@ -17,7 +17,6 @@
 #include <iostream>
 #include "../DCPSE_op.hpp"
 #include "../DCPSE_Solver.hpp"
-#include "../DCPSE_Solver.cuh"
 #include "Operators/Vector/vector_dist_operators.hpp"
 #include "Vector/vector_dist_subset.hpp"
 #include "../EqnsStruct.hpp"
@@ -154,7 +153,7 @@ BOOST_AUTO_TEST_CASE(dcpse_op_vec3d_gpu) {
         size_t bc[2] = {NON_PERIODIC, NON_PERIODIC};
         double spacing = box.getHigh(0) / (sz[0] - 1);
         Ghost<2, double> ghost(spacing * 3);
-        double rCut = 3.1 * spacing;
+        double rCut = 2.0 * spacing;
         BOOST_TEST_MESSAGE("Init vector_dist...");
 
         vector_dist_gpu<2, double, aggregate<double,double,double,double>> domain(0, box, bc, ghost);
@@ -180,7 +179,7 @@ BOOST_AUTO_TEST_CASE(dcpse_op_vec3d_gpu) {
         domain.map();
         domain.ghost_get<0>();
 
-        Laplacian_gpu Lap(domain, 2, rCut);
+        Laplacian_gpu Lap(domain, 2, rCut, 2,support_options::N_PARTICLES);
 
         DCPSE_scheme_gpu<equations2d1_gpu,decltype(domain)> Solver( domain);
 
@@ -415,10 +414,9 @@ BOOST_AUTO_TEST_CASE(dcpse_op_vec3d_gpu) {
         domain.map();
         domain.ghost_get<0>();
 
-        Derivative_x_gpu Dx(domain, 2, rCut / 3.0 ,1.9/*,support_options::RADIUS*/);
-        Derivative_y_gpu Dy(domain, 2, rCut / 3.0 ,1.9/*,support_options::RADIUS*/);
-        Laplacian_gpu Lap(domain, 2, rCut / 3.0 ,1.9/*,support_options::RADIUS*/);
-
+        Derivative_x_gpu Dx(domain, 2, rCut/3.0 ,1.9,support_options::N_PARTICLES);
+        Derivative_y_gpu Dy(domain, 2, rCut/3.0,1.9,support_options::N_PARTICLES);
+        Laplacian_gpu Lap(domain, 2, rCut/3.0 ,1.9,support_options::N_PARTICLES);
 
         openfpm::vector<aggregate<int>> bulk;
         openfpm::vector<aggregate<int>> up_p;
@@ -552,7 +550,7 @@ BOOST_AUTO_TEST_CASE(dcpse_op_vec3d_gpu) {
     BOOST_AUTO_TEST_CASE(dcpse_poisson_Dirichlet_anal) {
 //  int rank;
 //  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-        const size_t sz[2] = {200,200};
+        const size_t sz[2] = {81,81};
         Box<2, double> box({0, 0}, {1, 1});
         size_t bc[2] = {NON_PERIODIC, NON_PERIODIC};
         double spacing = box.getHigh(0) / (sz[0] - 1);
@@ -860,7 +858,7 @@ BOOST_AUTO_TEST_CASE(dcpse_op_vec3d_gpu) {
         size_t bc[2] = {NON_PERIODIC, NON_PERIODIC};
         double spacing = box.getHigh(0) / (sz[0] - 1);
         Ghost<2, double> ghost(spacing * 3);
-        double rCut = 3.1 * spacing;
+        double rCut = 2.0 * spacing;
         BOOST_TEST_MESSAGE("Init vector_dist...");
 
         vector_dist_gpu<2, double, aggregate<double,double,double,double,double,VectorS<2, double>>> domain(0, box, bc, ghost);
@@ -886,8 +884,8 @@ BOOST_AUTO_TEST_CASE(dcpse_op_vec3d_gpu) {
         domain.map();
         domain.ghost_get<0>();
 
-        Derivative_y_gpu Dy(domain, 2, rCut);
-        Laplacian_gpu Lap(domain, 2, rCut);
+        Derivative_y_gpu Dy(domain, 2, rCut,2,support_options::N_PARTICLES);
+        Laplacian_gpu Lap(domain, 2, rCut, 3,support_options::N_PARTICLES);
 
         DCPSE_scheme_gpu<equations2d1_gpu,decltype(domain)> Solver(domain);
 
@@ -1033,9 +1031,10 @@ BOOST_AUTO_TEST_CASE(dcpse_op_vec3d_gpu) {
         domain.map();
         domain.ghost_get<0>();
 
-        Derivative_x_gpu Dx(domain, 2, rCut);
-        Derivative_y_gpu Dy(domain, 2, rCut);
-        Laplacian_gpu Lap(domain, 2, rCut);
+        Derivative_x_gpu Dx(domain, 2, rCut,1.9,support_options::N_PARTICLES);
+        Derivative_y_gpu Dy(domain, 2, rCut,1.9,support_options::N_PARTICLES);
+        Laplacian_gpu Lap(domain, 2, rCut, 1.9,support_options::N_PARTICLES);
+
         petsc_solver<double> solver;
         solver.setRestart(500);
         solver.setSolver(KSPGMRES);
@@ -1175,10 +1174,9 @@ BOOST_AUTO_TEST_CASE(dcpse_op_vec3d_gpu) {
         domain.map();
         domain.ghost_get<0>();
 
-        Derivative_x_gpu Dx(domain, 2, rCut,1.9,support_options::RADIUS);
-        Derivative_y_gpu Dy(domain, 2, rCut,1.9,support_options::RADIUS);
-        Laplacian_gpu Lap(domain, 2, rCut,1.9,support_options::RADIUS);
-
+        Derivative_x Dx(domain, 2, rCut,1.9,support_options::RADIUS);
+        Derivative_y Dy(domain, 2, rCut,1.9,support_options::RADIUS);
+        Laplacian Lap(domain, 2, rCut,1.9,support_options::RADIUS);
 
         openfpm::vector<aggregate<int>> bulk;
         openfpm::vector<aggregate<int>> up_p;
