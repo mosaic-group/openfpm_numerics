@@ -49,6 +49,7 @@ add_executable(numerics ${OPENFPM_INIT_FILE} ${CUDA_SOURCES}
 #		level_set/closest_point/closest_point_unit_tests.cpp
 #		level_set/redistancing_Sussman/tests/redistancingSussman_unit_test.cpp
 #		level_set/redistancing_Sussman/tests/convergence_test.cpp
+		level_set/particle_cp/pcp_unit_tests.cpp
 		)
 
 add_dependencies(numerics ofpmmemory)
@@ -92,12 +93,14 @@ target_include_directories (numerics PUBLIC ${Boost_INCLUDE_DIRS})
 target_include_directories (numerics PUBLIC ${Vc_INCLUDE_DIR})
 target_include_directories (numerics PUBLIC ${ALPAKA_ROOT}/include)
 target_include_directories (numerics PUBLIC ${MPI_C_INCLUDE_DIRS})
+target_include_directories (numerics PUBLIC /datapot/lschulze/Applications/minter/src)
 if(EIGEN3_FOUND)
         target_include_directories (numerics PUBLIC /usr/local/include) 
 	target_include_directories (numerics PUBLIC ${EIGEN3_INCLUDE_DIR})
 endif()
 
 link_directories(${PARMETIS_ROOT} ${METIS_ROOT})
+link_directories(/datapot/lschulze/Applications/minter/build)
 target_link_libraries(numerics ${Boost_LIBRARIES})
 target_link_libraries(numerics ${HDF5_LIBRARIES})
 target_link_libraries(numerics ${PARMETIS_LIBRARIES})
@@ -105,6 +108,8 @@ target_link_libraries(numerics -L${LIBHILBERT_LIBRARY_DIRS} ${LIBHILBERT_LIBRARI
 target_link_libraries(numerics ${Vc_LIBRARIES})
 target_link_libraries(numerics ${MPI_C_LIBRARIES})
 target_link_libraries(numerics ${MPI_CXX_LIBRARIES})
+target_link_libraries(numerics minter)
+
 if(PETSC_FOUND)
 	target_include_directories (numerics PUBLIC ${PETSC_INCLUDES})
 	target_link_libraries(numerics ${PETSC_LIBRARIES})
@@ -129,8 +134,8 @@ if (TEST_COVERAGE)
 endif()
 
 ## Regression
-target_include_directories(numerics PUBLIC /Users/lschulze/minter/src/)
-target_link_libraries(numerics -L/Users/lschulze/minter/build minter)
+target_include_directories(numerics PUBLIC /datapot/lschulze/Applications/minter/src/)
+target_link_libraries(numerics -L/datapot/lschulze/Applications/minter/build minter)
 ##
 
 # Request that particles be built with -std=c++11

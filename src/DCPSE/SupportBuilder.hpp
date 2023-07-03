@@ -17,7 +17,8 @@
 enum support_options
 {
 	N_PARTICLES,
-	RADIUS
+	RADIUS,
+	AT_LEAST_N_PARTICLES
 };
 
 template<typename vector_type>
