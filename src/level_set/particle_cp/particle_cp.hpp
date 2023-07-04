@@ -103,6 +103,17 @@ public:
 		find_closest_point(vd_in, vd_s);
 	}
 
+	particles_surface<particles_in_type::dims, num_minter_coeffs> initialize_surface_discretization()
+	{
+		detect_surface_particles();
+
+		interpolate_sdf_field();
+
+		format_vd_s(vd_s);
+
+		return(vd_s);
+	}
+
 private:
 	static constexpr size_t num_neibs = 0;
 	static constexpr size_t vd_s_close_part = 1;
@@ -389,7 +400,6 @@ private:
    							<<" for some particles. Consider using at least N particles function."<<std::endl;
         	if (message_projection_fail) std::cout<<"Warning: Newton-style projections towards the interface do not satisfy"
                 					<<" given tolerance for some particles"<<std::endl;
-
 	}
 	
 	// This function now finds the exact closest point on the surface to any given particle.
@@ -705,6 +715,27 @@ private:
 			std::cout<<"Warning: Newton algorithm has reached maximum number of iterations, does not converge for some particles"<<std::endl;
 		}
 
+	}
+
+	// reformat vd_s, such that it only contains the sample particles on the surface with their respective properties.
+	void format_vd_s(particles_surface<dim, n_c> & vd_s)
+	{
+		auto part = vd_s.getDomainIterator();
+		openfpm::vector<size_t> keys;
+
+		while(part.isNext())
+		{
+			vect_dist_key_dx a = part.get();
+			// decide here whether the reformatted sample particles should be originating from both sides or only one side
+			// if (vd_s.template getProp<vd_s_close_part>(a) != 1) keys.add(a.getKey());
+			if ((vd_s.template getProp<vd_s_sdf>(a) > 0) or !(vd_s.template getProp<vd_s_close_part>(a))) keys.add(a.getKey());
+			else 
+			{
+				for(int k=0; k < dim; k++) vd_s.template getPos(a)[k] = vd_s.template getProp<vd_s_sample>(a)[k];
+			}
+			++part;
+		}
+		vd_s.template remove(keys);
 	}
 
 	// monomial regression polynomial evaluation
