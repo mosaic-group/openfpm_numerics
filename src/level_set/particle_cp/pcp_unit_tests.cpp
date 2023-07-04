@@ -124,7 +124,7 @@ BOOST_AUTO_TEST_CASE( ellipsoid )
 
 	static constexpr unsigned int num_coeffs = minter_lp_degree_one_num_coeffs(3, poly_order);
 
-	particle_cp_redistancing<particles, taylor4, sdf, cp, normal, curvature, num_coeffs> pcprdist(vd, rdistoptions);
+	particle_cp_redistancing<particles, minter_polynomial, sdf, cp, normal, curvature, num_coeffs> pcprdist(vd, rdistoptions);
 	pcprdist.run_redistancing();
 	
 	//vd.write("pcpunittest");

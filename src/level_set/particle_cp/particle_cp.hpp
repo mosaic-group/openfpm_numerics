@@ -66,6 +66,7 @@ struct Redist_options
 struct quadratic {};
 struct bicubic {};
 struct taylor4 {};
+struct minter_polynomial {};
 
 
 template <typename particles_in_type, typename polynomial_degree, size_t phi_field, size_t closest_point_field, size_t normal_field, size_t curvature_field, unsigned int num_minter_coeffs>
@@ -83,7 +84,8 @@ public:
 		if (std::is_same<polynomial_degree,quadratic>::value) polynomialDegree = "quadratic";
 		else if (std::is_same<polynomial_degree,bicubic>::value) polynomialDegree = "bicubic";
 		else if (std::is_same<polynomial_degree,taylor4>::value) polynomialDegree = "taylor4";
-		else throw std::invalid_argument("Invalid polynomial degree given. Valid choices currently are quadratic, bicubic and taylor4.");
+		else if (std::is_same<polynomial_degree,minter_polynomial>::value) polynomialDegree = "minterpolation";
+		else throw std::invalid_argument("Invalid polynomial degree given. Valid choices currently are quadratic, bicubic, taylor4, minter_polynomial.");
 	}
 	
 	void run_redistancing()
