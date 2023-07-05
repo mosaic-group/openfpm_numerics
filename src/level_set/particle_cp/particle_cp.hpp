@@ -100,7 +100,7 @@ public:
 		
 		interpolate_sdf_field();
 
-		find_closest_point(vd_in, vd_s);
+		find_closest_point();
 	}
 
 private:
@@ -402,7 +402,7 @@ private:
 	// The polynomial that is used for checking if the constraint is fulfilled is the interpolation polynomial
 	// carried by the sample point.
 
-	void find_closest_point(particles_in_type& vd_in, particles_surface<dim, n_c> & vd_s)
+	void find_closest_point()
 	{
 		// iterate over all particles, i.e. do closest point optimisation for all particles, and initialize
 		// all relevant variables.
