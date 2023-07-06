@@ -88,6 +88,7 @@ public:
 		else throw std::invalid_argument("Invalid polynomial degree given. Valid choices currently are quadratic, bicubic, taylor4, minter_polynomial.");
 	}
 	
+	// closest-point, signed distance function, surface normal and curvature computation.
 	void run_redistancing()
 	{
 		if (redistOptions.verbose) 
@@ -103,16 +104,29 @@ public:
 		find_closest_point(vd_in, vd_s);
 	}
 
+	// compute and return sample particles
 	particles_surface<particles_in_type::dims, num_minter_coeffs> initialize_surface_discretization()
 	{
 		detect_surface_particles();
 
 		interpolate_sdf_field();
 
-		format_vd_s(vd_s);
+		format_vd_s();
 
 		return(vd_s);
 	}
+
+	// interpolate field to given particle positions
+	template <size_t prp_id> void interpolate_field_quantity()
+	{
+
+		detect_surface_particles();
+
+		//compute_field_interpolation<prp_id>();
+
+	}
+
+
 
 private:
 	static constexpr size_t num_neibs = 0;
@@ -481,37 +495,7 @@ private:
 			// Now we will iterate over the sample points, which means iterating over vd_s.
 			auto Np = NN_s.template getNNIterator<NO_CHECK>(NN_s.getCell(vd_in.getPos(a)));
 
-			// distance is the the minimum distance to be beaten
-			double distance = 1000000.0;
-			// dist_calc is the variable for the distance that is computed per sample point
-			double dist_calc = 1000000000.0;
-			// b_min is the handle referring to the particle that carries the sample point with the minimum distance so far
-			decltype(a) b_min = a;
-
-			while (Np.isNext())
-			{
-				vect_dist_key_dx b = Np.get();
-
-				// only go for particles (a) that carry sample points
-				if (!vd_s.template getProp<vd_s_close_part>(b))
-				{
-					++Np;
-					continue;
-				}
-
-				Point<dim, double> xbb = vd_s.template getProp<vd_s_sample>(b);
-
-				// compute the distance towards the sample point and check if it the closest so far. If yes, store the new
-				// closest distance to be beaten and store the handle
-				dist_calc = abs(xbb.distance(xaa));
-
-				if (dist_calc < distance)
-				{
-					distance = dist_calc;
-					b_min = b;
-				}
-				++Np;
-			}
+			vect_dist_key_dx b_min = get_closest_neighbor<decltype(NN_s)>(xaa, vd_s, NN_s);
 
 			// set x0 to the sample point which was closest to the query particle
 			for(int k = 0; k < dim; k++) x[k] = vd_s.template getProp<vd_s_sample>(b_min)[k];
@@ -718,8 +702,10 @@ private:
 	}
 
 	// reformat vd_s, such that it only contains the sample particles on the surface with their respective properties.
-	void format_vd_s(particles_surface<dim, n_c> & vd_s)
+	// Note that currently only domain particles are formatted, and ghost particles stay as is. A deleteGhost() call erases them in the main.
+	void format_vd_s()
 	{
+		//vd_s.template ghost_get<vd_s_close_part, vd_s_sample>();
 		auto part = vd_s.getDomainIterator();
 		openfpm::vector<size_t> keys;
 
@@ -738,6 +724,90 @@ private:
 		vd_s.template remove(keys);
 	}
 
+	template<typename NNlist_type> vect_dist_key_dx get_closest_neighbor(Point<dim, double> & xa, particles_surface<dim, n_c> & vd_surface, NNlist_type & NN_s)
+	{
+		auto Np = NN_s.template getNNIterator<NO_CHECK>(NN_s.getCell(xa));
+
+		// distance is the the minimum distance to be beaten
+                double distance = 1000000.0;
+                // dist_calc is the variable for the distance that is computed per sample point
+                double dist_calc = 1000000000.0;
+                // b_min is the handle referring to the particle that carries the sample point with the minimum distance so far
+                vect_dist_key_dx b_min = Np.get();
+
+		while(Np.isNext())
+		{
+			vect_dist_key_dx b = Np.get();
+
+			if (!vd_s.template getProp<vd_s_close_part>(b))
+			{
+				++Np;
+				continue;
+			}
+			Point<dim, double> xb = vd_s.template getProp<vd_s_sample>(b);
+			dist_calc = norm(xa - xb);
+			if (dist_calc < distance)
+			{
+				distance = dist_calc;
+				b_min = b;
+			}
+
+			++Np;
+		}
+		return(b_min);
+	}
+
+/*
+	// vd_to is the vector containing the locations to which the interpolation is supposed to take place
+	template<typename particle_in_type, size_t prp_id> compute_field_interpolation(particles_in_type & vd_to)
+	{
+		int message_insufficient_support = 0;
+
+		vd_s.template ghost_get<prp_id>();
+		double r_cutoff_celllist = sqrt(r_cutoff2);
+		if (minterpol && (redistOptions.min_num_particles != 0)) r_cutoff_celllist = redistOptions.r_cutoff_factor_min_num_particles*redistOptions.H;
+		auto NN_in = vd_in.getCellList(r_cutoff_celllist);
+		auto part = vd_to.getDomainIterator();
+
+		while(part.isNext())
+		{	
+			vect_dist_key_dx a = part.get()
+			Point<dim, double> xa = vd_to.getPos(a);
+
+			RegressionModel<dim, prp_id> genericMinterModel;
+			
+			if(redistOptions.min_num_particles == 0) 
+			{
+            			auto regSupport = RegressionSupport<decltype(vd_in), decltype(NN_in)>(vd_in, part, sqrt(r_cutoff2), RADIUS, NN_in);
+				if (regSupport.getNumParticles() < n_c) message_insufficient_support = 1;
+				genericMinterModel.computeCoeffs(vd_s, regSupport);
+			}
+			else 
+			{
+            			auto regSupport = RegressionSupport<decltype(vd_in), decltype(NN_in)>(vd_in, part, n_c + 3, AT_LEAST_N_PARTICLES, NN_in);
+				if (regSupport.getNumParticles() < n_c) message_insufficient_support = 1;
+				genericMinterModel.computeCoeffs(vd_s, regSupport);
+			}
+
+			auto& minterModel = genericMinterModel.model;
+			vd_s.template getProp<minter_coeff>(a) = minterModel->getCoeffs();
+
+            		double grad_p_minter_mag2;
+
+			EMatrix<double, Eigen::Dynamic, 1> grad_p_minter(dim_r, 1);
+			EMatrix<double, Eigen::Dynamic, 1> x_minter(dim_r, 1);
+			for(int k = 0; k < dim_r; k++) x_minter[k] = xa[k];
+
+			double p_minter = get_p_minter(x_minter, minterModel);
+
+			++part;
+		}
+
+		if (message_insufficient_support) std::cout<<"Warning: less number of neighbours than required for interpolation"
+   							<<" for some particles. Consider using at least N particles function."<<std::endl;
+		}
+	}
+*/
 	// monomial regression polynomial evaluation
 	inline double get_p(EMatrix<double, Eigen::Dynamic, 1> xvector, EMatrix<double, Eigen::Dynamic, 1> c, std::string polynomialdegree)
 	{
