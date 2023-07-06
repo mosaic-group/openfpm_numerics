@@ -125,7 +125,10 @@ BOOST_AUTO_TEST_CASE( ellipsoid )
 	static constexpr unsigned int num_coeffs = minter_lp_degree_one_num_coeffs(3, poly_order);
 
 	particle_cp_redistancing<particles, minter_polynomial, sdf, cp, normal, curvature, num_coeffs> pcprdist(vd, rdistoptions);
+	std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
 	pcprdist.run_redistancing();
+	std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
+	std::cout << "Time difference for pcp redistancing = " << std::chrono::duration_cast<std::chrono::milliseconds>(end - begin).count() << "[ms]" << std::endl;
 	
 	//vd.write("pcpunittest");
 	// iterate through particles and compute error
