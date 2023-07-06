@@ -471,37 +471,7 @@ private:
 			// Now we will iterate over the sample points, which means iterating over vd_s.
 			auto Np = NN_s.template getNNIterator<NO_CHECK>(NN_s.getCell(vd_in.getPos(a)));
 
-			// distance is the the minimum distance to be beaten
-			double distance = 1000000.0;
-			// dist_calc is the variable for the distance that is computed per sample point
-			double dist_calc = 1000000000.0;
-			// b_min is the handle referring to the particle that carries the sample point with the minimum distance so far
-			decltype(a) b_min = a;
-
-			while (Np.isNext())
-			{
-				vect_dist_key_dx b = Np.get();
-
-				// only go for particles (a) that carry sample points
-				if (!vd_s.template getProp<vd_s_close_part>(b))
-				{
-					++Np;
-					continue;
-				}
-
-				Point<dim, double> xbb = vd_s.template getProp<vd_s_sample>(b);
-
-				// compute the distance towards the sample point and check if it the closest so far. If yes, store the new
-				// closest distance to be beaten and store the handle
-				dist_calc = abs(xbb.distance(xaa));
-
-				if (dist_calc < distance)
-				{
-					distance = dist_calc;
-					b_min = b;
-				}
-				++Np;
-			}
+			vect_dist_key_dx b_min = get_closest_neighbor<decltype(NN_s)>(xaa, vd_s, NN_s);
 
 			// set x0 to the sample point which was closest to the query particle
 			for(int k = 0; k < dim; k++) x[k] = vd_s.template getProp<vd_s_sample>(b_min)[k];
@@ -705,6 +675,39 @@ private:
 			std::cout<<"Warning: Newton algorithm has reached maximum number of iterations, does not converge for some particles"<<std::endl;
 		}
 
+	}
+
+	template<typename NNlist_type> vect_dist_key_dx get_closest_neighbor(Point<dim, double> & xa, particles_surface<dim, n_c> & vd_surface, NNlist_type & NN_s)
+	{
+		auto Np = NN_s.template getNNIterator<NO_CHECK>(NN_s.getCell(xa));
+
+		// distance is the the minimum distance to be beaten
+                double distance = 1000000.0;
+                // dist_calc is the variable for the distance that is computed per sample point
+                double dist_calc = 1000000000.0;
+                // b_min is the handle referring to the particle that carries the sample point with the minimum distance so far
+                vect_dist_key_dx b_min = Np.get();
+
+		while(Np.isNext())
+		{
+			vect_dist_key_dx b = Np.get();
+
+			if (!vd_s.template getProp<vd_s_close_part>(b))
+			{
+				++Np;
+				continue;
+			}
+			Point<dim, double> xb = vd_s.template getProp<vd_s_sample>(b);
+			dist_calc = norm(xa - xb);
+			if (dist_calc < distance)
+			{
+				distance = dist_calc;
+				b_min = b;
+			}
+
+			++Np;
+		}
+		return(b_min);
 	}
 
 	// monomial regression polynomial evaluation
