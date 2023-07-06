@@ -129,7 +129,7 @@ BOOST_AUTO_TEST_CASE( ellipsoid )
 	pcprdist.run_redistancing();
 	std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
 	std::cout << "Time difference for pcp redistancing = " << std::chrono::duration_cast<std::chrono::milliseconds>(end - begin).count() << "[ms]" << std::endl;
-	
+
 	//vd.write("pcpunittest");
 	// iterate through particles and compute error
 	auto part = vd.getDomainIterator();
