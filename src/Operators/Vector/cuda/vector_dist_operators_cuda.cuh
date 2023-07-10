@@ -56,7 +56,7 @@ struct pos_or_propL
 	}
 
 	//! return the value (position or property) of the particle k in the vector v
-	static inline auto value_type(vector && v, const vect_dist_key_dx & k) -> decltype(v.template getProp<prp>(k))
+	__device__ __host__ static inline auto value_type(vector && v, const vect_dist_key_dx & k) -> decltype(v.template getProp<prp>(k))
 	{
 		return v.template getProp<prp>(k);
 	}
@@ -386,7 +386,7 @@ struct vector_dist_op_compute_op<prp,false,comp_host>
 	template<unsigned int n, typename vector, typename expr>
 	static void compute_expr_slice(vector & v,expr & v_exp, int (& comp)[n])
 	{
-		typedef typename std::remove_const<typename std::remove_reference<decltype(pos_or_propL<vector,prp>::value_type(std::declval<vector>(),vect_dist_key_dx(0)))>::type>::type property_act;
+		typedef typename pos_or_propL<vector,prp>::property_act property_act;
 
 		v_exp.init();
 

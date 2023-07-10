@@ -400,7 +400,6 @@ public:
 
     template<typename r_type= typename std::remove_reference<decltype(o1.value(vect_dist_key_dx(0)))>::type>
     inline r_type value(const vect_dist_key_dx &key) const {
-        //typedef typename std::remove_reference<decltype(o1.value(key))>::type::blabla blabla;
 
         typename std::remove_reference<decltype(o1.value(key))>::type v_lap;
         v_lap = 0.0;
