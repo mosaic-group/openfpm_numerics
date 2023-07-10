@@ -66,7 +66,7 @@ private:
     openfpm::vector_custd<T> localEpsInvPow; // Each MPI rank has just access to the local ones
     openfpm::vector_custd<T> calcKernels;
 
-    openfpm::vector<size_t> subsetKeyPid;
+    openfpm::vector_custd<size_t> subsetKeyPid;
 
     vector_type & particles;
     double rCut;
@@ -432,7 +432,7 @@ public:
 
         size_t localKey = subsetKeyPid.get(key.getKey());
         double eps = localEps.get(localKey);
-        double epsInvPow = localEpsInvPow(localKey);
+        double epsInvPow = localEpsInvPow.get(localKey);
 
         auto &particles = o1.getVector();
 
@@ -480,6 +480,99 @@ public:
         subsetKeyPid.clear();
 
         initializeStaticSize(particles, convergenceOrder, rCut, supportSizeFactor);
+    }
+
+    /*
+     *
+     Save computed DCPSE coefficients to file
+     *
+     */
+    void save(const std::string &file){
+        auto & v_cl=create_vcluster();
+        size_t req = 0;
+
+        Packer<decltype(supportRefs),CudaMemory>::packRequest(supportRefs,req);
+        Packer<decltype(kerOffsets),CudaMemory>::packRequest(kerOffsets,req);
+        Packer<decltype(supportKeys1D),CudaMemory>::packRequest(supportKeys1D,req);
+        Packer<decltype(localEps),CudaMemory>::packRequest(localEps,req);
+        Packer<decltype(localEpsInvPow),CudaMemory>::packRequest(localEpsInvPow,req);
+        Packer<decltype(calcKernels),CudaMemory>::packRequest(calcKernels,req);
+        Packer<decltype(subsetKeyPid),CudaMemory>::packRequest(subsetKeyPid,req);
+
+        // allocate the memory
+        CudaMemory pmem;
+        ExtPreAlloc<CudaMemory> mem(req,pmem);
+
+        //Packing
+        Pack_stat sts;
+
+        Packer<decltype(supportRefs),CudaMemory>::pack(mem,supportRefs,sts);
+        Packer<decltype(kerOffsets),CudaMemory>::pack(mem,kerOffsets,sts);
+        Packer<decltype(supportKeys1D),CudaMemory>::pack(mem,supportKeys1D,sts);
+        Packer<decltype(localEps),CudaMemory>::pack(mem,localEps,sts);
+        Packer<decltype(localEpsInvPow),CudaMemory>::pack(mem,localEpsInvPow,sts);
+        Packer<decltype(calcKernels),CudaMemory>::pack(mem,calcKernels,sts);
+        Packer<decltype(subsetKeyPid),CudaMemory>::pack(mem,subsetKeyPid,sts);
+
+        // Save into a binary file
+        std::ofstream dump (file+"_"+std::to_string(v_cl.rank()), std::ios::out | std::ios::binary);
+        if (dump.is_open() == false)
+        {   std::cerr << __FILE__ << ":" << __LINE__ <<" Unable to write since dump is open at rank "<<v_cl.rank()<<std::endl;
+            return;
+            }
+        dump.write ((const char *)pmem.getPointer(), pmem.size());
+        return;
+    }
+
+    /*! \brief Load the DCPSE computations
+     *
+     *
+     */
+    void load(const std::string & file)
+    {
+        auto & v_cl=create_vcluster();
+        std::ifstream fs (file+"_"+std::to_string(v_cl.rank()), std::ios::in | std::ios::binary | std::ios::ate );
+        if (fs.is_open() == false)
+        {
+            std::cerr << __FILE__ << ":" << __LINE__ << " error, opening file: " << file << std::endl;
+            return;
+        }
+
+        // take the size of the file
+        size_t sz = fs.tellg();
+
+        fs.close();
+
+        // reopen the file without ios::ate to read
+        std::ifstream input (file+"_"+std::to_string(v_cl.rank()), std::ios::in | std::ios::binary );
+        if (input.is_open() == false)
+        {//some message here maybe
+            return;}
+
+        // Create the CudaMemory memory
+        size_t req = 0;
+        req += sz;
+        CudaMemory pmem;
+        ExtPreAlloc<CudaMemory> mem(req,pmem);
+
+        mem.allocate(pmem.size());
+
+        // read
+        input.read((char *)pmem.getPointer(), sz);
+
+        //close the file
+        input.close();
+
+        //Unpacking
+        Unpack_stat ps;
+
+        Unpacker<decltype(supportRefs),CudaMemory>::unpack(mem,supportRefs,ps);
+        Unpacker<decltype(kerOffsets),CudaMemory>::unpack(mem,kerOffsets,ps);
+        Unpacker<decltype(supportKeys1D),CudaMemory>::unpack(mem,supportKeys1D,ps);
+        Unpacker<decltype(localEps),CudaMemory>::unpack(mem,localEps,ps);
+        Unpacker<decltype(localEpsInvPow),CudaMemory>::unpack(mem,localEpsInvPow,ps);
+        Unpacker<decltype(calcKernels),CudaMemory>::unpack(mem,calcKernels,ps);
+        Unpacker<decltype(subsetKeyPid),CudaMemory>::unpack(mem,subsetKeyPid,ps);
     }
 
 private:
