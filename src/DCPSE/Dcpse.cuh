@@ -4,11 +4,10 @@
 #ifndef OPENFPM_PDATA_DCPSE_CUH
 #define OPENFPM_PDATA_DCPSE_CUH
 
-#if defined(__NVCC__) && defined(HAVE_EIGEN)
+#if defined(__NVCC__)
 
 #include "Vector/vector_dist.hpp"
 #include "MonomialBasis.hpp"
-#include "DMatrix/EMatrix.hpp"
 #include "SupportBuilder.hpp"
 #include "SupportBuilder.cuh"
 #include "Support.hpp"
@@ -103,11 +102,7 @@ public:
             opt(opt)
     {
         particles.ghost_get_subset();
-
-        if (supportSizeFactor < 1) 
-            initializeAdaptive(particles, convergenceOrder, rCut);
-        else 
-            initializeStaticSize(particles, convergenceOrder, rCut, supportSizeFactor);
+        initializeStaticSize(particles, convergenceOrder, rCut, supportSizeFactor);
     }
 
     Dcpse_gpu(vector_type &particles,
@@ -130,11 +125,7 @@ public:
             isSharedSupport(true)
     {
         particles.ghost_get_subset();
-
-        if (supportSizeFactor < 1)
-            initializeAdaptive(particles, convergenceOrder, rCut);
-        else
-            initializeStaticSize(particles, convergenceOrder, rCut, supportSizeFactor);
+        initializeStaticSize(particles, convergenceOrder, rCut, supportSizeFactor);
     }
 
     template<unsigned int prp>
@@ -576,79 +567,6 @@ public:
     }
 
 private:
-
-    template <typename U>
-    void initializeAdaptive(vector_type &particles,
-                            unsigned int convergenceOrder,
-                            U rCut) {
-        // Still need to be tested
-#ifdef SE_CLASS1
-        this->update_ctr=particles.getMapCtr();
-#endif
-
-        if (!isSharedSupport) {
-            subsetKeyPid.resize(particles.size_local_orig());
-            supportRefs.resize(particles.size_local());
-        }
-        localEps.resize(particles.size_local());
-        localEpsInvPow.resize(particles.size_local());
-        kerOffsets.resize(particles.size_local()+1);
-
-        const T condVTOL = 1e2;
-
-        if (!isSharedSupport) {
-            SupportBuilder<vector_type,vector_type>
-                supportBuilder(particles, particles, differentialSignature, rCut, differentialOrder == 0);
-
-            unsigned int requiredSupportSize = monomialBasis.size();
-            // need to resize supportKeys1D to yet unknown supportKeysTotalN
-            // add() takes too long
-            openfpm::vector<openfpm::vector<size_t>> tempSupportKeys(supportRefs.size());
-
-            auto it = particles.getDomainIterator();
-            while (it.isNext()) {
-                auto key_o = particles.getOriginKey(it.get());
-                subsetKeyPid.get(key_o.getKey()) = it.get().getKey();
-
-                Support support = supportBuilder.getSupport(it, requiredSupportSize, opt);
-                supportRefs.get(key_o.getKey()) = key_o.getKey();
-                tempSupportKeys.get(key_o.getKey()) = support.getKeys();
-                kerOffsets.get(key_o.getKey()) = supportKeysTotalN;
-
-                if (maxSupportSize < support.size())
-                    maxSupportSize = support.size();
-                supportKeysTotalN += support.size();
-
-                EMatrix<T, Eigen::Dynamic, Eigen::Dynamic> V(support.size(), monomialBasis.size());
-                // Vandermonde matrix computation
-                Vandermonde<dim, T, EMatrix<T, Eigen::Dynamic, Eigen::Dynamic>>
-                        vandermonde(support, monomialBasis, particles, particles,HOverEpsilon);
-                vandermonde.getMatrix(V);
-
-                T condV = conditionNumber(V, condVTOL);
-                T eps = vandermonde.getEps();
-                if (condV > condVTOL) {
-                    requiredSupportSize *= 2;
-                    std::cout << "INFO: Increasing, requiredSupportSize = " << requiredSupportSize << std::endl; // debug
-                    continue;
-                } else requiredSupportSize = monomialBasis.size();
-
-                ++it;
-            }
-
-            kerOffsets.get(supportRefs.size()) = supportKeysTotalN;
-            supportKeys1D.resize(supportKeysTotalN);
-
-            size_t offset = 0;
-            for (size_t i = 0; i < tempSupportKeys.size(); ++i)
-                for (size_t j = 0; j < tempSupportKeys.get(i).size(); ++j, ++offset)
-                    supportKeys1D.get(offset) = tempSupportKeys.get(i).get(j);
-        }
-
-        kerOffsets.hostToDevice(); supportKeys1D.hostToDevice();
-        assembleLocalMatrices_t(rCut);
-    }
-
     template <typename U>
     void initializeStaticSize(vector_type &particles,
                               unsigned int convergenceOrder,
