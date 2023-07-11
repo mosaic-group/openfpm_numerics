@@ -184,14 +184,7 @@ public:
             opt(opt)
     {
         particles.ghost_get_subset();         // This communicates which ghost particles to be excluded from support
-        if (supportSizeFactor < 1) 
-        {
-            initializeAdaptive(particles, particles, convergenceOrder, rCut);
-        } 
-        else 
-        {
-            initializeStaticSize(particles, particles, convergenceOrder, rCut, supportSizeFactor);
-        }
+        initializeStaticSize(particles, particles, convergenceOrder, rCut, supportSizeFactor);
     }
 
     //Surface DCPSE Constructor
@@ -259,11 +252,9 @@ public:
             isSharedLocalSupport(true)
     {
         particles.ghost_get_subset();
-        if (supportSizeFactor < 1)
-            initializeAdaptive(particles, particles, convergenceOrder, rCut);
-        else
-            initializeStaticSize(particles, particles, convergenceOrder, rCut, supportSizeFactor);
+        initializeStaticSize(particles, particles, convergenceOrder, rCut, supportSizeFactor);
     }
+
     Dcpse(vector_type &particlesFrom,vector_type2 &particlesTo,
           Point<dim, unsigned int> differentialSignature,
           unsigned int convergenceOrder,
@@ -277,10 +268,7 @@ public:
              opt(opt)
     {
         particlesFrom.ghost_get_subset();
-        if (supportSizeFactor < 1)
-            initializeAdaptive(particlesFrom,particlesTo,convergenceOrder, rCut);
-        else
-            initializeStaticSize(particlesFrom,particlesTo,convergenceOrder, rCut, supportSizeFactor);
+        initializeStaticSize(particlesFrom,particlesTo,convergenceOrder, rCut, supportSizeFactor);
     }
 
 
@@ -762,95 +750,6 @@ public:
     }
 
 private:
-
-    void initializeAdaptive(vector_type &particlesFrom, 
-                            vector_type2 &particlesTo,
-                            unsigned int convergenceOrder,
-                            T rCut) {
-        SupportBuilder<vector_type,vector_type2>
-                supportBuilder(particlesFrom, particlesTo, differentialSignature, rCut, differentialOrder == 0);
-        unsigned int requiredSupportSize = monomialBasis.size();
-
-        if (!isSharedLocalSupport)
-            localSupports.resize(particlesTo.size_local_orig());
-        localEps.resize(particlesTo.size_local_orig());
-        localEpsInvPow.resize(particlesTo.size_local_orig());
-        kerOffsets.resize(particlesTo.size_local_orig());
-        kerOffsets.fill(-1);
-
-        auto it = particlesTo.getDomainIterator();
-        while (it.isNext()) {
-            const T condVTOL = 1e2;
-            auto key_o = particlesTo.getOriginKey(it.get());
-
-            if (!isSharedLocalSupport)
-                localSupports.get(key_o.getKey()) = supportBuilder.getSupport(it, requiredSupportSize,opt);
-
-            Support& support = localSupports.get(key_o.getKey());
-
-            // Get the points in the support of the DCPSE kernel and store the support for reuse
-            EMatrix<T, Eigen::Dynamic, Eigen::Dynamic> V(support.size(), monomialBasis.size());
-
-            // Vandermonde matrix computation
-            Vandermonde<dim, T, EMatrix<T, Eigen::Dynamic, Eigen::Dynamic>>
-                    vandermonde(support, monomialBasis,particlesFrom, particlesTo,HOverEpsilon);
-            vandermonde.getMatrix(V);
-
-            T eps = vandermonde.getEps();
-
-            if (!isSharedLocalSupport) {
-                T condV = conditionNumber(V, condVTOL);
-
-                if (condV > condVTOL) {
-                    requiredSupportSize *= 2;
-                    std::cout
-                            << "INFO: Increasing, requiredSupportSize = " << requiredSupportSize
-                            << std::endl; // debug
-                    continue;
-                } else
-                    requiredSupportSize = monomialBasis.size();
-            }
-
-            localSupports.get(key_o.getKey()) = support;
-            localEps.get(key_o.getKey()) = eps;
-            localEpsInvPow.get(key_o.getKey()) = 1.0 / openfpm::math::intpowlog(eps,differentialOrder);
-            // Compute the diagonal matrix E
-            DcpseDiagonalScalingMatrix<dim> diagonalScalingMatrix(monomialBasis);
-            EMatrix<T, Eigen::Dynamic, Eigen::Dynamic> E(support.size(), support.size());
-            diagonalScalingMatrix.buildMatrix(E, support, eps, particlesFrom, particlesTo);
-            // Compute intermediate matrix B
-            EMatrix<T, Eigen::Dynamic, Eigen::Dynamic> B = E * V;
-            // Compute matrix A
-            EMatrix<T, Eigen::Dynamic, Eigen::Dynamic> A = B.transpose() * B;
-            // Compute RHS vector b
-            DcpseRhs<dim> rhs(monomialBasis, differentialSignature);
-            EMatrix<T, Eigen::Dynamic, 1> b(monomialBasis.size(), 1);
-            rhs.template getVector<T>(b);
-            // Get the vector where to store the coefficients...
-            EMatrix<T, Eigen::Dynamic, 1> a(monomialBasis.size(), 1);
-            // ...solve the linear system...
-            a = A.colPivHouseholderQr().solve(b);
-            // ...and store the solution for later reuse
-            kerOffsets.get(key_o.getKey()) = calcKernels.size();
-
-            Point<dim, T> xp = particlesTo.getPosOrig(key_o);
-
-            const auto& support_keys = support.getKeys();
-            size_t N = support_keys.size();
-            for (size_t i = 0; i < N; ++i)
-            {
-                const auto& xqK = support_keys.get(i);
-                Point<dim, T> xq = particlesFrom.getPosOrig(xqK);
-                Point<dim, T> normalizedArg = (xp - xq) / eps;
-
-                calcKernels.add(computeKernel(normalizedArg, a));
-            }
-            //
-            ++it;
-        }
-    }
-
-
     void initializeStaticSize(vector_type &particlesFrom,vector_type2 &particlesTo,
                               unsigned int convergenceOrder,
                               T rCut,
