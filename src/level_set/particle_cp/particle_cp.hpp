@@ -96,9 +96,9 @@ public:
 	}
 
 	// interpolate field to given particle positions
-	template <size_t prp_id> void regress_field(particles_surface<particles_in_type::dims, num_minter_coeffs> & vd_surface)
+	template <size_t prp_id, size_t prp_id_to> void regress_field(particles_surface<particles_in_type::dims, num_minter_coeffs> & vd_surface)
 	{
-		regress_field_to_particles<prp_id>(vd_surface);
+		regress_field_to_particles<prp_id, prp_id_to>(vd_surface);
 	}
 
 private:
@@ -592,7 +592,7 @@ private:
 		vd_s.template remove(keys);
 	}
 
-	template <size_t prp_id> void regress_field_to_particles(particles_surface<dim, n_c> & vd_surface)
+	template <size_t prp_id, size_t prp_id_to> void regress_field_to_particles(particles_surface<dim, n_c> & vd_surface)
 	{
 		int message_insufficient_support = 0;
 		double r_cutoff_celllist = sqrt(r_cutoff2);
@@ -627,7 +627,7 @@ private:
 				auto& minterModel = genericMinterModel.model;
 				EMatrix<double, Eigen::Dynamic, 1> x(dim, 1);
 				for (int l = 0; l < dim; l++) x[l] = xa[l];
-				vd_surface.template getProp<5>(a)[k] = get_p_minter(x, minterModel);
+				vd_surface.template getProp<prp_id_to>(a)[k] = get_p_minter(x, minterModel);
 			}
 			++part;
 		}
