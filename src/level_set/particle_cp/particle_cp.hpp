@@ -28,12 +28,12 @@
 #include "Vector/vector_dist.hpp"
 #include "regression/regression.hpp"
 
-template<unsigned int dim, unsigned int n_c> using particles_surface = vector_dist<dim, double, aggregate<int, int, double, double[dim], EVectorXd>>;
+template<unsigned int dim, unsigned int n_c> using particles_surface = vector_dist<dim, double, aggregate<int, int, double, double[dim], EVectorXd, double[dim]>>;
 struct Redist_options
 {
 	size_t max_iter = 1000;	// params for the Newton algorithm for the solution of the constrained
 	double tolerance = 1e-11; // optimization problem, and for the projection of the sample points on the interface
-	
+
 	double H; // interparticle spacing
 	double r_cutoff_factor; // radius of neighbors to consider during interpolation, as factor of H
 	double sampling_radius;
@@ -69,16 +69,16 @@ public:
 	{
 		// Constructor
 	}
-	
+
 	void run_redistancing()
 	{
-		if (redistOptions.verbose) 
+		if (redistOptions.verbose)
 		{
-			std::cout<<"Verbose mode. Make sure the vd.getProp<4>(a) is an integer that pcp can write surface flags onto."<<std::endl; 
+			std::cout<<"Verbose mode. Make sure the vd.getProp<4>(a) is an integer that pcp can write surface flags onto."<<std::endl;
 		}
 
 		detect_surface_particles();
-		
+
 		interpolate_sdf_field();
 
 		find_closest_point();
@@ -96,13 +96,9 @@ public:
 	}
 
 	// interpolate field to given particle positions
-	template <size_t prp_id> void interpolate_field_quantity()
+	template <size_t prp_id> void regress_field(particles_surface<particles_in_type::dims, num_minter_coeffs> & vd_surface)
 	{
-
-		detect_surface_particles();
-
-		//compute_field_interpolation<prp_id>();
-
+		regress_field_to_particles<prp_id>(vd_surface);
 	}
 
 private:
@@ -111,7 +107,7 @@ private:
 	static constexpr size_t vd_s_sdf = 2;
 	static constexpr size_t vd_s_sample = 3;
 	static constexpr size_t minter_coeff = 4;
-	// static constexpr size_t vd_s_minter_model = 5;
+	// static constexpr size_t vd_s_velocity_field = 5;
 	static constexpr size_t vd_in_sdf = phi_field; // this is really required in the vd_in vector, so users need to know about it.
 	static constexpr size_t vd_in_close_part = 4; // this is not needed by the method, but more for debugging purposes, as it shows all particles for which
 						      // interpolation and sampling is performed.
@@ -177,7 +173,7 @@ private:
 				vect_dist_key_dx bkey = Np.get();
 				int sgn_b = return_sign(vd_in.template getProp<vd_in_sdf>(bkey));
 				Point<dim, double> xb = vd_in.getPos(bkey);
-	            		Point<dim,double> dr = xa - xb;
+				Point<dim, double> dr = xa - xb;
 	            		double r2 = norm2(dr);
 
 	            		// check if the particle will provide a polynomial interpolation and a sample point on the interface
@@ -190,7 +186,7 @@ private:
 	            		// its up for debate if this is stable or not. Possibly, this could be avoided by simply using vd_in in the interpolation step.
 	            		if ((sqrt(r2) < ((redistOptions.r_cutoff_factor + 1.5)*redistOptions.H)) && (sgn_a != sgn_b)) surfaceflag = 1;
 	            		++Np;
-	            
+
 			}
 
 			if (surfaceflag) // these particles will play a role in the subsequent interpolation: Either they carry interpolation polynomials,
@@ -214,7 +210,7 @@ private:
 			++part;
 		}
 	}
-	
+
 	void interpolate_sdf_field()
 	{
 		int message_insufficient_support = 0;
@@ -230,7 +226,7 @@ private:
 		while (part.isNext())
 		{
 			vect_dist_key_dx a = part.get();
-			
+
 			// only the close particles (a) will get the full treatment (interpolation + projection)
 			if (vd_s.template getProp<vd_s_close_part>(a) != 1)
 			{
@@ -242,14 +238,14 @@ private:
 			Point<dim, double> xa = vd_s.getPos(a);
 			int neib = 0;
             		int k_project = 0;
-			
-			if(redistOptions.min_num_particles == 0) 
+
+			if(redistOptions.min_num_particles == 0)
 			{
             			auto regSupport = RegressionSupport<decltype(vd_s), decltype(NN_s)>(vd_s, part, sqrt(r_cutoff2), RADIUS, NN_s);
 				if (regSupport.getNumParticles() < n_c) message_insufficient_support = 1;
 				minterModelpcp.computeCoeffs(vd_s, regSupport);
 			}
-			else 
+			else
 			{
             			auto regSupport = RegressionSupport<decltype(vd_s), decltype(NN_s)>(vd_s, part, n_c + 3, AT_LEAST_N_PARTICLES, NN_s);
 				if (regSupport.getNumParticles() < n_c) message_insufficient_support = 1;
@@ -278,7 +274,7 @@ private:
             		}
 			// store the resulting sample point on the surface at the central particle.
 			for(int k = 0; k < dim; k++) vd_s.template getProp<vd_s_sample>(a)[k] = x_minter[k];
-			if (k_project == redistOptions.max_iter) 
+			if (k_project == redistOptions.max_iter)
 			{
 				if (redistOptions.verbose) std::cout<<"didnt work for "<<a.getKey()<<std::endl;
 				message_projection_fail = 1;
@@ -293,7 +289,7 @@ private:
                 					<<" given tolerance for some particles"<<std::endl;
 
 	}
-	
+
 	// This function now finds the exact closest point on the surface to any given particle.
 	// For this, it iterates through all particles in the input vector (since all need to be redistanced),
 	// and finds the closest sample point on the surface. Then, it uses this sample point as an initial guess
@@ -321,7 +317,7 @@ private:
 		while (part.isNext())
 		{
 			vect_dist_key_dx a = part.get();
-			
+
 			if ((redistOptions.only_narrowband) && (std::abs(vd_in.template getProp<vd_in_sdf>(a)) > redistOptions.sampling_radius))
 			{
 				++part;
@@ -390,12 +386,12 @@ private:
 		    	Point<dim, int> derivOrder;
 			Point<dim, double> grad_p_minter;
 			model->setCoeffs(vd_s.template getProp<minter_coeff>(b_min));
-			
+
 			if(redistOptions.verbose)
 			{
                 		std::cout<<std::setprecision(16)<<"VERBOSE%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% for particle "<<a.getKey()<<std::endl;
                 		std::cout<<"x_poly: "<<vd_s.getPos(b_min)[0]<<", "<<vd_s.getPos(b_min)[1]<<"\nxa: "<<xa[0]<<", "<<xa[1]<<"\nx_0: "<<x[0]<<", "<<x[1]<<"\nc: "<<c<<std::endl;
- 
+
 				std::cout<<"interpol_i(x_0) = "<<get_p_minter(x, model)<<std::endl;
 			}
 
@@ -437,7 +433,7 @@ private:
 				// compute Newton increment
 				dx = - H_f.inverse()*nabla_f;
 
-				// prevent Newton algorithm from leaving the support radius by scaling step size. It is invoked in case 
+				// prevent Newton algorithm from leaving the support radius by scaling step size. It is invoked in case
 				// the increment exceeds 50% of the cutoff radius and simply scales the step length down to 10% until it
 				// does not exceed 50% of the cutoff radius.
 
@@ -587,7 +583,7 @@ private:
 			// decide here whether the reformatted sample particles should be originating from both sides or only one side
 			// if (vd_s.template getProp<vd_s_close_part>(a) != 1) keys.add(a.getKey());
 			if ((vd_s.template getProp<vd_s_sdf>(a) > 0) or !(vd_s.template getProp<vd_s_close_part>(a))) keys.add(a.getKey());
-			else 
+			else
 			{
 				for(int k=0; k < dim; k++) vd_s.template getPos(a)[k] = vd_s.template getProp<vd_s_sample>(a)[k];
 			}
@@ -595,57 +591,51 @@ private:
 		}
 		vd_s.template remove(keys);
 	}
-/*
-	// vd_to is the vector containing the locations to which the interpolation is supposed to take place
-	template<typename particle_in_type, size_t prp_id> compute_field_interpolation(particles_in_type & vd_to)
+
+	template <size_t prp_id> void regress_field_to_particles(particles_surface<dim, n_c> & vd_surface)
 	{
 		int message_insufficient_support = 0;
-
-		vd_s.template ghost_get<prp_id>();
 		double r_cutoff_celllist = sqrt(r_cutoff2);
-		if (minterpol && (redistOptions.min_num_particles != 0)) r_cutoff_celllist = redistOptions.r_cutoff_factor_min_num_particles*redistOptions.H;
-		auto NN_in = vd_in.getCellList(r_cutoff_celllist);
-		auto part = vd_to.getDomainIterator();
+		auto NN = vd_in.getCellList(r_cutoff_celllist);
+		auto part = vd_surface.getDomainIterator();
+		auto genericMinterModel = RegressionModel<dim, prp_id>(redistOptions.minter_poly_degree, redistOptions.minter_lp_degree);
 
 		while(part.isNext())
-		{	
-			vect_dist_key_dx a = part.get()
-			Point<dim, double> xa = vd_to.getPos(a);
+		{
+			vect_dist_key_dx a = part.get();
+			Point<dim, double> xa = vd_surface.getPos(a);
+			auto Np = NN.template getNNIterator<NO_CHECK>(NN.getCell(xa));
+			openfpm::vector<size_t> keys;
 
-			RegressionModel<dim, prp_id> genericMinterModel;
-			
-			if(redistOptions.min_num_particles == 0) 
+			while(Np.isNext())
 			{
-            			auto regSupport = RegressionSupport<decltype(vd_in), decltype(NN_in)>(vd_in, part, sqrt(r_cutoff2), RADIUS, NN_in);
-				if (regSupport.getNumParticles() < n_c) message_insufficient_support = 1;
-				genericMinterModel.computeCoeffs(vd_s, regSupport);
-			}
-			else 
-			{
-            			auto regSupport = RegressionSupport<decltype(vd_in), decltype(NN_in)>(vd_in, part, n_c + 3, AT_LEAST_N_PARTICLES, NN_in);
-				if (regSupport.getNumParticles() < n_c) message_insufficient_support = 1;
-				genericMinterModel.computeCoeffs(vd_s, regSupport);
+				vect_dist_key_dx b = Np.get();
+				Point<dim, double> xb = vd_in.getPos(b);
+				double dist2 = norm2(xb - xa);
+
+				if(dist2 < r_cutoff2) keys.add(b.getKey());
+
+				++Np;
 			}
 
-			auto& minterModel = genericMinterModel.model;
-			vd_s.template getProp<minter_coeff>(a) = minterModel->getCoeffs();
+			auto regSupport = RegressionSupport<particles_in_type, decltype(NN)>(keys, vd_in, NN);
+			if (regSupport.getNumParticles() < n_c) message_insufficient_support = 1;
 
-            		double grad_p_minter_mag2;
-
-			EMatrix<double, Eigen::Dynamic, 1> grad_p_minter(dim_r, 1);
-			EMatrix<double, Eigen::Dynamic, 1> x_minter(dim_r, 1);
-			for(int k = 0; k < dim_r; k++) x_minter[k] = xa[k];
-
-			double p_minter = get_p_minter(x_minter, minterModel);
-
+			for(int k = 0; k < dim; k++)
+			{
+				genericMinterModel.computeCoeffs(vd_in, regSupport, k);
+				auto& minterModel = genericMinterModel.model;
+				EMatrix<double, Eigen::Dynamic, 1> x(dim, 1);
+				for (int l = 0; l < dim; l++) x[l] = xa[l];
+				vd_surface.template getProp<5>(a)[k] = get_p_minter(x, minterModel);
+			}
 			++part;
 		}
 
-		if (message_insufficient_support) std::cout<<"Warning: less number of neighbours than required for interpolation"
+		if (message_insufficient_support) std::cout<<"Warning: less number of neighbours than required for property regression"
    							<<" for some particles. Consider using at least N particles function."<<std::endl;
-		}
+
 	}
-*/
 
 	// minterface
 	template<typename PolyType>
