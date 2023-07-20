@@ -54,6 +54,7 @@ struct Redist_options
 				   // particle is at the corner of a cell and hence only has neighbors in certain directions)
 	float r_cutoff_factor_min_num_particles; // this is the rcut for the celllist
 	int only_narrowband = 1; // only redistance particles with phi < sampling_radius, or all particles if only_narrowband = 0
+	int fixedSampleParticles = 0;
 };
 
 template <typename particles_in_type, size_t phi_field, size_t closest_point_field, size_t normal_field, size_t curvature_field, unsigned int num_minter_coeffs>
@@ -83,6 +84,7 @@ public:
 
 		find_closest_point();
 	}
+
 	// compute and return sample particles
 	particles_surface<particles_in_type::dims, num_minter_coeffs> initialize_surface_discretization()
 	{
@@ -153,7 +155,8 @@ private:
 		{
 			vect_dist_key_dx akey = part.get();
             		// depending on the application this can spare computational effort
-            		if ((redistOptions.only_narrowband) && (std::abs(vd_in.template getProp<vd_in_sdf>(akey)) > redistOptions.sampling_radius))
+            		if (((redistOptions.only_narrowband) && (std::abs(vd_in.template getProp<vd_in_sdf>(akey)) > redistOptions.sampling_radius)))
+			//or ((redistOptions.fixedSampleParticles) && (vd_in.template getProp<vd_in_close_part>(akey) != 1)))
             		{
                 		++part;
                 		continue;
@@ -177,7 +180,8 @@ private:
 	            		double r2 = norm2(dr);
 
 	            		// check if the particle will provide a polynomial interpolation and a sample point on the interface
-	            		if ((sqrt(r2) < (1.5*redistOptions.H)) && (sgn_a != sgn_b)) isclose = 1;
+	            		//if (((sqrt(r2) < (1.5*redistOptions.H)) and (sgn_a != sgn_b)) and ((redistOptions.fixedSampleParticles != 1) or (vd_in.template getProp<vd_in_close_part>(akey) == 1))) isclose = 1;
+	            		if ((sqrt(r2) < (1.5*redistOptions.H)) and (sgn_a != sgn_b)) isclose = 1;
 
 	            		// count how many particles are in the neighborhood and will be part of the interpolation
 	            		if (r2 < r_cutoff2)	++num_neibs_a;
@@ -228,7 +232,7 @@ private:
 			vect_dist_key_dx a = part.get();
 
 			// only the close particles (a) will get the full treatment (interpolation + projection)
-			if (vd_s.template getProp<vd_s_close_part>(a) != 1)
+			if ((vd_s.template getProp<vd_s_close_part>(a) != 1) or (abs(vd_s.template getProp<vd_s_sdf>(a)) < redistOptions.tolerance))
 			{
 				++part;
 				continue;
@@ -262,6 +266,7 @@ private:
 			for(int k = 0; k < dim_r; k++) x_minter[k] = xa[k];
 
 			double p_minter = get_p_minter(x_minter, minterModel);
+			//if (redistOptions.fixedSampleParticles) p_minter = 0.0;
 			k_project = 0;
 			while ((abs(p_minter) > redistOptions.tolerance) && (k_project < redistOptions.max_iter))
 			{
@@ -319,6 +324,7 @@ private:
 			vect_dist_key_dx a = part.get();
 
 			if ((redistOptions.only_narrowband) && (std::abs(vd_in.template getProp<vd_in_sdf>(a)) > redistOptions.sampling_radius))
+			//or ((redistOptions.fixedSampleParticles) && (vd_in.template getProp<vd_in_close_part>(a) == 1)))
 			{
 				++part;
 				continue;
@@ -487,10 +493,10 @@ private:
 	   		// that it lies on the surface and cannot be distinguished from the one phase or the other. The reason for
 	    		// this probably lies in the numerical tolerance. As a quick fix, we introduce an error of the tolerance,
 	    		// but keep the sign.
-            		if ((k_newton == 0) && (xax.norm() < redistOptions.tolerance))
-            		{
-                		vd_in.template getProp<vd_in_sdf>(a) = return_sign(vd_in.template getProp<vd_in_sdf>(a))*redistOptions.tolerance;
-            		}
+            		//if ((k_newton == 0) && (xax.norm() < redistOptions.tolerance))
+            		//{
+                	//	vd_in.template getProp<vd_in_sdf>(a) = return_sign(vd_in.template getProp<vd_in_sdf>(a))*redistOptions.tolerance;
+            		//}
 
             		// debug optimisation
 			if(redistOptions.verbose)
