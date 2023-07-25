@@ -54,6 +54,9 @@ struct Redist_options
 				   // particle is at the corner of a cell and hence only has neighbors in certain directions)
 	float r_cutoff_factor_min_num_particles; // this is the rcut for the celllist
 	int only_narrowband = 1; // only redistance particles with phi < sampling_radius, or all particles if only_narrowband = 0
+	int project_particles = 0; // change the actual position of the particles by projection onto their respective closest points.
+				   // to perform this, verbose needs to be 0 as it interferes with the surface flag which is queried
+				   // for the projection.
 };
 
 template <typename particles_in_type, size_t phi_field, size_t closest_point_field, size_t normal_field, size_t curvature_field, unsigned int num_minter_coeffs>
@@ -115,8 +118,9 @@ private:
 	static constexpr size_t minter_coeff = 4;
 	// static constexpr size_t vd_s_velocity_field = 5;
 	static constexpr size_t vd_in_sdf = phi_field; // this is really required in the vd_in vector, so users need to know about it.
-	static constexpr size_t vd_in_close_part = 4; // this is not needed by the method, but more for debugging purposes, as it shows all particles for which
-						      // interpolation and sampling is performed.
+	static constexpr size_t vd_in_close_part = 4; // this is not needed by the method, but is used for debugging purposes, as it shows all particles for which
+						      // interpolation and sampling is performed. Also, it flags particles that are supposed to be moved (or projected)
+						      // onto the surface.
 	static constexpr size_t vd_in_normal = normal_field;
 	static constexpr size_t vd_in_curvature = curvature_field;
 	static constexpr size_t	vd_in_cp = closest_point_field;
@@ -487,6 +491,12 @@ private:
 			// and does not cross the interface.
 			if (redistOptions.write_sdf) vd_generic.template getProp<vd_in_sdf>(a) = return_sign(vd_generic.template getProp<vd_in_sdf>(a))*xax.norm();
 			if (redistOptions.write_cp) for(int k = 0; k <dim; k++) vd_generic.template getProp<vd_in_cp>(a)[k] = x[k];
+			// If particles contain a flag in position 4 and the redistOptions is set accordingly, project particles onto their closest point on
+			// the surface.
+			if ((!redistOptions.verbose) and (vd_generic.template getProp<vd_in_close_part>(a)) and redistOptions.project_particles)
+			{
+				for(int k = 0; k < dim; k++) vd_generic.getPos(a)[k] = vd_generic.template getProp<vd_in_cp>(a)[k];
+			}
 	    		// This is to avoid loss of mass conservation - in some simulations, a particle can get assigned a 0-sdf, so
 	   		// that it lies on the surface and cannot be distinguished from the one phase or the other. The reason for
 	    		// this probably lies in the numerical tolerance. As a quick fix, we introduce an error of the tolerance,
@@ -582,6 +592,7 @@ private:
 				for(int k = 0; k < dim; k++) sampleParticles.getLastPos()[k] = vd_s.template getProp<vd_s_sample>(a)[k];
 				sampleParticles.template getLastProp<vd_in_sdf>() = 0.0;
 				for(int k = 0; k < dim; k++) sampleParticles.template getLastProp<vd_in_cp>()[k] = vd_s.template getProp<vd_s_sample>(a)[k];
+				sampleParticles.template getLastProp<vd_in_close_part>() = 1;
 
             			auto& model = minterModelpcp.model;
 				model->setCoeffs(vd_s.template getProp<minter_coeff>(a));

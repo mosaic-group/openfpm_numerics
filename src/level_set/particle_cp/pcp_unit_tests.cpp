@@ -27,26 +27,26 @@ typedef struct EllipseParameters{
 } EllipseParams;
 
 // Generate an ellipsoid initial levelset signed distance function
-template<typename particles_type, typename iterator_type, size_t sdf, size_t ref_cp>
+template<typename particles_type, typename iterator_type, size_t sdf, size_t surf_flag, size_t ref_cp>
 void initializeLSEllipsoid(particles_type &vd, iterator_type particle_it, const EllipseParams &params, double bandwidth, double perturb_factor, double H)
 {
     while(particle_it.isNext())
     {
-        double posx = particle_it.get().get(0); 
-        double posy = particle_it.get().get(1); 
+        double posx = particle_it.get().get(0);
+        double posy = particle_it.get().get(1);
         double posz = particle_it.get().get(2);
 
 	double ref_cpx = 0.0;
 	double ref_cpy = 0.0;
 	double ref_cpz = 0.0;
-        
+
 	double dist = DistancePointEllipsoid(params.radiusA, params.radiusB, params.radiusC, abs(posx), abs(posy), abs(posz), ref_cpx, ref_cpy, ref_cpz);
         if (abs(dist) < bandwidth/2.0)
 	{
 		posx = posx + perturb_factor*randMinusOneToOne()*H;
 		posy = posy + perturb_factor*randMinusOneToOne()*H;
 		posz = posz + perturb_factor*randMinusOneToOne()*H;
-		
+
 		dist = DistancePointEllipsoid(params.radiusA, params.radiusB, params.radiusC, abs(posx), abs(posy), abs(posz), ref_cpx, ref_cpy, ref_cpz);
 		vd.add();
 		vd.getLastPos()[0] = posx;
@@ -58,8 +58,9 @@ void initializeLSEllipsoid(particles_type &vd, iterator_type particle_it, const 
 		vd.template getLastProp<ref_cp>()[0] = return_sign(posx)*ref_cpx;
 		vd.template getLastProp<ref_cp>()[1] = return_sign(posy)*ref_cpy;
 		vd.template getLastProp<ref_cp>()[2] = return_sign(posz)*ref_cpz;
+		vd.template getLastProp<surf_flag>() = 0;
 	}
-	
+
 	++particle_it;
     }
 }
@@ -89,10 +90,11 @@ BOOST_AUTO_TEST_CASE( ellipsoid )
 	constexpr int cp = 1;
 	constexpr int normal = 2;
 	constexpr int curvature = 3;
-	constexpr int ref_cp = 4;
-	typedef vector_dist<3, double, aggregate<double, Point<3, double>, Point<3, double>, double, Point<3, double>>> particles;
-	//					 |		|		|		|		|
-	//					SDF	closest point		|  	   curvature	 	|
+	constexpr int surf_flag = 4;
+	constexpr int ref_cp = 5;
+	typedef vector_dist<3, double, aggregate<double, Point<3, double>, Point<3, double>, double, int, Point<3, double>>> particles;
+	//					 |		|		|		|      |		|
+	//					SDF	closest point		|  	   curvature surface flag 	|
 	//								surface normal	   		reference closest point
 
 	particles vd(0, domain, bc, g, DEC_GRAN(512));
@@ -107,7 +109,7 @@ BOOST_AUTO_TEST_CASE( ellipsoid )
 	auto particle_it = DrawParticles::DrawBox(vd, sz, domain, domain);
 
 	// initialize spurious sdf values and reference solution
-	initializeLSEllipsoid<particles, decltype(particle_it), sdf, ref_cp>(vd, particle_it, params, bandwidth, perturb_factor, H);
+	initializeLSEllipsoid<particles, decltype(particle_it), sdf, surf_flag, ref_cp>(vd, particle_it, params, bandwidth, perturb_factor, H);
 
 	//vd.write("pcpunittest_init");
 	// initialize and run pcp redistancing
@@ -151,7 +153,7 @@ BOOST_AUTO_TEST_CASE( ellipsoid )
 		double reference_sdf = return_sign(sqrt(((pos[0] - params.origin[0])/params.radiusA)*((pos[0] - params.origin[0])/params.radiusA) + ((pos[1] - params.origin[1])/params.radiusB)*((pos[1] - params.origin[1])/params.radiusB) + ((pos[2] - params.origin[2])/params.radiusC)*((pos[2] - params.origin[2])/params.radiusC)) - 1.0)*norm(vd.getProp<ref_cp>(a) - pos);
 		Point<3, double> reference_normal;
 		double reference_curvature;
-	
+
 		// compute reference SDF value w/ reference closest point and check computed SDF value
 		sdferr = abs(vd.getProp<sdf>(a) - reference_sdf);
 		if (sdferr > sdfmaxerr) sdfmaxerr = sdferr;
@@ -169,7 +171,7 @@ BOOST_AUTO_TEST_CASE( ellipsoid )
 		reference_normal = return_sign(reference_sdf)*reference_normal/norm(reference_normal);
 		normalerr = norm(reference_normal - vd.getProp<normal>(a));
 		if (normalerr > normalmaxerr) normalmaxerr = normalerr;
-		
+
 		// compute reference curvature and check computed curvature
 		reference_curvature = (std::abs(vd.getProp<ref_cp>(a)[0]*vd.getProp<ref_cp>(a)[0] + vd.getProp<ref_cp>(a)[1]*vd.getProp<ref_cp>(a)[1] + vd.getProp<ref_cp>(a)[2]*vd.getProp<ref_cp>(a)[2] - params.radiusA*params.radiusA  - params.radiusB*params.radiusB - params.radiusC*params.radiusC))/(2*params.radiusA*params.radiusA*params.radiusB*params.radiusB*params.radiusC*params.radiusC*std::pow(vd.getProp<ref_cp>(a)[0]*vd.getProp<ref_cp>(a)[0]/std::pow(params.radiusA, 4) + vd.getProp<ref_cp>(a)[1]*vd.getProp<ref_cp>(a)[1]/std::pow(params.radiusB, 4) + vd.getProp<ref_cp>(a)[2]*vd.getProp<ref_cp>(a)[2]/std::pow(params.radiusC, 4), 1.5));
 		curvatureerr = abs(reference_curvature - vd.getProp<curvature>(a));
@@ -183,7 +185,7 @@ BOOST_AUTO_TEST_CASE( ellipsoid )
         std::cout<<"Maximum error for the closest point is: "<<cpmaxerr<<std::endl;
         std::cout<<"Maximum error for surface normal is: "<<normalmaxerr<<std::endl;
         std::cout<<"Maximum error for curvature is: "<<curvaturemaxerr<<std::endl;
-	
+
     	double tolerance = 1e-7;
    	bool check;
     	if (std::abs(sdfmaxerr) < tolerance)
