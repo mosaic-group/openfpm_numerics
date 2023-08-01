@@ -71,8 +71,8 @@ private:
 
 //// Definitions below
 
-template<unsigned int dim>
-MonomialBasis<dim>::MonomialBasis(unsigned int orderLimit)
+template<unsigned int dim, typename T, template<typename, template<typename...> class...> class vector_type, template<typename...> class... Args>
+MonomialBasis<dim, T, vector_type, Args...>::MonomialBasis(unsigned int orderLimit)
 {
     generateInterpolBasis(orderLimit);
 }
@@ -163,8 +163,8 @@ void MonomialBasis<dim, T, vector_type, Args...>::generateBasis(vector_type<unsi
     }
 }
 
-template<unsigned int dim>
-void MonomialBasis<dim>::generateInterpolBasis(unsigned int orderLimit)
+template<unsigned int dim, typename T, template<typename, template<typename...> class...> class vector_type, template<typename...> class... Args>
+void MonomialBasis<dim, T, vector_type, Args...>::generateInterpolBasis(unsigned int orderLimit)
 {
 	size_t dimensions[dim];
 	std::fill(dimensions, dimensions + dim, orderLimit);
