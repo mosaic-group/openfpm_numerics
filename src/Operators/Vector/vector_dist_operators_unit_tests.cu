@@ -7,6 +7,7 @@
 #include "Operators/Vector/vector_dist_operators.hpp"
 #include "Operators/Vector/tests/vector_dist_operators_tests_util.hpp"
 
+
 BOOST_AUTO_TEST_SUITE( vector_dist_operators_test_gpu )
 
 BOOST_AUTO_TEST_CASE(vector_dist_operators_list_ker_test)

@@ -272,7 +272,7 @@ struct mutable_or_not
 {
 	T obj;
 
-	mutable_or_not(T & obj)
+	mutable_or_not(const T & obj)
 	:obj(obj)
 	{}
 };
@@ -282,7 +282,7 @@ struct mutable_or_not<T,true>
 {
 	mutable T obj;
 
-	mutable_or_not(T & obj)
+	mutable_or_not(const T & obj)
 	:obj(obj)
 	{}
 };
@@ -389,7 +389,8 @@ public:
 	 * \param vd vector containing the particle positions
 	 *
 	 */
-	vector_dist_expression_op(const exp1 & o1, NN_nr & cl, Kernel & ker, const vector_orig_nr & vd)
+
+	vector_dist_expression_op(const exp1 & o1, const NN& cl, Kernel & ker, const vector_orig_nr & vd)
 	:o1(o1),cl(cl),ker(ker),vd(vd)
 	{}
 
@@ -502,7 +503,7 @@ public:
 	 * \param vd vector containing the particle positions
 	 *
 	 */
-	vector_dist_expression_op(const exp1 & o1, NN_nr & cl, Kernel & ker, const vector_orig_nr & vd)
+	vector_dist_expression_op(const exp1 & o1, NN & cl, Kernel & ker, const vector_orig_nr & vd)
 	:o1(o1),cl(cl),ker(ker),vd(vd)
 	{}
 
@@ -611,7 +612,7 @@ public:
 	 * \param vd Vector containing the particle positions
 	 *
 	 */
-	vector_dist_expression_op(NN & cl, Kernel & ker, const vector_orig & vd)
+	vector_dist_expression_op(const NN & cl, Kernel & ker, const vector_orig & vd)
 	:cl(cl),ker(ker),vd(vd)
 	{}
 
@@ -719,7 +720,7 @@ public:
 	 * \param vd Vector containing the particle positions
 	 *
 	 */
-	vector_dist_expression_op(NN & cl, Kernel & ker, const vector_orig & vd)
+	vector_dist_expression_op(const NN & cl, Kernel & ker, const vector_orig & vd)
 	:cl(cl),ker(ker),vd(vd)
 	{}
 
@@ -832,7 +833,7 @@ public:
 	 * \param vd vector containing the set of particles
 	 *
 	 */
-	vector_dist_expression_op(const exp1 & o1, NN & cl, Kernel & ker, const vector_orig & vd)
+	vector_dist_expression_op(const exp1 & o1, const NN & cl, Kernel & ker, const vector_orig & vd)
 	:o1(o1),cl(cl),ker(ker),vd(vd)
 	{}
 
@@ -946,7 +947,7 @@ public:
 	 * \param vd vector containing the set of particles
 	 *
 	 */
-	vector_dist_expression_op(const exp1 & o1, NN & cl, Kernel & ker, const vector_orig & vd)
+	vector_dist_expression_op(const exp1 & o1, const NN & cl, Kernel & ker, const vector_orig & vd)
 	:o1(o1),cl(cl),ker(ker),vd(vd)
 	{}
 
@@ -1069,7 +1070,7 @@ struct vl_selector_impl<false,vl_type,cl_type,2>
 {
 	typedef decltype(std::declval<vl_type>().toKernel()) vtype;
 
-	static vtype & get(vl_type & v)
+	static vtype get(vl_type & v)
 	{
 		return v.toKernel();
 	}
@@ -1080,7 +1081,7 @@ struct vl_selector_impl<true,vl_type,cl_type,2>
 {
 	typedef decltype(std::declval<vl_type>().toKernel()) vtype;
 
-	static vtype & get(vl_type & v)
+	static vtype get(vl_type & v)
 	{
 		return v.toKernel_sorted();
 	}

@@ -1012,8 +1012,7 @@ public:
         bool increment = false;
         if (skip_first == true)
         {
-
-                auto it = g_map.getSubDomainIterator(start_k,stop_k);
+                auto it = g_map.getSubDomainIterator(start_k,start_k);
 
                 if (it.isNext() == true)
                         increment = true;

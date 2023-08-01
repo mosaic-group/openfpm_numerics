@@ -29,8 +29,14 @@
 template <typename point_type, typename radius_type>
 bool inside_sphere(point_type coords, radius_type radius, double center_x=0, double center_y=0, double center_z=0)
 {
-	const double EPSILON = std::numeric_limits<double>::epsilon();
-	const double X = coords.get(0), Y = coords.get(1), Z = coords.get(2);
+	typedef typename std::remove_const_t<std::remove_reference_t<decltype(coords.get(0))>> space_type;
+	if(!(std::is_same<space_type, radius_type>::value))
+	{
+		std::cout << "Radius type and space type of grid must be the same! Aborting..." << std::endl;
+		abort();
+	}
+	const space_type EPSILON = std::numeric_limits<space_type>::epsilon();
+	const space_type X = coords.get(0), Y = coords.get(1), Z = coords.get(2);
 	return (X - center_x) * (X - center_x)
 	+ (Y - center_y) * (Y - center_y)
 	+ (Z - center_z) * (Z - center_z)
@@ -57,13 +63,18 @@ bool inside_sphere(point_type coords, radius_type radius, double center_x=0, dou
 template <size_t Phi_0, typename grid_type, typename radius_type>
 void init_grid_with_sphere(grid_type & grid, radius_type radius, double center_x=0, double center_y=0, double center_z=0)
 {
+	if(!(std::is_same<typename grid_type::stype, radius_type>::value))
+	{
+		std::cout << "Radius type and space type of grid must be the same! Aborting..." << std::endl;
+		abort();
+	}
 	// assign pixel values to domain. For each pixel get factor_refinement number of grid points with corresponding value
 	auto dom = grid.getDomainIterator();
 	while(dom.isNext())
 	{
 		auto key = dom.get();
 	
-		Point<grid_type::dims, double> coords = grid.getPos(key);
+		Point<grid_type::dims, typename grid_type::stype> coords = grid.getPos(key);
 
 		if (inside_sphere(coords, radius, center_x, center_y, center_z))
 		{

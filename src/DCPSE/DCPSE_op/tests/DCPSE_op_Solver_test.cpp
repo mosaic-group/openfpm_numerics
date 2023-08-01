@@ -1001,6 +1001,23 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
         Solver.impose(-D_y, dw_p, prop_id<1>());
         Solver.impose(-D_x, l_p, prop_id<1>());
         Solver.impose(D_x, r_p, prop_id<1>());
+
+        Solver.reset_b();
+        Solver.impose_b(bulk, prop_id<1>());
+        Solver.impose_b(up_p, prop_id<1>());
+        Solver.impose_b(dw_p, prop_id<1>());
+        Solver.impose_b(l_p, prop_id<1>());
+        Solver.impose_b(r_p, prop_id<1>());
+
+        Solver.solve_with_solver(solver,sol);
+
+        Solver.reset_b();
+        Solver.impose_b(bulk, prop_id<1>());
+        Solver.impose_b(up_p, prop_id<1>());
+        Solver.impose_b(dw_p, prop_id<1>());
+        Solver.impose_b(l_p, prop_id<1>());
+        Solver.impose_b(r_p, prop_id<1>());
+
         Solver.solve_with_solver(solver,sol);
 
 //       Solver.solve(sol);
@@ -1020,6 +1037,170 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
         BOOST_REQUIRE(worst1 < 1.0);
 
         //domain.write("Neumann");
+    }
+
+        BOOST_AUTO_TEST_CASE(dcpse_poisson_Neumann2d) {
+        const size_t sz[2] = {31,31};
+        Box<2, double> box({0, 0}, {1.0, 1.0});
+        size_t bc[2] = {NON_PERIODIC, NON_PERIODIC};
+        double spacing = box.getHigh(0) / (sz[0] - 1);
+        double rCut = 3.1 * spacing;
+        Ghost<2, double> ghost(spacing * 3.1);
+        BOOST_TEST_MESSAGE("Init vector_dist...");
+
+        vector_dist<2, double, aggregate<double[2],double[2],double[2],double[2],double[2]>> domain(0, box, bc, ghost);
+
+
+        //Init_DCPSE(domain)
+        BOOST_TEST_MESSAGE("Init domain...");
+
+        auto it = domain.getGridIterator(sz);
+        while (it.isNext()) {
+
+            domain.add();
+
+            auto key = it.get();
+            double x = key.get(0) * it.getSpacing(0);
+            domain.getLastPos()[0] = x;
+            double y = key.get(1) * it.getSpacing(1);
+            domain.getLastPos()[1] = y;
+
+            ++it;
+        }
+        BOOST_TEST_MESSAGE("Sync domain across processors...");
+
+        domain.map();
+        domain.ghost_get<0>();
+
+        Derivative_x Dx(domain, 2, rCut,1.9,support_options::N_PARTICLES);
+        Derivative_y Dy(domain, 2, rCut,1.9,support_options::N_PARTICLES);
+        Laplacian Lap(domain, 2, rCut, 1.9,support_options::N_PARTICLES);
+        petsc_solver<double> solver;
+        solver.setRestart(500);
+        solver.setSolver(KSPGMRES);
+        solver.setPreconditioner(PCSVD);
+
+        openfpm::vector<aggregate<int>> bulk;
+        openfpm::vector<aggregate<int>> up_p;
+        openfpm::vector<aggregate<int>> dw_p;
+        openfpm::vector<aggregate<int>> l_p;
+        openfpm::vector<aggregate<int>> r_p;
+
+        auto v = getV<0>(domain);
+        auto RHS=getV<1>(domain);
+        auto sol = getV<2>(domain);
+        auto anasol = getV<3>(domain);
+        auto err = getV<4>(domain);
+
+        // Here fill me
+
+        Box<2, double> up({box.getLow(0) - spacing / 2.0, box.getHigh(1) - spacing / 2.0},
+                          {box.getHigh(0) + spacing / 2.0, box.getHigh(1) + spacing / 2.0});
+
+        Box<2, double> down({box.getLow(0) - spacing / 2.0, box.getLow(1) - spacing / 2.0},
+                            {box.getHigh(0) + spacing / 2.0, box.getLow(1) + spacing / 2.0});
+
+        Box<2, double> left({box.getLow(0) - spacing / 2.0, box.getLow(1) + spacing / 2.0},
+                            {box.getLow(0) + spacing / 2.0, box.getHigh(1) - spacing / 2.0});
+
+        Box<2, double> right({box.getHigh(0) - spacing / 2.0, box.getLow(1) + spacing / 2.0},
+                             {box.getHigh(0) + spacing / 2.0, box.getHigh(1) - spacing / 2.0});
+
+        openfpm::vector<Box<2, double>> boxes;
+        boxes.add(up);
+        boxes.add(down);
+        boxes.add(left);
+        boxes.add(right);
+
+        // Create a writer and write
+        VTKWriter<openfpm::vector<Box<2, double>>, VECTOR_BOX> vtk_box;
+        vtk_box.add(boxes);
+        //vtk_box.write("vtk_box.vtk");
+
+
+        auto it2 = domain.getDomainIterator();
+
+        while (it2.isNext()) {
+            auto p = it2.get();
+            Point<2, double> xp = domain.getPos(p);
+            //domain.getProp<3>(p)=1+xp[0]*xp[0]+2*xp[1]*xp[1];
+            if (up.isInside(xp) == true) {
+                up_p.add();
+                up_p.last().get<0>() = p.getKey();
+                domain.getProp<1>(p)[0] =  sin(5*xp.get(0));
+                domain.getProp<1>(p)[1] =  sin(5*xp.get(0));
+            } else if (down.isInside(xp) == true) {
+                dw_p.add();
+                dw_p.last().get<0>() = p.getKey();
+                domain.getProp<1>(p)[0] =  sin(5*xp.get(0));
+                domain.getProp<1>(p)[1] =  sin(5*xp.get(0));
+            } else if (left.isInside(xp) == true) {
+                l_p.add();
+                l_p.last().get<0>() = p.getKey();
+                domain.getProp<1>(p)[0] =  sin(5*xp.get(0));
+                domain.getProp<1>(p)[1] =  sin(5*xp.get(0));
+            } else if (right.isInside(xp) == true) {
+                r_p.add();
+                r_p.last().get<0>() = p.getKey();
+                domain.getProp<1>(p)[0] =  sin(5*xp.get(0));
+                domain.getProp<1>(p)[1] =  sin(5*xp.get(0));
+            } else {
+                bulk.add();
+                bulk.last().get<0>() = p.getKey();
+                domain.getProp<1>(p)[0] =  -10*exp(-((xp.get(0)-0.5)*(xp.get(0)-0.5)+(xp.get(1)-0.5)*(xp.get(1)-0.5))/0.02);
+                domain.getProp<1>(p)[1] =  -10*exp(-((xp.get(0)-0.5)*(xp.get(0)-0.5)+(xp.get(1)-0.5)*(xp.get(1)-0.5))/0.02);
+            }
+
+            ++it2;
+        }
+
+        DCPSE_scheme<equations2d2,decltype(domain)> Solver(domain,options_solver::LAGRANGE_MULTIPLIER);
+        eq_id vx,vy;
+        vx.setId(0);
+        vy.setId(1);
+        auto Poisson0 = -Lap(v[0]);
+        auto D_x0 = Dx(v[0]);
+        auto D_y0 = Dy(v[0]);
+        auto Poisson1 = -Lap(v[1]);
+        auto D_x1 = Dx(v[1]);
+        auto D_y1 = Dy(v[1]);
+
+        Solver.impose(Poisson0, bulk, RHS[0],vx);
+        Solver.impose(Poisson1, bulk, RHS[1],vy);
+        Solver.impose(D_y0, up_p, RHS[0],vx);
+        Solver.impose(-D_y0, dw_p, RHS[0],vx);
+        Solver.impose(-D_x0, l_p, RHS[0],vx);
+        Solver.impose(D_x0, r_p, RHS[0],vx);
+
+        Solver.impose(D_y1, up_p, RHS[1],vy);
+        Solver.impose(-D_y1, dw_p, RHS[1],vy);
+        Solver.impose(-D_x1, l_p, RHS[1],vy);
+        Solver.impose(D_x1, r_p, RHS[1],vy);
+        Solver.solve_with_solver(solver,sol[0],sol[1]);
+
+//       Solver.solve(sol);
+        domain.ghost_get<2>();
+        anasol[0]=-Lap(sol[0]);
+        anasol[1]=-Lap(sol[1]);
+        double worst1 = 0.0,worst2 = 0.0;
+
+        for(int j=0;j<bulk.size();j++)
+        {   auto p=bulk.get<0>(j);
+            if (fabs(domain.getProp<3>(p)[0]- domain.getProp<1>(p)[0]) >= worst1) {
+                worst1 = fabs(domain.getProp<3>(p)[0] - domain.getProp<1>(p)[0]);
+            }
+            if (fabs(domain.getProp<3>(p)[1]- domain.getProp<1>(p)[1]) >= worst2) {
+                worst2 = fabs(domain.getProp<3>(p)[1] - domain.getProp<1>(p)[1]);
+            }
+            domain.getProp<4>(p)[0] = fabs(domain.getProp<1>(p)[0] - domain.getProp<3>(p)[0]);
+            domain.getProp<4>(p)[1] = fabs(domain.getProp<1>(p)[1] - domain.getProp<3>(p)[1]);
+
+        }
+        //Auto Error
+        BOOST_REQUIRE(worst1 < 1.0);
+        BOOST_REQUIRE(worst2 < 1.0);
+
+        domain.write("Neumann2d");
     }
 
 
@@ -1162,7 +1343,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
         vx.setId(0);
         vy.setId(1);
 
-        DCPSE_scheme<equations2d2,decltype(domain)> Solver( domain);
+        DCPSE_scheme<equations2d2,decltype(domain)> Solver(domain);
         auto Poisson0 = Lap(v[0]);
         auto Poisson1 = Lap(v[1]);
         //auto D_x = Dx(v[1]);

@@ -196,7 +196,7 @@ private:
 					                                            INSERT_VALUES));
 		}
 
-		PETSC_SAFE_CALL(MatAssemblyBegin(mat,MAT_FINAL_ASSEMBLY));
+        PETSC_SAFE_CALL(MatAssemblyBegin(mat,MAT_FINAL_ASSEMBLY));
 		PETSC_SAFE_CALL(MatAssemblyEnd(mat,MAT_FINAL_ASSEMBLY));
 
 		m_created = true;
@@ -223,6 +223,7 @@ public:
 	{
 		PETSC_SAFE_CALL(MatCreate(PETSC_COMM_WORLD,&mat));
 		PETSC_SAFE_CALL(MatSetType(mat,MATMPIAIJ));
+        PETSC_SAFE_CALL(MatSetFromOptions(mat));
 		PETSC_SAFE_CALL(MatSetSizes(mat,n_row_local,n_row_local,N1,N2));
 
 		Vcluster<> & v_cl = create_vcluster();
@@ -245,7 +246,9 @@ public:
 	:g_row(0),g_col(0),l_row(0l),l_col(0),start_row(0)
 	{
 		PETSC_SAFE_CALL(MatCreate(PETSC_COMM_WORLD,&mat));
-		PETSC_SAFE_CALL(MatSetType(mat,MATMPIAIJ));
+        PETSC_SAFE_CALL(MatSetType(mat,MATMPIAIJ));
+        PETSC_SAFE_CALL(MatSetFromOptions(mat));
+
 	}
 
 	~SparseMatrix()
@@ -367,6 +370,17 @@ public:
 		}
 
 		return 0;
+	}
+
+	/*! \brief Return the state of matrix
+	 *
+	 * Returns a bool flag that indicated whether the matrix
+	 * has already been filled via MatSetValues
+	 *
+	 */
+	bool isMatrixFilled()
+	{
+		return m_created;
 	}
 
 	/* Write matrix on vtk

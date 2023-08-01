@@ -13,6 +13,7 @@
 #define REDISTANCING_SUSSMAN_HELPFUNCTIONS_HPP
 
 #include <iostream>
+#include <fstream>
 /**@brief Gets the sign of a variable.
  *
  * @tparam T Inferred type of input variable.
@@ -74,7 +75,7 @@ bool isApproxEqual(T val1, T val2, T tolerance)
 template <typename T>
 void append_value_to_textfile(std::string & textfile, T value)
 {
-	std::ofstream out(textfile);
+	std::ofstream out(textfile, std::ios_base::app);
 	out << value;
 }
 

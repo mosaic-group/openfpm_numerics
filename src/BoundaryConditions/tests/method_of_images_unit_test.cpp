@@ -13,7 +13,7 @@
 
 BOOST_AUTO_TEST_SUITE(MethodOfImagesTestSuite)
 	
-	BOOST_AUTO_TEST_CASE(DiffusionWithReflectingNBCs)
+	BOOST_AUTO_TEST_CASE(DiffusionWithNoFluxNBCs)
 	{
 		const size_t dims     = 2;
 		const double L_low    = 0.0;
@@ -88,7 +88,7 @@ BOOST_AUTO_TEST_SUITE(MethodOfImagesTestSuite)
 			vd.template ghost_get<Conc_n>(KEEP_PROPERTIES);
 			
 			///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-			// Place mirror particles for reflecting boundary conditions.
+			// Place mirror particles for noflux boundary conditions.
 			////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 			size_t mirror_width = 3; // Mirror width in number of particles
 //		size_t mirror_width = std::round(0.1/p_spacing); // Mirror width in number of particles

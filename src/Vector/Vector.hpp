@@ -8,7 +8,7 @@
 #ifndef OPENFPM_NUMERICS_SRC_VECTOR_VECTOR_HPP_
 #define OPENFPM_NUMERICS_SRC_VECTOR_VECTOR_HPP_
 
-#include "config/config.h"
+#include "config.h"
 #include "util/linalgebra_lib.hpp"
 
 /*! \brief It store one row value of a vector

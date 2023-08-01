@@ -12,13 +12,13 @@ bool AlmostEqualRelativeAndAbs(T A, T B,
 {
 	// Check if the numbers are really close -- needed
 	// when comparing numbers near zero.
-	float diff = fabs(A - B);
+	T diff = fabs(A - B);
 	if (diff <= maxDiff)
 		return true;
 	
 	A = fabs(A);
 	B = fabs(B);
-	float largest = (B > A) ? B : A;
+	T largest = (B > A) ? B : A;
 	
 	if (diff <= largest * maxRelDiff)
 		return true;
