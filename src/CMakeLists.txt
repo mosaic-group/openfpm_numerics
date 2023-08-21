@@ -17,12 +17,15 @@ endif()
 
 if (NOT CUDA_ON_BACKEND STREQUAL "None")
 	set(CUDA_SOURCES Operators/Vector/vector_dist_operators_unit_tests.cu
-					 DCPSE/DCPSE_op/tests/DCPSE_op_Solver_test.cu
-			                 DCPSE/DCPSE_op/tests/DCPSE_op_test_base_tests.cu
-			                 DCPSE/DCPSE_op/tests/DCPSE_op_test_temporal.cu
 			 	 	 OdeIntegrators/tests/Odeintegrators_test_gpu.cu
-					 #DCPSE/DCPSE_op/tests/DCPSE_op_subset_test.cu
 					 Operators/Vector/vector_dist_operators_apply_kernel_unit_tests.cu)
+endif()
+
+if (CUDA_ON_BACKEND STREQUAL "CUDA")
+	set(CUDA_SOURCES DCPSE/DCPSE_op/tests/DCPSE_op_Solver_test.cu
+			                 DCPSE/DCPSE_op/tests/DCPSE_op_test_base_tests.cu
+					 #DCPSE/DCPSE_op/tests/DCPSE_op_subset_test.cu
+			                 DCPSE/DCPSE_op/tests/DCPSE_op_test_temporal.cu)
 endif()
 
 if ( CUDA_ON_BACKEND STREQUAL "HIP" AND HIP_FOUND )
