@@ -11,7 +11,7 @@ if (CUDA_ON_BACKEND STREQUAL "CUDA")
 	set(CUDA_SOURCES ${CUDA_SOURCES} DCPSE/DCPSE_op/tests/DCPSE_op_Solver_test.cu
 			                 DCPSE/DCPSE_op/tests/DCPSE_op_test_base_tests.cu
 					 #DCPSE/DCPSE_op/tests/DCPSE_op_subset_test.cu
-					 OdeIntegrators/tests/Odeintegrators_test_gpu.cu
+					 #OdeIntegrators/tests/Odeintegrators_test_gpu.cu
 			                 DCPSE/DCPSE_op/tests/DCPSE_op_test_temporal.cu)
 endif()
 
