@@ -90,6 +90,9 @@ private:
 	openfpm::vector<triplet_type> trpl;
 	openfpm::vector<triplet_type> trpl_recv;
 
+	//! indicate if the matrix has been created
+	bool m_created = false;
+
 	/*! \brief Assemble the matrix
 	 *
 	 *
@@ -109,6 +112,8 @@ private:
 		}
 		else
 			mat.setFromTriplets(trpl.begin(),trpl.end());
+
+		m_created = true;
 	}
 
 	/*! \brief Here we collect the full matrix on master
@@ -122,6 +127,7 @@ private:
 
 		// here we collect all the triplet in one array on the root node
 		vcl.SGather(trpl,trpl_recv,0);
+		m_created = false;
 	}
 
 public:
@@ -154,7 +160,7 @@ public:
 	 */
 	openfpm::vector<triplet_type> & getMatrixTriplets()
 	{
-		return this->trpl;
+		m_created = false; return this->trpl;
 	}
 
 	/*! \brief Get the Eigen Matrix object
@@ -165,7 +171,7 @@ public:
 	const Eigen::SparseMatrix<T,0,id_t> & getMat() const
 	{
 		// Here we collect the information on master
-		assemble();
+		if (m_created == false) assemble();
 
 		return mat;
 	}
@@ -177,7 +183,7 @@ public:
 	 */
 	Eigen::SparseMatrix<T,0,id_t> & getMat()
 	{
-		assemble();
+		if (m_created == false) assemble();
 
 		return mat;
 	}
@@ -190,7 +196,7 @@ public:
 	 */
 	void resize(size_t row, size_t col,size_t l_row, size_t l_col)
 	{
-		mat.resize(row,col);
+		m_created = false; mat.resize(row,col);
 	}
 
 	/*! \brief Get the row i and the colum j of the Matrix
@@ -244,6 +250,7 @@ public:
 	 */
 	bool load(const std::string & file)
 	{
+		m_created = false;
 	    std::ifstream fs (file, std::ios::in | std::ios::binary | std::ios::ate );
 	    if (fs.is_open() == false)
 	    	return false;
@@ -293,6 +300,17 @@ public:
 		}
 
 		return 0;
+	}
+
+	/*! \brief Return the state of matrix
+	 *
+	 * Returns a bool flag that indicated whether the matrix
+	 * has already been filled via MatSetValues
+	 *
+	 */
+	bool isMatrixFilled()
+	{
+		return m_created;
 	}
 };
 
