@@ -1815,7 +1815,7 @@ public:
         o1.template value_nz<Sys_eqs>(p_map,key,cols,coeff,comp_ + var_id + comp[0]);
     }
 
-    inline vector_dist_expression_op<exp1,boost::mpl::int_<2>,VECT_COMP> operator[](int comp_)
+    inline vector_dist_expression_op<exp1,boost::mpl::int_<n+1>,VECT_COMP> operator[](int comp_)
     {
     	int comp_n[n+1];
 
@@ -1823,7 +1823,7 @@ public:
     	{comp_n[i] = comp[i];}
     	comp_n[n] = comp_;
 
-    	vector_dist_expression_op<exp1,boost::mpl::int_<2>,VECT_COMP> v_exp(o1,comp_n,var_id);
+	vector_dist_expression_op<exp1,boost::mpl::int_<n+1>,VECT_COMP> v_exp(o1,comp_n,var_id);
 
     	return v_exp;
     }
