@@ -286,7 +286,7 @@ struct point_scalar_process
 
 		auto & v_cl = create_vcluster<CudaMemory>();
 
-		openfpm::reduce((val_type *)ve.template getDeviceBuffer<0>(), ve.size(), (val_type *)(exp_tmp2[0].getDevicePointer()), gpu::plus_t<val_type>(), v_cl.getgpuContext());
+		openfpm::reduce((val_type *)ve.template getDeviceBuffer<0>(), ve.size(), (val_type *)(exp_tmp2[0].getDevicePointer()), gpu::plus_t<val_type>(), v_cl.getGpuContext());
 
 		exp_tmp2[0].deviceToHost();
 
@@ -326,7 +326,7 @@ struct point_scalar_process<val_type,is_sort,true>
 						 ve.size(),
 						 (typename val_type::coord_type *)(exp_tmp2[0].getDevicePointer()),
 						 gpu::plus_t<typename val_type::coord_type>(),
-						 v_cl.getgpuContext());
+						 v_cl.getGpuContext());
 
 			exp_tmp2[0].deviceToHost();
 
