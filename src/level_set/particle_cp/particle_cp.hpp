@@ -500,8 +500,8 @@ private:
 					vd_in.template getProp<vd_in_curvature>(a) = (H_p(0,0)*grad_p(1)*grad_p(1) - 2*grad_p(1)*grad_p(0)*H_p(0,1) + H_p(1,1)*grad_p(0)*grad_p(0))/std::pow(sqrt(grad_p(0)*grad_p(0) + grad_p(1)*grad_p(1)),3);
 				}
 				else if (dim == 3)
-				{	// Mean curvature is 0.5*fluid mechanical curvature (see https://link.springer.com/article/10.1007/s00466-021-02128-9)
-					vd_in.template getProp<vd_in_curvature>(a) = 0.5*
+				{	// Mean curvature is 0.5*fluid mechanical curvature (see https://link.springer.com/article/10.1007/s00466-021-02128-9), but here we get fluidmechanical curvature, which is the divergence of the normalized gradient field
+					vd_in.template getProp<vd_in_curvature>(a) =
 					((H_p(1,1) + H_p(2,2))*std::pow(grad_p(0), 2) + (H_p(0,0) + H_p(2,2))*std::pow(grad_p(1), 2) + (H_p(0,0) + H_p(1,1))*std::pow(grad_p(2), 2)
 					- 2*grad_p(0)*grad_p(1)*H_p(0,1) - 2*grad_p(0)*grad_p(2)*H_p(0,2) - 2*grad_p(1)*grad_p(2)*H_p(1,2))*std::pow(std::pow(grad_p(0), 2) + std::pow(grad_p(1), 2) + std::pow(grad_p(2), 2), -1.5);
 				}
