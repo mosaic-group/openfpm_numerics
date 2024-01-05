@@ -28,12 +28,12 @@
 #include "Vector/vector_dist.hpp"
 #include "regression/regression.hpp"
 
-template<unsigned int dim, unsigned int n_c> using particles_surface = vector_dist<dim, double, aggregate<int, int, double, double[dim], EVectorXd>>;
+template<unsigned int dim, unsigned int n_c> using particles_surface = vector_dist<dim, double, aggregate<int, int, double, double[dim], double[n_c]>>;
 struct Redist_options
 {
 	size_t max_iter = 1000;	// params for the Newton algorithm for the solution of the constrained
 	double tolerance = 1e-11; // optimization problem, and for the projection of the sample points on the interface
-	
+
 	double H; // interparticle spacing
 	double r_cutoff_factor; // radius of neighbors to consider during interpolation, as factor of H
 	double sampling_radius;
@@ -69,16 +69,16 @@ public:
 	{
 		// Constructor
 	}
-	
+
 	void run_redistancing()
 	{
-		if (redistOptions.verbose) 
+		if (redistOptions.verbose)
 		{
-			std::cout<<"Verbose mode. Make sure the vd.getProp<4>(a) is an integer that pcp can write surface flags onto."<<std::endl; 
+			std::cout<<"Verbose mode. Make sure the vd.getProp<4>(a) is an integer that pcp can write surface flags onto."<<std::endl;
 		}
 
 		detect_surface_particles();
-		
+
 		interpolate_sdf_field();
 
 		find_closest_point();
@@ -169,7 +169,7 @@ private:
 	            		// its up for debate if this is stable or not. Possibly, this could be avoided by simply using vd_in in the interpolation step.
 	            		if ((sqrt(r2) < ((redistOptions.r_cutoff_factor + 1.5)*redistOptions.H)) && (sgn_a != sgn_b)) surfaceflag = 1;
 	            		++Np;
-	            
+
 			}
 
 			if (surfaceflag) // these particles will play a role in the subsequent interpolation: Either they carry interpolation polynomials,
@@ -193,7 +193,7 @@ private:
 			++part;
 		}
 	}
-	
+
 	void interpolate_sdf_field()
 	{
 		int message_insufficient_support = 0;
@@ -209,7 +209,7 @@ private:
 		while (part.isNext())
 		{
 			vect_dist_key_dx a = part.get();
-			
+
 			// only the close particles (a) will get the full treatment (interpolation + projection)
 			if (vd_s.template getProp<vd_s_close_part>(a) != 1)
 			{
@@ -221,14 +221,14 @@ private:
 			Point<dim, double> xa = vd_s.getPos(a);
 			int neib = 0;
             		int k_project = 0;
-			
-			if(redistOptions.min_num_particles == 0) 
+
+			if(redistOptions.min_num_particles == 0)
 			{
             			auto regSupport = RegressionSupport<decltype(vd_s), decltype(NN_s)>(vd_s, part, sqrt(r_cutoff2), RADIUS, NN_s);
 				if (regSupport.getNumParticles() < n_c) message_insufficient_support = 1;
 				minterModelpcp.computeCoeffs(vd_s, regSupport);
 			}
-			else 
+			else
 			{
             			auto regSupport = RegressionSupport<decltype(vd_s), decltype(NN_s)>(vd_s, part, n_c + 3, AT_LEAST_N_PARTICLES, NN_s);
 				if (regSupport.getNumParticles() < n_c) message_insufficient_support = 1;
@@ -236,7 +236,7 @@ private:
 			}
 
             		auto& minterModel = minterModelpcp.model;
-			vd_s.template getProp<minter_coeff>(a) = minterModel->getCoeffs();
+			for(int k = 0; k < n_c; k++) vd_s.template getProp<minter_coeff>(a)[k] = minterModel->getCoeffs()[k];
 
             		double grad_p_minter_mag2;
 
@@ -257,7 +257,7 @@ private:
             		}
 			// store the resulting sample point on the surface at the central particle.
 			for(int k = 0; k < dim; k++) vd_s.template getProp<vd_s_sample>(a)[k] = x_minter[k];
-			if (k_project == redistOptions.max_iter) 
+			if (k_project == redistOptions.max_iter)
 			{
 				if (redistOptions.verbose) std::cout<<"didnt work for "<<a.getKey()<<std::endl;
 				message_projection_fail = 1;
@@ -288,7 +288,7 @@ private:
 		// iterate over all particles, i.e. do closest point optimisation for all particles, and initialize
 		// all relevant variables.
 
-		vd_s.template ghost_get<vd_s_close_part,vd_s_sample>();
+		vd_s.template ghost_get<vd_s_close_part,vd_s_sample,minter_coeff>();
 
 		auto NN_s = vd_s.getCellList(redistOptions.sampling_radius);
 		auto part = vd_in.getDomainIterator();
@@ -300,7 +300,7 @@ private:
 		while (part.isNext())
 		{
 			vect_dist_key_dx a = part.get();
-			
+
 			if ((redistOptions.only_narrowband) && (std::abs(vd_in.template getProp<vd_in_sdf>(a)) > redistOptions.sampling_radius))
 			{
 				++part;
@@ -366,15 +366,17 @@ private:
 			for(int k = 0; k < dim; k++) x00x[k] = 0.0;
 
             		auto& model = minterModelpcp.model;
+			EVectorXd temp(n_c, 1);
+			for(int k = 0; k < n_c; k++) temp[k] = vd_s.template getProp<minter_coeff>(b_min)[k];
 		    	Point<dim, int> derivOrder;
 			Point<dim, double> grad_p_minter;
-			model->setCoeffs(vd_s.template getProp<minter_coeff>(b_min));
-			
+			model->setCoeffs(temp);
+
 			if(redistOptions.verbose)
 			{
                 		std::cout<<std::setprecision(16)<<"VERBOSE%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% for particle "<<a.getKey()<<std::endl;
                 		std::cout<<"x_poly: "<<vd_s.getPos(b_min)[0]<<", "<<vd_s.getPos(b_min)[1]<<"\nxa: "<<xa[0]<<", "<<xa[1]<<"\nx_0: "<<x[0]<<", "<<x[1]<<"\nc: "<<c<<std::endl;
- 
+
 				std::cout<<"interpol_i(x_0) = "<<get_p_minter(x, model)<<std::endl;
 			}
 
