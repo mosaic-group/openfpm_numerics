@@ -93,14 +93,13 @@ target_include_directories (numerics PUBLIC ${Boost_INCLUDE_DIRS})
 target_include_directories (numerics PUBLIC ${Vc_INCLUDE_DIR})
 target_include_directories (numerics PUBLIC ${ALPAKA_ROOT}/include)
 target_include_directories (numerics PUBLIC ${MPI_C_INCLUDE_DIRS})
-target_include_directories (numerics PUBLIC /datapot/lschulze/Applications/minter/src)
+target_include_directories (numerics PUBLIC ${MINTER_ROOT}/include)
 if(EIGEN3_FOUND)
         target_include_directories (numerics PUBLIC /usr/local/include) 
 	target_include_directories (numerics PUBLIC ${EIGEN3_INCLUDE_DIR})
 endif()
 
 link_directories(${PARMETIS_ROOT} ${METIS_ROOT})
-link_directories(/datapot/lschulze/Applications/minter/build)
 target_link_libraries(numerics ${Boost_LIBRARIES})
 target_link_libraries(numerics ${HDF5_LIBRARIES})
 target_link_libraries(numerics ${PARMETIS_LIBRARIES})
@@ -108,7 +107,6 @@ target_link_libraries(numerics -L${LIBHILBERT_LIBRARY_DIRS} ${LIBHILBERT_LIBRARI
 target_link_libraries(numerics ${Vc_LIBRARIES})
 target_link_libraries(numerics ${MPI_C_LIBRARIES})
 target_link_libraries(numerics ${MPI_CXX_LIBRARIES})
-target_link_libraries(numerics minter)
 
 if(PETSC_FOUND)
 	target_include_directories (numerics PUBLIC ${PETSC_INCLUDES})
@@ -134,8 +132,7 @@ if (TEST_COVERAGE)
 endif()
 
 ## Regression
-target_include_directories(numerics PUBLIC /datapot/lschulze/Applications/minter/src/)
-target_link_libraries(numerics -L/datapot/lschulze/Applications/minter/build minter)
+target_include_directories(numerics PUBLIC ${MINTER_ROOT}/include)
 ##
 
 # Request that particles be built with -std=c++11
