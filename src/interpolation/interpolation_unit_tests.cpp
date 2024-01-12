@@ -408,6 +408,65 @@ BOOST_AUTO_TEST_CASE( interpolation_full_single_test_3D )
 	interp_test<3,double,mp4_kernel<float>>(gd,vd,true,2);
 }
 
+BOOST_AUTO_TEST_CASE( interpolation_getSubCheck )
+{
+	Box<3,double> domain({0.0,0.0,0.0},{1.0,1.0,1.0});
+	size_t sz[3] = {64,64,64};
+
+	Ghost<3,long int> gg(2);
+	Ghost<3,double> gv(0.01);
+
+	size_t bc_v[3] = {NON_PERIODIC,NON_PERIODIC,NON_PERIODIC};
+
+	typedef vector_dist<3,double,aggregate<double>> vector;
+	typedef grid_dist_id<3,double,aggregate<double>> grid;
+
+	vector vd(0,domain,bc_v,gv);
+	grid_dist_id<3,double,aggregate<double>> gd(vd.getDecomposition(),sz,gg);
+
+	// interpolate
+	interpolate<vector,grid,mp4_kernel<double>> inte(vd,gd);
+
+	// decomposition
+	auto & dec = vd.getDecomposition();
+
+	int nl = dec.getNLocalSub();
+
+	for (int i = 0 ; i < nl ; i++)
+	{
+		int  nll = dec.getLocalNIGhost(i);
+		for (int j = 0 ; j < nll ; j++)
+		{
+			auto ibx = dec.getLocalIGhostBox(i,j);
+			int x = dec.getLocalIGhostSub(i,j);
+			auto bx = dec.getSubDomain(x);
+
+			Point<3,double> p;
+			for (int s = 0; s < 3 ; s++)
+			{
+				Point<3,double> p;
+				for (int s1 = 0; s1 < 3 ; s1++)
+				{
+					p.get(s1) = (ibx.getHigh(s1) - ibx.getLow(s1)) / 2.0 + ibx.getLow(s1);
+				}
+
+				if (ibx.getLow(s) == bx.getHigh(s))
+				{
+					p.get(s) = ibx.getLow(s);
+					int sub = inte.getSub(p);
+					BOOST_REQUIRE_EQUAL(sub,i);
+				}
+				else if (ibx.getHigh(s) == bx.getLow(s))
+				{
+					p.get(s) = ibx.getHigh(s);
+					int sub = inte.getSub(p);
+					BOOST_REQUIRE_EQUAL(sub,x);
+				}
+			}
+		}
+	}
+}
+
 BOOST_AUTO_TEST_CASE( interpolation_full_test_3D )
 {
 	Box<3,double> domain({0.0,0.0,0.0},{1.0,1.0,1.0});

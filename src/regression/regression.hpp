@@ -18,7 +18,6 @@
 template<typename vector_type_support, typename NN_type>
 class RegressionSupport
 {
-	//std::vector<size_t> keys;
 	openfpm::vector<size_t> keys;
 	
 public:

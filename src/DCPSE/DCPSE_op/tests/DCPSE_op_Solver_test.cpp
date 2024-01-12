@@ -1001,6 +1001,24 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
         Solver.impose(-D_y, dw_p, prop_id<1>());
         Solver.impose(-D_x, l_p, prop_id<1>());
         Solver.impose(D_x, r_p, prop_id<1>());
+
+        Solver.reset_b();
+        Solver.impose_b(bulk, prop_id<1>());
+        Solver.impose_b(up_p, prop_id<1>());
+        Solver.impose_b(dw_p, prop_id<1>());
+        Solver.impose_b(l_p, prop_id<1>());
+        Solver.impose_b(r_p, prop_id<1>());
+
+        Solver.solve_with_solver(solver,sol);
+
+
+        Solver.reset_b();
+        Solver.impose_b(bulk, prop_id<1>());
+        Solver.impose_b(up_p, prop_id<1>());
+        Solver.impose_b(dw_p, prop_id<1>());
+        Solver.impose_b(l_p, prop_id<1>());
+        Solver.impose_b(r_p, prop_id<1>());
+
         Solver.solve_with_solver(solver,sol);
 
 //       Solver.solve(sol);
@@ -1162,7 +1180,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
         vx.setId(0);
         vy.setId(1);
 
-        DCPSE_scheme<equations2d2,decltype(domain)> Solver( domain);
+        DCPSE_scheme<equations2d2,decltype(domain)> Solver(domain);
         auto Poisson0 = Lap(v[0]);
         auto Poisson1 = Lap(v[1]);
         //auto D_x = Dx(v[1]);

@@ -13,6 +13,7 @@
 #define REDISTANCING_SUSSMAN_HELPFUNCTIONS_HPP
 
 #include <iostream>
+#include <fstream>
 /**@brief Gets the sign of a variable.
  *
  * @tparam T Inferred type of input variable.

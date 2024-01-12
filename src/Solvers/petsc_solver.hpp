@@ -1329,6 +1329,46 @@ public:
 		return x;
 	}
 
+    /*! \brief Here we invert the matrix and solve the system
+     *
+     * \param A sparse matrix
+     * \param b vector
+     * \param x solution and initial guess
+     *
+     * \return true if succeed
+     *
+     */
+    Vector<double,PETSC_BASE> solve(SparseMatrix<double,int,PETSC_BASE> & A, Vector<double,PETSC_BASE> & x, const Vector<double,PETSC_BASE> & b)
+    {
+        Mat & A_ = A.getMat();
+        const Vec & b_ = b.getVec();
+        Vec & x_ = x.getVec();
+
+       /* // We set the size of x according to the Matrix A
+        PetscInt row;
+        PetscInt col;
+        PetscInt row_loc;
+        PetscInt col_loc;*/
+
+        PETSC_SAFE_CALL(KSPSetInitialGuessNonzero(ksp,PETSC_TRUE));
+
+        /*PETSC_SAFE_CALL(MatGetSize(A_,&row,&col));
+        PETSC_SAFE_CALL(MatGetLocalSize(A_,&row_loc,&col_loc));*/
+
+        pre_solve_impl(A_,b_,x_);
+        solve_simple(A_,b_,x_);
+
+        x.update();
+
+        return x;
+
+        /*pre_solve_impl(A_,b_,x_);
+        solve_simple(A_,b_,x_);
+        x.update();
+
+        return true;*/
+    }
+
     /*! \brief Here we invert the matrix and solve the system using a Nullspace for Neumann BC
      *
      *  \warning umfpack is not a parallel solver, this function work only with one processor
@@ -1417,30 +1457,6 @@ public:
 	solError get_residual_error(const Vector<double,PETSC_BASE> & x, const Vector<double,PETSC_BASE> & b)
 	{
 		return getSolNormError(b.getVec(),x.getVec(),ksp);
-	}
-
-	/*! \brief Here we invert the matrix and solve the system
-	 *
-	 * \param A sparse matrix
-	 * \param b vector
-	 * \param x solution and initial guess
-	 *
-	 * \return true if succeed
-	 *
-	 */
-	bool solve(SparseMatrix<double,int,PETSC_BASE> & A, Vector<double,PETSC_BASE> & x, const Vector<double,PETSC_BASE> & b)
-	{
-		Mat & A_ = A.getMat();
-		const Vec & b_ = b.getVec();
-		Vec & x_ = x.getVec();
-
-		PETSC_SAFE_CALL(KSPSetInitialGuessNonzero(ksp,PETSC_TRUE));
-
-		pre_solve_impl(A_,b_,x_);
-		solve_simple(A_,b_,x_);
-		x.update();
-
-		return true;
 	}
 
 	/*! \brief Here we invert the matrix and solve the system

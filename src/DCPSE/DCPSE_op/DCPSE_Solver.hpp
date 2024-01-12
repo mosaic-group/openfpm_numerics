@@ -44,6 +44,9 @@ class DCPSE_scheme {
     //! Vector b
     typename Sys_eqs::Vector_type b;
 
+    //! Vector x_ig (initial guess)
+    typename Sys_eqs::Vector_type x_ig;
+
     //! Sparse matrix triplet type
     typedef typename Sys_eqs::SparseMatrix_type::triplet_type triplet;
 
@@ -73,6 +76,9 @@ class DCPSE_scheme {
 
     //! row on b
     size_t row_b;
+
+    //! row on x_ig
+    size_t row_x_ig;
 
     //! Total number of points
     size_t tot;
@@ -108,19 +114,25 @@ class DCPSE_scheme {
         // resize b if needed
         if (opt == options_solver::STANDARD) {
             b.resize(Sys_eqs::nvar * tot, Sys_eqs::nvar * sz);
+            x_ig.resize(Sys_eqs::nvar * tot, Sys_eqs::nvar * sz);
+
         } else if (opt == options_solver::LAGRANGE_MULTIPLIER) {
             if (v_cl.rank() == v_cl.size() - 1) {
                 b.resize(Sys_eqs::nvar * tot + 1, Sys_eqs::nvar * sz + 1);
+                x_ig.resize(Sys_eqs::nvar * tot + 1, Sys_eqs::nvar * sz + 1);
             } else {
                 b.resize(Sys_eqs::nvar * tot + 1, Sys_eqs::nvar * sz);
+                x_ig.resize(Sys_eqs::nvar * tot + 1, Sys_eqs::nvar * sz);
             }
         }
             //Use Custom number of constraints using opt as an integer
         else {
             if (v_cl.rank() == v_cl.size() - 1) {
                 b.resize(Sys_eqs::nvar * tot - offset, Sys_eqs::nvar * sz - offset);
+                x_ig.resize(Sys_eqs::nvar * tot - offset, Sys_eqs::nvar * sz - offset);
             } else {
                 b.resize(Sys_eqs::nvar * tot - offset, Sys_eqs::nvar * sz);
+                x_ig.resize(Sys_eqs::nvar * tot - offset, Sys_eqs::nvar * sz);
             }
         }
 
@@ -211,25 +223,34 @@ class DCPSE_scheme {
     /*! \brief Check if the Matrix is consistent
  *
  */
-    void consistency() {
+    void consistency(options_solver opt)
+    {
         openfpm::vector<triplet> &trpl = A.getMatrixTriplets();
+        Vcluster<> &v_cl = create_vcluster();
 
         // A and B must have the same rows
         if (row != row_b) {
             std::cerr << "Error " << __FILE__ << ":" << __LINE__
-                      << " the term B and the Matrix A for Ax=B must contain the same number of rows " << row << "!=" << row_b << "\n";
+                      << " the term B and the Matrix A for Ax=B must contain the same number of rows " << row
+                      << "!=" << row_b << "\n";
             return;
         }
+
         if (row_b != p_map.size_local() * Sys_eqs::nvar) {
             std::cerr << "Error " << __FILE__ << ":" << __LINE__ << " your system is underdetermined you set "
                       << row_b << " conditions " << " but i am expecting " << p_map.size_local() * Sys_eqs::nvar
                       << std::endl;
             return;
         }
-
         // Indicate all the non zero rows
         openfpm::vector<unsigned char> nz_rows;
-        nz_rows.resize(row_b);
+
+        if (v_cl.rank() == v_cl.size()-1 && opt == options_solver::LAGRANGE_MULTIPLIER) {
+            nz_rows.resize(row_b+1);
+            }
+        else{
+            nz_rows.resize(row_b);
+        };
 
         for (size_t i = 0; i < trpl.size(); i++) {
             if (trpl.get(i).row() - s_pnt * Sys_eqs::nvar >= nz_rows.size()) {
@@ -242,10 +263,14 @@ class DCPSE_scheme {
         // Indicate all the non zero colums
         // This check can be done only on single processor
 
-        Vcluster<> &v_cl = create_vcluster();
         if (v_cl.getProcessingUnits() == 1) {
             openfpm::vector<unsigned> nz_cols;
-            nz_cols.resize(row_b);
+            if (v_cl.rank() == v_cl.size()-1 && opt == options_solver::LAGRANGE_MULTIPLIER) {
+                nz_cols.resize(row_b+1);
+            }
+            else{
+                nz_cols.resize(row_b);
+            };
 
             for (size_t i = 0; i < trpl.size(); i++) {
                 if (trpl.get(i).value() != 0) { nz_cols.get(trpl.get(i).col()) = true; }
@@ -382,6 +407,30 @@ public:
         copy_nested(x, comp, exps ...);
     }
 
+    /*! \brief Solve an equation
+ *
+ *  \warning exp must be a scalar type
+ *
+ * \param Solver Manually created Solver instead from the Equation structure
+ * \param exp where to store the result
+ *
+ */
+    template<typename SolverType, typename ... expr_type>
+    void solve_with_solver_ig(SolverType &solver,expr_type ... exps) {
+#ifdef SE_CLASS1
+
+        if (sizeof...(exps) != Sys_eqs::nvar) {
+            std::cerr << __FILE__ << ":" << __LINE__ << " Error the number of properties you gave does not match the solution in\
+    													dimensionality, I am expecting " << Sys_eqs::nvar <<
+                      " properties " << std::endl;
+        };
+#endif
+        auto x = solver.solve(getA(opt),get_x_ig(opt),getB(opt));
+
+        unsigned int comp = 0;
+        copy_nested(x, comp, exps ...);
+    }
+
     /*! \brief Solve an equation with a given Nullspace
      *
      *  \warning exp must be a scalar type
@@ -455,13 +504,19 @@ public:
     {
     	row_b = 0;
     }
+    void reset_x_ig()
+    {
+        row_x_ig = 0;
+    }
 
     void reset(particles_type &part, options_solver opt = options_solver::STANDARD)
     {
     	row = 0;
     	row_b = 0;
+        row_x_ig = 0;
 
-    	p_map.clear();
+
+        p_map.clear();
     	p_map.resize(part.size_local());
 
     	A.getMatrixTriplets().clear();
@@ -473,6 +528,7 @@ public:
     {
     	row = 0;
     	row_b = 0;
+        row_x_ig = 0;
 
     	A.getMatrixTriplets().clear();
     }
@@ -543,6 +599,27 @@ public:
         impose_git_b(vb, id.getId(), itd);
     }
 
+    /*! \brief Impose x as initial guess for the Matrix System Ax=b
+    *
+    * This function impose an initial guess for the matrix solver Ax=b
+    *
+    *
+    * \param subset Vector with indices of particles where the operator has to be imposed
+    * \param the constant guess num.
+    * \param id Equation id in the system that we are imposing given by ed_id type
+    *
+    */
+    template<typename index_type, unsigned int prp_id>
+    void impose_x_ig(openfpm::vector<index_type> &subset,
+                  const prop_id<prp_id> &num,
+                  eq_id id = eq_id()) {
+        auto itd = subset.template getIteratorElements<0>();
+
+        variable_b<prp_id> vx(parts);
+
+        impose_git_x(vx, id.getId(), itd);
+    }
+
     /*! \brief Impose an operator in the Matrix System
      *
      * This function impose an operator on a particular particle region to produce the system
@@ -581,6 +658,22 @@ public:
                 eq_id id = eq_id()) {
         auto itd = subset.template getIteratorElements<0>();
         impose_git_b(rhs, id.getId(), itd);
+    }
+    /*! \brief Impose initial guess x in the Matrix System Ax=b
+    *
+    * This function impose initial guess x of an existing Ax=b system.
+    *
+    * \param subset Vector with indices of particles where the operator has to be imposed as a guess
+    * \param num Constant for all the particles
+    * \param id Equation id in the system that we are imposing given by ed_id type
+    *
+    */
+    template<typename index_type, typename RHS_type, typename sfinae = typename std::enable_if<!std::is_fundamental<RHS_type>::type::value>::type>
+    void impose_x_ig(openfpm::vector<index_type> &subset,
+                  const RHS_type &rhs,
+                  eq_id id = eq_id()) {
+        auto itd = subset.template getIteratorElements<0>();
+        impose_git_x(rhs, id.getId(), itd);
     }
 
     /*! \brief Impose an operator in the Matrix System
@@ -629,6 +722,28 @@ public:
         impose_git_b(b, id.getId(), itd);
     }
 
+    /*! \brief Impose initial guess x in the Matrix System Ax=b
+*
+* This function impose RHS of an existing Ax=b system.
+*
+*
+*
+* \param subset Vector with indices of particles where the operator has to be imposed as a guess
+* \param num Constant for all the particles
+* \param id Equation id in the system that we are imposing given by ed_id type
+*
+*/
+    template< typename index_type>
+    void impose_x_ig(openfpm::vector<index_type> &subset,
+                  const typename Sys_eqs::stype num,
+                  eq_id id = eq_id()) {
+        auto itd = subset.template getIteratorElements<0>();
+
+        constant_b x_ig(num);
+
+        impose_git_x(x_ig, id.getId(), itd);
+    }
+
     /*! \brief produce the Matrix
  *
  *  \return the Sparse matrix produced
@@ -636,9 +751,6 @@ public:
  */
     template<typename options>
     typename Sys_eqs::SparseMatrix_type &getA(options opt) {
-#ifdef SE_CLASS1
-        consistency();
-#endif
         if (opt == options_solver::STANDARD) {
             A.resize(tot * Sys_eqs::nvar, tot * Sys_eqs::nvar,
                      p_map.size_local() * Sys_eqs::nvar,
@@ -681,8 +793,8 @@ public:
 
                 trpl.add(t3);
 
-                row_b++;
-                row++;
+                //row_b++;
+                //row++;
             }
             else {
                 A.resize(tot * Sys_eqs::nvar + 1, tot * Sys_eqs::nvar + 1,
@@ -716,7 +828,9 @@ public:
                          p_map.size_local() * Sys_eqs::nvar);
                 }
             }
-
+#ifdef SE_CLASS1
+        consistency(opt);
+#endif
         return A;
 
     }
@@ -727,9 +841,9 @@ public:
      *
      */
     typename Sys_eqs::Vector_type &getB(options_solver opt = options_solver::STANDARD) {
-#ifdef SE_CLASS1
-        consistency();
-#endif
+/*#ifdef SE_CLASS1
+        consistency(opt);
+#endif*/
         if (opt == options_solver::LAGRANGE_MULTIPLIER) {
             auto &v_cl = create_vcluster();
             if (v_cl.rank() == v_cl.size() - 1) {
@@ -738,6 +852,25 @@ public:
             }
         }
         return b;
+    }
+
+    /*! \brief produce the B vector
+     *
+     *  \return the vector produced
+     *
+     */
+    typename Sys_eqs::Vector_type &get_x_ig(options_solver opt = options_solver::STANDARD) {
+/*#ifdef SE_CLASS1
+        consistency(opt);
+#endif*/
+        if (opt == options_solver::LAGRANGE_MULTIPLIER) {
+            auto &v_cl = create_vcluster();
+            if (v_cl.rank() == v_cl.size() - 1) {
+
+                x_ig(tot * Sys_eqs::nvar) = 0;
+            }
+        }
+        return x_ig;
     }
 
 
@@ -762,6 +895,29 @@ public:
             ++it;
         }
     }
+
+    template<typename xop, typename iterator>
+    void impose_git_x(xop num,
+                      long int id,
+                      const iterator &it_d) {
+        auto it = it_d;
+        // iterate all particles points
+        while (it.isNext()) {
+            // get the particle
+            auto key = it.get();
+            // Calculate the non-zero colums
+            x_ig(p_map.template getProp<0>(key) * Sys_eqs::nvar + id) = num.get(key);
+//       std::cout << "b=(" << p_map.template getProp<0>(key)*Sys_eqs::nvar + id << "," << num.get(key)<<")" <<"\n";
+
+            // if SE_CLASS1 is defined check the position
+#ifdef SE_CLASS1
+            //			T::position(key,gs,s_pos);
+#endif
+            ++row_x_ig;
+            ++it;
+        }
+    }
+
 
     /*! \brief Impose an operator
      *
@@ -839,6 +995,7 @@ public:
 
             ++row;
             ++row_b;
+            ++row_x_ig;
             ++it;
         }
     }
