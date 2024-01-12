@@ -28,7 +28,7 @@
 #include "Vector/vector_dist.hpp"
 #include "regression/regression.hpp"
 
-template<unsigned int dim, unsigned int n_c> using particles_surface = vector_dist<dim, double, aggregate<int, int, double, double[dim], EVectorXd, double[dim]>>;
+template<unsigned int dim, unsigned int n_c> using particles_surface = vector_dist<dim, double, aggregate<int, int, double, double[dim], double[n_c], double[dim]>>;
 struct Redist_options
 {
 	size_t max_iter = 1000;	// params for the Newton algorithm for the solution of the constrained
@@ -263,7 +263,7 @@ private:
 			}
 
             		auto& minterModel = minterModelpcp.model;
-			vd_s.template getProp<minter_coeff>(a) = minterModel->getCoeffs();
+			for(int k = 0; k < n_c; k++) vd_s.template getProp<minter_coeff>(a)[k] = minterModel->getCoeffs()[k];
 
             		double grad_p_minter_mag2;
 
@@ -315,8 +315,7 @@ private:
 		// iterate over all particles, i.e. do closest point optimisation for all particles, and initialize
 		// all relevant variables.
 
-		vd_s.template ghost_get<vd_s_close_part,vd_s_sample>();
-
+		vd_s.template ghost_get<vd_s_close_part,vd_s_sample,minter_coeff>();
 		auto NN_s = vd_s.getCellList(redistOptions.sampling_radius);
 		auto part = vd_generic.getDomainIterator();
 
@@ -393,7 +392,9 @@ private:
 			for(int k = 0; k < dim; k++) x00x[k] = 0.0;
 
             		auto& model = minterModelpcp.model;
-			model->setCoeffs(vd_s.template getProp<minter_coeff>(b_min));
+			EVectorXd temp(n_c,1);
+			for(int k = 0; k < n_c; k++) temp[k] = vd_s.template getProp<minter_coeff>(b_min)[k];
+			model->setCoeffs(temp);
 
 			if(redistOptions.verbose)
 			{
@@ -521,6 +522,11 @@ private:
 			{
 				EMatrix<double, Eigen::Dynamic, 1> normal = get_normal(grad_p, return_sign(vd_generic.template getProp<vd_in_sdf>(a)));
 				for(int k = 0; k<dim; k++) vd_generic.template getProp<vd_in_normal>(a)[k] = normal[k];
+
+				EMatrix<double, Eigen::Dynamic, 1> grad_p_iso(dim_r, 1);
+				grad_p_iso = get_grad_p_minter(xa, model);
+				//vd_generic.template getProp<11>(a)[0] = grad_p_iso[0];
+				//vd_generic.template getProp<11>(a)[1] = grad_p_iso[1];
 			}
 
 			if (redistOptions.compute_curvatures)
@@ -595,7 +601,9 @@ private:
 				sampleParticles.template getLastProp<vd_in_close_part>() = 1;
 
             			auto& model = minterModelpcp.model;
-				model->setCoeffs(vd_s.template getProp<minter_coeff>(a));
+				EVectorXd temp(n_c,1);
+				for(int k = 0; k < n_c; k++) temp[k] = vd_s.template getProp<minter_coeff>(a)[k];
+				model->setCoeffs(temp);
 				EMatrix<double, Eigen::Dynamic, 1> grad_p(dim, 1);
 				EMatrix<double, Eigen::Dynamic, Eigen::Dynamic> H_p(dim, dim);
 				EMatrix<double, Eigen::Dynamic, 1> normal(dim, 1);
@@ -642,15 +650,20 @@ private:
 
 			auto regSupport = RegressionSupport<particles_in_type, decltype(NN)>(keys, vd_in, NN);
 			if (regSupport.getNumParticles() < n_c) message_insufficient_support = 1;
-
+			double divergence = 0.0;
 			for(int k = 0; k < dim; k++)
 			{
 				genericMinterModel.computeCoeffs(vd_in, regSupport, k);
 				auto& minterModel = genericMinterModel.model;
 				EMatrix<double, Eigen::Dynamic, 1> x(dim, 1);
+				EMatrix<double, Eigen::Dynamic, 1> grad_p_minter(dim, 1);
 				for (int l = 0; l < dim; l++) x[l] = xa[l];
 				vd_generic.template getProp<prp_id_to>(a)[k] = get_p_minter(x, minterModel);
+				// experimental: compute divergence of bulk velocity field
+				grad_p_minter = get_grad_p_minter(x, minterModel);
+				divergence = divergence + grad_p_minter[k];
 			}
+			vd_generic.template getProp<5>(a) = divergence;
 			++part;
 		}
 
@@ -717,7 +730,7 @@ private:
 		}
 		else if (dim == 3)
 		{	// Mean curvature is 0.5*fluid mechanical curvature (see https://link.springer.com/article/10.1007/s00466-021-02128-9)
-			kappa = 0.5*((H_p(1,1) + H_p(2,2))*std::pow(grad_p(0), 2) + (H_p(0,0) + H_p(2,2))*std::pow(grad_p(1), 2) + (H_p(0,0) + H_p(1,1))*std::pow(grad_p(2), 2)
+			kappa = ((H_p(1,1) + H_p(2,2))*std::pow(grad_p(0), 2) + (H_p(0,0) + H_p(2,2))*std::pow(grad_p(1), 2) + (H_p(0,0) + H_p(1,1))*std::pow(grad_p(2), 2)
 			- 2*grad_p(0)*grad_p(1)*H_p(0,1) - 2*grad_p(0)*grad_p(2)*H_p(0,2) - 2*grad_p(1)*grad_p(2)*H_p(1,2))*std::pow(std::pow(grad_p(0), 2) + std::pow(grad_p(1), 2) + std::pow(grad_p(2), 2), -1.5);
 		}
 		return(kappa);
