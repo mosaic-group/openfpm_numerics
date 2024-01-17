@@ -511,7 +511,7 @@ private:
 			}
 			++part;
 		}
-		if (message_step_limitation)
+		if (redistOptions.verbose and message_step_limitation)
 		{
 			std::cout<<"Step size limitation invoked"<<std::endl;
 		}
