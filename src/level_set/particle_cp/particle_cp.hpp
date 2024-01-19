@@ -150,7 +150,7 @@ private:
 			if (redistOptions.verbose) vd_in.template getProp<vd_in_close_part>(akey) = 0;
 			int isclose = 0;
 
-			auto Np = NN.template getNNIterator<NO_CHECK>(NN.getCell(xa));
+			auto Np = NN.template getNNIterator(NN.getCell(xa));
 			while (Np.isNext())
 			{
 				vect_dist_key_dx bkey = Np.get();
@@ -350,7 +350,7 @@ private:
 			Point<dim, double> xaa = vd_in.getPos(a);
 
 			// Now we will iterate over the sample points, which means iterating over vd_s.
-			auto Np = NN_s.template getNNIterator<NO_CHECK>(NN_s.getCell(vd_in.getPos(a)));
+			auto Np = NN_s.template getNNIterator(NN_s.getCell(vd_in.getPos(a)));
 
 			vect_dist_key_dx b_min = get_closest_neighbor<decltype(NN_s)>(xaa, vd_s, NN_s);
 
@@ -366,7 +366,7 @@ private:
 			for(int k = 0; k < dim; k++) x00x[k] = 0.0;
 
             		auto& model = minterModelpcp.model;
-			EVectorXd temp(n_c, 1);
+			EVectorXd temp(n_c_r, 1);
 			for(int k = 0; k < n_c; k++) temp[k] = vd_s.template getProp<minter_coeff>(b_min)[k];
 		    	Point<dim, int> derivOrder;
 			Point<dim, double> grad_p_minter;
@@ -524,7 +524,7 @@ private:
 
 	template<typename NNlist_type> vect_dist_key_dx get_closest_neighbor(Point<dim, double> & xa, particles_surface<dim, n_c> & vd_surface, NNlist_type & NN_s)
 	{
-		auto Np = NN_s.template getNNIterator<NO_CHECK>(NN_s.getCell(xa));
+		auto Np = NN_s.template getNNIterator(NN_s.getCell(xa));
 
 		// distance is the the minimum distance to be beaten
                 double distance = 1000000.0;
@@ -566,7 +566,7 @@ private:
 	template<typename PolyType>
 	inline EMatrix<double, Eigen::Dynamic, 1> get_grad_p_minter(EMatrix<double, Eigen::Dynamic, 1> xvector, PolyType model)
     	{
-        	EMatrix<double, Eigen::Dynamic, 1> grad_p(dim, 1);
+        	EMatrix<double, Eigen::Dynamic, 1> grad_p(dim_r, 1);
         	std::vector<int> derivOrder(dim, 0);
        		for(int k = 0; k < dim; k++){
             		std::fill(derivOrder.begin(), derivOrder.end(), 0);
@@ -579,7 +579,7 @@ private:
 	template<typename PolyType>
     	inline EMatrix<double, Eigen::Dynamic, Eigen::Dynamic> get_H_p_minter(EMatrix<double, Eigen::Dynamic, 1> xvector, PolyType model)
     	{
-        	EMatrix<double, Eigen::Dynamic, Eigen::Dynamic> H_p(dim, dim);
+        	EMatrix<double, Eigen::Dynamic, Eigen::Dynamic> H_p(dim_r, dim_r);
        		std::vector<int> derivOrder(dim, 0);
 
         	for(int k = 0; k < dim; k++){
