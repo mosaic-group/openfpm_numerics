@@ -131,11 +131,13 @@ public:
             for (int i = 0 ; i < keys.size() ; i++)
             {
                 size_t xqK = keys.get(i);
-                int real_particle=(xqK-initialParticleSize)/(2.*nCount);
-                if(real_particle<0)
-                    {
-                        real_particle=xqK;
-                    }
+		int difference = static_cast<int>(xqK) - static_cast<int>(initialParticleSize);
+		int real_particle;
+		if (std::signbit(difference)) {
+		    real_particle = xqK;
+		} else {
+		    real_particle = difference / (2 * nCount);
+		}
                 auto found=nMap.find(real_particle);
                 if(found!=nMap.end()){
                     accCalcKernels.get(found->second)+=calcKernels.get(kerOff+i);
