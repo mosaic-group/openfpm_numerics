@@ -173,7 +173,7 @@ BOOST_AUTO_TEST_CASE( ellipsoid )
 		if (normalerr > normalmaxerr) normalmaxerr = normalerr;
 
 		// compute reference curvature and check computed curvature
-		reference_curvature = (std::abs(vd.getProp<ref_cp>(a)[0]*vd.getProp<ref_cp>(a)[0] + vd.getProp<ref_cp>(a)[1]*vd.getProp<ref_cp>(a)[1] + vd.getProp<ref_cp>(a)[2]*vd.getProp<ref_cp>(a)[2] - params.radiusA*params.radiusA  - params.radiusB*params.radiusB - params.radiusC*params.radiusC))/(2*params.radiusA*params.radiusA*params.radiusB*params.radiusB*params.radiusC*params.radiusC*std::pow(vd.getProp<ref_cp>(a)[0]*vd.getProp<ref_cp>(a)[0]/std::pow(params.radiusA, 4) + vd.getProp<ref_cp>(a)[1]*vd.getProp<ref_cp>(a)[1]/std::pow(params.radiusB, 4) + vd.getProp<ref_cp>(a)[2]*vd.getProp<ref_cp>(a)[2]/std::pow(params.radiusC, 4), 1.5));
+		reference_curvature = (std::abs(vd.getProp<ref_cp>(a)[0]*vd.getProp<ref_cp>(a)[0] + vd.getProp<ref_cp>(a)[1]*vd.getProp<ref_cp>(a)[1] + vd.getProp<ref_cp>(a)[2]*vd.getProp<ref_cp>(a)[2] - params.radiusA*params.radiusA  - params.radiusB*params.radiusB - params.radiusC*params.radiusC))/(params.radiusA*params.radiusA*params.radiusB*params.radiusB*params.radiusC*params.radiusC*std::pow(vd.getProp<ref_cp>(a)[0]*vd.getProp<ref_cp>(a)[0]/std::pow(params.radiusA, 4) + vd.getProp<ref_cp>(a)[1]*vd.getProp<ref_cp>(a)[1]/std::pow(params.radiusB, 4) + vd.getProp<ref_cp>(a)[2]*vd.getProp<ref_cp>(a)[2]/std::pow(params.radiusC, 4), 1.5));
 		curvatureerr = abs(reference_curvature - vd.getProp<curvature>(a));
 		if (curvatureerr > curvaturemaxerr) curvaturemaxerr = curvatureerr;
 

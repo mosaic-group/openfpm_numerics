@@ -177,7 +177,7 @@ private:
 			if (redistOptions.verbose) vd_in.template getProp<vd_in_close_part>(akey) = 0;
 			int isclose = 0;
 
-			auto Np = NN.template getNNIterator<NO_CHECK>(NN.getCell(xa));
+			auto Np = NN.template getNNIterator(NN.getCell(xa));
 			while (Np.isNext())
 			{
 				vect_dist_key_dx bkey = Np.get();
@@ -536,7 +536,7 @@ private:
 			}
 			++part;
 		}
-		if (message_step_limitation)
+		if (redistOptions.verbose and message_step_limitation)
 		{
 			std::cout<<"Step size limitation invoked"<<std::endl;
 		}
@@ -549,7 +549,7 @@ private:
 
 	template<typename NNlist_type> vect_dist_key_dx get_closest_neighbor(Point<dim, double> & xa, NNlist_type & NN_s)
 	{
-		auto Np = NN_s.template getNNIterator<NO_CHECK>(NN_s.getCell(xa));
+		auto Np = NN_s.template getNNIterator(NN_s.getCell(xa));
 
 		// distance is the the minimum distance to be beaten
                 double distance = 1000000.0;

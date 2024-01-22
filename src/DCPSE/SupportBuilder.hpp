@@ -16,11 +16,11 @@
 
 enum support_options
 {
-    AT_LEAST_N_PARTICLES,
     N_PARTICLES,
     RADIUS,
     LOAD,
-    ADAPTIVE
+    ADAPTIVE,
+    AT_LEAST_N_PARTICLES
 };
 
 

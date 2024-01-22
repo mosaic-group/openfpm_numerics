@@ -2,9 +2,17 @@ cmake_minimum_required(VERSION 3.8 FATAL_ERROR)
 
 ########################### Executables
 
-if (CUDA_FOUND OR CUDA_ON_CPU)
-        set(CUDA_SOURCES Operators/Vector/vector_dist_operators_unit_tests.cu
-                                         Operators/Vector/vector_dist_operators_apply_kernel_unit_tests.cu)
+if (NOT CUDA_ON_BACKEND STREQUAL "None")
+	set(CUDA_SOURCES Operators/Vector/vector_dist_operators_unit_tests.cu
+					 Operators/Vector/vector_dist_operators_apply_kernel_unit_tests.cu)
+endif()
+
+if (CUDA_ON_BACKEND STREQUAL "CUDA")
+	set(CUDA_SOURCES ${CUDA_SOURCES} DCPSE/DCPSE_op/tests/DCPSE_op_Solver_test.cu
+			                 DCPSE/DCPSE_op/tests/DCPSE_op_test_base_tests.cu
+					 #DCPSE/DCPSE_op/tests/DCPSE_op_subset_test.cu
+					 #OdeIntegrators/tests/Odeintegrators_test_gpu.cu
+			                 DCPSE/DCPSE_op/tests/DCPSE_op_test_temporal.cu)
 endif()
 
 if (CUDA_ON_BACKEND STREQUAL "OpenMP" OR CUDA_ON_BACKEND STREQUAL "SEQUENTIAL")
@@ -13,16 +21,6 @@ if (CUDA_ON_BACKEND STREQUAL "OpenMP" OR CUDA_ON_BACKEND STREQUAL "SEQUENTIAL")
         if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU" OR CMAKE_CXX_COMPILER_ID STREQUAL "AppleClang" OR CMAKE_CXX_COMPILER_ID STREQUAL "Clang" OR CMAKE_CXX_COMPILER_ID STREQUAL "Intel")
                 add_definitions("-x c++")
         endif()
-endif()
-
-if (NOT CUDA_ON_BACKEND STREQUAL "None")
-	set(CUDA_SOURCES Operators/Vector/vector_dist_operators_unit_tests.cu
-					 DCPSE/DCPSE_op/tests/DCPSE_op_Solver_test.cu
-			                 DCPSE/DCPSE_op/tests/DCPSE_op_test_base_tests.cu
-			                 DCPSE/DCPSE_op/tests/DCPSE_op_test_temporal.cu
-			 	 	 OdeIntegrators/tests/Odeintegrators_test_gpu.cu
-					 #DCPSE/DCPSE_op/tests/DCPSE_op_subset_test.cu
-					 Operators/Vector/vector_dist_operators_apply_kernel_unit_tests.cu)
 endif()
 
 if ( CUDA_ON_BACKEND STREQUAL "HIP" AND HIP_FOUND )
@@ -79,6 +77,8 @@ if ( CUDA_ON_BACKEND STREQUAL "HIP" AND HIP_FOUND )
 else()
 
 	add_executable(numerics ${OPENFPM_INIT_FILE} ${CUDA_SOURCES}
+		regression/regression_test.cpp
+		regression/poly_levelset_test.cpp
 		OdeIntegrators/tests/OdeIntegratores_base_tests.cpp
 		OdeIntegrators/tests/OdeIntegrator_grid_tests.cpp
 		DCPSE/DCPSE_op/tests/DCPSE_op_subset_test.cpp
@@ -107,15 +107,16 @@ else()
 						Operators/Vector/vector_dist_operators_unit_tests.cpp
 						Operators/Vector/vector_dist_operators_apply_kernel_unit_tests.cpp
 						../../src/lib/pdata.cpp
-		        level_set/particle_cp/pcp_unit_tests.cpp
-			DCPSE/DCPSE_op/tests/DCPSE_op_Surface_tests.cpp
-#			BoundaryConditions/tests/method_of_images_cylinder_unit_test.cpp
-#		    level_set/closest_point/closest_point_unit_tests.cpp
-			level_set/redistancing_Sussman/tests/redistancingSussman_fast_unit_test.cpp
-#			level_set/redistancing_Sussman/tests/help_functions_unit_test.cpp
-			level_set/redistancing_Sussman/tests/narrowBand_unit_test.cpp
-#			level_set/redistancing_Sussman/tests/redistancingSussman_unit_test.cpp
-#			level_set/redistancing_Sussman/tests/convergence_test.cpp
+						BoundaryConditions/tests/method_of_images_cylinder_unit_test.cpp
+#		level_set/closest_point/closest_point_unit_tests.cpp
+#		level_set/redistancing_Sussman/tests/redistancingSussman_unit_test.cpp
+#		level_set/redistancing_Sussman/tests/convergence_test.cpp
+		level_set/particle_cp/pcp_unit_tests.cpp
+		DCPSE/DCPSE_op/tests/DCPSE_op_Surface_tests.cpp
+#		BoundaryConditions/tests/method_of_images_cylinder_unit_test.cpp
+		level_set/redistancing_Sussman/tests/redistancingSussman_fast_unit_test.cpp
+#		level_set/redistancing_Sussman/tests/help_functions_unit_test.cpp
+		level_set/redistancing_Sussman/tests/narrowBand_unit_test.cpp
 		)
 
 	set_property(TARGET numerics PROPERTY CUDA_ARCHITECTURES OFF)
@@ -171,14 +172,13 @@ target_include_directories (numerics PUBLIC ${BLITZ_ROOT}/include)
 target_include_directories (numerics PUBLIC ${ALGOIM_ROOT}/include)
 target_include_directories (numerics PUBLIC ${ALPAKA_ROOT}/include)
 target_include_directories (numerics PUBLIC ${MPI_C_INCLUDE_DIRS})
-target_include_directories (numerics PUBLIC /datapot/lschulze/Applications/minter/src)
+target_include_directories (numerics PUBLIC ${MINTER_ROOT}/include)
 if(EIGEN3_FOUND)
         target_include_directories (numerics PUBLIC /usr/local/include) 
 	target_include_directories (numerics PUBLIC ${EIGEN3_INCLUDE_DIR})
 endif()
 
 link_directories(${PARMETIS_ROOT} ${METIS_ROOT})
-link_directories(/datapot/lschulze/Applications/minter/build)
 target_link_libraries(numerics ${Boost_LIBRARIES})
 target_link_libraries(numerics ${HDF5_LIBRARIES})
 target_link_libraries(numerics ${PARMETIS_LIBRARIES})
@@ -186,7 +186,6 @@ target_link_libraries(numerics -L${LIBHILBERT_LIBRARY_DIRS} ${LIBHILBERT_LIBRARI
 target_link_libraries(numerics ${Vc_LIBRARIES})
 target_link_libraries(numerics ${MPI_C_LIBRARIES})
 target_link_libraries(numerics ${MPI_CXX_LIBRARIES})
-target_link_libraries(numerics minter)
 
 if(PETSC_FOUND)
 	target_include_directories (numerics PUBLIC ${PETSC_INCLUDES})
@@ -217,8 +216,7 @@ if (TEST_COVERAGE)
 endif()
 
 ## Regression
-target_include_directories(numerics PUBLIC /datapot/lschulze/Applications/minter/src/)
-target_link_libraries(numerics -L/datapot/lschulze/Applications/minter/build minter)
+target_include_directories(numerics PUBLIC ${MINTER_ROOT}/include)
 ##
 
 # Request that particles be built with -std=c++11
@@ -368,6 +366,7 @@ install(FILES DMatrix/EMatrix.hpp
 install(FILES level_set/particle_cp/particle_cp.hpp
 	DESTINATION openfpm_numerics/include/level_set/particle_cp
 	COMPONENT OpenFPM)
+
 install(FILES level_set/closest_point/closest_point.hpp
 	DESTINATION openfpm_numerics/include/level_set/closest_point
 	COMPONENT OpenFPM)

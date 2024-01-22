@@ -12,13 +12,12 @@
 #include "Space/Shape/Point.hpp"
 #include "DMatrix/EMatrix.hpp"
 #include "DCPSE/SupportBuilder.hpp"
-#include "/datapot/lschulze/Applications/minter/include/minter.h"
+#include "minter.h"
 
 
 template<typename vector_type_support, typename NN_type>
 class RegressionSupport
 {
-	//std::vector<size_t> keys;
 	openfpm::vector<size_t> keys;
 
 public:

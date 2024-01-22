@@ -65,17 +65,10 @@ public:
 
 
 private:
-    void generateInterpolBasis(unsigned int orderLimit);
     void generateBasis(vector_type<unsigned int, Args...> m, unsigned int r);
 };
 
 //// Definitions below
-
-template<unsigned int dim, typename T, template<typename, template<typename...> class...> class vector_type, template<typename...> class... Args>
-MonomialBasis<dim, T, vector_type, Args...>::MonomialBasis(unsigned int orderLimit)
-{
-    generateInterpolBasis(orderLimit);
-}
 
 template<unsigned int dim, typename T, template<typename, template<typename...> class...> class vector_type, template<typename...> class... Args>
 __host__ __device__ MonomialBasis<dim, T, vector_type, Args...>::MonomialBasis(const vector_type<unsigned int, Args...> &degrees, unsigned int convergenceOrder)
@@ -161,41 +154,6 @@ void MonomialBasis<dim, T, vector_type, Args...>::generateBasis(vector_type<unsi
         }
         ++it;
     }
-}
-
-template<unsigned int dim, typename T, template<typename, template<typename...> class...> class vector_type, template<typename...> class... Args>
-void MonomialBasis<dim, T, vector_type, Args...>::generateInterpolBasis(unsigned int orderLimit)
-{
-	size_t dimensions[dim];
-	std::fill(dimensions, dimensions + dim, orderLimit);
-
-	// Now initialize grid with appropriate size, then start-stop points and boundary conditions for the iterator
-	grid_sm<dim, void> grid(dimensions);
-
-	long int startV[dim] = {}; // 0-initialized
-	grid_key_dx<dim, long int> start(startV);
-	grid_key_dx<dim, long int> stop(dimensions);
-
-	size_t bc[dim];
-	std::fill(bc, bc + dim, NON_PERIODIC);
-
-	grid_key_dx_iterator_sub_bc<dim> it(grid, start, stop, bc);
-
-	// Finally compute alpha_min
-	//unsigned char alphaMin = static_cast<unsigned char>(!(mSum % 2)); // if mSum is even, alpha_min must be 1
-	unsigned char alphaMin = 0; // we want to always have 1 in the basis
-	//std::cout<<"AlphaMin: "<<alphaMin<<std::endl;
-	while (it.isNext())
-	{
-	Point<dim, long int> p = it.get().get_k();
-	Monomial<dim> candidateBasisElement(p);
-	// Filter out the elements which don't fullfil the theoretical condition for being in the vandermonde matrix
-	//if (candidateBasisElement.order() < orderLimit)
-	//{
-	basis.push_back(candidateBasisElement);
-	//}
-	++it;
-	}
 }
 
 template<unsigned int dim, typename T, template<typename, template<typename...> class...> class vector_type, template<typename...> class... Args>
