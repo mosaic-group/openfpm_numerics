@@ -359,7 +359,7 @@ private:
 			}
 
 			EMatrix<double, Eigen::Dynamic, 1> c(n_c_r, 1);
-			for (int k = 0; k < n_c; k++) c[k] = 0.0;
+			for (int k = 0; k < n_c_r; k++) c[k] = 0.0;
 
 			// f(x, lambda) is the Lagrangian, initialize its gradient and Hessian
 			EMatrix<double, Eigen::Dynamic, 1> nabla_f(dim_r + 1, 1);
@@ -392,8 +392,8 @@ private:
 			for(int k = 0; k < dim; k++) x00x[k] = 0.0;
 
             		auto& model = minterModelpcp.model;
-			EVectorXd temp(n_c,1);
-			for(int k = 0; k < n_c; k++) temp[k] = vd_s.template getProp<minter_coeff>(b_min)[k];
+			EVectorXd temp(n_c_r,1);
+			for(int k = 0; k < n_c_r; k++) temp[k] = vd_s.template getProp<minter_coeff>(b_min)[k];
 			model->setCoeffs(temp);
 
 			if(redistOptions.verbose)
@@ -683,9 +683,9 @@ private:
 	template<typename PolyType>
 	inline EMatrix<double, Eigen::Dynamic, 1> get_grad_p_minter(EMatrix<double, Eigen::Dynamic, 1> xvector, PolyType model)
     	{
-        	EMatrix<double, Eigen::Dynamic, 1> grad_p(dim, 1);
-        	std::vector<int> derivOrder(dim, 0);
-       		for(int k = 0; k < dim; k++){
+        	EMatrix<double, Eigen::Dynamic, 1> grad_p(dim_r, 1);
+        	std::vector<int> derivOrder(dim_r, 0);
+       		for(int k = 0; k < dim_r; k++){
             		std::fill(derivOrder.begin(), derivOrder.end(), 0);
             		derivOrder[k] = 1;
             		grad_p[k] = model->deriv_eval(xvector.transpose(), derivOrder)(0);
@@ -696,11 +696,11 @@ private:
 	template<typename PolyType>
     	inline EMatrix<double, Eigen::Dynamic, Eigen::Dynamic> get_H_p_minter(EMatrix<double, Eigen::Dynamic, 1> xvector, PolyType model)
     	{
-        	EMatrix<double, Eigen::Dynamic, Eigen::Dynamic> H_p(dim, dim);
-       		std::vector<int> derivOrder(dim, 0);
+        	EMatrix<double, Eigen::Dynamic, Eigen::Dynamic> H_p(dim_r, dim_r);
+       		std::vector<int> derivOrder(dim_r, 0);
 
-        	for(int k = 0; k < dim; k++){
-            		for(int l = 0; l < dim; l++)
+        	for(int k = 0; k < dim_r; k++){
+            		for(int l = 0; l < dim_r; l++)
             		{
                 		std::fill(derivOrder.begin(), derivOrder.end(), 0);
                 		derivOrder[k]++;
@@ -713,9 +713,9 @@ private:
 
 	inline EMatrix<double, Eigen::Dynamic, 1> get_normal(EMatrix<double, Eigen::Dynamic, 1> grad_p, float direction)
 	{
-		EMatrix<double, Eigen::Dynamic, 1> normal(dim, 1);
+		EMatrix<double, Eigen::Dynamic, 1> normal(dim_r, 1);
 
-		for(int k = 0; k<dim; k++) normal[k] = direction*grad_p(k)*1/grad_p.norm();
+		for(int k = 0; k<dim_r; k++) normal[k] = direction*grad_p(k)*1/grad_p.norm();
 
 		return(normal);
 	}
