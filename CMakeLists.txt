@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.8 FATAL_ERROR)
 project(openfpm_pdata LANGUAGES C CXX)
 
 if (POLICY CMP0074)
-        cmake_policy(SET CMP0074 OLD)
+	cmake_policy(SET CMP0074 OLD)
 endif ()
 
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_LIST_DIR}/../cmake_modules/)
@@ -115,7 +115,7 @@ else()
 endif()
 
 if(PETSC_FOUND)
-        set(DEFINE_HAVE_PETSC "#define HAVE_PETSC")
+	set(DEFINE_HAVE_PETSC "#define HAVE_PETSC")
 endif()
 
 if(HDF5_FOUND)
@@ -136,18 +136,18 @@ endif()
 
 
 if(EIGEN3_FOUND)
-        set(DEFINE_HAVE_EIGEN "#define HAVE_EIGEN")
+	set(DEFINE_HAVE_EIGEN "#define HAVE_EIGEN")
 endif()
 
 if(LIBHILBERT_FOUND)
-        set(DEFINE_HAVE_LIBHILBERT "#define HAVE_LIBHILBERT 1")
+	set(DEFINE_HAVE_LIBHILBERT "#define HAVE_LIBHILBERT 1")
 else()
-        file(WRITE error_code "210")
-        message( FATAL_ERROR "LibHilbert is required in order to install OpenFPM")
+	file(WRITE error_code "210")
+	message( FATAL_ERROR "LibHilbert is required in order to install OpenFPM")
 endif()
 
 if(SUITESPARSE_FOUND AND SuiteSparse_UMFPACK_FOUND)
-        set(DEFINE_HAVE_SUITESPARSE "#define HAVE_SUITESPARSE")
+	set(DEFINE_HAVE_SUITESPARSE "#define HAVE_SUITESPARSE")
 endif()
 
 if(SUITESPARSE_FOUND AND SuiteSparse_UMFPACK_FOUND)
@@ -163,8 +163,25 @@ if(TINYOBJLOADER_FOUND)
 endif()
 
 if (TEST_COVERAGE)
-        set(DEFINE_TEST_COVERAGE_MODE "#define TEST_COVERAGE_MODE")
+	set(DEFINE_TEST_COVERAGE_MODE "#define TEST_COVERAGE_MODE")
 endif()
+
+#include Minter as a dependency project
+#TODO: make optional
+include(ExternalProject)
+ExternalProject_Add(
+	minter
+	PREFIX ${CMAKE_CURRENT_SOURCE_DIR}/minter
+	GIT_REPOSITORY https://git.mpi-cbg.de/mosaic/software/math/minter.git
+	GIT_TAG origin/header_only
+	CONFIGURE_COMMAND ""
+	BUILD_COMMAND ""
+	INSTALL_COMMAND ${CMAKE_COMMAND} -E copy_directory
+		<SOURCE_DIR> ${CMAKE_CURRENT_SOURCE_DIR}/src/regression/minter
+	LOG_DOWNLOAD ON
+	LOG_INSTALL ON
+)
+
 
 file(WRITE error_code "0")
 file(WRITE cuda_lib "${CUDA_cudart_static_LIBRARY} ${CUDA_cudadevrt_LIBRARY}")
@@ -174,7 +191,7 @@ file(WRITE mpi_libs "${MPI_C_LINK_FLAGS} ${MPI_C_LIBRARIES}")
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/src/config/config_cmake.h.in ${CMAKE_CURRENT_SOURCE_DIR}/src/config/config.h)
 
 if (CUDA_ON_BACKEND STREQUAL "CUDA")
-        enable_language(CUDA)
+	enable_language(CUDA)
 endif()
 
 add_subdirectory (src)

@@ -12,7 +12,7 @@
 #include "Space/Shape/Point.hpp"
 #include "DMatrix/EMatrix.hpp"
 #include "DCPSE/SupportBuilder.hpp"
-#include "minter.h"
+#include "minter/include/minter.h"
 
 
 template<typename vector_type_support, typename NN_type>
