@@ -175,6 +175,7 @@ ExternalProject_Add(
 	GIT_REPOSITORY https://git.mpi-cbg.de/mosaic/software/math/minter.git
 	GIT_TAG origin/header_only
 	CONFIGURE_COMMAND ""
+	UPDATE_COMMAND ""
 	BUILD_COMMAND ""
 	INSTALL_COMMAND ${CMAKE_COMMAND} -E copy_directory
 		<SOURCE_DIR> ${CMAKE_CURRENT_SOURCE_DIR}/src/regression/minter
