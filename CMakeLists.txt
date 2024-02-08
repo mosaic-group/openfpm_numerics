@@ -96,21 +96,18 @@ endif()
 if (METIS_FOUND)
 	set(DEFINE_HAVE_METIS "#define HAVE_METIS 1")
 else()
-	file(WRITE error_code "201")
 	message( FATAL_ERROR "Metis is required in order to install OpenFPM" )
 endif()
 
 if (PARMETIS_FOUND)
 	set(DEFINE_HAVE_PARMETIS "#define HAVE_PARMETIS 1")
 else()
-	file(WRITE error_code "208")
 	message( FATAL_ERROR "ParMetis is required in order to install OpenFPM")
 endif()
 
 if(MPI_FOUND)
 	set(DEFINE_HAVE_MPI "#define HAVE_MPI")
 else()
-	file(WRITE error_code "200")
 	message( FATAL_ERROR "MPI is required in order to install OpenFPM" )
 endif()
 
@@ -122,11 +119,9 @@ if(HDF5_FOUND)
 	if (HDF5_IS_PARALLEL)
 		set(DEFINE_HAVE_HDF5 "#define HAVE_HDF5")
 	else()
-		file(WRITE error_code "207")
 		message( FATAL_ERROR "HDF5 found ${HDF5_INCLUDE_DIRS} does not have parallel support, OpenFPM require it" )
 	endif()
 else()
-	file(WRITE error_code "207")
 	message( FATAL_ERROR "HDF5 with parallel support is required in order to install OpenFPM" )
 endif()
 
@@ -142,7 +137,6 @@ endif()
 if(LIBHILBERT_FOUND)
 	set(DEFINE_HAVE_LIBHILBERT "#define HAVE_LIBHILBERT 1")
 else()
-	file(WRITE error_code "210")
 	message( FATAL_ERROR "LibHilbert is required in order to install OpenFPM")
 endif()
 
@@ -183,11 +177,6 @@ ExternalProject_Add(
 	LOG_INSTALL ON
 )
 
-
-file(WRITE error_code "0")
-file(WRITE cuda_lib "${CUDA_cudart_static_LIBRARY} ${CUDA_cudadevrt_LIBRARY}")
-file(WRITE mpi_include "-I${MPI_C_INCLUDE_DIRS}")
-file(WRITE mpi_libs "${MPI_C_LINK_FLAGS} ${MPI_C_LIBRARIES}")
 
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/src/config/config_cmake.h.in ${CMAKE_CURRENT_SOURCE_DIR}/src/config/config.h)
 
