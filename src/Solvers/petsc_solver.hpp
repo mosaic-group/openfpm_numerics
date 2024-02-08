@@ -1462,7 +1462,8 @@ public:
      */
     Vector<double,PETSC_BASE> with_nullspace_solve(SparseMatrix<double,int,PETSC_BASE> & A, const Vector<double,PETSC_BASE> & b, bool initial_guess = false,bool symmetric = false)
     {
-        Mat & A_ = A.getMat();
+#ifndef __arm64__
+	Mat & A_ = A.getMat();
         const Vec & b_ = b.getVec();
 
         // We set the size of x according to the Matrix A
@@ -1523,6 +1524,7 @@ public:
         x.update();
 
         return x;
+#endif
     }
 
 	/*! \brief Return the KSP solver

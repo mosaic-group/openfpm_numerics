@@ -23,6 +23,8 @@ public:
 
     MonomialBasis(const vector_type<unsigned int, Args...> &degrees, unsigned int convergenceOrder);
 
+    MonomialBasis(unsigned int orderLimit);
+
     MonomialBasis(unsigned int degrees[dim], unsigned int convergenceOrder);
 
 //    explicit MonomialBasis(Point<dim, unsigned int> degrees, unsigned int convergenceOrder);
@@ -59,6 +61,8 @@ public:
         lhs << "}" << std::endl;
         return lhs;
     }
+
+
 
 private:
     void generateBasis(vector_type<unsigned int, Args...> m, unsigned int r);
@@ -138,7 +142,6 @@ void MonomialBasis<dim, T, vector_type, Args...>::generateBasis(vector_type<unsi
         alphaMin = 0;
     }
     //std::cout<<"AlphaMin: "<<alphaMin<<std::endl;
-    //unsigned char alphaMin = 0; // we want to always have 1 in the basis
 
     while (it.isNext())
     {
