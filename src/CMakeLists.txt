@@ -74,7 +74,7 @@ if ( CUDA_ON_BACKEND STREQUAL "HIP" AND HIP_FOUND )
 		FiniteDifference/tests/FD_simple_unit_test.cpp
 		Operators/Vector/vector_dist_operators_unit_tests.cpp
 		Operators/Vector/vector_dist_operators_apply_kernel_unit_tests.cpp
-		../../src/lib/pdata.cpp
+		../../openfpm_pdata/src/lib/pdata.cpp
 #               BoundaryConditions/tests/method_of_images_cylinder_unit_test.cpp
 #		        level_set/closest_point/closest_point_unit_tests.cpp
 			level_set/redistancing_Sussman/tests/redistancingSussman_fast_unit_test.cpp
@@ -117,7 +117,7 @@ else()
 		FiniteDifference/tests/FD_simple_unit_test.cpp
 		Operators/Vector/vector_dist_operators_unit_tests.cpp
 		Operators/Vector/vector_dist_operators_apply_kernel_unit_tests.cpp
-		../../src/lib/pdata.cpp
+		../../openfpm_pdata/src/lib/pdata.cpp
 		BoundaryConditions/tests/method_of_images_cylinder_unit_test.cpp
 #		level_set/closest_point/closest_point_unit_tests.cpp
 #		level_set/redistancing_Sussman/tests/redistancingSussman_unit_test.cpp
@@ -169,7 +169,7 @@ target_include_directories (numerics PUBLIC ${CMAKE_CUDA_TOOLKIT_INCLUDE_DIRECTO
 target_include_directories (numerics PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 target_include_directories (numerics PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/../../openfpm_devices/src/)
 target_include_directories (numerics PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/../../openfpm_vcluster/src/)
-target_include_directories (numerics PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/../../src/)
+target_include_directories (numerics PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/../../openfpm_pdata/src/)
 target_include_directories (numerics PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/../../openfpm_data/src/)
 target_include_directories (numerics PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/../../openfpm_io/src/)
 target_include_directories (numerics PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/config)
@@ -389,21 +389,4 @@ install(FILES regression/regression.hpp
 install(DIRECTORY regression/minter
 	DESTINATION openfpm_numerics/include/regression
 	COMPONENT OpenFPM)
-
-#if(BUILD_TESTING)
-
-#  add_executable(particle_test test.cu)
-
-#  set_target_properties(particle_test PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
-#  target_link_libraries(particle_test PRIVATE particles)
-
-#  add_test(NAME particles_10k COMMAND particle_test 10000 )
-#  add_test(NAME particles_256k COMMAND particle_test 256000 )
-
-#  if(APPLE)
-    # We need to add the default path to the driver (libcuda.dylib) as an rpath,
-    # so that the static cuda runtime can find it at runtime.
-    #    set_property(TARGET particle_test PROPERTY BUILD_RPATH ${CMAKE_CUDA_IMPLICIT_LINK_DIRECTORIES})
-    #  endif()
-    #endif()
 
