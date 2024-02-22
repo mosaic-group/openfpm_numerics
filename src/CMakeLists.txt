@@ -4,15 +4,15 @@ cmake_minimum_required(VERSION 3.8 FATAL_ERROR)
 
 if (NOT CUDA_ON_BACKEND STREQUAL "None")
 	set(CUDA_SOURCES Operators/Vector/vector_dist_operators_unit_tests.cu
-					 Operators/Vector/vector_dist_operators_apply_kernel_unit_tests.cu)
+		Operators/Vector/vector_dist_operators_apply_kernel_unit_tests.cu)
 endif()
 
 if (CUDA_ON_BACKEND STREQUAL "CUDA")
 	set(CUDA_SOURCES ${CUDA_SOURCES} DCPSE/DCPSE_op/tests/DCPSE_op_Solver_test.cu
-			                 DCPSE/DCPSE_op/tests/DCPSE_op_test_base_tests.cu
-					 #DCPSE/DCPSE_op/tests/DCPSE_op_subset_test.cu
-					 #OdeIntegrators/tests/Odeintegrators_test_gpu.cu
-			                 DCPSE/DCPSE_op/tests/DCPSE_op_test_temporal.cu)
+		DCPSE/DCPSE_op/tests/DCPSE_op_test_base_tests.cu
+		#DCPSE/DCPSE_op/tests/DCPSE_op_subset_test.cu
+		#OdeIntegrators/tests/Odeintegrators_test_gpu.cu
+		DCPSE/DCPSE_op/tests/DCPSE_op_test_temporal.cu)
 endif()
 
 if (CUDA_ON_BACKEND STREQUAL "CUDA")
@@ -42,7 +42,6 @@ if ( CUDA_ON_BACKEND STREQUAL "HIP" AND HIP_FOUND )
 
 	list(APPEND HIP_HIPCC_FLAGS -D__NVCC__ -D__HIP__  -DCUDART_VERSION=11000 -D__CUDACC__ -D__CUDACC_VER_MAJOR__=11 -D__CUDACC_VER_MINOR__=0 -D__CUDACC_VER_BUILD__=0 --std=c++14)
 	set_source_files_properties(${CUDA_SOURCES} PROPERTIES LANGUAGE CXX)
-
 
 	hip_add_executable(numerics ${OPENFPM_INIT_FILE} ${CUDA_SOURCES}
 		regression/regression_test.cpp
@@ -75,15 +74,14 @@ if ( CUDA_ON_BACKEND STREQUAL "HIP" AND HIP_FOUND )
 		Operators/Vector/vector_dist_operators_unit_tests.cpp
 		Operators/Vector/vector_dist_operators_apply_kernel_unit_tests.cpp
 		../../openfpm_pdata/src/lib/pdata.cpp
-#               BoundaryConditions/tests/method_of_images_cylinder_unit_test.cpp
-#		        level_set/closest_point/closest_point_unit_tests.cpp
-			level_set/redistancing_Sussman/tests/redistancingSussman_fast_unit_test.cpp
-#		        level_set/redistancing_Sussman/tests/help_functions_unit_test.cpp
-			level_set/redistancing_Sussman/tests/narrowBand_unit_test.cpp
-#               level_set/redistancing_Sussman/tests/redistancingSussman_unit_test.cpp
-#		        level_set/redistancing_Sussman/tests/convergence_test.cpp
+		#BoundaryConditions/tests/method_of_images_cylinder_unit_test.cpp
+		#level_set/closest_point/closest_point_unit_tests.cpp
+		level_set/redistancing_Sussman/tests/redistancingSussman_fast_unit_test.cpp
+		#level_set/redistancing_Sussman/tests/help_functions_unit_test.cpp
+		level_set/redistancing_Sussman/tests/narrowBand_unit_test.cpp
+		#level_set/redistancing_Sussman/tests/redistancingSussman_unit_test.cpp
+		#level_set/redistancing_Sussman/tests/convergence_test.cpp
 		)
-
 
 else()
 
@@ -119,16 +117,15 @@ else()
 		Operators/Vector/vector_dist_operators_apply_kernel_unit_tests.cpp
 		../../openfpm_pdata/src/lib/pdata.cpp
 		BoundaryConditions/tests/method_of_images_cylinder_unit_test.cpp
-#		level_set/closest_point/closest_point_unit_tests.cpp
-#		level_set/redistancing_Sussman/tests/redistancingSussman_unit_test.cpp
-#		level_set/redistancing_Sussman/tests/convergence_test.cpp
+		#level_set/closest_point/closest_point_unit_tests.cpp
+		#level_set/redistancing_Sussman/tests/redistancingSussman_unit_test.cpp
+		#level_set/redistancing_Sussman/tests/convergence_test.cpp
 		level_set/particle_cp/pcp_unit_tests.cpp
 		DCPSE/DCPSE_op/tests/DCPSE_op_Surface_tests.cpp
-#		BoundaryConditions/tests/method_of_images_cylinder_unit_test.cpp
+		#BoundaryConditions/tests/method_of_images_cylinder_unit_test.cpp
 		level_set/redistancing_Sussman/tests/redistancingSussman_fast_unit_test.cpp
-#		level_set/redistancing_Sussman/tests/help_functions_unit_test.cpp
-		level_set/redistancing_Sussman/tests/narrowBand_unit_test.cpp
-		)
+		#level_set/redistancing_Sussman/tests/help_functions_unit_test.cpp
+		level_set/redistancing_Sussman/tests/narrowBand_unit_test.cpp)
 
 	set_property(TARGET numerics PROPERTY CUDA_ARCHITECTURES OFF)
 
@@ -147,11 +144,12 @@ if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
 	target_compile_options(numerics PRIVATE "-Wno-undefined-var-template")
 	target_compile_options(numerics PRIVATE "-Wno-macro-redefined")
 endif()
+
 if ( CMAKE_COMPILER_IS_GNUCC )
-#target_compile_options(numerics PRIVATE "-Wno-deprecated-declarations")
-    if (TEST_COVERAGE)
-	target_compile_options(numerics PRIVATE $<$<COMPILE_LANGUAGE:CXX>: -fprofile-arcs -ftest-coverage>)
-    endif()
+	#target_compile_options(numerics PRIVATE "-Wno-deprecated-declarations")
+	if (TEST_COVERAGE)
+		target_compile_options(numerics PRIVATE $<$<COMPILE_LANGUAGE:CXX>: -fprofile-arcs -ftest-coverage>)
+	endif()
 endif()
 
 if (CMAKE_CUDA_COMPILER_ID STREQUAL "Clang")
@@ -162,7 +160,7 @@ if(CUDA_FOUND)
 	if (TEST_COVERAGE)
 		target_compile_options(numerics PRIVATE $<$<COMPILE_LANGUAGE:CUDA>: -Xcompiler "-fprofile-arcs -ftest-coverage" >)
 	endif()
-    target_link_libraries(numerics -lcublas)
+	target_link_libraries(numerics -lcublas)
 endif()
 
 target_include_directories (numerics PUBLIC ${CMAKE_CUDA_TOOLKIT_INCLUDE_DIRECTORIES})
@@ -219,13 +217,13 @@ if(SuiteSparse_FOUND)
 endif()
 
 if(OpenMP_CXX_FOUND)
-    target_link_libraries(numerics OpenMP::OpenMP_CXX)
+	target_link_libraries(numerics OpenMP::OpenMP_CXX)
 endif()
 
 target_link_libraries(numerics -L${METIS_ROOT}/lib metis)
 
 if (TEST_COVERAGE)
-    target_link_libraries(numerics -lgcov)
+	target_link_libraries(numerics -lgcov)
 endif()
 
 # Request that particles be built with -std=c++11
@@ -235,7 +233,7 @@ target_compile_features(numerics PUBLIC cxx_std_11)
 target_link_libraries(numerics ${MPI_C_LIBRARIES})
 
 if (NOT APPLE)
-    target_link_libraries(numerics rt)
+	target_link_libraries(numerics rt)
 endif ()
 
 install(FILES Matrix/SparseMatrix.hpp 
@@ -281,7 +279,7 @@ install(FILES FiniteDifference/Average.hpp
 	FiniteDifference/FD_expressions.hpp
 	DESTINATION openfpm_numerics/include/FiniteDifference
 	COMPONENT OpenFPM)
-	      
+
 install(FILES FiniteDifference/util/common.hpp
 	FiniteDifference/util/EqnsStructFD.hpp
 	DESTINATION openfpm_numerics/include/FiniteDifference/util
