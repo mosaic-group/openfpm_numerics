@@ -9,7 +9,7 @@
 #define VECTOR_DIST_OPERATORS_CUDA_CUH_
 
 #include "Space/Shape/Point.hpp"
-#include "util/cuda_launch.hpp"
+#include "util/cuda_util.hpp"
 #include <utility>
 
 #ifdef SE_CLASS1
