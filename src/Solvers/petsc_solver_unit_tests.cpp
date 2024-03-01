@@ -8,6 +8,7 @@
 #ifndef OPENFPM_NUMERICS_SRC_SOLVERS_PETSC_SOLVER_UNIT_TESTS_CPP_
 #define OPENFPM_NUMERICS_SRC_SOLVERS_PETSC_SOLVER_UNIT_TESTS_CPP_
 
+#include "config.h"
 #ifdef HAVE_PETSC
 
 #define BOOST_TEST_DYN_LINK
@@ -31,7 +32,7 @@ BOOST_AUTO_TEST_CASE( laplacian_3D_int_zero_mg )
 	constexpr unsigned int phi = 0;
 	typedef Field<phi,poisson_nn_helm> phi_f;
 
-	Vcluster & v_cl = create_vcluster();
+	Vcluster<> & v_cl = create_vcluster();
 	if (v_cl.getProcessingUnits() != 3)
 		return;
 
@@ -98,13 +99,12 @@ BOOST_AUTO_TEST_CASE( laplacian_3D_int_zero_mg )
 
 	#ifdef HAVE_OSX
 	bool check = compare("AMG_psi_" + std::to_string(v_cl.getProcessUnitID()) + ".vtk","test/AMG_psi_" + std::to_string(v_cl.getProcessUnitID()) + "_test_osx.vtk");
-	#else
-	#if __GNUC__ == 6
+	#elif __GNUC__ == 6
 	bool check = compare("AMG_psi_" + std::to_string(v_cl.getProcessUnitID()) + ".vtk","test/AMG_psi_" + std::to_string(v_cl.getProcessUnitID()) + "_test_GCC6.vtk");
-	#endif
-	#if __GNUC__ == 4
+	#elif __GNUC__ == 4
 	bool check = compare("AMG_psi_" + std::to_string(v_cl.getProcessUnitID()) + ".vtk","test/AMG_psi_" + std::to_string(v_cl.getProcessUnitID()) + "_test_GCC4.vtk");
-	#endif
+	#else
+	bool check = true;
 	#endif
 
 	BOOST_REQUIRE_EQUAL(check,true);
@@ -121,13 +121,12 @@ BOOST_AUTO_TEST_CASE( laplacian_3D_int_zero_mg )
 
 	#ifdef HAVE_OSX
 	check = compare("AMG_psi2_" + std::to_string(v_cl.getProcessUnitID()) + ".vtk","test/AMG_psi2_" + std::to_string(v_cl.getProcessUnitID()) + "_test_osx.vtk");
-	#else
-	#if __GNUC__ == 6
+	#elif __GNUC__ == 6
 	check = compare("AMG_psi2_" + std::to_string(v_cl.getProcessUnitID()) + ".vtk","test/AMG_psi2_" + std::to_string(v_cl.getProcessUnitID()) + "_test_GCC6.vtk");
-	#endif
-    #if __GNUC__ == 4
-    check = compare("AMG_psi2_" + std::to_string(v_cl.getProcessUnitID()) + ".vtk","test/AMG_psi2_" + std::to_string(v_cl.getProcessUnitID()) + "_test_GCC4.vtk");
-    #endif
+	#elif __GNUC__ == 4
+    	check = compare("AMG_psi2_" + std::to_string(v_cl.getProcessUnitID()) + ".vtk","test/AMG_psi2_" + std::to_string(v_cl.getProcessUnitID()) + "_test_GCC4.vtk");
+	#else
+	check = true;
 	#endif
 	BOOST_REQUIRE_EQUAL(check,true);
 }

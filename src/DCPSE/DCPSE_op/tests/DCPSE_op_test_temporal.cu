@@ -15,7 +15,7 @@
 
 #include <boost/test/unit_test.hpp>
 #include "Operators/Vector/vector_dist_operators.hpp"
-#include "../DCPSE_op.hpp"
+#include "DCPSE/DCPSE_op/DCPSE_op.hpp"
 
 BOOST_AUTO_TEST_SUITE(temporal_test_suite_cu)
     BOOST_AUTO_TEST_CASE(temporal_test)

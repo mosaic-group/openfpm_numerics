@@ -15,8 +15,8 @@
 #include "util/util_debug.hpp"
 #include <boost/test/unit_test.hpp>
 #include <iostream>
-#include "../DCPSE_surface_op.hpp"
-#include "../DCPSE_Solver.hpp"
+#include "DCPSE/DCPSE_op/DCPSE_surface_op.hpp"
+#include "DCPSE/DCPSE_op/DCPSE_Solver.hpp"
 #include "Operators/Vector/vector_dist_operators.hpp"
 #include "Vector/vector_dist_subset.hpp"
 #include <iostream>

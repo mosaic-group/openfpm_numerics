@@ -6,7 +6,7 @@
 
 #include <boost/test/unit_test.hpp>
 #include <DCPSE/DcpseRhs.hpp>
-#include "../../openfpm_numerics/src/DMatrix/EMatrix.hpp"
+#include "DMatrix/EMatrix.hpp"
 
 BOOST_AUTO_TEST_SUITE(DcpseRhs_tests)
 

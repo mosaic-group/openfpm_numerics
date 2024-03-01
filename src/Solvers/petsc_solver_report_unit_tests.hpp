@@ -54,7 +54,7 @@ BOOST_AUTO_TEST_CASE( laplacian_3D_int_zero_mg_report )
 	constexpr unsigned int phi = 0;
 	typedef Field<phi,poisson_nn_helm> phi_f;
 
-	Vcluster & v_cl = create_vcluster();
+	Vcluster<> & v_cl = create_vcluster();
 	if (v_cl.getProcessingUnits() != 3)
 		return;
 
