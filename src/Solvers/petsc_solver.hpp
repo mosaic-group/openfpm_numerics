@@ -1487,19 +1487,19 @@ public:
         PetscInt N, rows;
 
         /* Determine factorability */
-        PETSC_SAFE_CALL(MatGetFactor(A_, MATSOLVERMUMPS, MAT_FACTOR_LU, &F));
-        PETSC_SAFE_CALL(MatGetLocalSize(A_, &rows, NULL));
+       //PETSC_SAFE_CALL(MatGetFactor(A_, MATSOLVERMUMPS, MAT_FACTOR_LU, &F));
+       //PETSC_SAFE_CALL(MatGetLocalSize(A_, &rows, NULL));
 
         /* Set MUMPS options, see MUMPS documentation for more information */
-        PETSC_SAFE_CALL(MatMumpsSetIcntl(F, 24, 1));
-        PETSC_SAFE_CALL(MatMumpsSetIcntl(F, 25, 1));
+        //PETSC_SAFE_CALL(MatMumpsSetIcntl(F, 24, 1));
+        //PETSC_SAFE_CALL(MatMumpsSetIcntl(F, 25, 1));
 
         /* Perform factorization */
-        PETSC_SAFE_CALL(MatLUFactorSymbolic(F, A_, NULL, NULL, NULL));
-        PETSC_SAFE_CALL(MatLUFactorNumeric(F, A_, NULL));
+        //PETSC_SAFE_CALL(MatLUFactorSymbolic(F, A_, NULL, NULL, NULL));
+        //PETSC_SAFE_CALL(MatLUFactorNumeric(F, A_, NULL));
 
         /* This is the dimension of the null space */
-        PETSC_SAFE_CALL(MatMumpsGetInfog(F, 28, &N));
+        //PETSC_SAFE_CALL(MatMumpsGetInfog(F, 28, &N));
         /* This will contain the null space in the columns */
         PETSC_SAFE_CALL(MatCreateDense(PETSC_COMM_WORLD, rows, N, PETSC_DETERMINE, PETSC_DETERMINE, NULL, &V));
         PETSC_SAFE_CALL(MatDuplicate(V, MAT_DO_NOT_COPY_VALUES, &work));
