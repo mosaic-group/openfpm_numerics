@@ -50,6 +50,32 @@ public:
         dcpse = new Dcpse<particlesFrom_type::dims, particlesFrom_type,particlesTo_type>(particlesFrom,particlesTo, p, ord, rCut, oversampling_factor, opt);
     }
 
+  /*! \brief Constructor to create the Surface DCPSE particle to particle interpolator (on the surface)
+   *
+   *
+   * \param particlesFrom particle set
+   * \param particlesTo particle set
+   * \param ord order of convergence of the operator
+   * \param rCut Argument for cell list construction
+   * \param oversampling_factor multiplier to the minimum no. of particles required by the operator in support
+   * \param support_options default:N_particles, Radius can be used to select all particles inside rCut. Overrides oversampling.
+   *
+   * \return Operator F which is a function on Vector_dist_Expressions
+   *
+   */
+  template<unsigned int NORMAL_ID>
+  PPInterpolation(particlesFrom_type &particlesFrom,particlesTo_type &particlesTo, unsigned int ord, typename particlesFrom_type::stype rCut,
+		  typename particlesFrom_type::stype nSpacing,
+		  value_t<NORMAL_ID>,
+		  support_options opt = support_options::RADIUS)
+    :particlesFrom(particlesFrom),particlesTo(particlesTo)
+  {
+    Point<particlesFrom_type::dims, unsigned int> p;
+    p.zero();
+    dcpse = new Dcpse<particlesFrom_type::dims,particlesFrom_type,particlesTo_type>(particlesFrom,particlesTo, p, ord, rCut, nSpacing,value_t<NORMAL_ID>(), opt);
+    // dcpse = new Dcpse<particlesFrom_type::dims, particlesFrom_type,particlesTo_type>(particlesFrom,particlesTo, p, ord, rCut, oversampling_factor, opt);
+  }
+
     void deallocate() {
         delete (Dcpse<particlesFrom_type::dims, particlesFrom_type, particlesTo_type> *) dcpse;
     }
