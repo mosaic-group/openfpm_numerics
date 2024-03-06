@@ -15,12 +15,12 @@
 #include "util/util_debug.hpp"
 #include <boost/test/unit_test.hpp>
 #include <iostream>
-#include "../DCPSE_op.hpp"
-#include "../DCPSE_Solver.hpp"
-#include "../DCPSE_Solver.cuh"
+#include "DCPSE/DCPSE_op/DCPSE_op.hpp"
+#include "DCPSE/DCPSE_op/DCPSE_Solver.hpp"
+#include "DCPSE/DCPSE_op/DCPSE_Solver.cuh"
 #include "Operators/Vector/vector_dist_operators.hpp"
 #include "Vector/vector_dist_subset.hpp"
-#include "../EqnsStruct.hpp"
+#include "DCPSE/DCPSE_op/EqnsStruct.hpp"
 
 //template<typename T>
 //struct Debug;

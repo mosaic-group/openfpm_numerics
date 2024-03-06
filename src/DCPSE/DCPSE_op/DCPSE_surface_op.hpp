@@ -33,12 +33,12 @@ public:
         p.zero();
         p.get(0) = 1;
 
-        dcpse = new Dcpse<particles_type::dims, particles_type>(parts, p, ord, rCut,nSpacing,value_t<NORMAL_ID>(), opt);
+        dcpse = new Dcpse<particles_type::dims, particles_type, particles_type>(parts, parts, p, ord, rCut,nSpacing,value_t<NORMAL_ID>(), opt);
     }
 
     template<typename particles_type>
     void deallocate(particles_type &parts) {
-        delete (Dcpse<particles_type::dims, particles_type> *) dcpse;
+        delete (Dcpse<particles_type::dims, particles_type, particles_type> *) dcpse;
     }
 
     template<typename operand_type>
@@ -51,14 +51,14 @@ public:
 
     template<typename particles_type>
     void checkMomenta(particles_type &particles) {
-        auto dcpse_temp = (Dcpse<particles_type::dims, particles_type> *) dcpse;
+        auto dcpse_temp = (Dcpse<particles_type::dims, particles_type, particles_type> *) dcpse;
         dcpse_temp->checkMomenta(particles);
 
     }
 
     template<unsigned int prp, typename particles_type>
     void DrawKernel(particles_type &particles, int k) {
-        auto dcpse_temp = (Dcpse<particles_type::dims, particles_type> *) dcpse;
+        auto dcpse_temp = (Dcpse<particles_type::dims, particles_type, particles_type> *) dcpse;
         dcpse_temp->template DrawKernel<prp>(particles, k);
 
     }
@@ -70,7 +70,7 @@ public:
      */
     template<typename particles_type>
     void save(particles_type &particles, const std::string &file) {
-        auto dcpse_temp = (Dcpse<particles_type::dims, particles_type> *) dcpse;
+        auto dcpse_temp = (Dcpse<particles_type::dims, particles_type, particles_type> *) dcpse;
         dcpse_temp->save(file);
     }
     /*! \brief Method for Loading the DCPSE Operator.
@@ -80,7 +80,7 @@ public:
      */
     template<typename particles_type>
     void load(particles_type &particles, const std::string &file) {
-        auto dcpse_temp = (Dcpse<particles_type::dims, particles_type> *) dcpse;
+        auto dcpse_temp = (Dcpse<particles_type::dims, particles_type, particles_type> *) dcpse;
         dcpse_temp->load(file);
     }
 
@@ -91,7 +91,7 @@ public:
      */
     template<typename particles_type>
     void update(particles_type &particles) {
-        auto dcpse_temp = (Dcpse<particles_type::dims, particles_type> *) dcpse;
+        auto dcpse_temp = (Dcpse<particles_type::dims, particles_type, particles_type> *) dcpse;
         dcpse_temp->template createNormalParticles<NORMAL_ID>(particles);
         dcpse_temp->initializeUpdate(particles);
         dcpse_temp->accumulateAndDeleteNormalParticles(particles);
@@ -123,12 +123,12 @@ public:
         p.zero();
         p.get(1) = 1;
 
-        dcpse = new Dcpse<particles_type::dims, particles_type>(parts, p, ord, rCut,nSpacing,value_t<NORMAL_ID>(), opt);
+        dcpse = new Dcpse<particles_type::dims, particles_type, particles_type>(parts, parts, p, ord, rCut,nSpacing,value_t<NORMAL_ID>(), opt);
     }
 
     template<typename particles_type>
     void deallocate(particles_type &parts) {
-        delete (Dcpse<particles_type::dims, particles_type> *) dcpse;
+        delete (Dcpse<particles_type::dims, particles_type, particles_type> *) dcpse;
     }
 
     template<typename operand_type>
@@ -141,14 +141,14 @@ public:
 
     template<typename particles_type>
     void checkMomenta(particles_type &particles) {
-        auto dcpse_temp = (Dcpse<particles_type::dims, particles_type> *) dcpse;
+        auto dcpse_temp = (Dcpse<particles_type::dims, particles_type, particles_type> *) dcpse;
         dcpse_temp->checkMomenta(particles);
 
     }
 
     template<unsigned int prp, typename particles_type>
     void DrawKernel(particles_type &particles, int k) {
-        auto dcpse_temp = (Dcpse<particles_type::dims, particles_type> *) dcpse;
+        auto dcpse_temp = (Dcpse<particles_type::dims, particles_type, particles_type> *) dcpse;
         dcpse_temp->template DrawKernel<prp>(particles, k);
 
     }
@@ -161,7 +161,7 @@ public:
      */
     template<typename particles_type>
     void save(particles_type &particles, const std::string &file) {
-        auto dcpse_temp = (Dcpse<particles_type::dims, particles_type> *) dcpse;
+        auto dcpse_temp = (Dcpse<particles_type::dims, particles_type, particles_type> *) dcpse;
         dcpse_temp->save(file);
     }
     /*! \brief Method for Loading the DCPSE Operator.
@@ -171,7 +171,7 @@ public:
      */
     template<typename particles_type>
     void load(particles_type &particles, const std::string &file) {
-        auto dcpse_temp = (Dcpse<particles_type::dims, particles_type> *) dcpse;
+        auto dcpse_temp = (Dcpse<particles_type::dims, particles_type, particles_type> *) dcpse;
         dcpse_temp->load(file);
     }
     /*! \brief Method for Updating the DCPSE Operator by recomputing DCPSE Kernels.
@@ -181,7 +181,7 @@ public:
      */
     template<typename particles_type>
     void update(particles_type &particles) {
-        auto dcpse_temp = (Dcpse<particles_type::dims, particles_type> *) dcpse;
+        auto dcpse_temp = (Dcpse<particles_type::dims, particles_type, particles_type> *) dcpse;
         dcpse_temp->template createNormalParticles<NORMAL_ID>(particles);
         dcpse_temp->initializeUpdate(particles);
         dcpse_temp->accumulateAndDeleteNormalParticles(particles);
@@ -214,12 +214,12 @@ public:
         p.zero();
         p.get(2) = 1;
 
-        dcpse = new Dcpse<particles_type::dims, particles_type>(parts, p, ord, rCut,nSpacing,value_t<NORMAL_ID>(), opt);
+        dcpse = new Dcpse<particles_type::dims, particles_type, particles_type>(parts, parts, p, ord, rCut,nSpacing,value_t<NORMAL_ID>(), opt);
     }
 
     template<typename particles_type>
     void deallocate(particles_type &parts) {
-        delete (Dcpse<particles_type::dims, particles_type> *) dcpse;
+        delete (Dcpse<particles_type::dims, particles_type, particles_type> *) dcpse;
     }
 
     template<typename operand_type>
@@ -232,14 +232,14 @@ public:
 
     template<typename particles_type>
     void checkMomenta(particles_type &particles) {
-        auto dcpse_temp = (Dcpse<particles_type::dims, particles_type> *) dcpse;
+        auto dcpse_temp = (Dcpse<particles_type::dims, particles_type, particles_type> *) dcpse;
         dcpse_temp->checkMomenta(particles);
 
     }
 
     template<unsigned int prp, typename particles_type>
     void DrawKernel(particles_type &particles, int k) {
-        auto dcpse_temp = (Dcpse<particles_type::dims, particles_type> *) dcpse;
+        auto dcpse_temp = (Dcpse<particles_type::dims, particles_type, particles_type> *) dcpse;
         dcpse_temp->template DrawKernel<prp>(particles, k);
 
     }
@@ -251,7 +251,7 @@ public:
      */
     template<typename particles_type>
     void save(particles_type &particles, const std::string &file) {
-        auto dcpse_temp = (Dcpse<particles_type::dims, particles_type> *) dcpse;
+        auto dcpse_temp = (Dcpse<particles_type::dims, particles_type, particles_type> *) dcpse;
         dcpse_temp->save(file);
     }
     /*! \brief Method for Loading the DCPSE Operator.
@@ -261,7 +261,7 @@ public:
      */
     template<typename particles_type>
     void load(particles_type &particles, const std::string &file) {
-        auto dcpse_temp = (Dcpse<particles_type::dims, particles_type> *) dcpse;
+        auto dcpse_temp = (Dcpse<particles_type::dims, particles_type, particles_type> *) dcpse;
         dcpse_temp->load(file);
     }
     /*! \brief Method for Updating the DCPSE Operator by recomputing DCPSE Kernels.
@@ -271,7 +271,7 @@ public:
      */
     template<typename particles_type>
     void update(particles_type &particles) {
-        auto dcpse_temp = (Dcpse<particles_type::dims, particles_type> *) dcpse;
+        auto dcpse_temp = (Dcpse<particles_type::dims, particles_type, particles_type> *) dcpse;
         dcpse_temp->template createNormalParticles<NORMAL_ID>(particles);
         dcpse_temp->initializeUpdate(particles);
         dcpse_temp->accumulateAndDeleteNormalParticles(particles);
@@ -306,12 +306,12 @@ public:
         p.get(1) = 2;
         p.get(2) = 2;
 
-        dcpse = new Dcpse<particles_type::dims, particles_type>(parts, p, ord, rCut,nSpacing,value_t<NORMAL_ID>(), opt);
+        dcpse = new Dcpse<particles_type::dims, particles_type, particles_type>(parts, parts, p, ord, rCut,nSpacing,value_t<NORMAL_ID>(), opt);
     }
 
     template<typename particles_type>
     void deallocate(particles_type &parts) {
-        delete (Dcpse<particles_type::dims, particles_type> *) dcpse;
+        delete (Dcpse<particles_type::dims, particles_type, particles_type> *) dcpse;
     }
 
     template<typename operand_type>
@@ -324,14 +324,14 @@ public:
 
     template<typename particles_type>
     void checkMomenta(particles_type &particles) {
-        auto dcpse_temp = (Dcpse<particles_type::dims, particles_type> *) dcpse;
+        auto dcpse_temp = (Dcpse<particles_type::dims, particles_type, particles_type> *) dcpse;
         dcpse_temp->checkMomenta(particles);
 
     }
 
     template<unsigned int prp, typename particles_type>
     void DrawKernel(particles_type &particles, int k) {
-        auto dcpse_temp = (Dcpse<particles_type::dims, particles_type> *) dcpse;
+        auto dcpse_temp = (Dcpse<particles_type::dims, particles_type, particles_type> *) dcpse;
         dcpse_temp->template DrawKernel<prp>(particles, k);
 
     }
@@ -343,7 +343,7 @@ public:
      */
     template<typename particles_type>
     void save(particles_type &particles, const std::string &file) {
-        auto dcpse_temp = (Dcpse<particles_type::dims, particles_type> *) dcpse;
+        auto dcpse_temp = (Dcpse<particles_type::dims, particles_type, particles_type> *) dcpse;
         dcpse_temp->save(file);
     }
     /*! \brief Method for Loading the DCPSE Operator.
@@ -353,7 +353,7 @@ public:
      */
     template<typename particles_type>
     void load(particles_type &particles, const std::string &file) {
-        auto dcpse_temp = (Dcpse<particles_type::dims, particles_type> *) dcpse;
+        auto dcpse_temp = (Dcpse<particles_type::dims, particles_type, particles_type> *) dcpse;
         dcpse_temp->load(file);
     }
     /*! \brief Method for Updating the DCPSE Operator by recomputing DCPSE Kernels.
@@ -363,7 +363,7 @@ public:
      */
     template<typename particles_type>
     void update(particles_type &particles) {
-        auto dcpse_temp = (Dcpse<particles_type::dims, particles_type> *) dcpse;
+        auto dcpse_temp = (Dcpse<particles_type::dims, particles_type, particles_type> *) dcpse;
         dcpse_temp->template createNormalParticles<NORMAL_ID>(particles);
         dcpse_temp->template createNormalParticles<NORMAL_ID>(particles);
         dcpse_temp->initializeUpdate(particles);
@@ -396,12 +396,12 @@ public:
         p.zero();
         p.get(0) = 2;
 
-        dcpse = new Dcpse<particles_type::dims, particles_type>(parts, p, ord, rCut,nSpacing,value_t<NORMAL_ID>(), opt);
+        dcpse = new Dcpse<particles_type::dims, particles_type, particles_type>(parts, parts, p, ord, rCut,nSpacing,value_t<NORMAL_ID>(), opt);
     }
 
     template<typename particles_type>
     void deallocate(particles_type &parts) {
-        delete (Dcpse<particles_type::dims, particles_type> *) dcpse;
+        delete (Dcpse<particles_type::dims, particles_type, particles_type> *) dcpse;
     }
 
     template<typename operand_type>
@@ -414,14 +414,14 @@ public:
 
     template<typename particles_type>
     void checkMomenta(particles_type &particles) {
-        auto dcpse_temp = (Dcpse<particles_type::dims, particles_type> *) dcpse;
+        auto dcpse_temp = (Dcpse<particles_type::dims, particles_type, particles_type> *) dcpse;
         dcpse_temp->checkMomenta(particles);
 
     }
 
     template<unsigned int prp, typename particles_type>
     void DrawKernel(particles_type &particles, int k) {
-        auto dcpse_temp = (Dcpse<particles_type::dims, particles_type> *) dcpse;
+        auto dcpse_temp = (Dcpse<particles_type::dims, particles_type, particles_type> *) dcpse;
         dcpse_temp->template DrawKernel<prp>(particles, k);
 
     }
@@ -433,7 +433,7 @@ public:
      */
     template<typename particles_type>
     void save(particles_type &particles, const std::string &file) {
-        auto dcpse_temp = (Dcpse<particles_type::dims, particles_type> *) dcpse;
+        auto dcpse_temp = (Dcpse<particles_type::dims, particles_type, particles_type> *) dcpse;
         dcpse_temp->save(file);
     }
     /*! \brief Method for Loading the DCPSE Operator.
@@ -443,7 +443,7 @@ public:
      */
     template<typename particles_type>
     void load(particles_type &particles, const std::string &file) {
-        auto dcpse_temp = (Dcpse<particles_type::dims, particles_type> *) dcpse;
+        auto dcpse_temp = (Dcpse<particles_type::dims, particles_type, particles_type> *) dcpse;
         dcpse_temp->load(file);
     }
     /*! \brief Method for Updating the DCPSE Operator by recomputing DCPSE Kernels.
@@ -453,7 +453,7 @@ public:
      */
     template<typename particles_type>
     void update(particles_type &particles) {
-        auto dcpse_temp = (Dcpse<particles_type::dims, particles_type> *) dcpse;
+        auto dcpse_temp = (Dcpse<particles_type::dims, particles_type, particles_type> *) dcpse;
         dcpse_temp->template createNormalParticles<NORMAL_ID>(particles);
         dcpse_temp->template createNormalParticles<NORMAL_ID>(particles);
         dcpse_temp->initializeUpdate(particles);
@@ -487,12 +487,12 @@ public:
         p.zero();
         p.get(1) = 2;
 
-        dcpse = new Dcpse<particles_type::dims, particles_type>(parts, p, ord, rCut,nSpacing,value_t<NORMAL_ID>(), opt);
+        dcpse = new Dcpse<particles_type::dims, particles_type, particles_type>(parts, parts, p, ord, rCut,nSpacing,value_t<NORMAL_ID>(), opt);
     }
 
     template<typename particles_type>
     void deallocate(particles_type &parts) {
-        delete (Dcpse<particles_type::dims, particles_type> *) dcpse;
+        delete (Dcpse<particles_type::dims, particles_type, particles_type> *) dcpse;
     }
 
     template<typename operand_type>
@@ -505,14 +505,14 @@ public:
 
     template<typename particles_type>
     void checkMomenta(particles_type &particles) {
-        auto dcpse_temp = (Dcpse<particles_type::dims, particles_type> *) dcpse;
+        auto dcpse_temp = (Dcpse<particles_type::dims, particles_type, particles_type> *) dcpse;
         dcpse_temp->checkMomenta(particles);
 
     }
 
     template<unsigned int prp, typename particles_type>
     void DrawKernel(particles_type &particles, int k) {
-        auto dcpse_temp = (Dcpse<particles_type::dims, particles_type> *) dcpse;
+        auto dcpse_temp = (Dcpse<particles_type::dims, particles_type, particles_type> *) dcpse;
         dcpse_temp->template DrawKernel<prp>(particles, k);
 
     }
@@ -524,7 +524,7 @@ public:
      */
     template<typename particles_type>
     void save(particles_type &particles, const std::string &file) {
-        auto dcpse_temp = (Dcpse<particles_type::dims, particles_type> *) dcpse;
+        auto dcpse_temp = (Dcpse<particles_type::dims, particles_type, particles_type> *) dcpse;
         dcpse_temp->save(file);
     }
     /*! \brief Method for Loading the DCPSE Operator.
@@ -534,7 +534,7 @@ public:
      */
     template<typename particles_type>
     void load(particles_type &particles, const std::string &file) {
-        auto dcpse_temp = (Dcpse<particles_type::dims, particles_type> *) dcpse;
+        auto dcpse_temp = (Dcpse<particles_type::dims, particles_type, particles_type> *) dcpse;
         dcpse_temp->load(file);
     }
     /*! \brief Method for Updating the DCPSE Operator by recomputing DCPSE Kernels.
@@ -544,7 +544,7 @@ public:
      */
     template<typename particles_type>
     void update(particles_type &particles) {
-        auto dcpse_temp = (Dcpse<particles_type::dims, particles_type> *) dcpse;
+        auto dcpse_temp = (Dcpse<particles_type::dims, particles_type, particles_type> *) dcpse;
         dcpse_temp->template createNormalParticles<NORMAL_ID>(particles);
         dcpse_temp->initializeUpdate(particles);
         dcpse_temp->accumulateAndDeleteNormalParticles(particles);
@@ -577,12 +577,12 @@ public:
         p.zero();
         p.get(2) = 2;
 
-        dcpse = new Dcpse<particles_type::dims, particles_type>(parts, p, ord, rCut,nSpacing,value_t<NORMAL_ID>(), opt);
+        dcpse = new Dcpse<particles_type::dims, particles_type, particles_type>(parts, parts, p, ord, rCut,nSpacing,value_t<NORMAL_ID>(), opt);
     }
 
     template<typename particles_type>
     void deallocate(particles_type &parts) {
-        delete (Dcpse<particles_type::dims, particles_type> *) dcpse;
+        delete (Dcpse<particles_type::dims, particles_type, particles_type> *) dcpse;
     }
 
     template<typename operand_type>
@@ -595,14 +595,14 @@ public:
 
     template<typename particles_type>
     void checkMomenta(particles_type &particles) {
-        auto dcpse_temp = (Dcpse<particles_type::dims, particles_type> *) dcpse;
+        auto dcpse_temp = (Dcpse<particles_type::dims, particles_type, particles_type> *) dcpse;
         dcpse_temp->checkMomenta(particles);
 
     }
 
     template<unsigned int prp, typename particles_type>
     void DrawKernel(particles_type &particles, int k) {
-        auto dcpse_temp = (Dcpse<particles_type::dims, particles_type> *) dcpse;
+        auto dcpse_temp = (Dcpse<particles_type::dims, particles_type, particles_type> *) dcpse;
         dcpse_temp->template DrawKernel<prp>(particles, k);
 
     }
@@ -614,7 +614,7 @@ public:
      */
     template<typename particles_type>
     void save(particles_type &particles, const std::string &file) {
-        auto dcpse_temp = (Dcpse<particles_type::dims, particles_type> *) dcpse;
+        auto dcpse_temp = (Dcpse<particles_type::dims, particles_type, particles_type> *) dcpse;
         dcpse_temp->save(file);
     }
     /*! \brief Method for Loading the DCPSE Operator.
@@ -624,7 +624,7 @@ public:
      */
     template<typename particles_type>
     void load(particles_type &particles, const std::string &file) {
-        auto dcpse_temp = (Dcpse<particles_type::dims, particles_type> *) dcpse;
+        auto dcpse_temp = (Dcpse<particles_type::dims, particles_type, particles_type> *) dcpse;
         dcpse_temp->load(file);
     }
     /*! \brief Method for Updating the DCPSE Operator by recomputing DCPSE Kernels.
@@ -634,7 +634,7 @@ public:
      */
     template<typename particles_type>
     void update(particles_type &particles) {
-        auto dcpse_temp = (Dcpse<particles_type::dims, particles_type> *) dcpse;
+        auto dcpse_temp = (Dcpse<particles_type::dims, particles_type, particles_type> *) dcpse;
         dcpse_temp->template createNormalParticles<NORMAL_ID>(particles);
         particles.write("With Normal");
         dcpse_temp->initializeUpdate(particles);
@@ -669,12 +669,12 @@ public:
         p.get(0) = 1;
         p.get(1) = 1;
 
-        dcpse = new Dcpse<particles_type::dims, particles_type>(parts, p, ord, rCut,nSpacing,value_t<NORMAL_ID>(), opt);
+        dcpse = new Dcpse<particles_type::dims, particles_type, particles_type>(parts, parts, p, ord, rCut,nSpacing,value_t<NORMAL_ID>(), opt);
     }
 
     template<typename particles_type>
     void deallocate(particles_type &parts) {
-        delete (Dcpse<particles_type::dims, particles_type> *) dcpse;
+        delete (Dcpse<particles_type::dims, particles_type, particles_type> *) dcpse;
     }
 
     template<typename operand_type>
@@ -687,14 +687,14 @@ public:
 
     template<typename particles_type>
     void checkMomenta(particles_type &particles) {
-        auto dcpse_temp = (Dcpse<particles_type::dims, particles_type> *) dcpse;
+        auto dcpse_temp = (Dcpse<particles_type::dims, particles_type, particles_type> *) dcpse;
         dcpse_temp->checkMomenta(particles);
 
     }
 
     template<unsigned int prp, typename particles_type>
     void DrawKernel(particles_type &particles, int k) {
-        auto dcpse_temp = (Dcpse<particles_type::dims, particles_type> *) dcpse;
+        auto dcpse_temp = (Dcpse<particles_type::dims, particles_type, particles_type> *) dcpse;
         dcpse_temp->template DrawKernel<prp>(particles, k);
 
     }
@@ -706,7 +706,7 @@ public:
      */
     template<typename particles_type>
     void save(particles_type &particles, const std::string &file) {
-        auto dcpse_temp = (Dcpse<particles_type::dims, particles_type> *) dcpse;
+        auto dcpse_temp = (Dcpse<particles_type::dims, particles_type, particles_type> *) dcpse;
         dcpse_temp->save(file);
     }
     /*! \brief Method for Loading the DCPSE Operator.
@@ -716,7 +716,7 @@ public:
      */
     template<typename particles_type>
     void load(particles_type &particles, const std::string &file) {
-        auto dcpse_temp = (Dcpse<particles_type::dims, particles_type> *) dcpse;
+        auto dcpse_temp = (Dcpse<particles_type::dims, particles_type, particles_type> *) dcpse;
         dcpse_temp->load(file);
     }
     /*! \brief Method for Updating the DCPSE Operator by recomputing DCPSE Kernels.
@@ -726,7 +726,7 @@ public:
      */
     template<typename particles_type>
     void update(particles_type &particles) {
-        auto dcpse_temp = (Dcpse<particles_type::dims, particles_type> *) dcpse;
+        auto dcpse_temp = (Dcpse<particles_type::dims, particles_type, particles_type> *) dcpse;
         dcpse_temp->template createNormalParticles<NORMAL_ID>(particles);
         dcpse_temp->initializeUpdate(particles);
         dcpse_temp->accumulateAndDeleteNormalParticles(particles);
@@ -761,12 +761,12 @@ public:
         p.get(1) = 1;
         p.get(2) = 1;
 
-        dcpse = new Dcpse<particles_type::dims, particles_type>(parts, p, ord, rCut,nSpacing,value_t<NORMAL_ID>(), opt);
+        dcpse = new Dcpse<particles_type::dims, particles_type, particles_type>(parts, parts, p, ord, rCut,nSpacing,value_t<NORMAL_ID>(), opt);
     }
 
     template<typename particles_type>
     void deallocate(particles_type &parts) {
-        delete (Dcpse<particles_type::dims, particles_type> *) dcpse;
+        delete (Dcpse<particles_type::dims, particles_type, particles_type> *) dcpse;
     }
 
     template<typename operand_type>
@@ -779,14 +779,14 @@ public:
 
     template<typename particles_type>
     void checkMomenta(particles_type &particles) {
-        auto dcpse_temp = (Dcpse<particles_type::dims, particles_type> *) dcpse;
+        auto dcpse_temp = (Dcpse<particles_type::dims, particles_type, particles_type> *) dcpse;
         dcpse_temp->checkMomenta(particles);
 
     }
 
     template<unsigned int prp, typename particles_type>
     void DrawKernel(particles_type &particles, int k) {
-        auto dcpse_temp = (Dcpse<particles_type::dims, particles_type> *) dcpse;
+        auto dcpse_temp = (Dcpse<particles_type::dims, particles_type, particles_type> *) dcpse;
         dcpse_temp->template DrawKernel<prp>(particles, k);
 
     }
@@ -798,7 +798,7 @@ public:
      */
     template<typename particles_type>
     void save(particles_type &particles, const std::string &file) {
-        auto dcpse_temp = (Dcpse<particles_type::dims, particles_type> *) dcpse;
+        auto dcpse_temp = (Dcpse<particles_type::dims, particles_type, particles_type> *) dcpse;
         dcpse_temp->save(file);
     }
     /*! \brief Method for Loading the DCPSE Operator.
@@ -808,7 +808,7 @@ public:
      */
     template<typename particles_type>
     void load(particles_type &particles, const std::string &file) {
-        auto dcpse_temp = (Dcpse<particles_type::dims, particles_type> *) dcpse;
+        auto dcpse_temp = (Dcpse<particles_type::dims, particles_type, particles_type> *) dcpse;
         dcpse_temp->load(file);
     }
     /*! \brief Method for Updating the DCPSE Operator by recomputing DCPSE Kernels.
@@ -818,7 +818,7 @@ public:
      */
     template<typename particles_type>
     void update(particles_type &particles) {
-        auto dcpse_temp = (Dcpse<particles_type::dims, particles_type> *) dcpse;
+        auto dcpse_temp = (Dcpse<particles_type::dims, particles_type, particles_type> *) dcpse;
         dcpse_temp->template createNormalParticles<NORMAL_ID>(particles);
         dcpse_temp->initializeUpdate(particles);
         dcpse_temp->accumulateAndDeleteNormalParticles(particles);
@@ -853,12 +853,12 @@ public:
         p.get(0) = 1;
         p.get(2) = 1;
 
-        dcpse = new Dcpse<particles_type::dims, particles_type>(parts, p, ord, rCut,nSpacing,value_t<NORMAL_ID>(), opt);
+        dcpse = new Dcpse<particles_type::dims, particles_type, particles_type>(parts, parts, p, ord, rCut,nSpacing,value_t<NORMAL_ID>(), opt);
     }
 
     template<typename particles_type>
     void deallocate(particles_type &parts) {
-        delete (Dcpse<particles_type::dims, particles_type> *) dcpse;
+        delete (Dcpse<particles_type::dims, particles_type, particles_type> *) dcpse;
     }
 
     template<typename operand_type>
@@ -871,14 +871,14 @@ public:
 
     template<typename particles_type>
     void checkMomenta(particles_type &particles) {
-        auto dcpse_temp = (Dcpse<particles_type::dims, particles_type> *) dcpse;
+        auto dcpse_temp = (Dcpse<particles_type::dims, particles_type, particles_type> *) dcpse;
         dcpse_temp->checkMomenta(particles);
 
     }
 
     template<unsigned int prp, typename particles_type>
     void DrawKernel(particles_type &particles, int k) {
-        auto dcpse_temp = (Dcpse<particles_type::dims, particles_type> *) dcpse;
+        auto dcpse_temp = (Dcpse<particles_type::dims, particles_type, particles_type> *) dcpse;
         dcpse_temp->template DrawKernel<prp>(particles, k);
 
     }
@@ -890,7 +890,7 @@ public:
      */
     template<typename particles_type>
     void save(particles_type &particles, const std::string &file) {
-        auto dcpse_temp = (Dcpse<particles_type::dims, particles_type> *) dcpse;
+        auto dcpse_temp = (Dcpse<particles_type::dims, particles_type, particles_type> *) dcpse;
         dcpse_temp->save(file);
     }
     /*! \brief Method for Loading the DCPSE Operator.
@@ -900,7 +900,7 @@ public:
      */
     template<typename particles_type>
     void load(particles_type &particles, const std::string &file) {
-        auto dcpse_temp = (Dcpse<particles_type::dims, particles_type> *) dcpse;
+        auto dcpse_temp = (Dcpse<particles_type::dims, particles_type, particles_type> *) dcpse;
         dcpse_temp->load(file);
     }
     /*! \brief Method for Updating the DCPSE Operator by recomputing DCPSE Kernels.
@@ -910,7 +910,7 @@ public:
      */
     template<typename particles_type>
     void update(particles_type &particles) {
-        auto dcpse_temp = (Dcpse<particles_type::dims, particles_type> *) dcpse;
+        auto dcpse_temp = (Dcpse<particles_type::dims, particles_type, particles_type> *) dcpse;
         dcpse_temp->template createNormalParticles<NORMAL_ID>(particles);
         dcpse_temp->initializeUpdate(particles);
         dcpse_temp->accumulateAndDeleteNormalParticles(particles);
@@ -940,12 +940,12 @@ public:
     SurfaceDerivative_G(particles_type &parts, unsigned int ord, typename particles_type::stype rCut,typename particles_type::stype nSpacing,
                     const Point<particles_type::dims, unsigned int> &p,support_options opt = support_options::RADIUS) {
 
-        dcpse = new Dcpse<particles_type::dims, particles_type>(parts, p, ord, rCut,nSpacing,value_t<NORMAL_ID>(), opt);
+        dcpse = new Dcpse<particles_type::dims, particles_type, particles_type>(parts, parts, p, ord, rCut,nSpacing,value_t<NORMAL_ID>(), opt);
     }
 
     template<typename particles_type>
     void deallocate(particles_type &parts) {
-        delete (Dcpse<particles_type::dims, particles_type> *) dcpse;
+        delete (Dcpse<particles_type::dims, particles_type, particles_type> *) dcpse;
     }
 
     template<typename operand_type>
@@ -958,14 +958,14 @@ public:
 
     template<typename particles_type>
     void checkMomenta(particles_type &particles) {
-        auto dcpse_temp = (Dcpse<particles_type::dims, particles_type> *) dcpse;
+        auto dcpse_temp = (Dcpse<particles_type::dims, particles_type, particles_type> *) dcpse;
         dcpse_temp->checkMomenta(particles);
 
     }
 
     template<unsigned int prp, typename particles_type>
     void DrawKernel(particles_type &particles, int k) {
-        auto dcpse_temp = (Dcpse<particles_type::dims, particles_type> *) dcpse;
+        auto dcpse_temp = (Dcpse<particles_type::dims, particles_type, particles_type> *) dcpse;
         dcpse_temp->template DrawKernel<prp>(particles, k);
 
     }
@@ -977,7 +977,7 @@ public:
      */
     template<typename particles_type>
     void save(particles_type &particles, const std::string &file) {
-        auto dcpse_temp = (Dcpse<particles_type::dims, particles_type> *) dcpse;
+        auto dcpse_temp = (Dcpse<particles_type::dims, particles_type, particles_type> *) dcpse;
         dcpse_temp->save(file);
     }
     /*! \brief Method for Loading the DCPSE Operator.
@@ -987,7 +987,7 @@ public:
      */
     template<typename particles_type>
     void load(particles_type &particles, const std::string &file) {
-        auto dcpse_temp = (Dcpse<particles_type::dims, particles_type> *) dcpse;
+        auto dcpse_temp = (Dcpse<particles_type::dims, particles_type, particles_type> *) dcpse;
         dcpse_temp->load(file);
     }
     /*! \brief Method for Updating the DCPSE Operator by recomputing DCPSE Kernels.
@@ -997,7 +997,7 @@ public:
      */
     template<typename particles_type>
     void update(particles_type &particles) {
-        auto dcpse_temp = (Dcpse<particles_type::dims, particles_type> *) dcpse;
+        auto dcpse_temp = (Dcpse<particles_type::dims, particles_type, particles_type> *) dcpse;
         dcpse_temp->template createNormalParticles<NORMAL_ID>(particles);
         dcpse_temp->initializeUpdate(particles);
         dcpse_temp->accumulateAndDeleteNormalParticles(particles);

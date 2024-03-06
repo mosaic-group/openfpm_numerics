@@ -8,7 +8,7 @@
 #include <DCPSE/MonomialBasis.hpp>
 #include <DCPSE/VandermondeRowBuilder.hpp>
 #include <DCPSE/Vandermonde.hpp>
-#include "../../openfpm_numerics/src/DMatrix/EMatrix.hpp"
+#include "DMatrix/EMatrix.hpp"
 
 BOOST_AUTO_TEST_SUITE(Vandermonde_tests)
 

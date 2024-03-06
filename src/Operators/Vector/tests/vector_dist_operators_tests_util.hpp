@@ -1216,7 +1216,7 @@ bool check_values_apply_kernel(vector & vd, Kernel & ker, NN_type & NN)
 		float prp_x = vd.template getProp<VC>(p) * vd.template getProp<VB>(p) + norm(vd.template getProp<VB>(p));
 
 		// For each neighborhood particle
-		auto Np = NN.template getNNIterator(NN.getCell(xp));
+		auto Np = NN.getNNIterator(NN.getCell(xp));
 
 		while (Np.isNext())
 		{
@@ -1278,7 +1278,7 @@ bool check_values_apply_kernel_reduce(vector & vd, Kernel & ker, NN_type & NN)
 		float prp_x = vd.template getProp<VC>(p) * vd.template getProp<VB>(p) + norm(vd.template getProp<VB>(p));
 
 		// For each neighborhood particle
-		auto Np = NN.template getNNIterator(NN.getCell(xp));
+		auto Np = NN.getNNIterator(NN.getCell(xp));
 
 		while (Np.isNext())
 		{
@@ -1353,7 +1353,7 @@ bool check_values_apply_kernel2(vector & vd, Kernel & ker, NN_type & NN)
 		Point<3,float> prp_x = 2.0 * vd.template getProp<VC>(p) + vd.template getProp<VB>(p);
 
 		// For each neighborhood particle
-		auto Np = NN.template getNNIterator(NN.getCell(xp));
+		auto Np = NN.getNNIterator(NN.getCell(xp));
 
 		while (Np.isNext())
 		{
@@ -1420,7 +1420,7 @@ bool check_values_apply_kernel3(vector & vd, Kernel & ker, NN_type & NN)
 		Point<3,float> prp_x = vd.template getProp<VC>(p);
 
 		// For each neighborhood particle
-		auto Np = NN.template getNNIterator(NN.getCell(xp));
+		auto Np = NN.getNNIterator(NN.getCell(xp));
 
 		while (Np.isNext())
 		{
@@ -1485,7 +1485,7 @@ bool check_values_apply_kernel2_reduce(vector & vd, Kernel & ker, NN_type & NN)
 		Point<3,float> prp_x = 2.0f*vd.template getProp<VC>(p) + vd.template getProp<VB>(p);
 
 		// For each neighborhood particle
-		auto Np = NN.template getNNIterator(NN.getCell(xp));
+		auto Np = NN.getNNIterator(NN.getCell(xp));
 
 		while (Np.isNext())
 		{
@@ -1562,7 +1562,7 @@ bool check_values_apply_kernel3_reduce(vector & vd, Kernel & ker, NN_type & NN, 
 		Point<2,float> ker_accu = 0.0;
 
 		// For each neighborhood particle
-		auto Np = NN.template getNNIterator(NN.getCell(xp));
+		auto Np = NN.getNNIterator(NN.getCell(xp));
 
 		while (Np.isNext())
 		{
