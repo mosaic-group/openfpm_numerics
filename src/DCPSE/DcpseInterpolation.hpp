@@ -18,7 +18,7 @@
  * \return Operator Dx which is a function on Vector_dist_Expressions
  *
  */
-template<typename particlesFrom_type, typename particlesTo_type>
+template<typename particlesFrom_type, typename particlesTo_type, unsigned int NORMAL_ID=0>
 class PPInterpolation 
 {
 
@@ -63,16 +63,17 @@ public:
    * \return Operator F which is a function on Vector_dist_Expressions
    *
    */
-  template<unsigned int NORMAL_ID>
   PPInterpolation(particlesFrom_type &particlesFrom,particlesTo_type &particlesTo, unsigned int ord, typename particlesFrom_type::stype rCut,
 		  typename particlesFrom_type::stype nSpacing,
 		  value_t<NORMAL_ID>,
 		  support_options opt = support_options::RADIUS)
     :particlesFrom(particlesFrom),particlesTo(particlesTo)
   {
+	  std::cout<<"entering right constructor"<<std::endl;
     Point<particlesFrom_type::dims, unsigned int> p;
     p.zero();
     dcpse = new Dcpse<particlesFrom_type::dims,particlesFrom_type,particlesTo_type>(particlesFrom,particlesTo, p, ord, rCut, nSpacing,value_t<NORMAL_ID>(), opt);
+    std::cout<<"Exiting right constructor"<<std::endl;
     // dcpse = new Dcpse<particlesFrom_type::dims, particlesFrom_type,particlesTo_type>(particlesFrom,particlesTo, p, ord, rCut, oversampling_factor, opt);
   }
 

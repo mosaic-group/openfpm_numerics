@@ -119,6 +119,7 @@ public:
         accKerOffsets.clear();
         accKerOffsets.resize(initialParticleSize);
         accKerOffsets.fill(-1);
+	std::cout<<"hu"<<std::endl;
         while(it.isNext()){
             supportBuffer.clear();
             nMap.clear();
@@ -155,12 +156,14 @@ public:
             ++supportsIt;
             ++it;
         }
+	std::cout<<"ha"<<std::endl;
         particles.resizeAtEnd(initialParticleSize);
         localEps.resize(initialParticleSize);
         localEpsInvPow.resize(initialParticleSize);
         localSupports.resize(initialParticleSize);
         calcKernels.swap(accCalcKernels);
         kerOffsets.swap(accKerOffsets);
+    	std::cout<<"Exiting accumulate and delete normal particles"<<std::endl;
     }
 
 #ifdef SE_CLASS1
@@ -191,21 +194,22 @@ public:
 
     //Surface DCPSE Constructor
     template<unsigned int NORMAL_ID>
-    Dcpse(vector_type &particles,
+    Dcpse(vector_type &particlesFrom,vector_type2 &particlesTo,
           Point<dim, unsigned int> differentialSignature,
           unsigned int convergenceOrder,
           T rCut,
           T nSpacing,
           value_t< NORMAL_ID >,
           support_options opt = support_options::RADIUS)
-		:particlesFrom(particles),
-         particlesTo(particles),
+		:particlesFrom(particlesFrom),
+         particlesTo(particlesTo),
             differentialSignature(differentialSignature),
             differentialOrder(Monomial<dim>(differentialSignature).order()),
             monomialBasis(differentialSignature.asArray(), convergenceOrder),
             opt(opt),isSurfaceDerivative(true),nSpacing(nSpacing),nCount(floor(rCut/nSpacing))
     {
-        particles.ghost_get_subset();         // This communicates which ghost particles to be excluded from support
+	    std::cout<<"Entering new DCPSE operator constructor"<<std::endl;
+	    particlesFrom.ghost_get_subset();         // This communicates which ghost particles to be excluded from support
 
          if(opt==support_options::ADAPTIVE) {
              this->AdapFac=nSpacing;
@@ -228,14 +232,14 @@ public:
 
          }
          if(opt!=support_options::LOAD) {
-             createNormalParticles<NORMAL_ID>(particles);
+             createNormalParticles<NORMAL_ID>(particlesFrom);
 #ifdef SE_CLASS1
-             particles.write("WithNormalParticlesQC");
+             particlesFrom.write("WithNormalParticlesQC");
 #endif
          }
-        initializeStaticSize(particles, particles, convergenceOrder, rCut, supportSizeFactor);
+        initializeStaticSize(particlesFrom, particlesTo, convergenceOrder, rCut, supportSizeFactor);
          if(opt!=support_options::LOAD) {
-             accumulateAndDeleteNormalParticles(particles);
+             accumulateAndDeleteNormalParticles(particlesFrom);
          }
     }
 
