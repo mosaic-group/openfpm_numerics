@@ -156,9 +156,9 @@ public:
             ++it;
         }
         particles.resizeAtEnd(initialParticleSize);
-        localEps.resize(initialParticleSize);
-        localEpsInvPow.resize(initialParticleSize);
-        localSupports.resize(initialParticleSize);
+        //localEps.resize(initialParticleSize);
+        //localEpsInvPow.resize(initialParticleSize);
+        //localSupports.resize(initialParticleSize);
         calcKernels.swap(accCalcKernels);
         kerOffsets.swap(accKerOffsets);
     }
