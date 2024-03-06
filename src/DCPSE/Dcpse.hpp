@@ -119,7 +119,6 @@ public:
         accKerOffsets.clear();
         accKerOffsets.resize(initialParticleSize);
         accKerOffsets.fill(-1);
-	std::cout<<"hu"<<std::endl;
         while(it.isNext()){
             supportBuffer.clear();
             nMap.clear();
@@ -156,14 +155,12 @@ public:
             ++supportsIt;
             ++it;
         }
-	std::cout<<"ha"<<std::endl;
         particles.resizeAtEnd(initialParticleSize);
         localEps.resize(initialParticleSize);
         localEpsInvPow.resize(initialParticleSize);
         localSupports.resize(initialParticleSize);
         calcKernels.swap(accCalcKernels);
         kerOffsets.swap(accKerOffsets);
-    	std::cout<<"Exiting accumulate and delete normal particles"<<std::endl;
     }
 
 #ifdef SE_CLASS1
@@ -208,7 +205,6 @@ public:
             monomialBasis(differentialSignature.asArray(), convergenceOrder),
             opt(opt),isSurfaceDerivative(true),nSpacing(nSpacing),nCount(floor(rCut/nSpacing))
     {
-	    std::cout<<"Entering new DCPSE operator constructor"<<std::endl;
 	    particlesFrom.ghost_get_subset();         // This communicates which ghost particles to be excluded from support
 
          if(opt==support_options::ADAPTIVE) {
@@ -239,7 +235,7 @@ public:
          }
         initializeStaticSize(particlesFrom, particlesTo, convergenceOrder, rCut, supportSizeFactor);
          if(opt!=support_options::LOAD) {
-             accumulateAndDeleteNormalParticles(particlesFrom);
+             accumulateAndDeleteNormalParticles(particlesTo);
          }
     }
 

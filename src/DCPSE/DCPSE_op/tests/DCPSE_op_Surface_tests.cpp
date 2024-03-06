@@ -5,7 +5,6 @@
 #include "config.h"
 #ifdef HAVE_EIGEN
 #ifdef HAVE_PETSC
-#define SE_CLASS1
 
 #define BOOST_MPL_CFG_NO_PREPROCESSED_HEADERS
 #define BOOST_MPL_LIMIT_VECTOR_SIZE 40
@@ -55,7 +54,17 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
                 Sparticles.getLastSubset(0);
             }
         }
+	auto it = Sparticles.getDomainIterator();
+	while(it.isNext())
+	{
+		auto a = it.get();
+		std::cout<<"Particle "<<a.getKey()<<" is at: "<<Sparticles.getPos(a)[0]<<", "<<Sparticles.getPos(a)[1]<<std::endl;
+		++it;
+	}
+	Sparticles.write("particles_before_mapping");
+	std::cout<<"before map"<<std::endl;
         Sparticles.map();
+	std::cout<<"after map"<<std::endl;
 
         BOOST_TEST_MESSAGE("Sync domain across processors...");
 
@@ -1126,11 +1135,10 @@ BOOST_AUTO_TEST_CASE(dcpse_surface_p2p_interpolation_sphere_scalar) {
 
   constexpr int K = 1;
   // particles
-  vector_dist<3,double, aggregate<double,double[3]>> SparticlesFrom(0,domain,bc,ghost);
+  vector_dist<3,double, aggregate<double,double[3],double>> SparticlesFrom(0,domain,bc,ghost);
   vector_dist<3,double, aggregate<double,double[3],double>> SparticlesTo(0,domain,bc,ghost);
   // properties: scalar_qty, normal, error
 
-  std::cout<<"before creating particlesTo"<<std::endl;
   // 1. particles on the Spherical surface
   double Golden_angle=M_PI * (3.0 - sqrt(5.0));
   if (v_cl.rank() == 0) {
@@ -1147,21 +1155,13 @@ BOOST_AUTO_TEST_CASE(dcpse_surface_p2p_interpolation_sphere_scalar) {
 	SparticlesFrom.getLastPos()[0] = x;
 	SparticlesFrom.getLastPos()[1] = y;
 	SparticlesFrom.getLastPos()[2] = z;
-	std::cout<<"added particle at "<<x<<", "<<y<<", "<<z<<std::endl;
 	double rm=sqrt(x*x+y*y+z*z);
 	SparticlesFrom.getLastProp<1>()[0] = x/rm;
 	SparticlesFrom.getLastProp<1>()[1] = y/rm;
 	SparticlesFrom.getLastProp<1>()[2] = z/rm;
 	SparticlesFrom.getLastProp<0>() = std::sqrt(3.0/(4.0*M_PI)) * z;
       }
-  }
-  SparticlesFrom.map();
-
-  std::cout<<"first map worked"<<std::endl;
-  if(v_cl.rank() == 0)
-  {
-  std::cout<<"after creating particlesFrom"<<std::endl;
-    for(int i=1;i<((int)n_sp/2.0);i++)
+    	for(int i=0;i<((int)n_sp/2.0 - 1);i++)
       {
 	double y = 1.0 - (i /double(((int)n_sp/2.0) - 1)) * 2.0;
 	double radius = sqrt(1 - y * y);
@@ -1178,31 +1178,17 @@ BOOST_AUTO_TEST_CASE(dcpse_surface_p2p_interpolation_sphere_scalar) {
 	SparticlesTo.getLastProp<1>()[2] = z/rm;
 	SparticlesTo.getLastProp<0>() = 0.0;//std::sqrt(3.0/(4.0*M_PI)) * z;
       }
-    //std::cout << "n: " << n << " - grid spacing: " << grid_spacing << " - rCut: " << rCut << "Surf Normal spacing" << grid_spacing<<std::endl;
   }
-  std::cout<<"after creating particlesTo"<<std::endl;
-  SparticlesTo.write("particlesTo");
-  auto it3 = SparticlesFrom.getDomainIterator();
-
-  while(it3.isNext())
-  {
-	auto a = it3.get();
-	std::cout<<SparticlesFrom.getPos(a)[0]<<std::endl;
-	++it3;
-  }
+  SparticlesFrom.map();
 
   SparticlesFrom.map();
-  SparticlesFrom.write("particlesFrom");
   SparticlesFrom.ghost_get<0,1>();
   SparticlesTo.map();
   SparticlesTo.ghost_get<0,1>();
 
-  std::cout<<"before PPInterpolation init"<<std::endl;
   PPInterpolation<decltype(SparticlesFrom),decltype(SparticlesTo), 1> ppSurface(SparticlesFrom,SparticlesTo,2,rCut,grid_spacing_surf, value_t<1>());
-  std::cout<<"before p2p"<<std::endl;
   ppSurface.p2p<0,0>();
-  std::cout<<"after p2p"<<std::endl;
-  
+
   auto it = SparticlesTo.getDomainIterator();
   double worst = 0.0;
   while (it.isNext()) {
@@ -1223,7 +1209,6 @@ BOOST_AUTO_TEST_CASE(dcpse_surface_p2p_interpolation_sphere_scalar) {
   SparticlesFrom.deleteGhost();
   SparticlesTo.write("SparticlesTo");
   SparticlesFrom.write("SparticlesFrom");
-  //std::cout<<worst;
   BOOST_REQUIRE(worst < 0.03);
 }
 
