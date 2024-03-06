@@ -1151,9 +1151,9 @@ BOOST_AUTO_TEST_CASE(dcpse_surface_p2p_interpolation_sphere_scalar) {
 	SparticlesFrom.getLastProp<1>()[2] = z/rm;
 	SparticlesFrom.getLastProp<0>() = std::sqrt(3.0/(4.0*M_PI)) * z;
       }
-    	for(int i=0;i<((int)n_sp*2.0 - 1);i++)
+    	for(int i=0;i<((int)n_sp/2.0 - 1);i++)
       {
-	double y = 1.0 - (i /double(((int)n_sp*2.0) - 1)) * 2.0;
+	double y = 1.0 - (i /double(((int)n_sp/2.0) - 1)) * 2.0;
 	double radius = sqrt(1 - y * y);
 	double Golden_theta = Golden_angle * i;
 	double x = cos(Golden_theta) * radius;

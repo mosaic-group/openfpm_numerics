@@ -85,57 +85,60 @@ private:
     support_options opt;
 public:
     template<unsigned int NORMAL_ID>
-    void createNormalParticles(vector_type &particles)
+    void createNormalParticles(vector_type &particlesFrom)
     {
-        particles.template ghost_get<NORMAL_ID>(SKIP_LABELLING);
-        initialParticleSize=particles.size_local_with_ghost();
-        auto it = particles.getDomainAndGhostIterator();
+        particlesFrom.template ghost_get<NORMAL_ID>(SKIP_LABELLING);
+        initialParticleSize=particlesFrom.size_local_with_ghost();
+        auto it = particlesFrom.getDomainAndGhostIterator();
         while(it.isNext()){
             auto key=it.get();
-            Point<dim,T> xp=particles.getPos(key), Normals=particles.template getProp<NORMAL_ID>(key);
+            Point<dim,T> xp=particlesFrom.getPos(key), Normals=particlesFrom.template getProp<NORMAL_ID>(key);
             if(opt==support_options::ADAPTIVE)
             {
                 nSpacing=nSpacings.get(key.getKey());
             }
             for(int i=1;i<=nCount;i++){
-                particles.addAtEnd();
+                particlesFrom.addAtEnd();
                 for(size_t j=0;j<dim;j++)
-                {particles.getLastPosEnd()[j]=xp[j]+i*nSpacing*Normals[j];}
-                particles.addAtEnd();
+                {particlesFrom.getLastPosEnd()[j]=xp[j]+i*nSpacing*Normals[j];}
+                particlesFrom.addAtEnd();
                 for(size_t j=0;j<dim;j++)
-                {particles.getLastPosEnd()[j]=xp[j]-i*nSpacing*Normals[j];}
+                {particlesFrom.getLastPosEnd()[j]=xp[j]-i*nSpacing*Normals[j];}
             }
             ++it;
         }
     }
 
-    void accumulateAndDeleteNormalParticles(vector_type &particles)
+    void accumulateAndDeleteNormalParticles(vector_type &particlesFrom, vector_type2 &particlesTo)
     {
         tsl::hopscotch_map<size_t, size_t> nMap;
-        auto it = particles.getDomainIterator();
+        auto it = particlesTo.getDomainIterator();
+	// Iterate through the supports of all particles in particleTo
         auto supportsIt = localSupports.begin();
         openfpm::vector_std<size_t> supportBuffer;
         accCalcKernels.clear();
         accKerOffsets.clear();
-        accKerOffsets.resize(initialParticleSize);
-        accKerOffsets.fill(-1);
+        accKerOffsets.resize(particlesTo.size_local_orig());
+	accKerOffsets.fill(-1);
         while(it.isNext()){
-            supportBuffer.clear();
+	    supportBuffer.clear();
             nMap.clear();
             auto key=it.get();
             Support support = *supportsIt;
             size_t xpK = support.getReferencePointKey();
             size_t kerOff = kerOffsets.get(xpK);
             auto &keys = support.getKeys();
-            accKerOffsets.get(xpK)=accCalcKernels.size();
+            // accumulate kernel offsets of each particle in particlesTo
+	    accKerOffsets.get(xpK)=accCalcKernels.size();
             for (int i = 0 ; i < keys.size() ; i++)
             {
                 size_t xqK = keys.get(i);
+		// find out whether particle is a real particle or a virtual normal particle
 		int difference = static_cast<int>(xqK) - static_cast<int>(initialParticleSize);
 		int real_particle;
-		if (std::signbit(difference)) {
+		if (std::signbit(difference)) { // its a real particle
 		    real_particle = xqK;
-		} else {
+		} else {			// its not
 		    real_particle = difference / (2 * nCount);
 		}
                 auto found=nMap.find(real_particle);
@@ -150,15 +153,17 @@ public:
                     nMap[real_particle]=accCalcKernels.size()-1;
                 }
             }
+	    // store keys of the surface support (only surface particles)
             keys.swap(supportBuffer);
             localSupports.get(xpK) = support;
             ++supportsIt;
             ++it;
         }
-        particles.resizeAtEnd(initialParticleSize);
-        //localEps.resize(initialParticleSize);
-        //localEpsInvPow.resize(initialParticleSize);
-        //localSupports.resize(initialParticleSize);
+        particlesFrom.resizeAtEnd(initialParticleSize);
+        localEps.resize(particlesTo.size_local_orig());
+        localEpsInvPow.resize(particlesTo.size_local_orig());
+        localSupports.resize(particlesTo.size_local_orig());
+	// store accumulated kernels (including normal particles) into surface particles
         calcKernels.swap(accCalcKernels);
         kerOffsets.swap(accKerOffsets);
     }
@@ -235,7 +240,7 @@ public:
          }
         initializeStaticSize(particlesFrom, particlesTo, convergenceOrder, rCut, supportSizeFactor);
          if(opt!=support_options::LOAD) {
-             accumulateAndDeleteNormalParticles(particlesTo);
+             accumulateAndDeleteNormalParticles(particlesFrom, particlesTo);
          }
     }
 
