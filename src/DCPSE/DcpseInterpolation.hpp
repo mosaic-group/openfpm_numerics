@@ -69,11 +69,9 @@ public:
 		  support_options opt = support_options::RADIUS)
     :particlesFrom(particlesFrom),particlesTo(particlesTo)
   {
-	  std::cout<<"entering right constructor"<<std::endl;
     Point<particlesFrom_type::dims, unsigned int> p;
     p.zero();
     dcpse = new Dcpse<particlesFrom_type::dims,particlesFrom_type,particlesTo_type>(particlesFrom,particlesTo, p, ord, rCut, nSpacing,value_t<NORMAL_ID>(), opt);
-    std::cout<<"Exiting right constructor"<<std::endl;
     // dcpse = new Dcpse<particlesFrom_type::dims, particlesFrom_type,particlesTo_type>(particlesFrom,particlesTo, p, ord, rCut, oversampling_factor, opt);
   }
 
