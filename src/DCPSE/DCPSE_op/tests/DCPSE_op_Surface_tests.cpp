@@ -1178,7 +1178,7 @@ BOOST_AUTO_TEST_CASE(dcpse_surface_p2p_interpolation_sphere_scalar) {
   SparticlesTo.map();
   SparticlesTo.ghost_get<0,1>();
 
-  PPInterpolation<decltype(SparticlesFrom),decltype(SparticlesTo), 1> ppSurface(SparticlesFrom,SparticlesTo,2,rCut,grid_spacing_surf, value_t<1>());
+  PPInterpolation<decltype(SparticlesFrom),decltype(SparticlesTo),1> ppSurface(SparticlesFrom,SparticlesTo,2,rCut,grid_spacing_surf);
   ppSurface.p2p<0,0>();
 
   auto it = SparticlesTo.getDomainIterator();
