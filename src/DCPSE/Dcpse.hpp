@@ -84,6 +84,15 @@ private:
 
     support_options opt;
 public:
+
+  /*!\fn createNormalParticless(vector_type &particlesFrom)
+   * \brief Normal extension
+   *
+   * \tparam NORMAL_ID Property ID for the normal field of the particle set.
+   * \param particlesFrom Particle set on which the normal extension is done.
+   *
+   * Creates the particles along the normal of each surface particle.
+   */
     template<unsigned int NORMAL_ID>
     void createNormalParticles(vector_type &particlesFrom)
     {
@@ -109,12 +118,25 @@ public:
         }
     }
 
+  /*!\fn accumulateAndDeleteNormalParticless(vector_type &particlesFrom, vector_type2 &particlesTo)
+   * \brief Creates the Surface DCPSE operator by accumulating the kernel of support particles
+   *
+   * \param particlesFrom Particle set from which the support is constructed
+   * \param particlesTo Particle set on which the support is constructed
+   *
+   * This function creates the surface DC-PSE kernels as explained in the original paper.
+   * The support of each particle in particlesTo (which would only have surface particles -- surf_To-- )
+   * is built from the surface particles in particlesFrom -- surf_From -- and the normally extended particles
+   * in particlesFrom -- normal_From -- (these were created in the createNormalParticles() function.
+   * For all particles in particlesTo we iterate through its support and accumulate/sum all the kernels of the normal_From particles
+   * on the corresponding surf_From particle.
+   * In the end, the normal_From particles are deleted: the vector is resized to its original size.
+   */
     void accumulateAndDeleteNormalParticles(vector_type &particlesFrom, vector_type2 &particlesTo)
     {
         tsl::hopscotch_map<size_t, size_t> nMap;
         auto it = particlesTo.getDomainIterator();
-	// Iterate through the supports of all particles in particleTo
-        auto supportsIt = localSupports.begin();
+        auto particlesTo_supportsIt = localSupports.begin(); // Iterator through the supports of all particles in particleTo
         openfpm::vector_std<size_t> supportBuffer;
         accCalcKernels.clear();
         accKerOffsets.clear();
@@ -124,21 +146,21 @@ public:
 	    supportBuffer.clear();
             nMap.clear();
             auto key=it.get();
-            Support support = *supportsIt;
-            size_t xpK = support.getReferencePointKey();
+            Support particlesTo_support = *particlesTo_supportsIt; // Support of the particleTo with 'key'
+            size_t xpK = particlesTo_support.getReferencePointKey();
             size_t kerOff = kerOffsets.get(xpK);
-            auto &keys = support.getKeys();
-            // accumulate kernel offsets of each particle in particlesTo
-	    accKerOffsets.get(xpK)=accCalcKernels.size();
+            auto &keys = particlesTo_support.getKeys();            
+	    accKerOffsets.get(xpK)=accCalcKernels.size(); // accumulate kernel offsets of each particle in particlesTo
+
+	    // Loop through all particles in the support of the current particle: normal_From and surf_From
             for (int i = 0 ; i < keys.size() ; i++)
             {
-                size_t xqK = keys.get(i);
-		// find out whether particle is a real particle or a virtual normal particle
-		int difference = static_cast<int>(xqK) - static_cast<int>(initialParticleSize);
+                size_t xqK = keys.get(i);		
+		int difference = static_cast<int>(xqK) - static_cast<int>(initialParticleSize); // find out whether particle is a real particle (surf_From) or a virtual normal particle (normal_From)
 		int real_particle;
-		if (std::signbit(difference)) { // its a real particle
+		if (std::signbit(difference)) { // it's a real particle
 		    real_particle = xqK;
-		} else {			// its not
+		} else {			// it's not
 		    real_particle = difference / (2 * nCount);
 		}
                 auto found=nMap.find(real_particle);
@@ -152,19 +174,17 @@ public:
                     accCalcKernels.get(accCalcKernels.size()-1)=calcKernels.get(kerOff+i);
                     nMap[real_particle]=accCalcKernels.size()-1;
                 }
-            }
-	    // store keys of the surface support (only surface particles)
-            keys.swap(supportBuffer);
-            localSupports.get(xpK) = support;
-            ++supportsIt;
+            }	    
+            keys.swap(supportBuffer); // store keys of the surface support (only surface particles)
+            localSupports.get(xpK) = particlesTo_support;
+            ++particlesTo_supportsIt;
             ++it;
         }
-        particlesFrom.resizeAtEnd(initialParticleSize);
+        particlesFrom.resizeAtEnd(initialParticleSize); // Delete all normal_From particles in the particlesFrom
         localEps.resize(particlesTo.size_local_orig());
         localEpsInvPow.resize(particlesTo.size_local_orig());
-        localSupports.resize(particlesTo.size_local_orig());
-	// store accumulated kernels (including normal particles) into surface particles
-        calcKernels.swap(accCalcKernels);
+        localSupports.resize(particlesTo.size_local_orig());	
+        calcKernels.swap(accCalcKernels); // store accumulated kernels (including normal_From) into surf_From particles
         kerOffsets.swap(accKerOffsets);
     }
 
@@ -194,7 +214,25 @@ public:
         initializeStaticSize(particles, particles, convergenceOrder, rCut, supportSizeFactor);
     }
 
-    //Surface DCPSE Constructor
+  /*!\fn Dcpse
+   * \brief Surface DC-PSE constructor
+   *
+   * \tparam NORMAL_ID Property ID for the normal field of the particle set.
+   * \param particlesFrom Particle set from which the support is constructed. The two sets are different only when used for interpolation.
+   * \param particlesTo Particle set on which the operator is constructed. The two sets are different only when used for interpolation.
+   * \param differentialSignature Vector that contains the information on the order of the derivative. For example, df/(dxdy) on a 3D domain: [1,1,0].
+   * \param convergenceOrder Convergence order of the numerical operator.
+   * \param rCut Size of the support/argument for cell list construction. It has to include sufficient enough particles to create the support.
+   * \param nSpacing Spacing of the particlesTo (on the surface).
+   * \param NORMAL_ID Property ID for the normal field of the particle set.
+   * \param opt Type of support.
+   *
+   * \note The number of particles along the normal is determined as nCount = floor(rCut/nSpacing). The ghost layer has to be at at least as big as rCut.
+   *
+   * \attention If opt = support_options::ADAPTIVE, the meaning of the rCut and nSpacing parameters changes. rCut is a slightly bigger number than the distance between two particlesTo (on the surface). nSpacing is a factor by which rCut is multiplied in order to determine the size of the support.  In this case, the algorithm takes the rCut as a suggestion in order to find the minimum distance in each particle's neighbourhood. Then, to construct the support for the operator, it multiplies that minimum distance by the nSpacing factor. In this case, the number of particles along the normal is set to be (hardcoded) 2 for a 3D problem and 3 for a 2D problem. The ghost layer has to be at least as big as rCut*nSpacing.
+   *
+   * \note When NOT used for particle to particle interpolation, particlesTo is set to be the same as particlesFrom.
+   */
     template<unsigned int NORMAL_ID>
     Dcpse(vector_type &particlesFrom,vector_type2 &particlesTo,
           Point<dim, unsigned int> differentialSignature,

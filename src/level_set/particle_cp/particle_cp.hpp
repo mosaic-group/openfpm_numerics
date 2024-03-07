@@ -376,7 +376,7 @@ private:
 			Point<dim, double> xaa = vd_generic.getPos(a);
 
 			// Now we will iterate over the sample points, which means iterating over vd_s.
-			auto Np = NN_s.template getNNIterator<NO_CHECK>(NN_s.getCell(vd_generic.getPos(a)));
+			auto Np = NN_s.template getNNIterator(NN_s.getCell(vd_generic.getPos(a)));
 
 			vect_dist_key_dx b_min = get_closest_neighbor<decltype(NN_s)>(xaa, NN_s);
 
@@ -634,7 +634,7 @@ private:
 		{
 			vect_dist_key_dx a = part.get();
 			Point<dim, double> xa = vd_generic.getPos(a);
-			auto Np = NN.template getNNIterator<NO_CHECK>(NN.getCell(xa));
+			auto Np = NN.template getNNIterator(NN.getCell(xa));
 			openfpm::vector<size_t> keys;
 
 			while(Np.isNext())
