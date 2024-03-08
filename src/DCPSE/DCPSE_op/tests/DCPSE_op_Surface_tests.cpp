@@ -1162,8 +1162,8 @@ BOOST_AUTO_TEST_CASE(dcpse_surface_p2p_interpolation_sphere_scalar) {
 	SparticlesFrom1.getLastProp<1>()[0] = x/rm;
 	SparticlesFrom1.getLastProp<1>()[1] = y/rm;
 	SparticlesFrom1.getLastProp<1>()[2] = z/rm;
-	// fill scalar field (spherical harmonic)
-	SparticlesFrom1.getLastProp<0>() = std::sqrt(3.0/(4.0*M_PI)) * z;
+	// fill scalar field (spherical harmonic 2,0)
+	SparticlesFrom1.getLastProp<0>() = std::sqrt(5.0/(16.0*M_PI)) * (3*z*z - 1.0);
       }
     // fill vector with resolution 2
     for(int i=1;i<n_from2;i++)
@@ -1183,7 +1183,7 @@ BOOST_AUTO_TEST_CASE(dcpse_surface_p2p_interpolation_sphere_scalar) {
 	SparticlesFrom2.getLastProp<1>()[1] = y/rm;
 	SparticlesFrom2.getLastProp<1>()[2] = z/rm;
 	// fill scalar field (spherical harmonic)
-	SparticlesFrom2.getLastProp<0>() = std::sqrt(3.0/(4.0*M_PI)) * z;
+	SparticlesFrom2.getLastProp<0>() = std::sqrt(5.0/(16.0*M_PI)) * (3*z*z - 1.0);
       }
       // fill vector with positions at which surface interpolation is supposed to be performed
     	for(int i=0;i<((int)(n_to-1));i++)
@@ -1215,9 +1215,9 @@ BOOST_AUTO_TEST_CASE(dcpse_surface_p2p_interpolation_sphere_scalar) {
   SparticlesTo.map();
   SparticlesTo.ghost_get<0>();
 
-  PPInterpolation<decltype(SparticlesFrom1),decltype(SparticlesTo), 1> ppSurface(SparticlesFrom1,SparticlesTo,1,rCut1,grid_spacing_surf1);
+  PPInterpolation<decltype(SparticlesFrom1),decltype(SparticlesTo), 1> ppSurface(SparticlesFrom1,SparticlesTo,2,rCut1,grid_spacing_surf1);
   ppSurface.p2p<0,0>();
-  PPInterpolation<decltype(SparticlesFrom2),decltype(SparticlesTo), 1> ppSurface2(SparticlesFrom2,SparticlesTo,1,rCut2,grid_spacing_surf2);
+  PPInterpolation<decltype(SparticlesFrom2),decltype(SparticlesTo), 1> ppSurface2(SparticlesFrom2,SparticlesTo,2,rCut2,grid_spacing_surf2);
   ppSurface2.p2p<0,1>();
 
   auto it = SparticlesTo.getDomainIterator();
@@ -1230,14 +1230,16 @@ BOOST_AUTO_TEST_CASE(dcpse_surface_p2p_interpolation_sphere_scalar) {
     double y = SparticlesTo.getPos(p)[1];
     double z = SparticlesTo.getPos(p)[2];
 
-    SparticlesTo.getProp<2>(p) = fabs(SparticlesTo.getProp<0>(p) - std::sqrt(3.0/(4.0*M_PI))*z); // error
-    SparticlesTo.getProp<3>(p) = fabs(SparticlesTo.getProp<1>(p) - std::sqrt(3.0/(4.0*M_PI))*z); // error
+    double sphericalHarmonic = std::sqrt(5.0/(16.0*M_PI)) * (3*z*z - 1.0);
 
-    if (fabs(SparticlesTo.getProp<0>(p) - std::sqrt(3.0/(4.0*M_PI))*z) > worst) {
-      worst = fabs(SparticlesTo.getProp<0>(p) - std::sqrt(3.0/(4.0*M_PI))*z);
+    SparticlesTo.getProp<2>(p) = fabs(SparticlesTo.getProp<0>(p) - sphericalHarmonic); // error
+    SparticlesTo.getProp<3>(p) = fabs(SparticlesTo.getProp<1>(p) - sphericalHarmonic); // error
+
+    if (fabs(SparticlesTo.getProp<0>(p) - sphericalHarmonic) > worst) {
+      worst = fabs(SparticlesTo.getProp<0>(p) - sphericalHarmonic);
     }
-    if (fabs(SparticlesTo.getProp<1>(p) - std::sqrt(3.0/(4.0*M_PI))*z) > worst2) {
-      worst2 = fabs(SparticlesTo.getProp<1>(p) - std::sqrt(3.0/(4.0*M_PI))*z);
+    if (fabs(SparticlesTo.getProp<1>(p) - sphericalHarmonic) > worst2) {
+      worst2 = fabs(SparticlesTo.getProp<1>(p) - sphericalHarmonic);
     }
     ++it;
   }
