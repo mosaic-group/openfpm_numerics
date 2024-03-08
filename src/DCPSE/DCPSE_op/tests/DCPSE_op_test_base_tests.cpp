@@ -1136,8 +1136,6 @@ BOOST_AUTO_TEST_CASE(slicer_3index_tensor) {
 
     }
 
-
-
 BOOST_AUTO_TEST_SUITE_END()
 
 
