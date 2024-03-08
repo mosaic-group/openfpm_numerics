@@ -21,22 +21,22 @@ template<unsigned int N> struct value_t {};
 
 template<bool cond>
 struct is_scalar {
-	template<typename op_type>
-	static auto
-	analyze(const vect_dist_key_dx &key, op_type &o1) -> typename std::remove_reference<decltype(o1.value(
-			key))>::type {
-		return o1.value(key);
-	};
+    template<typename op_type>
+    static auto
+    analyze(const vect_dist_key_dx &key, op_type &o1) -> typename std::remove_reference<decltype(o1.value(
+            key))>::type {
+        return o1.value(key);
+    };
 };
 
 template<>
 struct is_scalar<false> {
-	template<typename op_type>
-	static auto
-	analyze(const vect_dist_key_dx &key, op_type &o1) -> typename std::remove_reference<decltype(o1.value(
-			key))>::type {
-		return o1.value(key);
-	};
+    template<typename op_type>
+    static auto
+    analyze(const vect_dist_key_dx &key, op_type &o1) -> typename std::remove_reference<decltype(o1.value(
+            key))>::type {
+        return o1.value(key);
+    };
 };
 
 template<unsigned int dim, typename vector_type,typename vector_type2=vector_type>
@@ -69,9 +69,8 @@ private:
     openfpm::vector<T> localEps; // Each MPI rank has just access to the local ones
     openfpm::vector<T> localEpsInvPow; // Each MPI rank has just access to the local ones
 
-    openfpm::vector<size_t> kerOffsets,accKerOffsets;
+    openfpm::vector<size_t> kerOffsets;
     openfpm::vector<T> calcKernels;
-    openfpm::vector<T> accCalcKernels;
     openfpm::vector<T> nSpacings;
     vector_type & particlesFrom;
     vector_type2 & particlesTo;
@@ -80,6 +79,7 @@ private:
 
     bool isSurfaceDerivative=false;
     size_t initialParticleSize;
+    size_t initialParticleSizeOrig;
 
 
     support_options opt;
@@ -87,16 +87,46 @@ public:
     template<unsigned int NORMAL_ID>
     void createNormalParticles(vector_type &particles)
     {
+        // Creates normally extended points along 
+        // the surface represented by the particles vector.
+        // If particles represent the whole domain, 
+        // local extensions will be created for all the particles in the domain
+
         particles.template ghost_get<NORMAL_ID>(SKIP_LABELLING);
-        initialParticleSize=particles.size_local_with_ghost();
-        auto it = particles.getDomainAndGhostIterator();
+        initialParticleSize=particles.size_local_orig();
+        initialParticleSizeOrig=particles.size_local_orig();
+        // auto it = particles.getDomainAndGhostIterator();
+
+        // auto it2 = particles.getGhostIterator();
+        // while(it2.isNext()){
+        //     auto key=it2.get();
+        //     Point<dim,T> xp=particles.getPos(key);
+        //     Point<dim,T> Normals=particles.template getProp<NORMAL_ID>(key);
+        //     if(opt==support_options::ADAPTIVE)
+        //     {
+        //         nSpacing=nSpacings.get(key.getKey());
+        //     }
+        //     for(int i=1;i<=nCount;i++){
+        //         particles.addAtEnd();
+        //         for(size_t j=0;j<dim;j++)
+        //         {particles.getLastPosEnd()[j]=xp[j]+i*nSpacing*Normals[j];}
+        //         particles.addAtEnd();
+        //         for(size_t j=0;j<dim;j++)
+        //         {particles.getLastPosEnd()[j]=xp[j]-i*nSpacing*Normals[j];}
+        //     }
+        //     ++it2;
+        // }
+
+        auto it = particles.getDomainIterator();
         while(it.isNext()){
             auto key=it.get();
-            Point<dim,T> xp=particles.getPos(key), Normals=particles.template getProp<NORMAL_ID>(key);
+            Point<dim,T> xp=particles.getPos(key);
+            Point<dim,T> Normals=particles.template getProp<NORMAL_ID>(key);
             if(opt==support_options::ADAPTIVE)
             {
                 nSpacing=nSpacings.get(key.getKey());
             }
+            // std::cout << "extension before : " << particles.size_local_orig() << std::endl;
             for(int i=1;i<=nCount;i++){
                 particles.addAtEnd();
                 for(size_t j=0;j<dim;j++)
@@ -105,62 +135,86 @@ public:
                 for(size_t j=0;j<dim;j++)
                 {particles.getLastPosEnd()[j]=xp[j]-i*nSpacing*Normals[j];}
             }
+            // std::cout << "extension after : " << particles.size_local_orig() << std::endl;
             ++it;
         }
+        std::cout << "after createNormalParticles " << localSupports.size() << " " << kerOffsets.size() << " " << calcKernels.size() << " " << initialParticleSize << " " << particles.size_local() << " " << particles.size_local_orig() << " " << particles.size_local_with_ghost() << std::endl;
+
     }
 
     void accumulateAndDeleteNormalParticles(vector_type &particles)
     {
-        tsl::hopscotch_map<size_t, size_t> nMap;
+        tsl::hopscotch_map<size_t, size_t> xpkToCalcKernelIndex;
+        openfpm::vector<size_t> _supportKeys;
+        openfpm::vector<size_t> _kerOffsets;
+        openfpm::vector<T> _calcKernels;
+
+        std::cout << "before accumulateAndDeleteNormalParticles " << localSupports.size() << " " << kerOffsets.size() << " " << calcKernels.size() << " " << initialParticleSize << " " << particles.size_local() << " " << particles.size_local_orig() << " " << particles.size_local_with_ghost() << std::endl;
+
         auto it = particles.getDomainIterator();
         auto supportsIt = localSupports.begin();
-        openfpm::vector_std<size_t> supportBuffer;
-        accCalcKernels.clear();
-        accKerOffsets.clear();
-        accKerOffsets.resize(initialParticleSize);
-        accKerOffsets.fill(-1);
+
+        _kerOffsets.resize(initialParticleSize);
+        _kerOffsets.fill(-1);
+
         while(it.isNext()){
-            supportBuffer.clear();
-            nMap.clear();
-            auto key=it.get();
-            Support support = *supportsIt;
-            size_t xpK = support.getReferencePointKey();
+            _supportKeys.clear(); xpkToCalcKernelIndex.clear();
+
+            size_t xpK = supportsIt->getReferencePointKey();
+            
+            if (xpK == -1) {
+                ++it; continue;
+            }
+
+            std::cout << xpK << std::endl;
+
+            _kerOffsets.get(xpK) = _calcKernels.size();
+
             size_t kerOff = kerOffsets.get(xpK);
-            auto &keys = support.getKeys();
-            accKerOffsets.get(xpK)=accCalcKernels.size();
-            for (int i = 0 ; i < keys.size() ; i++)
+            auto &supportKeys = supportsIt->getKeys();
+
+            for (int i = 0 ; i < supportKeys.size() ; i++)
             {
-                size_t xqK = keys.get(i);
-		int difference = static_cast<int>(xqK) - static_cast<int>(initialParticleSize);
-		int real_particle;
-		if (std::signbit(difference)) {
-		    real_particle = xqK;
-		} else {
-		    real_particle = difference / (2 * nCount);
-		}
-                auto found=nMap.find(real_particle);
-                if(found!=nMap.end()){
-                    accCalcKernels.get(found->second)+=calcKernels.get(kerOff+i);
+                int xqK = supportKeys.get(i);
+                int difference = static_cast<int>(xqK) - static_cast<int>(initialParticleSizeOrig);
+
+                if (std::signbit(difference))
+                    xqK = xqK;
+                else
+                    xqK = difference / (2 * nCount);
+
+                auto found = xpkToCalcKernelIndex.find(xqK);
+
+                if (found != xpkToCalcKernelIndex.end()) {
+                    // std::cout << " calcKernels.get(kerOff+i) " << kerOff << " " << i << " " << calcKernels.get(kerOff+i) << std::endl;
+                    _calcKernels.get(found->second) += calcKernels.get(kerOff+i);
                 }
-                else{
-                    supportBuffer.add();
-                    supportBuffer.get(supportBuffer.size()-1)=real_particle;
-                    accCalcKernels.add();
-                    accCalcKernels.get(accCalcKernels.size()-1)=calcKernels.get(kerOff+i);
-                    nMap[real_particle]=accCalcKernels.size()-1;
+                else {
+
+                    _supportKeys.add(); _supportKeys.get(_supportKeys.size()-1) = xqK;
+                    _calcKernels.add(); _calcKernels.get(_calcKernels.size()-1) = calcKernels.get(kerOff+i);
+
+                    xpkToCalcKernelIndex[xqK]=_calcKernels.size()-1;
                 }
             }
-            keys.swap(supportBuffer);
-            localSupports.get(xpK) = support;
-            ++supportsIt;
-            ++it;
+            supportKeys.swap(_supportKeys);
+            localSupports.get(xpK) = *supportsIt;
+            ++supportsIt; ++it;
         }
+
+        // shrink particles vector and auxiliary vectors back to the original size
+        // which was before normal extension
         particles.resizeAtEnd(initialParticleSize);
-        localEps.resize(initialParticleSize);
-        localEpsInvPow.resize(initialParticleSize);
-        localSupports.resize(initialParticleSize);
-        calcKernels.swap(accCalcKernels);
-        kerOffsets.swap(accKerOffsets);
+
+        localEps.resize(initialParticleSizeOrig);
+        localEpsInvPow.resize(initialParticleSizeOrig);
+        localSupports.resize(initialParticleSizeOrig);
+
+        calcKernels.swap(_calcKernels);
+        kerOffsets.swap(_kerOffsets);
+
+        std::cout << "after accumulateAndDeleteNormalParticles " << localSupports.size() << " " << kerOffsets.size() << " " << calcKernels.size() << " " << initialParticleSize << " " << particles.size_local() << " " << particles.size_local_orig() << " " << particles.size_local_with_ghost() << std::endl;
+
     }
 
 #ifdef SE_CLASS1
@@ -178,7 +232,7 @@ public:
           T rCut,
           T supportSizeFactor = 1,                               //Maybe change this to epsilon/h or h/epsilon = c 0.9. Benchmark
           support_options opt = support_options::RADIUS)
-		:particlesFrom(particles),
+        :particlesFrom(particles),
          particlesTo(particles),
             differentialSignature(differentialSignature),
             differentialOrder(Monomial<dim>(differentialSignature).order()),
@@ -198,7 +252,7 @@ public:
           T nSpacing,
           value_t< NORMAL_ID >,
           support_options opt = support_options::RADIUS)
-		:particlesFrom(particles),
+        :particlesFrom(particles),
          particlesTo(particles),
             differentialSignature(differentialSignature),
             differentialOrder(Monomial<dim>(differentialSignature).order()),
@@ -219,6 +273,7 @@ public:
                 supportBuilder(particlesFrom,particlesTo, differentialSignature, rCut, differentialOrder == 0);
                 supportBuilder.setAdapFac(nSpacing);
                 auto it = particlesTo.getDomainAndGhostIterator();
+                // auto it = particlesTo.getDomainIterator();
                 while (it.isNext()) {
                     auto key_o = particlesTo.getOriginKey(it.get());
                     Support support = supportBuilder.getSupport(it,monomialBasis.size(),opt);
@@ -360,82 +415,82 @@ public:
         auto & v_cl=create_vcluster();
         size_t req = 0;
 
-		Packer<decltype(localSupports),HeapMemory>::packRequest(localSupports,req);
+        Packer<decltype(localSupports),HeapMemory>::packRequest(localSupports,req);
         Packer<decltype(localEps),HeapMemory>::packRequest(localEps,req);
         Packer<decltype(localEpsInvPow),HeapMemory>::packRequest(localEpsInvPow,req);
         Packer<decltype(calcKernels),HeapMemory>::packRequest(calcKernels,req);
         Packer<decltype(kerOffsets),HeapMemory>::packRequest(kerOffsets,req);
 
-		// allocate the memory
-		HeapMemory pmem;
-		//pmem.allocate(req);
-		ExtPreAlloc<HeapMemory> mem(req,pmem);
+        // allocate the memory
+        HeapMemory pmem;
+        //pmem.allocate(req);
+        ExtPreAlloc<HeapMemory> mem(req,pmem);
 
-		//Packing
-		Pack_stat sts;
-		Packer<decltype(localSupports),HeapMemory>::pack(mem,localSupports,sts);
+        //Packing
+        Pack_stat sts;
+        Packer<decltype(localSupports),HeapMemory>::pack(mem,localSupports,sts);
         Packer<decltype(localEps),HeapMemory>::pack(mem,localEps,sts);
         Packer<decltype(localEpsInvPow),HeapMemory>::pack(mem,localEpsInvPow,sts);
         Packer<decltype(calcKernels),HeapMemory>::pack(mem,calcKernels,sts);
         Packer<decltype(kerOffsets),HeapMemory>::pack(mem,kerOffsets,sts);
 
-		// Save into a binary file
-	    std::ofstream dump (file+"_"+std::to_string(v_cl.rank()), std::ios::out | std::ios::binary);
-	    if (dump.is_open() == false)
+        // Save into a binary file
+        std::ofstream dump (file+"_"+std::to_string(v_cl.rank()), std::ios::out | std::ios::binary);
+        if (dump.is_open() == false)
         {   std::cerr << __FILE__ << ":" << __LINE__ <<" Unable to write since dump is open at rank "<<v_cl.rank()<<std::endl;
-	    	return;
+            return;
             }
-	    dump.write ((const char *)pmem.getPointer(), pmem.size());
-	    return;
+        dump.write ((const char *)pmem.getPointer(), pmem.size());
+        return;
     }
     /*! \brief Load the DCPSE computations
      *
      *
      */
     void load(const std::string & file)
-	{
+    {
         auto & v_cl=create_vcluster();
-	    std::ifstream fs (file+"_"+std::to_string(v_cl.rank()), std::ios::in | std::ios::binary | std::ios::ate );
-	    if (fs.is_open() == false)
-	    {
-	    	std::cerr << __FILE__ << ":" << __LINE__ << " error, opening file: " << file << std::endl;
-	    	return;
-	    }
+        std::ifstream fs (file+"_"+std::to_string(v_cl.rank()), std::ios::in | std::ios::binary | std::ios::ate );
+        if (fs.is_open() == false)
+        {
+            std::cerr << __FILE__ << ":" << __LINE__ << " error, opening file: " << file << std::endl;
+            return;
+        }
 
-	    // take the size of the file
-	    size_t sz = fs.tellg();
+        // take the size of the file
+        size_t sz = fs.tellg();
 
-	    fs.close();
+        fs.close();
 
-	    // reopen the file without ios::ate to read
-	    std::ifstream input (file+"_"+std::to_string(v_cl.rank()), std::ios::in | std::ios::binary );
-	    if (input.is_open() == false)
+        // reopen the file without ios::ate to read
+        std::ifstream input (file+"_"+std::to_string(v_cl.rank()), std::ios::in | std::ios::binary );
+        if (input.is_open() == false)
         {//some message here maybe
-	    	return;}
+            return;}
 
-	    // Create the HeapMemory and the ExtPreAlloc memory
-	    size_t req = 0;
-	    req += sz;
-	    HeapMemory pmem;
-		ExtPreAlloc<HeapMemory> mem(req,pmem);
+        // Create the HeapMemory and the ExtPreAlloc memory
+        size_t req = 0;
+        req += sz;
+        HeapMemory pmem;
+        ExtPreAlloc<HeapMemory> mem(req,pmem);
 
-		mem.allocate(pmem.size());
+        mem.allocate(pmem.size());
 
-		// read
-	    input.read((char *)pmem.getPointer(), sz);
+        // read
+        input.read((char *)pmem.getPointer(), sz);
 
-	    //close the file
-	    input.close();
+        //close the file
+        input.close();
 
-		//Unpacking
-		Unpack_stat ps;
-	 	Unpacker<decltype(localSupports),HeapMemory>::unpack(mem,localSupports,ps);
+        //Unpacking
+        Unpack_stat ps;
+        Unpacker<decltype(localSupports),HeapMemory>::unpack(mem,localSupports,ps);
         Unpacker<decltype(localEps),HeapMemory>::unpack(mem,localEps,ps);
         Unpacker<decltype(localEpsInvPow),HeapMemory>::unpack(mem,localEpsInvPow,ps);
         Unpacker<decltype(calcKernels),HeapMemory>::unpack(mem,calcKernels,ps);
         Unpacker<decltype(kerOffsets),HeapMemory>::unpack(mem,kerOffsets,ps);
-	 	return;
-	}
+        return;
+    }
 
 
     void checkMomenta(vector_type &particles)
@@ -584,7 +639,7 @@ public:
      */
     inline T getCoeffNN(const vect_dist_key_dx &key, int j)
     {
-    	size_t base = kerOffsets.get(key.getKey());
+        size_t base = kerOffsets.get(key.getKey());
         return calcKernels.get(base + j);
     }
 
@@ -770,8 +825,11 @@ private:
         }
         SupportBuilder<vector_type,vector_type2>
                 supportBuilder(particlesFrom,particlesTo, differentialSignature, rCut, differentialOrder == 0);
+        std::cout << "After support builder" << std::endl;
         unsigned int requiredSupportSize = monomialBasis.size() * supportSizeFactor;
         supportBuilder.setAdapFac(AdapFac);
+
+
 
         if (!isSharedLocalSupport)
             localSupports.resize(particlesTo.size_local_orig());

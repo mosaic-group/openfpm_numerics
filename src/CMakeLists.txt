@@ -122,6 +122,7 @@ else()
 		#level_set/redistancing_Sussman/tests/convergence_test.cpp
 		level_set/particle_cp/pcp_unit_tests.cpp
 		DCPSE/DCPSE_op/tests/DCPSE_op_Surface_tests.cpp
+		DCPSE/DCPSE_op/tests/DCPSE_op_Surface_subset_tests.cpp
 		#BoundaryConditions/tests/method_of_images_cylinder_unit_test.cpp
 		level_set/redistancing_Sussman/tests/redistancingSussman_fast_unit_test.cpp
 		#level_set/redistancing_Sussman/tests/help_functions_unit_test.cpp
