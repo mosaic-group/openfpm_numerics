@@ -18,7 +18,7 @@
  * \return Operator Dx which is a function on Vector_dist_Expressions
  *
  */
-template<typename particlesFrom_type, typename particlesTo_type>
+template<typename particlesFrom_type, typename particlesTo_type, typename list_type>
 class PPInterpolation 
 {
 
@@ -40,14 +40,13 @@ public:
      * \return Operator F which is a function on Vector_dist_Expressions
      *
      */
-    PPInterpolation(particlesFrom_type &particlesFrom,particlesTo_type &particlesTo, unsigned int ord, typename particlesFrom_type::stype rCut,
-                      double oversampling_factor = dcpse_oversampling_factor,
-                      support_options opt = support_options::RADIUS)
+    PPInterpolation(particlesFrom_type &particlesFrom,particlesTo_type &particlesTo, unsigned int ord, list_type verletList,
+                      support_option opt = support_option::CONSTRUCT)
     :particlesFrom(particlesFrom),particlesTo(particlesTo)
     {
         Point<particlesFrom_type::dims, unsigned int> p;
         p.zero();
-        dcpse = new Dcpse<particlesFrom_type::dims, particlesFrom_type,particlesTo_type>(particlesFrom,particlesTo, p, ord, rCut, oversampling_factor, opt);
+        dcpse = new Dcpse<particlesFrom_type::dims, particlesFrom_type,particlesTo_type>(particlesFrom,particlesTo, p, ord, verletList, opt);
     }
 
     void deallocate() {
