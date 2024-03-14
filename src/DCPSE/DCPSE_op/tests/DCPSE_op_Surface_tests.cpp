@@ -1132,7 +1132,7 @@ BOOST_AUTO_TEST_CASE(tensor_surface_gradient) {
   // Test for three different configurations to check for convergence
   for (int ll = 0; ll < 3; ++ll) {
 
-    int n_part{part_set_size[ll]};
+    size_t n_part{part_set_size[ll]};
     double rCut{3.1};
     
     size_t sz[3] = {n_part,n_part,n_part};
@@ -1178,24 +1178,24 @@ BOOST_AUTO_TEST_CASE(tensor_surface_gradient) {
 	// Vector field
 	// \Phi_{30} = \hat{r} \times \nabla_S Y_{30}
 	// \Phi_{30} = 3/4 * sqrt(7/pi) * (1 - 5*cos(theta)*cos(theta)) * sin(theta) \hat(e_phi or phi)
-	// part.getLastProp<VEC>()[0] = - 3.0/4.0 * std::sqrt(7.0/pi) * (1.0 - 5.0 * std::cos(thetaB) * std::cos(thetaB)) * std::sin(thetaB) * std::sin(phi);
-	// part.getLastProp<VEC>()[1] =   3.0/4.0 * std::sqrt(7.0/pi) * (1.0 - 5.0 * std::cos(thetaB) * std::cos(thetaB)) * std::sin(thetaB) * std::cos(phi);
-	// part.getLastProp<VEC>()[2] =   0.0;
+	part.getLastProp<VEC>()[0] = - 3.0/4.0 * std::sqrt(7.0/pi) * (1.0 - 5.0 * std::cos(thetaB) * std::cos(thetaB)) * std::sin(thetaB) * std::sin(phi);
+	part.getLastProp<VEC>()[1] =   3.0/4.0 * std::sqrt(7.0/pi) * (1.0 - 5.0 * std::cos(thetaB) * std::cos(thetaB)) * std::sin(thetaB) * std::cos(phi);
+	part.getLastProp<VEC>()[2] =   0.0;
 
 	// \Phi_{10} = \hat{r} \times \nabla_S Y_{10} = -sqrt(3/4pi) sin(theta) \hat(e_phi or phi) --> normalized basis, convariant/contravariant
 	// \Phi_{10} = -sqrt(3/4pi) \hat(phi) --> non-normalized basis, contravariant
-	part.getLastProp<VEC>()[0] =   std::sqrt(3.0/(4.0*pi)) * std::sin(thetaB) * std::sin(phi);
-	part.getLastProp<VEC>()[1] = - std::sqrt(3.0/(4.0*pi)) * std::sin(thetaB) * std::cos(phi);
-	part.getLastProp<VEC>()[2] = 0;
+	// part.getLastProp<VEC>()[0] =   std::sqrt(3.0/(4.0*pi)) * std::sin(thetaB) * std::sin(phi);
+	// part.getLastProp<VEC>()[1] = - std::sqrt(3.0/(4.0*pi)) * std::sin(thetaB) * std::cos(phi);
+	// part.getLastProp<VEC>()[2] = 0;
 	
 	// Analytical solution
-	// part.getLastProp<ANALYTLAP>()[0] =   11.0 * 3.0/4.0 * std::sqrt(7.0/pi) * (1.0 - 5.0 * std::cos(thetaB) * std::cos(thetaB)) * std::sin(thetaB) * std::sin(phi);
-	// part.getLastProp<ANALYTLAP>()[1] = - 11.0 * 3.0/4.0 * std::sqrt(7.0/pi) * (1.0 - 5.0 * std::cos(thetaB) * std::cos(thetaB)) * std::sin(thetaB) * std::cos(phi);
-	// part.getLastProp<ANALYTLAP>()[2] =   0.0;
+	part.getLastProp<ANALYTLAP>()[0] =   11.0 * 3.0/4.0 * std::sqrt(7.0/pi) * (1.0 - 5.0 * std::cos(thetaB) * std::cos(thetaB)) * std::sin(thetaB) * std::sin(phi);
+	part.getLastProp<ANALYTLAP>()[1] = - 11.0 * 3.0/4.0 * std::sqrt(7.0/pi) * (1.0 - 5.0 * std::cos(thetaB) * std::cos(thetaB)) * std::sin(thetaB) * std::cos(phi);
+	part.getLastProp<ANALYTLAP>()[2] =   0.0;
 
-	part.getLastProp<ANALYTLAP>()[0] = -1.0 *    std::sqrt(3.0/(4.0*pi)) * std::sin(thetaB) * std::sin(phi);
-	part.getLastProp<ANALYTLAP>()[1] = -1.0 * (- std::sqrt(3.0/(4.0*pi)) * std::sin(thetaB) * std::cos(phi));
-	part.getLastProp<ANALYTLAP>()[2] = 0;
+	// part.getLastProp<ANALYTLAP>()[0] = -1.0 *    std::sqrt(3.0/(4.0*pi)) * std::sin(thetaB) * std::sin(phi);
+	// part.getLastProp<ANALYTLAP>()[1] = -1.0 * (- std::sqrt(3.0/(4.0*pi)) * std::sin(thetaB) * std::cos(phi));
+	// part.getLastProp<ANALYTLAP>()[2] = 0;
 	
 	// Normal field
 	part.getLastProp<NORMAL>()[0] = std::sin(thetaB)*std::cos(phi);
@@ -1416,22 +1416,20 @@ BOOST_AUTO_TEST_CASE(tensor_surface_gradient) {
     // 2. Norm and angle with theta unit vector ------------------------------------------
     {
       double maxErr{0}, l2err{0};
-      double err, dotWithPhi, abs_lap;
+      double err, abs_lap;
       auto pit{part.getDomainIterator()};
       while (pit.isNext()) {
 	auto key{pit.get()};
 
 	err = 0.0;
-	dotWithPhi = 0;
 	abs_lap = 0;
 	for (int d = 0; d < 3; ++d) {
 	  err += (part.getProp<ANALYTLAP>(key)[d] - part.getProp<LAP>(key)[d]) * (part.getProp<ANALYTLAP>(key)[d] - part.getProp<LAP>(key)[d]);
 	  abs_lap += part.getProp<LAP>(key)[d] * part.getProp<LAP>(key)[d];
-	}
+	}	
+	l2err += err;
 	err = std::sqrt(err);
-      
 	maxErr = std::max(maxErr,err);
-	l2err += err*err;
             
 	++pit;
       }
