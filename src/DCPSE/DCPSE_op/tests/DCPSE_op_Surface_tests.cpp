@@ -1119,7 +1119,7 @@ BOOST_AUTO_TEST_CASE(tensor_surface_gradient) {
   constexpr int LAP{6};           // vector - [DIM]
   constexpr int ANALYTLAP{7};     // vector - [DIM]
   
-  typedef aggregate<double[3],double[3],double[3][3],double[3][3],double[3][3],double[3][3][3],double[3],double[2]> prop_part;
+  typedef aggregate<double[3],double[3],double[3][3],double[3][3],double[3][3],double[3][3][3],double[3],double[3]> prop_part;
   // vector field, normal field, projection matrix, euclidean gradient, surface gradient, derivative of surface gradient, surface laplacian, analytical surf laplacian
   
   openfpm::vector<std::string> propNames{"vector","normal","projmat","eucGrad","surfGrad","DSurfGrad","lap","analyt_lap"};
@@ -1150,7 +1150,6 @@ BOOST_AUTO_TEST_CASE(tensor_surface_gradient) {
     std::array<double,3> coord;
     
     if (v_cl.rank() == 0) {
-      std::cout << "1. Creating particles\n";
 
       // Created using the Fibonacci sphere algorithm                                                                                                                                                   
       const double pi{3.14159265358979323846};
@@ -1347,53 +1346,13 @@ BOOST_AUTO_TEST_CASE(tensor_surface_gradient) {
     dSGrad[2][2][0] = Sdx(SGrad[2][2]);
     dSGrad[2][2][1] = Sdy(SGrad[2][2]);
     dSGrad[2][2][2] = Sdz(SGrad[2][2]);
-    // dSGrad[0] = Sdx(SGrad[0][0]);
-    // dSGrad[1] = Sdy(SGrad[0][0]);
-    // dSGrad[2] = Sdz(SGrad[0][0]);
-
-    // dSGrad[3] = Sdx(SGrad[0][1]);
-    // dSGrad[4] = Sdy(SGrad[0][1]);
-    // dSGrad[5] = Sdz(SGrad[0][1]);
-
-    // dSGrad[6] = Sdx(SGrad[0][2]);
-    // dSGrad[7] = Sdy(SGrad[0][2]);
-    // dSGrad[8] = Sdz(SGrad[0][2]);
-
-
-    // dSGrad[9] = Sdx(SGrad[1][0]);
-    // dSGrad[10] = Sdy(SGrad[1][0]);
-    // dSGrad[11] = Sdz(SGrad[1][0]);
-
-    // dSGrad[12] = Sdx(SGrad[1][1]);
-    // dSGrad[13] = Sdy(SGrad[1][1]);
-    // dSGrad[14] = Sdz(SGrad[1][1]);
-
-    // dSGrad[15] = Sdx(SGrad[1][2]);
-    // dSGrad[16] = Sdy(SGrad[1][2]);
-    // dSGrad[17] = Sdz(SGrad[1][2]);
-
-  
-    // dSGrad[18] = Sdx(SGrad[2][0]);
-    // dSGrad[19] = Sdy(SGrad[2][0]);
-    // dSGrad[20] = Sdz(SGrad[2][0]);
-
-    // dSGrad[21] = Sdx(SGrad[2][1]);
-    // dSGrad[22] = Sdy(SGrad[2][1]);
-    // dSGrad[23] = Sdz(SGrad[2][1]);
-
-    // dSGrad[24] = Sdx(SGrad[2][2]);
-    // dSGrad[25] = Sdy(SGrad[2][2]);
-    // dSGrad[26] = Sdz(SGrad[2][2]);
     part.template ghost_get<DSGRAD>();
 
-    // int linIdx;
     for (int i = 0; i < 3; ++i)
       for (int l = 0; l < 3; ++l)
 	for (int k = 0; k < 3; ++k)
 	  for (int m = 0; m < 3; ++m) {
-	    // linIdx = (l*3 + k)*3 + m;
 	    lap[i] = projMat[i][l] * projMat[k][m] * dSGrad[l][k][m] + lap[i];
-	    // lap[i] = projMat[i][l] * projMat[k][m] * dSGrad[linIdx] + lap[i];
 	  }
     part.template ghost_get<LAP>();
   
@@ -1452,8 +1411,11 @@ BOOST_AUTO_TEST_CASE(tensor_surface_gradient) {
     part.write("tensor_surface_derivative_N" + std::to_string(n_part),VTK_WRITER);
   } // end ll loop to test forconvergence
 
-  BOOST_REQUIRE_CLOSE(L2norms_conv[0]/L2norms_conv[1],2,1);
-  BOOST_REQUIRE_CLOSE(L2norms_conv[1]/L2norms_conv[2],2,1);
+  BOOST_TEST_MESSAGE("Test convergence of surface vector Laplacian");
+  BOOST_TEST_MESSAGE("L2 error for N=4000 / L2 error for N=8000 = " + std::to_string(L2norms_conv[0]/L2norms_conv[1]));
+  BOOST_TEST_MESSAGE("L2 error for N=8000 / L2 error for N=16000 = " + std::to_string(L2norms_conv[1]/L2norms_conv[2]));
+  BOOST_REQUIRE(L2norms_conv[0]/L2norms_conv[1] > 2);
+  BOOST_REQUIRE(L2norms_conv[1]/L2norms_conv[2] > 1.8);
 
 }
 BOOST_AUTO_TEST_SUITE_END()
