@@ -11,8 +11,6 @@
 #define BOOST_MPL_CFG_NO_PREPROCESSED_HEADERS
 #define BOOST_MPL_LIMIT_VECTOR_SIZE 30
 
-
-
 #define BOOST_TEST_DYN_LINK
 
 #include "util/util_debug.hpp"
@@ -27,7 +25,7 @@
 
 BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
 BOOST_AUTO_TEST_CASE(dcpse_op_test) {
-        size_t edgeSemiSize = 40;
+        size_t edgeSemiSize = 512;
         const size_t sz[2] = {2 * edgeSemiSize, 2 * edgeSemiSize};
         Box<2, double> box({0, 0}, {2 * M_PI, 2 * M_PI});
         size_t bc[2] = {NON_PERIODIC, NON_PERIODIC};
@@ -87,8 +85,11 @@ BOOST_AUTO_TEST_CASE(dcpse_op_test) {
 
         }
 
-
+        timer tt;
+        tt.start();
         Derivative_x Dx(domain, 2, verletList);
+        tt.stop();
+        std::cout<<"wct"<<tt.getwct()<<std::endl;
         //Dx.checkMomenta(domain);
         Derivative_y Dy(domain, 2, verletList);
         //Gradient Grad(domain, 2, verletList);

@@ -60,11 +60,12 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
 
         Sparticles.ghost_get<0,3>();
         //Sparticles.write("Sparticles");
-        //Here template parameters are Normal property no.
-        SurfaceDerivative_xx<2> SDxx(Sparticles, 2, rCut,grid_spacing);
-        SurfaceDerivative_yy<2> SDyy(Sparticles, 2, rCut,grid_spacing);
-        //SurfaceDerivative_x<2> SDx(Sparticles, 4, rCut,grid_spacing);
-        //SurfaceDerivative_y<2> SDy(Sparticles, 4, rCut,grid_spacing);
+        //Here template parameters are Normal property no
+        auto verletList = Sparticles.getVerlet(rCut);
+        SurfaceDerivative_xx<2> SDxx(Sparticles, 2, verletList,grid_spacing,rCut/grid_spacing);
+        SurfaceDerivative_yy<2> SDyy(Sparticles, 2, verletList,grid_spacing,rCut/grid_spacing);
+        //SurfaceDerivative_x<2> SDx(Sparticles, 4, rCut,grid_spacing,rCut/grid_spacing);
+        //SurfaceDerivative_y<2> SDy(Sparticles, 4, rCut,grid_spacing,rCut/grid_spacing);
         auto INICONC = getV<3>(Sparticles);
         auto CONC = getV<0>(Sparticles);
         auto TEMP = getV<4>(Sparticles);
@@ -140,8 +141,9 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
         Sparticles.ghost_get<0,3>();
         //Sparticles.write("Sparticles");
         //Here template parameters are Normal property no.
-        SurfaceDerivative_xx<2> SDxx(Sparticles, 2, rCut,grid_spacing);
-        SurfaceDerivative_yy<2> SDyy(Sparticles, 2, rCut,grid_spacing);
+        auto verletList = Sparticles.getVerlet(rCut);
+        SurfaceDerivative_xx<2> SDxx(Sparticles, 2, verletList,grid_spacing,rCut/grid_spacing);
+        SurfaceDerivative_yy<2> SDyy(Sparticles, 2, verletList,grid_spacing,rCut/grid_spacing);
         //SurfaceDerivative_xy<2> SDxy(Sparticles, 3, rCut,grid_spacing);
         //SurfaceDerivative_x<2> SDx(Sparticles, 3, rCut,grid_spacing);
         //SurfaceDerivative_y<2> SDy(Sparticles, 3, rCut,grid_spacing);
@@ -233,8 +235,9 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
         auto & bulk=Sparticles_bulk.getIds();
         auto & boundary=Sparticles_boundary.getIds();
         //Here template parameters are Normal property no.
-        SurfaceDerivative_xx<2> SDxx(Sparticles, 2, rCut,grid_spacing);
-        SurfaceDerivative_yy<2> SDyy(Sparticles, 2, rCut,grid_spacing);
+        auto verletList = Sparticles.getVerlet(rCut);
+        SurfaceDerivative_xx<2> SDxx(Sparticles, 2, verletList,grid_spacing,rCut/grid_spacing);
+        SurfaceDerivative_yy<2> SDyy(Sparticles, 2, verletList,grid_spacing,rCut/grid_spacing);
         auto INICONC = getV<3>(Sparticles);
         auto CONC = getV<0>(Sparticles);
         auto TEMP = getV<4>(Sparticles);
@@ -344,9 +347,10 @@ BOOST_AUTO_TEST_CASE(dcpse_surface_sphere) {
   auto f=getV<3>(Sparticles);
   auto Df=getV<0>(Sparticles);
 
-  SurfaceDerivative_xx<2> Sdxx{Sparticles,2,rCut,grid_spacing_surf};
-  SurfaceDerivative_yy<2> Sdyy{Sparticles,2,rCut,grid_spacing_surf};
-  SurfaceDerivative_zz<2> Sdzz{Sparticles,2,rCut,grid_spacing_surf};
+  auto verletList=Sparticles.getVerlet(rCut);
+  SurfaceDerivative_xx<2> Sdxx{Sparticles,2,verletList,grid_spacing,static_cast<unsigned int>(rCut/grid_spacing)};
+  SurfaceDerivative_yy<2> Sdyy{Sparticles,2,verletList,grid_spacing,static_cast<unsigned int>(rCut/grid_spacing)};
+  SurfaceDerivative_zz<2> Sdzz{Sparticles,2,verletList,grid_spacing,static_cast<unsigned int>(rCut/grid_spacing)};
   //Laplace_Beltrami<2> SLap{Sparticles,2,rCut,grid_spacing_surf};
   //Sdyy.DrawKernel<5>(Sparticles,0);
   //Sdzz.DrawKernel<5>(Sparticles,0);
@@ -479,15 +483,15 @@ BOOST_AUTO_TEST_CASE(dcpse_surface_sphere_old) {
   }*/
   auto f=getV<3>(Sparticles);
   auto Df=getV<0>(Sparticles);
-
-  //SurfaceDerivative_xx<2> Sdxx{Sparticles,2,rCut,grid_spacing_surf};
-  //SurfaceDerivative_yy<2> Sdyy{Sparticles,2,rCut,grid_spacing_surf};
-  //SurfaceDerivative_zz<2> Sdzz{Sparticles,2,rCut,grid_spacing_surf};
-  Derivative_xx Sdxx{Sparticles,2,rCut};
+  auto verletList = Sparticles.getVerlet(rCut);
+  SurfaceDerivative_xx<2> Sdxx(Sparticles,2,verletList,grid_spacing,static_cast<unsigned int>(rCut/grid_spacing));
+  SurfaceDerivative_yy<2> Sdyy(Sparticles,2,verletList,grid_spacing,static_cast<unsigned int>(rCut/grid_spacing));
+  SurfaceDerivative_zz<2> Sdzz(Sparticles,2,verletList,grid_spacing,static_cast<unsigned int>(rCut/grid_spacing));
+  //Derivative_xx Sdxx{Sparticles,2,rCut};
   //std::cout<<"Dxx Done"<<std::endl;
-  Derivative_yy Sdyy{Sparticles,2,rCut};
+  //Derivative_yy Sdyy{Sparticles,2,rCut};
   //std::cout<<"Dyy Done"<<std::endl;
-  Derivative_zz Sdzz{Sparticles,2,rCut};
+  //Derivative_zz Sdzz{Sparticles,2,rCut};
   //std::cout<<"Dzz Done"<<std::endl;
 
   //Laplace_Beltrami<2> SLap{Sparticles,2,rCut,grid_spacing_surf};
@@ -830,7 +834,9 @@ BOOST_AUTO_TEST_CASE(dcpse_surface_sphere_old) {
         }
 
         domain.ghost_get<1,2,3>();
-        SurfaceDerivative_xx<6> Dxx(domain, 2, rCut,3.9,support_options::ADAPTIVE);
+        auto verletList = domain.getVerlet(rCut); //Try with Adaptive here
+        double nspacing=spacing; //Find way to pass the entire nSpacing vec.
+        SurfaceDerivative_xx<6> Dxx(domain, 2, verletList, nspacing, rCut/nspacing);
 
 /*        v=0;
         auto itNNN=domain.getDomainIterator();
@@ -845,9 +851,8 @@ BOOST_AUTO_TEST_CASE(dcpse_surface_sphere_old) {
 */
         //Dxx.DrawKernel<5,decltype(domain)>(domain,6161);
         //domain.write_frame("Kernel",6161);
-
-        SurfaceDerivative_yy<6> Dyy(domain, 2, rCut,3.9,support_options::ADAPTIVE);
-        SurfaceDerivative_zz<6> Dzz(domain, 2, rCut,3.9,support_options::ADAPTIVE);
+        SurfaceDerivative_yy<6> Dyy(domain, 2, verletList, nspacing, rCut/nspacing);
+        SurfaceDerivative_zz<6> Dzz(domain, 2, verletList, nspacing, rCut/nspacing);
 
         Dxx.save(domain,"Sdxx_test");
         Dyy.save(domain,"Sdyy_test");
@@ -1076,9 +1081,10 @@ BOOST_AUTO_TEST_CASE(dcpse_surface_sphere_old) {
         }
 
         domain.ghost_get<1,2,3>();
-        SurfaceDerivative_xx<6> Dxx(domain, 2, rCut,3.9,support_options::LOAD);
-        SurfaceDerivative_yy<6> Dyy(domain, 2, rCut,3.9,support_options::LOAD);
-        SurfaceDerivative_zz<6> Dzz(domain, 2, rCut,3.9,support_options::LOAD);
+        auto verletList = domain.getVerlet(rCut);
+        SurfaceDerivative_xx<6> Dxx(domain, 2, verletList,3.9,static_cast<unsigned int>(rCut/spacing),support_option::LOAD);
+        SurfaceDerivative_yy<6> Dyy(domain, 2, verletList,3.9,static_cast<unsigned int>(rCut/spacing),support_option::LOAD);
+        SurfaceDerivative_zz<6> Dzz(domain, 2, verletList,3.9,static_cast<unsigned int>(rCut/spacing),support_option::LOAD);
         Dxx.load(domain,"Sdxx_test");
         Dyy.load(domain,"Sdyy_test");
         Dzz.load(domain,"Sdzz_test");

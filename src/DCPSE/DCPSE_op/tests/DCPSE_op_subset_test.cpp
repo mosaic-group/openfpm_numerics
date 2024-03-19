@@ -135,8 +135,9 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_subset_suite_tests)
         Derivative_y Dy(Particles, 2, rCut);
         Derivative_x Dx_bulk(Particles_bulk, 2, rCut);
 */
-        Derivative_x Dx_bulk(Particles_bulk, 2, rCut,sampling_factor, support_options::RADIUS);
-        Derivative_y Dy_bulk(Particles_bulk, 2, rCut,sampling_factor, support_options::RADIUS);
+        auto verletList = Particles_bulk.getVerlet(rCut);
+        Derivative_x Dx_bulk(Particles_bulk, 2, verletList);
+        Derivative_y Dy_bulk(Particles_bulk, 2, verletList);
 
         Out_bulk = Dx_bulk(P);
 	    Out_V_bulk[0] = P + Dx_bulk(P);
@@ -289,13 +290,13 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_subset_suite_tests)
         auto RHS_bulk =getV<2>(Particles_bulk);
 
         P_bulk = 0;
-
-        Derivative_x Dx(Particles, 2, rCut,sampling_factor, support_options::RADIUS);
-        Derivative_xx Dxx(Particles, 2, rCut,sampling_factor, support_options::RADIUS);
-        Derivative_yy Dyy(Particles, 2, rCut,sampling_factor, support_options::RADIUS);
-        Derivative_y Dy(Particles, 2, rCut,sampling_factor, support_options::RADIUS);
-        Derivative_x Bulk_Dx(Particles_bulk, 2, rCut,sampling_factor, support_options::RADIUS);
-        Derivative_y Bulk_Dy(Particles_bulk, 2, rCut,sampling_factor, support_options::RADIUS);
+        auto verletList = Particles.getVerlet(rCut);
+        Derivative_x Dx(Particles, 2, verletList);
+        Derivative_xx Dxx(Particles, 2, verletList);
+        Derivative_yy Dyy(Particles, 2, verletList);
+        Derivative_y Dy(Particles, 2, verletList);
+        Derivative_x Bulk_Dx(Particles_bulk, 2, verletList);
+        Derivative_y Bulk_Dy(Particles_bulk, 2, verletList);
 
         int n = 0, nmax = 5, ctr = 0, errctr=1, Vreset = 0;
         double V_err=1;
@@ -495,12 +496,12 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_subset_suite_tests)
         auto Grad_bulk= getV<2>(Particles_subset);
 
         P_bulk = 0;
-
-        Derivative_x Dx(Particles, 2, rCut,sampling_factor, support_options::RADIUS);
-        Derivative_x Bulk_Dx(Particles_subset, 2, rCut,sampling_factor, support_options::RADIUS);
-        Derivative_xx Dxx(Particles, 2, rCut,sampling_factor, support_options::RADIUS);
-        Derivative_yy Dyy(Particles, 2, rCut,sampling_factor, support_options::RADIUS);
-        Derivative_y Dy(Particles, 2, rCut,sampling_factor, support_options::RADIUS),Bulk_Dy(Particles_subset, 2, rCut,sampling_factor, support_options::RADIUS);;
+        auto verletList = Particles.getVerlet(rCut);
+        Derivative_x Dx(Particles, 2, verletList);
+        Derivative_x Bulk_Dx(Particles_subset, 2, verletList);
+        Derivative_xx Dxx(Particles, 2, verletList);
+        Derivative_yy Dyy(Particles, 2, verletList);
+        Derivative_y Dy(Particles, 2, verletList),Bulk_Dy(Particles_subset, 2, verletList);;
 
         int n = 0, nmax = 5, ctr = 0, errctr=0, Vreset = 0;
         double V_err=1;

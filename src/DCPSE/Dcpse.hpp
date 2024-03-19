@@ -122,8 +122,8 @@ public:
             nMap.clear();
             auto key=it.get();
             auto xpK = it.get();
-            size_t kerOff = kerOffsets.get(xpK);
-            accKerOffsets.get(xpK)=accCalcKernels.size();
+            size_t kerOff = kerOffsets.get(xpK.getKey());
+            accKerOffsets.get(xpK.getKey())=accCalcKernels.size();
             auto itNN = verletList.getNNIterator(xpK.getKey());
             size_t i=0;
             while (itNN.isNext()) {
@@ -526,7 +526,7 @@ public:
             double epsInvPow = *epsItInvPow;
             T Dfxp = 0;
             T fxp = sign * particles.template getProp<fValuePos>(xpK);
-            size_t kerOff = kerOffsets.get(xpK);
+            size_t kerOff = kerOffsets.get(xpK.getKey());
             auto itNN = verletList.getNNIterator(xpK.getKey());
             size_t i=0;
             while (itNN.isNext()) {
@@ -576,9 +576,10 @@ public:
  * \return the number of neighbours
  *
  */
-    inline size_t getIndexNN(const vect_dist_key_dx &i,const size_t &j)
+    inline size_t getIndexNN(const vect_dist_key_dx &i,const vect_dist_key_dx &j) const
     {
-        return verletList.getNeighborId(i,j);
+
+        return verletList.getNeighborId(i.getKey(),j.getKey());
         //localSupports.get(key.getKey()).getKeys().get(j);
     }
 
@@ -789,6 +790,9 @@ private:
             assert(nnbs >= monomialBasis.size());
 #endif
             {
+                //here we precompute a smart dictionary for avoiding recomputations of pow.
+                T epsSq = (2.0 * eps * eps);
+                auto& basisElements = monomialBasis.getElements();
                 auto itNN = verletList.getNNIterator(key_o.getKey());
                 size_t i = 0;
                 while (itNN.isNext()) {
@@ -798,18 +802,21 @@ private:
                         Point<dim, T> xq = particlesTo.getPosOrig(key);
                         Point<dim, T> Arg = xp-xq;
                         double dist = norm(Arg);
-                        auto& basisElements = monomialBasis.getElements();
                         for (size_t j = 0; j < basisElements.size(); ++j) {
                             const Monomial<dim> &m =  basisElements.get(j);
                             //double temp=m.evaluate(Arg);
                             V(i, j) = m.evaluate(Arg);
-                            V(i, j) /= openfpm::math::intpowlog(eps, m.order());
                         }
                         //Eigen access diagonal matrix entry i
-                        E.diagonal()[i]=exp(- norm2(Arg) / (2.0 * eps * eps));
+                        E.diagonal()[i]=exp(- norm2(Arg) / epsSq);
                         ++i;
                     }
                     ++itNN;
+                }
+                //computing columnwise prefactor for as many basis elements
+                for (size_t j = 0; j < basisElements.size(); ++j) {
+                    const Monomial<dim> &m =  basisElements.get(j);
+                    V.col(j) /= openfpm::math::intpowlog(eps, m.order());
                 }
             }
             //Compute Spacing Statistics for convergence and output.
@@ -829,16 +836,14 @@ private:
             localEps.get(key_o.getKey()) = eps;
             localEpsInvPow.get(key_o.getKey()) = 1.0 / openfpm::math::intpowlog(eps,differentialOrder);
             // Compute matrix A, Note that in dcpse, intermediate B = E * V.
-            EMatrix<T, Eigen::Dynamic, Eigen::Dynamic> A = (E*V).transpose()*(E*V);
+            //EMatrix<T, Eigen::Dynamic, Eigen::Dynamic> A = (E*V).transpose()*(E*V);
             // Compute RHS vector b
             EMatrix<T, Eigen::Dynamic, 1> b(monomialBasis.size(), 1), a(monomialBasis.size(), 1);
             DcpseRhs<dim> rhs(monomialBasis, differentialSignature);
             rhs.template getVector<T>(b);
             // ...solve the linear system...
-            a = A.colPivHouseholderQr().solve(b);
-            EMatrix<T, Eigen::Dynamic, 1> C=A*a;
-            //std::cout<<"Ax:"<<C<<std::endl;
-            //std::cout<<"b:"<<b<<std::endl;
+            //a = ((E*V).transpose()*(E*V)).colPivHouseholderQr().solve(b);
+            a = ((E*V).transpose()*(E*V)).lu().solve(b);
             // ...and store the solution for later reuse
             kerOffsets.get(key_o.getKey()) = calcKernels.size();
 

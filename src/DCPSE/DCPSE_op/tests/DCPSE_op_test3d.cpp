@@ -96,8 +96,8 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests3)
 
         domain.map();
         domain.ghost_get<0>();
-
-        Advection Adv(domain, 2, rCut, 1.9,support_options::RADIUS);
+        auto verletList = domain.getVerlet(rCut);
+        Advection Adv(domain, 2, verletList);
         auto v = getV<1>(domain);
         auto P = getV<0>(domain);
         auto dv = getV<3>(domain);
@@ -186,10 +186,10 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests3)
 
         domain.map();
         domain.ghost_get<0>();
-
-        Derivative_x Dx(domain, 2, rCut,1.9,support_options::RADIUS);
-        Derivative_y Dy(domain, 2, rCut,1.9,support_options::RADIUS);
-        Laplacian Lap(domain, 2, rCut,1.3,support_options::RADIUS);
+        auto verletList = domain.getVerlet(rCut);
+        Derivative_x Dx(domain, 2, verletList);
+        Derivative_y Dy(domain, 2, verletList);
+        Laplacian Lap(domain, 2, verletList);
 
         openfpm::vector<aggregate<int>> bulk;
         openfpm::vector<aggregate<int>> front_p;
@@ -502,12 +502,16 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests3)
         double sampling2=1.9;
         double rCut2=3.9*spacing;
 
-        Derivative_x Dx(Particles, 2, rCut,sampling, support_options::RADIUS),B_Dx(Particles_bulk, 2, rCut,sampling, support_options::RADIUS);
-        Derivative_y Dy(Particles, 2, rCut,sampling, support_options::RADIUS),B_Dy(Particles_bulk, 2, rCut,sampling, support_options::RADIUS);
-        Derivative_z Dz(Particles, 2, rCut,sampling, support_options::RADIUS),B_Dz(Particles_bulk, 2, rCut,sampling, support_options::RADIUS);
-        Derivative_xx Dxx(Particles, 2, rCut2,sampling2,support_options::RADIUS);
-        Derivative_yy Dyy(Particles, 2, rCut2,sampling2,support_options::RADIUS);
-        Derivative_zz Dzz(Particles, 2, rCut2,sampling2,support_options::RADIUS);
+        auto verletList = Particles.getVerlet(rCut);
+        auto verletList2 = Particles.getVerlet(rCut2);
+        auto verletListBulk = Particles_bulk.getVerlet(rCut);
+
+        Derivative_x Dx(Particles, 2, verletList),B_Dx(Particles_bulk, 2, verletListBulk);
+        Derivative_y Dy(Particles, 2, verletList),B_Dy(Particles_bulk, 2, verletListBulk);
+        Derivative_z Dz(Particles, 2, verletList),B_Dz(Particles_bulk, 2, verletListBulk);
+        Derivative_xx Dxx(Particles, 2, verletList2);
+        Derivative_yy Dyy(Particles, 2, verletList2);
+        Derivative_zz Dzz(Particles, 2, verletList2);
 
         //std::cout << "DCPSE KERNELS DONE" << std::endl;
         petsc_solver<double> solverPetsc;
@@ -822,16 +826,17 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests3)
         vy.setId(1);
         vz.setId(2);
 
-        double sampling=3.1;
-        double sampling2=1.9;
         double rCut2=3.9*spacing;
 
-        Derivative_x Dx(Particles, 2, rCut,sampling, support_options::RADIUS),B_Dx(Particles_bulk, 2, rCut,sampling, support_options::RADIUS);
-        Derivative_y Dy(Particles, 2, rCut,sampling, support_options::RADIUS),B_Dy(Particles_bulk, 2, rCut,sampling, support_options::RADIUS);
-        Derivative_z Dz(Particles, 2, rCut,sampling, support_options::RADIUS),B_Dz(Particles_bulk, 2, rCut,sampling, support_options::RADIUS);
-        Derivative_xx Dxx(Particles, 2, rCut2,sampling2,support_options::RADIUS);
-        Derivative_yy Dyy(Particles, 2, rCut2,sampling2,support_options::RADIUS);
-        Derivative_zz Dzz(Particles, 2, rCut2,sampling2,support_options::RADIUS);
+        auto verletList = Particles.getVerlet(rCut);
+        auto verletList2 = Particles.getVerlet(rCut2);
+        auto verletListBulk = Particles_bulk.getVerlet(rCut);
+        Derivative_x Dx(Particles, 2, verletList),B_Dx(Particles_bulk, 2, verletListBulk);
+        Derivative_y Dy(Particles, 2, verletList),B_Dy(Particles_bulk, 2, verletListBulk);
+        Derivative_z Dz(Particles, 2, verletList),B_Dz(Particles_bulk, 2, verletListBulk);
+        Derivative_xx Dxx(Particles, 2, verletList2);
+        Derivative_yy Dyy(Particles, 2, verletList2);
+        Derivative_zz Dzz(Particles, 2, verletList2);
 
         //std::cout << "DCPSE KERNELS DONE" << std::endl;
         petsc_solver<double> solverPetsc;

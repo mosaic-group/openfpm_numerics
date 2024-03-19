@@ -101,7 +101,7 @@ BOOST_AUTO_TEST_SUITE(odeInt_BASE_tests)
 
 BOOST_AUTO_TEST_CASE(odeint_base_test1)
 {
-        size_t edgeSemiSize = 512;
+        size_t edgeSemiSize = 40;
         const size_t sz[2] = {edgeSemiSize,edgeSemiSize };
         Box<2, double> box({ 0, 0 }, { 1.0, 1.0 });
         size_t bc[2] = { NON_PERIODIC, NON_PERIODIC };
@@ -534,8 +534,8 @@ BOOST_AUTO_TEST_CASE(dcpse_op_react_diff_test) {
         //Derivative_y Dy(domain, 2, rCut);
         //Gradient Grad(domain, 2, rCut);
         vectorGlobal=(void *) &domain;
-
-        Laplacian Lap(domain, 2, rCut);
+        auto verletList = domain.getVerlet(rCut);
+        Laplacian Lap(domain, 2, verletList);
 
         auto u = getV<0>(domain);
         auto v = getV<1>(domain);
