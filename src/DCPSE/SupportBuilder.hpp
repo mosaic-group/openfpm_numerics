@@ -18,11 +18,9 @@ enum support_options
 {
     N_PARTICLES,
     RADIUS,
-    LOAD,
     ADAPTIVE,
     AT_LEAST_N_PARTICLES
 };
-
 
 template<typename vector_type,typename vector_type2>
 class SupportBuilder {
