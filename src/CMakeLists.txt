@@ -170,7 +170,7 @@ target_include_directories (numerics PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/../../op
 target_include_directories (numerics PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/../../openfpm_pdata/src/)
 target_include_directories (numerics PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/../../openfpm_data/src/)
 target_include_directories (numerics PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/../../openfpm_io/src/)
-target_include_directories (numerics PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/config)
+target_include_directories (numerics PUBLIC ${CMAKE_BINARY_DIR}/config)
 target_include_directories (numerics PUBLIC ${PARMETIS_ROOT}/include)
 target_include_directories (numerics PUBLIC ${METIS_ROOT}/include)
 target_include_directories (numerics PUBLIC ${HDF5_ROOT}/include)

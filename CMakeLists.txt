@@ -50,8 +50,6 @@ ExternalProject_Add(
 	LOG_INSTALL ON
 )
 
-configure_file(${CMAKE_CURRENT_SOURCE_DIR}/src/config/config_cmake.h.in ${CMAKE_CURRENT_SOURCE_DIR}/src/config/config.h)
-
 add_subdirectory (src)
 
 get_directory_property(hasParent PARENT_DIRECTORY)
