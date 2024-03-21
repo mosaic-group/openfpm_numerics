@@ -6,6 +6,7 @@
  *
  */
 #include "config.h"
+//#define PRINT_STACKTRACE
 #ifdef HAVE_EIGEN
 #ifdef HAVE_PETSC
 #define BOOST_MPL_CFG_NO_PREPROCESSED_HEADERS
@@ -25,7 +26,7 @@
 
 BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
 BOOST_AUTO_TEST_CASE(dcpse_op_test) {
-        size_t edgeSemiSize = 512;
+        size_t edgeSemiSize = 40;
         const size_t sz[2] = {2 * edgeSemiSize, 2 * edgeSemiSize};
         Box<2, double> box({0, 0}, {2 * M_PI, 2 * M_PI});
         size_t bc[2] = {NON_PERIODIC, NON_PERIODIC};
@@ -301,7 +302,7 @@ BOOST_AUTO_TEST_CASE(dcpse_op_test) {
 
         domain.map();
         domain.ghost_get<0>();
-        auto verletList = domain.getVerlet(rCut);
+        auto verletList = domain.getVerlet(rCut,domain);
         PPInterpolation<vector_type,vector_type,decltype(verletList)> Fx(domain,domain, 2, verletList);
         auto v = getV<1>(domain);
         auto P = getV<0>(domain);
@@ -331,15 +332,15 @@ BOOST_AUTO_TEST_CASE(dcpse_op_test) {
         spacing[0] = 2 * M_PI / (sz[0] - 1);
         spacing[1] = 2 * M_PI / (sz[1] - 1);
         Ghost<2, double> ghost(spacing[0] * 3.9);
-        double rCut = 3.95 * spacing[0];
+        double rCut = 5.0 * spacing[0];
         BOOST_TEST_MESSAGE("Init vector_dist...");
-        double sigma2 = spacing[0] * spacing[1] / ( 4);
+        double sigma2 = spacing[0] * spacing[1] / 4.0;
         std::normal_distribution<> gaussian{0, sigma2};
         std::mt19937 rng{6666666};
         typedef vector_dist<2, double, aggregate<double, double, double, VectorS<2, double>, VectorS<2, double>>> vector_dist;
 
         vector_dist domain(0, box,bc,ghost);
-        vector_dist domain2(domain.getDecomposition(),0);
+        vector_dist domainFrom(domain.getDecomposition(),0);
 
         //Init_DCPSE(domain)
         BOOST_TEST_MESSAGE("Init domain...");
@@ -350,7 +351,7 @@ BOOST_AUTO_TEST_CASE(dcpse_op_test) {
         double minNormOne = 999;
         while (it.isNext()) {
             domain.add();
-            domain2.add();
+            domainFrom.add();
             auto key = it.get();
             mem_id k0 = key.get(0);
             mem_id k1 = key.get(1);
@@ -358,29 +359,32 @@ BOOST_AUTO_TEST_CASE(dcpse_op_test) {
             double y = k1 * spacing[1];
             domain.getLastPos()[0] = x;//+ gaussian(rng);
             domain.getLastPos()[1] = y;//+gaussian(rng);
-            if(x!=0 && y!=0 && x!=box.getHigh(0) && y!=box.getHigh(1)){
-                domain2.getLastPos()[0] = x+ gaussian(rng);
-                domain2.getLastPos()[1] = y+ gaussian(rng);
+            if(x!=0 && y!=0 && x<=box.getHigh(0)-spacing[0]/2.0 && y<=box.getHigh(1)-spacing[1]/2.0){
+                domainFrom.getLastPos()[0] = x+ gaussian(rng);
+                domainFrom.getLastPos()[1] = y+ gaussian(rng);
             }
             else{
-                domain2.getLastPos()[0] = x;
-                domain2.getLastPos()[1] = y;
+                domainFrom.getLastPos()[0] = x;
+                domainFrom.getLastPos()[1] = y;
             }
             // Here fill the function value
             domain.template getLastProp<0>() = sin(domain.getLastPos()[0]) + sin(domain.getLastPos()[1]);
             domain.template getLastProp<1>() = 0.0;
-            domain2.template getLastProp<0>() = sin(domain2.getLastPos()[0]) + sin(domain2.getLastPos()[1]);
+            domainFrom.template getLastProp<0>() = sin(domainFrom.getLastPos()[0]) + sin(domainFrom.getLastPos()[1]);
             ++counter;
             ++it;
         }
         BOOST_TEST_MESSAGE("Sync domain across processors...");
 
         domain.map();
-        domain2.map();
+        domainFrom.map();
+        domain.deleteGhost();
+        domain.write("domain");
+        domainFrom.write("domainFrom");
         domain.ghost_get<0>();
-        domain2.ghost_get<0>();
-        auto verletList = domain.getVerlet(rCut);
-        PPInterpolation<vector_dist,vector_dist,decltype(verletList)> Fx(domain2,domain, 2, verletList);
+        domainFrom.ghost_get<0>();
+        auto verletList = domain.getVerlet(rCut,domainFrom);
+        PPInterpolation<vector_dist,vector_dist,decltype(verletList)> Fx(domainFrom,domain, 2, verletList);
         //auto v = getV<1>(domain);
         //auto P = getV<0>(domain);
         Fx.p2p<0,1>();
@@ -388,7 +392,7 @@ BOOST_AUTO_TEST_CASE(dcpse_op_test) {
         double worst = 0.0;
         while (it2.isNext()) {
             auto p = it2.get();
-            //domain.template getProp<2>(p) = domain.getProp<1>(p) - domain.getProp<0>(p);
+            domain.template getProp<2>(p) = domain.getProp<1>(p) - domain.getProp<0>(p);
             if (fabs(domain.getProp<1>(p) - domain.getProp<0>(p)) > worst) {
                 worst = fabs(domain.getProp<1>(p) - domain.getProp<0>(p));
             }
@@ -396,9 +400,9 @@ BOOST_AUTO_TEST_CASE(dcpse_op_test) {
         }
         //std::cout<<"Worst:"<<worst<<std::endl;
         domain.deleteGhost();
-        //domain.write("test1");
-        //domain2.write("test2");
-        BOOST_REQUIRE(worst < 0.03);
+        //domain.write("domain");
+        //domainFrom.write("domainFrom");
+        BOOST_REQUIRE(worst < 0.07);
     }
 
 

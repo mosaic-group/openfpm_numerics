@@ -40,7 +40,7 @@ public:
      * \return Operator F which is a function on Vector_dist_Expressions
      *
      */
-    PPInterpolation(particlesFrom_type &particlesFrom,particlesTo_type &particlesTo, unsigned int ord, list_type verletList,
+    PPInterpolation(particlesFrom_type &particlesFrom,particlesTo_type &particlesTo, unsigned int ord, list_type &verletList,
                       support_option opt = support_option::CONSTRUCT)
     :particlesFrom(particlesFrom),particlesTo(particlesTo)
     {

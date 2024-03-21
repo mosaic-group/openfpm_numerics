@@ -184,7 +184,7 @@ public:
             opt(opt)
     {
         particles.ghost_get_subset();         // This communicates which ghost particles to be excluded from support
-        initializeStaticSize(particles, particles, convergenceOrder);
+        initializeStaticSize(particles, particles);
     }
 
     //Surface DCPSE Constructor
@@ -232,7 +232,7 @@ public:
              particles.write("WithNormalParticlesQC");
 #endif
          }
-        initializeStaticSize(particles, particles, convergenceOrder);
+        initializeStaticSize(particles, particles);
          if(opt!=support_option::LOAD) {
              accumulateAndDeleteNormalParticles(particles);
          }
@@ -253,7 +253,7 @@ public:
             monomialBasis(differentialSignature.asArray(), convergenceOrder)
     {
         particles.ghost_get_subset();
-        initializeStaticSize(particles, particles, convergenceOrder);
+        initializeStaticSize(particles, particles);
     }
 
     Dcpse(vector_type &particlesFrom,vector_type2 &particlesTo,
@@ -269,7 +269,7 @@ public:
              opt(opt)
     {
         particlesFrom.ghost_get_subset();
-        initializeStaticSize(particlesFrom,particlesTo,convergenceOrder);
+        initializeStaticSize(particlesFrom,particlesTo,differentialSignature==0);
     }
 
 
@@ -333,9 +333,9 @@ public:
         while (it.isNext()){
             double epsInvPow = *epsItInvPow;
             T2 Dfxp = 0;
-            size_t xpK = it.get().getKey();
-            size_t kerOff = kerOffsets.get(xpK);
-            auto itNN = verletList.getNNIterator(xpK);
+            auto xpK = it.get();
+            size_t kerOff = kerOffsets.get(xpK.getKey());
+            auto itNN = verletList.getNNIterator(xpK.getKey());
             size_t i=0;
             while(itNN.isNext()) {
                 auto xqK = itNN.get();
@@ -719,16 +719,15 @@ public:
         calcKernels.clear();
         kerOffsets.clear();
 
-        initializeStaticSize(particles,particles, convergenceOrder);
+        initializeStaticSize(particles,particles);
     }
 
 private:
     void initializeStaticSize(vector_type &particlesFrom,vector_type2 &particlesTo,
-                              unsigned int convergenceOrder) {
+                              const bool &isInterpolation=0) {
 #ifdef SE_CLASS1
         this->update_ctr=particlesFrom.getMapCtr();
 #endif
-        this->convergenceOrder=convergenceOrder;
         auto & v_cl=create_vcluster();
         if(this->opt==LOAD){
             if(v_cl.rank()==0)
@@ -750,7 +749,10 @@ private:
         while (it.isNext()) {
             // Get the points in the support of the DCPSE kernel and store the support for reuse
             auto key_o = particlesTo.getOriginKey(it.get());
-            size_t nnbs = verletList.getNNPart(key_o.getKey())-1; //no. of neighbours minus center particle
+
+            size_t nnbs = verletList.getNNPart(key_o.getKey()); //no. of neighbours minus center particle
+            if(!isInterpolation)
+                {nnbs-=1;}
             // First check that the number of points given is enough for building the Vandermonde matrix
             if (nnbs < monomialBasis.size()) {
                 ACTION_ON_ERROR(
@@ -764,14 +766,16 @@ private:
                 auto itNN = verletList.getNNIterator(key_o.getKey());
                 while (itNN.isNext()) {
                     auto key = itNN.get();
-                    if(key_o.getKey()!=key){
-                        Point<dim, T> xp = particlesFrom.getPosOrig(key_o);
-                        Point<dim, T> xq = particlesTo.getPosOrig(key);
-                        Point<dim, T> Arg = xp-xq; //Possible OpenFPM bug here. The subtraction is not working properly if directly using Point. particlesFrom.getPosOrig(key_o)-particlesTo.getPosOrig(key)
-                        double dist = norm(Arg);
-                        avgNeighbourSpacing += Arg.norm1();
-                        if (minSpacing > dist) { minSpacing = dist; }
+                    if(key_o.getKey()==key && !isInterpolation){
+                        ++itNN;
+                        continue;
                     }
+                    Point<dim, T> xp = particlesFrom.getPosOrig(key_o);
+                    Point<dim, T> xq = particlesTo.getPosOrig(key);
+                    Point<dim, T> Arg = xp-xq; //Possible OpenFPM bug here. The subtraction is not working properly if directly using Point. particlesFrom.getPosOrig(key_o)-particlesTo.getPosOrig(key)
+                    double dist = norm(Arg);
+                    avgNeighbourSpacing += Arg.norm1();
+                    if (minSpacing > dist) { minSpacing = dist; }
                     ++itNN;
                 }
             }
@@ -797,20 +801,22 @@ private:
                 size_t i = 0;
                 while (itNN.isNext()) {
                     auto key = itNN.get();
-                    if(key_o.getKey()!=key){
-                        Point<dim, T> xp = particlesFrom.getPosOrig(key_o);
-                        Point<dim, T> xq = particlesTo.getPosOrig(key);
-                        Point<dim, T> Arg = xp-xq;
-                        double dist = norm(Arg);
-                        for (size_t j = 0; j < basisElements.size(); ++j) {
-                            const Monomial<dim> &m =  basisElements.get(j);
-                            //double temp=m.evaluate(Arg);
-                            V(i, j) = m.evaluate(Arg);
-                        }
-                        //Eigen access diagonal matrix entry i
-                        E.diagonal()[i]=exp(- norm2(Arg) / epsSq);
-                        ++i;
+                    if(key_o.getKey()==key && !isInterpolation){
+                        ++itNN;
+                        continue;
                     }
+                    Point<dim, T> xp = particlesFrom.getPosOrig(key_o);
+                    Point<dim, T> xq = particlesTo.getPosOrig(key);
+                    Point<dim, T> Arg = xp-xq;
+                    double dist = norm(Arg);
+                    for (size_t j = 0; j < basisElements.size(); ++j) {
+                        const Monomial<dim> &m =  basisElements.get(j);
+                        //double temp=m.evaluate(Arg);
+                        V(i, j) = m.evaluate(Arg);
+                    }
+                    //Eigen access diagonal matrix entry i
+                    E.diagonal()[i]=exp(- norm2(Arg) / epsSq);
+                    ++i;
                     ++itNN;
                 }
                 //computing columnwise prefactor for as many basis elements
@@ -851,12 +857,14 @@ private:
             {
                 auto itNN = verletList.getNNIterator(key_o.getKey());
                 while (itNN.isNext()) {
-                    const auto& xqK = itNN.get();
-                    if(key_o.getKey()!=xqK) {
-                        Point<dim, T> xq = particlesTo.getPosOrig(xqK);
-                        Point<dim, T> normalizedArg = (xp-xq)/ eps;
-                        calcKernels.add(computeKernel(normalizedArg, a));
+                    auto xqK = itNN.get();
+                    if(key_o.getKey()==xqK && !isInterpolation){
+                        ++itNN;
+                        continue;
                     }
+                    Point<dim, T> xq = particlesTo.getPosOrig(xqK);
+                    Point<dim, T> normalizedArg = (xp-xq)/ eps;
+                    calcKernels.add(computeKernel(normalizedArg, a));
                     ++itNN;
                 }
             }
