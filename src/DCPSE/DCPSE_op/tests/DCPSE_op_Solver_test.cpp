@@ -1082,7 +1082,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
         petsc_solver<double> solver;
         solver.setRestart(500);
         solver.setSolver(KSPGMRES);
-        solver.setPreconditioner(PCSVD);
+        solver.setPreconditioner(PCNONE);
 
         openfpm::vector<aggregate<int>> bulk;
         openfpm::vector<aggregate<int>> up_p;

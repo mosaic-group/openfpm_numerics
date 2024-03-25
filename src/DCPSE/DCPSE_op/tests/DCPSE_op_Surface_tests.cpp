@@ -617,9 +617,9 @@ BOOST_AUTO_TEST_CASE(dcpse_surface_sphere) {
             domain.getProp<4>(p) = fabs(domain.getProp<1>(p) - domain.getProp<2>(p));
 
         }
-        std::cout << "Maximum Analytic Error: " << worst1 << std::endl;
+        //std::cout << "Maximum Analytic Error: " << worst1 << std::endl;
         //domain.ghost_get<4>();
-        domain.write("SurfaceAdap");
+        //domain.write("SurfaceAdap");
         BOOST_REQUIRE(worst1 < 0.03);
 
     }
