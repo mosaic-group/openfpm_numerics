@@ -173,7 +173,7 @@ private:
 		
 		for (int i = 0 ; i < subs.size() ; i++)
 		{
-			SpaceBox<vd_type::dims, typename vd_type::stype> sub = subs.get(i);
+			Box<vd_type::dims, typename vd_type::stype> sub = subs.get(i);
 			sub.enlarge(g);
 			is_inside |= sub.isInside(p);
 		}
