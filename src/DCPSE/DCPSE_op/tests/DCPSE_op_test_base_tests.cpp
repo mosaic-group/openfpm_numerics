@@ -34,7 +34,7 @@ BOOST_AUTO_TEST_CASE(dcpse_op_test) {
         spacing[0] = 2 * M_PI / (sz[0] - 1);
         spacing[1] = 2 * M_PI / (sz[1] - 1);
         Ghost<2, double> ghost(spacing[0] * 3.9);
-        double rCut = 3.95 * spacing[0];
+        double rCut = 3.1 * spacing[0];
         BOOST_TEST_MESSAGE("Init vector_dist...");
         double sigma2 = spacing[0] * spacing[1] / (2 * 4);
 
@@ -70,7 +70,7 @@ BOOST_AUTO_TEST_CASE(dcpse_op_test) {
         domain.ghost_get<0>();
         //domain.write("test");
         //auto CellList = domain.getCellList(rCut);
-        auto verletList = domain.getVerlet(rCut);
+        auto verletList = domain.getVerletWithoutRefP(rCut);
         {
                 auto itNN = verletList.getNNIterator(0);
                 size_t i = 0;
@@ -90,7 +90,7 @@ BOOST_AUTO_TEST_CASE(dcpse_op_test) {
         tt.start();
         Derivative_x Dx(domain, 2, verletList);
         tt.stop();
-        std::cout<<"wct"<<tt.getwct()<<std::endl;
+        // std::cout<<"wct"<<tt.getwct()<<std::endl;
         //Dx.checkMomenta(domain);
         Derivative_y Dy(domain, 2, verletList);
         //Gradient Grad(domain, 2, verletList);
@@ -127,7 +127,7 @@ BOOST_AUTO_TEST_CASE(dcpse_op_test) {
         spacing[0] = 2 * M_PI / (sz[0] - 1);
         spacing[1] = 2 * M_PI / (sz[1] - 1);
         Ghost<2, double> ghost(spacing[0] * 3.9);
-        double rCut = 3.95 * spacing[0];
+        double rCut = 3.1 * spacing[0];
         BOOST_TEST_MESSAGE("Init vector_dist...");
         double sigma2 = spacing[0] * spacing[1] / (2 * 4);
 
@@ -161,7 +161,7 @@ BOOST_AUTO_TEST_CASE(dcpse_op_test) {
 
         domain.map();
         domain.ghost_get<0>();
-        auto verletList = domain.getVerlet(rCut);
+        auto verletList = domain.getVerletWithoutRefP(rCut);
         Derivative_x Dx(domain, 2, verletList);
         Derivative_y Dy(domain, 2, verletList);
         auto v = getV<1>(domain);
@@ -200,7 +200,7 @@ BOOST_AUTO_TEST_CASE(dcpse_op_test) {
         spacing[0] = 2 * M_PI / (sz[0] - 1);
         spacing[1] = 2 * M_PI / (sz[1] - 1);
         Ghost<2, double> ghost(spacing[0] * 3.9);
-        double rCut = 3.95 * spacing[0];
+        double rCut = 3.1 * spacing[0];
         BOOST_TEST_MESSAGE("Init vector_dist...");
         double sigma2 = spacing[0] * spacing[1] / (2 * 4);
 
@@ -237,7 +237,7 @@ BOOST_AUTO_TEST_CASE(dcpse_op_test) {
         auto v = getV<1>(domain);
         auto v2 = getV<3>(domain);
         auto P = getV<0>(domain);
-        auto verletList = domain.getVerlet(rCut);
+        auto verletList = domain.getVerletWithoutRefP(rCut);
         Derivative_x DxLoaded(domain, 2, verletList, support_option::LOAD);
         Derivative_y DyLoaded(domain, 2, verletList, support_option::LOAD);
         DxLoaded.load(domain,"DX_test");
@@ -268,7 +268,7 @@ BOOST_AUTO_TEST_CASE(dcpse_op_test) {
         spacing[0] = 2 * M_PI / (sz[0] - 1);
         spacing[1] = 2 * M_PI / (sz[1] - 1);
         Ghost<2, double> ghost(spacing[0] * 3.9);
-        double rCut = 3.95 * spacing[0];
+        double rCut = 3.1 * spacing[0];
         BOOST_TEST_MESSAGE("Init vector_dist...");
         double sigma2 = spacing[0] * spacing[1] / (2 * 4);
 
@@ -378,16 +378,16 @@ BOOST_AUTO_TEST_CASE(dcpse_op_test) {
 
         domain.map();
         domainFrom.map();
-        domain.deleteGhost();
-        domain.write("domain");
-        domainFrom.write("domainFrom");
+        //domain.deleteGhost();
+        //domain.write("domain");
+        //domainFrom.write("domainFrom");
         domain.ghost_get<0>();
         domainFrom.ghost_get<0>();
         auto verletList = domain.getVerlet(rCut,domainFrom);
         PPInterpolation<vector_dist,vector_dist,decltype(verletList)> Fx(domainFrom,domain, 2, verletList);
         //auto v = getV<1>(domain);
         //auto P = getV<0>(domain);
-        Fx.p2p<0,1>();
+        Fx.template p2p<0,1>();
         auto it2 = domain.getDomainIterator();
         double worst = 0.0;
         while (it2.isNext()) {
@@ -399,7 +399,7 @@ BOOST_AUTO_TEST_CASE(dcpse_op_test) {
             ++it2;
         }
         //std::cout<<"Worst:"<<worst<<std::endl;
-        domain.deleteGhost();
+        //domain.deleteGhost();
         //domain.write("domain");
         //domainFrom.write("domainFrom");
         BOOST_REQUIRE(worst < 0.07);
@@ -407,7 +407,7 @@ BOOST_AUTO_TEST_CASE(dcpse_op_test) {
 
 
     BOOST_AUTO_TEST_CASE(dcpse_op_test_lap) {
-        size_t edgeSemiSize = 81;
+        size_t edgeSemiSize = 41;
         const size_t sz[2] = {2 * edgeSemiSize+1, 2 * edgeSemiSize+1};
         Box<2, double> box({0, 0}, {2 * M_PI, 2 * M_PI});
         size_t bc[2] = {NON_PERIODIC, NON_PERIODIC};
@@ -415,7 +415,7 @@ BOOST_AUTO_TEST_CASE(dcpse_op_test) {
         spacing[0] = 2 * M_PI / (sz[0] - 1);
         spacing[1] = 2 * M_PI / (sz[1] - 1);
         Ghost<2, double> ghost(spacing[0] * 3.9);
-        double rCut = 3.95 * spacing[0];
+        double rCut = 3.1 * spacing[0];
         BOOST_TEST_MESSAGE("Init vector_dist...");
         double sigma2 = spacing[0] * spacing[1] / (2 * 4);
 
@@ -454,7 +454,7 @@ BOOST_AUTO_TEST_CASE(dcpse_op_test) {
 
         domain.map();
         domain.ghost_get<0>();
-        auto verletList = domain.getVerlet(rCut);
+        auto verletList = domain.getVerletWithoutRefP(rCut);
         Laplacian Lap(domain, 2, verletList);
         auto v = getV<1>(domain);
         auto P = getV<0>(domain);
@@ -541,7 +541,7 @@ BOOST_AUTO_TEST_CASE(dcpse_op_test) {
 
         domain.map();
         domain.ghost_get<0>();
-        auto verletList = domain.getVerlet(rCut);
+        auto verletList = domain.getVerletWithoutRefP(rCut);
         Divergence Div(domain, 2, verletList);
         Derivative_x Dx(domain, 2, verletList);
         Derivative_y Dy(domain, 2, verletList);
@@ -570,12 +570,12 @@ BOOST_AUTO_TEST_CASE(dcpse_op_test) {
             ++it2;
         }
 
-        domain.deleteGhost();
-/*
-        domain.write("DIV");
+        //domain.deleteGhost();
 
-        std::cout<<worst1<<":"<<worst2;
-*/
+        //domain.write("DIV");
+
+        //std::cout<<worst1<<":"<<worst2;
+
 
         BOOST_REQUIRE(worst1 < 0.05);
         BOOST_REQUIRE(worst2 < 0.05);
@@ -646,7 +646,7 @@ BOOST_AUTO_TEST_CASE(dcpse_op_test) {
 
         domain.map();
         domain.ghost_get<0>();
-        auto verletList = domain.getVerlet(rCut);
+        auto verletList = domain.getVerletWithoutRefP(rCut);
         Advection Adv(domain, 2, verletList);
         auto v = getV<1>(domain);
         auto P = getV<0>(domain);
@@ -731,7 +731,7 @@ BOOST_AUTO_TEST_CASE(dcpse_op_test) {
         auto S = getV<2>(Particles);
         auto Sig = getV<3>(Particles);
 
-        auto verletList = Particles.getVerlet(rCut);
+        auto verletList = Particles.getVerletWithoutRefP(rCut);
         Derivative_x Dx(Particles, 2,verletList);
 
         P = Dx(V[0]);
@@ -821,7 +821,7 @@ BOOST_AUTO_TEST_CASE(dcpse_op_test) {
         auto Sig = getV<3>(Particles);
 
 
-        auto verletList = Particles.getVerlet(rCut);
+        auto verletList = Particles.getVerletWithoutRefP(rCut);
         Derivative_x Dx(Particles, 2,verletList);
 
         P = Dx(V[0]);
@@ -935,7 +935,7 @@ BOOST_AUTO_TEST_CASE(dcpse_op_test) {
 
         domain.map();
         domain.ghost_get<0>();
-        auto verletList = domain.getVerlet(rCut);
+        auto verletList = domain.getVerletWithoutRefP(rCut);
         //Derivative_x Dx(domain, 2, verletList);
         Derivative_xx Dxx(domain, 2, verletList);
         //Derivative_y Dy(domain, 2, verletList);

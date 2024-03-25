@@ -17,6 +17,7 @@ template<unsigned int N> struct value_t {};
 enum support_option
 {
     CONSTRUCT,
+    ADAPTIVE,
     LOAD
 };
 
@@ -75,27 +76,29 @@ private:
     openfpm::vector<T> nSpacings;
     vector_type & particlesFrom;
     vector_type2 & particlesTo;
-    list_type &verletList;
     double nSpacing;
     unsigned int convergenceOrder,nCount;
     bool isSurfaceDerivative=false;
     size_t initialParticleSize;
     support_option opt;
+    list_type &verletList;
 
 public:
+
     template<unsigned int NORMAL_ID>
     void createNormalParticles(vector_type &particles)
     {
         particles.template ghost_get<NORMAL_ID>(SKIP_LABELLING);
         initialParticleSize=particles.size_local_with_ghost();
         auto it = particles.getDomainAndGhostIterator();
+        T nSpacing_old=nSpacing;
         while(it.isNext()){
             auto key=it.get();
             Point<dim,T> xp=particles.getPos(key), Normals=particles.template getProp<NORMAL_ID>(key);
-            //if(opt==support_option::ADAPTIVE)
-            //{
-            //    nSpacing=nSpacings.get(key.getKey());
-            //}
+            if(opt==support_option::ADAPTIVE)
+            {
+                nSpacing=nSpacings.get(key.getKey());
+            }
             for(int i=1;i<=nCount;i++){
                 particles.addAtEnd();
                 for(size_t j=0;j<dim;j++)
@@ -105,6 +108,12 @@ public:
                 {particles.getLastPosEnd()[j]=xp[j]-i*nSpacing*Normals[j];}
             }
             ++it;
+        }
+        if(opt==support_option::ADAPTIVE){
+            particles.updateVerlet(verletList,1.25*nCount*nSpacing_old);
+        }
+        else{
+            particles.updateVerlet(verletList,1.1*nCount*nSpacing);
         }
     }
 
@@ -120,7 +129,6 @@ public:
         while(it.isNext()){
             supportBuffer.clear();
             nMap.clear();
-            auto key=it.get();
             auto xpK = it.get();
             size_t kerOff = kerOffsets.get(xpK.getKey());
             accKerOffsets.get(xpK.getKey())=accCalcKernels.size();
@@ -128,27 +136,25 @@ public:
             size_t i=0;
             while (itNN.isNext()) {
                 auto xqK = itNN.get();
-                if(xpK.getKey()!=xqK) {
-                    int difference = static_cast<int>(xqK) - static_cast<int>(initialParticleSize);
-                    int real_particle;
-                    if (difference<0) {
-                        real_particle = xqK;
-                    } else {
-                        real_particle = difference / (2 * nCount);
-                    }
-                            auto found=nMap.find(real_particle);
-                            if(found!=nMap.end()){
-                                accCalcKernels.get(found->second)+=calcKernels.get(kerOff+i);
-                            }
-                            else{
-                                supportBuffer.add();
-                                supportBuffer.get(supportBuffer.size()-1)=real_particle;
-                                accCalcKernels.add();
-                                accCalcKernels.get(accCalcKernels.size()-1)=calcKernels.get(kerOff+i);
-                                nMap[real_particle]=accCalcKernels.size()-1;
-                            }
-                            ++i;
+                int difference = static_cast<int>(xqK) - static_cast<int>(initialParticleSize);
+                int real_particle;
+                if (difference<0) {
+                    real_particle = xqK;
+                } else {
+                    real_particle = difference / (2 * nCount);
                 }
+                auto found=nMap.find(real_particle);
+                if(found!=nMap.end()){
+                    accCalcKernels.get(found->second)+=calcKernels.get(kerOff+i);
+                }
+                else{
+                    supportBuffer.add();
+                    supportBuffer.get(supportBuffer.size()-1)=real_particle;
+                    accCalcKernels.add();
+                    accCalcKernels.get(accCalcKernels.size()-1)=calcKernels.get(kerOff+i);
+                    nMap[real_particle]=accCalcKernels.size()-1;
+                }
+                ++i;
                 ++itNN;
             }
             verletList.replace_p(xpK.getKey(), supportBuffer);
@@ -205,27 +211,28 @@ public:
             opt(opt),isSurfaceDerivative(true),nSpacing(nSpacing),nCount(nCount)
     {
         particles.ghost_get_subset();         // This communicates which ghost particles to be excluded from support
-
-         /*if(opt==support_option::ADAPTIVE) {
-             this->AdapFac=nSpacing;
-             if(dim==2){
-                 nCount=3;
-             }
-             else{
-                 nCount=2;
-             }
-             SupportBuilder<vector_type,vector_type2>
-                supportBuilder(particlesFrom,particlesTo, differentialSignature, rCut, differentialOrder == 0);
-                supportBuilder.setAdapFac(nSpacing);
-                auto it = particlesTo.getDomainAndGhostIterator();
-                while (it.isNext()) {
+         if(opt==support_option::ADAPTIVE) {
+             auto it = particlesTo.getDomainAndGhostIterator();
+             while (it.isNext()) {
                     auto key_o = particlesTo.getOriginKey(it.get());
-                    Support support = supportBuilder.getSupport(it,monomialBasis.size(),opt);
-                    nSpacings.add(supportBuilder.getLastMinspacing());
+                    T minSpacing = std::numeric_limits<T>::max();
+                    auto itNN = verletList.getNNIterator(key_o.getKey());
+                    while (itNN.isNext()) {
+                        auto key = itNN.get();
+                        if(key_o.getKey()!=key) {
+                            Point<dim, T> xp = particlesFrom.getPosOrig(key_o);
+                            Point<dim, T> xq = particlesTo.getPosOrig(key);
+                            Point<dim, T> Arg = xp - xq; //Possible OpenFPM bug here. The subtraction is not working properly if directly using Point. particlesFrom.getPosOrig(key_o)-particlesTo.getPosOrig(key)
+                            double dist = norm(Arg);
+                            if (minSpacing > dist) { minSpacing = dist; }
+                        }
+                        ++itNN;
+                    }
+                    nSpacings.add(minSpacing);
                     ++it;
                   }
+
          }
-        */
          if(opt!=support_option::LOAD) {
              createNormalParticles<NORMAL_ID>(particles);
 #ifdef SE_CLASS1
@@ -269,7 +276,7 @@ public:
              opt(opt)
     {
         particlesFrom.ghost_get_subset();
-        initializeStaticSize(particlesFrom,particlesTo,differentialSignature==0);
+        initializeStaticSize(particlesFrom,particlesTo);
     }
 
 
@@ -281,10 +288,8 @@ public:
             size_t i=0;
             while (itNN.isNext()) {
                 auto xqK = itNN.get();
-                if(xpK.getKey()!=xqK) {
-                    particles.template getProp<prp>(xqK) += calcKernels.get(kerOff+i);
-                    ++i;
-                }
+                particles.template getProp<prp>(xqK) += calcKernels.get(kerOff+i);
+                ++i;
                 ++itNN;
             }
     }
@@ -297,10 +302,8 @@ public:
             size_t i=0;
             while (itNN.isNext()) {
                 auto xqK = itNN.get();
-                if(xpK.getKey()!=xqK) {
-                    particles.template getProp<prp>(xqK) = 1.0;
-                    ++i;
-                }
+                particles.template getProp<prp>(xqK) = 1.0;
+                ++i;
                 ++itNN;
         }
     }
@@ -312,12 +315,10 @@ public:
         auto itNN = verletList.getNNIterator(xpK.getKey());
         size_t j=0;
         while(itNN.isNext()) {
-                auto xqK = itNN.get();
-                if(xpK.getKey()!=xqK) {
-                     particles.template getProp<prp>(xqK)[i] += calcKernels.get(kerOff+j);
-                     ++j;
-                }
-                ++itNN;
+            auto xqK = itNN.get();
+            particles.template getProp<prp>(xqK)[i] += calcKernels.get(kerOff+j);
+            ++j;
+            ++itNN;
         }
     }
     /*
@@ -466,20 +467,18 @@ public:
             size_t i=0;
             while (itNN.isNext()) {
                 auto xqK = itNN.get();
-                if(xpK !=xqK) {
-                    Point<dim, T> xq = particles.getPos(xqK);
-                    Point<dim, T> normalizedArg = (xp - xq) / eps;
-                    auto ker = calcKernels.get(kerOff+i);
-                    int counter = 0;
-                    size_t N = monomialBasis.getElements().size();
-                    for (size_t j = 0; j < N; ++j) {
-                        const Monomial<dim> &m = monomialBasis.getElement(j);
-                        T mbValue = m.evaluate(normalizedArg);
-                        momenta_accu.template get<0>(counter) += mbValue * ker;
-                        ++counter;
-                    }
-                    ++i;
+                Point<dim, T> xq = particles.getPos(xqK);
+                Point<dim, T> normalizedArg = (xp - xq) / eps;
+                auto ker = calcKernels.get(kerOff+i);
+                int counter = 0;
+                size_t N = monomialBasis.getElements().size();
+                for (size_t j = 0; j < N; ++j) {
+                    const Monomial<dim> &m = monomialBasis.getElement(j);
+                    T mbValue = m.evaluate(normalizedArg);
+                    momenta_accu.template get<0>(counter) += mbValue * ker;
+                    ++counter;
                 }
+                ++i;
                 ++itNN;
             }
 
@@ -531,11 +530,9 @@ public:
             size_t i=0;
             while (itNN.isNext()) {
                 auto xqK = itNN.get();
-                if(xpK.getKey()!=xqK) {
-                    T fxq = particles.template getProp<fValuePos>(xqK);
-                    Dfxp += (fxq + fxp) * calcKernels.get(kerOff+i);
-                    ++i;
-                }
+                T fxq = particles.template getProp<fValuePos>(xqK);
+                Dfxp += (fxq + fxp) * calcKernels.get(kerOff+i);
+                ++i;
                 ++itNN;
             }
             Dfxp *= epsInvPow;
@@ -554,7 +551,7 @@ public:
      */
     inline int getNumNN(const vect_dist_key_dx &key)
     {
-        return verletList.getNNPart(key.getKey())-1;
+        return verletList.getNNPart(key.getKey());
     }
 
     /*! \brief Get the coefficent j (Neighbour) of the particle key
@@ -565,10 +562,10 @@ public:
      * \return the coefficent
      *
      */
-    inline T getCoeffNN(const vect_dist_key_dx &key, int j)
+    inline T getCoeffNN(const vect_dist_key_dx &key,const size_t &j)
     {
-    	size_t base = kerOffsets.get(key.getKey());
-        return calcKernels.get(base + j);
+    	size_t kerOff = kerOffsets.get(key.getKey());
+        return calcKernels.get(kerOff + j);
     }
 
     /*! \brief Get the number of neighbours
@@ -576,10 +573,13 @@ public:
  * \return the number of neighbours
  *
  */
-    inline size_t getIndexNN(const vect_dist_key_dx &i,const vect_dist_key_dx &j) const
+    inline size_t getIndexNN(const vect_dist_key_dx &i,const size_t &j) const
     {
 
-        return verletList.getNeighborId(i.getKey(),j.getKey());
+        size_t nid=verletList.get(i.getKey(),j);//verletList.getNeighborId(i.getKey(),j);
+        return nid;
+        //return verletList.getNeighborId(i,j);
+        //return verletList.get(i).getKey(),j);
         //localSupports.get(key.getKey()).getKeys().get(j);
     }
 
@@ -637,11 +637,9 @@ public:
         size_t i=0;
         while (itNN.isNext()) {
             auto xqK = itNN.get();
-            if(xpK.getKey()!=xqK) {
-                expr_type fxq = o1.value(vect_dist_key_dx(xqK));
-                Dfxp = Dfxp + (fxq + fxp) * calcKernels.get(kerOff+i);
-                ++i;
-            }
+            expr_type fxq = o1.value(vect_dist_key_dx(xqK));
+            Dfxp = Dfxp + (fxq + fxp) * calcKernels.get(kerOff+i);
+            ++i;
             ++itNN;
         }
         Dfxp = Dfxp * epsInvPow;
@@ -685,11 +683,9 @@ public:
         size_t j=0;
         while (itNN.isNext()) {
             auto xqK = itNN.get();
-            if(xpK.getKey()!=xqK) {
-                expr_type fxq = o1.value(vect_dist_key_dx(xqK))[i];
-                Dfxp = Dfxp + (fxq + fxp) * calcKernels.get(kerOff+j);
-                ++j;
-            }
+            expr_type fxq = o1.value(vect_dist_key_dx(xqK))[i];
+            Dfxp = Dfxp + (fxq + fxp) * calcKernels.get(kerOff+j);
+            ++j;
             ++itNN;
         }
         Dfxp = Dfxp * epsInvPow;
@@ -706,7 +702,7 @@ public:
         localEpsInvPow.clear();
         calcKernels.clear();
         kerOffsets.clear();
-        initializeStaticSize(particlesFrom,particlesTo, convergenceOrder);
+        initializeStaticSize(particlesFrom,particlesTo);
     }
 
     void initializeUpdate(vector_type &particles)
@@ -723,8 +719,7 @@ public:
     }
 
 private:
-    void initializeStaticSize(vector_type &particlesFrom,vector_type2 &particlesTo,
-                              const bool &isInterpolation=0) {
+    void initializeStaticSize(vector_type &particlesFrom,vector_type2 &particlesTo) {
 #ifdef SE_CLASS1
         this->update_ctr=particlesFrom.getMapCtr();
 #endif
@@ -750,9 +745,7 @@ private:
             // Get the points in the support of the DCPSE kernel and store the support for reuse
             auto key_o = particlesTo.getOriginKey(it.get());
 
-            size_t nnbs = verletList.getNNPart(key_o.getKey()); //no. of neighbours minus center particle
-            if(!isInterpolation)
-                {nnbs-=1;}
+            size_t nnbs = verletList.getNNPart(key_o.getKey()); //no. of neighbours
             // First check that the number of points given is enough for building the Vandermonde matrix
             if (nnbs < monomialBasis.size()) {
                 ACTION_ON_ERROR(
@@ -766,16 +759,14 @@ private:
                 auto itNN = verletList.getNNIterator(key_o.getKey());
                 while (itNN.isNext()) {
                     auto key = itNN.get();
-                    if(key_o.getKey()==key && !isInterpolation){
-                        ++itNN;
-                        continue;
+                    if(key_o.getKey()!=key) {
+                        Point<dim, T> xp = particlesFrom.getPosOrig(key_o);
+                        Point<dim, T> xq = particlesTo.getPosOrig(key);
+                        Point<dim, T> Arg = xp - xq; //Possible OpenFPM bug here. The subtraction is not working properly if directly using Point. particlesFrom.getPosOrig(key_o)-particlesTo.getPosOrig(key)
+                        double dist = norm(Arg);
+                        avgNeighbourSpacing += Arg.norm1();
+                        if (minSpacing > dist) { minSpacing = dist; }
                     }
-                    Point<dim, T> xp = particlesFrom.getPosOrig(key_o);
-                    Point<dim, T> xq = particlesTo.getPosOrig(key);
-                    Point<dim, T> Arg = xp-xq; //Possible OpenFPM bug here. The subtraction is not working properly if directly using Point. particlesFrom.getPosOrig(key_o)-particlesTo.getPosOrig(key)
-                    double dist = norm(Arg);
-                    avgNeighbourSpacing += Arg.norm1();
-                    if (minSpacing > dist) { minSpacing = dist; }
                     ++itNN;
                 }
             }
@@ -794,17 +785,12 @@ private:
             assert(nnbs >= monomialBasis.size());
 #endif
             {
-                //here we precompute a smart dictionary for avoiding recomputations of pow.
                 T epsSq = (2.0 * eps * eps);
                 auto& basisElements = monomialBasis.getElements();
                 auto itNN = verletList.getNNIterator(key_o.getKey());
                 size_t i = 0;
                 while (itNN.isNext()) {
                     auto key = itNN.get();
-                    if(key_o.getKey()==key && !isInterpolation){
-                        ++itNN;
-                        continue;
-                    }
                     Point<dim, T> xp = particlesFrom.getPosOrig(key_o);
                     Point<dim, T> xq = particlesTo.getPosOrig(key);
                     Point<dim, T> Arg = xp-xq;
@@ -858,10 +844,6 @@ private:
                 auto itNN = verletList.getNNIterator(key_o.getKey());
                 while (itNN.isNext()) {
                     auto xqK = itNN.get();
-                    if(key_o.getKey()==xqK && !isInterpolation){
-                        ++itNN;
-                        continue;
-                    }
                     Point<dim, T> xq = particlesTo.getPosOrig(xqK);
                     Point<dim, T> normalizedArg = (xp-xq)/ eps;
                     calcKernels.add(computeKernel(normalizedArg, a));

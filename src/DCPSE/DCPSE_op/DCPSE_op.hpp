@@ -68,7 +68,7 @@ public:
     inline void value_nz(pmap_type &p_map, const vect_dist_key_dx &key, unordered_map_type &cols, coeff_type &coeff,
                          unsigned int comp) const {
         // for all NN of key
-        for (int j = 0; j < dcp.getNumNN(key); j++) {
+        for (size_t j = 0; j < dcp.getNumNN(key); j++) {
             auto coeff_dc = dcp.getCoeffNN(key, j);
             auto k = dcp.getIndexNN(key, j);
 
@@ -159,7 +159,7 @@ public:
                          unsigned int comp) const {
         for (int i = 0; i < DCPSE_type::vtype::dims; i++) {
             // for all NN of key
-            for (int j = 0; j < dcp[i].getNumNN(key); j++) {
+            for (size_t j = 0; j < dcp[i].getNumNN(key); j++) {
                 auto coeff_dc = dcp[i].getCoeffNN(key, j);
                 auto k = dcp[i].getIndexNN(key, j);
 
@@ -256,7 +256,7 @@ public:
                          unsigned int comp) const {
         for (int i = 0; i < DCPSE_type::vtype::dims; i++) {
             // for all NN of key
-            for (int j = 0; j < dcp[i].getNumNN(key); j++) {
+            for (size_t j = 0; j < dcp[i].getNumNN(key); j++) {
                 auto coeff_dc = dcp[i].getCoeffNN(key, j);
                 auto k = dcp[i].getIndexNN(key, j);
 
@@ -413,7 +413,7 @@ public:
                          unsigned int comp) const {
         for (int i = 0; i < DCPSE_type::vtype::dims; i++) {
             // for all NN of key
-            for (int j = 0; j < dcp[i].getNumNN(key); j++) {
+            for (size_t j = 0; j < dcp[i].getNumNN(key); j++) {
                 auto coeff_dc = dcp[i].getCoeffNN(key, j);
                 auto k = dcp[i].getIndexNN(key, j);
 
@@ -496,7 +496,7 @@ public:
                          unsigned int comp) const {
         for (int i = 0; i < DCPSE_type::vtype::dims; i++) {
             // for all NN of key
-            for (int j = 0; j < dcp[i].getNumNN(key); j++) {
+            for (size_t j = 0; j < dcp[i].getNumNN(key); j++) {
                 auto coeff_dc = dcp[i].getCoeffNN(key, j);
                 auto k = dcp[i].getIndexNN(key, j);
 
@@ -591,7 +591,7 @@ public:
                          unsigned int comp) const {
         for (int i = 0; i < DCPSE_type::vtype::dims; i++) {
             // for all NN of key
-            for (int j = 0; j < dcp[i].getNumNN(key); j++) {
+            for (size_t j = 0; j < dcp[i].getNumNN(key); j++) {
                 auto coeff_dc = dcp[i].getCoeffNN(key, j);
                 auto k = dcp[i].getIndexNN(key, j);
 
