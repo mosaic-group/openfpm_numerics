@@ -645,7 +645,7 @@ struct vector_dist_op_compute_op<prp,false,comp_dev>
 		Point<n,int> comp_;
 		for (int i = 0 ; i < n ; i++)	{comp_[i] = comp[i];}
 
-		CUDA_LAUNCH((compute_expr_ker_slice<prp,n>),ite,v,v_exp,comp);
+		CUDA_LAUNCH((compute_expr_ker_slice<prp,n>),ite,v,v_exp,comp_);
 	}
 
 	template<typename vector, typename expr>

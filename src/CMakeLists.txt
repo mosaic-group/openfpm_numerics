@@ -40,7 +40,7 @@ if ( CUDA_ON_BACKEND STREQUAL "HIP" AND HIP_FOUND )
 		list(APPEND HIP_HIPCC_FLAGS -O0)
 	endif()
 
-	list(APPEND HIP_HIPCC_FLAGS -D__NVCC__ -D__HIP__  -DCUDART_VERSION=11000 -D__CUDACC__ -D__CUDACC_VER_MAJOR__=11 -D__CUDACC_VER_MINOR__=0 -D__CUDACC_VER_BUILD__=0 --std=c++14)
+	list(APPEND HIP_HIPCC_FLAGS -D__NVCC__ -D__HIP__  -DCUDART_VERSION=11000 -D__CUDACC__ -D__CUDACC_VER_MAJOR__=11 -D__CUDACC_VER_MINOR__=0 -D__CUDACC_VER_BUILD__=0 --std=c++17)
 	set_source_files_properties(${CUDA_SOURCES} PROPERTIES LANGUAGE CXX)
 
 	hip_add_executable(numerics ${OPENFPM_INIT_FILE} ${CUDA_SOURCES}
@@ -166,7 +166,7 @@ target_include_directories (numerics PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/../../op
 target_include_directories (numerics PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/../../openfpm_pdata/src/)
 target_include_directories (numerics PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/../../openfpm_data/src/)
 target_include_directories (numerics PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/../../openfpm_io/src/)
-target_include_directories (numerics PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/config)
+target_include_directories (numerics PUBLIC ${CMAKE_BINARY_DIR}/config)
 target_include_directories (numerics PUBLIC ${PARMETIS_ROOT}/include)
 target_include_directories (numerics PUBLIC ${METIS_ROOT}/include)
 target_include_directories (numerics PUBLIC ${HDF5_ROOT}/include)
@@ -223,10 +223,10 @@ if (TEST_COVERAGE)
 	target_link_libraries(numerics -lgcov)
 endif()
 
-# Request that particles be built with -std=c++11
+# Request that particles be built with -std=c++17
 # As this is a public compile feature anything that links to particles
-# will also build with -std=c++11
-target_compile_features(numerics PUBLIC cxx_std_11)
+# will also build with -std=c++17
+target_compile_features(numerics PUBLIC cxx_std_17)
 target_link_libraries(numerics ${MPI_C_LIBRARIES})
 
 if (NOT APPLE)
