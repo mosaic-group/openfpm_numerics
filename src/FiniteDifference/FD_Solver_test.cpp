@@ -462,6 +462,7 @@ f_x = f_y = f_z = 3
 
     	g_dist.setDefaultStagPosition();
     	g_dist.setStagPosition<0>(cmb_v);
+        g_dist.setStagPosition<2>(cmb_v);
 
     	// It is the maximum extension of the stencil
     	Ghost<2,long int> stencil_max(1);

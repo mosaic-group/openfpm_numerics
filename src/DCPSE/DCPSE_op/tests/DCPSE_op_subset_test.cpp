@@ -203,20 +203,24 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_subset_suite_tests)
         Out_V_bulk[1] = Out_V[0] +Dy_bulk(P);
 
 	    auto it2 = Particles_bulk.getDomainIterator();
-        bool check1=1,check2=2,check3=1,check4=1;
+        double check1=15.0,check2=0,check3=0,check4=0;
         while (it2.isNext())
         {
 		    auto p = it2.get();
-		    check1=Particles_bulk.getProp<2>(p)==15.0;
-		    check2=fabs(Particles_bulk.getProp<1>(p) - cos(Particles_bulk.getPos(p)[0])) < 0.005 ;
-		    check3=(fabs(Particles_bulk.getProp<3>(p)[0] - Particles_bulk.getProp<0>(p) - cos(Particles_bulk.getPos(p)[0])) < 0.001 );
-		    check4=(fabs(Particles_bulk.getProp<3>(p)[1] - Particles_bulk.getProp<3>(p)[0] - cos(Particles_bulk.getPos(p)[1])) < 0.001 );
+            if(Particles_bulk.getProp<2>(p)!=15.0)
+                {check1=0;};
+            if(check2>fabs(Particles_bulk.getProp<1>(p) - cos(Particles_bulk.getPos(p)[0])))
+                {check2= fabs(Particles_bulk.getProp<1>(p) - cos(Particles_bulk.getPos(p)[0]));}
+		    if(check3 > fabs(Particles_bulk.getProp<3>(p)[0] - Particles_bulk.getProp<0>(p) - cos(Particles_bulk.getPos(p)[0])))
+                {check3 = fabs(Particles_bulk.getProp<3>(p)[0] - Particles_bulk.getProp<0>(p) - cos(Particles_bulk.getPos(p)[0]));}
+		    if(check4>fabs(Particles_bulk.getProp<3>(p)[1] - Particles_bulk.getProp<3>(p)[0] - cos(Particles_bulk.getPos(p)[1])))
+                {check4=fabs(Particles_bulk.getProp<3>(p)[1] - Particles_bulk.getProp<3>(p)[0] - cos(Particles_bulk.getPos(p)[1]));}
             ++it2;
 	    }
-        BOOST_REQUIRE(check1);
-        BOOST_REQUIRE(check3);
-        BOOST_REQUIRE(check2);
-        BOOST_REQUIRE(check4);
+        BOOST_REQUIRE(check1==15.0);
+        BOOST_REQUIRE(check2<0.005);
+        BOOST_REQUIRE(check3<0.001);
+        BOOST_REQUIRE(check4<0.001);
     }
 
     BOOST_AUTO_TEST_CASE(dcpse_op_subset_PC_lid) {

@@ -504,8 +504,19 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests3)
 
         auto verletList = Particles.getVerlet(rCut);
         auto verletList2 = Particles.getVerlet(rCut2);
-        auto verletListBulk = Particles_bulk.getVerlet(rCut);
-
+        auto verletListBulk = verletList;
+        verletListBulk.clear();
+        for(size_t i=0;i<bulk.size();++i) {
+            auto p=bulk.get<0>(i);
+            auto itNN = verletList.getNNIterator(p);
+            while (itNN.isNext()) {
+                auto nkey = itNN.get();
+                if (Particles.getSubset(nkey) == 0) {
+                    verletListBulk.addPart(p, nkey);
+                }
+                ++itNN;
+            }
+        }
         Derivative_x Dx(Particles, 2, verletList),B_Dx(Particles_bulk, 2, verletListBulk);
         Derivative_y Dy(Particles, 2, verletList),B_Dy(Particles_bulk, 2, verletListBulk);
         Derivative_z Dz(Particles, 2, verletList),B_Dz(Particles_bulk, 2, verletListBulk);
@@ -830,7 +841,19 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests3)
 
         auto verletList = Particles.getVerlet(rCut);
         auto verletList2 = Particles.getVerlet(rCut2);
-        auto verletListBulk = Particles_bulk.getVerlet(rCut);
+        auto verletListBulk = verletList;
+        verletListBulk.clear();
+        for(size_t i=0;i<bulk.size();++i) {
+            auto p=bulk.get<0>(i);
+            auto itNN = verletList.getNNIterator(p);
+            while (itNN.isNext()) {
+                auto nkey = itNN.get();
+                if (Particles.getSubset(nkey) == 0) {
+                    verletListBulk.addPart(p, nkey);
+                }
+                ++itNN;
+            }
+        }
         Derivative_x Dx(Particles, 2, verletList),B_Dx(Particles_bulk, 2, verletListBulk);
         Derivative_y Dy(Particles, 2, verletList),B_Dy(Particles_bulk, 2, verletListBulk);
         Derivative_z Dz(Particles, 2, verletList),B_Dz(Particles_bulk, 2, verletListBulk);

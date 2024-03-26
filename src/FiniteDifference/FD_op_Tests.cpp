@@ -412,16 +412,17 @@ BOOST_AUTO_TEST_SUITE(fd_op_suite_tests)
         grid_key_dx<2> stop({(long int)(sz[0]-2),(long int)(sz[1]-2)});
 
         auto it2 = domain.getSubDomainIterator(start,stop);
+        bool check1=1;
         while (it2.isNext())
         {
             auto key_l = it2.get();
 
             double test = phi.value(key_l,c2);
-
-            BOOST_REQUIRE_EQUAL(test,0.5);
-
+            if(test!=0.5)
+                check1=0;
             ++it2;
         }
+        BOOST_REQUIRE(check1);
     }
 
     BOOST_AUTO_TEST_CASE(fd_op_tests_derivative_staggered) {
