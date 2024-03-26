@@ -476,7 +476,7 @@ BOOST_AUTO_TEST_CASE(odeint_base_test3)
 
 #ifdef HAVE_EIGEN
 BOOST_AUTO_TEST_CASE(dcpse_op_react_diff_test) {
-        size_t edgeSemiSize = 5;
+        size_t edgeSemiSize = 20;
         const size_t sz[2] = {2 * edgeSemiSize+1, 2 * edgeSemiSize+1};
         Box<2, double> box({0, 0}, {1.0, 1.0});
         size_t bc[2] = {PERIODIC, PERIODIC};

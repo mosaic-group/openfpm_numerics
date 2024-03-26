@@ -112,6 +112,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_subset_suite_tests)
         vector_dist_subset<2, double, aggregate<double, double, double, VectorS<2, double>, VectorS<2, double>,VectorS<2, double>,double>> Particles_bulk(Particles,0);
         vector_dist_subset<2, double, aggregate<double, double, double, VectorS<2, double>, VectorS<2, double>,VectorS<2, double>,double>> Particles_boundary(Particles,1);
         auto & boundary = Particles_boundary.getIds();
+        auto & bulk = Particles_bulk.getIds();
 
         // move particles
         auto P = getV<0>(Particles);
@@ -127,7 +128,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_subset_suite_tests)
         P_bulk = 5;
 
         P_bulk=Pb+Out;
-//        Particles.write("Test_output_subset");
+        //Particles.write("Test_output_subset");
 
         // Create the subset
 
@@ -135,9 +136,24 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_subset_suite_tests)
         Derivative_y Dy(Particles, 2, rCut);
         Derivative_x Dx_bulk(Particles_bulk, 2, rCut);
 */
-        auto verletList = Particles_bulk.getVerlet(rCut);
-        Derivative_x Dx_bulk(Particles_bulk, 2, verletList);
-        Derivative_y Dy_bulk(Particles_bulk, 2, verletList);
+        //auto verletListSubset = Particles_bulk.getVerlet(rCut); //On subsets, it returns a empty list of list.
+        //let's manually construct a list of list.
+        auto verletList = Particles.getVerletWithoutRefP(rCut);
+        auto verletListSubset = verletList;
+        verletListSubset.clear();
+        for(size_t i=0;i<bulk.size();++i) {
+            auto p=bulk.get<0>(i);
+            auto itNN = verletList.getNNIterator(p);
+            while (itNN.isNext()) {
+                auto nkey = itNN.get();
+                if (Particles.getSubset(nkey) == 0) {
+                    verletListSubset.addPart(p, nkey);
+                }
+                ++itNN;
+            }
+        }
+        Derivative_x Dx_bulk(Particles_bulk, 2, verletListSubset);
+        Derivative_y Dy_bulk(Particles_bulk, 2, verletListSubset);
 
         Out_bulk = Dx_bulk(P);
 	    Out_V_bulk[0] = P + Dx_bulk(P);
@@ -173,7 +189,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_subset_suite_tests)
 //        P = Dx_bulk(P);   <------- Incorrect produce overflow
 
         Particles.ghost_get<0>();
-        Particles.write("TEST");
+        //Particles.write("TEST");
 
         for (int i = 0 ; i < boundary.size() ; i++)
         {
@@ -187,19 +203,20 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_subset_suite_tests)
         Out_V_bulk[1] = Out_V[0] +Dy_bulk(P);
 
 	    auto it2 = Particles_bulk.getDomainIterator();
+        bool check1=1,check2=2,check3=1,check4=1;
         while (it2.isNext())
         {
 		    auto p = it2.get();
-
-		    BOOST_REQUIRE_EQUAL(Particles_bulk.getProp<2>(p),15.0);
-		    BOOST_REQUIRE(fabs(Particles_bulk.getProp<1>(p) - cos(Particles_bulk.getPos(p)[0])) < 0.005 );
-		    BOOST_REQUIRE(fabs(Particles_bulk.getProp<3>(p)[0] - Particles_bulk.getProp<0>(p) - cos(Particles_bulk.getPos(p)[0])) < 0.001 );
-		    BOOST_REQUIRE(fabs(Particles_bulk.getProp<3>(p)[1] - Particles_bulk.getProp<3>(p)[0] - cos(Particles_bulk.getPos(p)[1])) < 0.001 );
-
+		    check1=Particles_bulk.getProp<2>(p)==15.0;
+		    check2=fabs(Particles_bulk.getProp<1>(p) - cos(Particles_bulk.getPos(p)[0])) < 0.005 ;
+		    check3=(fabs(Particles_bulk.getProp<3>(p)[0] - Particles_bulk.getProp<0>(p) - cos(Particles_bulk.getPos(p)[0])) < 0.001 );
+		    check4=(fabs(Particles_bulk.getProp<3>(p)[1] - Particles_bulk.getProp<3>(p)[0] - cos(Particles_bulk.getPos(p)[1])) < 0.001 );
             ++it2;
 	    }
-
-
+        BOOST_REQUIRE(check1);
+        BOOST_REQUIRE(check3);
+        BOOST_REQUIRE(check2);
+        BOOST_REQUIRE(check4);
     }
 
     BOOST_AUTO_TEST_CASE(dcpse_op_subset_PC_lid) {
@@ -290,13 +307,26 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_subset_suite_tests)
         auto RHS_bulk =getV<2>(Particles_bulk);
 
         P_bulk = 0;
-        auto verletList = Particles.getVerlet(rCut);
+        auto verletList = Particles.getVerletWithoutRefP(rCut);
+        auto verletListSubset = verletList;
+        verletListSubset.clear();
+        for(size_t i=0;i<bulk.size();++i) {
+            auto p=bulk.get<0>(i);
+            auto itNN = verletList.getNNIterator(p);
+            while (itNN.isNext()) {
+                auto nkey = itNN.get();
+                if (Particles.getSubset(nkey) == 0) {
+                    verletListSubset.addPart(p, nkey);
+                }
+                ++itNN;
+            }
+        }
         Derivative_x Dx(Particles, 2, verletList);
         Derivative_xx Dxx(Particles, 2, verletList);
         Derivative_yy Dyy(Particles, 2, verletList);
         Derivative_y Dy(Particles, 2, verletList);
-        Derivative_x Bulk_Dx(Particles_bulk, 2, verletList);
-        Derivative_y Bulk_Dy(Particles_bulk, 2, verletList);
+        Derivative_x Bulk_Dx(Particles_bulk, 2, verletListSubset);
+        Derivative_y Bulk_Dy(Particles_bulk, 2, verletListSubset);
 
         int n = 0, nmax = 5, ctr = 0, errctr=1, Vreset = 0;
         double V_err=1;
@@ -494,14 +524,14 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_subset_suite_tests)
 
         auto P_bulk = getV<0>(Particles_subset);
         auto Grad_bulk= getV<2>(Particles_subset);
-
+        auto verletList = Particles.getVerletWithoutRefP(rCut);
+        auto verletListSubset = Particles_subset.getVerletWithoutRefP(rCut);
         P_bulk = 0;
-        auto verletList = Particles.getVerlet(rCut);
         Derivative_x Dx(Particles, 2, verletList);
-        Derivative_x Bulk_Dx(Particles_subset, 2, verletList);
+        Derivative_x Bulk_Dx(Particles_subset, 2, verletListSubset);
         Derivative_xx Dxx(Particles, 2, verletList);
         Derivative_yy Dyy(Particles, 2, verletList);
-        Derivative_y Dy(Particles, 2, verletList),Bulk_Dy(Particles_subset, 2, verletList);;
+        Derivative_y Dy(Particles, 2, verletList),Bulk_Dy(Particles_subset, 2, verletListSubset);
 
         int n = 0, nmax = 5, ctr = 0, errctr=0, Vreset = 0;
         double V_err=1;
