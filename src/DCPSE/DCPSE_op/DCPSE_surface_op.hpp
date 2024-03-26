@@ -26,14 +26,13 @@ public:
      * \return Operator Dxx which is a function on Vector_dist_Expressions
      *
      */
-    template<typename particles_type>
-    SurfaceDerivative_x(particles_type &parts, unsigned int ord, typename particles_type::stype rCut,typename particles_type::stype nSpacing,
-                    support_options opt = support_options::RADIUS) {
+    template<typename particles_type, typename list_type>
+    SurfaceDerivative_x(particles_type &parts, unsigned int ord, list_type &verletList, typename particles_type::stype nSpacing, unsigned int nCount, support_option opt = support_option::CONSTRUCT) {
         Point<particles_type::dims, unsigned int> p;
         p.zero();
         p.get(0) = 1;
 
-        dcpse = new Dcpse<particles_type::dims, particles_type>(parts, p, ord, rCut,nSpacing,value_t<NORMAL_ID>(), opt);
+        dcpse = new Dcpse<particles_type::dims, particles_type>(parts, p, ord, verletList, nSpacing, nCount, value_t<NORMAL_ID>(), opt);
     }
 
     template<typename particles_type>
@@ -116,14 +115,14 @@ public:
      * \return Operator Dxx which is a function on Vector_dist_Expressions
      *
      */
-    template<typename particles_type>
-    SurfaceDerivative_y(particles_type &parts, unsigned int ord, typename particles_type::stype rCut,typename particles_type::stype nSpacing,
-                    support_options opt = support_options::RADIUS) {
+    template<typename particles_type, typename list_type>
+    SurfaceDerivative_y(particles_type &parts, unsigned int ord, list_type &verletList, typename particles_type::stype nSpacing, unsigned int nCount,
+                    support_option opt = support_option::CONSTRUCT) {
         Point<particles_type::dims, unsigned int> p;
         p.zero();
         p.get(1) = 1;
 
-        dcpse = new Dcpse<particles_type::dims, particles_type>(parts, p, ord, rCut,nSpacing,value_t<NORMAL_ID>(), opt);
+        dcpse = new Dcpse<particles_type::dims, particles_type>(parts, p, ord, verletList, nSpacing, nCount, value_t<NORMAL_ID>(), opt);
     }
 
     template<typename particles_type>
@@ -207,14 +206,13 @@ public:
      * \return Operator Dxx which is a function on Vector_dist_Expressions
      *
      */
-    template<typename particles_type>
-    SurfaceDerivative_z(particles_type &parts, unsigned int ord, typename particles_type::stype rCut,typename particles_type::stype nSpacing,
-                    support_options opt = support_options::RADIUS) {
+    template<typename particles_type, typename list_type>
+    SurfaceDerivative_z(particles_type &parts, unsigned int ord, list_type &verletList, typename particles_type::stype nSpacing, unsigned int nCount, support_option opt = support_option::CONSTRUCT) {
         Point<particles_type::dims, unsigned int> p;
         p.zero();
         p.get(2) = 1;
 
-        dcpse = new Dcpse<particles_type::dims, particles_type>(parts, p, ord, rCut,nSpacing,value_t<NORMAL_ID>(), opt);
+        dcpse = new Dcpse<particles_type::dims, particles_type>(parts, p, ord, verletList,nSpacing, nCount, value_t<NORMAL_ID>(), opt);
     }
 
     template<typename particles_type>
@@ -297,16 +295,15 @@ public:
      * \return Operator Dxx which is a function on Vector_dist_Expressions
      *
      */
-    template<typename particles_type>
-    Laplace_Beltrami(particles_type &parts, unsigned int ord, typename particles_type::stype rCut,typename particles_type::stype nSpacing,
-                    support_options opt = support_options::RADIUS) {
+    template<typename particles_type, typename list_type>
+    Laplace_Beltrami(particles_type &parts, unsigned int ord, list_type &verletList, typename particles_type::stype nSpacing, unsigned int nCount, support_option opt = support_option::CONSTRUCT) {
         Point<particles_type::dims, unsigned int> p;
         p.zero();
         p.get(0) = 2;
         p.get(1) = 2;
         p.get(2) = 2;
 
-        dcpse = new Dcpse<particles_type::dims, particles_type>(parts, p, ord, rCut,nSpacing,value_t<NORMAL_ID>(), opt);
+        dcpse = new Dcpse<particles_type::dims, particles_type>(parts, p, ord, verletList,nSpacing, nCount, value_t<NORMAL_ID>(), opt);
     }
 
     template<typename particles_type>
@@ -389,14 +386,13 @@ public:
      * \return Operator Dxx which is a function on Vector_dist_Expressions
      *
      */
-    template<typename particles_type>
-    SurfaceDerivative_xx(particles_type &parts, unsigned int ord, typename particles_type::stype rCut,typename particles_type::stype nSpacing,
-                    support_options opt = support_options::RADIUS) {
+    template<typename particles_type, typename list_type>
+    SurfaceDerivative_xx(particles_type &parts, unsigned int ord, list_type &verletList, typename particles_type::stype nSpacing, unsigned int nCount, support_option opt = support_option::CONSTRUCT) {
         Point<particles_type::dims, unsigned int> p;
         p.zero();
         p.get(0) = 2;
 
-        dcpse = new Dcpse<particles_type::dims, particles_type>(parts, p, ord, rCut,nSpacing,value_t<NORMAL_ID>(), opt);
+        dcpse = new Dcpse<particles_type::dims, particles_type>(parts, p, ord, verletList, nSpacing, nCount, value_t<NORMAL_ID>(), opt);
     }
 
     template<typename particles_type>
@@ -480,14 +476,13 @@ public:
      * \return Operator Dxx which is a function on Vector_dist_Expressions
      *
      */
-    template<typename particles_type>
-    SurfaceDerivative_yy(particles_type &parts, unsigned int ord, typename particles_type::stype rCut,typename particles_type::stype nSpacing,
-                    support_options opt = support_options::RADIUS) {
+    template<typename particles_type, typename list_type>
+    SurfaceDerivative_yy(particles_type &parts, unsigned int ord, list_type &verletList, typename particles_type::stype nSpacing, unsigned int nCount, support_option opt = support_option::CONSTRUCT) {
         Point<particles_type::dims, unsigned int> p;
         p.zero();
         p.get(1) = 2;
 
-        dcpse = new Dcpse<particles_type::dims, particles_type>(parts, p, ord, rCut,nSpacing,value_t<NORMAL_ID>(), opt);
+        dcpse = new Dcpse<particles_type::dims, particles_type>(parts, p, ord, verletList,nSpacing, nCount, value_t<NORMAL_ID>(), opt);
     }
 
     template<typename particles_type>
@@ -570,14 +565,13 @@ public:
      * \return Operator Dxx which is a function on Vector_dist_Expressions
      *
      */
-    template<typename particles_type>
-    SurfaceDerivative_zz(particles_type &parts, unsigned int ord, typename particles_type::stype rCut,typename particles_type::stype nSpacing,
-                    support_options opt = support_options::RADIUS) {
+    template<typename particles_type, typename list_type>
+    SurfaceDerivative_zz(particles_type &parts, unsigned int ord, list_type &verletList, typename particles_type::stype nSpacing, unsigned int nCount, support_option opt = support_option::CONSTRUCT) {
         Point<particles_type::dims, unsigned int> p;
         p.zero();
         p.get(2) = 2;
 
-        dcpse = new Dcpse<particles_type::dims, particles_type>(parts, p, ord, rCut,nSpacing,value_t<NORMAL_ID>(), opt);
+        dcpse = new Dcpse<particles_type::dims, particles_type>(parts, p, ord, verletList,nSpacing, nCount, value_t<NORMAL_ID>(), opt);
     }
 
     template<typename particles_type>
@@ -662,14 +656,14 @@ public:
      *
      */
     template<typename particles_type>
-    SurfaceDerivative_xy(particles_type &parts, unsigned int ord, typename particles_type::stype rCut,typename particles_type::stype nSpacing,
-                    support_options opt = support_options::RADIUS) {
+    SurfaceDerivative_xy(particles_type &parts, unsigned int ord, typename particles_type::stype rCut,typename particles_type::stype nSpacing, unsigned int nCount,
+                    support_option opt = support_option::CONSTRUCT) {
         Point<particles_type::dims, unsigned int> p;
         p.zero();
         p.get(0) = 1;
         p.get(1) = 1;
 
-        dcpse = new Dcpse<particles_type::dims, particles_type>(parts, p, ord, rCut,nSpacing,value_t<NORMAL_ID>(), opt);
+        dcpse = new Dcpse<particles_type::dims, particles_type>(parts, p, ord, rCut,nSpacing, nCount, value_t<NORMAL_ID>(), opt);
     }
 
     template<typename particles_type>
@@ -753,15 +747,14 @@ public:
      * \return Operator Dxx which is a function on Vector_dist_Expressions
      *
      */
-    template<typename particles_type>
-    SurfaceDerivative_yz(particles_type &parts, unsigned int ord, typename particles_type::stype rCut,typename particles_type::stype nSpacing,
-                    support_options opt = support_options::RADIUS) {
+    template<typename particles_type, typename list_type>
+    SurfaceDerivative_yz(particles_type &parts, unsigned int ord, list_type &verletList, typename particles_type::stype nSpacing, unsigned int nCount, support_option opt = support_option::CONSTRUCT) {
         Point<particles_type::dims, unsigned int> p;
         p.zero();
         p.get(1) = 1;
         p.get(2) = 1;
 
-        dcpse = new Dcpse<particles_type::dims, particles_type>(parts, p, ord, rCut,nSpacing,value_t<NORMAL_ID>(), opt);
+        dcpse = new Dcpse<particles_type::dims, particles_type>(parts, p, ord, verletList, nSpacing, nCount, value_t<NORMAL_ID>(), opt);
     }
 
     template<typename particles_type>
@@ -845,15 +838,14 @@ public:
      * \return Operator Dxx which is a function on Vector_dist_Expressions
      *
      */
-    template<typename particles_type>
-    SurfaceDerivative_xz(particles_type &parts, unsigned int ord, typename particles_type::stype rCut,typename particles_type::stype nSpacing,
-                    support_options opt = support_options::RADIUS) {
+    template<typename particles_type, typename list_type>
+    SurfaceDerivative_xz(particles_type &parts, unsigned int ord, list_type &verletList, typename particles_type::stype nSpacing, unsigned int nCount, support_option opt = support_option::CONSTRUCT) {
         Point<particles_type::dims, unsigned int> p;
         p.zero();
         p.get(0) = 1;
         p.get(2) = 1;
 
-        dcpse = new Dcpse<particles_type::dims, particles_type>(parts, p, ord, rCut,nSpacing,value_t<NORMAL_ID>(), opt);
+        dcpse = new Dcpse<particles_type::dims, particles_type>(parts, p, ord, verletList, nSpacing, nCount, value_t<NORMAL_ID>(), opt);
     }
 
     template<typename particles_type>
@@ -936,11 +928,11 @@ public:
      * \return Operator Dxx which is a function on Vector_dist_Expressions
      *
      */
-    template<typename particles_type>
-    SurfaceDerivative_G(particles_type &parts, unsigned int ord, typename particles_type::stype rCut,typename particles_type::stype nSpacing,
-                    const Point<particles_type::dims, unsigned int> &p,support_options opt = support_options::RADIUS) {
+    template<typename particles_type, typename list_type>
+    SurfaceDerivative_G(particles_type &parts, unsigned int ord, list_type &verletList, typename particles_type::stype nSpacing, unsigned int nCount,
+                    const Point<particles_type::dims, unsigned int> &p, support_option opt = support_option::CONSTRUCT) {
 
-        dcpse = new Dcpse<particles_type::dims, particles_type>(parts, p, ord, rCut,nSpacing,value_t<NORMAL_ID>(), opt);
+        dcpse = new Dcpse<particles_type::dims, particles_type>(parts, p, ord, verletList,nSpacing, nCount, value_t<NORMAL_ID>(), opt);
     }
 
     template<typename particles_type>

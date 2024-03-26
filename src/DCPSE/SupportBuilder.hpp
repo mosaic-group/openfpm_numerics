@@ -18,11 +18,8 @@ enum support_options
 {
     N_PARTICLES,
     RADIUS,
-    LOAD,
-    ADAPTIVE,
     AT_LEAST_N_PARTICLES
 };
-
 
 template<typename vector_type,typename vector_type2>
 class SupportBuilder {
@@ -114,7 +111,7 @@ private:
 
     void enlargeSetOfCellsUntilSize(std::set<grid_key_dx<vector_type::dims>> &set, unsigned int requiredSize,
                                     support_options opt) {
-        if (opt == support_options::RADIUS || opt == support_options::ADAPTIVE) {
+        if (opt == support_options::RADIUS) {
             auto cell = *set.begin();
             grid_key_dx<vector_type::dims> middle;
             int n = std::ceil(rCut / cellList.getCellBox().getHigh(0));
@@ -203,7 +200,7 @@ private:
                     }
                     #endif*/
         }
-        else if(opt == support_options::ADAPTIVE) {
+        else if(opt == support_options::RADIUS) {
             MinSpacing = std::numeric_limits<double>::max();
             for (int i = 0; i < rp.size(); i++) {
                 if (MinSpacing > rp.get(i).dist && rp.get(i).dist != 0) {

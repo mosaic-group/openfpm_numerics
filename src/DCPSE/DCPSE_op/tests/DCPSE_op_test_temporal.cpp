@@ -78,9 +78,8 @@ BOOST_AUTO_TEST_SUITE(temporal_test_suite)
 		auto dT = getV<dTensor>(Particles);
 
 		//Particles_subset.write("Pars");
-		Derivative_x Dx(Particles, ord, rCut, sampling_factor, support_options::RADIUS), Bulk_Dx(Particles, ord,
-																								 rCut, sampling_factor,
-																								 support_options::RADIUS);
+        auto verletList = Particles.getVerlet(rCut);
+        Derivative_x Dx(Particles, ord, verletList), Bulk_Dx(Particles, ord, verletList);
         texp_v<double> TVx,TdxVx;
 		texp_v<VectorS<3, double>> TV;
         texp_v<double[3][3]> TT;
