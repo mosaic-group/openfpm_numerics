@@ -177,7 +177,7 @@ private:
 			if (redistOptions.verbose) vd_in.template getProp<vd_in_close_part>(akey) = 0;
 			int isclose = 0;
 
-			auto Np = NN.template getNNIterator(NN.getCell(xa));
+			auto Np = NN.getNNIterator(NN.getCell(xa));
 			while (Np.isNext())
 			{
 				vect_dist_key_dx bkey = Np.get();
@@ -376,7 +376,7 @@ private:
 			Point<dim, double> xaa = vd_generic.getPos(a);
 
 			// Now we will iterate over the sample points, which means iterating over vd_s.
-			auto Np = NN_s.template getNNIterator(NN_s.getCell(vd_generic.getPos(a)));
+			auto Np = NN_s.getNNIterator(NN_s.getCell(vd_generic.getPos(a)));
 
 			vect_dist_key_dx b_min = get_closest_neighbor<decltype(NN_s)>(xaa, NN_s);
 
@@ -549,7 +549,7 @@ private:
 
 	template<typename NNlist_type> vect_dist_key_dx get_closest_neighbor(Point<dim, double> & xa, NNlist_type & NN_s)
 	{
-		auto Np = NN_s.template getNNIterator(NN_s.getCell(xa));
+		auto Np = NN_s.getNNIterator(NN_s.getCell(xa));
 
 		// distance is the the minimum distance to be beaten
                 double distance = 1000000.0;
@@ -634,7 +634,7 @@ private:
 		{
 			vect_dist_key_dx a = part.get();
 			Point<dim, double> xa = vd_generic.getPos(a);
-			auto Np = NN.template getNNIterator(NN.getCell(xa));
+			auto Np = NN.getNNIterator(NN.getCell(xa));
 			openfpm::vector<size_t> keys;
 
 			while(Np.isNext())
