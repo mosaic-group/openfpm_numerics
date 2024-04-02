@@ -1308,44 +1308,51 @@ BOOST_AUTO_TEST_CASE(tensor_surface_gradient) {
       }
     }
 
-    // 2) Surface Laplacian                                                                                                                                                                             
-    dSGrad[0][0][0] = Sdx(SGrad[0][0]);
-    dSGrad[0][0][1] = Sdy(SGrad[0][0]);
-    dSGrad[0][0][2] = Sdz(SGrad[0][0]);
+    // 2) Surface Laplacian
+    for (int d1 = 0; d1 < 3; ++d1)
+      for (int d2 = 0; d2 < 3; ++d2) {
+	dSGrad[d1][d2][0] = Sdx(SGrad[d1][d2]);
+	dSGrad[d1][d2][1] = Sdy(SGrad[d1][d2]);
+	dSGrad[d1][d2][2] = Sdz(SGrad[d1][d2]);
+      }
+    
+    // dSGrad[0][0][0] = Sdx(SGrad[0][0]);
+    // dSGrad[0][0][1] = Sdy(SGrad[0][0]);
+    // dSGrad[0][0][2] = Sdz(SGrad[0][0]);
 
-    dSGrad[0][1][0] = Sdx(SGrad[0][1]);
-    dSGrad[0][1][1] = Sdy(SGrad[0][1]);
-    dSGrad[0][1][2] = Sdz(SGrad[0][1]);
+    // dSGrad[0][1][0] = Sdx(SGrad[0][1]);
+    // dSGrad[0][1][1] = Sdy(SGrad[0][1]);
+    // dSGrad[0][1][2] = Sdz(SGrad[0][1]);
 
-    dSGrad[0][2][0] = Sdx(SGrad[0][2]);
-    dSGrad[0][2][1] = Sdy(SGrad[0][2]);
-    dSGrad[0][2][2] = Sdz(SGrad[0][2]);
-
-
-    dSGrad[1][0][0] = Sdx(SGrad[1][0]);
-    dSGrad[1][0][1] = Sdy(SGrad[1][0]);
-    dSGrad[1][0][2] = Sdz(SGrad[1][0]);
-
-    dSGrad[1][1][0] = Sdx(SGrad[1][1]);
-    dSGrad[1][1][1] = Sdy(SGrad[1][1]);
-    dSGrad[1][1][2] = Sdz(SGrad[1][1]);
-
-    dSGrad[1][2][0] = Sdx(SGrad[1][2]);
-    dSGrad[1][2][1] = Sdy(SGrad[1][2]);
-    dSGrad[1][2][2] = Sdz(SGrad[1][2]);
+    // dSGrad[0][2][0] = Sdx(SGrad[0][2]);
+    // dSGrad[0][2][1] = Sdy(SGrad[0][2]);
+    // dSGrad[0][2][2] = Sdz(SGrad[0][2]);
 
 
-    dSGrad[2][0][0] = Sdx(SGrad[2][0]);
-    dSGrad[2][0][1] = Sdy(SGrad[2][0]);
-    dSGrad[2][0][2] = Sdz(SGrad[2][0]);
+    // dSGrad[1][0][0] = Sdx(SGrad[1][0]);
+    // dSGrad[1][0][1] = Sdy(SGrad[1][0]);
+    // dSGrad[1][0][2] = Sdz(SGrad[1][0]);
 
-    dSGrad[2][1][0] = Sdx(SGrad[2][1]);
-    dSGrad[2][1][1] = Sdy(SGrad[2][1]);
-    dSGrad[2][1][2] = Sdz(SGrad[2][1]);
+    // dSGrad[1][1][0] = Sdx(SGrad[1][1]);
+    // dSGrad[1][1][1] = Sdy(SGrad[1][1]);
+    // dSGrad[1][1][2] = Sdz(SGrad[1][1]);
 
-    dSGrad[2][2][0] = Sdx(SGrad[2][2]);
-    dSGrad[2][2][1] = Sdy(SGrad[2][2]);
-    dSGrad[2][2][2] = Sdz(SGrad[2][2]);
+    // dSGrad[1][2][0] = Sdx(SGrad[1][2]);
+    // dSGrad[1][2][1] = Sdy(SGrad[1][2]);
+    // dSGrad[1][2][2] = Sdz(SGrad[1][2]);
+
+
+    // dSGrad[2][0][0] = Sdx(SGrad[2][0]);
+    // dSGrad[2][0][1] = Sdy(SGrad[2][0]);
+    // dSGrad[2][0][2] = Sdz(SGrad[2][0]);
+
+    // dSGrad[2][1][0] = Sdx(SGrad[2][1]);
+    // dSGrad[2][1][1] = Sdy(SGrad[2][1]);
+    // dSGrad[2][1][2] = Sdz(SGrad[2][1]);
+
+    // dSGrad[2][2][0] = Sdx(SGrad[2][2]);
+    // dSGrad[2][2][1] = Sdy(SGrad[2][2]);
+    // dSGrad[2][2][2] = Sdz(SGrad[2][2]);
     part.template ghost_get<DSGRAD>();
 
     for (int i = 0; i < 3; ++i)
