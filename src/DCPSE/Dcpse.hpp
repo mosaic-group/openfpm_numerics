@@ -199,7 +199,7 @@ public:
           Point<dim, unsigned int> differentialSignature,
           unsigned int convergenceOrder,
           list_type &verletList,
-          T nSpacing, T nCount,
+          T nSpacing, unsigned int nCount,
           value_t< NORMAL_ID >,
           support_option opt = support_option::CONSTRUCT)
 		:particlesFrom(particles),
