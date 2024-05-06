@@ -30,10 +30,6 @@
 #define VECT_APPLYKER_OUT_SIM 14
 #define VECT_APPLYKER_REDUCE_SIM 15
 
-#define VECT_APPLYKER_IN_GEN_SORT 16
-#define VECT_APPLYKER_IN_SORT 17
-#define VECT_APPLYKER_IN_SIM_SORT 18
-
 #define VECT_NORM 56
 #define VECT_NORM2 57
 #define VECT_ABS 58
@@ -264,11 +260,6 @@ struct nn_type_result<void,NN2_type>
 	}
 };
 
-template<bool s1, bool s2>
-struct vector_is_sort_result
-{
-	typedef boost::mpl::bool_<s1 | s2> type;
-};
 
 /*! \brief Sum operation
  *
@@ -292,9 +283,6 @@ public:
 
 	//! return the vector type on which this expression operate
 	typedef typename first_or_second<has_vtype<exp1>::value,exp1,exp2>::vtype vtype;
-
-	//! result for is sort
-	typedef typename vector_is_sort_result<exp1::is_sort::value,exp2::is_sort::value>::type is_sort;
 
 	//! NN_type
 	typedef typename nn_type_result<typename exp1::NN_type,typename exp2::NN_type>::type NN_type;
@@ -406,9 +394,6 @@ public:
 
 	typedef typename exp1::is_ker is_ker;
 
-	//! result for is sort
-	typedef typename vector_is_sort_result<exp1::is_sort::value,exp2::is_sort::value>::type is_sort;
-
 	//! NN_type
 	typedef typename nn_type_result<typename exp1::NN_type,typename exp2::NN_type>::type NN_type;
 
@@ -472,6 +457,7 @@ public:
     * \return the vector
     *
     */
+
     const vtype & getVector()
     {
         return first_or_second<has_vtype<exp1>::value,exp1,exp2>::getVector(o1,o2);
@@ -519,9 +505,6 @@ public:
 	typedef typename first_or_second<has_vtype<exp1>::value,exp1,exp2>::vtype vtype;
 
 	typedef typename exp1::is_ker is_ker;
-
-	//! result for is sort
-	typedef typename vector_is_sort_result<exp1::is_sort::value,exp2::is_sort::value>::type is_sort;
 
 	//! NN_type
 	typedef typename nn_type_result<typename exp1::NN_type,typename exp2::NN_type>::type NN_type;
@@ -622,9 +605,6 @@ public:
 	typedef typename first_or_second<has_vtype<exp1>::value,exp1,exp2>::vtype vtype;
 
 	typedef typename exp1::is_ker is_ker;
-
-	//! result for is sort
-	typedef typename vector_is_sort_result<exp1::is_sort::value,exp2::is_sort::value>::type is_sort;
 
 	//! NN_type
 	typedef typename nn_type_result<typename exp1::NN_type,typename exp2::NN_type>::type NN_type;
@@ -731,9 +711,6 @@ public:
 	//! return the vector type on which this expression operate
 	typedef typename vector_result<typename exp1::vtype,void>::type vtype;
 
-	//! result for is sort
-	typedef typename vector_is_sort_result<exp1::is_sort::value,false>::type is_sort;
-
 	//! NN_type
 	typedef typename nn_type_result<typename exp1::NN_type,void>::type NN_type;
 
@@ -832,7 +809,7 @@ struct vector_dist_expression_comp_proxy_sel
 {
     template<bool cond_, typename v_type, typename exp_type>
     static void compute(v_type &v,exp_type &v_exp)
-    { vector_dist_op_compute_op<0,false,vector_dist_expression_comp_sel<comp_dev,cond_>::type::value>
+    { vector_dist_op_compute_op<0,vector_dist_expression_comp_sel<comp_dev,cond_>::type::value>
         ::compute_expr(v,v_exp);}
 };
 
@@ -867,7 +844,7 @@ struct vector_dist_expression_comp_proxy_sel<false>
     static void compute(v_type &v, exp_type &v_exp)
     {   auto v_ker=v.toKernel();
         auto v_exp_transformed = transform_if_temporal<typename std::remove_const<exp_type>::type>::transform(v_exp);
-        vector_dist_op_compute_op<0,false,vector_dist_expression_comp_sel<comp_dev,cond>::type::value>
+        vector_dist_op_compute_op<0,vector_dist_expression_comp_sel<comp_dev,cond>::type::value>
         ::compute_expr(v_ker,v_exp_transformed);}
 };
 
@@ -915,9 +892,6 @@ public:
 
 	//! The type of the internal vector
 	typedef vector vtype;
-
-	//! result for is sort
-	typedef boost::mpl::bool_<false> is_sort;
 
 	//! NN_type
 	typedef void NN_type;
@@ -983,9 +957,9 @@ public:
 	 * \param vdkl vector_dist_ker_list
 	 *
 	 */
-	void set_vector_dist_ker_list(vector_dist_ker_list<vector> & vdkl, bool is_sort)
+	void set_vector_dist_ker_list(vector_dist_ker_list<vector> & vdkl)
 	{
-		vdkl.add(v.v,is_sort);
+		vdkl.add(v.v);
 		vdl = &vdkl;
 	}
 
@@ -1067,13 +1041,13 @@ public:
 
 		if (has_vector_kernel<vector>::type::value == false)
 		{
-			vector_dist_op_compute_op<prp,false,vector_dist_expression_comp_sel<comp_host,
+			vector_dist_op_compute_op<prp,vector_dist_expression_comp_sel<comp_host,
 																	   	  has_vector_kernel<vector>::type::value>::type::value>
 			::compute_expr(v.v,v_exp);
 		}
 		else
 		{
-			vector_dist_op_compute_op<prp,false,vector_dist_expression_comp_sel<comp_dev,
+			vector_dist_op_compute_op<prp,vector_dist_expression_comp_sel<comp_dev,
 		   	  	  	  	  	  	  	  	  	  	  	  	  	  	  	  	  has_vector_kernel<vector>::type::value>::type::value>
 			::compute_expr(v.v,v_exp);
 		}
@@ -1090,9 +1064,7 @@ public:
 	 */
 	template<typename T,typename memory,template <typename> class layout_base > vector & operator=(const vector_dist_expression<0,openfpm::vector<aggregate<T>, memory, layout_base>> & v_exp)
 	{
-		//vector_dist_op_compute_op<prp,false,vector_dist_expression_comp_sel<comp_host,has_vector_kernel<vector>::type::value>::type::value>
-		//::compute_expr(v.v,v_exp);
-            vector_dist_op_compute_op<prp,false,vector_dist_expression_comp_sel<comp_host,
+            vector_dist_op_compute_op<prp,vector_dist_expression_comp_sel<comp_host,
                     has_vector_kernel<vector>::type::value>::type::value>
             ::compute_expr(v.v,v_exp);
 
@@ -1109,12 +1081,9 @@ public:
  */
     template<typename T> vector & operator=(const vector_dist_expression<0,openfpm::vector_gpu<aggregate<T>>> & v_exp)
     {
-            vector_dist_op_compute_op<prp,false,vector_dist_expression_comp_sel<comp_dev,
+            vector_dist_op_compute_op<prp,vector_dist_expression_comp_sel<comp_dev,
                     has_vector_kernel<vector>::type::value>::type::value>
             ::compute_expr(v.v,v_exp.getVector().toKernel());
-        //constexpr bool cond=has_vector_kernel<vector>::type::value || std::is_same<vector,openfpm::vector<aggregate<T>,CudaMemory,memory_traits_inte>>::value;
-        //vector_dist_expression_comp_proxy_sel<!std::is_same<vector,openfpm::vector<aggregate<T>,CudaMemory,memory_traits_inte>>::value>::template compute<cond>(v.v,v_exp);
-
 
         return v.v;
     }
@@ -1138,7 +1107,6 @@ public:
 		if (has_vector_kernel<vector>::type::value == false)
 		{
 			vector_dist_op_compute_op<prp,
-									  vector_dist_expression_op<exp1,exp2,op>::is_sort::value,
 									  vector_dist_expression_comp_sel<comp_host,
 																	  has_vector_kernel<vector>::type::value>::type::value>
 			::compute_expr(v.v,v_exp);
@@ -1146,7 +1114,6 @@ public:
 		else
 		{
 			vector_dist_op_compute_op<prp,
-									  vector_dist_expression_op<exp1,exp2,op>::is_sort::value,
 									  vector_dist_expression_comp_sel<comp_dev,
 		   	  	  	  	  	  	  	  	  	  	  	  	  	  	  	  has_vector_kernel<vector>::type::value>::type::value>
 			::compute_expr(v.v,v_exp);
@@ -1167,7 +1134,6 @@ public:
 		if (has_vector_kernel<vector>::type::value == false)
 		{
 			vector_dist_op_compute_op<prp,
-									  false,
 									  vector_dist_expression_comp_sel<comp_host,
 																	  has_vector_kernel<vector>::type::value>::type::value>
 			::compute_const(v.v,d);
@@ -1175,7 +1141,6 @@ public:
 		else
 		{
 			vector_dist_op_compute_op<prp,
-									  false,
 									  vector_dist_expression_comp_sel<comp_dev,
 		   	  	  	  	  	  	  	  	  	  	  	  	  	  	  	  has_vector_kernel<vector>::type::value>::type::value>
 			::compute_const(v.v,d);
@@ -1230,9 +1195,6 @@ public:
 
     //! The type of the internal value
     typedef T value_type;
-
-    //! result for is sort
-    typedef boost::mpl::bool_<false> is_sort;
 
     //! NN_type
     typedef void NN_type;
@@ -1376,16 +1338,10 @@ public:
 
         v.resize(v_exp.getVector().size_local());
         constexpr bool cond=has_vector_kernel<vector>::type::value || std::is_same<vector,openfpm::vector<aggregate<T>,CudaMemory,memory_traits_inte>>::value;
-        //std::cout<<cond<<std::endl;
-        //std::cout<< (vector_dist_expression_comp_sel<comp_host,has_vector_kernel<vector>::type::value>::type::value || std::is_same<vector,openfpm::vector<aggregate<T>,CudaMemory,memory_traits_inte>>::value)<<std::endl;
-        //std::cout<<(vector_dist_expression_comp_sel<2,
-           //     has_vector_kernel<vector>::type::value>::type::value || std::is_same<vector,openfpm::vector<aggregate<T>,CudaMemory,memory_traits_inte>>::value)<<std::endl;
-        //std::cout<<has_vector_kernel<vector>::type::value<<std::endl;
-        //std::cout<<vector_dist_expression_comp_sel<2,false>::type::value<<std::endl;
-        //std::cout<<!std::is_same<vector,openfpm::vector<aggregate<T>,CudaMemory,memory_traits_inte>>::value<<std::endl;
+
         if (has_vector_kernel<vector>::type::value == false && !std::is_same<vector,openfpm::vector<aggregate<T>,CudaMemory,memory_traits_inte>>::value)
         {
-            vector_dist_op_compute_op<0,false,vector_dist_expression_comp_sel<comp_host,cond>::type::value>
+            vector_dist_op_compute_op<0,vector_dist_expression_comp_sel<comp_host,cond>::type::value>
             ::compute_expr(v,v_exp);
         }
         else
@@ -1418,7 +1374,6 @@ public:
         if (has_vector_kernel<vector>::type::value == false)
         {
             vector_dist_op_compute_op<0,
-                    vector_dist_expression_op<exp1,exp2,op>::is_sort::value,
                     vector_dist_expression_comp_sel<comp_host,
                             has_vector_kernel<vector>::type::value>::type::value>
             ::compute_expr(v,v_exp);
@@ -1426,7 +1381,6 @@ public:
         else
         {
             vector_dist_op_compute_op<0,
-                    vector_dist_expression_op<exp1,exp2,op>::is_sort::value,
                     vector_dist_expression_comp_sel<comp_dev,
                             has_vector_kernel<vector>::type::value>::type::value>
             ::compute_expr(v,v_exp);
@@ -1570,7 +1524,7 @@ struct switcher_get_v
 	static vector & get(vector & v)	{return v;};
 
 	template<typename exp_type, typename vector_klist>
-	static void register_vector(exp_type & exp_v, vector_klist & v,bool is_sort)
+	static void register_vector(exp_type & exp_v, vector_klist & v)
 	{
 	}
 };
@@ -1583,9 +1537,9 @@ struct switcher_get_v<vector,comp_dev>
 	static type get(vector & v)	{return v.toKernel();};
 
 	template<typename exp_type, typename vector_klist>
-	static void register_vector(exp_type & exp_v, vector_klist & v,bool is_sort)
+	static void register_vector(exp_type & exp_v, vector_klist & v)
 	{
-		exp_v.set_vector_dist_ker_list(v.private_get_vector_dist_ker_list(),is_sort);
+		exp_v.set_vector_dist_ker_list(v.private_get_vector_dist_ker_list());
 	}
 };
 
@@ -1704,10 +1658,6 @@ public:
 
         typedef std::false_type is_ker;
 
-        //! result for is sort
-        typedef boost::mpl::bool_<false> is_sort;
-
-        //! result for is sort
         typedef boost::mpl::bool_<false> NN_type;
 
 	typedef typename exp1::vtype vtype;
@@ -1910,13 +1860,13 @@ public:
 
 		if (has_vector_kernel<vtype>::type::value == false)
 		{
-			vector_dist_op_compute_op<exp1::prop,false,vector_dist_expression_comp_sel<comp_host,
+			vector_dist_op_compute_op<exp1::prop,vector_dist_expression_comp_sel<comp_host,
 																	   	  has_vector_kernel<vtype>::type::value>::type::value>
 			::compute_expr_slice(o1.getVector(),v_exp,comp);
 		}
 		else
 		{
-			vector_dist_op_compute_op<exp1::prop,false,vector_dist_expression_comp_sel<comp_dev,
+			vector_dist_op_compute_op<exp1::prop,vector_dist_expression_comp_sel<comp_dev,
 		   	  	  	  	  	  	  	  	  	  	  	  	  	  	  	  	  has_vector_kernel<vtype>::type::value>::type::value>
 			::compute_expr_slice(o1.getVector(),v_exp,comp);
 		}
@@ -1964,25 +1914,7 @@ inline vector_dist_expression<prp,typename switcher_get_v<vector,impl>::type > g
 	decltype(switcher_get_v<vector,impl>::get(v)) vk = switcher_get_v<vector,impl>::get(v);
 	vector_dist_expression<prp,typename switcher_get_v<vector,impl>::type > exp_v(vk);
 
-	switcher_get_v<vector,impl>::register_vector(exp_v,v,false);
-
-	return exp_v;
-}
-
-
-/*! \Create an expression from a vector property
- *
- * \tpatam prp property
- * \param v
- *
- */
-template <unsigned int prp,typename vector>
-inline vector_dist_expression<prp, typename switcher_get_v<vector,comp_dev>::type > getV_sort(vector & v)
-{
-	auto vk = v.toKernel_sorted();
-	vector_dist_expression<prp,typename switcher_get_v<vector, comp_dev>::type > exp_v(vk);
-
-	exp_v.set_vector_dist_ker_list(v.private_get_vector_dist_ker_list(),true);
+	switcher_get_v<vector,impl>::register_vector(exp_v,v);
 
 	return exp_v;
 }
@@ -2001,9 +1933,6 @@ class vector_dist_expression<prp,double>
 public:
 
 	typedef std::false_type is_ker;
-
-	//! result for is sort
-	typedef boost::mpl::bool_<false> is_sort;
 
 	typedef void NN_type;
 
@@ -2070,10 +1999,6 @@ class vector_dist_expression<prp,float>
 public:
 
 	typedef std::false_type is_ker;
-
-
-	//! result for is sort
-	typedef boost::mpl::bool_<false> is_sort;
 
 	typedef void NN_type;
 

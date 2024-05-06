@@ -39,8 +39,6 @@ public:
 
     typedef std::false_type NN_type;
 
-    typedef std::false_type is_sort;
-
     typedef typename exp1::vtype vtype;
 
     //! Costruct a subtraction expression out of two expressions
@@ -122,8 +120,6 @@ public:
     typedef std::false_type is_ker;
 
     typedef std::false_type NN_type;
-
-    typedef std::false_type is_sort;
 
     typedef typename exp1::vtype vtype;
 
@@ -222,8 +218,6 @@ public:
 
     typedef std::false_type NN_type;
 
-    typedef std::false_type is_sort;
-
     typedef typename exp1::vtype vtype;
 
     //! Costruct a subtraction expression out of two expressions
@@ -317,8 +311,6 @@ public:
 
     typedef std::false_type NN_type;
 
-    typedef std::false_type is_sort;
-
     inline vector_dist_expression_op(openfpm::vector<aggregate<int>> &l1, openfpm::vector<aggregate<int>> &l2)
             : l1(l1), l2(l2) {}
 
@@ -352,8 +344,6 @@ public:
 
     typedef std::false_type NN_type;
 
-    typedef std::false_type is_sort;
-
     inline vector_dist_expression_op(openfpm::vector<aggregate<int>> &l1, int l2_key)
             : l1(l1), l2_key(l2_key) {}
 
@@ -386,8 +376,6 @@ public:
     typedef std::false_type is_ker;
 
     typedef std::false_type NN_type;
-
-    typedef std::false_type is_sort;
 
     typedef typename exp1::vtype vtype;
 
@@ -469,8 +457,6 @@ public:
     typedef std::false_type is_ker;
 
     typedef std::false_type NN_type;
-
-    typedef std::false_type is_sort;
 
     typedef typename exp1::vtype vtype;
 
@@ -560,8 +546,6 @@ public:
     typedef std::false_type is_ker;
 
     typedef std::false_type NN_type;
-
-    typedef std::false_type is_sort;
 
     //! The type of the internal vector
     typedef typename first_or_second<has_vtype<exp1>::value, exp1, exp2>::vtype vtype;
