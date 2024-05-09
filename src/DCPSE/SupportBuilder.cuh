@@ -114,7 +114,7 @@ public:
     {
         domain.hostToDevicePos();
         auto it = domain.getDomainIteratorGPU(512);
-        typedef CellList_gen<vector_type::dims, typename vector_type::stype, Process_keys_lin, Mem_fast<CudaMemory>, shift<vector_type::dims, typename vector_type::stype>> params;
+        typedef CellList<vector_type::dims, typename vector_type::stype, Mem_fast<CudaMemory>, shift<vector_type::dims, typename vector_type::stype>> params;
         // auto NN = domain.getCellListGPU(rCut);
         auto NN = domain.template getCellList<params>(rCut);
         NN.hostToDevice();
