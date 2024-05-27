@@ -1883,6 +1883,7 @@ struct check_all_apply_ker<comp_dev>
 		vd.deviceToHostPos();
 
 		auto cl = vd.template getCellListGPU(0.05);
+		vd.updateCellListGPU(cl);
 
 		vector_dist_op_ap_ker_impl<comp_dev>(vd,vA,vC,vVA,vVB,vVC,cl,RUN_ON_DEVICE);
 	}
