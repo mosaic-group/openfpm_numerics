@@ -1125,7 +1125,7 @@ BOOST_AUTO_TEST_CASE(dcpse_surface_p2p_interpolation_sphere_scalar) {
   double grid_spacing_surf2=grid_spacing2;
   double grid_spacing_surf1=grid_spacing1;
   double grid_spacing_surfTo=grid_spacingTo;
-  double cutoff_factor = 3.0;
+  double cutoff_factor = 1.75;
   double rCut2{cutoff_factor * grid_spacing_surf2};
   double rCut1{cutoff_factor * grid_spacing_surf1};
   double rCutTo{cutoff_factor * grid_spacing_surfTo};
@@ -1232,7 +1232,7 @@ BOOST_AUTO_TEST_CASE(dcpse_surface_p2p_interpolation_sphere_scalar) {
   SparticlesTo.map();
   SparticlesTo.ghost_get<0>();
 
-  const size_t oporder = 4;
+  const size_t oporder = 2;
 
   PPInterpolation<decltype(SparticlesFrom1),decltype(SparticlesTo), 1> ppSurface(SparticlesFrom1,SparticlesTo,oporder,rCut1,grid_spacing_surf1, support_options::RADIUS);
   ppSurface.p2p<0,0>();
