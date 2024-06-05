@@ -634,7 +634,7 @@ private:
 		{
 			vect_dist_key_dx a = part.get();
 			Point<dim, double> xa = vd_generic.getPos(a);
-			auto Np = NN.template getNNIterator(NN.getCell(xa));
+			auto Np = NN.getNNIterator(NN.getCell(xa));
 			openfpm::vector<size_t> keys;
 
 			while(Np.isNext())

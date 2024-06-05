@@ -1281,6 +1281,97 @@ BOOST_AUTO_TEST_CASE(dcpse_surface_p2p_interpolation_sphere_scalar) {
   BOOST_REQUIRE(worst2 < 0.03);
 }
 
+BOOST_AUTO_TEST_CASE(dcpse_surface_p2p_interpolation_plane_scalar) {
+
+  auto & v_cl = create_vcluster();
+
+  size_t n{10};
+  double rCut{3.1};
+  
+  // Domain and simulation parameters
+  Box<3,double> domain{{-1,-1,-1},{1,1,1}};
+  size_t sz[3] = {n,n,n};
+  double grid_spacing{2.0/(n-1)};
+  size_t bc[3] = {NON_PERIODIC,NON_PERIODIC,NON_PERIODIC};
+  Ghost<3,double> ghost{rCut};
+
+  vector_dist<3,double,aggregate<double,double[3],double>> part_from{0,domain,bc,ghost};
+  vector_dist<3,double,aggregate<double,double[3],double>> part_to{0,domain,bc,ghost};
+  // props: scalar_qty, normal, error
+
+  // Create particles_from in a grid-like manner
+  if (v_cl.rank() == 0) {
+
+    for (int i = 0; i < n; ++i)
+      for (int j = 0; j < n; ++j) {
+
+	part_from.add();
+	
+	part_from.getLastPos()[0] = -1 + i*grid_spacing;
+	part_from.getLastPos()[1] = -1 + j*grid_spacing;
+	part_from.getLastPos()[2] = 0;
+	
+	part_from.getLastProp<0>() = std::fabs(part_from.getLastPos()[0]); // scalar_qty
+	part_from.getLastProp<1>()[0] = 0; // normal_x
+	part_from.getLastProp<1>()[1] = 0; // normal_y
+	part_from.getLastProp<1>()[2] = 1; // normal_z
+	part_from.getLastProp<2>() = 0; // error
+      }
+  }
+  part_from.map();
+  part_from.ghost_get<0,1>();
+
+  // Create particles_to in a grid-like manner + random noise
+  std::random_device rd;
+  std::mt19937 gen(rd());
+  std::uniform_real_distribution<> dist_threshold{-1.0,1.0};
+  
+  if (v_cl.rank() == 0) {
+
+    for (int i = 0; i < n; ++i)
+      for (int j = 0; j < n; ++j) {
+
+	part_to.add();
+	
+	part_to.getLastPos()[0] = -1 + i*grid_spacing + dist_threshold(gen) * 0.07; // 7% noise
+	part_to.getLastPos()[1] = -1 + j*grid_spacing + dist_threshold(gen) * 0.07;
+	part_to.getLastPos()[2] = 0;
+	
+	part_to.getLastProp<0>() = 0; // scalar_qty
+	part_to.getLastProp<1>()[0] = 0; // normal_x
+	part_to.getLastProp<1>()[1] = 0; // normal_y
+	part_to.getLastProp<1>()[2] = 1; // normal_z
+	part_to.getLastProp<2>() = 0; // error
+      }
+  }
+  part_to.map();
+  part_to.ghost_get<0,1>();
+
+  // Interpolate
+  PPInterpolation<decltype(part_from),decltype(part_to),1> ppSurface(part_from,part_to,2,rCut,grid_spacing);
+  ppSurface.p2p<0,0>();
+
+  // Compute maximum error
+  auto it = part_to.getDomainIterator();
+  double worst = 0.0;
+  while (it.isNext()) {
+    auto key{it.get()};
+
+    part_to.getProp<2>(key) = std::fabs(part_to.getProp<0>(key) - part_to.getPos(key)[0]); // error
+
+    if (part_to.getProp<2>(key) > worst)
+      worst = part_to.getProp<2>(key);
+    ++it;
+  }
+
+  // Write particles
+  part_from.deleteGhost();
+  part_from.write("surface_p2p_interp_plane_part_from");
+  part_to.deleteGhost();
+  part_to.write("surface_p2p_interp_plane_part_to");
+
+  BOOST_REQUIRE(worst < 0.03);
+}
 
 BOOST_AUTO_TEST_SUITE_END()
 
