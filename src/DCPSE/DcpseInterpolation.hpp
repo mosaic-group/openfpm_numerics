@@ -53,11 +53,11 @@ public:
    *
    * \brief Constructor for the surface particle to particle interpolation. Only enabled when the property ID of the normal to the surface is passed as the third template parameter. 
    */
-  //template<std::enable_if_t< (NORMAL_ID < INT_MAX),int> =0>
+  template<std::enable_if_t< (NORMAL_ID > 0),int> =0>
   PPInterpolation(particlesFrom_type &particlesFrom,particlesTo_type &particlesTo, unsigned int ord, typename particlesFrom_type::stype rCut,
 		  typename particlesFrom_type::stype nSpacing,
-		  support_options opt = support_options::RADIUS,
-		  bool isSurfaceInterpolation = true)
+		  support_options opt = support_options::RADIUS)
+//		  bool isSurfaceInterpolation = true)
     :particlesFrom(particlesFrom),particlesTo(particlesTo),isSurfaceInterpolation(true)
   {
     Point<particlesFrom_type::dims, unsigned int> p;
