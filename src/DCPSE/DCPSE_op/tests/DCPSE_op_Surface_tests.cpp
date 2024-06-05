@@ -1,6 +1,7 @@
 //
 // Created by Abhinav Singh on 15.11.21.
 //
+//#define SE_CLASS1
 
 #include "config.h"
 #ifdef HAVE_EIGEN
@@ -1110,7 +1111,7 @@ BOOST_AUTO_TEST_CASE(dcpse_surface_p2p_interpolation_sphere_scalar) {
   timer tt;
   tt.start();
   size_t n_from1=512;
-  size_t n_from2=1024;
+  size_t n_from2=2048;
   size_t n_to=256;
   // Domain
   double boxP1{-1.5}, boxP2{1.5};
@@ -1118,22 +1119,22 @@ BOOST_AUTO_TEST_CASE(dcpse_surface_p2p_interpolation_sphere_scalar) {
   size_t sz1[3] = {n_from1,n_from1,n_from1};
   size_t sz2[3] = {n_from2,n_from2,n_from2};
   size_t szTo[3] = {n_to,n_to,n_to};
-  double grid_spacing1{0.8/(std::pow(sz1[0],1.0/3.0)-1.0)};
-  double grid_spacing2{0.8/(std::pow(sz2[0],1.0/3.0)-1.0)};
-  double grid_spacingTo{0.8/(std::pow(szTo[0],1.0/3.0)-1.0)};
+  double grid_spacing1 = std::sqrt(4.0*M_PI/n_from1);//{0.8/(std::pow(sz1[0],1.0/3.0)-1.0)};
+  double grid_spacing2 = std::sqrt(4.0*M_PI/n_from2);//{0.8/(std::pow(sz2[0],1.0/3.0)-1.0)};
+  double grid_spacingTo = std::sqrt(4.0*M_PI/n_to);//{0.8/(std::pow(szTo[0],1.0/3.0)-1.0)};
   double grid_spacing_surf2=grid_spacing2;
   double grid_spacing_surf1=grid_spacing1;
   double grid_spacing_surfTo=grid_spacingTo;
-  double rCut2{2.5 * grid_spacing_surf2};
-  double rCut1{2.5 * grid_spacing_surf1};
-  double rCutTo{2.5 * grid_spacing_surfTo};
+  double cutoff_factor = 2.0;
+  double rCut2{cutoff_factor * grid_spacing_surf2};
+  double rCut1{cutoff_factor * grid_spacing_surf1};
+  double rCutTo{cutoff_factor * grid_spacing_surfTo};
 
   Box<3,double> domain{{boxP1,boxP1,boxP1},{boxP2,boxP2,boxP2}};
   size_t bc[3] = {NON_PERIODIC,NON_PERIODIC,NON_PERIODIC};
   Ghost<3,double> ghost1{rCut1 + grid_spacing1/8.0};
   Ghost<3,double> ghost2{rCut2 + grid_spacing2/8.0};
   Ghost<3,double> ghostTo{rCutTo + grid_spacingTo/8.0};
-  constexpr int K = 1;
   // particles
   vector_dist<3,double, aggregate<double,double[3]>> SparticlesFrom1(0,domain,bc,ghost1);
   vector_dist<3,double, aggregate<double,double[3]>> SparticlesFrom2(0,domain,bc,ghost2);
@@ -1146,7 +1147,7 @@ BOOST_AUTO_TEST_CASE(dcpse_surface_p2p_interpolation_sphere_scalar) {
   double Golden_angle=M_PI * (3.0 - sqrt(5.0));
   if (v_cl.rank() == 0) {
     // fill vector with resolution 1
-    for(int i=1;i<n_from1;i++)
+    for(int i=0;i<n_from1;i++)
       {
 	double y = 1.0 - (i /double(n_from1 - 1.0)) * 2.0;
 	double radius = sqrt(1 - y * y);
@@ -1163,10 +1164,18 @@ BOOST_AUTO_TEST_CASE(dcpse_surface_p2p_interpolation_sphere_scalar) {
 	SparticlesFrom1.getLastProp<1>()[1] = y/rm;
 	SparticlesFrom1.getLastProp<1>()[2] = z/rm;
 	// fill scalar field (spherical harmonic 2,0)
-	SparticlesFrom1.getLastProp<0>() = std::sqrt(5.0/(16.0*M_PI)) * (3*z*z - 1.0);
+	//SparticlesFrom1.getLastProp<0>() = std::sqrt(5.0/(16.0*M_PI)) * (3*z*z - 1.0);
+        // spherical harmonic 2,1
+	//SparticlesFrom1.getLastProp<0>() = 0.5*std::sqrt(15.0/M_PI)*x*z;
+	// spherical harmonic 2,2
+	//SparticlesFrom1.getLastProp<0>() = 0.25*std::sqrt(15.0/M_PI)*(x*x - y*y);
+	// spherical harmonic 3,2
+	SparticlesFrom1.getLastProp<0>() = 0.25*std::sqrt(105.0/M_PI)*(x*x - y*y)*z;
+	// spherical harmonic 0,0
+	//SparticlesFrom1.getLastProp<0>() = 0.5/std::sqrt(M_PI);
       }
     // fill vector with resolution 2
-    for(int i=1;i<n_from2;i++)
+    for(int i=0;i<n_from2;i++)
       {
 	double y = 1.0 - (i /double(n_from2 - 1.0)) * 2.0;
 	double radius = sqrt(1 - y * y);
@@ -1183,11 +1192,19 @@ BOOST_AUTO_TEST_CASE(dcpse_surface_p2p_interpolation_sphere_scalar) {
 	SparticlesFrom2.getLastProp<1>()[1] = y/rm;
 	SparticlesFrom2.getLastProp<1>()[2] = z/rm;
 	// fill scalar field (spherical harmonic)
-	SparticlesFrom2.getLastProp<0>() = std::sqrt(5.0/(16.0*M_PI)) * (3*z*z - 1.0);
+	//SparticlesFrom2.getLastProp<0>() = std::sqrt(5.0/(16.0*M_PI)) * (3*z*z - 1.0);
+        // spherical harmonic 2,1
+	//SparticlesFrom2.getLastProp<0>() = 0.5*std::sqrt(15.0/M_PI)*x*z;
+      	// spherical harmonic 2,2
+	//SparticlesFrom2.getLastProp<0>() = 0.25*std::sqrt(15.0/M_PI)*(x*x - y*y);
+	// spherical harmonic 3,2
+	SparticlesFrom2.getLastProp<0>() = 0.25*std::sqrt(105.0/M_PI)*(x*x - y*y)*z;
+	// spherical harmonic 0,0
+      	//SparticlesFrom2.getLastProp<0>() = 0.5/std::sqrt(M_PI);
       }
       // fill vector with positions at which surface interpolation is supposed to be performed
     	for(int i=0;i<((int)(n_to-1));i++)
-      {
+    {
 	double y = 1.0 - (i /double(n_to - 1.0)) * 2.0;
 	double radius = sqrt(1 - y * y);
 	double Golden_theta = Golden_angle * i;
@@ -1215,9 +1232,11 @@ BOOST_AUTO_TEST_CASE(dcpse_surface_p2p_interpolation_sphere_scalar) {
   SparticlesTo.map();
   SparticlesTo.ghost_get<0>();
 
-  PPInterpolation<decltype(SparticlesFrom1),decltype(SparticlesTo), 1> ppSurface(SparticlesFrom1,SparticlesTo,2,rCut1,grid_spacing_surf1);
+  const size_t oporder = 3;
+
+  PPInterpolation<decltype(SparticlesFrom1),decltype(SparticlesTo), 1> ppSurface(SparticlesFrom1,SparticlesTo,oporder,rCut1,grid_spacing_surf1, support_options::RADIUS, true);
   ppSurface.p2p<0,0>();
-  PPInterpolation<decltype(SparticlesFrom2),decltype(SparticlesTo), 1> ppSurface2(SparticlesFrom2,SparticlesTo,2,rCut2,grid_spacing_surf2);
+  PPInterpolation<decltype(SparticlesFrom2),decltype(SparticlesTo), 1> ppSurface2(SparticlesFrom2,SparticlesTo,oporder,rCut2,grid_spacing_surf2, support_options::RADIUS, true);
   ppSurface2.p2p<0,1>();
 
   auto it = SparticlesTo.getDomainIterator();
@@ -1230,7 +1249,14 @@ BOOST_AUTO_TEST_CASE(dcpse_surface_p2p_interpolation_sphere_scalar) {
     double y = SparticlesTo.getPos(p)[1];
     double z = SparticlesTo.getPos(p)[2];
 
-    double sphericalHarmonic = std::sqrt(5.0/(16.0*M_PI)) * (3*z*z - 1.0);
+    //double sphericalHarmonic = std::sqrt(5.0/(16.0*M_PI)) * (3*z*z - 1.0);
+    // spherical harmonic 2,1
+    // double sphericalHarmonic = 0.5*std::sqrt(15.0/M_PI)*x*z;
+    // spherical harmonic 2,2
+    //double sphericalHarmonic = 0.25*std::sqrt(15.0/M_PI)*(x*x - y*y);
+    // spherical harmonic 3,2
+    double sphericalHarmonic = 0.25*std::sqrt(105.0/M_PI)*(x*x - y*y)*z;
+    //double sphericalHarmonic = 0.5/std::sqrt(M_PI);
 
     SparticlesTo.getProp<2>(p) = fabs(SparticlesTo.getProp<0>(p) - sphericalHarmonic); // error
     SparticlesTo.getProp<3>(p) = fabs(SparticlesTo.getProp<1>(p) - sphericalHarmonic); // error
@@ -1243,6 +1269,10 @@ BOOST_AUTO_TEST_CASE(dcpse_surface_p2p_interpolation_sphere_scalar) {
     }
     ++it;
   }
+  std::cout<<"Linf interpolation error with h_from1=1/"<<n_from1<<" to h_to=1/"<<n_to<<" is: "<<worst<<std::endl;
+  std::cout<<"Linf interpolation error with h_from2=1/"<<n_from2<<" to h_to=1/"<<n_to<<" is: "<<worst2<<std::endl;
+  std::cout<<"Convergence order is "<<std::log10(worst2/worst)/std::log10(std::sqrt((float)n_from1/(float)n_from2))<<std::endl;
+  std::cout<<"Operator order = "<<oporder<<std::endl;
   SparticlesTo.deleteGhost();
   SparticlesFrom1.deleteGhost();
   SparticlesTo.write("SparticlesTo_after");
