@@ -107,7 +107,7 @@ struct apply_kernel_is_number_or_expression
 	    rtype prp_p = v_exp.value(key);
 
 	    // Get the neighborhood of the particle
-	    auto NN = cl.getNNIterator(cl.getCell(p));
+	    auto NN = cl.getNNIteratorBox(cl.getCell(p));
 	    while(NN.isNext())
 	    {
 			auto nnp = NN.get();
@@ -163,7 +163,7 @@ struct apply_kernel_is_number_or_expression_sim
 	    Point<vector::dims,typename vector::stype> p = vd.getPos(key);
 
 	    // Get the neighborhood of the particle
-	    auto NN = cl.getNNIterator(cl.getCell(p));
+	    auto NN = cl.getNNIteratorBox(cl.getCell(p));
 	    while(NN.isNext())
 	    {
 			auto nnp = NN.get();
@@ -218,7 +218,7 @@ struct apply_kernel_is_number_or_expression_gen
 	    Point<vector::dims,typename vector::stype> p = vd.getPos(key);
 
 	    // Get the neighborhood of the particle
-	    auto NN = cl.getNNIterator(cl.getCell(p));
+	    auto NN = cl.getNNIteratorBox(cl.getCell(p));
 	    while(NN.isNext())
 	    {
 			auto nnp = NN.get();
