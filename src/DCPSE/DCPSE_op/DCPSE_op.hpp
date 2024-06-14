@@ -16,10 +16,6 @@
 #include "DCPSE/Dcpse.cuh"
 #endif
 
-
-const double dcpse_oversampling_factor = 1.9;
-const double rcut_verlet = 3.1;
-
 /*! \brief Subtraction operation
  *
  * \tparam exp1 expression1
@@ -70,7 +66,7 @@ public:
     inline void value_nz(pmap_type &p_map, const vect_dist_key_dx &key, unordered_map_type &cols, coeff_type &coeff,
                          unsigned int comp) const {
         // for all NN of key
-        for (int j = 0; j < dcp.getNumNN(key); j++) {
+        for (size_t j = 0; j < dcp.getNumNN(key); j++) {
             auto coeff_dc = dcp.getCoeffNN(key, j);
             auto k = dcp.getIndexNN(key, j);
 
@@ -159,7 +155,7 @@ public:
                          unsigned int comp) const {
         for (int i = 0; i < DCPSE_type::vtype::dims; i++) {
             // for all NN of key
-            for (int j = 0; j < dcp[i].getNumNN(key); j++) {
+            for (size_t j = 0; j < dcp[i].getNumNN(key); j++) {
                 auto coeff_dc = dcp[i].getCoeffNN(key, j);
                 auto k = dcp[i].getIndexNN(key, j);
 
@@ -254,7 +250,7 @@ public:
                          unsigned int comp) const {
         for (int i = 0; i < DCPSE_type::vtype::dims; i++) {
             // for all NN of key
-            for (int j = 0; j < dcp[i].getNumNN(key); j++) {
+            for (size_t j = 0; j < dcp[i].getNumNN(key); j++) {
                 auto coeff_dc = dcp[i].getCoeffNN(key, j);
                 auto k = dcp[i].getIndexNN(key, j);
 
@@ -405,7 +401,7 @@ public:
                          unsigned int comp) const {
         for (int i = 0; i < DCPSE_type::vtype::dims; i++) {
             // for all NN of key
-            for (int j = 0; j < dcp[i].getNumNN(key); j++) {
+            for (size_t j = 0; j < dcp[i].getNumNN(key); j++) {
                 auto coeff_dc = dcp[i].getCoeffNN(key, j);
                 auto k = dcp[i].getIndexNN(key, j);
 
@@ -486,7 +482,7 @@ public:
                          unsigned int comp) const {
         for (int i = 0; i < DCPSE_type::vtype::dims; i++) {
             // for all NN of key
-            for (int j = 0; j < dcp[i].getNumNN(key); j++) {
+            for (size_t j = 0; j < dcp[i].getNumNN(key); j++) {
                 auto coeff_dc = dcp[i].getCoeffNN(key, j);
                 auto k = dcp[i].getIndexNN(key, j);
 
@@ -579,7 +575,7 @@ public:
                          unsigned int comp) const {
         for (int i = 0; i < DCPSE_type::vtype::dims; i++) {
             // for all NN of key
-            for (int j = 0; j < dcp[i].getNumNN(key); j++) {
+            for (size_t j = 0; j < dcp[i].getNumNN(key); j++) {
                 auto coeff_dc = dcp[i].getCoeffNN(key, j);
                 auto k = dcp[i].getIndexNN(key, j);
 
@@ -665,15 +661,13 @@ public:
      * \return Operator Dx which is a function on Vector_dist_Expressions
      *
      */
-    template<typename particles_type>
-    Derivative_x_T(particles_type &parts, unsigned int ord, typename particles_type::stype rCut,
-                 double oversampling_factor = dcpse_oversampling_factor,
-                 support_options opt = support_options::RADIUS) {
+    template<typename particles_type, typename list_type>
+    Derivative_x_T(particles_type &parts, unsigned int ord, list_type &verletList, support_option opt = support_option::CONSTRUCT) {
         Point<particles_type::dims, unsigned int> p;
         p.zero();
         p.get(0) = 1;
 
-        dcpse = new Dcpse_type<particles_type::dims, particles_type>(parts, p, ord, rCut, oversampling_factor, opt);
+        dcpse = new Dcpse_type<particles_type::dims, particles_type>(parts, p, ord, verletList, opt);
     }
 
     template<typename particles_type>
@@ -775,15 +769,13 @@ public:
      * \return Operator Dy which is a function on Vector_dist_Expressions
      *
      */
-    template<typename particles_type>
-    Derivative_y_T(particles_type &parts, unsigned int ord, typename particles_type::stype rCut,
-                 double oversampling_factor = dcpse_oversampling_factor,
-                 support_options opt = support_options::RADIUS) {
+    template<typename particles_type, typename list_type>
+    Derivative_y_T(particles_type &parts, unsigned int ord, list_type &verletList, support_option opt = support_option::CONSTRUCT) {
         Point<particles_type::dims, unsigned int> p;
         p.zero();
         p.get(1) = 1;
 
-        dcpse = new Dcpse_type<particles_type::dims, particles_type>(parts, p, ord, rCut, oversampling_factor, opt);
+        dcpse = new Dcpse_type<particles_type::dims, particles_type>(parts, p, ord, verletList, opt);
     }
 
     template<typename particles_type>
@@ -877,15 +869,13 @@ public:
      * \return Operator Dz which is a function on Vector_dist_Expressions
      *
      */
-    template<typename particles_type>
-    Derivative_z_T(particles_type &parts, unsigned int ord, typename particles_type::stype rCut,
-                 double oversampling_factor = dcpse_oversampling_factor,
-                 support_options opt = support_options::RADIUS) {
+    template<typename particles_type, typename list_type>
+    Derivative_z_T(particles_type &parts, unsigned int ord, list_type &verletList, support_option opt = support_option::CONSTRUCT) {
         Point<particles_type::dims, unsigned int> p;
         p.zero();
         p.get(2) = 1;
 
-        dcpse = new Dcpse_type<particles_type::dims, particles_type>(parts, p, ord, rCut, oversampling_factor, opt);
+        dcpse = new Dcpse_type<particles_type::dims, particles_type>(parts, p, ord, verletList, opt);
     }
 
     template<typename particles_type>
@@ -976,10 +966,8 @@ public:
      * \return Operator Grad which is a function on Vector_dist_Expressions
      *
      */
-    template<typename particles_type>
-    Gradient_T(particles_type &parts, unsigned int ord, typename particles_type::stype rCut,
-             double oversampling_factor = dcpse_oversampling_factor,
-             support_options opt = support_options::RADIUS) {
+    template<typename particles_type, typename list_type>
+    Gradient_T(particles_type &parts, unsigned int ord, list_type &verletList, support_option opt = support_option::CONSTRUCT) {
         typedef Dcpse_type<particles_type::dims, particles_type> DCPSE_type;
 
         dcpse = new unsigned char[particles_type::dims * sizeof(DCPSE_type)];
@@ -992,9 +980,9 @@ public:
             p.get(i) = 1;
 
             if (i)
-                new(&dcpse_ptr[i]) Dcpse_type<particles_type::dims, particles_type>(parts, dcpse_ptr[0], p, ord, rCut, oversampling_factor, opt);
+                new(&dcpse_ptr[i]) Dcpse_type<particles_type::dims, particles_type>(parts, dcpse_ptr[0], p, ord, verletList, opt);
             else
-                new(&dcpse_ptr[i]) Dcpse_type<particles_type::dims, particles_type>(parts, p, ord, rCut, oversampling_factor, opt);
+                new(&dcpse_ptr[i]) Dcpse_type<particles_type::dims, particles_type>(parts, p, ord, verletList, opt);
         }
     }
 
@@ -1073,9 +1061,8 @@ public:
      * \return Operator which is a function on Vector_dist_Expressions
      *
      */
-    template<typename particles_type>
-    Curl2D_T(particles_type &parts, unsigned int ord, typename particles_type::stype rCut,
-           double oversampling_factor = dcpse_oversampling_factor, support_options opt = support_options::RADIUS) {
+    template<typename particles_type, typename list_type>
+    Curl2D_T(particles_type &parts, unsigned int ord, list_type &verletList, support_option opt = support_option::CONSTRUCT) {
         typedef Dcpse_type<particles_type::dims, particles_type> DCPSE_type;
 
         dcpse = new unsigned char[particles_type::dims * sizeof(DCPSE_type)];
@@ -1085,11 +1072,11 @@ public:
 
         p.zero();
         p.get(1) = 1;
-        new(dcpse_ptr) Dcpse_type<particles_type::dims, particles_type>(parts, p, ord, rCut, oversampling_factor, opt);
+        new(dcpse_ptr) Dcpse_type<particles_type::dims, particles_type>(parts, p, ord, verletList, opt);
 
         p.zero();
         p.get(0) = 1;
-        new(dcpse_ptr+1) Dcpse_type<particles_type::dims, particles_type>(parts, dcpse_ptr[0], p, ord, rCut, oversampling_factor, opt);
+        new(dcpse_ptr+1) Dcpse_type<particles_type::dims, particles_type>(parts, dcpse_ptr[0], p, ord, verletList, opt);
 
     }
 
@@ -1136,10 +1123,8 @@ public:
      * \return Operator which is a function on Vector_dist_Expressions
      *
      */
-    template<typename particles_type>
-    Laplacian_T(particles_type &parts, unsigned int ord, typename particles_type::stype rCut,
-              double oversampling_factor = dcpse_oversampling_factor,
-              support_options opt = support_options::RADIUS) {
+    template<typename particles_type, typename list_type>
+    Laplacian_T(particles_type &parts, unsigned int ord, list_type &verletList, support_option opt = support_option::CONSTRUCT) {
         typedef Dcpse_type<particles_type::dims, particles_type> DCPSE_type;
         dcpse = new unsigned char[particles_type::dims * sizeof(DCPSE_type)];
 
@@ -1151,9 +1136,9 @@ public:
             p.get(i) = 2;
 
             if (i)
-                new(&dcpse_ptr[i]) Dcpse_type<particles_type::dims, particles_type>(parts, dcpse_ptr[0], p, ord, rCut, oversampling_factor, opt);
+                new(&dcpse_ptr[i]) Dcpse_type<particles_type::dims, particles_type>(parts, dcpse_ptr[0], p, ord, verletList, opt);
             else
-                new(&dcpse_ptr[i]) Dcpse_type<particles_type::dims, particles_type>(parts, p, ord, rCut, oversampling_factor, opt);
+                new(&dcpse_ptr[i]) Dcpse_type<particles_type::dims, particles_type>(parts, p, ord, verletList, opt);
         }
     }
 
@@ -1241,10 +1226,8 @@ public:
      * \return Operator which is a function on Vector_dist_Expressions. Computes Divergence of Vectors
      *
      */
-    template<typename particles_type>
-    Divergence_T(particles_type &parts, unsigned int ord, typename particles_type::stype rCut,
-               double oversampling_factor = dcpse_oversampling_factor,
-               support_options opt = support_options::RADIUS) {
+    template<typename particles_type, typename list_type>
+    Divergence_T(particles_type &parts, unsigned int ord, list_type &verletList, support_option opt = support_option::CONSTRUCT) {
         typedef Dcpse_type<particles_type::dims, particles_type> DCPSE_type;
 
         dcpse = new unsigned char[particles_type::dims * sizeof(DCPSE_type)];
@@ -1257,9 +1240,9 @@ public:
             p.get(i) = 1;
 
             if (i)
-                new(&dcpse_ptr[i]) Dcpse_type<particles_type::dims, particles_type>(parts, dcpse_ptr[0], p, ord, rCut, oversampling_factor, opt);
+                new(&dcpse_ptr[i]) Dcpse_type<particles_type::dims, particles_type>(parts, dcpse_ptr[0], p, ord, verletList, opt);
             else
-                new(&dcpse_ptr[i]) Dcpse_type<particles_type::dims, particles_type>(parts, p, ord, rCut, oversampling_factor, opt);
+                new(&dcpse_ptr[i]) Dcpse_type<particles_type::dims, particles_type>(parts, p, ord, verletList, opt);
         }
     }
 
@@ -1322,10 +1305,8 @@ public:
      * \return Operator which is a function on Vector_dist_Expressions. Computes Advection of Vectors Adv(v,u) = v.Grad(u)
      *
      */
-    template<typename particles_type>
-    Advection_T(particles_type &parts, unsigned int ord, typename particles_type::stype rCut,
-              double oversampling_factor = dcpse_oversampling_factor,
-              support_options opt = support_options::RADIUS) {
+    template<typename particles_type, typename list_type>
+    Advection_T(particles_type &parts, unsigned int ord, list_type &verletList, support_option opt = support_option::CONSTRUCT) {
         typedef Dcpse_type<particles_type::dims, particles_type> DCPSE_type;
 
         dcpse = new unsigned char[particles_type::dims * sizeof(DCPSE_type)];
@@ -1338,9 +1319,9 @@ public:
             p.get(i) = 1;
 
             if (i)
-                new(&dcpse_ptr[i]) Dcpse_type<particles_type::dims, particles_type>(parts, dcpse_ptr[0], p, ord, rCut, oversampling_factor, opt);
+                new(&dcpse_ptr[i]) Dcpse_type<particles_type::dims, particles_type>(parts, dcpse_ptr[0], p, ord, verletList, opt);
             else
-                new(&dcpse_ptr[i]) Dcpse_type<particles_type::dims, particles_type>(parts, p, ord, rCut, oversampling_factor, opt);
+                new(&dcpse_ptr[i]) Dcpse_type<particles_type::dims, particles_type>(parts, p, ord, verletList, opt);
         }
 
 
@@ -1423,16 +1404,14 @@ public:
      * \return Operator Dxy which is a function on Vector_dist_Expressions
      *
      */
-    template<typename particles_type>
-    Derivative_xy_T(particles_type &parts, unsigned int ord, typename particles_type::stype rCut,
-                  double oversampling_factor = dcpse_oversampling_factor,
-                  support_options opt = support_options::RADIUS) {
+    template<typename particles_type, typename list_type>
+    Derivative_xy_T(particles_type &parts, unsigned int ord, list_type &verletList, support_option opt = support_option::CONSTRUCT) {
         Point<particles_type::dims, unsigned int> p;
         p.zero();
         p.get(0) = 1;
         p.get(1) = 1;
 
-        dcpse = new Dcpse_type<particles_type::dims, particles_type>(parts, p, ord, rCut, oversampling_factor, opt);
+        dcpse = new Dcpse_type<particles_type::dims, particles_type>(parts, p, ord, verletList, opt);
     }
 
     template<typename particles_type>
@@ -1525,16 +1504,14 @@ public:
      * \return Operator Dyz which is a function on Vector_dist_Expressions
      *
      */
-    template<typename particles_type>
-    Derivative_yz_T(particles_type &parts, unsigned int ord, typename particles_type::stype rCut,
-                  double oversampling_factor = dcpse_oversampling_factor,
-                  support_options opt = support_options::RADIUS) {
+    template<typename particles_type, typename list_type>
+    Derivative_yz_T(particles_type &parts, unsigned int ord, list_type &verletList, support_option opt = support_option::CONSTRUCT) {
         Point<particles_type::dims, unsigned int> p;
         p.zero();
         p.get(1) = 1;
         p.get(2) = 1;
 
-        dcpse = new Dcpse_type<particles_type::dims, particles_type>(parts, p, ord, rCut, oversampling_factor, opt);
+        dcpse = new Dcpse_type<particles_type::dims, particles_type>(parts, p, ord, verletList, opt);
     }
 
     template<typename particles_type>
@@ -1627,16 +1604,14 @@ public:
      * \return Operator Dxz which is a function on Vector_dist_Expressions
      *
      */
-    template<typename particles_type>
-    Derivative_xz_T(particles_type &parts, unsigned int ord, typename particles_type::stype rCut,
-                  double oversampling_factor = dcpse_oversampling_factor,
-                  support_options opt = support_options::RADIUS) {
+    template<typename particles_type, typename list_type>
+    Derivative_xz_T(particles_type &parts, unsigned int ord, list_type &verletList, support_option opt = support_option::CONSTRUCT) {
         Point<particles_type::dims, unsigned int> p;
         p.zero();
         p.get(0) = 1;
         p.get(2) = 1;
 
-        dcpse = new Dcpse_type<particles_type::dims, particles_type>(parts, p, ord, rCut, oversampling_factor, opt);
+        dcpse = new Dcpse_type<particles_type::dims, particles_type>(parts, p, ord, verletList, opt);
     }
 
     template<typename particles_type>
@@ -1730,16 +1705,14 @@ public:
      * \return Operator Dxx which is a function on Vector_dist_Expressions
      *
      */
-    template<typename particles_type>
-    Derivative_xx_T(particles_type &parts, unsigned int ord, typename particles_type::stype rCut,
-                  double oversampling_factor = dcpse_oversampling_factor,
-                  support_options opt = support_options::RADIUS) {
+    template<typename particles_type, typename list_type>
+    Derivative_xx_T(particles_type &parts, unsigned int ord, list_type &verletList, support_option opt = support_option::CONSTRUCT) {
         Point<particles_type::dims, unsigned int> p;
         p.zero();
         p.get(0) = 2;
         p.get(1) = 0;
 
-        dcpse = new Dcpse_type<particles_type::dims, particles_type>(parts, p, ord, rCut, oversampling_factor, opt);
+        dcpse = new Dcpse_type<particles_type::dims, particles_type>(parts, p, ord, verletList, opt);
     }
 
     template<typename particles_type>
@@ -1832,16 +1805,14 @@ public:
      * \return Operator Dyy which is a function on Vector_dist_Expressions
      *
      */
-    template<typename particles_type>
-    Derivative_yy_T(particles_type &parts, unsigned int ord, typename particles_type::stype rCut,
-                  double oversampling_factor = dcpse_oversampling_factor,
-                  support_options opt = support_options::RADIUS) {
+    template<typename particles_type, typename list_type>
+    Derivative_yy_T(particles_type &parts, unsigned int ord, list_type &verletList, support_option opt = support_option::CONSTRUCT) {
         Point<particles_type::dims, unsigned int> p;
         p.zero();
         p.get(0) = 0;
         p.get(1) = 2;
 
-        dcpse = new Dcpse_type<particles_type::dims, particles_type>(parts, p, ord, rCut, oversampling_factor, opt);
+        dcpse = new Dcpse_type<particles_type::dims, particles_type>(parts, p, ord, verletList, opt);
     }
 
     template<typename particles_type>
@@ -1933,15 +1904,13 @@ public:
      * \return Operator Dzz which is a function on Vector_dist_Expressions
      *
      */
-    template<typename particles_type>
-    Derivative_zz_T(particles_type &parts, unsigned int ord, typename particles_type::stype rCut,
-                  double oversampling_factor = dcpse_oversampling_factor,
-                  support_options opt = support_options::RADIUS) {
+    template<typename particles_type, typename list_type>
+    Derivative_zz_T(particles_type &parts, unsigned int ord, list_type &verletList, support_option opt = support_option::CONSTRUCT) {
         Point<particles_type::dims, unsigned int> p;
         p.zero();
         p.get(2) = 2;
 
-        dcpse = new Dcpse_type<particles_type::dims, particles_type>(parts, p, ord, rCut, oversampling_factor, opt);
+        dcpse = new Dcpse_type<particles_type::dims, particles_type>(parts, p, ord, verletList, opt);
     }
 
     template<typename particles_type>
@@ -2011,16 +1980,14 @@ class Derivative_xxx_T {
 
 public:
 
-    template<typename particles_type>
-    Derivative_xxx_T(particles_type &parts, unsigned int ord, typename particles_type::stype rCut,
-                   double oversampling_factor = dcpse_oversampling_factor,
-                   support_options opt = support_options::RADIUS) {
+    template<typename particles_type, typename list_type>
+    Derivative_xxx_T(particles_type &parts, unsigned int ord, list_type &verletList, support_option opt = support_option::CONSTRUCT) {
         Point<particles_type::dims, unsigned int> p;
         p.zero();
         p.get(0) = 3;
         p.get(1) = 0;
 
-        dcpse = new Dcpse_type<particles_type::dims, particles_type>(parts, p, ord, rCut, oversampling_factor, opt);
+        dcpse = new Dcpse_type<particles_type::dims, particles_type>(parts, p, ord, verletList, opt);
     }
 
     template<typename operand_type>
@@ -2086,16 +2053,14 @@ class Derivative_xxy_T {
 
 public:
 
-    template<typename particles_type>
-    Derivative_xxy_T(particles_type &parts, unsigned int ord, typename particles_type::stype rCut,
-                   double oversampling_factor = dcpse_oversampling_factor,
-                   support_options opt = support_options::RADIUS) {
+    template<typename particles_type, typename list_type>
+    Derivative_xxy_T(particles_type &parts, unsigned int ord, list_type &verletList, support_option opt = support_option::CONSTRUCT) {
         Point<particles_type::dims, unsigned int> p;
         p.zero();
         p.get(0) = 2;
         p.get(1) = 1;
 
-        dcpse = new Dcpse_type<particles_type::dims, particles_type>(parts, p, ord, rCut, oversampling_factor, opt);
+        dcpse = new Dcpse_type<particles_type::dims, particles_type>(parts, p, ord, verletList, opt);
     }
 
     template<typename operand_type>
@@ -2161,16 +2126,14 @@ class Derivative_yyx_T {
 
 public:
 
-    template<typename particles_type>
-    Derivative_yyx_T(particles_type &parts, unsigned int ord, typename particles_type::stype rCut,
-                   double oversampling_factor = dcpse_oversampling_factor,
-                   support_options opt = support_options::RADIUS) {
+    template<typename particles_type, typename list_type>
+    Derivative_yyx_T(particles_type &parts, unsigned int ord, list_type &verletList, support_option opt = support_option::CONSTRUCT) {
         Point<particles_type::dims, unsigned int> p;
         p.zero();
         p.get(0) = 1;
         p.get(1) = 2;
 
-        dcpse = new Dcpse_type<particles_type::dims, particles_type>(parts, p, ord, rCut, oversampling_factor, opt);
+        dcpse = new Dcpse_type<particles_type::dims, particles_type>(parts, p, ord, verletList, opt);
     }
 
     template<typename operand_type>
@@ -2236,16 +2199,14 @@ class Derivative_yyy_T {
 
 public:
 
-    template<typename particles_type>
-    Derivative_yyy_T(particles_type &parts, unsigned int ord, typename particles_type::stype rCut,
-                   double oversampling_factor = dcpse_oversampling_factor,
-                   support_options opt = support_options::RADIUS) {
+    template<typename particles_type, typename list_type>
+    Derivative_yyy_T(particles_type &parts, unsigned int ord, list_type &verletList, support_option opt = support_option::CONSTRUCT) {
         Point<particles_type::dims, unsigned int> p;
         p.zero();
         p.get(0) = 0;
         p.get(1) = 3;
 
-        dcpse = new Dcpse_type<particles_type::dims, particles_type>(parts, p, ord, rCut, oversampling_factor, opt);
+        dcpse = new Dcpse_type<particles_type::dims, particles_type>(parts, p, ord, verletList, opt);
     }
 
     template<typename operand_type>
@@ -2312,16 +2273,14 @@ class Derivative_xxxx_T {
 
 public:
 
-    template<typename particles_type>
-    Derivative_xxxx_T(particles_type &parts, unsigned int ord, typename particles_type::stype rCut,
-                   double oversampling_factor = dcpse_oversampling_factor,
-                   support_options opt = support_options::RADIUS) {
+    template<typename particles_type, typename list_type>
+    Derivative_xxxx_T(particles_type &parts, unsigned int ord, list_type &verletList, support_option opt = support_option::CONSTRUCT) {
         Point<particles_type::dims, unsigned int> p;
         p.zero();
         p.get(0) = 4;
         p.get(1) = 0;
 
-        dcpse = new Dcpse_type<particles_type::dims, particles_type>(parts, p, ord, rCut, oversampling_factor, opt);
+        dcpse = new Dcpse_type<particles_type::dims, particles_type>(parts, p, ord, verletList, opt);
     }
 
     template<typename operand_type>
@@ -2388,16 +2347,14 @@ class Derivative_yyyy_T {
 
 public:
 
-    template<typename particles_type>
-    Derivative_yyyy_T(particles_type &parts, unsigned int ord, typename particles_type::stype rCut,
-                   double oversampling_factor = dcpse_oversampling_factor,
-                   support_options opt = support_options::RADIUS) {
+    template<typename particles_type, typename list_type>
+    Derivative_yyyy_T(particles_type &parts, unsigned int ord, list_type &verletList, support_option opt = support_option::CONSTRUCT) {
         Point<particles_type::dims, unsigned int> p;
         p.zero();
         p.get(0) = 0;
         p.get(1) = 4;
 
-        dcpse = new Dcpse_type<particles_type::dims, particles_type>(parts, p, ord, rCut, oversampling_factor, opt);
+        dcpse = new Dcpse_type<particles_type::dims, particles_type>(parts, p, ord, verletList, opt);
     }
 
     template<typename operand_type>
@@ -2463,16 +2420,14 @@ class Derivative_xxyy_T {
 
 public:
 
-    template<typename particles_type>
-    Derivative_xxyy_T(particles_type &parts, unsigned int ord, typename particles_type::stype rCut,
-                   double oversampling_factor = dcpse_oversampling_factor,
-                   support_options opt = support_options::RADIUS) {
+    template<typename particles_type, typename list_type>
+    Derivative_xxyy_T(particles_type &parts, unsigned int ord, list_type &verletList, support_option opt = support_option::CONSTRUCT) {
         Point<particles_type::dims, unsigned int> p;
         p.zero();
         p.get(0) = 2;
         p.get(1) = 2;
 
-        dcpse = new Dcpse_type<particles_type::dims, particles_type>(parts, p, ord, rCut, oversampling_factor, opt);
+        dcpse = new Dcpse_type<particles_type::dims, particles_type>(parts, p, ord, verletList, opt);
     }
 
     template<typename operand_type>
@@ -2539,11 +2494,9 @@ class Derivative_G_T {
 
 public:
 
-    template<typename particles_type>
-    Derivative_G_T(particles_type &parts, unsigned int ord, typename particles_type::stype rCut,
-                   const Point<particles_type::dims, unsigned int> &p,double oversampling_factor = dcpse_oversampling_factor,
-                   support_options opt = support_options::RADIUS) {
-        dcpse = new Dcpse_type<particles_type::dims, particles_type>(parts, p, ord, rCut, oversampling_factor, opt);
+    template<typename particles_type, typename list_type>
+    Derivative_G_T(particles_type &parts, unsigned int ord,const Point<particles_type::dims, unsigned int> &p,list_type &verletList, support_option opt = support_option::CONSTRUCT) {
+        dcpse = new Dcpse_type<particles_type::dims, particles_type>(parts, p, ord, verletList, opt);
     }
 
     template<typename operand_type>

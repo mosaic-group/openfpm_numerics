@@ -13,7 +13,7 @@ typedef std::tuple <int, int> lm;
 /*! \brief Structure required for the Sph Harmonic amplitude dictionary arguments
  *
  */
-struct key_hash : public std::unary_function<lm, std::size_t>
+struct key_hash : public std::__unary_function<lm, std::size_t>
 {
     std::size_t operator()(const lm& k) const
     {
@@ -24,7 +24,7 @@ struct key_hash : public std::unary_function<lm, std::size_t>
 /*! \brief Structure required for the Sph Harmonic amplitude dictionary arguments
  *
  */
-struct key_equal : public std::binary_function<lm, lm, bool>
+struct key_equal : public std::__binary_function<lm, lm, bool>
 {
     bool operator()(const lm& v0, const lm& v1) const
     {

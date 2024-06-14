@@ -25,19 +25,18 @@
 #include "Operators/Vector/vector_dist_operators.hpp"
 #include "Vector/vector_dist_subset.hpp"
 #include "DCPSE/DCPSE_op/EqnsStruct.hpp"
-#include "Decomposition/Distribution/SpaceDistribution.hpp"
 
 BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
 
     BOOST_AUTO_TEST_CASE(dcpse_op_solver) {
 //  int rank;
 //  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-        const size_t sz[2] = {31, 31};
+        const size_t sz[2] = {61, 61};
         Box<2, double> box({0, 0}, {1.0, 1.0});
         size_t bc[2] = {NON_PERIODIC, NON_PERIODIC};
         double spacing = box.getHigh(0) / (sz[0] - 1);
-        Ghost<2, double> ghost(spacing * 3);
-        double rCut = 2.0 * spacing;
+        Ghost<2, double> ghost(spacing * 3.9);
+        double rCut = 3.9 * spacing;
         BOOST_TEST_MESSAGE("Init vector_dist...");
 
         vector_dist<2, double, aggregate<double,double,double,double>> domain(0, box, bc, ghost);
@@ -62,8 +61,9 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
 
         domain.map();
         domain.ghost_get<0>();
-
-        Laplacian Lap(domain, 2, rCut, 2,support_options::N_PARTICLES);
+        auto verletList = domain.getVerletWithoutRefP(rCut);
+        //verletList.remove_ref_p(); //Buggy pls fix when creating a normal verletList and using this
+        Laplacian Lap(domain, 2, verletList);
 
         DCPSE_scheme<equations2d1,decltype(domain)> Solver(domain);
 
@@ -116,9 +116,9 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
         boxes.add(right_l);
 
         // Create a writer and write
-        VTKWriter<openfpm::vector<Box<2, double>>, VECTOR_BOX> vtk_box;
-        vtk_box.add(boxes);
-        vtk_box.write("vtk_box.vtk");
+        //VTKWriter<openfpm::vector<Box<2, double>>, VECTOR_BOX> vtk_box;
+        //vtk_box.add(boxes);
+        //vtk_box.write("vtk_box.vtk");
 
         auto it2 = domain.getDomainIterator();
 
@@ -176,8 +176,8 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
 
             ++it2;
         }
-
-        domain.write("particles");
+        //std::cout<<worst1<<std::endl;
+        //domain.write("particles");
         BOOST_REQUIRE(worst1 < 0.03);
     }
 
@@ -191,7 +191,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
         size_t bc[2] = {NON_PERIODIC, NON_PERIODIC};
         double spacing = box.getHigh(0) / (sz[0] - 1);
         Ghost<2, double> ghost(spacing * 3.1);
-        double rCut = 3.1 * spacing;
+        double rCut = 6.1 * spacing;
         BOOST_TEST_MESSAGE("Init vector_dist...");
 
         vector_dist<2, double, aggregate<double,double,double,double,double,double>> domain(0, box, bc, ghost);
@@ -297,10 +297,11 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
 
         domain.map();
         domain.ghost_get<0>();
-
-        Derivative_x Dx(domain, 2, rCut/3.0 ,1.9,support_options::N_PARTICLES);
-        Derivative_y Dy(domain, 2, rCut/3.0,1.9,support_options::N_PARTICLES);
-        Laplacian Lap(domain, 2, rCut/3.0 ,1.9,support_options::N_PARTICLES);
+        size_t nmax=20; //Maximum number of particles in a neighborhood.
+        auto verletList = domain.getVerletWithoutRefP(rCut,nmax);
+        Derivative_x Dx(domain, 2, verletList); //Nparticles
+        Derivative_y Dy(domain, 2, verletList);
+        Laplacian Lap(domain, 2, verletList);
 
         openfpm::vector<aggregate<int>> bulk;
         openfpm::vector<aggregate<int>> up_p;
@@ -337,8 +338,8 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
         boxes.add(right);
 
         // Create a writer and write
-        VTKWriter<openfpm::vector<Box<2, double>>, VECTOR_BOX> vtk_box;
-        vtk_box.add(boxes);
+        //VTKWriter<openfpm::vector<Box<2, double>>, VECTOR_BOX> vtk_box;
+        //vtk_box.add(boxes);
         //vtk_box.write("vtk_box.vtk");
 
 
@@ -464,10 +465,10 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
 
         domain.map();
         domain.ghost_get<0>();
-
-        Derivative_x Dx(domain, 2, rCut,1.9,support_options::RADIUS);
-        Derivative_y Dy(domain, 2, rCut,1.9,support_options::RADIUS);
-        Laplacian Lap(domain, 2, rCut, 1.9,support_options::RADIUS);
+        auto verletList = domain.getVerletWithoutRefP(rCut);
+        Derivative_x Dx(domain, 2, verletList);
+        Derivative_y Dy(domain, 2, verletList);
+        Laplacian Lap(domain, 2, verletList);
 
         openfpm::vector<aggregate<int>> bulk;
         openfpm::vector<aggregate<int>> bulkF;
@@ -505,8 +506,8 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
         boxes.add(right);
 
         // Create a writer and write
-        VTKWriter<openfpm::vector<Box<2, double>>, VECTOR_BOX> vtk_box;
-        vtk_box.add(boxes);
+        //VTKWriter<openfpm::vector<Box<2, double>>, VECTOR_BOX> vtk_box;
+        //vtk_box.add(boxes);
         //vtk_box.write("vtk_box.vtk");
 
 
@@ -640,8 +641,8 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
         domain.map();
         domain.ghost_get<0>();
 
-
-        Laplacian Lap(domain, 2, rCut, 1.9, support_options::RADIUS);
+        auto verletList = domain.getVerletWithoutRefP(rCut);
+        Laplacian Lap(domain, 2, verletList);
 
         DCPSE_scheme<equations2d1p,decltype(domain)> Solver( domain);
 
@@ -679,8 +680,8 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
         boxes.add(right);
 
         // Create a writer and write
-        VTKWriter<openfpm::vector<Box<2, double>>, VECTOR_BOX> vtk_box;
-        vtk_box.add(boxes);
+        //VTKWriter<openfpm::vector<Box<2, double>>, VECTOR_BOX> vtk_box;
+        //vtk_box.add(boxes);
         //vtk_box.write("vtk_box.vtk");
 
 
@@ -742,7 +743,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
         size_t bc[2] = {NON_PERIODIC, NON_PERIODIC};
         double spacing = box.getHigh(0) / (sz[0] - 1);
         Ghost<2, double> ghost(spacing * 3);
-        double rCut = 2.0 * spacing;
+        double rCut = 3.1 * spacing;
         BOOST_TEST_MESSAGE("Init vector_dist...");
 
         vector_dist<2, double, aggregate<double,double,double,double,double,VectorS<2, double>>> domain(0, box, bc, ghost);
@@ -768,8 +769,9 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
         domain.map();
         domain.ghost_get<0>();
 
-        Derivative_y Dy(domain, 2, rCut,2,support_options::N_PARTICLES);
-        Laplacian Lap(domain, 2, rCut, 3,support_options::N_PARTICLES);
+        auto verletList = domain.getVerletWithoutRefP(rCut);
+        Derivative_y Dy(domain, 2, verletList);  //2 NParticles
+        Laplacian Lap(domain, 2, verletList);  //3 NParticles
 
         DCPSE_scheme<equations2d1,decltype(domain)> Solver(domain);
 
@@ -806,8 +808,8 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
         boxes.add(right);
 
         // Create a writer and write
-        VTKWriter<openfpm::vector<Box<2, double>>, VECTOR_BOX> vtk_box;
-        vtk_box.add(boxes);
+        //VTKWriter<openfpm::vector<Box<2, double>>, VECTOR_BOX> vtk_box;
+        //vtk_box.add(boxes);
         //vtk_box.write("vtk_box.vtk");
 
 
@@ -915,9 +917,10 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
         domain.map();
         domain.ghost_get<0>();
 
-        Derivative_x Dx(domain, 2, rCut,1.9,support_options::N_PARTICLES);
-        Derivative_y Dy(domain, 2, rCut,1.9,support_options::N_PARTICLES);
-        Laplacian Lap(domain, 2, rCut, 1.9,support_options::N_PARTICLES);
+        auto verletList = domain.getVerletWithoutRefP(rCut);
+        Derivative_x Dx(domain, 2, verletList);
+        Derivative_y Dy(domain, 2, verletList);
+        Laplacian Lap(domain, 2, verletList);
         petsc_solver<double> solver;
         solver.setRestart(500);
         solver.setSolver(KSPGMRES);
@@ -956,8 +959,8 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
         boxes.add(right);
 
         // Create a writer and write
-        VTKWriter<openfpm::vector<Box<2, double>>, VECTOR_BOX> vtk_box;
-        vtk_box.add(boxes);
+        //VTKWriter<openfpm::vector<Box<2, double>>, VECTOR_BOX> vtk_box;
+        //vtk_box.add(boxes);
         //vtk_box.write("vtk_box.vtk");
 
 
@@ -1072,13 +1075,14 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
         domain.map();
         domain.ghost_get<0>();
 
-        Derivative_x Dx(domain, 2, rCut,1.9,support_options::N_PARTICLES);
-        Derivative_y Dy(domain, 2, rCut,1.9,support_options::N_PARTICLES);
-        Laplacian Lap(domain, 2, rCut, 1.9,support_options::N_PARTICLES);
+        auto verletList = domain.getVerletWithoutRefP(rCut);
+        Derivative_x Dx(domain, 2, verletList);
+        Derivative_y Dy(domain, 2, verletList);
+        Laplacian Lap(domain, 2, verletList);
         petsc_solver<double> solver;
         solver.setRestart(500);
         solver.setSolver(KSPGMRES);
-        solver.setPreconditioner(PCSVD);
+        solver.setPreconditioner(PCNONE);
 
         openfpm::vector<aggregate<int>> bulk;
         openfpm::vector<aggregate<int>> up_p;
@@ -1113,8 +1117,8 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
         boxes.add(right);
 
         // Create a writer and write
-        VTKWriter<openfpm::vector<Box<2, double>>, VECTOR_BOX> vtk_box;
-        vtk_box.add(boxes);
+        //VTKWriter<openfpm::vector<Box<2, double>>, VECTOR_BOX> vtk_box;
+        //vtk_box.add(boxes);
         //vtk_box.write("vtk_box.vtk");
 
 
@@ -1200,7 +1204,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
         BOOST_REQUIRE(worst1 < 1.0);
         BOOST_REQUIRE(worst2 < 1.0);
 
-        domain.write("Neumann2d");
+        //domain.write("Neumann2d");
     }
 
 
@@ -1238,9 +1242,10 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
         domain.map();
         domain.ghost_get<0>();
 
-        Derivative_x Dx(domain, 2, rCut,1.9,support_options::RADIUS);
-        Derivative_y Dy(domain, 2, rCut,1.9,support_options::RADIUS);
-        Laplacian Lap(domain, 2, rCut,1.9,support_options::RADIUS);
+        auto verletList = domain.getVerletWithoutRefP(rCut);
+        Derivative_x Dx(domain, 2, verletList);
+        Derivative_y Dy(domain, 2, verletList);
+        Laplacian Lap(domain, 2, verletList);
 
 
         openfpm::vector<aggregate<int>> bulk;
@@ -1278,8 +1283,8 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
         boxes.add(right);
 
         // Create a writer and write
-        VTKWriter<openfpm::vector<Box<2, double>>, VECTOR_BOX> vtk_box;
-        vtk_box.add(boxes);
+        //VTKWriter<openfpm::vector<Box<2, double>>, VECTOR_BOX> vtk_box;
+        //vtk_box.add(boxes);
         //vtk_box.write("vtk_box.vtk");
        // domain.write("Slice_anasol");
 

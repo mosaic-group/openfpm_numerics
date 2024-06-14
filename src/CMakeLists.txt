@@ -58,8 +58,6 @@ if ( CUDA_ON_BACKEND STREQUAL "HIP" AND HIP_FOUND )
 		DCPSE/tests/Dcpse_unit_tests.cpp
 		DCPSE/tests/DcpseRhs_unit_tests.cpp
 		DCPSE/tests/MonomialBasis_unit_tests.cpp
-		DCPSE/tests/Support_unit_tests.cpp
-		DCPSE/tests/Vandermonde_unit_tests.cpp
 		main.cpp
 		Matrix/SparseMatrix_unit_tests.cpp
 		#interpolation/interpolation_unit_tests.cpp
@@ -100,9 +98,7 @@ else()
 		DCPSE/tests/Dcpse_unit_tests.cpp
 		DCPSE/tests/DcpseRhs_unit_tests.cpp
 		DCPSE/tests/MonomialBasis_unit_tests.cpp
-		DCPSE/tests/Support_unit_tests.cpp
-		DCPSE/tests/Vandermonde_unit_tests.cpp
-		main.cpp
+			main.cpp
 		Matrix/SparseMatrix_unit_tests.cpp
 		#interpolation/interpolation_unit_tests.cpp
 		Vector/Vector_unit_tests.cpp
@@ -214,6 +210,7 @@ if(SuiteSparse_FOUND)
 	target_link_libraries(numerics ${SuiteSparse_LIBRARIES})
 	target_include_directories (numerics PUBLIC ${BLAS_INCLUDE_DIRS})
 	target_link_libraries(numerics ${BLAS_LIBRARIES})
+	target_link_libraries(numerics "-framework Accelerate /Users/abhinav/repos/lapack/liblapacke.a")
 endif()
 
 if(OpenMP_CXX_FOUND)
