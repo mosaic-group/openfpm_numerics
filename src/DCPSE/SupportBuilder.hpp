@@ -31,7 +31,7 @@ private:
     vector_type2 &domainTo;
     decltype(std::declval<vector_type>().getCellList(0.0)) cellList;
     const Point<vector_type::dims, unsigned int> differentialSignature;
-    typename vector_type::stype rCut, MinSpacing, AdapFac=1;
+    typename vector_type::stype rCut, MinSpacing, adaptiveSizeFactor=1;
     bool is_interpolation;
 
 public:
@@ -88,7 +88,7 @@ public:
     }
 
     void setAdapFac(typename vector_type::stype fac) {
-        this->AdapFac=fac;
+        this->adaptiveSizeFactor=fac;
     }
 
 private:
@@ -195,13 +195,6 @@ private:
                     points.push_back(rp.get(i).offset);
                 }
             }
-            /*      #ifdef SE_CLASS1
-                    if (points.size()<requiredSupportSize)
-                    {
-                        std::cerr<<__FILE__<<":"<<__LINE__<<"Note that the DCPSE neighbourhood doesn't have asked no. particles (Increase the rCut or reduce the over_sampling factor)";
-                        std::cout<<"Particels asked (minimum*oversampling_factor): "<<requiredSupportSize<<". Particles Possible with given options:"<<points.size()<<"."<<std::endl;
-                    }
-                    #endif*/
         }
         else if(opt == support_options::ADAPTIVE) {
             MinSpacing = std::numeric_limits<double>::max();
@@ -214,7 +207,7 @@ private:
         assert(MinSpacing !=0 && "You have multiple particles on the same position.");
 #endif
             for (int i = 0; i < rp.size(); i++) {
-                if (rp.get(i).dist < AdapFac * MinSpacing) {
+                if (rp.get(i).dist < adaptiveSizeFactor * MinSpacing) {
                     points.push_back(rp.get(i).offset);
                 }
             }
