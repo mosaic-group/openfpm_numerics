@@ -24,8 +24,8 @@ class PPInterpolation
 
     void *dcpse;
 
-    particlesFrom_type & particlesFrom;
-    particlesTo_type & particlesTo;
+    particlesFrom_type & particlesSupport;
+    particlesTo_type & particlesDomain;
 
 public:
     /*! \brief Constructor for Creating the DCPSE Operator Dx and objects and computes DCPSE Kernels.
@@ -40,14 +40,14 @@ public:
      * \return Operator F which is a function on Vector_dist_Expressions
      *
      */
-    PPInterpolation(particlesFrom_type &particlesFrom,particlesTo_type &particlesTo, unsigned int ord, typename particlesFrom_type::stype rCut,
+    PPInterpolation(particlesFrom_type &particlesSupport,particlesTo_type &particlesDomain, unsigned int ord, typename particlesFrom_type::stype rCut,
                       double oversampling_factor = dcpse_oversampling_factor,
                       support_options opt = support_options::RADIUS)
-    :particlesFrom(particlesFrom),particlesTo(particlesTo)
+    :particlesSupport(particlesSupport),particlesDomain(particlesDomain)
     {
         Point<particlesFrom_type::dims, unsigned int> p;
         p.zero();
-        dcpse = new Dcpse<particlesFrom_type::dims, particlesFrom_type,particlesTo_type>(particlesFrom,particlesTo, p, ord, rCut, oversampling_factor, opt);
+        dcpse = new Dcpse<particlesFrom_type::dims, particlesFrom_type,particlesTo_type>(particlesSupport,particlesDomain, p, ord, rCut, oversampling_factor, opt);
     }
 
     void deallocate() {
@@ -96,7 +96,7 @@ public:
      */
     void update() {
         auto dcpse_temp = (Dcpse<particlesFrom_type::dims, particlesFrom_type, particlesTo_type> *) dcpse;
-        dcpse_temp->initializeUpdate(particlesFrom,particlesTo);
+        dcpse_temp->initializeUpdate(particlesSupport,particlesDomain);
 
     }
 

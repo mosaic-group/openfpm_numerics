@@ -27,38 +27,37 @@ enum support_options
 template<typename vector_type,typename vector_type2>
 class SupportBuilder {
 private:
-    vector_type &domainFrom;
-    vector_type2 &domainTo;
-    decltype(std::declval<vector_type>().getCellList(0.0)) cellList;
+    vector_type &particlesSupport;
+    vector_type2 &particlesDomain;
+    decltype(std::declval<vector_type2>().getCellList(0.0)) cellList;
     const Point<vector_type::dims, unsigned int> differentialSignature;
     typename vector_type::stype rCut, MinSpacing, adaptiveSizeFactor=1;
     bool is_interpolation;
 
 public:
 
-    SupportBuilder(vector_type &domainFrom, vector_type2 &domainTo,
+    SupportBuilder(vector_type &particlesSupport, vector_type2 &particlesDomain,
                    const Point<vector_type::dims, unsigned int> differentialSignature,
                    typename vector_type::stype rCut,
                    bool is_interpolation)
-            : domainFrom(domainFrom),
-              domainTo(domainTo),
+            : particlesSupport(particlesSupport),
+              particlesDomain(particlesDomain),
               differentialSignature(differentialSignature),
               rCut(rCut), is_interpolation(is_interpolation) {
-        cellList = domainFrom.getCellList(rCut);
+        cellList = particlesDomain.getCellList(rCut);
     }
 
-    SupportBuilder(vector_type &domainFrom, vector_type2 &domainTo,
+    SupportBuilder(vector_type &particlesSupport, vector_type2 &particlesDomain,
                    unsigned int differentialSignature[vector_type::dims], typename vector_type::stype rCut,
                    bool is_interpolation)
-            : SupportBuilder(domainFrom, domainTo, Point<vector_type::dims, unsigned int>(differentialSignature),
+            : SupportBuilder(particlesSupport, particlesDomain, Point<vector_type::dims, unsigned int>(differentialSignature),
                              rCut) {}
 
     template<typename iterator_type>
     Support getSupport(iterator_type itPoint, unsigned int requiredSize, support_options opt) {
         // Get spatial position from point iterator
         vect_dist_key_dx p = itPoint.get();
-        vect_dist_key_dx pOrig = itPoint.getOrig();
-        Point<vector_type::dims, typename vector_type::stype> pos = domainTo.getPos(p.getKey());
+        Point<vector_type::dims, typename vector_type::stype> pos = particlesDomain.getPos(p.getKey());
 
         // Get cell containing current point and add it to the set of cell keys
         grid_key_dx<vector_type::dims> curCellKey = cellList.getCellGrid(
@@ -72,15 +71,13 @@ public:
 
         // Now return all the points from the support into a vector
 
-        std::vector<size_t> supportKeys = getPointsInSetOfCells(supportCells, p, pOrig, requiredSize, opt);
+        std::vector<size_t> supportKeys = getPointsInSetOfCells(supportCells, p, requiredSize, opt);
 
         if (is_interpolation == false) {
-            auto p_o = domainFrom.getOriginKey(p.getKey());
-            std::remove(supportKeys.begin(), supportKeys.end(), p_o.getKey());
+            std::remove(supportKeys.begin(), supportKeys.end(), p.getKey());
         }
 
-        auto p_o = domainTo.getOriginKey(p.getKey());
-        return Support(p_o.getKey(), openfpm::vector_std<size_t>(supportKeys.begin(), supportKeys.end()));
+        return Support(p.getKey(), openfpm::vector_std<size_t>(supportKeys.begin(), supportKeys.end()));
     }
 
     typename vector_type::stype getLastMinspacing() {
@@ -157,28 +154,27 @@ private:
 
     std::vector<size_t> getPointsInSetOfCells(std::set<grid_key_dx<vector_type::dims>> set,
                                               vect_dist_key_dx &p,
-                                              vect_dist_key_dx &pOrig,
                                               size_t requiredSupportSize,
                                               support_options opt) {
         struct reord {
             typename vector_type::stype dist;
             size_t offset;
 
-            bool operator<(const reord &p) const { return this->dist < p.dist; }
+            bool operator<(const reord &q) const { return this->dist < q.dist; }
         };
 
         openfpm::vector<reord> rp;
         std::vector<size_t> points;
-        Point<vector_type::dims, typename vector_type::stype> xp = domainTo.getPos(p);
+        Point<vector_type::dims, typename vector_type::stype> xp = particlesDomain.getPos(p);
         for (const auto cellKey: set) {
             const size_t cellLinId = getCellLinId(cellKey);
             const size_t elemsInCell = getNumElementsInCell(cellKey);
             for (size_t k = 0; k < elemsInCell; ++k) {
                 size_t el = cellList.get(cellLinId, k);
 
-                if (pOrig.getKey() == el && is_interpolation == false) { continue; }
+                if (p.getKey() == el && is_interpolation == false) { continue; }
 
-                Point<vector_type::dims, typename vector_type::stype> xq = domainFrom.getPosOrig(el);
+                Point<vector_type::dims, typename vector_type::stype> xq = particlesSupport.getPos(el);
                 //points.push_back(el);
 
                 reord pr;

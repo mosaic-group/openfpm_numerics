@@ -29,7 +29,6 @@ public:
 		rCut = cellList_in.getCellBox().getHigh(0);
 		// Get spatial position from point iterator
 		vect_dist_key_dx p = itPoint.get();
-		vect_dist_key_dx pOrig = itPoint.getOrig();
 		Point<vector_type_support::dims, typename vector_type_support::stype> pos = domain.getPos(p.getKey());
 
 		// Get cell containing current point and add it to the set of cell keys
@@ -41,8 +40,8 @@ public:
 		enlargeSetOfCellsUntilSize(supportCells, requiredSize + 1,
                                    opt); // NOTE: this +1 is because we then remove the point itself
 
-        	// Now return all the points from the support into a vector
-        	keys = getPointsInSetOfCells(supportCells, p, pOrig, requiredSize, opt);
+		// Now return all the points from the support into a vector
+		keys = getPointsInSetOfCells(supportCells, p, requiredSize, opt);
 	}
 	
 	auto getKeys()
@@ -142,7 +141,6 @@ private:
 
     openfpm::vector<size_t> getPointsInSetOfCells(std::set<grid_key_dx<vector_type_support::dims>> set,
                                               vect_dist_key_dx &p,
-                                              vect_dist_key_dx &pOrig,
                                               size_t requiredSupportSize,
                                               support_options opt) {
         struct reord {
@@ -161,7 +159,7 @@ private:
             for (size_t k = 0; k < elemsInCell; ++k) {
                 size_t el = cellList.get(cellLinId, k);
 
-                Point<vector_type_support::dims, typename vector_type_support::stype> xq = domain.getPosOrig(el);
+                Point<vector_type_support::dims, typename vector_type_support::stype> xq = domain.getPos(el);
                 //points.push_back(el);
 
                 reord pr;

@@ -26,12 +26,12 @@ public:
              typename vector_type2>
     Vandermonde(const Support &support,
                 const MonomialBasis<dim> &monomialBasis,
-                const vector_type & particlesFrom,
-                const vector_type2 & particlesTo,T HOverEpsilon=0.5)    //0.5 for the test
-    : point(particlesTo.getPosOrig(support.getReferencePointKey())),
+                const vector_type & particlesSupport,
+                const vector_type2 & particlesDomain,T HOverEpsilon=0.5)    //0.5 for the test
+    : point(particlesDomain.getPos(support.getReferencePointKey())),
                   monomialBasis(monomialBasis),HOverEpsilon(HOverEpsilon)
     {
-        initialize(support,particlesFrom,particlesTo);
+        initialize(support,particlesSupport,particlesDomain);
     }
 
 
@@ -94,14 +94,14 @@ private:
     }
 
     template<typename vector_type, typename vector_type2>
-    void initialize(const Support &sup, const vector_type & particlesFrom, vector_type2 &particlesTo)
+    void initialize(const Support &sup, const vector_type & particlesSupport, vector_type2 &particlesDomain)
     {
     	auto & keys = sup.getKeys();
 
     	for (int i = 0 ; i < keys.size() ; i++)
     	{
-    		Point<dim,T> p = particlesTo.getPosOrig(sup.getReferencePointKey());
-            p -= particlesFrom.getPosOrig(keys.get(i));
+            Point<dim,T> p = particlesDomain.getPos(sup.getReferencePointKey());
+            p -= particlesSupport.getPos(keys.get(i));
             offsets.add(p);
     	}
 

@@ -221,15 +221,15 @@ struct get_vector_dist_expression_op
 	}
 
 	template<unsigned int prop, typename exp_type, typename vector_type>
-	__device__ __host__ inline static void assign(exp_type & o1, vector_type & v, const vect_dist_key_dx & key, const vect_dist_key_dx & key_orig)
+	__device__ __host__ inline static void assign(exp_type & o1, vector_type & v, const vect_dist_key_dx & key)
 	{
-		pos_or_propL<vector_type,exp_type::prop>::value(v,key) = o1.value(key_orig);
+		pos_or_propL<vector_type,exp_type::prop>::value(v,key) = o1.value(key);
 	}
 
 	template<unsigned int prop, typename exp_type, typename vector_type>
-	__device__ __host__ inline static void assign(exp_type & o1, vector_type & v, const unsigned int & key, const unsigned int & key_orig)
+	__device__ __host__ inline static void assign(exp_type & o1, vector_type & v, const unsigned int & key)
 	{
-		pos_or_propL<vector_type,exp_type::prop>::value(v,key) = o1.value(key_orig);
+		pos_or_propL<vector_type,exp_type::prop>::value(v,key) = o1.value(key);
 	}
 
 	template<unsigned int prop, typename vector_type>
@@ -250,25 +250,25 @@ struct get_vector_dist_expression_op<1,false>
 	}
 
 	template<unsigned int prop, typename exp_type, typename vector_type>
-	__device__ __host__ inline static void assign(exp_type & o1, vector_type & v, const vect_dist_key_dx & key, const vect_dist_key_dx & key_orig, const int (& comp)[1])
+	__device__ __host__ inline static void assign(exp_type & o1, vector_type & v, const vect_dist_key_dx & key, const int (& comp)[1])
 	{
 		printf("ERROR: Slicer, the expression is incorrect, please check it\n");
 	}
 
 	template<unsigned int prop, typename exp_type, typename vector_type>
-	__device__ __host__ inline static void assign(exp_type & o1, vector_type & v, const unsigned int & key, const vect_dist_key_dx & key_orig, const int (& comp)[1])
+	__device__ __host__ inline static void assign(exp_type & o1, vector_type & v, const unsigned int & key, const int (& comp)[1])
 	{
 		printf("ERROR: Slicer, the expression is incorrect, please check it\n");
 	}
 
         template<unsigned int prop,typename exp_type, typename vector_type>
-        __device__ __host__ inline static void assign(exp_type & o1, vector_type & v, const vect_dist_key_dx & key, const vect_dist_key_dx & key_orig, const Point<1,int> & comp)
+        __device__ __host__ inline static void assign(exp_type & o1, vector_type & v, const vect_dist_key_dx & key, const Point<1,int> & comp)
         {
                 printf("ERROR: Slicer, the expression is incorrect, please check it\n");
         }
 
         template<unsigned int prop,typename exp_type, typename vector_type>
-        __device__ __host__ inline static void assign(exp_type & o1, vector_type & v, const unsigned int & key, const unsigned int & key_orig, const Point<1,int> & comp)
+        __device__ __host__ inline static void assign(exp_type & o1, vector_type & v, const unsigned int & key, const Point<1,int> & comp)
         {
                 printf("ERROR: Slicer, the expression is incorrect, please check it\n");
         }
@@ -291,25 +291,25 @@ struct get_vector_dist_expression_op<2,false>
 	}
 
 	template<unsigned int prop, typename exp_type, typename vector_type>
-	__device__ __host__ inline static void assign(exp_type & o1, vector_type & v, const vect_dist_key_dx & key, const vect_dist_key_dx & key_orig, const int (& comp)[2])
+	__device__ __host__ inline static void assign(exp_type & o1, vector_type & v, const vect_dist_key_dx & key, const int (& comp)[2])
 	{
 		printf("ERROR: Slicer, the expression is incorrect, please check it\n");
 	}
 
 	template<unsigned int prop, typename exp_type, typename vector_type>
-	__device__ __host__ inline static void assign(exp_type & o1, vector_type & v, const unsigned int & key, const vect_dist_key_dx & key_orig, const int (& comp)[2])
+	__device__ __host__ inline static void assign(exp_type & o1, vector_type & v, const unsigned int & key, const int (& comp)[2])
 	{
 		printf("ERROR: Slicer, the expression is incorrect, please check it\n");
 	}
 
         template<unsigned int prop,typename exp_type, typename vector_type>
-        __device__ __host__ inline static void assign(exp_type & o1, vector_type & v, const vect_dist_key_dx & key, const vect_dist_key_dx & key_orig, const Point<2,int> & comp)
+        __device__ __host__ inline static void assign(exp_type & o1, vector_type & v, const vect_dist_key_dx & key, const Point<2,int> & comp)
         {
                 printf("ERROR: Slicer, the expression is incorrect, please check it\n");
         }
 
         template<unsigned int prop,typename exp_type, typename vector_type>
-        __device__ __host__ inline static void assign(exp_type & o1, vector_type & v, const unsigned int & key, const unsigned int & key_orig, const Point<2,int> & comp)
+        __device__ __host__ inline static void assign(exp_type & o1, vector_type & v, const unsigned int & key, const Point<2,int> & comp)
         {
                 printf("ERROR: Slicer, the expression is incorrect, please check it\n");
         }
@@ -331,27 +331,27 @@ struct get_vector_dist_expression_op<1,true>
 	}
 
 	template<unsigned int prop,typename exp_type, typename vector_type>
-	__device__ __host__ inline static void assign(exp_type & o1, vector_type & v, const vect_dist_key_dx & key, const vect_dist_key_dx & key_orig, const int (& comp)[1])
+	__device__ __host__ inline static void assign(exp_type & o1, vector_type & v, const vect_dist_key_dx & key, const int (& comp)[1])
 	{
-		pos_or_propL<vector_type,prop>::value(v,key)[comp[0]] = o1.value(key_orig);
+		pos_or_propL<vector_type,prop>::value(v,key)[comp[0]] = o1.value(key);
 	}
 
 	template<unsigned int prop,typename exp_type, typename vector_type>
-	__device__ __host__ inline static void assign(exp_type & o1, vector_type & v, const unsigned int & key, const unsigned int & key_orig, const int (& comp)[1])
+	__device__ __host__ inline static void assign(exp_type & o1, vector_type & v, const unsigned int & key, const int (& comp)[1])
 	{
-		pos_or_propL<vector_type,prop>::value(v,key)[comp[0]] = o1.value(key_orig);
+		pos_or_propL<vector_type,prop>::value(v,key)[comp[0]] = o1.value(key);
 	}
 
 	template<unsigned int prop,typename exp_type, typename vector_type>
-	__device__ __host__ inline static void assign(exp_type & o1, vector_type & v, const vect_dist_key_dx & key, const vect_dist_key_dx & key_orig, const Point<1,int> & comp)
+	__device__ __host__ inline static void assign(exp_type & o1, vector_type & v, const vect_dist_key_dx & key, const Point<1,int> & comp)
 	{
-		pos_or_propL<vector_type,prop>::value(v,key)[comp[0]] = o1.value(key_orig);
+		pos_or_propL<vector_type,prop>::value(v,key)[comp[0]] = o1.value(key);
 	}
 
 	template<unsigned int prop,typename exp_type, typename vector_type>
-	__device__ __host__ inline static void assign(exp_type & o1, vector_type & v, const unsigned int & key, const unsigned int & key_orig, const Point<1,int> & comp)
+	__device__ __host__ inline static void assign(exp_type & o1, vector_type & v, const unsigned int & key, const Point<1,int> & comp)
 	{
-		pos_or_propL<vector_type,prop>::value(v,key)[comp[0]] = o1.value(key_orig);
+		pos_or_propL<vector_type,prop>::value(v,key)[comp[0]] = o1.value(key);
 	}
 
 	template<unsigned int prop, typename vector_type>
@@ -371,27 +371,27 @@ struct get_vector_dist_expression_op<2,true>
 	}
 
 	template<unsigned int prop,typename exp_type, typename vector_type>
-	__device__ __host__ inline static void assign(exp_type & o1, vector_type & v, const vect_dist_key_dx & key, const vect_dist_key_dx & key_orig, const int (& comp)[2])
+	__device__ __host__ inline static void assign(exp_type & o1, vector_type & v, const vect_dist_key_dx & key, const int (& comp)[2])
 	{
-		pos_or_propL<vector_type,prop>::value(v,key)[comp[0]][comp[1]] = o1.value(key_orig);
+		pos_or_propL<vector_type,prop>::value(v,key)[comp[0]][comp[1]] = o1.value(key);
 	}
 
 	template<unsigned int prop,typename exp_type, typename vector_type>
-	__device__ __host__ inline static void assign(exp_type & o1, vector_type & v, const vect_dist_key_dx & key, const vect_dist_key_dx & key_orig, const Point<2,int> & comp)
+	__device__ __host__ inline static void assign(exp_type & o1, vector_type & v, const vect_dist_key_dx & key, const Point<2,int> & comp)
 	{
-		pos_or_propL<vector_type,prop>::value(v,key)[comp[0]][comp[1]] = o1.value(key_orig);
+		pos_or_propL<vector_type,prop>::value(v,key)[comp[0]][comp[1]] = o1.value(key);
 	}
 
 	template<unsigned int prop,typename exp_type, typename vector_type>
-	__device__ __host__ inline static void assign(exp_type & o1, vector_type & v, const unsigned int & key, const unsigned int & key_orig, const int (& comp)[2])
+	__device__ __host__ inline static void assign(exp_type & o1, vector_type & v, const unsigned int & key, const int (& comp)[2])
 	{
-		pos_or_propL<vector_type,prop>::value(v,key)[comp[0]][comp[1]] = o1.value(key_orig);
+		pos_or_propL<vector_type,prop>::value(v,key)[comp[0]][comp[1]] = o1.value(key);
 	}
 
 	template<unsigned int prop,typename exp_type, typename vector_type>
-	__device__ __host__ inline static void assign(exp_type & o1, vector_type & v, const unsigned int & key, const unsigned int & key_orig, const Point<2,int> & comp)
+	__device__ __host__ inline static void assign(exp_type & o1, vector_type & v, const unsigned int & key, const Point<2,int> & comp)
 	{
-		pos_or_propL<vector_type,prop>::value(v,key)[comp[0]][comp[1]] = o1.value(key_orig);
+		pos_or_propL<vector_type,prop>::value(v,key)[comp[0]][comp[1]] = o1.value(key);
 	}
 
 	template<unsigned int prop, typename vector_type>
@@ -411,27 +411,27 @@ struct get_vector_dist_expression_op<3,true>
 	}
 
 	template<unsigned int prop,typename exp_type, typename vector_type>
-	__device__ __host__ inline static void assign(exp_type & o1, vector_type & v, const vect_dist_key_dx & key, const vect_dist_key_dx & key_orig, const int (& comp)[3])
+	__device__ __host__ inline static void assign(exp_type & o1, vector_type & v, const vect_dist_key_dx & key, const int (& comp)[3])
 	{
-		pos_or_propL<vector_type,prop>::value(v,key)[comp[0]][comp[1]][comp[2]] = o1.value(key_orig);
+		pos_or_propL<vector_type,prop>::value(v,key)[comp[0]][comp[1]][comp[2]] = o1.value(key);
 	}
 
 	template<unsigned int prop,typename exp_type, typename vector_type>
-	__device__ __host__ inline static void assign(exp_type & o1, vector_type & v, const vect_dist_key_dx & key, const vect_dist_key_dx & key_orig, const Point<3,int> & comp)
+	__device__ __host__ inline static void assign(exp_type & o1, vector_type & v, const vect_dist_key_dx & key, const Point<3,int> & comp)
 	{
-		pos_or_propL<vector_type,prop>::value(v,key)[comp[0]][comp[1]][comp[2]] = o1.value(key_orig);
+		pos_or_propL<vector_type,prop>::value(v,key)[comp[0]][comp[1]][comp[2]] = o1.value(key);
 	}
 
 	template<unsigned int prop,typename exp_type, typename vector_type>
-	__device__ __host__ inline static void assign(exp_type & o1, vector_type & v, const unsigned int & key, const unsigned int & key_orig, const int (& comp)[3])
+	__device__ __host__ inline static void assign(exp_type & o1, vector_type & v, const unsigned int & key, const int (& comp)[3])
 	{
-		pos_or_propL<vector_type,prop>::value(v,key)[comp[0]][comp[1]][comp[2]] = o1.value(key_orig);
+		pos_or_propL<vector_type,prop>::value(v,key)[comp[0]][comp[1]][comp[2]] = o1.value(key);
 	}
 
 	template<unsigned int prop,typename exp_type, typename vector_type>
-	__device__ __host__ inline static void assign(exp_type & o1, vector_type & v, const unsigned int & key, const unsigned int & key_orig, const Point<3,int> & comp)
+	__device__ __host__ inline static void assign(exp_type & o1, vector_type & v, const unsigned int & key, const Point<3,int> & comp)
 	{
-		pos_or_propL<vector_type,prop>::value(v,key)[comp[0]][comp[1]][comp[2]] = o1.value(key_orig);
+		pos_or_propL<vector_type,prop>::value(v,key)[comp[0]][comp[1]][comp[2]] = o1.value(key);
 	}
 
 	template<unsigned int prop, typename vector_type>
@@ -456,9 +456,8 @@ struct vector_dist_op_compute_op<prp,comp_host>
         while (it.isNext())
         {
                 auto key = it.get();
-                auto key_orig = v.getOriginKey(key);
 
-                pos_or_propL<vector,prp>::value(v,key) = v_exp.value(key_orig);
+                pos_or_propL<vector,prp>::value(v,key) = v_exp.value(key);
 
                 ++it;
 		}
@@ -482,9 +481,8 @@ struct vector_dist_op_compute_op<prp,comp_host>
 		while (it.isNext())
 		{
 			auto key = it.get();
-			auto key_orig = v.getOriginKey(key);
 
-			get_vector_dist_expression_op<n,n == rank_gen<property_act>::type::value>::template assign<prp>(v_exp,v,key,key_orig,comp);
+			get_vector_dist_expression_op<n,n == rank_gen<property_act>::type::value>::template assign<prp>(v_exp,v,key,comp);
 
 			++it;
 		}
@@ -498,7 +496,6 @@ struct vector_dist_op_compute_op<prp,comp_host>
         while (it.isNext())
         {
                 auto key = it.get();
-                auto key_orig = v.getOriginKey(key);
 
                 pos_or_propL<vector,prp>::value(v,key) = d;
 
@@ -571,7 +568,7 @@ __global__ void compute_expr_ker_slice(vector vd, expr v_exp, Point<n,int> comp)
 
 	if (p >= vd.size_local())	{return;}
 
-	get_vector_dist_expression_op<n,n == rank_gen<property_act>::type::value>::template assign<prp>(v_exp,vd,p,p,comp);
+	get_vector_dist_expression_op<n,n == rank_gen<property_act>::type::value>::template assign<prp>(v_exp,vd,p,comp);
 }
 
 template<unsigned int prp, typename vector>

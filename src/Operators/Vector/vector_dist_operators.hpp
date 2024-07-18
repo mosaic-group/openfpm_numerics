@@ -1553,9 +1553,9 @@ struct get_vector_dist_expression_op
 	}
 
 	template<unsigned int prop, typename exp_type, typename vector_type>
-	inline static void assign(exp_type & o1, vector_type & v, const vect_dist_key_dx & key, const vect_dist_key_dx & key_orig)
+	inline static void assign(exp_type & o1, vector_type & v, const vect_dist_key_dx & key)
 	{
-		pos_or_propL<vector_type,exp_type::prop>::value(v,key) = o1.value(key_orig);
+		pos_or_propL<vector_type,exp_type::prop>::value(v,key) = o1.value(key);
 	}
 
 	template<unsigned int prop, typename vector_type>
@@ -1598,9 +1598,9 @@ struct get_vector_dist_expression_op<1,true>
 	}
 
 	template<unsigned int prop,typename exp_type, typename vector_type>
-	inline static void assign(exp_type & o1, vector_type & v, const vect_dist_key_dx & key, const vect_dist_key_dx & key_orig, const int (& comp)[1])
+	inline static void assign(exp_type & o1, vector_type & v, const vect_dist_key_dx & key, const int (& comp)[1])
 	{
-		pos_or_propL<vector_type,prop>::value(v,key)[comp[0]] = o1.value(key_orig);
+		pos_or_propL<vector_type,prop>::value(v,key)[comp[0]] = o1.value(key);
 	}
 
 	template<unsigned int prop, typename vector_type>
@@ -1620,9 +1620,9 @@ struct get_vector_dist_expression_op<2,true>
 	}
 
 	template<unsigned int prop,typename exp_type, typename vector_type>
-	inline static void assign(exp_type & o1, vector_type & v, const vect_dist_key_dx & key, const vect_dist_key_dx & key_orig, const int (& comp)[2])
+	inline static void assign(exp_type & o1, vector_type & v, const vect_dist_key_dx & key, const int (& comp)[2])
 	{
-		pos_or_propL<vector_type,prop>::value(v,key)[comp[0]][comp[1]] = o1.value(key_orig);
+		pos_or_propL<vector_type,prop>::value(v,key)[comp[0]][comp[1]] = o1.value(key);
 	}
 
 	template<unsigned int prop, typename vector_type>
@@ -1801,9 +1801,8 @@ public:
         while (it.isNext())
         {
             auto key = it.get();
-            auto key_orig = v.getOriginKey(key);
 
-            get_vector_dist_expression_op<n,n == rank_gen<property_act>::type::value>::template assign<exp1::prop>(v_exp,v,key,key_orig,comp);
+            get_vector_dist_expression_op<n,n == rank_gen<property_act>::type::value>::template assign<exp1::prop>(v_exp,v,key,comp);
 
             ++it;
         }
@@ -1833,9 +1832,8 @@ public:
 		while (it.isNext())
 		{
 			auto key = it.get();
-			auto key_orig = v.getOriginKey(key);
 
-			get_vector_dist_expression_op<n,n == rank_gen<property_act>::type::value>::template assign<exp1::prop>(v_exp,v,key,key_orig,comp);
+			get_vector_dist_expression_op<n,n == rank_gen<property_act>::type::value>::template assign<exp1::prop>(v_exp,v,key,comp);
 
 			++it;
 		}

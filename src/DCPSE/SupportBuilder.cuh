@@ -29,7 +29,7 @@ __global__ void gatherSupportSize_gpu(
 		auto q = Np.get(); ++Np;
 
 		if (p == q) continue;
-		if (pos.distance(particles.getPosOrig(q)) < rCut) ++N;
+		if (pos.distance(particles.getPos(q)) < rCut) ++N;
 	}
 
 	supportSize.get(p) = N;
@@ -57,7 +57,7 @@ __global__ void assembleSupport_gpu(
 		auto q = Np.get(); ++Np;
 
 		if (p == q) continue;
-		if (pos.distance(particles.getPosOrig(q)) < rCut) supportKeys[N++] = q;
+		if (pos.distance(particles.getPos(q)) < rCut) supportKeys[N++] = q;
 	}
 }
 

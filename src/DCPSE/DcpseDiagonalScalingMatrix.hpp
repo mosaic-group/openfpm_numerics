@@ -20,14 +20,14 @@ public:
     DcpseDiagonalScalingMatrix(const monomialBasis_type &monomialBasis) : monomialBasis(monomialBasis) {}
 
     template <typename T, typename MatrixType, typename vector_type, typename vector_type2>
-    void buildMatrix(MatrixType &M, Support support, T eps, vector_type & particlesFrom , vector_type2 & particlesTo)
+    void buildMatrix(MatrixType &M, Support support, T eps, vector_type & particlesSupport , vector_type2 & particlesDomain)
     {
         // Check that all the dimension constraints are met
         assert(support.size() >= monomialBasis.size());
         assert(M.rows() == support.size());
         assert(M.cols() == support.size());
 
-        Point<dim,typename vector_type::stype> ref_p = particlesTo.getPosOrig(support.getReferencePointKey());
+        Point<dim,typename vector_type::stype> ref_p = particlesDomain.getPos(support.getReferencePointKey());
 
         // Fill the diagonal matrix
         M.setZero(); // Make sure the rest of the matrix is zero!
@@ -36,26 +36,26 @@ public:
         for (size_t i = 0; i < N; ++i)
         {
             const auto& pt = support_keys.get(i);
-        	Point<dim,typename vector_type::stype> p = ref_p;
-        	p -= particlesFrom.getPosOrig(pt);
+            Point<dim,typename vector_type::stype> p = ref_p;
+            p -= particlesSupport.getPos(pt);
 
             M(i,i) = exp(- norm2(p) / (2.0 * eps * eps));
         }
     }
 
     template <typename T, typename vector_type, typename vector_type2>
-    __host__ __device__ void buildMatrix(T* M, size_t supportRefKey, size_t supportKeysSize, const size_t* supportKeys, T eps, vector_type & particlesFrom, vector_type2 & particlesTo)
+    __host__ __device__ void buildMatrix(T* M, size_t supportRefKey, size_t supportKeysSize, const size_t* supportKeys, T eps, vector_type & particlesSupport, vector_type2 & particlesDomain)
     {
         // Check that all the dimension constraints are met
         assert(supportKeysSize >= monomialBasis.size());
 
-        Point<dim,typename vector_type::stype> ref_p = particlesTo.getPos(supportRefKey);
+        Point<dim,typename vector_type::stype> ref_p = particlesDomain.getPos(supportRefKey);
 
         for (size_t i = 0; i < supportKeysSize; ++i)
         {
             size_t pt = supportKeys[i];
             Point<dim,typename vector_type::stype> p = ref_p;
-            p -= particlesFrom.getPos(pt);
+            p -= particlesSupport.getPos(pt);
 
             M[i] = exp(- norm2(p) / (2.0 * eps * eps));
         }

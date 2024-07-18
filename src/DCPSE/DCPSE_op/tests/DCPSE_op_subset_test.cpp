@@ -135,8 +135,8 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_subset_suite_tests)
         Derivative_y Dy(Particles, 2, rCut);
         Derivative_x Dx_bulk(Particles_bulk, 2, rCut);
 */
-        Derivative_x Dx_bulk(Particles_bulk, 2, rCut,sampling_factor, support_options::RADIUS);
-        Derivative_y Dy_bulk(Particles_bulk, 2, rCut,sampling_factor, support_options::RADIUS);
+        Derivative_x Dx_bulk(Particles, Particles_bulk, 2, rCut,sampling_factor, support_options::RADIUS);
+        Derivative_y Dy_bulk(Particles, Particles_bulk, 2, rCut,sampling_factor, support_options::RADIUS);
 
         Out_bulk = Dx_bulk(P);
 	    Out_V_bulk[0] = P + Dx_bulk(P);
@@ -294,8 +294,8 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_subset_suite_tests)
         Derivative_xx Dxx(Particles, 2, rCut,sampling_factor, support_options::RADIUS);
         Derivative_yy Dyy(Particles, 2, rCut,sampling_factor, support_options::RADIUS);
         Derivative_y Dy(Particles, 2, rCut,sampling_factor, support_options::RADIUS);
-        Derivative_x Bulk_Dx(Particles_bulk, 2, rCut,sampling_factor, support_options::RADIUS);
-        Derivative_y Bulk_Dy(Particles_bulk, 2, rCut,sampling_factor, support_options::RADIUS);
+        Derivative_x Bulk_Dx(Particles, Particles_bulk, 2, rCut,sampling_factor, support_options::RADIUS);
+        Derivative_y Bulk_Dy(Particles, Particles_bulk, 2, rCut,sampling_factor, support_options::RADIUS);
 
         int n = 0, nmax = 5, ctr = 0, errctr=1, Vreset = 0;
         double V_err=1;
