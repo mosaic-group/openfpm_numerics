@@ -58,7 +58,6 @@ if ( CUDA_ON_BACKEND STREQUAL "HIP" AND HIP_FOUND )
 		DCPSE/tests/Dcpse_unit_tests.cpp
 		DCPSE/tests/DcpseRhs_unit_tests.cpp
 		DCPSE/tests/MonomialBasis_unit_tests.cpp
-		DCPSE/tests/Support_unit_tests.cpp
 		DCPSE/tests/Vandermonde_unit_tests.cpp
 		main.cpp
 		Matrix/SparseMatrix_unit_tests.cpp
@@ -100,7 +99,6 @@ else()
 		DCPSE/tests/Dcpse_unit_tests.cpp
 		DCPSE/tests/DcpseRhs_unit_tests.cpp
 		DCPSE/tests/MonomialBasis_unit_tests.cpp
-		DCPSE/tests/Support_unit_tests.cpp
 		DCPSE/tests/Vandermonde_unit_tests.cpp
 		main.cpp
 		Matrix/SparseMatrix_unit_tests.cpp

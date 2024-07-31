@@ -16,11 +16,10 @@
 
 enum support_options
 {
-    N_PARTICLES,
     RADIUS,
     LOAD,
-    ADAPTIVE,
-    AT_LEAST_N_PARTICLES
+    ADAPTIVE,             //used in SurfaceDcpse
+    AT_LEAST_N_PARTICLES  //used in regression module
 };
 
 

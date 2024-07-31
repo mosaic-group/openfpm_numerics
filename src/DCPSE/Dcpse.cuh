@@ -90,7 +90,7 @@ public:
           unsigned int convergenceOrder,
           T rCut,
           T supportSizeFactor = 1,
-          support_options opt = support_options::N_PARTICLES)
+          support_options opt = support_options::RADIUS)
         :particles(particles),
             differentialSignature(differentialSignature),
             differentialOrder(Monomial<dim>(differentialSignature).order()),
@@ -109,7 +109,7 @@ public:
           unsigned int convergenceOrder,
           T rCut,
           T supportSizeFactor = 1,
-          support_options opt = support_options::N_PARTICLES)
+          support_options opt = support_options::RADIUS)
         :particles(particles), opt(opt),
             differentialSignature(differentialSignature),
             differentialOrder(Monomial<dim>(differentialSignature).order()),
