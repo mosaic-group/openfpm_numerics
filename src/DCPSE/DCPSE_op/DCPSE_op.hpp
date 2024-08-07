@@ -647,7 +647,7 @@ public:
  * \return Operator Dx which is a function on Vector_dist_Expressions
  *
  */
-template<template<unsigned int, typename, typename...> class Dcpse_type = Dcpse>
+template<typename VerletList_type, template<unsigned int, typename, typename...> class Dcpse_type = Dcpse>
 class Derivative_x_T {
 
 	void *dcpse;
@@ -666,14 +666,19 @@ public:
 	 *
 	 */
 	template<typename particles_type>
-	Derivative_x_T(particles_type &parts, unsigned int ord, typename particles_type::stype rCut,
-				 double oversampling_factor = dcpse_oversampling_factor,
-				 support_options opt = support_options::RADIUS) {
+	Derivative_x_T(
+		particles_type &parts,
+		VerletList_type& verletList,
+		unsigned int ord,
+		typename particles_type::stype rCut,
+		double oversampling_factor = dcpse_oversampling_factor,
+		support_options opt = support_options::RADIUS
+	) {
 		Point<particles_type::dims, unsigned int> p;
 		p.zero();
 		p.get(0) = 1;
 
-		dcpse = new Dcpse_type<particles_type::dims, particles_type>(parts, p, ord, rCut, oversampling_factor, opt);
+		dcpse = new Dcpse_type<particles_type::dims, VerletList_type, particles_type>(parts, verletList, p, ord, rCut, oversampling_factor, opt);
 	}
 
 	/*! \brief Constructor for Creating the DCPSE Operator Dx and objects and computes DCPSE Kernels.
@@ -696,6 +701,7 @@ public:
 	Derivative_x_T(
 		vector_type &particlesSupport,
 		vector_type2 &particlesDomain,
+		VerletList_type& verletList,
 		unsigned int ord,
 		typename vector_type::stype rCut,
 		double oversampling_factor = dcpse_oversampling_factor,
@@ -705,9 +711,10 @@ public:
 		p.zero();
 		p.get(0) = 1;
 
-		dcpse = new Dcpse_type<vector_type::dims, vector_type, vector_type2>(
+		dcpse = new Dcpse_type<vector_type::dims, VerletList_type, vector_type, vector_type2>(
 			particlesSupport,
 			particlesDomain,
+			verletList,
 			p,
 			ord,
 			rCut,
@@ -718,34 +725,34 @@ public:
 
 	template<typename particles_type>
 	void deallocate(particles_type &parts) {
-		delete (Dcpse_type<particles_type::dims, particles_type> *) dcpse;
+		delete (Dcpse_type<particles_type::dims, VerletList_type, particles_type> *) dcpse;
 	}
 
 	template<typename operand_type>
-	vector_dist_expression_op<operand_type, Dcpse_type<operand_type::vtype::dims, typename operand_type::vtype>, VECT_DCPSE>
+	vector_dist_expression_op<operand_type, Dcpse_type<operand_type::vtype::dims, VerletList_type, typename operand_type::vtype>, VECT_DCPSE>
 	operator()(operand_type arg) {
-		typedef Dcpse_type<operand_type::vtype::dims, typename operand_type::vtype> dcpse_type;
+		typedef Dcpse_type<operand_type::vtype::dims, VerletList_type, typename operand_type::vtype> dcpse_type;
 
 		return vector_dist_expression_op<operand_type, dcpse_type, VECT_DCPSE>(arg, *(dcpse_type *) dcpse);
 	}
 
 	template<unsigned int prp, typename particles_type>
 	void DrawKernel(particles_type &particles, int k) {
-		auto dcpse_temp = (Dcpse_type<particles_type::dims, particles_type> *) dcpse;
+		auto dcpse_temp = (Dcpse_type<particles_type::dims, VerletList_type, particles_type> *) dcpse;
 		dcpse_temp->template DrawKernel<prp>(particles, k);
 
 	}
 
 	template<unsigned int prp, typename particles_type>
 	void DrawKernelNN(particles_type &particles, int k) {
-		auto dcpse_temp = (Dcpse_type<particles_type::dims, particles_type> *) dcpse;
+		auto dcpse_temp = (Dcpse_type<particles_type::dims, VerletList_type, particles_type> *) dcpse;
 		dcpse_temp->template DrawKernelNN<prp>(particles, k);
 
 	}
 
 	template<typename particles_type>
 	void checkMomenta(particles_type &particles) {
-		auto dcpse_temp = (Dcpse_type<particles_type::dims, particles_type> *) dcpse;
+		auto dcpse_temp = (Dcpse_type<particles_type::dims, VerletList_type, particles_type> *) dcpse;
 		dcpse_temp->checkMomenta(particles);
 
 	}
@@ -757,7 +764,7 @@ public:
 	 */
 	template<typename particles_type>
 	void save(particles_type &particles, const std::string &file) {
-		auto dcpse_temp = (Dcpse_type<particles_type::dims, particles_type> *) dcpse;
+		auto dcpse_temp = (Dcpse_type<particles_type::dims, VerletList_type, particles_type> *) dcpse;
 		dcpse_temp->save(file);
 	}
 	/*! \brief Method for Loading the DCPSE Operator.
@@ -767,7 +774,7 @@ public:
 	 */
 	template<typename particles_type>
 	void load(particles_type &particles, const std::string &file) {
-		auto dcpse_temp = (Dcpse_type<particles_type::dims, particles_type> *) dcpse;
+		auto dcpse_temp = (Dcpse_type<particles_type::dims, VerletList_type, particles_type> *) dcpse;
 		dcpse_temp->load(file);
 	}
 	/*! \brief Method for Updating the DCPSE Operator by recomputing DCPSE Kernels.
@@ -777,7 +784,7 @@ public:
 	 */
 	template<typename particles_type>
 	void update(particles_type &particles) {
-		auto dcpse_temp = (Dcpse_type<particles_type::dims, particles_type> *) dcpse;
+		auto dcpse_temp = (Dcpse_type<particles_type::dims, VerletList_type, particles_type> *) dcpse;
 		dcpse_temp->initializeUpdate(particles);
 
 	}
@@ -796,7 +803,7 @@ public:
  * \return Operator Dy which is a function on Vector_dist_Expressions
  *
  */
-template<template<unsigned int, typename, typename...> class Dcpse_type = Dcpse>
+template<typename VerletList_type, template<unsigned int, typename, typename...> class Dcpse_type = Dcpse>
 class Derivative_y_T {
 
 	void *dcpse;
@@ -816,14 +823,19 @@ public:
 	 *
 	 */
 	template<typename particles_type>
-	Derivative_y_T(particles_type &parts, unsigned int ord, typename particles_type::stype rCut,
-				 double oversampling_factor = dcpse_oversampling_factor,
-				 support_options opt = support_options::RADIUS) {
+	Derivative_y_T(
+		particles_type &parts,
+		VerletList_type& verletList,
+		unsigned int ord,
+		typename particles_type::stype rCut,
+		double oversampling_factor = dcpse_oversampling_factor,
+		support_options opt = support_options::RADIUS
+	) {
 		Point<particles_type::dims, unsigned int> p;
 		p.zero();
 		p.get(1) = 1;
 
-		dcpse = new Dcpse_type<particles_type::dims, particles_type>(parts, p, ord, rCut, oversampling_factor, opt);
+		dcpse = new Dcpse_type<particles_type::dims, VerletList_type, particles_type>(parts, verletList, p, ord, rCut, oversampling_factor, opt);
 	}
 
 	/*! \brief Constructor for Creating the DCPSE Operator Dy and objects and computes DCPSE Kernels.
@@ -846,6 +858,7 @@ public:
 	Derivative_y_T(
 		vector_type &particlesSupport,
 		vector_type2 &particlesDomain,
+		VerletList_type& verletList,
 		unsigned int ord,
 		typename vector_type::stype rCut,
 		double oversampling_factor = dcpse_oversampling_factor,
@@ -855,9 +868,10 @@ public:
 		p.zero();
 		p.get(1) = 1;
 
-		dcpse = new Dcpse_type<vector_type::dims, vector_type, vector_type2>(
+		dcpse = new Dcpse_type<vector_type::dims, VerletList_type, vector_type, vector_type2>(
 			particlesSupport,
 			particlesDomain,
+			verletList,
 			p,
 			ord,
 			rCut,
@@ -868,28 +882,28 @@ public:
 
 	template<typename particles_type>
 	void deallocate(particles_type &parts) {
-		delete (Dcpse_type<particles_type::dims, particles_type> *) dcpse;
+		delete (Dcpse_type<particles_type::dims, VerletList_type, particles_type> *) dcpse;
 	}
 
 	template<typename operand_type>
 
-	vector_dist_expression_op<operand_type, Dcpse_type<operand_type::vtype::dims, typename operand_type::vtype>, VECT_DCPSE>
+	vector_dist_expression_op<operand_type, Dcpse_type<operand_type::vtype::dims, VerletList_type, typename operand_type::vtype>, VECT_DCPSE>
 	operator()(operand_type arg) {
-		typedef Dcpse_type<operand_type::vtype::dims, typename operand_type::vtype> dcpse_type;
+		typedef Dcpse_type<operand_type::vtype::dims, VerletList_type, typename operand_type::vtype> dcpse_type;
 
 		return vector_dist_expression_op<operand_type, dcpse_type, VECT_DCPSE>(arg, *(dcpse_type *) dcpse);
 	}
 
 	template<unsigned int prp, typename particles_type>
 	void DrawKernel(particles_type &particles, int k) {
-		auto dcpse2 = (Dcpse_type<particles_type::dims, particles_type> *) dcpse;
+		auto dcpse2 = (Dcpse_type<particles_type::dims, VerletList_type, particles_type> *) dcpse;
 		dcpse2->template DrawKernel<prp>(particles, k);
 
 	}
 
 	template<typename particles_type>
 	void checkMomenta(particles_type &particles) {
-		auto dcpse_temp = (Dcpse_type<particles_type::dims, particles_type> *) dcpse;
+		auto dcpse_temp = (Dcpse_type<particles_type::dims, VerletList_type, particles_type> *) dcpse;
 		dcpse_temp->checkMomenta(particles);
 
 	}
@@ -901,7 +915,7 @@ public:
 	 */
 	template<typename particles_type>
 	void save(particles_type &particles, const std::string &file) {
-		auto dcpse_temp = (Dcpse_type<particles_type::dims, particles_type> *) dcpse;
+		auto dcpse_temp = (Dcpse_type<particles_type::dims, VerletList_type, particles_type> *) dcpse;
 		dcpse_temp->save(file);
 	}
 	/*! \brief Method for Loading the DCPSE Operator.
@@ -911,7 +925,7 @@ public:
 	 */
 	template<typename particles_type>
 	void load(particles_type &particles, const std::string &file) {
-		auto dcpse_temp = (Dcpse_type<particles_type::dims, particles_type> *) dcpse;
+		auto dcpse_temp = (Dcpse_type<particles_type::dims, VerletList_type, particles_type> *) dcpse;
 		dcpse_temp->load(file);
 	}
 	/*! \brief Method for Updating the DCPSE Operator by recomputing DCPSE Kernels.
@@ -921,7 +935,7 @@ public:
 	 */
 	template<typename particles_type>
 	void update(particles_type &particles) {
-		auto dcpse_temp = (Dcpse_type<particles_type::dims, particles_type> *) dcpse;
+		auto dcpse_temp = (Dcpse_type<particles_type::dims, VerletList_type, particles_type> *) dcpse;
 		dcpse_temp->initializeUpdate(particles);
 
 	}
@@ -939,7 +953,7 @@ public:
  * \return Operator Dz which is a function on Vector_dist_Expressions
  *
  */
-template<template<unsigned int, typename, typename...> class Dcpse_type = Dcpse>
+template<typename VerletList_type, template<unsigned int, typename, typename...> class Dcpse_type = Dcpse>
 class Derivative_z_T {
 
 	void *dcpse;
@@ -958,14 +972,19 @@ public:
 	 *
 	 */
 	template<typename particles_type>
-	Derivative_z_T(particles_type &parts, unsigned int ord, typename particles_type::stype rCut,
-				 double oversampling_factor = dcpse_oversampling_factor,
-				 support_options opt = support_options::RADIUS) {
+	Derivative_z_T(
+		particles_type &parts,
+		VerletList_type& verletList,
+		unsigned int ord,
+		typename particles_type::stype rCut,
+		double oversampling_factor = dcpse_oversampling_factor,
+		support_options opt = support_options::RADIUS
+	) {
 		Point<particles_type::dims, unsigned int> p;
 		p.zero();
 		p.get(2) = 1;
 
-		dcpse = new Dcpse_type<particles_type::dims, particles_type>(parts, p, ord, rCut, oversampling_factor, opt);
+		dcpse = new Dcpse_type<particles_type::dims, VerletList_type, particles_type>(parts, verletList, p, ord, rCut, oversampling_factor, opt);
 	}
 
 	/*! \brief Constructor for Creating the DCPSE Operator Dz and objects and computes DCPSE Kernels.
@@ -988,6 +1007,7 @@ public:
 	Derivative_z_T(
 		vector_type &particlesSupport,
 		vector_type2 &particlesDomain,
+		VerletList_type& verletList,
 		unsigned int ord,
 		typename vector_type::stype rCut,
 		double oversampling_factor = dcpse_oversampling_factor,
@@ -997,9 +1017,10 @@ public:
 		p.zero();
 		p.get(2) = 1;
 
-		dcpse = new Dcpse_type<vector_type::dims, vector_type, vector_type2>(
+		dcpse = new Dcpse_type<vector_type::dims, VerletList_type, vector_type, vector_type2>(
 			particlesSupport,
 			particlesDomain,
+			verletList,
 			p,
 			ord,
 			rCut,
@@ -1010,13 +1031,13 @@ public:
 
 	template<typename particles_type>
 	void deallocate(particles_type &parts) {
-		delete (Dcpse_type<particles_type::dims, particles_type> *) dcpse;
+		delete (Dcpse_type<particles_type::dims, VerletList_type, particles_type> *) dcpse;
 	}
 
 	template<typename operand_type>
-	vector_dist_expression_op<operand_type, Dcpse_type<operand_type::vtype::dims, typename operand_type::vtype>, VECT_DCPSE>
+	vector_dist_expression_op<operand_type, Dcpse_type<operand_type::vtype::dims, VerletList_type, typename operand_type::vtype>, VECT_DCPSE>
 	operator()(operand_type arg) {
-		typedef Dcpse_type<operand_type::vtype::dims, typename operand_type::vtype> dcpse_type;
+		typedef Dcpse_type<operand_type::vtype::dims, VerletList_type, typename operand_type::vtype> dcpse_type;
 
 		return vector_dist_expression_op<operand_type, dcpse_type, VECT_DCPSE>(arg, *(dcpse_type *) dcpse);
 	}
@@ -1028,7 +1049,7 @@ public:
 	 */
 	template<typename particles_type>
 	void save(particles_type &particles, const std::string &file) {
-		auto dcpse_temp = (Dcpse_type<particles_type::dims, particles_type> *) dcpse;
+		auto dcpse_temp = (Dcpse_type<particles_type::dims, VerletList_type, particles_type> *) dcpse;
 		dcpse_temp->save(file);
 	}
 	/*! \brief Method for Loading the DCPSE Operator.
@@ -1038,7 +1059,7 @@ public:
 	 */
 	template<typename particles_type>
 	void load(particles_type &particles, const std::string &file) {
-		auto dcpse_temp = (Dcpse_type<particles_type::dims, particles_type> *) dcpse;
+		auto dcpse_temp = (Dcpse_type<particles_type::dims, VerletList_type, particles_type> *) dcpse;
 		dcpse_temp->load(file);
 	}
 	/*! \brief Method for Updating the DCPSE Operator by recomputing DCPSE Kernels.
@@ -1048,14 +1069,14 @@ public:
 	 */
 	template<typename particles_type>
 	void update(particles_type &particles) {
-		auto dcpse_temp = (Dcpse_type<particles_type::dims, particles_type> *) dcpse;
+		auto dcpse_temp = (Dcpse_type<particles_type::dims, VerletList_type, particles_type> *) dcpse;
 		dcpse_temp->initializeUpdate(particles);
 
 	}
 
 	template<typename particles_type>
 	void checkMomenta(particles_type &particles) {
-		auto dcpse_temp = (Dcpse_type<particles_type::dims, particles_type> *) dcpse;
+		auto dcpse_temp = (Dcpse_type<particles_type::dims, VerletList_type, particles_type> *) dcpse;
 		dcpse_temp->checkMomenta(particles);
 
 	}
@@ -1076,7 +1097,7 @@ public:
 	 * \return Operator Grad which is a function on Vector_dist_Expressions
 	 *
 	 */
-template<template<unsigned int, typename, typename...> class Dcpse_type = Dcpse>
+template<typename VerletList_type, template<unsigned int, typename, typename...> class Dcpse_type = Dcpse>
 class Gradient_T {
 
 	void *dcpse;
@@ -1097,14 +1118,19 @@ public:
 	 *
 	 */
 	template<typename particles_type>
-	Gradient_T(particles_type &parts, unsigned int ord, typename particles_type::stype rCut,
-			 double oversampling_factor = dcpse_oversampling_factor,
-			 support_options opt = support_options::RADIUS) {
-		typedef Dcpse_type<particles_type::dims, particles_type> DCPSE_type;
+	Gradient_T(
+		particles_type &parts,
+		VerletList_type& verletList,
+		unsigned int ord,
+		typename particles_type::stype rCut,
+		double oversampling_factor = dcpse_oversampling_factor,
+		support_options opt = support_options::RADIUS
+	) {
+		typedef Dcpse_type<particles_type::dims, VerletList_type, particles_type> DCPSE_type;
 
 		dcpse = new unsigned char[particles_type::dims * sizeof(DCPSE_type)];
 
-		Dcpse_type<particles_type::dims, particles_type> *dcpse_ptr = (Dcpse_type<particles_type::dims, particles_type> *) dcpse;
+		Dcpse_type<particles_type::dims, VerletList_type, particles_type> *dcpse_ptr = (Dcpse_type<particles_type::dims, VerletList_type, particles_type> *) dcpse;
 
 		for (int i = 0; i < particles_type::dims; i++) {
 			Point<particles_type::dims, unsigned int> p;
@@ -1112,9 +1138,9 @@ public:
 			p.get(i) = 1;
 
 			if (i)
-				new(&dcpse_ptr[i]) Dcpse_type<particles_type::dims, particles_type>(parts, dcpse_ptr[0], p, ord, rCut, oversampling_factor, opt);
+				new(&dcpse_ptr[i]) Dcpse_type<particles_type::dims, VerletList_type, particles_type>(parts, verletList, dcpse_ptr[0], p, ord, rCut, oversampling_factor, opt);
 			else
-				new(&dcpse_ptr[i]) Dcpse_type<particles_type::dims, particles_type>(parts, p, ord, rCut, oversampling_factor, opt);
+				new(&dcpse_ptr[i]) Dcpse_type<particles_type::dims, VerletList_type, particles_type>(parts, verletList, p, ord, rCut, oversampling_factor, opt);
 		}
 	}
 
@@ -1139,16 +1165,17 @@ public:
 	Gradient_T(
 		vector_type &particlesSupport,
 		vector_type2 &particlesDomain,
+		VerletList_type& verletList,
 		unsigned int ord,
 		typename vector_type::stype rCut,
 		double oversampling_factor = dcpse_oversampling_factor,
 		support_options opt = support_options::RADIUS
 	) {
-		typedef Dcpse_type<vector_type::dims, vector_type, vector_type2> DCPSE_type;
+		typedef Dcpse_type<vector_type::dims, VerletList_type, vector_type, vector_type2> DCPSE_type;
 
 		dcpse = new unsigned char[vector_type::dims * sizeof(DCPSE_type)];
 
-		Dcpse_type<vector_type::dims, vector_type, vector_type2> *dcpse_ptr = (Dcpse_type<vector_type::dims, vector_type, vector_type2> *) dcpse;
+		Dcpse_type<vector_type::dims, VerletList_type, vector_type, vector_type2> *dcpse_ptr = (Dcpse_type<vector_type::dims, VerletList_type, vector_type, vector_type2> *) dcpse;
 
 		for (int i = 0; i < vector_type::dims; i++) {
 			Point<vector_type::dims, unsigned int> p;
@@ -1156,9 +1183,10 @@ public:
 			p.get(i) = 1;
 
 			if (i)
-				new(&dcpse_ptr[i]) Dcpse_type<vector_type::dims, vector_type, vector_type2>(
+				new(&dcpse_ptr[i]) Dcpse_type<vector_type::dims, VerletList_type, vector_type, vector_type2>(
 					particlesSupport,
 					particlesDomain,
+					verletList,
 					dcpse_ptr[0],
 					p,
 					ord,
@@ -1167,9 +1195,10 @@ public:
 					opt
 				);
 			else
-				new(&dcpse_ptr[i]) Dcpse_type<vector_type::dims, vector_type, vector_type2>(
+				new(&dcpse_ptr[i]) Dcpse_type<vector_type::dims, VerletList_type, vector_type, vector_type2>(
 					particlesSupport,
 					particlesDomain,
+					verletList,
 					p,
 					ord,
 					rCut,
@@ -1182,14 +1211,14 @@ public:
 	template<typename particles_type>
 	void deallocate(particles_type &parts) {
 		for (int i = 0; i < particles_type::dims; i++) {
-			delete &(((Dcpse_type<particles_type::dims, particles_type> *) dcpse)[i]);
+			delete &(((Dcpse_type<particles_type::dims, VerletList_type, particles_type> *) dcpse)[i]);
 		}
 	}
 
 	template<typename operand_type>
-	vector_dist_expression_op<operand_type, Dcpse_type<operand_type::vtype::dims, typename operand_type::vtype>, VECT_DCPSE_V>
+	vector_dist_expression_op<operand_type, Dcpse_type<operand_type::vtype::dims, VerletList_type, typename operand_type::vtype>, VECT_DCPSE_V>
 	operator()(operand_type arg) {
-		typedef Dcpse_type<operand_type::vtype::dims, typename operand_type::vtype> dcpse_type;
+		typedef Dcpse_type<operand_type::vtype::dims, VerletList_type, typename operand_type::vtype> dcpse_type;
 
 		return vector_dist_expression_op<operand_type, dcpse_type, VECT_DCPSE_V>(arg,
 																				 *(dcpse_type(*)[operand_type::vtype::dims]) dcpse);
@@ -1197,7 +1226,7 @@ public:
 
 	template<unsigned int prp, typename particles_type>
 	void DrawKernel(particles_type &particles, int k) {
-		Dcpse_type<particles_type::dims, particles_type> *dcpse_ptr = (Dcpse_type<particles_type::dims, particles_type> *) dcpse;
+		Dcpse_type<particles_type::dims, VerletList_type, particles_type> *dcpse_ptr = (Dcpse_type<particles_type::dims, VerletList_type, particles_type> *) dcpse;
 
 		for (int i = 0; i < particles_type::dims; i++) {
 			dcpse_ptr[i].template DrawKernel<prp>(particles, i, k);
@@ -1212,7 +1241,7 @@ public:
 	 */
 	template<typename particles_type>
 	void update(particles_type &particles) {
-		Dcpse_type<particles_type::dims, particles_type> *dcpse_ptr = (Dcpse_type<particles_type::dims, particles_type> *) dcpse;
+		Dcpse_type<particles_type::dims, VerletList_type, particles_type> *dcpse_ptr = (Dcpse_type<particles_type::dims, VerletList_type, particles_type> *) dcpse;
 		for (int i = 0; i < particles_type::dims; i++) {
 			dcpse_ptr[i].initializeUpdate(particles);
 		}
@@ -1235,7 +1264,7 @@ public:
 	 * \return Operator which is a function on Vector_dist_Expressions
 	 *
 	 */
-template<template<unsigned int, typename, typename...> class Dcpse_type = Dcpse>
+template<typename VerletList_type, template<unsigned int, typename, typename...> class Dcpse_type = Dcpse>
 class Curl2D_T {
 
 	void *dcpse;
@@ -1255,22 +1284,28 @@ public:
 	 *
 	 */
 	template<typename particles_type>
-	Curl2D_T(particles_type &parts, unsigned int ord, typename particles_type::stype rCut,
-		   double oversampling_factor = dcpse_oversampling_factor, support_options opt = support_options::RADIUS) {
-		typedef Dcpse_type<particles_type::dims, particles_type> DCPSE_type;
+	Curl2D_T(
+		particles_type &parts,
+		VerletList_type& verletList,
+		unsigned int ord,
+		typename particles_type::stype rCut,
+		double oversampling_factor = dcpse_oversampling_factor,
+		support_options opt = support_options::RADIUS
+	) {
+		typedef Dcpse_type<particles_type::dims, VerletList_type, particles_type> DCPSE_type;
 
 		dcpse = new unsigned char[particles_type::dims * sizeof(DCPSE_type)];
 
-		Dcpse_type<particles_type::dims, particles_type> *dcpse_ptr = (Dcpse_type<particles_type::dims, particles_type> *) dcpse;
+		Dcpse_type<particles_type::dims, VerletList_type, particles_type> *dcpse_ptr = (Dcpse_type<particles_type::dims, VerletList_type, particles_type> *) dcpse;
 		Point<particles_type::dims, unsigned int> p;
 
 		p.zero();
 		p.get(1) = 1;
-		new(dcpse_ptr) Dcpse_type<particles_type::dims, particles_type>(parts, p, ord, rCut, oversampling_factor, opt);
+		new(dcpse_ptr) Dcpse_type<particles_type::dims, VerletList_type, particles_type>(parts, verletList, p, ord, rCut, oversampling_factor, opt);
 
 		p.zero();
 		p.get(0) = 1;
-		new(dcpse_ptr+1) Dcpse_type<particles_type::dims, particles_type>(parts, dcpse_ptr[0], p, ord, rCut, oversampling_factor, opt);
+		new(dcpse_ptr+1) Dcpse_type<particles_type::dims, VerletList_type, particles_type>(parts, verletList, dcpse_ptr[0], p, ord, rCut, oversampling_factor, opt);
 
 	}
 
@@ -1296,22 +1331,24 @@ public:
 	Curl2D_T(
 		vector_type &particlesSupport,
 		vector_type2 &particlesDomain,
+		VerletList_type& verletList,
 		unsigned int ord,
 		typename vector_type::stype rCut,
 		double oversampling_factor = dcpse_oversampling_factor, support_options opt = support_options::RADIUS
 	) {
-		typedef Dcpse_type<vector_type::dims, vector_type, vector_type2> DCPSE_type;
+		typedef Dcpse_type<vector_type::dims, VerletList_type, vector_type, vector_type2> DCPSE_type;
 
 		dcpse = new unsigned char[vector_type::dims * sizeof(DCPSE_type)];
 
-		Dcpse_type<vector_type::dims, vector_type, vector_type2> *dcpse_ptr = (Dcpse_type<vector_type::dims, vector_type, vector_type2> *) dcpse;
+		Dcpse_type<vector_type::dims, VerletList_type, vector_type, vector_type2> *dcpse_ptr = (Dcpse_type<vector_type::dims, VerletList_type, vector_type, vector_type2> *) dcpse;
 		Point<vector_type::dims, unsigned int> p;
 
 		p.zero();
 		p.get(1) = 1;
-		new(dcpse_ptr) Dcpse_type<vector_type::dims, vector_type, vector_type2>(
+		new(dcpse_ptr) Dcpse_type<vector_type::dims, VerletList_type, vector_type, vector_type2>(
 			particlesSupport,
 			particlesDomain,
+			verletList,
 			p,
 			ord,
 			rCut,
@@ -1321,9 +1358,10 @@ public:
 
 		p.zero();
 		p.get(0) = 1;
-		new(dcpse_ptr+1) Dcpse_type<vector_type::dims, vector_type, vector_type2>(
+		new(dcpse_ptr+1) Dcpse_type<vector_type::dims, VerletList_type, vector_type, vector_type2>(
 			particlesSupport,
 			particlesDomain,
+			verletList,
 			dcpse_ptr[0],
 			p,
 			ord,
@@ -1335,9 +1373,9 @@ public:
 	}
 
 	template<typename operand_type>
-	vector_dist_expression_op<operand_type, Dcpse_type<operand_type::vtype::dims, typename operand_type::vtype>, VECT_DCPSE_V_CURL2D>
+	vector_dist_expression_op<operand_type, Dcpse_type<operand_type::vtype::dims, VerletList_type, typename operand_type::vtype>, VECT_DCPSE_V_CURL2D>
 	operator()(operand_type arg) {
-		typedef Dcpse_type<operand_type::vtype::dims, typename operand_type::vtype> dcpse_type;
+		typedef Dcpse_type<operand_type::vtype::dims, VerletList_type, typename operand_type::vtype> dcpse_type;
 
 		return vector_dist_expression_op<operand_type, dcpse_type, VECT_DCPSE_V_CURL2D>(arg,
 																						*(dcpse_type(*)[operand_type::vtype::dims]) dcpse);
@@ -1357,7 +1395,7 @@ public:
 	 * \return Operator which is a function on Vector_dist_Expressions
 	 *
 	 */
-template<template<unsigned int, typename, typename...> class Dcpse_type = Dcpse>
+template<typename VerletList_type, template<unsigned int, typename, typename...> class Dcpse_type = Dcpse>
 class Laplacian_T {
 
 	void *dcpse;
@@ -1378,13 +1416,18 @@ public:
 	 *
 	 */
 	template<typename particles_type>
-	Laplacian_T(particles_type &parts, unsigned int ord, typename particles_type::stype rCut,
-			  double oversampling_factor = dcpse_oversampling_factor,
-			  support_options opt = support_options::RADIUS) {
-		typedef Dcpse_type<particles_type::dims, particles_type> DCPSE_type;
+	Laplacian_T(
+		particles_type &parts,
+		VerletList_type& verletList,
+		unsigned int ord,
+		typename particles_type::stype rCut,
+		double oversampling_factor = dcpse_oversampling_factor,
+		support_options opt = support_options::RADIUS
+	) {
+		typedef Dcpse_type<particles_type::dims, VerletList_type, particles_type> DCPSE_type;
 		dcpse = new unsigned char[particles_type::dims * sizeof(DCPSE_type)];
 
-		Dcpse_type<particles_type::dims, particles_type> *dcpse_ptr = (Dcpse_type<particles_type::dims, particles_type> *) dcpse;
+		Dcpse_type<particles_type::dims, VerletList_type, particles_type> *dcpse_ptr = (Dcpse_type<particles_type::dims, VerletList_type, particles_type> *) dcpse;
 
 		for (int i = 0; i < particles_type::dims; i++) {
 			Point<particles_type::dims, unsigned int> p;
@@ -1392,9 +1435,9 @@ public:
 			p.get(i) = 2;
 
 			if (i)
-				new(&dcpse_ptr[i]) Dcpse_type<particles_type::dims, particles_type>(parts, dcpse_ptr[0], p, ord, rCut, oversampling_factor, opt);
+				new(&dcpse_ptr[i]) Dcpse_type<particles_type::dims, VerletList_type, particles_type>(parts, verletList, dcpse_ptr[0], p, ord, rCut, oversampling_factor, opt);
 			else
-				new(&dcpse_ptr[i]) Dcpse_type<particles_type::dims, particles_type>(parts, p, ord, rCut, oversampling_factor, opt);
+				new(&dcpse_ptr[i]) Dcpse_type<particles_type::dims, VerletList_type, particles_type>(parts, verletList, p, ord, rCut, oversampling_factor, opt);
 		}
 	}
 
@@ -1420,15 +1463,16 @@ public:
 	Laplacian_T(
 		vector_type &particlesSupport,
 		vector_type2 &particlesDomain,
+		VerletList_type& verletList,
 		unsigned int ord,
 		typename vector_type::stype rCut,
 		double oversampling_factor = dcpse_oversampling_factor,
 		support_options opt = support_options::RADIUS
 	) {
-		typedef Dcpse_type<vector_type::dims, vector_type, vector_type2> DCPSE_type;
+		typedef Dcpse_type<vector_type::dims, VerletList_type, vector_type, vector_type2> DCPSE_type;
 		dcpse = new unsigned char[vector_type::dims * sizeof(DCPSE_type)];
 
-		Dcpse_type<vector_type::dims, vector_type, vector_type2> *dcpse_ptr = (Dcpse_type<vector_type::dims, vector_type, vector_type2> *) dcpse;
+		Dcpse_type<vector_type::dims, VerletList_type, vector_type, vector_type2> *dcpse_ptr = (Dcpse_type<vector_type::dims, VerletList_type, vector_type, vector_type2> *) dcpse;
 
 		for (int i = 0; i < vector_type::dims; i++) {
 			Point<vector_type::dims, unsigned int> p;
@@ -1436,9 +1480,10 @@ public:
 			p.get(i) = 2;
 
 			if (i)
-				new(&dcpse_ptr[i]) Dcpse_type<vector_type::dims, vector_type, vector_type2>(
+				new(&dcpse_ptr[i]) Dcpse_type<vector_type::dims, VerletList_type, vector_type, vector_type2>(
 					particlesSupport,
 					particlesDomain,
+					verletList,
 					dcpse_ptr[0],
 					p,
 					ord,
@@ -1447,9 +1492,10 @@ public:
 					opt
 				);
 			else
-				new(&dcpse_ptr[i]) Dcpse_type<vector_type::dims, vector_type, vector_type2>(
+				new(&dcpse_ptr[i]) Dcpse_type<vector_type::dims, VerletList_type, vector_type, vector_type2>(
 					particlesSupport,
 					particlesDomain,
+					verletList,
 					p,
 					ord,
 					rCut,
@@ -1460,9 +1506,9 @@ public:
 	}
 
 	template<typename operand_type>
-	vector_dist_expression_op<operand_type, Dcpse_type<operand_type::vtype::dims, typename operand_type::vtype>, VECT_DCPSE_V_SUM>
+	vector_dist_expression_op<operand_type, Dcpse_type<operand_type::vtype::dims, VerletList_type, typename operand_type::vtype>, VECT_DCPSE_V_SUM>
 	operator()(operand_type arg) {
-		typedef Dcpse_type<operand_type::vtype::dims, typename operand_type::vtype> dcpse_type;
+		typedef Dcpse_type<operand_type::vtype::dims, VerletList_type, typename operand_type::vtype> dcpse_type;
 
 		return vector_dist_expression_op<operand_type, dcpse_type, VECT_DCPSE_V_SUM>(arg,
 																					 *(dcpse_type(*)[operand_type::vtype::dims]) dcpse);
@@ -1471,7 +1517,7 @@ public:
 
 	template<typename particles_type>
 	void checkMomenta(particles_type &particles) {
-		Dcpse_type<particles_type::dims, particles_type> *dcpse_ptr = (Dcpse_type<particles_type::dims, particles_type> *) dcpse;
+		Dcpse_type<particles_type::dims, VerletList_type, particles_type> *dcpse_ptr = (Dcpse_type<particles_type::dims, VerletList_type, particles_type> *) dcpse;
 
 		for (int i = 0; i < particles_type::dims; i++) {
 			dcpse_ptr[i].checkMomenta(particles);
@@ -1481,7 +1527,7 @@ public:
 
 	template<unsigned int prp, typename particles_type>
 	void DrawKernel(particles_type &particles, int k) {
-		Dcpse_type<particles_type::dims, particles_type> *dcpse_ptr = (Dcpse_type<particles_type::dims, particles_type> *) dcpse;
+		Dcpse_type<particles_type::dims, VerletList_type, particles_type> *dcpse_ptr = (Dcpse_type<particles_type::dims, VerletList_type, particles_type> *) dcpse;
 
 		for (int i = 0; i < particles_type::dims; i++) {
 			dcpse_ptr[i].template DrawKernel<prp>(particles, k);
@@ -1490,7 +1536,7 @@ public:
 	}
 	template<typename particles_type>
 	void deallocate(particles_type &parts) {
-		delete (Dcpse_type<particles_type::dims, particles_type> *) dcpse;
+		delete (Dcpse_type<particles_type::dims, VerletList_type, particles_type> *) dcpse;
 	}
 	/*! \brief Method for Updating the DCPSE Operator by recomputing DCPSE Kernels.
 	 *
@@ -1499,7 +1545,7 @@ public:
 	 */
 	template<typename particles_type>
 	void update(particles_type &particles) {
-		Dcpse_type<particles_type::dims, particles_type> *dcpse_ptr = (Dcpse_type<particles_type::dims, particles_type> *) dcpse;
+		Dcpse_type<particles_type::dims, VerletList_type, particles_type> *dcpse_ptr = (Dcpse_type<particles_type::dims, VerletList_type, particles_type> *) dcpse;
 		for (int i = 0; i < particles_type::dims; i++) {
 			dcpse_ptr[i].initializeUpdate(particles);
 		}
@@ -1523,7 +1569,7 @@ public:
 	 * \return Operator which is a function on Vector_dist_Expressions. Computes Divergence of Vectors
 	 *
 	 */
-template<template<unsigned int, typename, typename...> class Dcpse_type = Dcpse>
+template<typename VerletList_type, template<unsigned int, typename, typename...> class Dcpse_type = Dcpse>
 class Divergence_T {
 
 	void *dcpse;
@@ -1544,14 +1590,19 @@ public:
 	 *
 	 */
 	template<typename particles_type>
-	Divergence_T(particles_type &parts, unsigned int ord, typename particles_type::stype rCut,
-			   double oversampling_factor = dcpse_oversampling_factor,
-			   support_options opt = support_options::RADIUS) {
-		typedef Dcpse_type<particles_type::dims, particles_type> DCPSE_type;
+	Divergence_T(
+		particles_type &parts,
+		VerletList_type& verletList,
+		unsigned int ord,
+		typename particles_type::stype rCut,
+		double oversampling_factor = dcpse_oversampling_factor,
+		support_options opt = support_options::RADIUS
+	) {
+		typedef Dcpse_type<particles_type::dims, VerletList_type, particles_type> DCPSE_type;
 
 		dcpse = new unsigned char[particles_type::dims * sizeof(DCPSE_type)];
 
-		Dcpse_type<particles_type::dims, particles_type> *dcpse_ptr = (Dcpse_type<particles_type::dims, particles_type> *) dcpse;
+		Dcpse_type<particles_type::dims, VerletList_type, particles_type> *dcpse_ptr = (Dcpse_type<particles_type::dims, VerletList_type, particles_type> *) dcpse;
 
 		for (int i = 0; i < particles_type::dims; i++) {
 			Point<particles_type::dims, unsigned int> p;
@@ -1559,9 +1610,9 @@ public:
 			p.get(i) = 1;
 
 			if (i)
-				new(&dcpse_ptr[i]) Dcpse_type<particles_type::dims, particles_type>(parts, dcpse_ptr[0], p, ord, rCut, oversampling_factor, opt);
+				new(&dcpse_ptr[i]) Dcpse_type<particles_type::dims, VerletList_type, particles_type>(parts, verletList, dcpse_ptr[0], p, ord, rCut, oversampling_factor, opt);
 			else
-				new(&dcpse_ptr[i]) Dcpse_type<particles_type::dims, particles_type>(parts, p, ord, rCut, oversampling_factor, opt);
+				new(&dcpse_ptr[i]) Dcpse_type<particles_type::dims, VerletList_type, particles_type>(parts, verletList, p, ord, rCut, oversampling_factor, opt);
 		}
 	}
 
@@ -1587,16 +1638,17 @@ public:
 	Divergence_T(
 		vector_type &particlesSupport,
 		vector_type2 &particlesDomain,
+		VerletList_type& verletList,
 		unsigned int ord,
 		typename vector_type::stype rCut,
 		double oversampling_factor = dcpse_oversampling_factor,
 		support_options opt = support_options::RADIUS
 	) {
-		typedef Dcpse_type<vector_type::dims, vector_type, vector_type2> DCPSE_type;
+		typedef Dcpse_type<vector_type::dims, VerletList_type, vector_type, vector_type2> DCPSE_type;
 
 		dcpse = new unsigned char[vector_type::dims * sizeof(DCPSE_type)];
 
-		Dcpse_type<vector_type::dims, vector_type, vector_type2> *dcpse_ptr = (Dcpse_type<vector_type::dims, vector_type, vector_type2> *) dcpse;
+		Dcpse_type<vector_type::dims, VerletList_type, vector_type, vector_type2> *dcpse_ptr = (Dcpse_type<vector_type::dims, VerletList_type, vector_type, vector_type2> *) dcpse;
 
 		for (int i = 0; i < vector_type::dims; i++) {
 			Point<vector_type::dims, unsigned int> p;
@@ -1604,9 +1656,10 @@ public:
 			p.get(i) = 1;
 
 			if (i)
-				new(&dcpse_ptr[i]) Dcpse_type<vector_type::dims, vector_type, vector_type2>(
+				new(&dcpse_ptr[i]) Dcpse_type<vector_type::dims, VerletList_type, vector_type, vector_type2>(
 					particlesSupport,
 					particlesDomain,
+					verletList,
 					dcpse_ptr[0],
 					p,
 					ord,
@@ -1615,9 +1668,10 @@ public:
 					opt
 				);
 			else
-				new(&dcpse_ptr[i]) Dcpse_type<vector_type::dims, vector_type, vector_type2>(
+				new(&dcpse_ptr[i]) Dcpse_type<vector_type::dims, VerletList_type, vector_type, vector_type2>(
 					particlesSupport,
 					particlesDomain,
+					verletList,
 					p,
 					ord,
 					rCut,
@@ -1628,9 +1682,9 @@ public:
 	}
 
 	template<typename operand_type>
-	vector_dist_expression_op<operand_type, Dcpse_type<operand_type::vtype::dims, typename operand_type::vtype>, VECT_DCPSE_V_DIV>
+	vector_dist_expression_op<operand_type, Dcpse_type<operand_type::vtype::dims, VerletList_type, typename operand_type::vtype>, VECT_DCPSE_V_DIV>
 	operator()(operand_type arg) {
-		typedef Dcpse_type<operand_type::vtype::dims, typename operand_type::vtype> dcpse_type;
+		typedef Dcpse_type<operand_type::vtype::dims, VerletList_type, typename operand_type::vtype> dcpse_type;
 
 		return vector_dist_expression_op<operand_type, dcpse_type, VECT_DCPSE_V_DIV>(arg,
 																					 *(dcpse_type(*)[operand_type::vtype::dims]) dcpse);
@@ -1643,7 +1697,7 @@ public:
 	 */
 	template<typename particles_type>
 	void update(particles_type &particles) {
-		Dcpse_type<particles_type::dims, particles_type> *dcpse_ptr = (Dcpse_type<particles_type::dims, particles_type> *) dcpse;
+		Dcpse_type<particles_type::dims, VerletList_type, particles_type> *dcpse_ptr = (Dcpse_type<particles_type::dims, VerletList_type, particles_type> *) dcpse;
 		for (int i = 0; i < particles_type::dims; i++) {
 			dcpse_ptr[i].initializeUpdate(particles);
 		}
@@ -1666,7 +1720,7 @@ public:
 	 * \return Operator which is a function on Vector_dist_Expressions. Computes Advection of Vectors Adv(v,u) = v.Grad(u)
 	 *
 	 */
-template<template<unsigned int, typename, typename...> class Dcpse_type = Dcpse>
+template<typename VerletList_type, template<unsigned int, typename, typename...> class Dcpse_type = Dcpse>
 class Advection_T {
 
 	void *dcpse;
@@ -1687,14 +1741,19 @@ public:
 	 *
 	 */
 	template<typename particles_type>
-	Advection_T(particles_type &parts, unsigned int ord, typename particles_type::stype rCut,
-			  double oversampling_factor = dcpse_oversampling_factor,
-			  support_options opt = support_options::RADIUS) {
-		typedef Dcpse_type<particles_type::dims, particles_type> DCPSE_type;
+	Advection_T(
+		particles_type &parts,
+		VerletList_type& verletList,
+		unsigned int ord,
+		typename particles_type::stype rCut,
+		double oversampling_factor = dcpse_oversampling_factor,
+		support_options opt = support_options::RADIUS
+	) {
+		typedef Dcpse_type<particles_type::dims, VerletList_type, particles_type> DCPSE_type;
 
 		dcpse = new unsigned char[particles_type::dims * sizeof(DCPSE_type)];
 
-		Dcpse_type<particles_type::dims, particles_type> *dcpse_ptr = (Dcpse_type<particles_type::dims, particles_type> *) dcpse;
+		Dcpse_type<particles_type::dims, VerletList_type, particles_type> *dcpse_ptr = (Dcpse_type<particles_type::dims, VerletList_type, particles_type> *) dcpse;
 
 		for (int i = 0; i < particles_type::dims; i++) {
 			Point<particles_type::dims, unsigned int> p;
@@ -1702,9 +1761,9 @@ public:
 			p.get(i) = 1;
 
 			if (i)
-				new(&dcpse_ptr[i]) Dcpse_type<particles_type::dims, particles_type>(parts, dcpse_ptr[0], p, ord, rCut, oversampling_factor, opt);
+				new(&dcpse_ptr[i]) Dcpse_type<particles_type::dims, VerletList_type, particles_type>(parts, verletList, dcpse_ptr[0], p, ord, rCut, oversampling_factor, opt);
 			else
-				new(&dcpse_ptr[i]) Dcpse_type<particles_type::dims, particles_type>(parts, p, ord, rCut, oversampling_factor, opt);
+				new(&dcpse_ptr[i]) Dcpse_type<particles_type::dims, VerletList_type, particles_type>(parts, verletList, p, ord, rCut, oversampling_factor, opt);
 		}
 
 
@@ -1731,16 +1790,17 @@ public:
 	Advection_T(
 		vector_type &particlesSupport,
 		vector_type2 &particlesDomain,
+		VerletList_type& verletList,
 		unsigned int ord,
 		typename vector_type::stype rCut,
 		double oversampling_factor = dcpse_oversampling_factor,
 		support_options opt = support_options::RADIUS
 	) {
-		typedef Dcpse_type<vector_type::dims, vector_type, vector_type2> DCPSE_type;
+		typedef Dcpse_type<vector_type::dims, VerletList_type, vector_type, vector_type2> DCPSE_type;
 
 		dcpse = new unsigned char[vector_type::dims * sizeof(DCPSE_type)];
 
-		Dcpse_type<vector_type::dims, vector_type, vector_type2> *dcpse_ptr = (Dcpse_type<vector_type::dims, vector_type, vector_type2> *) dcpse;
+		Dcpse_type<vector_type::dims, VerletList_type, vector_type, vector_type2> *dcpse_ptr = (Dcpse_type<vector_type::dims, VerletList_type, vector_type, vector_type2> *) dcpse;
 
 		for (int i = 0; i < vector_type::dims; i++) {
 			Point<vector_type::dims, unsigned int> p;
@@ -1748,9 +1808,10 @@ public:
 			p.get(i) = 1;
 
 			if (i)
-				new(&dcpse_ptr[i]) Dcpse_type<vector_type::dims, vector_type, vector_type2>(
+				new(&dcpse_ptr[i]) Dcpse_type<vector_type::dims, VerletList_type, vector_type, vector_type2>(
 					particlesSupport,
 					particlesDomain,
+					verletList,
 					dcpse_ptr[0],
 					p,
 					ord,
@@ -1759,9 +1820,10 @@ public:
 					opt
 				);
 			else
-				new(&dcpse_ptr[i]) Dcpse_type<vector_type::dims, vector_type, vector_type2>(
+				new(&dcpse_ptr[i]) Dcpse_type<vector_type::dims, VerletList_type, vector_type, vector_type2>(
 					particlesSupport,
 					particlesDomain,
+					verletList,
 					p,
 					ord,
 					rCut,
@@ -1774,9 +1836,9 @@ public:
 	}
 
 	template<typename operand_type1, typename operand_type2>
-	vector_dist_expression_op<operand_type1, std::pair<operand_type2, Dcpse_type<operand_type2::vtype::dims, typename operand_type2::vtype>>, VECT_DCPSE_V_DOT>
+	vector_dist_expression_op<operand_type1, std::pair<operand_type2, Dcpse_type<operand_type2::vtype::dims, VerletList_type, typename operand_type2::vtype>>, VECT_DCPSE_V_DOT>
 	operator()(operand_type1 arg, operand_type2 arg2) {
-		typedef Dcpse_type<operand_type2::vtype::dims, typename operand_type2::vtype> dcpse_type;
+		typedef Dcpse_type<operand_type2::vtype::dims, VerletList_type, typename operand_type2::vtype> dcpse_type;
 
 		return vector_dist_expression_op<operand_type1, std::pair<operand_type2, dcpse_type>, VECT_DCPSE_V_DOT>(arg,
 																												arg2,
@@ -1785,7 +1847,7 @@ public:
 
 	template<typename particles_type>
 	void checkMomenta(particles_type &particles) {
-		Dcpse_type<particles_type::dims, particles_type> *dcpse_ptr = (Dcpse_type<particles_type::dims, particles_type> *) dcpse;
+		Dcpse_type<particles_type::dims, VerletList_type, particles_type> *dcpse_ptr = (Dcpse_type<particles_type::dims, VerletList_type, particles_type> *) dcpse;
 
 		for (int i = 0; i < particles_type::dims; i++) {
 			dcpse_ptr[i].checkMomenta(particles);
@@ -1795,7 +1857,7 @@ public:
 
 	template<unsigned int prp, typename particles_type>
 	void DrawKernel(particles_type &particles, int k) {
-		Dcpse_type<particles_type::dims, particles_type> *dcpse_ptr = (Dcpse_type<particles_type::dims, particles_type> *) dcpse;
+		Dcpse_type<particles_type::dims, VerletList_type, particles_type> *dcpse_ptr = (Dcpse_type<particles_type::dims, VerletList_type, particles_type> *) dcpse;
 
 		for (int i = 0; i < particles_type::dims; i++) {
 			dcpse_ptr[i].template DrawKernel<prp>(particles, i, k);
@@ -1810,7 +1872,7 @@ public:
 	 */
 	template<typename particles_type>
 	void update(particles_type &particles) {
-		Dcpse_type<particles_type::dims, particles_type> *dcpse_ptr = (Dcpse_type<particles_type::dims, particles_type> *) dcpse;
+		Dcpse_type<particles_type::dims, VerletList_type, particles_type> *dcpse_ptr = (Dcpse_type<particles_type::dims, VerletList_type, particles_type> *) dcpse;
 		for (int i = 0; i < particles_type::dims; i++) {
 			dcpse_ptr[i].initializeUpdate(particles);
 		}
@@ -1832,7 +1894,7 @@ public:
 	 * \return Operator Dxy which is a function on Vector_dist_Expressions
 	 *
 	 */
-template<template<unsigned int, typename, typename...> class Dcpse_type = Dcpse>
+template<typename VerletList_type, template<unsigned int, typename, typename...> class Dcpse_type = Dcpse>
 class Derivative_xy_T {
 
 	void *dcpse;
@@ -1851,15 +1913,20 @@ public:
 	 *
 	 */
 	template<typename particles_type>
-	Derivative_xy_T(particles_type &parts, unsigned int ord, typename particles_type::stype rCut,
-				  double oversampling_factor = dcpse_oversampling_factor,
-				  support_options opt = support_options::RADIUS) {
+	Derivative_xy_T(
+		particles_type &parts,
+		VerletList_type& verletList,
+		unsigned int ord,
+		typename particles_type::stype rCut,
+		double oversampling_factor = dcpse_oversampling_factor,
+		support_options opt = support_options::RADIUS
+	) {
 		Point<particles_type::dims, unsigned int> p;
 		p.zero();
 		p.get(0) = 1;
 		p.get(1) = 1;
 
-		dcpse = new Dcpse_type<particles_type::dims, particles_type>(parts, p, ord, rCut, oversampling_factor, opt);
+		dcpse = new Dcpse_type<particles_type::dims, VerletList_type, particles_type>(parts, verletList, p, ord, rCut, oversampling_factor, opt);
 	}
 
 	/*! \brief Constructor for Creating the DCPSE Operator Dxy and objects and computes DCPSE Kernels.
@@ -1882,6 +1949,7 @@ public:
 	Derivative_xy_T(
 		vector_type &particlesSupport,
 		vector_type2 &particlesDomain,
+		VerletList_type& verletList,
 		unsigned int ord,
 		typename vector_type::stype rCut,
 		double oversampling_factor = dcpse_oversampling_factor,
@@ -1892,9 +1960,10 @@ public:
 		p.get(0) = 1;
 		p.get(1) = 1;
 
-		dcpse = new Dcpse_type<vector_type::dims, vector_type, vector_type2>(
+		dcpse = new Dcpse_type<vector_type::dims, VerletList_type, vector_type, vector_type2>(
 			particlesSupport,
 			particlesDomain,
+			verletList,
 			p,
 			ord,
 			rCut,
@@ -1905,20 +1974,20 @@ public:
 
 	template<typename particles_type>
 	void deallocate(particles_type &parts) {
-		delete (Dcpse_type<particles_type::dims, particles_type> *) dcpse;
+		delete (Dcpse_type<particles_type::dims, VerletList_type, particles_type> *) dcpse;
 	}
 
 	template<typename operand_type>
-	vector_dist_expression_op<operand_type, Dcpse_type<operand_type::vtype::dims, typename operand_type::vtype>, VECT_DCPSE>
+	vector_dist_expression_op<operand_type, Dcpse_type<operand_type::vtype::dims, VerletList_type, typename operand_type::vtype>, VECT_DCPSE>
 	operator()(operand_type arg) {
-		typedef Dcpse_type<operand_type::vtype::dims, typename operand_type::vtype> dcpse_type;
+		typedef Dcpse_type<operand_type::vtype::dims, VerletList_type, typename operand_type::vtype> dcpse_type;
 
 		return vector_dist_expression_op<operand_type, dcpse_type, VECT_DCPSE>(arg, *(dcpse_type *) dcpse);
 	}
 
 	template<unsigned int prp, typename particles_type>
 	void DrawKernel(particles_type &particles, int k) {
-		Dcpse_type<particles_type::dims, particles_type> *dcpse_ptr = (Dcpse_type<particles_type::dims, particles_type> *) dcpse;
+		Dcpse_type<particles_type::dims, VerletList_type, particles_type> *dcpse_ptr = (Dcpse_type<particles_type::dims, VerletList_type, particles_type> *) dcpse;
 
 		dcpse_ptr[0].template DrawKernel<prp>(particles, k);
 
@@ -1926,7 +1995,7 @@ public:
 
 	template<typename particles_type>
 	void checkMomenta(particles_type &particles) {
-		auto dcpse_temp = (Dcpse_type<particles_type::dims, particles_type> *) dcpse;
+		auto dcpse_temp = (Dcpse_type<particles_type::dims, VerletList_type, particles_type> *) dcpse;
 		dcpse_temp->checkMomenta(particles);
 
 	}
@@ -1938,7 +2007,7 @@ public:
 	 */
 	template<typename particles_type>
 	void save(particles_type &particles, const std::string &file) {
-		auto dcpse_temp = (Dcpse_type<particles_type::dims, particles_type> *) dcpse;
+		auto dcpse_temp = (Dcpse_type<particles_type::dims, VerletList_type, particles_type> *) dcpse;
 		dcpse_temp->save(file);
 	}
 	/*! \brief Method for Loading the DCPSE Operator.
@@ -1948,7 +2017,7 @@ public:
 	 */
 	template<typename particles_type>
 	void load(particles_type &particles, const std::string &file) {
-		auto dcpse_temp = (Dcpse_type<particles_type::dims, particles_type> *) dcpse;
+		auto dcpse_temp = (Dcpse_type<particles_type::dims, VerletList_type, particles_type> *) dcpse;
 		dcpse_temp->load(file);
 	}
 	/*! \brief Method for Updating the DCPSE Operator by recomputing DCPSE Kernels.
@@ -1958,7 +2027,7 @@ public:
 	 */
 	template<typename particles_type>
 	void update(particles_type &particles) {
-		auto dcpse_temp = (Dcpse_type<particles_type::dims, particles_type> *) dcpse;
+		auto dcpse_temp = (Dcpse_type<particles_type::dims, VerletList_type, particles_type> *) dcpse;
 		dcpse_temp->initializeUpdate(particles);
 
 	}
@@ -1975,7 +2044,7 @@ public:
 	 * \return Operator Dyz which is a function on Vector_dist_Expressions
 	 *
 	 */
-template<template<unsigned int, typename, typename...> class Dcpse_type = Dcpse>
+template<typename VerletList_type, template<unsigned int, typename, typename...> class Dcpse_type = Dcpse>
 class Derivative_yz_T {
 
 	void *dcpse;
@@ -1994,15 +2063,20 @@ public:
 	 *
 	 */
 	template<typename particles_type>
-	Derivative_yz_T(particles_type &parts, unsigned int ord, typename particles_type::stype rCut,
-				  double oversampling_factor = dcpse_oversampling_factor,
-				  support_options opt = support_options::RADIUS) {
+	Derivative_yz_T(
+		particles_type &parts,
+		VerletList_type& verletList,
+		unsigned int ord,
+		typename particles_type::stype rCut,
+		double oversampling_factor = dcpse_oversampling_factor,
+		support_options opt = support_options::RADIUS
+	) {
 		Point<particles_type::dims, unsigned int> p;
 		p.zero();
 		p.get(1) = 1;
 		p.get(2) = 1;
 
-		dcpse = new Dcpse_type<particles_type::dims, particles_type>(parts, p, ord, rCut, oversampling_factor, opt);
+		dcpse = new Dcpse_type<particles_type::dims, VerletList_type, particles_type>(parts, verletList, p, ord, rCut, oversampling_factor, opt);
 	}
 
 	/*! \brief Constructor for Creating the DCPSE Operator Dyz and objects and computes DCPSE Kernels.
@@ -2025,6 +2099,7 @@ public:
 	Derivative_yz_T(
 		vector_type &particlesSupport,
 		vector_type2 &particlesDomain,
+		VerletList_type& verletList,
 		unsigned int ord,
 		typename vector_type::stype rCut,
 		double oversampling_factor = dcpse_oversampling_factor,
@@ -2035,9 +2110,10 @@ public:
 		p.get(1) = 1;
 		p.get(2) = 1;
 
-		dcpse = new Dcpse_type<vector_type::dims, vector_type, vector_type2>(
+		dcpse = new Dcpse_type<vector_type::dims, VerletList_type, vector_type, vector_type2>(
 			particlesSupport,
 			particlesDomain,
+			verletList,
 			p,
 			ord,
 			rCut,
@@ -2048,20 +2124,20 @@ public:
 
 	template<typename particles_type>
 	void deallocate(particles_type &parts) {
-		delete (Dcpse_type<particles_type::dims, particles_type> *) dcpse;
+		delete (Dcpse_type<particles_type::dims, VerletList_type, particles_type> *) dcpse;
 	}
 
 	template<typename operand_type>
-	vector_dist_expression_op<operand_type, Dcpse_type<operand_type::vtype::dims, typename operand_type::vtype>, VECT_DCPSE>
+	vector_dist_expression_op<operand_type, Dcpse_type<operand_type::vtype::dims, VerletList_type, typename operand_type::vtype>, VECT_DCPSE>
 	operator()(operand_type arg) {
-		typedef Dcpse_type<operand_type::vtype::dims, typename operand_type::vtype> dcpse_type;
+		typedef Dcpse_type<operand_type::vtype::dims, VerletList_type, typename operand_type::vtype> dcpse_type;
 
 		return vector_dist_expression_op<operand_type, dcpse_type, VECT_DCPSE>(arg, *(dcpse_type *) dcpse);
 	}
 
 	template<unsigned int prp, typename particles_type>
 	void DrawKernel(particles_type &particles, int k) {
-		Dcpse_type<particles_type::dims, particles_type> *dcpse_ptr = (Dcpse_type<particles_type::dims, particles_type> *) dcpse;
+		Dcpse_type<particles_type::dims, VerletList_type, particles_type> *dcpse_ptr = (Dcpse_type<particles_type::dims, VerletList_type, particles_type> *) dcpse;
 
 		dcpse_ptr[0].template DrawKernel<prp>(particles, k);
 
@@ -2069,7 +2145,7 @@ public:
 
 	template<typename particles_type>
 	void checkMomenta(particles_type &particles) {
-		auto dcpse_temp = (Dcpse_type<particles_type::dims, particles_type> *) dcpse;
+		auto dcpse_temp = (Dcpse_type<particles_type::dims, VerletList_type, particles_type> *) dcpse;
 		dcpse_temp->checkMomenta(particles);
 
 	}
@@ -2081,7 +2157,7 @@ public:
 	 */
 	template<typename particles_type>
 	void save(particles_type &particles, const std::string &file) {
-		auto dcpse_temp = (Dcpse_type<particles_type::dims, particles_type> *) dcpse;
+		auto dcpse_temp = (Dcpse_type<particles_type::dims, VerletList_type, particles_type> *) dcpse;
 		dcpse_temp->save(file);
 	}
 	/*! \brief Method for Loading the DCPSE Operator.
@@ -2091,7 +2167,7 @@ public:
 	 */
 	template<typename particles_type>
 	void load(particles_type &particles, const std::string &file) {
-		auto dcpse_temp = (Dcpse_type<particles_type::dims, particles_type> *) dcpse;
+		auto dcpse_temp = (Dcpse_type<particles_type::dims, VerletList_type, particles_type> *) dcpse;
 		dcpse_temp->load(file);
 	}
 	/*! \brief Method for Updating the DCPSE Operator by recomputing DCPSE Kernels.
@@ -2101,7 +2177,7 @@ public:
 	 */
 	template<typename particles_type>
 	void update(particles_type &particles) {
-		auto dcpse_temp = (Dcpse_type<particles_type::dims, particles_type> *) dcpse;
+		auto dcpse_temp = (Dcpse_type<particles_type::dims, VerletList_type, particles_type> *) dcpse;
 		dcpse_temp->initializeUpdate(particles);
 
 	}
@@ -2118,7 +2194,7 @@ public:
 	 * \return Operator Dxz which is a function on Vector_dist_Expressions
 	 *
 	 */
-template<template<unsigned int, typename, typename...> class Dcpse_type = Dcpse>
+template<typename VerletList_type, template<unsigned int, typename, typename...> class Dcpse_type = Dcpse>
 class Derivative_xz_T {
 
 	void *dcpse;
@@ -2137,15 +2213,20 @@ public:
 	 *
 	 */
 	template<typename particles_type>
-	Derivative_xz_T(particles_type &parts, unsigned int ord, typename particles_type::stype rCut,
-				  double oversampling_factor = dcpse_oversampling_factor,
-				  support_options opt = support_options::RADIUS) {
+	Derivative_xz_T(
+		particles_type &parts,
+		VerletList_type& verletList,
+		unsigned int ord,
+		typename particles_type::stype rCut,
+		double oversampling_factor = dcpse_oversampling_factor,
+		support_options opt = support_options::RADIUS
+	) {
 		Point<particles_type::dims, unsigned int> p;
 		p.zero();
 		p.get(0) = 1;
 		p.get(2) = 1;
 
-		dcpse = new Dcpse_type<particles_type::dims, particles_type>(parts, p, ord, rCut, oversampling_factor, opt);
+		dcpse = new Dcpse_type<particles_type::dims, VerletList_type, particles_type>(parts, verletList, p, ord, rCut, oversampling_factor, opt);
 	}
 
 	/*! \brief Constructor for Creating the DCPSE Operator Dxz and objects and computes DCPSE Kernels.
@@ -2168,6 +2249,7 @@ public:
 	Derivative_xz_T(
 		vector_type &particlesSupport,
 		vector_type2 &particlesDomain,
+		VerletList_type& verletList,
 		unsigned int ord,
 		typename vector_type::stype rCut,
 		double oversampling_factor = dcpse_oversampling_factor,
@@ -2178,9 +2260,10 @@ public:
 		p.get(0) = 1;
 		p.get(2) = 1;
 
-		dcpse = new Dcpse_type<vector_type::dims, vector_type, vector_type2>(
+		dcpse = new Dcpse_type<vector_type::dims, VerletList_type, vector_type, vector_type2>(
 			particlesSupport,
 			particlesDomain,
+			verletList,
 			p,
 			ord,
 			rCut,
@@ -2191,20 +2274,20 @@ public:
 
 	template<typename particles_type>
 	void deallocate(particles_type &parts) {
-		delete (Dcpse_type<particles_type::dims, particles_type> *) dcpse;
+		delete (Dcpse_type<particles_type::dims, VerletList_type, particles_type> *) dcpse;
 	}
 
 	template<typename operand_type>
-	vector_dist_expression_op<operand_type, Dcpse_type<operand_type::vtype::dims, typename operand_type::vtype>, VECT_DCPSE>
+	vector_dist_expression_op<operand_type, Dcpse_type<operand_type::vtype::dims, VerletList_type, typename operand_type::vtype>, VECT_DCPSE>
 	operator()(operand_type arg) {
-		typedef Dcpse_type<operand_type::vtype::dims, typename operand_type::vtype> dcpse_type;
+		typedef Dcpse_type<operand_type::vtype::dims, VerletList_type, typename operand_type::vtype> dcpse_type;
 
 		return vector_dist_expression_op<operand_type, dcpse_type, VECT_DCPSE>(arg, *(dcpse_type *) dcpse);
 	}
 
 	template<unsigned int prp, typename particles_type>
 	void DrawKernel(particles_type &particles, int k) {
-		Dcpse_type<particles_type::dims, particles_type> *dcpse_ptr = (Dcpse_type<particles_type::dims, particles_type> *) dcpse;
+		Dcpse_type<particles_type::dims, VerletList_type, particles_type> *dcpse_ptr = (Dcpse_type<particles_type::dims, VerletList_type, particles_type> *) dcpse;
 
 		dcpse_ptr[0].template DrawKernel<prp>(particles, k);
 
@@ -2212,7 +2295,7 @@ public:
 
 	template<typename particles_type>
 	void checkMomenta(particles_type &particles) {
-		auto dcpse_temp = (Dcpse_type<particles_type::dims, particles_type> *) dcpse;
+		auto dcpse_temp = (Dcpse_type<particles_type::dims, VerletList_type, particles_type> *) dcpse;
 		dcpse_temp->checkMomenta(particles);
 
 	}
@@ -2224,7 +2307,7 @@ public:
 	 */
 	template<typename particles_type>
 	void save(particles_type &particles, const std::string &file) {
-		auto dcpse_temp = (Dcpse_type<particles_type::dims, particles_type> *) dcpse;
+		auto dcpse_temp = (Dcpse_type<particles_type::dims, VerletList_type, particles_type> *) dcpse;
 		dcpse_temp->save(file);
 	}
 	/*! \brief Method for Loading the DCPSE Operator.
@@ -2234,7 +2317,7 @@ public:
 	 */
 	template<typename particles_type>
 	void load(particles_type &particles, const std::string &file) {
-		auto dcpse_temp = (Dcpse_type<particles_type::dims, particles_type> *) dcpse;
+		auto dcpse_temp = (Dcpse_type<particles_type::dims, VerletList_type, particles_type> *) dcpse;
 		dcpse_temp->load(file);
 	}
 	/*! \brief Method for Updating the DCPSE Operator by recomputing DCPSE Kernels.
@@ -2244,7 +2327,7 @@ public:
 	 */
 	template<typename particles_type>
 	void update(particles_type &particles) {
-		auto dcpse_temp = (Dcpse_type<particles_type::dims, particles_type> *) dcpse;
+		auto dcpse_temp = (Dcpse_type<particles_type::dims, VerletList_type, particles_type> *) dcpse;
 		dcpse_temp->initializeUpdate(particles);
 
 	}
@@ -2262,7 +2345,7 @@ public:
 	 * \return Operator Dxx which is a function on Vector_dist_Expressions
 	 *
 	 */
-template<template<unsigned int, typename, typename...> class Dcpse_type = Dcpse>
+template<typename VerletList_type, template<unsigned int, typename, typename...> class Dcpse_type = Dcpse>
 class Derivative_xx_T {
 
 	void *dcpse;
@@ -2281,15 +2364,20 @@ public:
 	 *
 	 */
 	template<typename particles_type>
-	Derivative_xx_T(particles_type &parts, unsigned int ord, typename particles_type::stype rCut,
-				  double oversampling_factor = dcpse_oversampling_factor,
-				  support_options opt = support_options::RADIUS) {
+	Derivative_xx_T(
+		particles_type &parts,
+		VerletList_type& verletList,
+		unsigned int ord,
+		typename particles_type::stype rCut,
+		double oversampling_factor = dcpse_oversampling_factor,
+		support_options opt = support_options::RADIUS
+	) {
 		Point<particles_type::dims, unsigned int> p;
 		p.zero();
 		p.get(0) = 2;
 		p.get(1) = 0;
 
-		dcpse = new Dcpse_type<particles_type::dims, particles_type>(parts, p, ord, rCut, oversampling_factor, opt);
+		dcpse = new Dcpse_type<particles_type::dims, VerletList_type, particles_type>(parts, verletList, p, ord, rCut, oversampling_factor, opt);
 	}
 
 	/*! \brief Class for Creating the DCPSE Operator Dxx and objects and computes DCPSE Kernels.
@@ -2312,6 +2400,7 @@ public:
 	Derivative_xx_T(
 		vector_type &particlesSupport,
 		vector_type2 &particlesDomain,
+		VerletList_type& verletList,
 		unsigned int ord,
 		typename vector_type::stype rCut,
 		double oversampling_factor = dcpse_oversampling_factor,
@@ -2322,9 +2411,10 @@ public:
 		p.get(0) = 2;
 		p.get(1) = 0;
 
-		dcpse = new Dcpse_type<vector_type::dims, vector_type, vector_type2>(
+		dcpse = new Dcpse_type<vector_type::dims, VerletList_type, vector_type, vector_type2>(
 			particlesSupport,
 			particlesDomain,
+			verletList,
 			p,
 			ord,
 			rCut,
@@ -2335,27 +2425,27 @@ public:
 
 	template<typename particles_type>
 	void deallocate(particles_type &parts) {
-		delete (Dcpse_type<particles_type::dims, particles_type> *) dcpse;
+		delete (Dcpse_type<particles_type::dims, VerletList_type, particles_type> *) dcpse;
 	}
 
 	template<typename operand_type>
-	vector_dist_expression_op<operand_type, Dcpse_type<operand_type::vtype::dims, typename operand_type::vtype>, VECT_DCPSE>
+	vector_dist_expression_op<operand_type, Dcpse_type<operand_type::vtype::dims, VerletList_type, typename operand_type::vtype>, VECT_DCPSE>
 	operator()(operand_type arg) {
-		typedef Dcpse_type<operand_type::vtype::dims, typename operand_type::vtype> dcpse_type;
+		typedef Dcpse_type<operand_type::vtype::dims, VerletList_type, typename operand_type::vtype> dcpse_type;
 
 		return vector_dist_expression_op<operand_type, dcpse_type, VECT_DCPSE>(arg, *(dcpse_type *) dcpse);
 	}
 
 	template<typename particles_type>
 	void checkMomenta(particles_type &particles) {
-		auto dcpse_temp = (Dcpse_type<particles_type::dims, particles_type> *) dcpse;
+		auto dcpse_temp = (Dcpse_type<particles_type::dims, VerletList_type, particles_type> *) dcpse;
 		dcpse_temp->checkMomenta(particles);
 
 	}
 
 	template<unsigned int prp, typename particles_type>
 	void DrawKernel(particles_type &particles, int k) {
-		auto dcpse_temp = (Dcpse_type<particles_type::dims, particles_type> *) dcpse;
+		auto dcpse_temp = (Dcpse_type<particles_type::dims, VerletList_type, particles_type> *) dcpse;
 		dcpse_temp->template DrawKernel<prp>(particles, k);
 
 	}
@@ -2367,7 +2457,7 @@ public:
 	 */
 	template<typename particles_type>
 	void save(particles_type &particles, const std::string &file) {
-		auto dcpse_temp = (Dcpse_type<particles_type::dims, particles_type> *) dcpse;
+		auto dcpse_temp = (Dcpse_type<particles_type::dims, VerletList_type, particles_type> *) dcpse;
 		dcpse_temp->save(file);
 	}
 	/*! \brief Method for Loading the DCPSE Operator.
@@ -2377,7 +2467,7 @@ public:
 	 */
 	template<typename particles_type>
 	void load(particles_type &particles, const std::string &file) {
-		auto dcpse_temp = (Dcpse_type<particles_type::dims, particles_type> *) dcpse;
+		auto dcpse_temp = (Dcpse_type<particles_type::dims, VerletList_type, particles_type> *) dcpse;
 		dcpse_temp->load(file);
 	}
 	/*! \brief Method for Updating the DCPSE Operator by recomputing DCPSE Kernels.
@@ -2387,7 +2477,7 @@ public:
 	 */
 	template<typename particles_type>
 	void update(particles_type &particles) {
-		auto dcpse_temp = (Dcpse_type<particles_type::dims, particles_type> *) dcpse;
+		auto dcpse_temp = (Dcpse_type<particles_type::dims, VerletList_type, particles_type> *) dcpse;
 		dcpse_temp->initializeUpdate(particles);
 
 	}
@@ -2405,7 +2495,7 @@ public:
  * \return Operator Dyy which is a function on Vector_dist_Expressions
  *
  */
-template<template<unsigned int, typename, typename...> class Dcpse_type = Dcpse>
+template<typename VerletList_type, template<unsigned int, typename, typename...> class Dcpse_type = Dcpse>
 class Derivative_yy_T {
 
 	void *dcpse;
@@ -2424,15 +2514,20 @@ public:
 	 *
 	 */
 	template<typename particles_type>
-	Derivative_yy_T(particles_type &parts, unsigned int ord, typename particles_type::stype rCut,
-				  double oversampling_factor = dcpse_oversampling_factor,
-				  support_options opt = support_options::RADIUS) {
+	Derivative_yy_T(
+		particles_type &parts,
+		VerletList_type& verletList,
+		unsigned int ord,
+		typename particles_type::stype rCut,
+		double oversampling_factor = dcpse_oversampling_factor,
+		support_options opt = support_options::RADIUS
+	) {
 		Point<particles_type::dims, unsigned int> p;
 		p.zero();
 		p.get(0) = 0;
 		p.get(1) = 2;
 
-		dcpse = new Dcpse_type<particles_type::dims, particles_type>(parts, p, ord, rCut, oversampling_factor, opt);
+		dcpse = new Dcpse_type<particles_type::dims, VerletList_type, particles_type>(parts, verletList, p, ord, rCut, oversampling_factor, opt);
 	}
 
 	/*! \brief Constructor for Creating the DCPSE Operator Dyy and objects and computes DCPSE Kernels.
@@ -2456,6 +2551,7 @@ public:
 	Derivative_yy_T(
 		vector_type &particlesSupport,
 		vector_type2 &particlesDomain,
+		VerletList_type& verletList,
 		unsigned int ord,
 		typename vector_type::stype rCut,
 		double oversampling_factor = dcpse_oversampling_factor,
@@ -2466,9 +2562,10 @@ public:
 		p.get(0) = 0;
 		p.get(1) = 2;
 
-		dcpse = new Dcpse_type<vector_type::dims, vector_type, vector_type2>(
+		dcpse = new Dcpse_type<vector_type::dims, VerletList_type, vector_type, vector_type2>(
 			particlesSupport,
 			particlesDomain,
+			verletList,
 			p,
 			ord,
 			rCut,
@@ -2479,27 +2576,27 @@ public:
 
 	template<typename particles_type>
 	void deallocate(particles_type &parts) {
-		delete (Dcpse_type<particles_type::dims, particles_type> *) dcpse;
+		delete (Dcpse_type<particles_type::dims, VerletList_type, particles_type> *) dcpse;
 	}
 
 	template<typename operand_type>
-	vector_dist_expression_op<operand_type, Dcpse_type<operand_type::vtype::dims, typename operand_type::vtype>, VECT_DCPSE>
+	vector_dist_expression_op<operand_type, Dcpse_type<operand_type::vtype::dims, VerletList_type, typename operand_type::vtype>, VECT_DCPSE>
 	operator()(operand_type arg) {
-		typedef Dcpse_type<operand_type::vtype::dims, typename operand_type::vtype> dcpse_type;
+		typedef Dcpse_type<operand_type::vtype::dims, VerletList_type, typename operand_type::vtype> dcpse_type;
 
 		return vector_dist_expression_op<operand_type, dcpse_type, VECT_DCPSE>(arg, *(dcpse_type *) dcpse);
 	}
 
 	template<typename particles_type>
 	void checkMomenta(particles_type &particles) {
-		auto dcpse_temp = (Dcpse_type<particles_type::dims, particles_type> *) dcpse;
+		auto dcpse_temp = (Dcpse_type<particles_type::dims, VerletList_type, particles_type> *) dcpse;
 		dcpse_temp->checkMomenta(particles);
 
 	}
 
 	template<unsigned int prp, typename particles_type>
 	void DrawKernel(particles_type &particles, int k) {
-		auto dcpse_temp = (Dcpse_type<particles_type::dims, particles_type> *) dcpse;
+		auto dcpse_temp = (Dcpse_type<particles_type::dims, VerletList_type, particles_type> *) dcpse;
 		dcpse_temp->template DrawKernel<prp>(particles, k);
 
 	}
@@ -2511,7 +2608,7 @@ public:
 	 */
 	template<typename particles_type>
 	void save(particles_type &particles, const std::string &file) {
-		auto dcpse_temp = (Dcpse_type<particles_type::dims, particles_type> *) dcpse;
+		auto dcpse_temp = (Dcpse_type<particles_type::dims, VerletList_type, particles_type> *) dcpse;
 		dcpse_temp->save(file);
 	}
 	/*! \brief Method for Loading the DCPSE Operator.
@@ -2521,7 +2618,7 @@ public:
 	 */
 	template<typename particles_type>
 	void load(particles_type &particles, const std::string &file) {
-		auto dcpse_temp = (Dcpse_type<particles_type::dims, particles_type> *) dcpse;
+		auto dcpse_temp = (Dcpse_type<particles_type::dims, VerletList_type, particles_type> *) dcpse;
 		dcpse_temp->load(file);
 	}
 	/*! \brief Method for Updating the DCPSE Operator by recomputing DCPSE Kernels.
@@ -2531,7 +2628,7 @@ public:
 	 */
 	template<typename particles_type>
 	void update(particles_type &particles) {
-		auto dcpse_temp = (Dcpse_type<particles_type::dims, particles_type> *) dcpse;
+		auto dcpse_temp = (Dcpse_type<particles_type::dims, VerletList_type, particles_type> *) dcpse;
 		dcpse_temp->initializeUpdate(particles);
 
 	}
@@ -2548,7 +2645,7 @@ public:
 	 * \return Operator Dzz which is a function on Vector_dist_Expressions
 	 *
 	 */
-template<template<unsigned int, typename, typename...> class Dcpse_type = Dcpse>
+template<typename VerletList_type, template<unsigned int, typename, typename...> class Dcpse_type = Dcpse>
 class Derivative_zz_T {
 
 	void *dcpse;
@@ -2567,14 +2664,19 @@ public:
 	 *
 	 */
 	template<typename particles_type>
-	Derivative_zz_T(particles_type &parts, unsigned int ord, typename particles_type::stype rCut,
-				  double oversampling_factor = dcpse_oversampling_factor,
-				  support_options opt = support_options::RADIUS) {
+	Derivative_zz_T(
+		particles_type &parts,
+		VerletList_type& verletList,
+		unsigned int ord,
+		typename particles_type::stype rCut,
+		double oversampling_factor = dcpse_oversampling_factor,
+		support_options opt = support_options::RADIUS
+	) {
 		Point<particles_type::dims, unsigned int> p;
 		p.zero();
 		p.get(2) = 2;
 
-		dcpse = new Dcpse_type<particles_type::dims, particles_type>(parts, p, ord, rCut, oversampling_factor, opt);
+		dcpse = new Dcpse_type<particles_type::dims, VerletList_type, particles_type>(parts, verletList, p, ord, rCut, oversampling_factor, opt);
 	}
 
 	/*! \brief Constructor for Creating the DCPSE Operator Dzz and objects and computes DCPSE Kernels.
@@ -2598,6 +2700,7 @@ public:
 	Derivative_zz_T(
 		vector_type &particlesSupport,
 		vector_type2 &particlesDomain,
+		VerletList_type& verletList,
 		unsigned int ord,
 		typename vector_type::stype rCut,
 		double oversampling_factor = dcpse_oversampling_factor,
@@ -2607,9 +2710,10 @@ public:
 		p.zero();
 		p.get(2) = 2;
 
-		dcpse = new Dcpse_type<vector_type::dims, vector_type, vector_type2>(
+		dcpse = new Dcpse_type<vector_type::dims, VerletList_type, vector_type, vector_type2>(
 			particlesSupport,
 			particlesDomain,
+			verletList,
 			p,
 			ord,
 			rCut,
@@ -2620,27 +2724,27 @@ public:
 
 	template<typename particles_type>
 	void deallocate(particles_type &parts) {
-		delete (Dcpse_type<particles_type::dims, particles_type> *) dcpse;
+		delete (Dcpse_type<particles_type::dims, VerletList_type, particles_type> *) dcpse;
 	}
 
 	template<typename operand_type>
-	vector_dist_expression_op<operand_type, Dcpse_type<operand_type::vtype::dims, typename operand_type::vtype>, VECT_DCPSE>
+	vector_dist_expression_op<operand_type, Dcpse_type<operand_type::vtype::dims, VerletList_type, typename operand_type::vtype>, VECT_DCPSE>
 	operator()(operand_type arg) {
-		typedef Dcpse_type<operand_type::vtype::dims, typename operand_type::vtype> dcpse_type;
+		typedef Dcpse_type<operand_type::vtype::dims, VerletList_type, typename operand_type::vtype> dcpse_type;
 
 		return vector_dist_expression_op<operand_type, dcpse_type, VECT_DCPSE>(arg, *(dcpse_type *) dcpse);
 	}
 
 	template<typename particles_type>
 	void checkMomenta(particles_type &particles) {
-		auto dcpse_temp = (Dcpse_type<particles_type::dims, particles_type> *) dcpse;
+		auto dcpse_temp = (Dcpse_type<particles_type::dims, VerletList_type, particles_type> *) dcpse;
 		dcpse_temp->checkMomenta(particles);
 
 	}
 
 	template<unsigned int prp, typename particles_type>
 	void DrawKernel(particles_type &particles, int k) {
-		auto dcpse_temp = (Dcpse_type<particles_type::dims, particles_type> *) dcpse;
+		auto dcpse_temp = (Dcpse_type<particles_type::dims, VerletList_type, particles_type> *) dcpse;
 		dcpse_temp->template DrawKernel<prp>(particles, k);
 
 	}
@@ -2652,7 +2756,7 @@ public:
 	 */
 	template<typename particles_type>
 	void save(particles_type &particles, const std::string &file) {
-		auto dcpse_temp = (Dcpse_type<particles_type::dims, particles_type> *) dcpse;
+		auto dcpse_temp = (Dcpse_type<particles_type::dims, VerletList_type, particles_type> *) dcpse;
 		dcpse_temp->save(file);
 	}
 	/*! \brief Method for Loading the DCPSE Operator.
@@ -2662,7 +2766,7 @@ public:
 	 */
 	template<typename particles_type>
 	void load(particles_type &particles, const std::string &file) {
-		auto dcpse_temp = (Dcpse_type<particles_type::dims, particles_type> *) dcpse;
+		auto dcpse_temp = (Dcpse_type<particles_type::dims, VerletList_type, particles_type> *) dcpse;
 		dcpse_temp->load(file);
 	}
 	/*! \brief Method for Updating the DCPSE Operator by recomputing DCPSE Kernels.
@@ -2672,13 +2776,13 @@ public:
 	 */
 	template<typename particles_type>
 	void update(particles_type &particles) {
-		auto dcpse_temp = (Dcpse_type<particles_type::dims, particles_type> *) dcpse;
+		auto dcpse_temp = (Dcpse_type<particles_type::dims, VerletList_type, particles_type> *) dcpse;
 		dcpse_temp->initializeUpdate(particles);
 
 	}
 };
 
-template<template<unsigned int, typename, typename...> class Dcpse_type = Dcpse>
+template<typename VerletList_type, template<unsigned int, typename, typename...> class Dcpse_type = Dcpse>
 class Derivative_xxx_T {
 
 	void *dcpse;
@@ -2686,15 +2790,20 @@ class Derivative_xxx_T {
 public:
 
 	template<typename particles_type>
-	Derivative_xxx_T(particles_type &parts, unsigned int ord, typename particles_type::stype rCut,
-				   double oversampling_factor = dcpse_oversampling_factor,
-				   support_options opt = support_options::RADIUS) {
+	Derivative_xxx_T(
+		particles_type &parts,
+		VerletList_type& verletList,
+		unsigned int ord,
+		typename particles_type::stype rCut,
+		double oversampling_factor = dcpse_oversampling_factor,
+		support_options opt = support_options::RADIUS
+	) {
 		Point<particles_type::dims, unsigned int> p;
 		p.zero();
 		p.get(0) = 3;
 		p.get(1) = 0;
 
-		dcpse = new Dcpse_type<particles_type::dims, particles_type>(parts, p, ord, rCut, oversampling_factor, opt);
+		dcpse = new Dcpse_type<particles_type::dims, VerletList_type, particles_type>(parts, verletList, p, ord, rCut, oversampling_factor, opt);
 	}
 
 	template<
@@ -2704,6 +2813,7 @@ public:
 	Derivative_xxx_T(
 		vector_type &particlesSupport,
 		vector_type2 &particlesDomain,
+		VerletList_type& verletList,
 		unsigned int ord,
 		typename vector_type::stype rCut,
 		double oversampling_factor = dcpse_oversampling_factor,
@@ -2714,9 +2824,10 @@ public:
 		p.get(0) = 3;
 		p.get(1) = 0;
 
-		dcpse = new Dcpse_type<vector_type::dims, vector_type, vector_type2>(
+		dcpse = new Dcpse_type<vector_type::dims, VerletList_type, vector_type, vector_type2>(
 			particlesSupport,
 			particlesDomain,
+			verletList,
 			p,
 			ord,
 			rCut,
@@ -2727,23 +2838,23 @@ public:
 
 	template<typename operand_type>
 
-	vector_dist_expression_op<operand_type, Dcpse_type<operand_type::vtype::dims, typename operand_type::vtype>, VECT_DCPSE>
+	vector_dist_expression_op<operand_type, Dcpse_type<operand_type::vtype::dims, VerletList_type, typename operand_type::vtype>, VECT_DCPSE>
 	operator()(operand_type arg) {
-		typedef Dcpse_type<operand_type::vtype::dims, typename operand_type::vtype> dcpse_type;
+		typedef Dcpse_type<operand_type::vtype::dims, VerletList_type, typename operand_type::vtype> dcpse_type;
 
 		return vector_dist_expression_op<operand_type, dcpse_type, VECT_DCPSE>(arg, *(dcpse_type *) dcpse);
 	}
 
 	template<typename particles_type>
 	void checkMomenta(particles_type &particles) {
-		auto dcpse_temp = (Dcpse_type<particles_type::dims, particles_type> *) dcpse;
+		auto dcpse_temp = (Dcpse_type<particles_type::dims, VerletList_type, particles_type> *) dcpse;
 		dcpse_temp->checkMomenta(particles);
 
 	}
 
 	template<unsigned int prp, typename particles_type>
 	void DrawKernel(particles_type &particles, int k) {
-		auto dcpse_temp = (Dcpse_type<particles_type::dims, particles_type> *) dcpse;
+		auto dcpse_temp = (Dcpse_type<particles_type::dims, VerletList_type, particles_type> *) dcpse;
 		dcpse_temp->template DrawKernel<prp>(particles, k);
 
 	}
@@ -2755,7 +2866,7 @@ public:
 	 */
 	template<typename particles_type>
 	void save(particles_type &particles, const std::string &file) {
-		auto dcpse_temp = (Dcpse_type<particles_type::dims, particles_type> *) dcpse;
+		auto dcpse_temp = (Dcpse_type<particles_type::dims, VerletList_type, particles_type> *) dcpse;
 		dcpse_temp->save(file);
 	}
 	/*! \brief Method for Loading the DCPSE Operator.
@@ -2765,7 +2876,7 @@ public:
 	 */
 	template<typename particles_type>
 	void load(particles_type &particles, const std::string &file) {
-		auto dcpse_temp = (Dcpse_type<particles_type::dims, particles_type> *) dcpse;
+		auto dcpse_temp = (Dcpse_type<particles_type::dims, VerletList_type, particles_type> *) dcpse;
 		dcpse_temp->load(file);
 	}
 	/*! \brief Method for Updating the DCPSE Operator by recomputing DCPSE Kernels.
@@ -2775,13 +2886,13 @@ public:
 	 */
 	template<typename particles_type>
 	void update(particles_type &particles) {
-		auto dcpse_temp = (Dcpse_type<particles_type::dims, particles_type> *) dcpse;
+		auto dcpse_temp = (Dcpse_type<particles_type::dims, VerletList_type, particles_type> *) dcpse;
 		dcpse_temp->initializeUpdate(particles);
 
 	}
 };
 
-template<template<unsigned int, typename, typename...> class Dcpse_type = Dcpse>
+template<typename VerletList_type, template<unsigned int, typename, typename...> class Dcpse_type = Dcpse>
 class Derivative_xxy_T {
 
 	void *dcpse;
@@ -2789,15 +2900,20 @@ class Derivative_xxy_T {
 public:
 
 	template<typename particles_type>
-	Derivative_xxy_T(particles_type &parts, unsigned int ord, typename particles_type::stype rCut,
-				   double oversampling_factor = dcpse_oversampling_factor,
-				   support_options opt = support_options::RADIUS) {
+	Derivative_xxy_T(
+		particles_type &parts,
+		VerletList_type& verletList,
+		unsigned int ord,
+		typename particles_type::stype rCut,
+		double oversampling_factor = dcpse_oversampling_factor,
+		support_options opt = support_options::RADIUS
+	) {
 		Point<particles_type::dims, unsigned int> p;
 		p.zero();
 		p.get(0) = 2;
 		p.get(1) = 1;
 
-		dcpse = new Dcpse_type<particles_type::dims, particles_type>(parts, p, ord, rCut, oversampling_factor, opt);
+		dcpse = new Dcpse_type<particles_type::dims, VerletList_type, particles_type>(parts, verletList, p, ord, rCut, oversampling_factor, opt);
 	}
 
 	template<
@@ -2807,6 +2923,7 @@ public:
 	Derivative_xxy_T(
 		vector_type &particlesSupport,
 		vector_type2 &particlesDomain,
+		VerletList_type& verletList,
 		unsigned int ord,
 		typename vector_type::stype rCut,
 		double oversampling_factor = dcpse_oversampling_factor,
@@ -2817,9 +2934,10 @@ public:
 		p.get(0) = 2;
 		p.get(1) = 1;
 
-		dcpse = new Dcpse_type<vector_type::dims, vector_type, vector_type2>(
+		dcpse = new Dcpse_type<vector_type::dims, VerletList_type, vector_type, vector_type2>(
 			particlesSupport,
 			particlesDomain,
+			verletList,
 			p,
 			ord,
 			rCut,
@@ -2830,23 +2948,23 @@ public:
 
 	template<typename operand_type>
 
-	vector_dist_expression_op<operand_type, Dcpse_type<operand_type::vtype::dims, typename operand_type::vtype>, VECT_DCPSE>
+	vector_dist_expression_op<operand_type, Dcpse_type<operand_type::vtype::dims, VerletList_type, typename operand_type::vtype>, VECT_DCPSE>
 	operator()(operand_type arg) {
-		typedef Dcpse_type<operand_type::vtype::dims, typename operand_type::vtype> dcpse_type;
+		typedef Dcpse_type<operand_type::vtype::dims, VerletList_type, typename operand_type::vtype> dcpse_type;
 
 		return vector_dist_expression_op<operand_type, dcpse_type, VECT_DCPSE>(arg, *(dcpse_type *) dcpse);
 	}
 
 	template<typename particles_type>
 	void checkMomenta(particles_type &particles) {
-		auto dcpse_temp = (Dcpse_type<particles_type::dims, particles_type> *) dcpse;
+		auto dcpse_temp = (Dcpse_type<particles_type::dims, VerletList_type, particles_type> *) dcpse;
 		dcpse_temp->checkMomenta(particles);
 
 	}
 
 	template<unsigned int prp, typename particles_type>
 	void DrawKernel(particles_type &particles, int k) {
-		auto dcpse_temp = (Dcpse_type<particles_type::dims, particles_type> *) dcpse;
+		auto dcpse_temp = (Dcpse_type<particles_type::dims, VerletList_type, particles_type> *) dcpse;
 		dcpse_temp->template DrawKernel<prp>(particles, k);
 
 	}
@@ -2858,7 +2976,7 @@ public:
 	 */
 	template<typename particles_type>
 	void save(particles_type &particles, const std::string &file) {
-		auto dcpse_temp = (Dcpse_type<particles_type::dims, particles_type> *) dcpse;
+		auto dcpse_temp = (Dcpse_type<particles_type::dims, VerletList_type, particles_type> *) dcpse;
 		dcpse_temp->save(file);
 	}
 	/*! \brief Method for Loading the DCPSE Operator.
@@ -2868,7 +2986,7 @@ public:
 	 */
 	template<typename particles_type>
 	void load(particles_type &particles, const std::string &file) {
-		auto dcpse_temp = (Dcpse_type<particles_type::dims, particles_type> *) dcpse;
+		auto dcpse_temp = (Dcpse_type<particles_type::dims, VerletList_type, particles_type> *) dcpse;
 		dcpse_temp->load(file);
 	}
 	/*! \brief Method for Updating the DCPSE Operator by recomputing DCPSE Kernels.
@@ -2878,13 +2996,13 @@ public:
 	 */
 	template<typename particles_type>
 	void update(particles_type &particles) {
-		auto dcpse_temp = (Dcpse_type<particles_type::dims, particles_type> *) dcpse;
+		auto dcpse_temp = (Dcpse_type<particles_type::dims, VerletList_type, particles_type> *) dcpse;
 		dcpse_temp->initializeUpdate(particles);
 
 	}
 };
 
-template<template<unsigned int, typename, typename...> class Dcpse_type = Dcpse>
+template<typename VerletList_type, template<unsigned int, typename, typename...> class Dcpse_type = Dcpse>
 class Derivative_yyx_T {
 
 	void *dcpse;
@@ -2892,15 +3010,20 @@ class Derivative_yyx_T {
 public:
 
 	template<typename particles_type>
-	Derivative_yyx_T(particles_type &parts, unsigned int ord, typename particles_type::stype rCut,
-				   double oversampling_factor = dcpse_oversampling_factor,
-				   support_options opt = support_options::RADIUS) {
+	Derivative_yyx_T(
+		particles_type &parts,
+		VerletList_type& verletList,
+		unsigned int ord,
+		typename particles_type::stype rCut,
+		double oversampling_factor = dcpse_oversampling_factor,
+		support_options opt = support_options::RADIUS
+	) {
 		Point<particles_type::dims, unsigned int> p;
 		p.zero();
 		p.get(0) = 1;
 		p.get(1) = 2;
 
-		dcpse = new Dcpse_type<particles_type::dims, particles_type>(parts, p, ord, rCut, oversampling_factor, opt);
+		dcpse = new Dcpse_type<particles_type::dims, VerletList_type, particles_type>(parts, verletList, p, ord, rCut, oversampling_factor, opt);
 	}
 
 	template<
@@ -2910,6 +3033,7 @@ public:
 	Derivative_yyx_T(
 		vector_type &particlesSupport,
 		vector_type2 &particlesDomain,
+		VerletList_type& verletList,
 		unsigned int ord,
 		typename vector_type::stype rCut,
 		double oversampling_factor = dcpse_oversampling_factor,
@@ -2920,9 +3044,10 @@ public:
 		p.get(0) = 1;
 		p.get(1) = 2;
 
-		dcpse = new Dcpse_type<vector_type::dims, vector_type, vector_type2>(
+		dcpse = new Dcpse_type<vector_type::dims, VerletList_type, vector_type, vector_type2>(
 			particlesSupport,
 			particlesDomain,
+			verletList,
 			p,
 			ord,
 			rCut,
@@ -2933,23 +3058,23 @@ public:
 
 	template<typename operand_type>
 
-	vector_dist_expression_op<operand_type, Dcpse_type<operand_type::vtype::dims, typename operand_type::vtype>, VECT_DCPSE>
+	vector_dist_expression_op<operand_type, Dcpse_type<operand_type::vtype::dims, VerletList_type, typename operand_type::vtype>, VECT_DCPSE>
 	operator()(operand_type arg) {
-		typedef Dcpse_type<operand_type::vtype::dims, typename operand_type::vtype> dcpse_type;
+		typedef Dcpse_type<operand_type::vtype::dims, VerletList_type, typename operand_type::vtype> dcpse_type;
 
 		return vector_dist_expression_op<operand_type, dcpse_type, VECT_DCPSE>(arg, *(dcpse_type *) dcpse);
 	}
 
 	template<typename particles_type>
 	void checkMomenta(particles_type &particles) {
-		auto dcpse_temp = (Dcpse_type<particles_type::dims, particles_type> *) dcpse;
+		auto dcpse_temp = (Dcpse_type<particles_type::dims, VerletList_type, particles_type> *) dcpse;
 		dcpse_temp->checkMomenta(particles);
 
 	}
 
 	template<unsigned int prp, typename particles_type>
 	void DrawKernel(particles_type &particles, int k) {
-		auto dcpse_temp = (Dcpse_type<particles_type::dims, particles_type> *) dcpse;
+		auto dcpse_temp = (Dcpse_type<particles_type::dims, VerletList_type, particles_type> *) dcpse;
 		dcpse_temp->template DrawKernel<prp>(particles, k);
 
 	}
@@ -2961,7 +3086,7 @@ public:
 	 */
 	template<typename particles_type>
 	void save(particles_type &particles, const std::string &file) {
-		auto dcpse_temp = (Dcpse_type<particles_type::dims, particles_type> *) dcpse;
+		auto dcpse_temp = (Dcpse_type<particles_type::dims, VerletList_type, particles_type> *) dcpse;
 		dcpse_temp->save(file);
 	}
 	/*! \brief Method for Loading the DCPSE Operator.
@@ -2971,7 +3096,7 @@ public:
 	 */
 	template<typename particles_type>
 	void load(particles_type &particles, const std::string &file) {
-		auto dcpse_temp = (Dcpse_type<particles_type::dims, particles_type> *) dcpse;
+		auto dcpse_temp = (Dcpse_type<particles_type::dims, VerletList_type, particles_type> *) dcpse;
 		dcpse_temp->load(file);
 	}
 	/*! \brief Method for Updating the DCPSE Operator by recomputing DCPSE Kernels.
@@ -2981,13 +3106,13 @@ public:
 	 */
 	template<typename particles_type>
 	void update(particles_type &particles) {
-		auto dcpse_temp = (Dcpse_type<particles_type::dims, particles_type> *) dcpse;
+		auto dcpse_temp = (Dcpse_type<particles_type::dims, VerletList_type, particles_type> *) dcpse;
 		dcpse_temp->initializeUpdate(particles);
 
 	}
 };
 
-template<template<unsigned int, typename, typename...> class Dcpse_type = Dcpse>
+template<typename VerletList_type, template<unsigned int, typename, typename...> class Dcpse_type = Dcpse>
 class Derivative_yyy_T {
 
 	void *dcpse;
@@ -2995,15 +3120,20 @@ class Derivative_yyy_T {
 public:
 
 	template<typename particles_type>
-	Derivative_yyy_T(particles_type &parts, unsigned int ord, typename particles_type::stype rCut,
-				   double oversampling_factor = dcpse_oversampling_factor,
-				   support_options opt = support_options::RADIUS) {
+	Derivative_yyy_T(
+		particles_type &parts,
+		VerletList_type& verletList,
+		unsigned int ord,
+		typename particles_type::stype rCut,
+		double oversampling_factor = dcpse_oversampling_factor,
+		support_options opt = support_options::RADIUS
+	) {
 		Point<particles_type::dims, unsigned int> p;
 		p.zero();
 		p.get(0) = 0;
 		p.get(1) = 3;
 
-		dcpse = new Dcpse_type<particles_type::dims, particles_type>(parts, p, ord, rCut, oversampling_factor, opt);
+		dcpse = new Dcpse_type<particles_type::dims, VerletList_type, particles_type>(parts, verletList, p, ord, rCut, oversampling_factor, opt);
 	}
 
 	template<
@@ -3013,6 +3143,7 @@ public:
 	Derivative_yyy_T(
 		vector_type &particlesSupport,
 		vector_type2 &particlesDomain,
+		VerletList_type& verletList,
 		unsigned int ord,
 		typename vector_type::stype rCut,
 		double oversampling_factor = dcpse_oversampling_factor,
@@ -3023,9 +3154,10 @@ public:
 		p.get(0) = 0;
 		p.get(1) = 3;
 
-		dcpse = new Dcpse_type<vector_type::dims, vector_type, vector_type2>(
+		dcpse = new Dcpse_type<vector_type::dims, VerletList_type, vector_type, vector_type2>(
 			particlesSupport,
 			particlesDomain,
+			verletList,
 			p,
 			ord,
 			rCut,
@@ -3036,23 +3168,23 @@ public:
 
 	template<typename operand_type>
 
-	vector_dist_expression_op<operand_type, Dcpse_type<operand_type::vtype::dims, typename operand_type::vtype>, VECT_DCPSE>
+	vector_dist_expression_op<operand_type, Dcpse_type<operand_type::vtype::dims, VerletList_type, typename operand_type::vtype>, VECT_DCPSE>
 	operator()(operand_type arg) {
-		typedef Dcpse_type<operand_type::vtype::dims, typename operand_type::vtype> dcpse_type;
+		typedef Dcpse_type<operand_type::vtype::dims, VerletList_type, typename operand_type::vtype> dcpse_type;
 
 		return vector_dist_expression_op<operand_type, dcpse_type, VECT_DCPSE>(arg, *(dcpse_type *) dcpse);
 	}
 
 	template<typename particles_type>
 	void checkMomenta(particles_type &particles) {
-		auto dcpse_temp = (Dcpse_type<particles_type::dims, particles_type> *) dcpse;
+		auto dcpse_temp = (Dcpse_type<particles_type::dims, VerletList_type, particles_type> *) dcpse;
 		dcpse_temp->checkMomenta(particles);
 
 	}
 
 	template<unsigned int prp, typename particles_type>
 	void DrawKernel(particles_type &particles, int k) {
-		auto dcpse_temp = (Dcpse_type<particles_type::dims, particles_type> *) dcpse;
+		auto dcpse_temp = (Dcpse_type<particles_type::dims, VerletList_type, particles_type> *) dcpse;
 		dcpse_temp->template DrawKernel<prp>(particles, k);
 
 	}
@@ -3064,7 +3196,7 @@ public:
 	 */
 	template<typename particles_type>
 	void save(particles_type &particles, const std::string &file) {
-		auto dcpse_temp = (Dcpse_type<particles_type::dims, particles_type> *) dcpse;
+		auto dcpse_temp = (Dcpse_type<particles_type::dims, VerletList_type, particles_type> *) dcpse;
 		dcpse_temp->save(file);
 	}
 	/*! \brief Method for Loading the DCPSE Operator.
@@ -3074,7 +3206,7 @@ public:
 	 */
 	template<typename particles_type>
 	void load(particles_type &particles, const std::string &file) {
-		auto dcpse_temp = (Dcpse_type<particles_type::dims, particles_type> *) dcpse;
+		auto dcpse_temp = (Dcpse_type<particles_type::dims, VerletList_type, particles_type> *) dcpse;
 		dcpse_temp->load(file);
 	}
 	/*! \brief Method for Updating the DCPSE Operator by recomputing DCPSE Kernels.
@@ -3084,14 +3216,14 @@ public:
 	 */
 	template<typename particles_type>
 	void update(particles_type &particles) {
-		auto dcpse_temp = (Dcpse_type<particles_type::dims, particles_type> *) dcpse;
+		auto dcpse_temp = (Dcpse_type<particles_type::dims, VerletList_type, particles_type> *) dcpse;
 		dcpse_temp->initializeUpdate(particles);
 
 	}
 };
 
 
-template<template<unsigned int, typename, typename...> class Dcpse_type = Dcpse>
+template<typename VerletList_type, template<unsigned int, typename, typename...> class Dcpse_type = Dcpse>
 class Derivative_xxxx_T {
 
 	void *dcpse;
@@ -3099,15 +3231,20 @@ class Derivative_xxxx_T {
 public:
 
 	template<typename particles_type>
-	Derivative_xxxx_T(particles_type &parts, unsigned int ord, typename particles_type::stype rCut,
-				   double oversampling_factor = dcpse_oversampling_factor,
-				   support_options opt = support_options::RADIUS) {
+	Derivative_xxxx_T(
+		particles_type &parts,
+		VerletList_type& verletList,
+		unsigned int ord,
+		typename particles_type::stype rCut,
+		double oversampling_factor = dcpse_oversampling_factor,
+		support_options opt = support_options::RADIUS
+	) {
 		Point<particles_type::dims, unsigned int> p;
 		p.zero();
 		p.get(0) = 4;
 		p.get(1) = 0;
 
-		dcpse = new Dcpse_type<particles_type::dims, particles_type>(parts, p, ord, rCut, oversampling_factor, opt);
+		dcpse = new Dcpse_type<particles_type::dims, VerletList_type, particles_type>(parts, verletList, p, ord, rCut, oversampling_factor, opt);
 	}
 
 	template<
@@ -3117,6 +3254,7 @@ public:
 	Derivative_xxxx_T(
 		vector_type &particlesSupport,
 		vector_type2 &particlesDomain,
+		VerletList_type& verletList,
 		unsigned int ord,
 		typename vector_type::stype rCut,
 		double oversampling_factor = dcpse_oversampling_factor,
@@ -3127,9 +3265,10 @@ public:
 		p.get(0) = 4;
 		p.get(1) = 0;
 
-		dcpse = new Dcpse_type<vector_type::dims, vector_type, vector_type2>(
+		dcpse = new Dcpse_type<vector_type::dims, VerletList_type, vector_type, vector_type2>(
 			particlesSupport,
 			particlesDomain,
+			verletList,
 			p,
 			ord,
 			rCut,
@@ -3139,23 +3278,23 @@ public:
 	}
 
 	template<typename operand_type>
-	vector_dist_expression_op<operand_type, Dcpse_type<operand_type::vtype::dims, typename operand_type::vtype>, VECT_DCPSE>
+	vector_dist_expression_op<operand_type, Dcpse_type<operand_type::vtype::dims, VerletList_type, typename operand_type::vtype>, VECT_DCPSE>
 	operator()(operand_type arg) {
-		typedef Dcpse_type<operand_type::vtype::dims, typename operand_type::vtype> dcpse_type;
+		typedef Dcpse_type<operand_type::vtype::dims, VerletList_type, typename operand_type::vtype> dcpse_type;
 
 		return vector_dist_expression_op<operand_type, dcpse_type, VECT_DCPSE>(arg, *(dcpse_type *) dcpse);
 	}
 
 	template<typename particles_type>
 	void checkMomenta(particles_type &particles) {
-		auto dcpse_temp = (Dcpse_type<particles_type::dims, particles_type> *) dcpse;
+		auto dcpse_temp = (Dcpse_type<particles_type::dims, VerletList_type, particles_type> *) dcpse;
 		dcpse_temp->checkMomenta(particles);
 
 	}
 
 	template<unsigned int prp, typename particles_type>
 	void DrawKernel(particles_type &particles, int k) {
-		auto dcpse_temp = (Dcpse_type<particles_type::dims, particles_type> *) dcpse;
+		auto dcpse_temp = (Dcpse_type<particles_type::dims, VerletList_type, particles_type> *) dcpse;
 		dcpse_temp->template DrawKernel<prp>(particles, k);
 
 	}
@@ -3167,7 +3306,7 @@ public:
 	 */
 	template<typename particles_type>
 	void save(particles_type &particles, const std::string &file) {
-		auto dcpse_temp = (Dcpse_type<particles_type::dims, particles_type> *) dcpse;
+		auto dcpse_temp = (Dcpse_type<particles_type::dims, VerletList_type, particles_type> *) dcpse;
 		dcpse_temp->save(file);
 	}
 	/*! \brief Method for Loading the DCPSE Operator.
@@ -3177,7 +3316,7 @@ public:
 	 */
 	template<typename particles_type>
 	void load(particles_type &particles, const std::string &file) {
-		auto dcpse_temp = (Dcpse_type<particles_type::dims, particles_type> *) dcpse;
+		auto dcpse_temp = (Dcpse_type<particles_type::dims, VerletList_type, particles_type> *) dcpse;
 		dcpse_temp->load(file);
 	}
 	/*! \brief Method for Updating the DCPSE Operator by recomputing DCPSE Kernels.
@@ -3187,14 +3326,14 @@ public:
 	 */
 	template<typename particles_type>
 	void update(particles_type &particles) {
-		auto dcpse_temp = (Dcpse_type<particles_type::dims, particles_type> *) dcpse;
+		auto dcpse_temp = (Dcpse_type<particles_type::dims, VerletList_type, particles_type> *) dcpse;
 		dcpse_temp->initializeUpdate(particles);
 
 	}
 };
 
 
-template<template<unsigned int, typename, typename...> class Dcpse_type = Dcpse>
+template<typename VerletList_type, template<unsigned int, typename, typename...> class Dcpse_type = Dcpse>
 class Derivative_yyyy_T {
 
 	void *dcpse;
@@ -3202,15 +3341,20 @@ class Derivative_yyyy_T {
 public:
 
 	template<typename particles_type>
-	Derivative_yyyy_T(particles_type &parts, unsigned int ord, typename particles_type::stype rCut,
-				   double oversampling_factor = dcpse_oversampling_factor,
-				   support_options opt = support_options::RADIUS) {
+	Derivative_yyyy_T(
+		particles_type &parts,
+		VerletList_type& verletList,
+		unsigned int ord,
+		typename particles_type::stype rCut,
+		double oversampling_factor = dcpse_oversampling_factor,
+		support_options opt = support_options::RADIUS
+	) {
 		Point<particles_type::dims, unsigned int> p;
 		p.zero();
 		p.get(0) = 0;
 		p.get(1) = 4;
 
-		dcpse = new Dcpse_type<particles_type::dims, particles_type>(parts, p, ord, rCut, oversampling_factor, opt);
+		dcpse = new Dcpse_type<particles_type::dims, VerletList_type, particles_type>(parts, verletList, p, ord, rCut, oversampling_factor, opt);
 	}
 
 	template<
@@ -3220,6 +3364,7 @@ public:
 	Derivative_yyyy_T(
 		vector_type &particlesSupport,
 		vector_type2 &particlesDomain,
+		VerletList_type& verletList,
 		unsigned int ord,
 		typename vector_type::stype rCut,
 		double oversampling_factor = dcpse_oversampling_factor,
@@ -3230,9 +3375,10 @@ public:
 		p.get(0) = 0;
 		p.get(1) = 4;
 
-		dcpse = new Dcpse_type<vector_type::dims, vector_type, vector_type2>(
+		dcpse = new Dcpse_type<vector_type::dims, VerletList_type, vector_type, vector_type2>(
 			particlesSupport,
 			particlesDomain,
+			verletList,
 			p,
 			ord,
 			rCut,
@@ -3242,23 +3388,23 @@ public:
 	}
 
 	template<typename operand_type>
-	vector_dist_expression_op<operand_type, Dcpse_type<operand_type::vtype::dims, typename operand_type::vtype>, VECT_DCPSE>
+	vector_dist_expression_op<operand_type, Dcpse_type<operand_type::vtype::dims, VerletList_type, typename operand_type::vtype>, VECT_DCPSE>
 	operator()(operand_type arg) {
-		typedef Dcpse_type<operand_type::vtype::dims, typename operand_type::vtype> dcpse_type;
+		typedef Dcpse_type<operand_type::vtype::dims, VerletList_type, typename operand_type::vtype> dcpse_type;
 
 		return vector_dist_expression_op<operand_type, dcpse_type, VECT_DCPSE>(arg, *(dcpse_type *) dcpse);
 	}
 
 	template<typename particles_type>
 	void checkMomenta(particles_type &particles) {
-		auto dcpse_temp = (Dcpse_type<particles_type::dims, particles_type> *) dcpse;
+		auto dcpse_temp = (Dcpse_type<particles_type::dims, VerletList_type, particles_type> *) dcpse;
 		dcpse_temp->checkMomenta(particles);
 
 	}
 
 	template<unsigned int prp, typename particles_type>
 	void DrawKernel(particles_type &particles, int k) {
-		auto dcpse_temp = (Dcpse_type<particles_type::dims, particles_type> *) dcpse;
+		auto dcpse_temp = (Dcpse_type<particles_type::dims, VerletList_type, particles_type> *) dcpse;
 		dcpse_temp->template DrawKernel<prp>(particles, k);
 
 	}
@@ -3270,7 +3416,7 @@ public:
 	 */
 	template<typename particles_type>
 	void save(particles_type &particles, const std::string &file) {
-		auto dcpse_temp = (Dcpse_type<particles_type::dims, particles_type> *) dcpse;
+		auto dcpse_temp = (Dcpse_type<particles_type::dims, VerletList_type, particles_type> *) dcpse;
 		dcpse_temp->save(file);
 	}
 	/*! \brief Method for Loading the DCPSE Operator.
@@ -3280,7 +3426,7 @@ public:
 	 */
 	template<typename particles_type>
 	void load(particles_type &particles, const std::string &file) {
-		auto dcpse_temp = (Dcpse_type<particles_type::dims, particles_type> *) dcpse;
+		auto dcpse_temp = (Dcpse_type<particles_type::dims, VerletList_type, particles_type> *) dcpse;
 		dcpse_temp->load(file);
 	}
 	/*! \brief Method for Updating the DCPSE Operator by recomputing DCPSE Kernels.
@@ -3290,13 +3436,13 @@ public:
 	 */
 	template<typename particles_type>
 	void update(particles_type &particles) {
-		auto dcpse_temp = (Dcpse_type<particles_type::dims, particles_type> *) dcpse;
+		auto dcpse_temp = (Dcpse_type<particles_type::dims, VerletList_type, particles_type> *) dcpse;
 		dcpse_temp->initializeUpdate(particles);
 
 	}
 };
 
-template<template<unsigned int, typename, typename...> class Dcpse_type = Dcpse>
+template<typename VerletList_type, template<unsigned int, typename, typename...> class Dcpse_type = Dcpse>
 class Derivative_xxyy_T {
 
 	void *dcpse;
@@ -3304,15 +3450,20 @@ class Derivative_xxyy_T {
 public:
 
 	template<typename particles_type>
-	Derivative_xxyy_T(particles_type &parts, unsigned int ord, typename particles_type::stype rCut,
-				   double oversampling_factor = dcpse_oversampling_factor,
-				   support_options opt = support_options::RADIUS) {
+	Derivative_xxyy_T(
+		particles_type &parts,
+		VerletList_type& verletList,
+		unsigned int ord,
+		typename particles_type::stype rCut,
+		double oversampling_factor = dcpse_oversampling_factor,
+		support_options opt = support_options::RADIUS
+	) {
 		Point<particles_type::dims, unsigned int> p;
 		p.zero();
 		p.get(0) = 2;
 		p.get(1) = 2;
 
-		dcpse = new Dcpse_type<particles_type::dims, particles_type>(parts, p, ord, rCut, oversampling_factor, opt);
+		dcpse = new Dcpse_type<particles_type::dims, VerletList_type, particles_type>(parts, verletList, p, ord, rCut, oversampling_factor, opt);
 	}
 
 	template<
@@ -3322,6 +3473,7 @@ public:
 	Derivative_xxyy_T(
 		vector_type &particlesSupport,
 		vector_type2 &particlesDomain,
+		VerletList_type& verletList,
 		unsigned int ord,
 		typename vector_type::stype rCut,
 		double oversampling_factor = dcpse_oversampling_factor,
@@ -3332,9 +3484,10 @@ public:
 		p.get(0) = 2;
 		p.get(1) = 2;
 
-		dcpse = new Dcpse_type<vector_type::dims, vector_type, vector_type2>(
+		dcpse = new Dcpse_type<vector_type::dims, VerletList_type, vector_type, vector_type2>(
 			particlesSupport,
 			particlesDomain,
+			verletList,
 			p,
 			ord,
 			rCut,
@@ -3345,23 +3498,23 @@ public:
 
 	template<typename operand_type>
 
-	vector_dist_expression_op<operand_type, Dcpse_type<operand_type::vtype::dims, typename operand_type::vtype>, VECT_DCPSE>
+	vector_dist_expression_op<operand_type, Dcpse_type<operand_type::vtype::dims, VerletList_type, typename operand_type::vtype>, VECT_DCPSE>
 	operator()(operand_type arg) {
-		typedef Dcpse_type<operand_type::vtype::dims, typename operand_type::vtype> dcpse_type;
+		typedef Dcpse_type<operand_type::vtype::dims, VerletList_type, typename operand_type::vtype> dcpse_type;
 
 		return vector_dist_expression_op<operand_type, dcpse_type, VECT_DCPSE>(arg, *(dcpse_type *) dcpse);
 	}
 
 	template<typename particles_type>
 	void checkMomenta(particles_type &particles) {
-		auto dcpse_temp = (Dcpse_type<particles_type::dims, particles_type> *) dcpse;
+		auto dcpse_temp = (Dcpse_type<particles_type::dims, VerletList_type, particles_type> *) dcpse;
 		dcpse_temp->checkMomenta(particles);
 
 	}
 
 	template<unsigned int prp, typename particles_type>
 	void DrawKernel(particles_type &particles, int k) {
-		auto dcpse_temp = (Dcpse_type<particles_type::dims, particles_type> *) dcpse;
+		auto dcpse_temp = (Dcpse_type<particles_type::dims, VerletList_type, particles_type> *) dcpse;
 		dcpse_temp->template DrawKernel<prp>(particles, k);
 
 	}
@@ -3373,7 +3526,7 @@ public:
 	 */
 	template<typename particles_type>
 	void save(particles_type &particles, const std::string &file) {
-		auto dcpse_temp = (Dcpse_type<particles_type::dims, particles_type> *) dcpse;
+		auto dcpse_temp = (Dcpse_type<particles_type::dims, VerletList_type, particles_type> *) dcpse;
 		dcpse_temp->save(file);
 	}
 	/*! \brief Method for Loading the DCPSE Operator.
@@ -3383,7 +3536,7 @@ public:
 	 */
 	template<typename particles_type>
 	void load(particles_type &particles, const std::string &file) {
-		auto dcpse_temp = (Dcpse_type<particles_type::dims, particles_type> *) dcpse;
+		auto dcpse_temp = (Dcpse_type<particles_type::dims, VerletList_type, particles_type> *) dcpse;
 		dcpse_temp->load(file);
 	}
 	/*! \brief Method for Updating the DCPSE Operator by recomputing DCPSE Kernels.
@@ -3393,14 +3546,14 @@ public:
 	 */
 	template<typename particles_type>
 	void update(particles_type &particles) {
-		auto dcpse_temp = (Dcpse_type<particles_type::dims, particles_type> *) dcpse;
+		auto dcpse_temp = (Dcpse_type<particles_type::dims, VerletList_type, particles_type> *) dcpse;
 		dcpse_temp->initializeUpdate(particles);
 
 	}
 };
 
 
-template<template<unsigned int, typename, typename...> class Dcpse_type = Dcpse>
+template<typename VerletList_type, template<unsigned int, typename, typename...> class Dcpse_type = Dcpse>
 class Derivative_G_T {
 
 	void *dcpse;
@@ -3408,10 +3561,16 @@ class Derivative_G_T {
 public:
 
 	template<typename particles_type>
-	Derivative_G_T(particles_type &parts, unsigned int ord, typename particles_type::stype rCut,
-				   const Point<particles_type::dims, unsigned int> &p,double oversampling_factor = dcpse_oversampling_factor,
-				   support_options opt = support_options::RADIUS) {
-		dcpse = new Dcpse_type<particles_type::dims, particles_type>(parts, p, ord, rCut, oversampling_factor, opt);
+	Derivative_G_T(
+		particles_type &parts,
+		VerletList_type& verletList,
+		unsigned int ord,
+		typename particles_type::stype rCut,
+		const Point<particles_type::dims, unsigned int> &p,
+		double oversampling_factor = dcpse_oversampling_factor,
+		support_options opt = support_options::RADIUS
+	) {
+		dcpse = new Dcpse_type<particles_type::dims, VerletList_type, particles_type>(parts, verletList, p, ord, rCut, oversampling_factor, opt);
 	}
 
 	template<
@@ -3421,15 +3580,17 @@ public:
 	Derivative_G_T(
 		vector_type &particlesSupport,
 		vector_type2 &particlesDomain,
+		VerletList_type& verletList,
 		unsigned int ord,
 		typename vector_type::stype rCut,
 		const Point<vector_type::dims, unsigned int> &p,
 		double oversampling_factor = dcpse_oversampling_factor,
 		support_options opt = support_options::RADIUS
 	) {
-		dcpse = new Dcpse_type<vector_type::dims, vector_type, vector_type2>(
+		dcpse = new Dcpse_type<vector_type::dims, VerletList_type, vector_type, vector_type2>(
 			particlesSupport,
 			particlesDomain,
+			verletList,
 			p,
 			ord,
 			rCut,
@@ -3439,23 +3600,23 @@ public:
 	}
 
 	template<typename operand_type>
-	vector_dist_expression_op<operand_type, Dcpse_type<operand_type::vtype::dims, typename operand_type::vtype>, VECT_DCPSE>
+	vector_dist_expression_op<operand_type, Dcpse_type<operand_type::vtype::dims, VerletList_type, typename operand_type::vtype>, VECT_DCPSE>
 	operator()(operand_type arg) {
-		typedef Dcpse_type<operand_type::vtype::dims, typename operand_type::vtype> dcpse_type;
+		typedef Dcpse_type<operand_type::vtype::dims, VerletList_type, typename operand_type::vtype> dcpse_type;
 
 		return vector_dist_expression_op<operand_type, dcpse_type, VECT_DCPSE>(arg, *(dcpse_type *) dcpse);
 	}
 
 	template<typename particles_type>
 	void checkMomenta(particles_type &particles) {
-		auto dcpse_temp = (Dcpse_type<particles_type::dims, particles_type> *) dcpse;
+		auto dcpse_temp = (Dcpse_type<particles_type::dims, VerletList_type, particles_type> *) dcpse;
 		dcpse_temp->checkMomenta(particles);
 
 	}
 
 	template<unsigned int prp, typename particles_type>
 	void DrawKernel(particles_type &particles, int k) {
-		auto dcpse_temp = (Dcpse_type<particles_type::dims, particles_type> *) dcpse;
+		auto dcpse_temp = (Dcpse_type<particles_type::dims, VerletList_type, particles_type> *) dcpse;
 		dcpse_temp->template DrawKernel<prp>(particles, k);
 
 	}
@@ -3467,7 +3628,7 @@ public:
 	 */
 	template<typename particles_type>
 	void save(particles_type &particles, const std::string &file) {
-		auto dcpse_temp = (Dcpse_type<particles_type::dims, particles_type> *) dcpse;
+		auto dcpse_temp = (Dcpse_type<particles_type::dims, VerletList_type, particles_type> *) dcpse;
 		dcpse_temp->save(file);
 	}
 	/*! \brief Method for Loading the DCPSE Operator.
@@ -3477,7 +3638,7 @@ public:
 	 */
 	template<typename particles_type>
 	void load(particles_type &particles, const std::string &file) {
-		auto dcpse_temp = (Dcpse_type<particles_type::dims, particles_type> *) dcpse;
+		auto dcpse_temp = (Dcpse_type<particles_type::dims, VerletList_type, particles_type> *) dcpse;
 		dcpse_temp->load(file);
 	}
 	/*! \brief Method for Updating the DCPSE Operator by recomputing DCPSE Kernels.
@@ -3487,57 +3648,58 @@ public:
 	 */
 	template<typename particles_type>
 	void update(particles_type &particles) {
-		auto dcpse_temp = (Dcpse_type<particles_type::dims, particles_type> *) dcpse;
+		auto dcpse_temp = (Dcpse_type<particles_type::dims, VerletList_type, particles_type> *) dcpse;
 		dcpse_temp->initializeUpdate(particles);
 
 	}
 };
 
 //typedef PPInterpolation_T<Dcpse> PPInterpolation;
-typedef Derivative_x_T<Dcpse> Derivative_x;
-typedef Derivative_y_T<Dcpse> Derivative_y;
-typedef Derivative_z_T<Dcpse> Derivative_z;
-typedef Gradient_T<Dcpse> Gradient;
-typedef Curl2D_T<Dcpse> Curl2D;
-typedef Laplacian_T<Dcpse> Laplacian;
-typedef Divergence_T<Dcpse> Divergence;
-typedef Advection_T<Dcpse> Advection;
-typedef Derivative_xy_T<Dcpse> Derivative_xy;
-typedef Derivative_yz_T<Dcpse> Derivative_yz;
-typedef Derivative_xz_T<Dcpse> Derivative_xz;
-typedef Derivative_xx_T<Dcpse> Derivative_xx;
-typedef Derivative_yy_T<Dcpse> Derivative_yy;
-typedef Derivative_zz_T<Dcpse> Derivative_zz;
-typedef Derivative_xxx_T<Dcpse> Derivative_xxx;
-typedef Derivative_xxy_T<Dcpse> Derivative_xxy;
-typedef Derivative_yyx_T<Dcpse> Derivative_yyx;
-typedef Derivative_yyy_T<Dcpse> Derivative_yyy;
-typedef Derivative_xxxx_T<Dcpse> Derivative_xxxx;
-typedef Derivative_yyyy_T<Dcpse> Derivative_yyyy;
-typedef Derivative_xxyy_T<Dcpse> Derivative_xxyy;
-typedef Derivative_G_T<Dcpse> Derivative_G;
+template <typename VerletList_type> using Derivative_x = Derivative_x_T<VerletList_type, Dcpse>;
+template <typename VerletList_type> using Derivative_x = Derivative_x_T<VerletList_type, Dcpse>;
+template <typename VerletList_type> using Derivative_y = Derivative_y_T<VerletList_type, Dcpse>;
+template <typename VerletList_type> using Derivative_z = Derivative_z_T<VerletList_type, Dcpse>;
+template <typename VerletList_type> using Gradient = Gradient_T<VerletList_type, Dcpse>;
+template <typename VerletList_type> using Curl2D = Curl2D_T<VerletList_type, Dcpse>;
+template <typename VerletList_type> using Laplacian = Laplacian_T<VerletList_type, Dcpse>;
+template <typename VerletList_type> using Divergence = Divergence_T<VerletList_type, Dcpse>;
+template <typename VerletList_type> using Advection = Advection_T<VerletList_type, Dcpse>;
+template <typename VerletList_type> using Derivative_xy = Derivative_xy_T<VerletList_type, Dcpse>;
+template <typename VerletList_type> using Derivative_yz = Derivative_yz_T<VerletList_type, Dcpse>;
+template <typename VerletList_type> using Derivative_xz = Derivative_xz_T<VerletList_type, Dcpse>;
+template <typename VerletList_type> using Derivative_xx = Derivative_xx_T<VerletList_type, Dcpse>;
+template <typename VerletList_type> using Derivative_yy = Derivative_yy_T<VerletList_type, Dcpse>;
+template <typename VerletList_type> using Derivative_zz = Derivative_zz_T<VerletList_type, Dcpse>;
+template <typename VerletList_type> using Derivative_xxx = Derivative_xxx_T<VerletList_type, Dcpse>;
+template <typename VerletList_type> using Derivative_xxy = Derivative_xxy_T<VerletList_type, Dcpse>;
+template <typename VerletList_type> using Derivative_yyx = Derivative_yyx_T<VerletList_type, Dcpse>;
+template <typename VerletList_type> using Derivative_yyy = Derivative_yyy_T<VerletList_type, Dcpse>;
+template <typename VerletList_type> using Derivative_xxxx = Derivative_xxxx_T<VerletList_type, Dcpse>;
+template <typename VerletList_type> using Derivative_yyyy = Derivative_yyyy_T<VerletList_type, Dcpse>;
+template <typename VerletList_type> using Derivative_xxyy = Derivative_xxyy_T<VerletList_type, Dcpse>;
+template <typename VerletList_type> using Derivative_G = Derivative_G_T<VerletList_type, Dcpse>;
 
 
 #if defined(__NVCC__)
-typedef Derivative_x_T<Dcpse_gpu> Derivative_x_gpu;
-typedef Derivative_y_T<Dcpse_gpu> Derivative_y_gpu;
-typedef Derivative_z_T<Dcpse_gpu> Derivative_z_gpu;
-typedef Gradient_T<Dcpse_gpu> Gradient_gpu;
-typedef Curl2D_T<Dcpse_gpu> Curl2D_gpu;
-typedef Laplacian_T<Dcpse_gpu> Laplacian_gpu;
-typedef Divergence_T<Dcpse_gpu> Divergence_gpu;
-typedef Advection_T<Dcpse_gpu> Advection_gpu;
-typedef Derivative_xy_T<Dcpse_gpu> Derivative_xy_gpu;
-typedef Derivative_yz_T<Dcpse_gpu> Derivative_yz_gpu;
-typedef Derivative_xz_T<Dcpse_gpu> Derivative_xz_gpu;
-typedef Derivative_xx_T<Dcpse_gpu> Derivative_xx_gpu;
-typedef Derivative_yy_T<Dcpse_gpu> Derivative_yy_gpu;
-typedef Derivative_zz_T<Dcpse_gpu> Derivative_zz_gpu;
-typedef Derivative_xxx_T<Dcpse_gpu> Derivative_xxx_gpu;
-typedef Derivative_xxy_T<Dcpse_gpu> Derivative_xxy_gpu;
-typedef Derivative_yyx_T<Dcpse_gpu> Derivative_yyx_gpu;
-typedef Derivative_yyy_T<Dcpse_gpu> Derivative_yyy_gpu;
-typedef Derivative_G_T<Dcpse_gpu> Derivative_G_gpu;
+template <typename VerletList_type> using Derivative_x_gpu = Derivative_x_T<VerletList_type, Dcpse_gpu>;
+template <typename VerletList_type> using Derivative_y_gpu = Derivative_y_T<VerletList_type, Dcpse_gpu>;
+template <typename VerletList_type> using Derivative_z_gpu = Derivative_z_T<VerletList_type, Dcpse_gpu>;
+template <typename VerletList_type> using Gradient_gpu = Gradient_T<VerletList_type, Dcpse_gpu>;
+template <typename VerletList_type> using Curl2D_gpu = Curl2D_T<VerletList_type, Dcpse_gpu>;
+template <typename VerletList_type> using Laplacian_gpu = Laplacian_T<VerletList_type, Dcpse_gpu>;
+template <typename VerletList_type> using Divergence_gpu = Divergence_T<VerletList_type, Dcpse_gpu>;
+template <typename VerletList_type> using Advection_gpu = Advection_T<VerletList_type, Dcpse_gpu>;
+template <typename VerletList_type> using Derivative_xy_gpu = Derivative_xy_T<VerletList_type, Dcpse_gpu>;
+template <typename VerletList_type> using Derivative_yz_gpu = Derivative_yz_T<VerletList_type, Dcpse_gpu>;
+template <typename VerletList_type> using Derivative_xz_gpu = Derivative_xz_T<VerletList_type, Dcpse_gpu>;
+template <typename VerletList_type> using Derivative_xx_gpu = Derivative_xx_T<VerletList_type, Dcpse_gpu>;
+template <typename VerletList_type> using Derivative_yy_gpu = Derivative_yy_T<VerletList_type, Dcpse_gpu>;
+template <typename VerletList_type> using Derivative_zz_gpu = Derivative_zz_T<VerletList_type, Dcpse_gpu>;
+template <typename VerletList_type> using Derivative_xxx_gpu = Derivative_xxx_T<VerletList_type, Dcpse_gpu>;
+template <typename VerletList_type> using Derivative_xxy_gpu = Derivative_xxy_T<VerletList_type, Dcpse_gpu>;
+template <typename VerletList_type> using Derivative_yyx_gpu = Derivative_yyx_T<VerletList_type, Dcpse_gpu>;
+template <typename VerletList_type> using Derivative_yyy_gpu = Derivative_yyy_T<VerletList_type, Dcpse_gpu>;
+template <typename VerletList_type> using Derivative_G_gpu = Derivative_G_T<VerletList_type, Dcpse_gpu>;
 #endif
 
 #endif /*EIGEN */

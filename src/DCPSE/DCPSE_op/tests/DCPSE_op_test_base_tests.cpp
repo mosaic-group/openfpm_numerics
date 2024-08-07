@@ -22,6 +22,7 @@
 #include "DCPSE/DCPSE_op/DCPSE_Solver.hpp"
 #include "Operators/Vector/vector_dist_operators.hpp"
 #include "Vector/vector_dist_subset.hpp"
+#include "Vector/vector_dist_multiphase_functions.hpp"
 #include "DCPSE/DCPSE_op/EqnsStruct.hpp"
 #include "DCPSE/DcpseInterpolation.hpp"
 
@@ -69,10 +70,13 @@ BOOST_AUTO_TEST_CASE(dcpse_op_tests) {
 
         domain.map();
         domain.ghost_get<0>();
-        Derivative_x Dx(domain, 2, rCut);
-        Derivative_y Dy(domain, 2, rCut);
-        Gradient Grad(domain, 2, rCut);
-        Laplacian Lap(domain, 2, rCut);
+
+        auto verletList = domain.template getVerlet<VL_NON_SYMMETRIC|VL_SKIP_REF_PART>(rCut);
+
+        Derivative_x<decltype(verletList)> Dx(domain, verletList, 2, rCut);
+        Derivative_y<decltype(verletList)> Dy(domain, verletList, 2, rCut);
+        Gradient<decltype(verletList)> Grad(domain, verletList, 2, rCut);
+        Laplacian<decltype(verletList)> Lap(domain, verletList, 2, rCut);
         auto v = getV<1>(domain);
         auto P = getV<0>(domain);
 
@@ -139,16 +143,18 @@ BOOST_AUTO_TEST_CASE(dcpse_op_tests) {
 
         domain.map();
         domain.ghost_get<0>();
-        Derivative_x Dx(domain, 2, rCut);
-        Derivative_y Dy(domain, 2, rCut);
+
+        auto verletList = domain.template getVerlet<VL_NON_SYMMETRIC|VL_SKIP_REF_PART>(rCut);
+        Derivative_x<decltype(verletList)> Dx(domain, verletList, 2, rCut);
+        Derivative_y<decltype(verletList)> Dy(domain, verletList, 2, rCut);
         auto v = getV<1>(domain);
         auto v2 = getV<3>(domain);
         auto P = getV<0>(domain);
         v2 = 2*Dx(P) + Dy(P);
         Dx.save(domain,"DX_test");
         Dy.save(domain,"DY_test");
-        Derivative_x DxLoaded(domain, 2, rCut,1,support_options::LOAD);
-        Derivative_y DyLoaded(domain, 2, rCut,1,support_options::LOAD);
+        Derivative_x<decltype(verletList)> DxLoaded(domain, verletList, 2, rCut,1,support_options::LOAD);
+        Derivative_y<decltype(verletList)> DyLoaded(domain, verletList, 2, rCut,1,support_options::LOAD);
         DxLoaded.load(domain,"DX_test");
         DyLoaded.load(domain,"DY_test");
         v= 2*DxLoaded(P)+DyLoaded(P);
@@ -214,8 +220,9 @@ BOOST_AUTO_TEST_CASE(dcpse_op_tests) {
         auto v = getV<1>(domain);
         auto v2 = getV<3>(domain);
         auto P = getV<0>(domain);
-        Derivative_x DxLoaded(domain, 2, rCut,1,support_options::LOAD);
-        Derivative_y DyLoaded(domain, 2, rCut,1,support_options::LOAD);
+        auto verletList = domain.template getVerlet<VL_NON_SYMMETRIC|VL_SKIP_REF_PART>(rCut);
+        Derivative_x<decltype(verletList)> DxLoaded(domain, verletList, 2, rCut,1,support_options::LOAD);
+        Derivative_y<decltype(verletList)> DyLoaded(domain, verletList, 2, rCut,1,support_options::LOAD);
         DxLoaded.load(domain,"DX_test");
         DyLoaded.load(domain,"DY_test");
         v= 2*DxLoaded(P)+DyLoaded(P);
@@ -244,7 +251,7 @@ BOOST_AUTO_TEST_CASE(dcpse_op_tests) {
         spacing[0] = 2 * M_PI / (sz[0] - 1);
         spacing[1] = 2 * M_PI / (sz[1] - 1);
         Ghost<2, double> ghost(spacing[0] * 3.9);
-        double rCut = 3.9 * spacing[0];
+        double rCut = 4.1 * spacing[0];
         BOOST_TEST_MESSAGE("Init vector_dist...");
         double sigma2 = spacing[0] * spacing[1] / (2 * 4);
 
@@ -279,7 +286,8 @@ BOOST_AUTO_TEST_CASE(dcpse_op_tests) {
         domain.map();
         domain.ghost_get<0>();
 
-        PPInterpolation<vector_type,vector_type> Fx(domain,domain, 2, rCut);
+        auto verletList = domain.template getVerlet<VL_NON_SYMMETRIC>(rCut);
+        PPInterpolation<vector_type,vector_type,decltype(verletList)> Fx(domain, domain, verletList, 2, rCut);
         auto v = getV<1>(domain);
         auto P = getV<0>(domain);
 
@@ -357,7 +365,10 @@ BOOST_AUTO_TEST_CASE(dcpse_op_tests) {
         domain.ghost_get<0>();
         domain2.ghost_get<0>();
 
-        PPInterpolation<vector_dist,vector_dist> Fx(domain2,domain, 2, rCut);
+        auto cellListDomain2 = domain2.getCellList(rCut);
+        auto verletList = createVerlet(domain,domain2,cellListDomain2,rCut);
+
+        PPInterpolation<vector_dist,vector_dist,decltype(verletList)> Fx(domain2, domain, verletList, 2, rCut);
         //auto v = getV<1>(domain);
         //auto P = getV<0>(domain);
         Fx.p2p<0,1>();
@@ -428,7 +439,8 @@ BOOST_AUTO_TEST_CASE(dcpse_op_tests) {
         domain.map();
         domain.ghost_get<0>();
 
-        Laplacian Lap(domain, 2, rCut);
+        auto verletList = domain.template getVerlet<VL_NON_SYMMETRIC|VL_SKIP_REF_PART>(rCut);
+        Laplacian<decltype(verletList)> Lap(domain, verletList, 2, rCut);
         auto v = getV<1>(domain);
         auto P = getV<0>(domain);
         auto vv = getV<2>(domain);
@@ -515,9 +527,10 @@ BOOST_AUTO_TEST_CASE(dcpse_op_tests) {
         domain.map();
         domain.ghost_get<0>();
 
-        Divergence Div(domain, 2, rCut);
-        Derivative_x Dx(domain, 2, rCut);
-        Derivative_y Dy(domain, 2, rCut);
+        auto verletList = domain.template getVerlet<VL_NON_SYMMETRIC|VL_SKIP_REF_PART>(rCut);
+        Divergence<decltype(verletList)> Div(domain, verletList, 2, rCut);
+        Derivative_x<decltype(verletList)> Dx(domain, verletList, 2, rCut);
+        Derivative_y<decltype(verletList)> Dy(domain, verletList, 2, rCut);
 
         auto v = getV<1>(domain);
         auto anasol = getV<0>(domain);
@@ -620,7 +633,8 @@ BOOST_AUTO_TEST_CASE(dcpse_op_tests) {
         domain.map();
         domain.ghost_get<0>();
 
-        Advection Adv(domain, 2, rCut);
+        auto verletList = domain.template getVerlet<VL_NON_SYMMETRIC|VL_SKIP_REF_PART>(rCut);
+        Advection<decltype(verletList)> Adv(domain, verletList, 2, rCut);
         auto v = getV<1>(domain);
         auto P = getV<0>(domain);
         auto dv = getV<3>(domain);
@@ -707,7 +721,8 @@ BOOST_AUTO_TEST_CASE(dcpse_op_tests) {
         auto Sig = getV<3>(Particles);
 
 
-        Derivative_x Dx(Particles, 2, rCut,2);
+        auto verletList = Particles.template getVerlet<VL_NON_SYMMETRIC|VL_SKIP_REF_PART>(rCut);
+        Derivative_x<decltype(verletList)> Dx(Particles, verletList, 2, rCut,2);
 
         P = Dx(V[0]);
         S = V[0]*V[0] + V[1]*V[1];
@@ -795,8 +810,8 @@ BOOST_AUTO_TEST_CASE(dcpse_op_tests) {
         auto S = getV<2>(Particles);
         auto Sig = getV<3>(Particles);
 
-
-        Derivative_x Dx(Particles, 2, rCut,2);
+        auto verletList = Particles.template getVerlet<VL_NON_SYMMETRIC|VL_SKIP_REF_PART>(rCut);
+        Derivative_x<decltype(verletList)> Dx(Particles, verletList, 2, rCut,2);
 
         P = Dx(V[0]);
         S = V[0]*V[0] + V[1]*V[1]+V[2]*V[2];
@@ -910,10 +925,12 @@ BOOST_AUTO_TEST_CASE(dcpse_op_tests) {
         domain.map();
         domain.ghost_get<0>();
 
-        //Derivative_x Dx(domain, 2, rCut);
-        Derivative_xx Dxx(domain, 2, rCut);
-        //Derivative_y Dy(domain, 2, rCut);
-        Derivative_yy Dyy(domain, 2, rCut);
+        auto verletList = domain.template getVerlet<VL_NON_SYMMETRIC|VL_SKIP_REF_PART>(rCut);
+
+        //Derivative_x<decltype(verletList)> Dx(domain, verletList, 2, rCut);
+        Derivative_xx<decltype(verletList)> Dxx(domain, verletList, 2, rCut);
+        //Derivative_y<decltype(verletList)> Dy(domain, verletList, 2, rCut);
+        Derivative_yy<decltype(verletList)> Dyy(domain, verletList, 2, rCut);
         auto C = getV<0>(domain);
         auto V = getV<3>(domain);
         auto Cnew = getV<1>(domain);
@@ -948,6 +965,7 @@ BOOST_AUTO_TEST_CASE(dcpse_op_tests) {
                 ++it2;
             }
             tt.start();
+            domain.updateVerlet(verletList,rCut);
             Dxx.update(domain);
             Dyy.update(domain);
             tt.stop();

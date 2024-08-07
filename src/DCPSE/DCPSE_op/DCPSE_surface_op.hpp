@@ -8,7 +8,7 @@
 
 #include "DCPSE/DCPSE_op/DCPSE_op.hpp"
 
-template<unsigned int NORMAL_ID>
+template<unsigned int NORMAL_ID, typename VerletList_type>
 class SurfaceDerivative_x {
 
     void *dcpse;
@@ -27,38 +27,44 @@ public:
      *
      */
     template<typename particles_type>
-    SurfaceDerivative_x(particles_type &parts, unsigned int ord, typename particles_type::stype rCut,typename particles_type::stype nSpacing,
-                    support_options opt = support_options::RADIUS) {
+    SurfaceDerivative_x(
+        particles_type &parts,
+        VerletList_type& verletList,
+        unsigned int ord,
+        typename particles_type::stype rCut,
+        typename particles_type::stype nSpacing,
+        support_options opt = support_options::RADIUS
+    ) {
         Point<particles_type::dims, unsigned int> p;
         p.zero();
         p.get(0) = 1;
 
-        dcpse = new SurfaceDcpse<particles_type::dims, particles_type>(parts, p, ord, rCut,nSpacing,value_t<NORMAL_ID>(), opt);
+        dcpse = new SurfaceDcpse<particles_type::dims, VerletList_type, particles_type>(parts, verletList, p, ord, rCut,nSpacing,value_t<NORMAL_ID>(), opt);
     }
 
     template<typename particles_type>
     void deallocate(particles_type &parts) {
-        delete (Dcpse<particles_type::dims, particles_type> *) dcpse;
+        delete (Dcpse<particles_type::dims, VerletList_type, particles_type> *) dcpse;
     }
 
     template<typename operand_type>
-    vector_dist_expression_op<operand_type, Dcpse<operand_type::vtype::dims, typename operand_type::vtype>, VECT_DCPSE>
+    vector_dist_expression_op<operand_type, Dcpse<operand_type::vtype::dims, VerletList_type, typename operand_type::vtype>, VECT_DCPSE>
     operator()(operand_type arg) {
-        typedef Dcpse<operand_type::vtype::dims, typename operand_type::vtype> dcpse_type;
+        typedef Dcpse<operand_type::vtype::dims, VerletList_type, typename operand_type::vtype> dcpse_type;
 
         return vector_dist_expression_op<operand_type, dcpse_type, VECT_DCPSE>(arg, *(dcpse_type *) dcpse);
     }
 
     template<typename particles_type>
     void checkMomenta(particles_type &particles) {
-        auto dcpse_temp = (Dcpse<particles_type::dims, particles_type> *) dcpse;
+        auto dcpse_temp = (Dcpse<particles_type::dims, VerletList_type, particles_type> *) dcpse;
         dcpse_temp->checkMomenta(particles);
 
     }
 
     template<unsigned int prp, typename particles_type>
     void DrawKernel(particles_type &particles, int k) {
-        auto dcpse_temp = (Dcpse<particles_type::dims, particles_type> *) dcpse;
+        auto dcpse_temp = (Dcpse<particles_type::dims, VerletList_type, particles_type> *) dcpse;
         dcpse_temp->template DrawKernel<prp>(particles, k);
 
     }
@@ -70,7 +76,7 @@ public:
      */
     template<typename particles_type>
     void save(particles_type &particles, const std::string &file) {
-        auto dcpse_temp = (Dcpse<particles_type::dims, particles_type> *) dcpse;
+        auto dcpse_temp = (Dcpse<particles_type::dims, VerletList_type, particles_type> *) dcpse;
         dcpse_temp->save(file);
     }
     /*! \brief Method for Loading the DCPSE Operator.
@@ -80,7 +86,7 @@ public:
      */
     template<typename particles_type>
     void load(particles_type &particles, const std::string &file) {
-        auto dcpse_temp = (Dcpse<particles_type::dims, particles_type> *) dcpse;
+        auto dcpse_temp = (Dcpse<particles_type::dims, VerletList_type, particles_type> *) dcpse;
         dcpse_temp->load(file);
     }
 
@@ -91,14 +97,14 @@ public:
      */
     template<typename particles_type>
     void update(particles_type &particles) {
-        auto dcpse_temp = (Dcpse<particles_type::dims, particles_type> *) dcpse;
+        auto dcpse_temp = (Dcpse<particles_type::dims, VerletList_type, particles_type> *) dcpse;
         dcpse_temp->template createNormalParticles<NORMAL_ID>(particles);
         dcpse_temp->initializeUpdate(particles);
         dcpse_temp->accumulateAndDeleteNormalParticles(particles);
     }
 };
 
-template<unsigned int NORMAL_ID>
+template<unsigned int NORMAL_ID, typename VerletList_type>
 class SurfaceDerivative_y {
 
     void *dcpse;
@@ -117,38 +123,44 @@ public:
      *
      */
     template<typename particles_type>
-    SurfaceDerivative_y(particles_type &parts, unsigned int ord, typename particles_type::stype rCut,typename particles_type::stype nSpacing,
-                    support_options opt = support_options::RADIUS) {
+    SurfaceDerivative_y(
+        particles_type &parts,
+        VerletList_type& verletList,
+        unsigned int ord,
+        typename particles_type::stype rCut,
+        typename particles_type::stype nSpacing,
+        support_options opt = support_options::RADIUS
+    ) {
         Point<particles_type::dims, unsigned int> p;
         p.zero();
         p.get(1) = 1;
 
-        dcpse = new SurfaceDcpse<particles_type::dims, particles_type>(parts, p, ord, rCut,nSpacing,value_t<NORMAL_ID>(), opt);
+        dcpse = new SurfaceDcpse<particles_type::dims, VerletList_type, particles_type>(parts, verletList, p, ord, rCut,nSpacing,value_t<NORMAL_ID>(), opt);
     }
 
     template<typename particles_type>
     void deallocate(particles_type &parts) {
-        delete (Dcpse<particles_type::dims, particles_type> *) dcpse;
+        delete (Dcpse<particles_type::dims, VerletList_type, particles_type> *) dcpse;
     }
 
     template<typename operand_type>
-    vector_dist_expression_op<operand_type, Dcpse<operand_type::vtype::dims, typename operand_type::vtype>, VECT_DCPSE>
+    vector_dist_expression_op<operand_type, Dcpse<operand_type::vtype::dims, VerletList_type, typename operand_type::vtype>, VECT_DCPSE>
     operator()(operand_type arg) {
-        typedef Dcpse<operand_type::vtype::dims, typename operand_type::vtype> dcpse_type;
+        typedef Dcpse<operand_type::vtype::dims, VerletList_type, typename operand_type::vtype> dcpse_type;
 
         return vector_dist_expression_op<operand_type, dcpse_type, VECT_DCPSE>(arg, *(dcpse_type *) dcpse);
     }
 
     template<typename particles_type>
     void checkMomenta(particles_type &particles) {
-        auto dcpse_temp = (Dcpse<particles_type::dims, particles_type> *) dcpse;
+        auto dcpse_temp = (Dcpse<particles_type::dims, VerletList_type, particles_type> *) dcpse;
         dcpse_temp->checkMomenta(particles);
 
     }
 
     template<unsigned int prp, typename particles_type>
     void DrawKernel(particles_type &particles, int k) {
-        auto dcpse_temp = (Dcpse<particles_type::dims, particles_type> *) dcpse;
+        auto dcpse_temp = (Dcpse<particles_type::dims, VerletList_type, particles_type> *) dcpse;
         dcpse_temp->template DrawKernel<prp>(particles, k);
 
     }
@@ -161,7 +173,7 @@ public:
      */
     template<typename particles_type>
     void save(particles_type &particles, const std::string &file) {
-        auto dcpse_temp = (Dcpse<particles_type::dims, particles_type> *) dcpse;
+        auto dcpse_temp = (Dcpse<particles_type::dims, VerletList_type, particles_type> *) dcpse;
         dcpse_temp->save(file);
     }
     /*! \brief Method for Loading the DCPSE Operator.
@@ -171,7 +183,7 @@ public:
      */
     template<typename particles_type>
     void load(particles_type &particles, const std::string &file) {
-        auto dcpse_temp = (Dcpse<particles_type::dims, particles_type> *) dcpse;
+        auto dcpse_temp = (Dcpse<particles_type::dims, VerletList_type, particles_type> *) dcpse;
         dcpse_temp->load(file);
     }
     /*! \brief Method for Updating the DCPSE Operator by recomputing DCPSE Kernels.
@@ -181,7 +193,7 @@ public:
      */
     template<typename particles_type>
     void update(particles_type &particles) {
-        auto dcpse_temp = (Dcpse<particles_type::dims, particles_type> *) dcpse;
+        auto dcpse_temp = (Dcpse<particles_type::dims, VerletList_type, particles_type> *) dcpse;
         dcpse_temp->template createNormalParticles<NORMAL_ID>(particles);
         dcpse_temp->initializeUpdate(particles);
         dcpse_temp->accumulateAndDeleteNormalParticles(particles);
@@ -189,7 +201,7 @@ public:
     }
 };
 
-template<unsigned int NORMAL_ID>
+template<unsigned int NORMAL_ID, typename VerletList_type>
 class SurfaceDerivative_z {
 
     void *dcpse;
@@ -208,38 +220,44 @@ public:
      *
      */
     template<typename particles_type>
-    SurfaceDerivative_z(particles_type &parts, unsigned int ord, typename particles_type::stype rCut,typename particles_type::stype nSpacing,
-                    support_options opt = support_options::RADIUS) {
+    SurfaceDerivative_z(
+        particles_type &parts,
+        VerletList_type& verletList,
+        unsigned int ord,
+        typename particles_type::stype rCut,
+        typename particles_type::stype nSpacing,
+        support_options opt = support_options::RADIUS
+    ) {
         Point<particles_type::dims, unsigned int> p;
         p.zero();
         p.get(2) = 1;
 
-        dcpse = new SurfaceDcpse<particles_type::dims, particles_type>(parts, p, ord, rCut,nSpacing,value_t<NORMAL_ID>(), opt);
+        dcpse = new SurfaceDcpse<particles_type::dims, VerletList_type, particles_type>(parts, verletList, p, ord, rCut,nSpacing,value_t<NORMAL_ID>(), opt);
     }
 
     template<typename particles_type>
     void deallocate(particles_type &parts) {
-        delete (Dcpse<particles_type::dims, particles_type> *) dcpse;
+        delete (Dcpse<particles_type::dims, VerletList_type, particles_type> *) dcpse;
     }
 
     template<typename operand_type>
-    vector_dist_expression_op<operand_type, Dcpse<operand_type::vtype::dims, typename operand_type::vtype>, VECT_DCPSE>
+    vector_dist_expression_op<operand_type, Dcpse<operand_type::vtype::dims, VerletList_type, typename operand_type::vtype>, VECT_DCPSE>
     operator()(operand_type arg) {
-        typedef Dcpse<operand_type::vtype::dims, typename operand_type::vtype> dcpse_type;
+        typedef Dcpse<operand_type::vtype::dims, VerletList_type, typename operand_type::vtype> dcpse_type;
 
         return vector_dist_expression_op<operand_type, dcpse_type, VECT_DCPSE>(arg, *(dcpse_type *) dcpse);
     }
 
     template<typename particles_type>
     void checkMomenta(particles_type &particles) {
-        auto dcpse_temp = (Dcpse<particles_type::dims, particles_type> *) dcpse;
+        auto dcpse_temp = (Dcpse<particles_type::dims, VerletList_type, particles_type> *) dcpse;
         dcpse_temp->checkMomenta(particles);
 
     }
 
     template<unsigned int prp, typename particles_type>
     void DrawKernel(particles_type &particles, int k) {
-        auto dcpse_temp = (Dcpse<particles_type::dims, particles_type> *) dcpse;
+        auto dcpse_temp = (Dcpse<particles_type::dims, VerletList_type, particles_type> *) dcpse;
         dcpse_temp->template DrawKernel<prp>(particles, k);
 
     }
@@ -251,7 +269,7 @@ public:
      */
     template<typename particles_type>
     void save(particles_type &particles, const std::string &file) {
-        auto dcpse_temp = (Dcpse<particles_type::dims, particles_type> *) dcpse;
+        auto dcpse_temp = (Dcpse<particles_type::dims, VerletList_type, particles_type> *) dcpse;
         dcpse_temp->save(file);
     }
     /*! \brief Method for Loading the DCPSE Operator.
@@ -261,7 +279,7 @@ public:
      */
     template<typename particles_type>
     void load(particles_type &particles, const std::string &file) {
-        auto dcpse_temp = (Dcpse<particles_type::dims, particles_type> *) dcpse;
+        auto dcpse_temp = (Dcpse<particles_type::dims, VerletList_type, particles_type> *) dcpse;
         dcpse_temp->load(file);
     }
     /*! \brief Method for Updating the DCPSE Operator by recomputing DCPSE Kernels.
@@ -271,7 +289,7 @@ public:
      */
     template<typename particles_type>
     void update(particles_type &particles) {
-        auto dcpse_temp = (Dcpse<particles_type::dims, particles_type> *) dcpse;
+        auto dcpse_temp = (Dcpse<particles_type::dims, VerletList_type, particles_type> *) dcpse;
         dcpse_temp->template createNormalParticles<NORMAL_ID>(particles);
         dcpse_temp->initializeUpdate(particles);
         dcpse_temp->accumulateAndDeleteNormalParticles(particles);
@@ -279,7 +297,7 @@ public:
     }
 };
 
-template<unsigned int NORMAL_ID>
+template<unsigned int NORMAL_ID, typename VerletList_type>
 class Laplace_Beltrami {
 
     void *dcpse;
@@ -298,40 +316,46 @@ public:
      *
      */
     template<typename particles_type>
-    Laplace_Beltrami(particles_type &parts, unsigned int ord, typename particles_type::stype rCut,typename particles_type::stype nSpacing,
-                    support_options opt = support_options::RADIUS) {
+    Laplace_Beltrami(
+        particles_type &parts,
+        VerletList_type& verletList,
+        unsigned int ord,
+        typename particles_type::stype rCut,
+        typename particles_type::stype nSpacing,
+        support_options opt = support_options::RADIUS
+    ) {
         Point<particles_type::dims, unsigned int> p;
         p.zero();
         p.get(0) = 2;
         p.get(1) = 2;
         p.get(2) = 2;
 
-        dcpse = new SurfaceDcpse<particles_type::dims, particles_type>(parts, p, ord, rCut,nSpacing,value_t<NORMAL_ID>(), opt);
+        dcpse = new SurfaceDcpse<particles_type::dims, VerletList_type, particles_type>(parts, verletList, p, ord, rCut,nSpacing,value_t<NORMAL_ID>(), opt);
     }
 
     template<typename particles_type>
     void deallocate(particles_type &parts) {
-        delete (Dcpse<particles_type::dims, particles_type> *) dcpse;
+        delete (Dcpse<particles_type::dims, VerletList_type, particles_type> *) dcpse;
     }
 
     template<typename operand_type>
-    vector_dist_expression_op<operand_type, Dcpse<operand_type::vtype::dims, typename operand_type::vtype>, VECT_DCPSE>
+    vector_dist_expression_op<operand_type, Dcpse<operand_type::vtype::dims, VerletList_type, typename operand_type::vtype>, VECT_DCPSE>
     operator()(operand_type arg) {
-        typedef Dcpse<operand_type::vtype::dims, typename operand_type::vtype> dcpse_type;
+        typedef Dcpse<operand_type::vtype::dims, VerletList_type, typename operand_type::vtype> dcpse_type;
 
         return vector_dist_expression_op<operand_type, dcpse_type, VECT_DCPSE>(arg, *(dcpse_type *) dcpse);
     }
 
     template<typename particles_type>
     void checkMomenta(particles_type &particles) {
-        auto dcpse_temp = (Dcpse<particles_type::dims, particles_type> *) dcpse;
+        auto dcpse_temp = (Dcpse<particles_type::dims, VerletList_type, particles_type> *) dcpse;
         dcpse_temp->checkMomenta(particles);
 
     }
 
     template<unsigned int prp, typename particles_type>
     void DrawKernel(particles_type &particles, int k) {
-        auto dcpse_temp = (Dcpse<particles_type::dims, particles_type> *) dcpse;
+        auto dcpse_temp = (Dcpse<particles_type::dims, VerletList_type, particles_type> *) dcpse;
         dcpse_temp->template DrawKernel<prp>(particles, k);
 
     }
@@ -343,7 +367,7 @@ public:
      */
     template<typename particles_type>
     void save(particles_type &particles, const std::string &file) {
-        auto dcpse_temp = (Dcpse<particles_type::dims, particles_type> *) dcpse;
+        auto dcpse_temp = (Dcpse<particles_type::dims, VerletList_type, particles_type> *) dcpse;
         dcpse_temp->save(file);
     }
     /*! \brief Method for Loading the DCPSE Operator.
@@ -353,7 +377,7 @@ public:
      */
     template<typename particles_type>
     void load(particles_type &particles, const std::string &file) {
-        auto dcpse_temp = (Dcpse<particles_type::dims, particles_type> *) dcpse;
+        auto dcpse_temp = (Dcpse<particles_type::dims, VerletList_type, particles_type> *) dcpse;
         dcpse_temp->load(file);
     }
     /*! \brief Method for Updating the DCPSE Operator by recomputing DCPSE Kernels.
@@ -363,7 +387,7 @@ public:
      */
     template<typename particles_type>
     void update(particles_type &particles) {
-        auto dcpse_temp = (Dcpse<particles_type::dims, particles_type> *) dcpse;
+        auto dcpse_temp = (Dcpse<particles_type::dims, VerletList_type, particles_type> *) dcpse;
         dcpse_temp->template createNormalParticles<NORMAL_ID>(particles);
         dcpse_temp->template createNormalParticles<NORMAL_ID>(particles);
         dcpse_temp->initializeUpdate(particles);
@@ -371,7 +395,7 @@ public:
     }
 };
 
-template<unsigned int NORMAL_ID>
+template<unsigned int NORMAL_ID, typename VerletList_type>
 class SurfaceDerivative_xx {
 
     void *dcpse;
@@ -390,38 +414,45 @@ public:
      *
      */
     template<typename particles_type>
-    SurfaceDerivative_xx(particles_type &parts, unsigned int ord, typename particles_type::stype rCut,typename particles_type::stype nSpacing,
-                    support_options opt = support_options::RADIUS) {
+    SurfaceDerivative_xx(
+        particles_type &parts,
+        VerletList_type& verletList,
+        unsigned int ord,
+        typename particles_type::stype rCut,
+        typename particles_type::stype nSpacing,
+        support_options opt = support_options::RADIUS
+    ) {
         Point<particles_type::dims, unsigned int> p;
         p.zero();
         p.get(0) = 2;
 
-        dcpse = new SurfaceDcpse<particles_type::dims, particles_type>(parts, p, ord, rCut,nSpacing,value_t<NORMAL_ID>(), opt);
+        std::cout << "SurfaceDerivative_xx " << ord << " " << rCut << " " << nSpacing << " " << opt << std::endl;
+        dcpse = new SurfaceDcpse<particles_type::dims, VerletList_type, particles_type>(parts, verletList, p, ord, rCut,nSpacing,value_t<NORMAL_ID>(), opt);
     }
 
     template<typename particles_type>
     void deallocate(particles_type &parts) {
-        delete (Dcpse<particles_type::dims, particles_type> *) dcpse;
+        delete (Dcpse<particles_type::dims, VerletList_type, particles_type> *) dcpse;
     }
 
     template<typename operand_type>
-    vector_dist_expression_op<operand_type, Dcpse<operand_type::vtype::dims, typename operand_type::vtype>, VECT_DCPSE>
+    vector_dist_expression_op<operand_type, Dcpse<operand_type::vtype::dims, VerletList_type, typename operand_type::vtype>, VECT_DCPSE>
     operator()(operand_type arg) {
-        typedef Dcpse<operand_type::vtype::dims, typename operand_type::vtype> dcpse_type;
+        typedef Dcpse<operand_type::vtype::dims, VerletList_type, typename operand_type::vtype> dcpse_type;
 
         return vector_dist_expression_op<operand_type, dcpse_type, VECT_DCPSE>(arg, *(dcpse_type *) dcpse);
     }
 
     template<typename particles_type>
     void checkMomenta(particles_type &particles) {
-        auto dcpse_temp = (Dcpse<particles_type::dims, particles_type> *) dcpse;
+        auto dcpse_temp = (Dcpse<particles_type::dims, VerletList_type, particles_type> *) dcpse;
         dcpse_temp->checkMomenta(particles);
 
     }
 
     template<unsigned int prp, typename particles_type>
     void DrawKernel(particles_type &particles, int k) {
-        auto dcpse_temp = (Dcpse<particles_type::dims, particles_type> *) dcpse;
+        auto dcpse_temp = (Dcpse<particles_type::dims, VerletList_type, particles_type> *) dcpse;
         dcpse_temp->template DrawKernel<prp>(particles, k);
 
     }
@@ -433,7 +464,7 @@ public:
      */
     template<typename particles_type>
     void save(particles_type &particles, const std::string &file) {
-        auto dcpse_temp = (Dcpse<particles_type::dims, particles_type> *) dcpse;
+        auto dcpse_temp = (Dcpse<particles_type::dims, VerletList_type, particles_type> *) dcpse;
         dcpse_temp->save(file);
     }
     /*! \brief Method for Loading the DCPSE Operator.
@@ -443,7 +474,7 @@ public:
      */
     template<typename particles_type>
     void load(particles_type &particles, const std::string &file) {
-        auto dcpse_temp = (Dcpse<particles_type::dims, particles_type> *) dcpse;
+        auto dcpse_temp = (Dcpse<particles_type::dims, VerletList_type, particles_type> *) dcpse;
         dcpse_temp->load(file);
     }
     /*! \brief Method for Updating the DCPSE Operator by recomputing DCPSE Kernels.
@@ -453,7 +484,7 @@ public:
      */
     template<typename particles_type>
     void update(particles_type &particles) {
-        auto dcpse_temp = (Dcpse<particles_type::dims, particles_type> *) dcpse;
+        auto dcpse_temp = (Dcpse<particles_type::dims, VerletList_type, particles_type> *) dcpse;
         dcpse_temp->template createNormalParticles<NORMAL_ID>(particles);
         dcpse_temp->template createNormalParticles<NORMAL_ID>(particles);
         dcpse_temp->initializeUpdate(particles);
@@ -462,7 +493,7 @@ public:
 };
 
 
-template<unsigned int NORMAL_ID>
+template<unsigned int NORMAL_ID, typename VerletList_type>
 class SurfaceDerivative_yy {
 
     void *dcpse;
@@ -481,38 +512,44 @@ public:
      *
      */
     template<typename particles_type>
-    SurfaceDerivative_yy(particles_type &parts, unsigned int ord, typename particles_type::stype rCut,typename particles_type::stype nSpacing,
-                    support_options opt = support_options::RADIUS) {
+    SurfaceDerivative_yy(
+        particles_type &parts,
+        VerletList_type& verletList,
+        unsigned int ord,
+        typename particles_type::stype rCut,
+        typename particles_type::stype nSpacing,
+        support_options opt = support_options::RADIUS
+    ) {
         Point<particles_type::dims, unsigned int> p;
         p.zero();
         p.get(1) = 2;
 
-        dcpse = new SurfaceDcpse<particles_type::dims, particles_type>(parts, p, ord, rCut,nSpacing,value_t<NORMAL_ID>(), opt);
+        dcpse = new SurfaceDcpse<particles_type::dims, VerletList_type, particles_type>(parts, verletList, p, ord, rCut,nSpacing,value_t<NORMAL_ID>(), opt);
     }
 
     template<typename particles_type>
     void deallocate(particles_type &parts) {
-        delete (Dcpse<particles_type::dims, particles_type> *) dcpse;
+        delete (Dcpse<particles_type::dims, VerletList_type, particles_type> *) dcpse;
     }
 
     template<typename operand_type>
-    vector_dist_expression_op<operand_type, Dcpse<operand_type::vtype::dims, typename operand_type::vtype>, VECT_DCPSE>
+    vector_dist_expression_op<operand_type, Dcpse<operand_type::vtype::dims, VerletList_type, typename operand_type::vtype>, VECT_DCPSE>
     operator()(operand_type arg) {
-        typedef Dcpse<operand_type::vtype::dims, typename operand_type::vtype> dcpse_type;
+        typedef Dcpse<operand_type::vtype::dims, VerletList_type, typename operand_type::vtype> dcpse_type;
 
         return vector_dist_expression_op<operand_type, dcpse_type, VECT_DCPSE>(arg, *(dcpse_type *) dcpse);
     }
 
     template<typename particles_type>
     void checkMomenta(particles_type &particles) {
-        auto dcpse_temp = (Dcpse<particles_type::dims, particles_type> *) dcpse;
+        auto dcpse_temp = (Dcpse<particles_type::dims, VerletList_type, particles_type> *) dcpse;
         dcpse_temp->checkMomenta(particles);
 
     }
 
     template<unsigned int prp, typename particles_type>
     void DrawKernel(particles_type &particles, int k) {
-        auto dcpse_temp = (Dcpse<particles_type::dims, particles_type> *) dcpse;
+        auto dcpse_temp = (Dcpse<particles_type::dims, VerletList_type, particles_type> *) dcpse;
         dcpse_temp->template DrawKernel<prp>(particles, k);
 
     }
@@ -524,7 +561,7 @@ public:
      */
     template<typename particles_type>
     void save(particles_type &particles, const std::string &file) {
-        auto dcpse_temp = (Dcpse<particles_type::dims, particles_type> *) dcpse;
+        auto dcpse_temp = (Dcpse<particles_type::dims, VerletList_type, particles_type> *) dcpse;
         dcpse_temp->save(file);
     }
     /*! \brief Method for Loading the DCPSE Operator.
@@ -534,7 +571,7 @@ public:
      */
     template<typename particles_type>
     void load(particles_type &particles, const std::string &file) {
-        auto dcpse_temp = (Dcpse<particles_type::dims, particles_type> *) dcpse;
+        auto dcpse_temp = (Dcpse<particles_type::dims, VerletList_type, particles_type> *) dcpse;
         dcpse_temp->load(file);
     }
     /*! \brief Method for Updating the DCPSE Operator by recomputing DCPSE Kernels.
@@ -544,7 +581,7 @@ public:
      */
     template<typename particles_type>
     void update(particles_type &particles) {
-        auto dcpse_temp = (Dcpse<particles_type::dims, particles_type> *) dcpse;
+        auto dcpse_temp = (Dcpse<particles_type::dims, VerletList_type, particles_type> *) dcpse;
         dcpse_temp->template createNormalParticles<NORMAL_ID>(particles);
         dcpse_temp->initializeUpdate(particles);
         dcpse_temp->accumulateAndDeleteNormalParticles(particles);
@@ -552,7 +589,7 @@ public:
     }
 };
 
-template<unsigned int NORMAL_ID>
+template<unsigned int NORMAL_ID, typename VerletList_type>
 class SurfaceDerivative_zz {
 
     void *dcpse;
@@ -571,38 +608,44 @@ public:
      *
      */
     template<typename particles_type>
-    SurfaceDerivative_zz(particles_type &parts, unsigned int ord, typename particles_type::stype rCut,typename particles_type::stype nSpacing,
-                    support_options opt = support_options::RADIUS) {
+    SurfaceDerivative_zz(
+        particles_type &parts,
+        VerletList_type& verletList,
+        unsigned int ord,
+        typename particles_type::stype rCut,
+        typename particles_type::stype nSpacing,
+        support_options opt = support_options::RADIUS
+    ) {
         Point<particles_type::dims, unsigned int> p;
         p.zero();
         p.get(2) = 2;
 
-        dcpse = new SurfaceDcpse<particles_type::dims, particles_type>(parts, p, ord, rCut,nSpacing,value_t<NORMAL_ID>(), opt);
+        dcpse = new SurfaceDcpse<particles_type::dims, VerletList_type, particles_type>(parts, verletList, p, ord, rCut,nSpacing,value_t<NORMAL_ID>(), opt);
     }
 
     template<typename particles_type>
     void deallocate(particles_type &parts) {
-        delete (Dcpse<particles_type::dims, particles_type> *) dcpse;
+        delete (Dcpse<particles_type::dims, VerletList_type, particles_type> *) dcpse;
     }
 
     template<typename operand_type>
-    vector_dist_expression_op<operand_type, Dcpse<operand_type::vtype::dims, typename operand_type::vtype>, VECT_DCPSE>
+    vector_dist_expression_op<operand_type, Dcpse<operand_type::vtype::dims, VerletList_type, typename operand_type::vtype>, VECT_DCPSE>
     operator()(operand_type arg) {
-        typedef Dcpse<operand_type::vtype::dims, typename operand_type::vtype> dcpse_type;
+        typedef Dcpse<operand_type::vtype::dims, VerletList_type, typename operand_type::vtype> dcpse_type;
 
         return vector_dist_expression_op<operand_type, dcpse_type, VECT_DCPSE>(arg, *(dcpse_type *) dcpse);
     }
 
     template<typename particles_type>
     void checkMomenta(particles_type &particles) {
-        auto dcpse_temp = (Dcpse<particles_type::dims, particles_type> *) dcpse;
+        auto dcpse_temp = (Dcpse<particles_type::dims, VerletList_type, particles_type> *) dcpse;
         dcpse_temp->checkMomenta(particles);
 
     }
 
     template<unsigned int prp, typename particles_type>
     void DrawKernel(particles_type &particles, int k) {
-        auto dcpse_temp = (Dcpse<particles_type::dims, particles_type> *) dcpse;
+        auto dcpse_temp = (Dcpse<particles_type::dims, VerletList_type, particles_type> *) dcpse;
         dcpse_temp->template DrawKernel<prp>(particles, k);
 
     }
@@ -614,7 +657,7 @@ public:
      */
     template<typename particles_type>
     void save(particles_type &particles, const std::string &file) {
-        auto dcpse_temp = (Dcpse<particles_type::dims, particles_type> *) dcpse;
+        auto dcpse_temp = (Dcpse<particles_type::dims, VerletList_type, particles_type> *) dcpse;
         dcpse_temp->save(file);
     }
     /*! \brief Method for Loading the DCPSE Operator.
@@ -624,7 +667,7 @@ public:
      */
     template<typename particles_type>
     void load(particles_type &particles, const std::string &file) {
-        auto dcpse_temp = (Dcpse<particles_type::dims, particles_type> *) dcpse;
+        auto dcpse_temp = (Dcpse<particles_type::dims, VerletList_type, particles_type> *) dcpse;
         dcpse_temp->load(file);
     }
     /*! \brief Method for Updating the DCPSE Operator by recomputing DCPSE Kernels.
@@ -634,7 +677,7 @@ public:
      */
     template<typename particles_type>
     void update(particles_type &particles) {
-        auto dcpse_temp = (Dcpse<particles_type::dims, particles_type> *) dcpse;
+        auto dcpse_temp = (Dcpse<particles_type::dims, VerletList_type, particles_type> *) dcpse;
         dcpse_temp->template createNormalParticles<NORMAL_ID>(particles);
         particles.write("With Normal");
         dcpse_temp->initializeUpdate(particles);
@@ -643,7 +686,7 @@ public:
     }
 };
 
-template<unsigned int NORMAL_ID>
+template<unsigned int NORMAL_ID, typename VerletList_type>
 class SurfaceDerivative_xy {
 
     void *dcpse;
@@ -662,39 +705,45 @@ public:
      *
      */
     template<typename particles_type>
-    SurfaceDerivative_xy(particles_type &parts, unsigned int ord, typename particles_type::stype rCut,typename particles_type::stype nSpacing,
-                    support_options opt = support_options::RADIUS) {
+    SurfaceDerivative_xy(
+        particles_type &parts,
+        VerletList_type& verletList,
+        unsigned int ord,
+        typename particles_type::stype rCut,
+        typename particles_type::stype nSpacing,
+        support_options opt = support_options::RADIUS
+    ) {
         Point<particles_type::dims, unsigned int> p;
         p.zero();
         p.get(0) = 1;
         p.get(1) = 1;
 
-        dcpse = new SurfaceDcpse<particles_type::dims, particles_type>(parts, p, ord, rCut,nSpacing,value_t<NORMAL_ID>(), opt);
+        dcpse = new SurfaceDcpse<particles_type::dims, VerletList_type, particles_type>(parts, verletList, p, ord, rCut,nSpacing,value_t<NORMAL_ID>(), opt);
     }
 
     template<typename particles_type>
     void deallocate(particles_type &parts) {
-        delete (Dcpse<particles_type::dims, particles_type> *) dcpse;
+        delete (Dcpse<particles_type::dims, VerletList_type, particles_type> *) dcpse;
     }
 
     template<typename operand_type>
-    vector_dist_expression_op<operand_type, Dcpse<operand_type::vtype::dims, typename operand_type::vtype>, VECT_DCPSE>
+    vector_dist_expression_op<operand_type, Dcpse<operand_type::vtype::dims, VerletList_type, typename operand_type::vtype>, VECT_DCPSE>
     operator()(operand_type arg) {
-        typedef Dcpse<operand_type::vtype::dims, typename operand_type::vtype> dcpse_type;
+        typedef Dcpse<operand_type::vtype::dims, VerletList_type, typename operand_type::vtype> dcpse_type;
 
         return vector_dist_expression_op<operand_type, dcpse_type, VECT_DCPSE>(arg, *(dcpse_type *) dcpse);
     }
 
     template<typename particles_type>
     void checkMomenta(particles_type &particles) {
-        auto dcpse_temp = (Dcpse<particles_type::dims, particles_type> *) dcpse;
+        auto dcpse_temp = (Dcpse<particles_type::dims, VerletList_type, particles_type> *) dcpse;
         dcpse_temp->checkMomenta(particles);
 
     }
 
     template<unsigned int prp, typename particles_type>
     void DrawKernel(particles_type &particles, int k) {
-        auto dcpse_temp = (Dcpse<particles_type::dims, particles_type> *) dcpse;
+        auto dcpse_temp = (Dcpse<particles_type::dims, VerletList_type, particles_type> *) dcpse;
         dcpse_temp->template DrawKernel<prp>(particles, k);
 
     }
@@ -706,7 +755,7 @@ public:
      */
     template<typename particles_type>
     void save(particles_type &particles, const std::string &file) {
-        auto dcpse_temp = (Dcpse<particles_type::dims, particles_type> *) dcpse;
+        auto dcpse_temp = (Dcpse<particles_type::dims, VerletList_type, particles_type> *) dcpse;
         dcpse_temp->save(file);
     }
     /*! \brief Method for Loading the DCPSE Operator.
@@ -716,7 +765,7 @@ public:
      */
     template<typename particles_type>
     void load(particles_type &particles, const std::string &file) {
-        auto dcpse_temp = (Dcpse<particles_type::dims, particles_type> *) dcpse;
+        auto dcpse_temp = (Dcpse<particles_type::dims, VerletList_type, particles_type> *) dcpse;
         dcpse_temp->load(file);
     }
     /*! \brief Method for Updating the DCPSE Operator by recomputing DCPSE Kernels.
@@ -726,7 +775,7 @@ public:
      */
     template<typename particles_type>
     void update(particles_type &particles) {
-        auto dcpse_temp = (Dcpse<particles_type::dims, particles_type> *) dcpse;
+        auto dcpse_temp = (Dcpse<particles_type::dims, VerletList_type, particles_type> *) dcpse;
         dcpse_temp->template createNormalParticles<NORMAL_ID>(particles);
         dcpse_temp->initializeUpdate(particles);
         dcpse_temp->accumulateAndDeleteNormalParticles(particles);
@@ -735,7 +784,7 @@ public:
 };
 
 
-template<unsigned int NORMAL_ID>
+template<unsigned int NORMAL_ID, typename VerletList_type>
 class SurfaceDerivative_yz {
 
     void *dcpse;
@@ -754,39 +803,45 @@ public:
      *
      */
     template<typename particles_type>
-    SurfaceDerivative_yz(particles_type &parts, unsigned int ord, typename particles_type::stype rCut,typename particles_type::stype nSpacing,
-                    support_options opt = support_options::RADIUS) {
+    SurfaceDerivative_yz(
+        particles_type &parts,
+        VerletList_type& verletList,
+        unsigned int ord,
+        typename particles_type::stype rCut,
+        typename particles_type::stype nSpacing,
+        support_options opt = support_options::RADIUS
+    ) {
         Point<particles_type::dims, unsigned int> p;
         p.zero();
         p.get(1) = 1;
         p.get(2) = 1;
 
-        dcpse = new SurfaceDcpse<particles_type::dims, particles_type>(parts, p, ord, rCut,nSpacing,value_t<NORMAL_ID>(), opt);
+        dcpse = new SurfaceDcpse<particles_type::dims, VerletList_type, particles_type>(parts, verletList, p, ord, rCut,nSpacing,value_t<NORMAL_ID>(), opt);
     }
 
     template<typename particles_type>
     void deallocate(particles_type &parts) {
-        delete (Dcpse<particles_type::dims, particles_type> *) dcpse;
+        delete (Dcpse<particles_type::dims, VerletList_type, particles_type> *) dcpse;
     }
 
     template<typename operand_type>
-    vector_dist_expression_op<operand_type, Dcpse<operand_type::vtype::dims, typename operand_type::vtype>, VECT_DCPSE>
+    vector_dist_expression_op<operand_type, Dcpse<operand_type::vtype::dims, VerletList_type, typename operand_type::vtype>, VECT_DCPSE>
     operator()(operand_type arg) {
-        typedef Dcpse<operand_type::vtype::dims, typename operand_type::vtype> dcpse_type;
+        typedef Dcpse<operand_type::vtype::dims, VerletList_type, typename operand_type::vtype> dcpse_type;
 
         return vector_dist_expression_op<operand_type, dcpse_type, VECT_DCPSE>(arg, *(dcpse_type *) dcpse);
     }
 
     template<typename particles_type>
     void checkMomenta(particles_type &particles) {
-        auto dcpse_temp = (Dcpse<particles_type::dims, particles_type> *) dcpse;
+        auto dcpse_temp = (Dcpse<particles_type::dims, VerletList_type, particles_type> *) dcpse;
         dcpse_temp->checkMomenta(particles);
 
     }
 
     template<unsigned int prp, typename particles_type>
     void DrawKernel(particles_type &particles, int k) {
-        auto dcpse_temp = (Dcpse<particles_type::dims, particles_type> *) dcpse;
+        auto dcpse_temp = (Dcpse<particles_type::dims, VerletList_type, particles_type> *) dcpse;
         dcpse_temp->template DrawKernel<prp>(particles, k);
 
     }
@@ -798,7 +853,7 @@ public:
      */
     template<typename particles_type>
     void save(particles_type &particles, const std::string &file) {
-        auto dcpse_temp = (Dcpse<particles_type::dims, particles_type> *) dcpse;
+        auto dcpse_temp = (Dcpse<particles_type::dims, VerletList_type, particles_type> *) dcpse;
         dcpse_temp->save(file);
     }
     /*! \brief Method for Loading the DCPSE Operator.
@@ -808,7 +863,7 @@ public:
      */
     template<typename particles_type>
     void load(particles_type &particles, const std::string &file) {
-        auto dcpse_temp = (Dcpse<particles_type::dims, particles_type> *) dcpse;
+        auto dcpse_temp = (Dcpse<particles_type::dims, VerletList_type, particles_type> *) dcpse;
         dcpse_temp->load(file);
     }
     /*! \brief Method for Updating the DCPSE Operator by recomputing DCPSE Kernels.
@@ -818,7 +873,7 @@ public:
      */
     template<typename particles_type>
     void update(particles_type &particles) {
-        auto dcpse_temp = (Dcpse<particles_type::dims, particles_type> *) dcpse;
+        auto dcpse_temp = (Dcpse<particles_type::dims, VerletList_type, particles_type> *) dcpse;
         dcpse_temp->template createNormalParticles<NORMAL_ID>(particles);
         dcpse_temp->initializeUpdate(particles);
         dcpse_temp->accumulateAndDeleteNormalParticles(particles);
@@ -827,7 +882,7 @@ public:
 };
 
 
-template<unsigned int NORMAL_ID>
+template<unsigned int NORMAL_ID, typename VerletList_type>
 class SurfaceDerivative_xz {
 
     void *dcpse;
@@ -846,39 +901,45 @@ public:
      *
      */
     template<typename particles_type>
-    SurfaceDerivative_xz(particles_type &parts, unsigned int ord, typename particles_type::stype rCut,typename particles_type::stype nSpacing,
-                    support_options opt = support_options::RADIUS) {
+    SurfaceDerivative_xz(
+        particles_type &parts,
+        VerletList_type& verletList,
+        unsigned int ord,
+        typename particles_type::stype rCut,
+        typename particles_type::stype nSpacing,
+        support_options opt = support_options::RADIUS
+    ) {
         Point<particles_type::dims, unsigned int> p;
         p.zero();
         p.get(0) = 1;
         p.get(2) = 1;
 
-        dcpse = new SurfaceDcpse<particles_type::dims, particles_type>(parts, p, ord, rCut,nSpacing,value_t<NORMAL_ID>(), opt);
+        dcpse = new SurfaceDcpse<particles_type::dims, VerletList_type, particles_type>(parts, verletList, p, ord, rCut,nSpacing,value_t<NORMAL_ID>(), opt);
     }
 
     template<typename particles_type>
     void deallocate(particles_type &parts) {
-        delete (Dcpse<particles_type::dims, particles_type> *) dcpse;
+        delete (Dcpse<particles_type::dims, VerletList_type, particles_type> *) dcpse;
     }
 
     template<typename operand_type>
-    vector_dist_expression_op<operand_type, Dcpse<operand_type::vtype::dims, typename operand_type::vtype>, VECT_DCPSE>
+    vector_dist_expression_op<operand_type, Dcpse<operand_type::vtype::dims, VerletList_type, typename operand_type::vtype>, VECT_DCPSE>
     operator()(operand_type arg) {
-        typedef Dcpse<operand_type::vtype::dims, typename operand_type::vtype> dcpse_type;
+        typedef Dcpse<operand_type::vtype::dims, VerletList_type, typename operand_type::vtype> dcpse_type;
 
         return vector_dist_expression_op<operand_type, dcpse_type, VECT_DCPSE>(arg, *(dcpse_type *) dcpse);
     }
 
     template<typename particles_type>
     void checkMomenta(particles_type &particles) {
-        auto dcpse_temp = (Dcpse<particles_type::dims, particles_type> *) dcpse;
+        auto dcpse_temp = (Dcpse<particles_type::dims, VerletList_type, particles_type> *) dcpse;
         dcpse_temp->checkMomenta(particles);
 
     }
 
     template<unsigned int prp, typename particles_type>
     void DrawKernel(particles_type &particles, int k) {
-        auto dcpse_temp = (Dcpse<particles_type::dims, particles_type> *) dcpse;
+        auto dcpse_temp = (Dcpse<particles_type::dims, VerletList_type, particles_type> *) dcpse;
         dcpse_temp->template DrawKernel<prp>(particles, k);
 
     }
@@ -890,7 +951,7 @@ public:
      */
     template<typename particles_type>
     void save(particles_type &particles, const std::string &file) {
-        auto dcpse_temp = (Dcpse<particles_type::dims, particles_type> *) dcpse;
+        auto dcpse_temp = (Dcpse<particles_type::dims, VerletList_type, particles_type> *) dcpse;
         dcpse_temp->save(file);
     }
     /*! \brief Method for Loading the DCPSE Operator.
@@ -900,7 +961,7 @@ public:
      */
     template<typename particles_type>
     void load(particles_type &particles, const std::string &file) {
-        auto dcpse_temp = (Dcpse<particles_type::dims, particles_type> *) dcpse;
+        auto dcpse_temp = (Dcpse<particles_type::dims, VerletList_type, particles_type> *) dcpse;
         dcpse_temp->load(file);
     }
     /*! \brief Method for Updating the DCPSE Operator by recomputing DCPSE Kernels.
@@ -910,7 +971,7 @@ public:
      */
     template<typename particles_type>
     void update(particles_type &particles) {
-        auto dcpse_temp = (Dcpse<particles_type::dims, particles_type> *) dcpse;
+        auto dcpse_temp = (Dcpse<particles_type::dims, VerletList_type, particles_type> *) dcpse;
         dcpse_temp->template createNormalParticles<NORMAL_ID>(particles);
         dcpse_temp->initializeUpdate(particles);
         dcpse_temp->accumulateAndDeleteNormalParticles(particles);
@@ -918,7 +979,7 @@ public:
     }
 };
 
-template<unsigned int NORMAL_ID>
+template<unsigned int NORMAL_ID, typename VerletList_type>
 class SurfaceDerivative_G {
 
     void *dcpse;
@@ -937,35 +998,41 @@ public:
      *
      */
     template<typename particles_type>
-    SurfaceDerivative_G(particles_type &parts, unsigned int ord, typename particles_type::stype rCut,typename particles_type::stype nSpacing,
-                    const Point<particles_type::dims, unsigned int> &p,support_options opt = support_options::RADIUS) {
-
-        dcpse = new SurfaceDcpse<particles_type::dims, particles_type>(parts, p, ord, rCut,nSpacing,value_t<NORMAL_ID>(), opt);
+    SurfaceDerivative_G(
+        particles_type &parts,
+        VerletList_type& verletList,
+        unsigned int ord,
+        typename particles_type::stype rCut,
+        typename particles_type::stype nSpacing,
+        const Point<particles_type::dims, unsigned int> &p,
+        support_options opt = support_options::RADIUS
+    ) {
+        dcpse = new SurfaceDcpse<particles_type::dims, VerletList_type, particles_type>(parts, verletList, p, ord, rCut,nSpacing,value_t<NORMAL_ID>(), opt);
     }
 
     template<typename particles_type>
     void deallocate(particles_type &parts) {
-        delete (Dcpse<particles_type::dims, particles_type> *) dcpse;
+        delete (Dcpse<particles_type::dims, VerletList_type, particles_type> *) dcpse;
     }
 
     template<typename operand_type>
-    vector_dist_expression_op<operand_type, Dcpse<operand_type::vtype::dims, typename operand_type::vtype>, VECT_DCPSE>
+    vector_dist_expression_op<operand_type, Dcpse<operand_type::vtype::dims, VerletList_type, typename operand_type::vtype>, VECT_DCPSE>
     operator()(operand_type arg) {
-        typedef Dcpse<operand_type::vtype::dims, typename operand_type::vtype> dcpse_type;
+        typedef Dcpse<operand_type::vtype::dims, VerletList_type, typename operand_type::vtype> dcpse_type;
 
         return vector_dist_expression_op<operand_type, dcpse_type, VECT_DCPSE>(arg, *(dcpse_type *) dcpse);
     }
 
     template<typename particles_type>
     void checkMomenta(particles_type &particles) {
-        auto dcpse_temp = (Dcpse<particles_type::dims, particles_type> *) dcpse;
+        auto dcpse_temp = (Dcpse<particles_type::dims, VerletList_type, particles_type> *) dcpse;
         dcpse_temp->checkMomenta(particles);
 
     }
 
     template<unsigned int prp, typename particles_type>
     void DrawKernel(particles_type &particles, int k) {
-        auto dcpse_temp = (Dcpse<particles_type::dims, particles_type> *) dcpse;
+        auto dcpse_temp = (Dcpse<particles_type::dims, VerletList_type, particles_type> *) dcpse;
         dcpse_temp->template DrawKernel<prp>(particles, k);
 
     }
@@ -977,7 +1044,7 @@ public:
      */
     template<typename particles_type>
     void save(particles_type &particles, const std::string &file) {
-        auto dcpse_temp = (Dcpse<particles_type::dims, particles_type> *) dcpse;
+        auto dcpse_temp = (Dcpse<particles_type::dims, VerletList_type, particles_type> *) dcpse;
         dcpse_temp->save(file);
     }
     /*! \brief Method for Loading the DCPSE Operator.
@@ -987,7 +1054,7 @@ public:
      */
     template<typename particles_type>
     void load(particles_type &particles, const std::string &file) {
-        auto dcpse_temp = (Dcpse<particles_type::dims, particles_type> *) dcpse;
+        auto dcpse_temp = (Dcpse<particles_type::dims, VerletList_type, particles_type> *) dcpse;
         dcpse_temp->load(file);
     }
     /*! \brief Method for Updating the DCPSE Operator by recomputing DCPSE Kernels.
@@ -997,7 +1064,7 @@ public:
      */
     template<typename particles_type>
     void update(particles_type &particles) {
-        auto dcpse_temp = (Dcpse<particles_type::dims, particles_type> *) dcpse;
+        auto dcpse_temp = (Dcpse<particles_type::dims, VerletList_type, particles_type> *) dcpse;
         dcpse_temp->template createNormalParticles<NORMAL_ID>(particles);
         dcpse_temp->initializeUpdate(particles);
         dcpse_temp->accumulateAndDeleteNormalParticles(particles);

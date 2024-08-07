@@ -18,14 +18,14 @@
  * \return Operator Dx which is a function on Vector_dist_Expressions
  *
  */
-template<typename particlesFrom_type, typename particlesTo_type>
+template<typename particlesSupport_type, typename particlesDomain_type, typename VerletList_type>
 class PPInterpolation 
 {
 
     void *dcpse;
 
-    particlesFrom_type & particlesSupport;
-    particlesTo_type & particlesDomain;
+    particlesSupport_type & particlesSupport;
+    particlesDomain_type & particlesDomain;
 
 public:
     /*! \brief Constructor for Creating the DCPSE Operator Dx and objects and computes DCPSE Kernels.
@@ -40,18 +40,39 @@ public:
      * \return Operator F which is a function on Vector_dist_Expressions
      *
      */
-    PPInterpolation(particlesFrom_type &particlesSupport,particlesTo_type &particlesDomain, unsigned int ord, typename particlesFrom_type::stype rCut,
-                      double oversampling_factor = dcpse_oversampling_factor,
-                      support_options opt = support_options::RADIUS)
-    :particlesSupport(particlesSupport),particlesDomain(particlesDomain)
+    PPInterpolation(
+        particlesSupport_type &particlesSupport,
+        particlesDomain_type &particlesDomain,
+        VerletList_type& verletList,
+        unsigned int ord,
+        typename particlesSupport_type::stype rCut,
+        double oversampling_factor = dcpse_oversampling_factor,
+        support_options opt = support_options::RADIUS
+    ):
+        particlesSupport(particlesSupport),
+        particlesDomain(particlesDomain)
     {
-        Point<particlesFrom_type::dims, unsigned int> p;
-        p.zero();
-        dcpse = new Dcpse<particlesFrom_type::dims, particlesFrom_type,particlesTo_type>(particlesSupport,particlesDomain, p, ord, rCut, oversampling_factor, opt);
+        Point<particlesSupport_type::dims, unsigned int> p; p.zero();
+
+        dcpse = new Dcpse<
+            particlesSupport_type::dims,
+            VerletList_type,
+            particlesSupport_type,
+            particlesDomain_type>
+        (
+            particlesSupport,
+            particlesDomain,
+            verletList,
+            p,
+            ord,
+            rCut,
+            oversampling_factor,
+            opt
+        );
     }
 
     void deallocate() {
-        delete (Dcpse<particlesFrom_type::dims, particlesFrom_type, particlesTo_type> *) dcpse;
+        delete (Dcpse<particlesSupport_type::dims, VerletList_type, particlesSupport_type, particlesDomain_type> *) dcpse;
     }
 
    /* template<typename operand_type>
@@ -63,28 +84,28 @@ public:
 
    template<unsigned int prp1,unsigned int prp2>
    void p2p() {
-       auto dcpse_temp = (Dcpse<particlesFrom_type::dims, particlesFrom_type, particlesTo_type>*) dcpse;
+       auto dcpse_temp = (Dcpse<particlesSupport_type::dims, VerletList_type, particlesSupport_type, particlesDomain_type>*) dcpse;
        dcpse_temp->template p2p<prp1,prp2>();
 
    }
 
     // template<unsigned int prp, typename particles_type>
     // void DrawKernel(particles_type &particles, int k) {
-    //     auto dcpse_temp = (Dcpse_type<particlesFrom_type::dims, particlesFrom_type, particlesTo_type> *) dcpse;
+    //     auto dcpse_temp = (Dcpse_type<particlesSupport_type::dims, VerletList_type, particlesSupport_type, particlesDomain_type> *) dcpse;
     //     dcpse_temp->template DrawKernel<prp>(particles, k);
 
     // }
 
     // template<unsigned int prp, typename particles_type>
     // void DrawKernelNN(particles_type &particles, int k) {
-    //     auto dcpse_temp = (Dcpse_type<particlesFrom_type::dims, particlesFrom_type,particlesTo_type> *) dcpse;
+    //     auto dcpse_temp = (Dcpse_type<particlesSupport_type::dims, particlesSupport_type,particlesDomain_type> *) dcpse;
     //     dcpse_temp->template DrawKernelNN<prp>(particles, k);
 
     // }
 
     // template<typename particles_type>
     // void checkMomenta(particles_type &particles) {
-    //     auto dcpse_temp = (Dcpse_type<particles_type::dims, particlesFrom_type, particlesTo_type> *) dcpse;
+    //     auto dcpse_temp = (Dcpse_type<particles_type::dims, particlesSupport_type, particlesDomain_type> *) dcpse;
     //     dcpse_temp->checkMomenta(particles);
 
     // }
@@ -95,7 +116,7 @@ public:
      * \param parts particle set
      */
     void update() {
-        auto dcpse_temp = (Dcpse<particlesFrom_type::dims, particlesFrom_type, particlesTo_type> *) dcpse;
+        auto dcpse_temp = (Dcpse<particlesSupport_type::dims, VerletList_type, particlesSupport_type, particlesDomain_type> *) dcpse;
         dcpse_temp->initializeUpdate(particlesSupport,particlesDomain);
 
     }

@@ -94,7 +94,8 @@ BOOST_AUTO_TEST_SUITE(Dcpse_tests)
         // Setup finished, actual test below...
 //        std::cout << "rCut = " << rCut << std::endl;
         BOOST_TEST_MESSAGE("DCPSE init & compute coefficients...");
-        Dcpse<2, vector_dist<2, double, aggregate<double, double, double>> > dcpse(domain, Point<2, unsigned int>({1, 0}), 2, rCut,2,support_options::RADIUS);
+        auto verletList = domain.template getVerlet<VL_NON_SYMMETRIC|VL_SKIP_REF_PART>(rCut);
+        Dcpse<2, decltype(verletList), vector_dist<2, double, aggregate<double, double, double>> > dcpse(domain, verletList, Point<2, unsigned int>({1, 0}), 2, rCut,2,support_options::RADIUS);
         BOOST_TEST_MESSAGE("DCPSE compute diff operator...");
         dcpse.template computeDifferentialOperator<0, 1>(domain);
 
@@ -202,7 +203,8 @@ BOOST_AUTO_TEST_SUITE(Dcpse_tests)
         // Setup finished, actual test below...
 //        std::cout << "rCut = " << rCut << std::endl;
         BOOST_TEST_MESSAGE("DCPSE init & compute coefficients...");
-        Dcpse<2, vector_dist<2, double, aggregate<double, double, double>> > dcpse(domain, Point<2, unsigned int>({1, 0}), 2, rCut, 2,support_options::RADIUS);
+        auto verletList = domain.template getVerlet<VL_NON_SYMMETRIC|VL_SKIP_REF_PART>(rCut);
+        Dcpse<2, decltype(verletList), vector_dist<2, double, aggregate<double, double, double>> > dcpse(domain, verletList, Point<2, unsigned int>({1, 0}), 2, rCut, 2,support_options::RADIUS);
         BOOST_TEST_MESSAGE("DCPSE compute diff operator...");
         dcpse.template computeDifferentialOperator<0, 1>(domain);
 
@@ -299,7 +301,8 @@ BOOST_AUTO_TEST_SUITE(Dcpse_tests)
 
         // Setup finished, actual test below...
         BOOST_TEST_MESSAGE("DCPSE init & compute coefficients...");
-        Dcpse<DIM, vector_dist<DIM, double, aggregate<double, double, double>>> dcpse(domain, Point<DIM, unsigned int>({0, 0, 1}), 2, rCut,2.5,support_options::RADIUS);
+        auto verletList = domain.template getVerlet<VL_NON_SYMMETRIC|VL_SKIP_REF_PART>(rCut);
+        Dcpse<DIM, decltype(verletList), vector_dist<DIM, double, aggregate<double, double, double>>> dcpse(domain, verletList, Point<DIM, unsigned int>({0, 0, 1}), 2, rCut,2.5,support_options::RADIUS);
         BOOST_TEST_MESSAGE("DCPSE compute diff operator...");
         dcpse.template computeDifferentialOperator<0, 1>(domain);
 
@@ -392,7 +395,8 @@ BOOST_AUTO_TEST_SUITE(Dcpse_tests)
         // Setup finished, actual test below...
         unsigned int r = 2;
         BOOST_TEST_MESSAGE("DCPSE init & compute coefficients...");
-        Dcpse<DIM, vector_dist<DIM, double, aggregate<double, double, double>> > dcpse(domain, Point<DIM, unsigned int>({2, 0, 2}), r, rCut,2.5,support_options::RADIUS);
+        auto verletList = domain.template getVerlet<VL_NON_SYMMETRIC|VL_SKIP_REF_PART>(rCut);
+        Dcpse<DIM,  decltype(verletList),vector_dist<DIM, double, aggregate<double, double, double>> > dcpse(domain, verletList, Point<DIM, unsigned int>({2, 0, 2}), r, rCut,2.5,support_options::RADIUS);
         BOOST_TEST_MESSAGE("DCPSE compute diff operator...");
         dcpse.template computeDifferentialOperator<0, 1>(domain);
 

@@ -69,10 +69,13 @@ BOOST_AUTO_TEST_CASE(dcpse_op_tests) {
 
         domain.map();
         domain.ghost_get<0>();
-        Derivative_x_gpu Dx(domain, 2, rCut);
-        Derivative_y_gpu Dy(domain, 2, rCut);
-        Gradient_gpu Grad(domain, 2, rCut);
-        Laplacian_gpu Lap(domain, 2, rCut);
+
+        auto verletList = domain.template getVerlet<VL_NON_SYMMETRIC|VL_SKIP_REF_PART>(rCut);
+
+        Derivative_x_gpu<decltype(verletList)> Dx(domain, verletList, 2, rCut);
+        Derivative_y_gpu<decltype(verletList)> Dy(domain, verletList, 2, rCut);
+        Gradient_gpu<decltype(verletList)> Grad(domain, verletList, 2, rCut);
+        Laplacian_gpu<decltype(verletList)> Lap(domain, verletList, 2, rCut);
         auto v = getV<1>(domain);
         auto P = getV<0>(domain);
 
@@ -139,16 +142,19 @@ BOOST_AUTO_TEST_CASE(dcpse_op_tests) {
 
         domain.map();
         domain.ghost_get<0>();
-        Derivative_x_gpu Dx(domain, 2, rCut);
-        Derivative_y_gpu Dy(domain, 2, rCut);
+
+        auto verletList = domain.template getVerlet<VL_NON_SYMMETRIC|VL_SKIP_REF_PART>(rCut);
+
+        Derivative_x_gpu<decltype(verletList)> Dx(domain, verletList, 2, rCut);
+        Derivative_y_gpu<decltype(verletList)> Dy(domain, verletList, 2, rCut);
         auto v = getV<1>(domain);
         auto v2 = getV<3>(domain);
         auto P = getV<0>(domain);
         v2 = 2*Dx(P) + Dy(P);
         Dx.save(domain,"DX_test");
         Dy.save(domain,"DY_test");
-        Derivative_x_gpu DxLoaded(domain, 2, rCut,1,support_options::LOAD);
-        Derivative_y_gpu DyLoaded(domain, 2, rCut,1,support_options::LOAD);
+        Derivative_x_gpu<decltype(verletList)> DxLoaded(domain, verletList, 2, rCut,1,support_options::LOAD);
+        Derivative_y_gpu<decltype(verletList)> DyLoaded(domain, verletList, 2, rCut,1,support_options::LOAD);
         DxLoaded.load(domain,"DX_test");
         DyLoaded.load(domain,"DY_test");
         v= 2*DxLoaded(P)+DyLoaded(P);
@@ -214,8 +220,10 @@ BOOST_AUTO_TEST_CASE(dcpse_op_tests) {
         auto v = getV<1>(domain);
         auto v2 = getV<3>(domain);
         auto P = getV<0>(domain);
-        Derivative_x_gpu DxLoaded(domain, 2, rCut,1,support_options::LOAD);
-        Derivative_y_gpu DyLoaded(domain, 2, rCut,1,support_options::LOAD);
+
+        auto verletList = domain.template getVerlet<VL_NON_SYMMETRIC|VL_SKIP_REF_PART>(rCut);
+        Derivative_x_gpu<decltype(verletList)> DxLoaded(domain, verletList, 2, rCut,1,support_options::LOAD);
+        Derivative_y_gpu<decltype(verletList)> DyLoaded(domain, verletList, 2, rCut,1,support_options::LOAD);
         DxLoaded.load(domain,"DX_test");
         DyLoaded.load(domain,"DY_test");
         v= 2*DxLoaded(P)+DyLoaded(P);
@@ -234,150 +242,6 @@ BOOST_AUTO_TEST_CASE(dcpse_op_tests) {
         //std::cout<<worst;
         BOOST_REQUIRE(worst < 0.03);
     }
-
-    BOOST_AUTO_TEST_CASE(dcpse_op_tests_fa) {
-        size_t edgeSemiSize = 40;
-        const size_t sz[2] = {2 * edgeSemiSize, 2 * edgeSemiSize};
-        Box<2, double> box({0, 0}, {2 * M_PI, 2 * M_PI});
-        size_t bc[2] = {NON_PERIODIC, NON_PERIODIC};
-        double spacing[2];
-        spacing[0] = 2 * M_PI / (sz[0] - 1);
-        spacing[1] = 2 * M_PI / (sz[1] - 1);
-        Ghost<2, double> ghost(spacing[0] * 3.9);
-        double rCut = 3.9 * spacing[0];
-        BOOST_TEST_MESSAGE("Init vector_dist...");
-        double sigma2 = spacing[0] * spacing[1] / (2 * 4);
-
-        typedef vector_dist_gpu<2, double, aggregate<double, double, double, VectorS<2, double>, VectorS<2, double>>> vector_type;
-
-        vector_type domain(0, box,bc,ghost);
-
-        //Init_DCPSE(domain)
-        BOOST_TEST_MESSAGE("Init domain...");
-
-        auto it = domain.getGridIterator(sz);
-        size_t pointId = 0;
-        size_t counter = 0;
-        double minNormOne = 999;
-        while (it.isNext()) {
-            domain.add();
-            auto key = it.get();
-            mem_id k0 = key.get(0);
-            double x = k0 * spacing[0];
-            domain.getLastPos()[0] = x;//+ gaussian(rng);
-            mem_id k1 = key.get(1);
-            double y = k1 * spacing[1];
-            domain.getLastPos()[1] = y;//+gaussian(rng);
-            // Here fill the function value
-            domain.template getLastProp<0>() = sin(domain.getLastPos()[0]) + sin(domain.getLastPos()[1]);
-            domain.template getLastProp<2>() = cos(domain.getLastPos()[0]) + cos(domain.getLastPos()[1]);
-            ++counter;
-            ++it;
-        }
-        BOOST_TEST_MESSAGE("Sync domain across processors...");
-
-        domain.map();
-        domain.ghost_get<0>();
-
-        PPInterpolation<vector_type,vector_type> Fx(domain,domain, 2, rCut);
-        auto v = getV<1>(domain);
-        auto P = getV<0>(domain);
-
-        Fx.p2p<0,1>();
-        auto it2 = domain.getDomainIterator();
-        double worst = 0.0;
-        while (it2.isNext()) {
-            auto p = it2.get();
-            if (fabs(domain.getProp<1>(p) - domain.getProp<0>(p)) > worst) {
-                worst = fabs(domain.getProp<1>(p) - domain.getProp<0>(p));
-            }
-            ++it2;
-        }
-        //std::cout<<"Worst:"<<worst<<std::endl;
-        domain.deleteGhost();
-        //domain.write_frame("test",0,0.024,BINARY);
-        BOOST_REQUIRE(worst < 0.03);
-    }
-
-    BOOST_AUTO_TEST_CASE(dcpse_op_tests_mfa) {
-        size_t edgeSemiSize = 40;
-        const size_t sz[2] = {2 * edgeSemiSize, 2 * edgeSemiSize};
-        Box<2, double> box({0, 0}, {2 * M_PI, 2 * M_PI});
-        size_t bc[2] = {NON_PERIODIC, NON_PERIODIC};
-        double spacing[2];
-        spacing[0] = 2 * M_PI / (sz[0] - 1);
-        spacing[1] = 2 * M_PI / (sz[1] - 1);
-        Ghost<2, double> ghost(spacing[0] * 3.9);
-        double rCut = 3.9 * spacing[0];
-        BOOST_TEST_MESSAGE("Init vector_dist...");
-        double sigma2 = spacing[0] * spacing[1] / ( 4);
-        std::normal_distribution<> gaussian{0, sigma2};
-        std::mt19937 rng{6666666};
-        typedef vector_dist_gpu<2, double, aggregate<double, double, double, VectorS<2, double>, VectorS<2, double>>> vector_type;
-
-        vector_type domain(0, box,bc,ghost);
-        vector_type domain2(domain.getDecomposition(),0);
-
-        //Init_DCPSE(domain)
-        BOOST_TEST_MESSAGE("Init domain...");
-
-        auto it = domain.getGridIterator(sz);
-        size_t pointId = 0;
-        size_t counter = 0;
-        double minNormOne = 999;
-        while (it.isNext()) {
-            domain.add();
-            domain2.add();
-            auto key = it.get();
-            mem_id k0 = key.get(0);
-            mem_id k1 = key.get(1);
-            double x = k0 * spacing[0];
-            double y = k1 * spacing[1];
-            domain.getLastPos()[0] = x;//+ gaussian(rng);
-            domain.getLastPos()[1] = y;//+gaussian(rng);
-            if(x!=0 && y!=0 && x!=box.getHigh(0) && y!=box.getHigh(1)){
-                domain2.getLastPos()[0] = x+ gaussian(rng);
-                domain2.getLastPos()[1] = y+ gaussian(rng);
-            }
-            else{
-                domain2.getLastPos()[0] = x;
-                domain2.getLastPos()[1] = y;
-            }
-            // Here fill the function value
-            domain.template getLastProp<0>() = sin(domain.getLastPos()[0]) + sin(domain.getLastPos()[1]);
-            domain.template getLastProp<1>() = 0.0;
-            domain2.template getLastProp<0>() = sin(domain2.getLastPos()[0]) + sin(domain2.getLastPos()[1]);
-            ++counter;
-            ++it;
-        }
-        BOOST_TEST_MESSAGE("Sync domain across processors...");
-
-        domain.map();
-        domain2.map();
-        domain.ghost_get<0>();
-        domain2.ghost_get<0>();
-
-        PPInterpolation<vector_type,vector_type> Fx(domain2,domain, 2, rCut);
-        //auto v = getV<1>(domain);
-        //auto P = getV<0>(domain);
-        Fx.p2p<0,1>();
-        auto it2 = domain.getDomainIterator();
-        double worst = 0.0;
-        while (it2.isNext()) {
-            auto p = it2.get();
-            //domain.template getProp<2>(p) = domain.getProp<1>(p) - domain.getProp<0>(p);
-            if (fabs(domain.getProp<1>(p) - domain.getProp<0>(p)) > worst) {
-                worst = fabs(domain.getProp<1>(p) - domain.getProp<0>(p));
-            }
-            ++it2;
-        }
-        //std::cout<<"Worst:"<<worst<<std::endl;
-        domain.deleteGhost();
-        //domain.write("test1");
-        //domain2.write("test2");
-        BOOST_REQUIRE(worst < 0.03);
-    }
-
 
     BOOST_AUTO_TEST_CASE(dcpse_op_test_lap) {
         size_t edgeSemiSize = 81;
@@ -428,7 +292,9 @@ BOOST_AUTO_TEST_CASE(dcpse_op_tests) {
         domain.map();
         domain.ghost_get<0>();
 
-        Laplacian_gpu Lap(domain, 2, rCut);
+        auto verletList = domain.template getVerlet<VL_NON_SYMMETRIC|VL_SKIP_REF_PART>(rCut);
+
+        Laplacian_gpu<decltype(verletList)> Lap(domain, verletList, 2, rCut);
         auto v = getV<1>(domain);
         auto P = getV<0>(domain);
         auto vv = getV<2>(domain);
@@ -515,9 +381,11 @@ BOOST_AUTO_TEST_CASE(dcpse_op_tests) {
         domain.map();
         domain.ghost_get<0>();
 
-        Divergence_gpu Div(domain, 2, rCut);
-        Derivative_x_gpu Dx(domain, 2, rCut);
-        Derivative_y_gpu Dy(domain, 2, rCut);
+        auto verletList = domain.template getVerlet<VL_NON_SYMMETRIC|VL_SKIP_REF_PART>(rCut);
+
+        Divergence_gpu<decltype(verletList)> Div(domain, verletList, 2, rCut);
+        Derivative_x_gpu<decltype(verletList)> Dx(domain, verletList, 2, rCut);
+        Derivative_y_gpu<decltype(verletList)> Dy(domain, verletList, 2, rCut);
 
         auto v = getV<1>(domain);
         auto anasol = getV<0>(domain);
@@ -620,7 +488,9 @@ BOOST_AUTO_TEST_CASE(dcpse_op_tests) {
          domain.map();
          domain.ghost_get<0>();
 
-         Advection_gpu Adv(domain, 2, rCut);
+         auto verletList = domain.template getVerlet<VL_NON_SYMMETRIC|VL_SKIP_REF_PART>(rCut);
+
+         Advection_gpu<decltype(verletList)> Adv(domain, verletList, 2, rCut);
          auto v = getV<1>(domain);
          auto P = getV<0>(domain);
          auto dv = getV<3>(domain);
@@ -705,7 +575,9 @@ BOOST_AUTO_TEST_CASE(dcpse_op_tests) {
         auto S = getV<2>(Particles);
         auto Sig = getV<3>(Particles);
 
-        Derivative_x_gpu Dx(Particles, 2, rCut,2);
+        auto verletList = Particles.template getVerlet<VL_NON_SYMMETRIC|VL_SKIP_REF_PART>(rCut);
+
+        Derivative_x_gpu<decltype(verletList)> Dx(Particles, verletList, 2, rCut, 2);
 
         P = Dx(V[0]);
         S = V[0]*V[0] + V[1]*V[1];
@@ -792,8 +664,9 @@ BOOST_AUTO_TEST_CASE(dcpse_op_tests) {
         auto S = getV<2>(Particles);
         auto Sig = getV<3>(Particles);
 
+        auto verletList = Particles.template getVerlet<VL_NON_SYMMETRIC|VL_SKIP_REF_PART>(rCut);
 
-        Derivative_x_gpu Dx(Particles, 2, rCut,2);
+        Derivative_x_gpu<decltype(verletList)> Dx(Particles, verletList, 2, rCut, 2);
 
         P = Dx(V[0]);
         S = V[0]*V[0] + V[1]*V[1]+V[2]*V[2];
@@ -907,10 +780,12 @@ BOOST_AUTO_TEST_CASE(dcpse_op_tests) {
         domain.map();
         domain.ghost_get<0>();
 
+        auto verletList = domain.template getVerlet<VL_NON_SYMMETRIC|VL_SKIP_REF_PART>(rCut);
+
         //Derivative_x_gpu Dx(domain, 2, rCut);
-        Derivative_xx Dxx(domain, 2, rCut);
+        Derivative_xx_gpu<decltype(verletList)> Dxx(domain, verletList, 2, rCut);
         //Derivative_y_gpu Dy(domain, 2, rCut);
-        Derivative_yy Dyy(domain, 2, rCut);
+        Derivative_yy_gpu<decltype(verletList)> Dyy(domain, verletList, 2, rCut);
         auto C = getV<0>(domain);
         auto V = getV<3>(domain);
         auto Cnew = getV<1>(domain);

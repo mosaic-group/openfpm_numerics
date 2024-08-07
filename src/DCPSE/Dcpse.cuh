@@ -31,7 +31,7 @@ __global__ void assembleLocalMatrices_gpu( particles_type, Point<dim, unsigned i
     T**, T**, localEps_type, localEps_type, matrix_type, size_t, size_t);
 
 
-template<unsigned int dim, typename vector_type, class T = typename vector_type::stype>
+template<unsigned int dim, typename VerletList_type, typename vector_type, class T = typename vector_type::stype>
 class Dcpse_gpu {
     static_assert(std::is_floating_point<T>::value, "CUBLAS supports only float or double");
 
@@ -85,41 +85,47 @@ public:
 
     // Here we require the first element of the aggregate to be:
     // 1) the value of the function f on the point
-    Dcpse_gpu(vector_type &particles,
-          Point<dim, unsigned int> differentialSignature,
-          unsigned int convergenceOrder,
-          T rCut,
-          T supportSizeFactor = 1,
-          support_options opt = support_options::RADIUS)
-        :particles(particles),
-            differentialSignature(differentialSignature),
-            differentialOrder(Monomial<dim>(differentialSignature).order()),
-            monomialBasis(differentialSignature.asArray(), convergenceOrder),
-            maxSupportSize(0),
-            supportKeysTotalN(0),
-            opt(opt)
+    Dcpse_gpu(
+        vector_type &particles,
+        VerletList_type& verletList,
+        Point<dim, unsigned int> differentialSignature,
+        unsigned int convergenceOrder,
+        T rCut,
+        T supportSizeFactor = 1,
+        support_options opt = support_options::RADIUS
+    ):
+        particles(particles),
+        differentialSignature(differentialSignature),
+        differentialOrder(Monomial<dim>(differentialSignature).order()),
+        monomialBasis(differentialSignature.asArray(), convergenceOrder),
+        maxSupportSize(0),
+        supportKeysTotalN(0),
+        opt(opt)
     {
         particles.ghost_get_subset();
         initializeStaticSize(particles, convergenceOrder, rCut, supportSizeFactor);
     }
 
-    Dcpse_gpu(vector_type &particles,
-          const Dcpse_gpu<dim, vector_type, T>& other,
-          Point<dim, unsigned int> differentialSignature,
-          unsigned int convergenceOrder,
-          T rCut,
-          T supportSizeFactor = 1,
-          support_options opt = support_options::RADIUS)
-        :particles(particles), opt(opt),
-            differentialSignature(differentialSignature),
-            differentialOrder(Monomial<dim>(differentialSignature).order()),
-            monomialBasis(differentialSignature.asArray(), convergenceOrder),
-            supportRefs(other.supportRefs),
-            supportKeys1D(other.supportKeys1D),
-            kerOffsets(other.kerOffsets),
-            maxSupportSize(other.maxSupportSize),
-            supportKeysTotalN(other.supportKeysTotalN),
-            isSharedSupport(true)
+    Dcpse_gpu(
+        vector_type &particles,
+        VerletList_type& verletList,
+        const Dcpse_gpu<dim, VerletList_type, vector_type, T>& other,
+        Point<dim, unsigned int> differentialSignature,
+        unsigned int convergenceOrder,
+        T rCut,
+        T supportSizeFactor = 1,
+        support_options opt = support_options::RADIUS
+    ):
+        particles(particles), opt(opt),
+        differentialSignature(differentialSignature),
+        differentialOrder(Monomial<dim>(differentialSignature).order()),
+        monomialBasis(differentialSignature.asArray(), convergenceOrder),
+        supportRefs(other.supportRefs),
+        supportKeys1D(other.supportKeys1D),
+        kerOffsets(other.kerOffsets),
+        maxSupportSize(other.maxSupportSize),
+        supportKeysTotalN(other.supportKeysTotalN),
+        isSharedSupport(true)
     {
         particles.ghost_get_subset();
         initializeStaticSize(particles, convergenceOrder, rCut, supportSizeFactor);

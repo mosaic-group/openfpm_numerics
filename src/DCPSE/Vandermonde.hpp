@@ -34,6 +34,20 @@ public:
         initialize(support,particlesSupport,particlesDomain);
     }
 
+    template<typename verletIterator_type, typename vector_type, typename vector_type2>
+    Vandermonde(
+        size_t p,
+        verletIterator_type &it,
+        const MonomialBasis<dim> &monomialBasis,
+        const vector_type & particlesSupport,
+        const vector_type2 & particlesDomain,T HOverEpsilon=0.5
+    ):
+        monomialBasis(monomialBasis),
+        HOverEpsilon(HOverEpsilon)
+    {
+        initialize(p, it, particlesSupport, particlesDomain);
+    }
+
 
     MatrixType &getMatrix(MatrixType &M)
     {
@@ -112,6 +126,31 @@ private:
         }
         // Compute eps for this point
         //factor here. This is C factor.
+        computeEps(HOverEpsilon);
+    }
+
+    template<typename verletIterator_type, typename vector_type, typename vector_type2>
+    void initialize(size_t p, verletIterator_type &it, const vector_type & particlesSupport, vector_type2 &particlesDomain)
+    {
+        while (it.isNext())
+        {
+            size_t q = it.get();
+
+            Point<dim,T> xp = particlesDomain.getPos(p);
+            xp -= particlesSupport.getPos(q);
+            offsets.add(xp);
+
+            ++it;
+        }
+
+
+        // First check that the number of points given is enough for building the Vandermonde matrix
+        if (offsets.size() < monomialBasis.size())
+        {
+            ACTION_ON_ERROR(std::length_error("Not enough neighbour points passed for Vandermonde matrix construction!"));
+        }
+        // Compute eps for this point
+        // factor here. This is C factor.
         computeEps(HOverEpsilon);
     }
 
