@@ -97,6 +97,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_subset_suite_tests)
 
         Particles.map();
         Particles.ghost_get<0>();
+        Particles.ghost_get_subset();
 
         auto git = Particles.getGhostIterator();
 
@@ -249,6 +250,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_subset_suite_tests)
         BOOST_TEST_MESSAGE("Sync Particles across processors...");
         Particles.map();
         Particles.ghost_get<0>();
+        Particles.ghost_get_subset();
 
         auto it2 = Particles.getDomainIterator();
         while (it2.isNext()) {
@@ -457,6 +459,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_subset_suite_tests)
         BOOST_TEST_MESSAGE("Sync Particles across processors...");
         Particles.map();
         Particles.ghost_get<0>();
+        Particles.ghost_get_subset();
         auto it2 = Particles.getDomainIterator();
         while (it2.isNext()) {
             auto p = it2.get();
