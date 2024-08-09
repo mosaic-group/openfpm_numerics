@@ -63,10 +63,10 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
         //Here template parameters are Normal property no.
         auto verletList = Sparticles.template getVerlet<VL_NON_SYMMETRIC|VL_SKIP_REF_PART>(rCut);
 
-        SurfaceDerivative_xx<2,decltype(verletList)> SDxx(Sparticles, verletList, 2, rCut,grid_spacing);
-        SurfaceDerivative_yy<2,decltype(verletList)> SDyy(Sparticles, verletList, 2, rCut,grid_spacing);
-        //SurfaceDerivative_x<2,decltype(verletList)> SDx(Sparticles, 4, rCut,grid_spacing);
-        //SurfaceDerivative_y<2,decltype(verletList)> SDy(Sparticles, 4, rCut,grid_spacing);
+        SurfaceDerivative_xx<2,decltype(verletList)> SDxx(Sparticles, verletList, 2, rCut, grid_spacing, rCut/grid_spacing);
+        SurfaceDerivative_yy<2,decltype(verletList)> SDyy(Sparticles, verletList, 2, rCut, grid_spacing, rCut/grid_spacing);
+        //SurfaceDerivative_x<2,decltype(verletList)> SDx(Sparticles, 4, rCut, grid_spacing, rCut/grid_spacing);
+        //SurfaceDerivative_y<2,decltype(verletList)> SDy(Sparticles, 4, rCut, grid_spacing, rCut/grid_spacing);
         auto INICONC = getV<3>(Sparticles);
         auto CONC = getV<0>(Sparticles);
         auto TEMP = getV<4>(Sparticles);
@@ -140,15 +140,16 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
         BOOST_TEST_MESSAGE("Sync domain across processors...");
 
         Sparticles.ghost_get<0,3>();
+        Sparticles.ghost_get_subset();
         //Sparticles.write("Sparticles");
         //Here template parameters are Normal property no.
         auto verletList = Sparticles.template getVerlet<VL_NON_SYMMETRIC|VL_SKIP_REF_PART>(rCut);
 
-        SurfaceDerivative_xx<2,decltype(verletList)> SDxx(Sparticles, verletList, 2, rCut,grid_spacing);
-        SurfaceDerivative_yy<2,decltype(verletList)> SDyy(Sparticles, verletList, 2, rCut,grid_spacing);
-        //SurfaceDerivative_xy<2,decltype(verletList)> SDxy(Sparticles, 3, rCut,grid_spacing);
-        //SurfaceDerivative_x<2,decltype(verletList)> SDx(Sparticles, 3, rCut,grid_spacing);
-        //SurfaceDerivative_y<2,decltype(verletList)> SDy(Sparticles, 3, rCut,grid_spacing);
+        SurfaceDerivative_xx<2,decltype(verletList)> SDxx(Sparticles, verletList, 2, rCut, grid_spacing, rCut/grid_spacing);
+        SurfaceDerivative_yy<2,decltype(verletList)> SDyy(Sparticles, verletList, 2, rCut, grid_spacing, rCut/grid_spacing);
+        //SurfaceDerivative_xy<2,decltype(verletList)> SDxy(Sparticles, 3, rCut, grid_spacing, rCut/grid_spacing);
+        //SurfaceDerivative_x<2,decltype(verletList)> SDx(Sparticles, 3, rCut, grid_spacing, rCut/grid_spacing);
+        //SurfaceDerivative_y<2,decltype(verletList)> SDy(Sparticles, 3, rCut, grid_spacing, rCut/grid_spacing);
         auto INICONC = getV<3>(Sparticles);
         auto CONC = getV<0>(Sparticles);
         auto TEMP = getV<4>(Sparticles);
@@ -239,8 +240,8 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
         //Here template parameters are Normal property no.
         auto verletList = Sparticles.template getVerlet<VL_NON_SYMMETRIC|VL_SKIP_REF_PART>(rCut);
 
-        SurfaceDerivative_xx<2,decltype(verletList)> SDxx(Sparticles, verletList, 2, rCut,grid_spacing);
-        SurfaceDerivative_yy<2,decltype(verletList)> SDyy(Sparticles, verletList, 2, rCut,grid_spacing);
+        SurfaceDerivative_xx<2,decltype(verletList)> SDxx(Sparticles, verletList, 2, rCut, grid_spacing, rCut/grid_spacing);
+        SurfaceDerivative_yy<2,decltype(verletList)> SDyy(Sparticles, verletList, 2, rCut, grid_spacing, rCut/grid_spacing);
         auto INICONC = getV<3>(Sparticles);
         auto CONC = getV<0>(Sparticles);
         auto TEMP = getV<4>(Sparticles);
@@ -352,10 +353,10 @@ BOOST_AUTO_TEST_CASE(dcpse_surface_sphere) {
 
   auto verletList = Sparticles.template getVerlet<VL_NON_SYMMETRIC|VL_SKIP_REF_PART>(rCut);
 
-  SurfaceDerivative_xx<2,decltype(verletList)> Sdxx{Sparticles,verletList,2,rCut,grid_spacing_surf};
-  SurfaceDerivative_yy<2,decltype(verletList)> Sdyy{Sparticles,verletList,2,rCut,grid_spacing_surf};
-  SurfaceDerivative_zz<2,decltype(verletList)> Sdzz{Sparticles,verletList,2,rCut,grid_spacing_surf};
-  //Laplace_Beltrami<2> SLap{Sparticles,2,rCut,grid_spacing_surf};
+  SurfaceDerivative_xx<2,decltype(verletList)> Sdxx{Sparticles,verletList,2,rCut,grid_spacing_surf,static_cast<unsigned int>(rCut/grid_spacing_surf)};
+  SurfaceDerivative_yy<2,decltype(verletList)> Sdyy{Sparticles,verletList,2,rCut,grid_spacing_surf,static_cast<unsigned int>(rCut/grid_spacing_surf)};
+  SurfaceDerivative_zz<2,decltype(verletList)> Sdzz{Sparticles,verletList,2,rCut,grid_spacing_surf,static_cast<unsigned int>(rCut/grid_spacing_surf)};
+  //Laplace_Beltrami<2> SLap{Sparticles,2,rCut,grid_spacing_surf,static_cast<unsigned int>(rCut/grid_spacing_surf)};
   //Sdyy.DrawKernel<5>(Sparticles,0);
   //Sdzz.DrawKernel<5>(Sparticles,0);
 /*  std::cout<<"SDXX:"<<std::endl;
@@ -488,9 +489,9 @@ BOOST_AUTO_TEST_CASE(dcpse_surface_sphere_old) {
   auto f=getV<3>(Sparticles);
   auto Df=getV<0>(Sparticles);
 
-  //SurfaceDerivative_xx<2,decltype(verletList)> Sdxx{Sparticles,2,rCut,grid_spacing_surf};
-  //SurfaceDerivative_yy<2,decltype(verletList)> Sdyy{Sparticles,2,rCut,grid_spacing_surf};
-  //SurfaceDerivative_zz<2,decltype(verletList)> Sdzz{Sparticles,2,rCut,grid_spacing_surf};
+  //SurfaceDerivative_xx<2,decltype(verletList)> Sdxx{Sparticles,2,rCut,grid_spacing_surf,static_cast<unsigned int>(rCut/grid_spacing_surf)};
+  //SurfaceDerivative_yy<2,decltype(verletList)> Sdyy{Sparticles,2,rCut,grid_spacing_surf,static_cast<unsigned int>(rCut/grid_spacing_surf)};
+  //SurfaceDerivative_zz<2,decltype(verletList)> Sdzz{Sparticles,2,rCut,grid_spacing_surf,static_cast<unsigned int>(rCut/grid_spacing_surf)};
   auto verletList = Sparticles.template getVerlet<VL_NON_SYMMETRIC|VL_SKIP_REF_PART>(rCut);
 
   Derivative_xx<decltype(verletList)> Sdxx{Sparticles,verletList,2,rCut};
@@ -500,7 +501,7 @@ BOOST_AUTO_TEST_CASE(dcpse_surface_sphere_old) {
   Derivative_zz<decltype(verletList)> Sdzz{Sparticles,verletList,2,rCut};
   //std::cout<<"Dzz Done"<<std::endl;
 
-  //Laplace_Beltrami<2> SLap{Sparticles,2,rCut,grid_spacing_surf};
+  //Laplace_Beltrami<2> SLap{Sparticles,2,rCut,grid_spacing_surf,static_cast<unsigned int>(rCut/grid_spacing_surf)};
   //SLap.DrawKernel<5>(Sparticles,73);
   //Sdxx.DrawKernel<5>(Sparticles,0);
   //Sdyy.DrawKernel<5>(Sparticles,0);
@@ -619,7 +620,7 @@ BOOST_AUTO_TEST_CASE(dcpse_surface_sphere_old) {
   auto f=getV<3>(Sparticles);
   auto Df=getV<0>(Sparticles);
 
-  SurfaceProjectedGradient<2> SGP{Sparticles,2,rCut,grid_spacing_surf};
+  SurfaceProjectedGradient<2> SGP{Sparticles,2,rCut,grid_spacing_surf,static_cast<unsigned int>(rCut/grid_spacing_surf)};
 
   Sparticles.ghost_get<3>();
   Df=SGP(f);
@@ -843,9 +844,9 @@ BOOST_AUTO_TEST_CASE(dcpse_surface_sphere_old) {
 
         auto verletList = domain.template getVerlet<VL_NON_SYMMETRIC|VL_SKIP_REF_PART|VL_NMAX_NEIGHBOR>(rCut,40);
 
-        SurfaceDerivative_xx<6,decltype(verletList)> Dxx(domain, verletList, 2, rCut,3.9,support_options::ADAPTIVE);
-        SurfaceDerivative_yy<6,decltype(verletList)> Dyy(domain, verletList, 2, rCut,3.9,support_options::ADAPTIVE);
-        SurfaceDerivative_zz<6,decltype(verletList)> Dzz(domain, verletList, 2, rCut,3.9,support_options::ADAPTIVE);
+        SurfaceDerivative_xx<6,decltype(verletList)> Dxx(domain, verletList, 2, rCut, 3.9, 2, support_options::ADAPTIVE);
+        SurfaceDerivative_yy<6,decltype(verletList)> Dyy(domain, verletList, 2, rCut, 3.9, 2, support_options::ADAPTIVE);
+        SurfaceDerivative_zz<6,decltype(verletList)> Dzz(domain, verletList, 2, rCut, 3.9, 2, support_options::ADAPTIVE);
 
 /*        v=0;
         auto itNNN=domain.getDomainIterator();
@@ -1092,9 +1093,9 @@ BOOST_AUTO_TEST_CASE(dcpse_surface_sphere_old) {
 
         auto verletList = domain.template getVerlet<VL_NON_SYMMETRIC|VL_SKIP_REF_PART>(rCut);
 
-        SurfaceDerivative_xx<6,decltype(verletList)> Dxx(domain, verletList, 2, rCut,3.9,support_options::LOAD);
-        SurfaceDerivative_yy<6,decltype(verletList)> Dyy(domain, verletList, 2, rCut,3.9,support_options::LOAD);
-        SurfaceDerivative_zz<6,decltype(verletList)> Dzz(domain, verletList, 2, rCut,3.9,support_options::LOAD);
+        SurfaceDerivative_xx<6,decltype(verletList)> Dxx(domain, verletList, 2, rCut, 3.9, static_cast<unsigned int>(rCut/spacing), support_options::LOAD);
+        SurfaceDerivative_yy<6,decltype(verletList)> Dyy(domain, verletList, 2, rCut, 3.9, static_cast<unsigned int>(rCut/spacing), support_options::LOAD);
+        SurfaceDerivative_zz<6,decltype(verletList)> Dzz(domain, verletList, 2, rCut, 3.9, static_cast<unsigned int>(rCut/spacing), support_options::LOAD);
         Dxx.load(domain,"Sdxx_test");
         Dyy.load(domain,"Sdyy_test");
         Dzz.load(domain,"Sdzz_test");

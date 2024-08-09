@@ -33,13 +33,14 @@ public:
         unsigned int ord,
         typename particles_type::stype rCut,
         typename particles_type::stype nSpacing,
+        unsigned int nCount,
         support_options opt = support_options::RADIUS
     ) {
         Point<particles_type::dims, unsigned int> p;
         p.zero();
         p.get(0) = 1;
 
-        dcpse = new SurfaceDcpse<particles_type::dims, VerletList_type, particles_type>(parts, verletList, p, ord, rCut,nSpacing,value_t<NORMAL_ID>(), opt);
+        dcpse = new SurfaceDcpse<particles_type::dims, VerletList_type, particles_type>(parts, verletList, p, ord, rCut,nSpacing, nCount, value_t<NORMAL_ID>(), opt);
     }
 
     template<typename particles_type>
@@ -129,13 +130,14 @@ public:
         unsigned int ord,
         typename particles_type::stype rCut,
         typename particles_type::stype nSpacing,
+        unsigned int nCount,
         support_options opt = support_options::RADIUS
     ) {
         Point<particles_type::dims, unsigned int> p;
         p.zero();
         p.get(1) = 1;
 
-        dcpse = new SurfaceDcpse<particles_type::dims, VerletList_type, particles_type>(parts, verletList, p, ord, rCut,nSpacing,value_t<NORMAL_ID>(), opt);
+        dcpse = new SurfaceDcpse<particles_type::dims, VerletList_type, particles_type>(parts, verletList, p, ord, rCut,nSpacing, nCount, value_t<NORMAL_ID>(), opt);
     }
 
     template<typename particles_type>
@@ -226,13 +228,14 @@ public:
         unsigned int ord,
         typename particles_type::stype rCut,
         typename particles_type::stype nSpacing,
+        unsigned int nCount,
         support_options opt = support_options::RADIUS
     ) {
         Point<particles_type::dims, unsigned int> p;
         p.zero();
         p.get(2) = 1;
 
-        dcpse = new SurfaceDcpse<particles_type::dims, VerletList_type, particles_type>(parts, verletList, p, ord, rCut,nSpacing,value_t<NORMAL_ID>(), opt);
+        dcpse = new SurfaceDcpse<particles_type::dims, VerletList_type, particles_type>(parts, verletList, p, ord, rCut,nSpacing, nCount, value_t<NORMAL_ID>(), opt);
     }
 
     template<typename particles_type>
@@ -322,6 +325,7 @@ public:
         unsigned int ord,
         typename particles_type::stype rCut,
         typename particles_type::stype nSpacing,
+        unsigned int nCount,
         support_options opt = support_options::RADIUS
     ) {
         Point<particles_type::dims, unsigned int> p;
@@ -330,7 +334,7 @@ public:
         p.get(1) = 2;
         p.get(2) = 2;
 
-        dcpse = new SurfaceDcpse<particles_type::dims, VerletList_type, particles_type>(parts, verletList, p, ord, rCut,nSpacing,value_t<NORMAL_ID>(), opt);
+        dcpse = new SurfaceDcpse<particles_type::dims, VerletList_type, particles_type>(parts, verletList, p, ord, rCut,nSpacing, nCount, value_t<NORMAL_ID>(), opt);
     }
 
     template<typename particles_type>
@@ -420,14 +424,14 @@ public:
         unsigned int ord,
         typename particles_type::stype rCut,
         typename particles_type::stype nSpacing,
+        unsigned int nCount,
         support_options opt = support_options::RADIUS
     ) {
         Point<particles_type::dims, unsigned int> p;
         p.zero();
         p.get(0) = 2;
 
-        std::cout << "SurfaceDerivative_xx " << ord << " " << rCut << " " << nSpacing << " " << opt << std::endl;
-        dcpse = new SurfaceDcpse<particles_type::dims, VerletList_type, particles_type>(parts, verletList, p, ord, rCut,nSpacing,value_t<NORMAL_ID>(), opt);
+        dcpse = new SurfaceDcpse<particles_type::dims, VerletList_type, particles_type>(parts, verletList, p, ord, rCut,nSpacing, nCount, value_t<NORMAL_ID>(), opt);
     }
 
     template<typename particles_type>
@@ -518,13 +522,14 @@ public:
         unsigned int ord,
         typename particles_type::stype rCut,
         typename particles_type::stype nSpacing,
+        unsigned int nCount,
         support_options opt = support_options::RADIUS
     ) {
         Point<particles_type::dims, unsigned int> p;
         p.zero();
         p.get(1) = 2;
 
-        dcpse = new SurfaceDcpse<particles_type::dims, VerletList_type, particles_type>(parts, verletList, p, ord, rCut,nSpacing,value_t<NORMAL_ID>(), opt);
+        dcpse = new SurfaceDcpse<particles_type::dims, VerletList_type, particles_type>(parts, verletList, p, ord, rCut,nSpacing, nCount, value_t<NORMAL_ID>(), opt);
     }
 
     template<typename particles_type>
@@ -614,13 +619,14 @@ public:
         unsigned int ord,
         typename particles_type::stype rCut,
         typename particles_type::stype nSpacing,
+        unsigned int nCount,
         support_options opt = support_options::RADIUS
     ) {
         Point<particles_type::dims, unsigned int> p;
         p.zero();
         p.get(2) = 2;
 
-        dcpse = new SurfaceDcpse<particles_type::dims, VerletList_type, particles_type>(parts, verletList, p, ord, rCut,nSpacing,value_t<NORMAL_ID>(), opt);
+        dcpse = new SurfaceDcpse<particles_type::dims, VerletList_type, particles_type>(parts, verletList, p, ord, rCut,nSpacing, nCount, value_t<NORMAL_ID>(), opt);
     }
 
     template<typename particles_type>
@@ -711,6 +717,7 @@ public:
         unsigned int ord,
         typename particles_type::stype rCut,
         typename particles_type::stype nSpacing,
+        unsigned int nCount,
         support_options opt = support_options::RADIUS
     ) {
         Point<particles_type::dims, unsigned int> p;
@@ -718,7 +725,7 @@ public:
         p.get(0) = 1;
         p.get(1) = 1;
 
-        dcpse = new SurfaceDcpse<particles_type::dims, VerletList_type, particles_type>(parts, verletList, p, ord, rCut,nSpacing,value_t<NORMAL_ID>(), opt);
+        dcpse = new SurfaceDcpse<particles_type::dims, VerletList_type, particles_type>(parts, verletList, p, ord, rCut,nSpacing, nCount, value_t<NORMAL_ID>(), opt);
     }
 
     template<typename particles_type>
@@ -809,6 +816,7 @@ public:
         unsigned int ord,
         typename particles_type::stype rCut,
         typename particles_type::stype nSpacing,
+        unsigned int nCount,
         support_options opt = support_options::RADIUS
     ) {
         Point<particles_type::dims, unsigned int> p;
@@ -816,7 +824,7 @@ public:
         p.get(1) = 1;
         p.get(2) = 1;
 
-        dcpse = new SurfaceDcpse<particles_type::dims, VerletList_type, particles_type>(parts, verletList, p, ord, rCut,nSpacing,value_t<NORMAL_ID>(), opt);
+        dcpse = new SurfaceDcpse<particles_type::dims, VerletList_type, particles_type>(parts, verletList, p, ord, rCut,nSpacing, nCount, value_t<NORMAL_ID>(), opt);
     }
 
     template<typename particles_type>
@@ -907,6 +915,7 @@ public:
         unsigned int ord,
         typename particles_type::stype rCut,
         typename particles_type::stype nSpacing,
+        unsigned int nCount,
         support_options opt = support_options::RADIUS
     ) {
         Point<particles_type::dims, unsigned int> p;
@@ -914,7 +923,7 @@ public:
         p.get(0) = 1;
         p.get(2) = 1;
 
-        dcpse = new SurfaceDcpse<particles_type::dims, VerletList_type, particles_type>(parts, verletList, p, ord, rCut,nSpacing,value_t<NORMAL_ID>(), opt);
+        dcpse = new SurfaceDcpse<particles_type::dims, VerletList_type, particles_type>(parts, verletList, p, ord, rCut,nSpacing, nCount, value_t<NORMAL_ID>(), opt);
     }
 
     template<typename particles_type>
@@ -1004,10 +1013,11 @@ public:
         unsigned int ord,
         typename particles_type::stype rCut,
         typename particles_type::stype nSpacing,
+        unsigned int nCount,
         const Point<particles_type::dims, unsigned int> &p,
         support_options opt = support_options::RADIUS
     ) {
-        dcpse = new SurfaceDcpse<particles_type::dims, VerletList_type, particles_type>(parts, verletList, p, ord, rCut,nSpacing,value_t<NORMAL_ID>(), opt);
+        dcpse = new SurfaceDcpse<particles_type::dims, VerletList_type, particles_type>(parts, verletList, p, ord, rCut,nSpacing, nCount, value_t<NORMAL_ID>(), opt);
     }
 
     template<typename particles_type>

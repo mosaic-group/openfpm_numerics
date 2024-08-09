@@ -836,30 +836,38 @@ protected:
 	{
 		particles.template ghost_get<NORMAL_ID>(SKIP_LABELLING);
 		initialParticleSize=particles.size_local_with_ghost();
-		double nSpacingP = 0.0;
+		double nSpacing_p = nSpacing;
 
 		auto it = particles.getDomainAndGhostIterator();
-		while(it.isNext()){
-			auto p=it.get();
+		while (it.isNext()) {
+			size_t p = it.get();
+
 			Point<dim,T> xp=particles.getPos(p), Normals=particles.template getProp<NORMAL_ID>(p);
 
-			if(this->opt==support_options::ADAPTIVE)
-				nSpacingP=nSpacings.get(p.getKey());
+			if (this->opt == support_options::ADAPTIVE)
+				nSpacing_p = nSpacings.get(p);
+
 
 			for(int i=1;i<=nCount;i++){
 				particles.appendLocal();
 				for(size_t j=0;j<dim;j++)
-					particles.getLastPosEnd()[j]=xp[j]+i*nSpacingP*Normals[j];
+					particles.getLastPosEnd()[j]=xp[j]+i*nSpacing_p*Normals[j];
 
 				particles.appendLocal();
 				for(size_t j=0;j<dim;j++)
-					particles.getLastPosEnd()[j]=xp[j]-i*nSpacingP*Normals[j];
+					particles.getLastPosEnd()[j]=xp[j]-i*nSpacing_p*Normals[j];
 			}
 			++it;
 		}
 
-		// particles.updateVerlet(this->verletList,1.25*nCount*nSpacing);
-		particles.updateVerlet(this->verletList,this->rCut);
+		if (this->opt==support_options::ADAPTIVE)
+		{
+			particles.updateVerlet(this->verletList, 1.25*nCount*nSpacing);
+		}
+		else
+		{
+			particles.updateVerlet(this->verletList, this->rCut);
+		}
 	}
 
 	void accumulateAndDeleteNormalParticles(vector_type &particles)
@@ -873,7 +881,7 @@ protected:
 		openfpm::vector_std<size_t> supportBuffer;
 
 		auto it = particles.getDomainIterator();
-		while(it.isNext()){
+		while (it.isNext()) {
 			supportBuffer.clear();
 			nMap.clear();
 
@@ -882,6 +890,7 @@ protected:
 			accKerOffsets.get(p)=accCalcKernels.size();
 			auto verletIt = this->verletList.getNNIterator(p);
 			int i = 0;
+
 			while (verletIt.isNext())
 			{
 				size_t q = verletIt.get();
@@ -889,6 +898,7 @@ protected:
 				int difference = static_cast<int>(q) - static_cast<int>(initialParticleSize);
 				int real_particle;
 
+				// error here, last element is overflownq
 				if (std::signbit(difference))
 					real_particle = q;
 				else
@@ -911,10 +921,9 @@ protected:
 			}
 
 			this->verletList.clear(p);
+
 			for (int i = 0; i < supportBuffer.size(); ++i)
-			{
 				this->verletList.addPart(p, supportBuffer.get(i));
-			}
 
 			++it;
 		}
@@ -936,21 +945,20 @@ public:
 		unsigned int convergenceOrder,
 		T rCut,
 		T nSpacing,
+		unsigned int nCount,
 		value_t< NORMAL_ID >,
 		support_options opt = support_options::RADIUS)
 	:
 		Dcpse<dim, VerletList_type, vector_type, vector_type2>(particles, verletList, differentialSignature, convergenceOrder, opt),
 		isSurfaceDerivative(true),
 		nSpacing(nSpacing),
-		nCount(floor(rCut/nSpacing))
+		nCount(nCount)
 	{
 		particles.ghost_get_subset();         // This communicates which ghost particles to be excluded from support
 		this->rCut = rCut;
 
 		if(opt==support_options::ADAPTIVE) {
 			adaptiveSizeFactor=nSpacing;
-			if (dim==2) nCount=3;
-			else nCount=2;
 
 			auto it = particles.getDomainIterator();
 
