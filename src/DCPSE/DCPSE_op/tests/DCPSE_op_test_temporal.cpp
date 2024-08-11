@@ -80,8 +80,8 @@ BOOST_AUTO_TEST_SUITE(temporal_test_suite)
 		//Particles_subset.write("Pars");
 		auto verletList = Particles.template getVerlet<VL_NON_SYMMETRIC|VL_SKIP_REF_PART>(rCut);
 
-		Derivative_x<decltype(verletList)> Dx(Particles, verletList, ord, rCut, sampling_factor, support_options::RADIUS);
-		Derivative_x<decltype(verletList)> Bulk_Dx(Particles, verletList, ord, rCut, sampling_factor, support_options::RADIUS);
+		Derivative_x<decltype(verletList)> Dx(Particles, verletList, ord, rCut, support_options::RADIUS);
+		Derivative_x<decltype(verletList)> Bulk_Dx(Particles, verletList, ord, rCut, support_options::RADIUS);
         texp_v<double> TVx,TdxVx;
 		texp_v<VectorS<3, double>> TV;
         texp_v<double[3][3]> TT;

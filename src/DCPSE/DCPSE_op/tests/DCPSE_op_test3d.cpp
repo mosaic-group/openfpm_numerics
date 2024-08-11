@@ -98,7 +98,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests3)
         domain.ghost_get<0>();
 
         auto verletList = domain.template getVerlet<VL_NON_SYMMETRIC|VL_SKIP_REF_PART>(rCut);
-        Advection<decltype(verletList)> Adv(domain, verletList, 2, rCut, 1.9,support_options::RADIUS);
+        Advection<decltype(verletList)> Adv(domain, verletList, 2, rCut, support_options::RADIUS);
         auto v = getV<1>(domain);
         auto P = getV<0>(domain);
         auto dv = getV<3>(domain);
@@ -190,9 +190,9 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests3)
 
         auto verletList = domain.template getVerlet<VL_NON_SYMMETRIC|VL_SKIP_REF_PART>(rCut);
 
-        Derivative_x<decltype(verletList)> Dx(domain, verletList, 2, rCut,1.9,support_options::RADIUS);
-        Derivative_y<decltype(verletList)> Dy(domain, verletList, 2, rCut,1.9,support_options::RADIUS);
-        Laplacian<decltype(verletList)> Lap(domain, verletList, 2, rCut,1.3,support_options::RADIUS);
+        Derivative_x<decltype(verletList)> Dx(domain, verletList, 2, rCut, support_options::RADIUS);
+        Derivative_y<decltype(verletList)> Dy(domain, verletList, 2, rCut, support_options::RADIUS);
+        Laplacian<decltype(verletList)> Lap(domain, verletList, 2, rCut, support_options::RADIUS);
 
         openfpm::vector<aggregate<int>> bulk;
         openfpm::vector<aggregate<int>> front_p;
@@ -509,18 +509,18 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests3)
         auto verletList2 = Particles.template getVerlet<VL_NON_SYMMETRIC|VL_SKIP_REF_PART>(rCut2);
         auto verletList_bulk = Particles_bulk.template getVerlet<VL_NON_SYMMETRIC|VL_SKIP_REF_PART>(rCut);
 
-        Derivative_x<decltype(verletList)> Dx(Particles, verletList, 2, rCut, sampling, support_options::RADIUS);
-        Derivative_y<decltype(verletList)> Dy(Particles, verletList, 2, rCut, sampling, support_options::RADIUS);
-        Derivative_z<decltype(verletList)> Dz(Particles, verletList, 2, rCut, sampling, support_options::RADIUS);
+        Derivative_x<decltype(verletList)> Dx(Particles, verletList, 2, rCut, support_options::RADIUS);
+        Derivative_y<decltype(verletList)> Dy(Particles, verletList, 2, rCut, support_options::RADIUS);
+        Derivative_z<decltype(verletList)> Dz(Particles, verletList, 2, rCut, support_options::RADIUS);
 
         // ?
-        Derivative_x<decltype(verletList_bulk)> B_Dx(Particles_bulk, verletList_bulk, 2, rCut, sampling, support_options::RADIUS);
-        Derivative_y<decltype(verletList_bulk)> B_Dy(Particles_bulk, verletList_bulk, 2, rCut, sampling, support_options::RADIUS);
-        Derivative_z<decltype(verletList_bulk)> B_Dz(Particles_bulk, verletList_bulk, 2, rCut, sampling, support_options::RADIUS);
+        Derivative_x<decltype(verletList_bulk)> B_Dx(Particles_bulk, verletList_bulk, 2, rCut, support_options::RADIUS);
+        Derivative_y<decltype(verletList_bulk)> B_Dy(Particles_bulk, verletList_bulk, 2, rCut, support_options::RADIUS);
+        Derivative_z<decltype(verletList_bulk)> B_Dz(Particles_bulk, verletList_bulk, 2, rCut, support_options::RADIUS);
 
-        Derivative_xx<decltype(verletList2)> Dxx(Particles, verletList2, 2, rCut2, sampling2, support_options::RADIUS);
-        Derivative_yy<decltype(verletList2)> Dyy(Particles, verletList2, 2, rCut2, sampling2, support_options::RADIUS);
-        Derivative_zz<decltype(verletList2)> Dzz(Particles, verletList2, 2, rCut2, sampling2, support_options::RADIUS);
+        Derivative_xx<decltype(verletList2)> Dxx(Particles, verletList2, 2, rCut2, support_options::RADIUS);
+        Derivative_yy<decltype(verletList2)> Dyy(Particles, verletList2, 2, rCut2, support_options::RADIUS);
+        Derivative_zz<decltype(verletList2)> Dzz(Particles, verletList2, 2, rCut2, support_options::RADIUS);
 
         //std::cout << "DCPSE KERNELS DONE" << std::endl;
         petsc_solver<double> solverPetsc;
@@ -843,17 +843,17 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests3)
         auto verletList2 = Particles.template getVerlet<VL_NON_SYMMETRIC|VL_SKIP_REF_PART>(rCut2);
         auto verletList_bulk = Particles_bulk.template getVerlet<VL_NON_SYMMETRIC|VL_SKIP_REF_PART>(rCut2);
 
-        Derivative_x<decltype(verletList)> Dx(Particles, verletList, 2, rCut, sampling, support_options::RADIUS);
-        Derivative_y<decltype(verletList)> Dy(Particles, verletList, 2, rCut, sampling, support_options::RADIUS);
-        Derivative_z<decltype(verletList)> Dz(Particles, verletList, 2, rCut, sampling, support_options::RADIUS);
+        Derivative_x<decltype(verletList)> Dx(Particles, verletList, 2, rCut, support_options::RADIUS);
+        Derivative_y<decltype(verletList)> Dy(Particles, verletList, 2, rCut, support_options::RADIUS);
+        Derivative_z<decltype(verletList)> Dz(Particles, verletList, 2, rCut, support_options::RADIUS);
 
-        Derivative_x<decltype(verletList_bulk)> B_Dx(Particles_bulk, verletList_bulk, 2, rCut, sampling, support_options::RADIUS);
-        Derivative_y<decltype(verletList_bulk)> B_Dy(Particles_bulk, verletList_bulk, 2, rCut, sampling, support_options::RADIUS);
-        Derivative_z<decltype(verletList_bulk)> B_Dz(Particles_bulk, verletList_bulk, 2, rCut, sampling, support_options::RADIUS);
+        Derivative_x<decltype(verletList_bulk)> B_Dx(Particles_bulk, verletList_bulk, 2, rCut, support_options::RADIUS);
+        Derivative_y<decltype(verletList_bulk)> B_Dy(Particles_bulk, verletList_bulk, 2, rCut, support_options::RADIUS);
+        Derivative_z<decltype(verletList_bulk)> B_Dz(Particles_bulk, verletList_bulk, 2, rCut, support_options::RADIUS);
 
-        Derivative_xx<decltype(verletList2)> Dxx(Particles, verletList2, 2, rCut2, sampling2, support_options::RADIUS);
-        Derivative_yy<decltype(verletList2)> Dyy(Particles, verletList2, 2, rCut2, sampling2, support_options::RADIUS);
-        Derivative_zz<decltype(verletList2)> Dzz(Particles, verletList2, 2, rCut2, sampling2, support_options::RADIUS);
+        Derivative_xx<decltype(verletList2)> Dxx(Particles, verletList2, 2, rCut2, support_options::RADIUS);
+        Derivative_yy<decltype(verletList2)> Dyy(Particles, verletList2, 2, rCut2, support_options::RADIUS);
+        Derivative_zz<decltype(verletList2)> Dzz(Particles, verletList2, 2, rCut2, support_options::RADIUS);
 
         //std::cout << "DCPSE KERNELS DONE" << std::endl;
         petsc_solver<double> solverPetsc;

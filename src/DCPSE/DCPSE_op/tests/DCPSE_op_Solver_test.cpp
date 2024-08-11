@@ -64,7 +64,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
         domain.ghost_get<0>();
 
         auto verletList = domain.template getVerlet<VL_NON_SYMMETRIC|VL_SKIP_REF_PART>(rCut);
-        Laplacian<decltype(verletList)> Lap(domain, verletList, 2, rCut, 2,support_options::RADIUS);
+        Laplacian<decltype(verletList)> Lap(domain, verletList, 2, rCut, support_options::RADIUS);
 
         DCPSE_scheme<equations2d1,decltype(domain)> Solver(domain);
 
@@ -301,9 +301,9 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
 
         auto verletList = domain.template getVerlet<VL_NON_SYMMETRIC|VL_SKIP_REF_PART>(rCut);
 
-        Derivative_x<decltype(verletList)> Dx(domain, verletList, 2, rCut ,1.9,support_options::RADIUS);
-        Derivative_y<decltype(verletList)> Dy(domain, verletList, 2, rCut,1.9,support_options::RADIUS);
-        Laplacian<decltype(verletList)> Lap(domain, verletList, 2, rCut ,1.9,support_options::RADIUS);
+        Derivative_x<decltype(verletList)> Dx(domain, verletList, 2, rCut, support_options::RADIUS);
+        Derivative_y<decltype(verletList)> Dy(domain, verletList, 2, rCut, support_options::RADIUS);
+        Laplacian<decltype(verletList)> Lap(domain, verletList, 2, rCut, support_options::RADIUS);
 
         openfpm::vector<aggregate<int>> bulk;
         openfpm::vector<aggregate<int>> up_p;
@@ -470,9 +470,9 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
 
         auto verletList = domain.template getVerlet<VL_NON_SYMMETRIC|VL_SKIP_REF_PART>(rCut);
 
-        Derivative_x<decltype(verletList)> Dx(domain, verletList, 2, rCut,1.9,support_options::RADIUS);
-        Derivative_y<decltype(verletList)> Dy(domain, verletList, 2, rCut,1.9,support_options::RADIUS);
-        Laplacian<decltype(verletList)> Lap(domain, verletList, 2, rCut, 1.9,support_options::RADIUS);
+        Derivative_x<decltype(verletList)> Dx(domain, verletList, 2, rCut, support_options::RADIUS);
+        Derivative_y<decltype(verletList)> Dy(domain, verletList, 2, rCut, support_options::RADIUS);
+        Laplacian<decltype(verletList)> Lap(domain, verletList, 2, rCut, support_options::RADIUS);
 
         openfpm::vector<aggregate<int>> bulk;
         openfpm::vector<aggregate<int>> bulkF;
@@ -646,7 +646,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
         domain.ghost_get<0>();
 
         auto verletList = domain.template getVerlet<VL_NON_SYMMETRIC|VL_SKIP_REF_PART>(rCut);
-        Laplacian<decltype(verletList)> Lap(domain, verletList, 2, rCut, 1.9, support_options::RADIUS);
+        Laplacian<decltype(verletList)> Lap(domain, verletList, 2, rCut, support_options::RADIUS);
 
         DCPSE_scheme<equations2d1p,decltype(domain)> Solver( domain);
 
@@ -775,8 +775,8 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
 
         auto verletList = domain.template getVerlet<VL_NON_SYMMETRIC|VL_SKIP_REF_PART>(rCut);
 
-        Derivative_y<decltype(verletList)> Dy(domain, verletList, 2, rCut,2,support_options::RADIUS);
-        Laplacian<decltype(verletList)> Lap(domain, verletList, 2, rCut, 3,support_options::RADIUS);
+        Derivative_y<decltype(verletList)> Dy(domain, verletList, 2, rCut, support_options::RADIUS);
+        Laplacian<decltype(verletList)> Lap(domain, verletList, 2, rCut, support_options::RADIUS);
 
         DCPSE_scheme<equations2d1,decltype(domain)> Solver(domain);
 
@@ -924,9 +924,9 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
 
         auto verletList = domain.template getVerlet<VL_NON_SYMMETRIC|VL_SKIP_REF_PART>(rCut);
 
-        Derivative_x<decltype(verletList)> Dx(domain, verletList, 2, rCut,1.9,support_options::RADIUS);
-        Derivative_y<decltype(verletList)> Dy(domain, verletList, 2, rCut,1.9,support_options::RADIUS);
-        Laplacian<decltype(verletList)> Lap(domain, verletList, 2, rCut, 1.9,support_options::RADIUS);
+        Derivative_x<decltype(verletList)> Dx(domain, verletList, 2, rCut, support_options::RADIUS);
+        Derivative_y<decltype(verletList)> Dy(domain, verletList, 2, rCut, support_options::RADIUS);
+        Laplacian<decltype(verletList)> Lap(domain, verletList, 2, rCut, support_options::RADIUS);
         petsc_solver<double> solver;
         solver.setRestart(500);
         solver.setSolver(KSPGMRES);
@@ -1083,9 +1083,9 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
 
         auto verletList = domain.template getVerlet<VL_NON_SYMMETRIC|VL_SKIP_REF_PART>(rCut);
 
-        Derivative_x<decltype(verletList)> Dx(domain, verletList, 2, rCut,1.9,support_options::RADIUS);
-        Derivative_y<decltype(verletList)> Dy(domain, verletList, 2, rCut,1.9,support_options::RADIUS);
-        Laplacian<decltype(verletList)> Lap(domain, verletList, 2, rCut, 1.9,support_options::RADIUS);
+        Derivative_x<decltype(verletList)> Dx(domain, verletList, 2, rCut, support_options::RADIUS);
+        Derivative_y<decltype(verletList)> Dy(domain, verletList, 2, rCut, support_options::RADIUS);
+        Laplacian<decltype(verletList)> Lap(domain, verletList, 2, rCut, support_options::RADIUS);
         petsc_solver<double> solver;
         solver.setRestart(500);
         solver.setSolver(KSPGMRES);
@@ -1251,9 +1251,9 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
 
         auto verletList = domain.template getVerlet<VL_NON_SYMMETRIC|VL_SKIP_REF_PART>(rCut);
 
-        Derivative_x<decltype(verletList)> Dx(domain, verletList, 2, rCut,1.9,support_options::RADIUS);
-        Derivative_y<decltype(verletList)> Dy(domain, verletList, 2, rCut,1.9,support_options::RADIUS);
-        Laplacian<decltype(verletList)> Lap(domain, verletList, 2, rCut,1.9,support_options::RADIUS);
+        Derivative_x<decltype(verletList)> Dx(domain, verletList, 2, rCut, support_options::RADIUS);
+        Derivative_y<decltype(verletList)> Dy(domain, verletList, 2, rCut, support_options::RADIUS);
+        Laplacian<decltype(verletList)> Lap(domain, verletList, 2, rCut, support_options::RADIUS);
 
 
         openfpm::vector<aggregate<int>> bulk;

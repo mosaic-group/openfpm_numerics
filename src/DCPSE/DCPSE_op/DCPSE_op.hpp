@@ -641,8 +641,7 @@ public:
  * \param parts particle set
  * \param ord order of convergence of the operator
  * \param rCut Argument for cell list construction
- * \param oversampling_factor multiplier to the minimum no. of particles required by the operator in support
- * \param support_options default:N_particles, Radius can be used to select all particles inside rCut. Overrides oversampling.
+ * \param support_options default: RADIUS to select all particles inside rCut
  *
  * \return Operator Dx which is a function on Vector_dist_Expressions
  *
@@ -659,8 +658,7 @@ public:
 	 * \param parts particle set
 	 * \param ord order of convergence of the operator
 	 * \param rCut Argument for cell list construction
-	 * \param oversampling_factor multiplier to the minimum no. of particles required by the operator in support
-	 * \param support_options default:N_particles, Radius can be used to select all particles inside rCut. Overrides oversampling.
+	 * \param support_options default: RADIUS to select all particles inside rCut
 	 *
 	 * \return Operator Dx which is a function on Vector_dist_Expressions
 	 *
@@ -671,14 +669,13 @@ public:
 		VerletList_type& verletList,
 		unsigned int ord,
 		typename particles_type::stype rCut,
-		double oversampling_factor = dcpse_oversampling_factor,
 		support_options opt = support_options::RADIUS
 	) {
 		Point<particles_type::dims, unsigned int> p;
 		p.zero();
 		p.get(0) = 1;
 
-		dcpse = new Dcpse_type<particles_type::dims, VerletList_type, particles_type>(parts, verletList, p, ord, rCut, oversampling_factor, opt);
+		dcpse = new Dcpse_type<particles_type::dims, VerletList_type, particles_type>(parts, verletList, p, ord, rCut, opt);
 	}
 
 	/*! \brief Constructor for Creating the DCPSE Operator Dx and objects and computes DCPSE Kernels.
@@ -688,8 +685,7 @@ public:
 	 * \param parts set of domain particles
 	 * \param ord order of convergence of the operator
 	 * \param rCut Argument for cell list construction
-	 * \param oversampling_factor multiplier to the minimum no. of particles required by the operator in support
-	 * \param support_options default:N_particles, Radius can be used to select all particles inside rCut. Overrides oversampling.
+	 * \param support_options default: RADIUS to select all particles inside rCut
 	 *
 	 * \return Operator Dx which is a function on Vector_dist_Expressions
 	 *
@@ -704,7 +700,6 @@ public:
 		VerletList_type& verletList,
 		unsigned int ord,
 		typename vector_type::stype rCut,
-		double oversampling_factor = dcpse_oversampling_factor,
 		support_options opt = support_options::RADIUS
 	) {
 		Point<vector_type::dims, unsigned int> p;
@@ -718,7 +713,6 @@ public:
 			p,
 			ord,
 			rCut,
-			oversampling_factor,
 			opt
 		);
 	}
@@ -797,8 +791,7 @@ public:
  * \param parts particle set
  * \param ord order of convergence of the operator
  * \param rCut Argument for cell list construction
- * \param oversampling_factor multiplier to the minimum no. of particles required by the operator in support
- * \param support_options default:N_particles, Radius can be used to select all particles inside rCut. Overrides oversampling.
+ * \param support_options default: RADIUS to select all particles inside rCut
  *
  * \return Operator Dy which is a function on Vector_dist_Expressions
  *
@@ -816,8 +809,7 @@ public:
 	 * \param parts particle set
 	 * \param ord order of convergence of the operator
 	 * \param rCut Argument for cell list construction
-	 * \param oversampling_factor multiplier to the minimum no. of particles required by the operator in support
-	 * \param support_options default:N_particles, Radius can be used to select all particles inside rCut. Overrides oversampling.
+	 * \param support_options default: RADIUS to select all particles inside rCut
 	 *
 	 * \return Operator Dy which is a function on Vector_dist_Expressions
 	 *
@@ -828,14 +820,13 @@ public:
 		VerletList_type& verletList,
 		unsigned int ord,
 		typename particles_type::stype rCut,
-		double oversampling_factor = dcpse_oversampling_factor,
 		support_options opt = support_options::RADIUS
 	) {
 		Point<particles_type::dims, unsigned int> p;
 		p.zero();
 		p.get(1) = 1;
 
-		dcpse = new Dcpse_type<particles_type::dims, VerletList_type, particles_type>(parts, verletList, p, ord, rCut, oversampling_factor, opt);
+		dcpse = new Dcpse_type<particles_type::dims, VerletList_type, particles_type>(parts, verletList, p, ord, rCut, opt);
 	}
 
 	/*! \brief Constructor for Creating the DCPSE Operator Dy and objects and computes DCPSE Kernels.
@@ -845,8 +836,7 @@ public:
 	 * \param parts set of domain particles
 	 * \param ord order of convergence of the operator
 	 * \param rCut Argument for cell list construction
-	 * \param oversampling_factor multiplier to the minimum no. of particles required by the operator in support
-	 * \param support_options default:N_particles, Radius can be used to select all particles inside rCut. Overrides oversampling.
+	 * \param support_options default: RADIUS to select all particles inside rCut
 	 *
 	 * \return Operator Dy which is a function on Vector_dist_Expressions
 	 *
@@ -861,7 +851,6 @@ public:
 		VerletList_type& verletList,
 		unsigned int ord,
 		typename vector_type::stype rCut,
-		double oversampling_factor = dcpse_oversampling_factor,
 		support_options opt = support_options::RADIUS
 	) {
 		Point<vector_type::dims, unsigned int> p;
@@ -875,7 +864,6 @@ public:
 			p,
 			ord,
 			rCut,
-			oversampling_factor,
 			opt
 		);
 	}
@@ -947,8 +935,7 @@ public:
  * \param parts particle set
  * \param ord order of convergence of the operator
  * \param rCut Argument for cell list construction
- * \param oversampling_factor multiplier to the minimum no. of particles required by the operator in support
- * \param support_options default:N_particles, Radius can be used to select all particles inside rCut. Overrides oversampling.
+ * \param support_options default: RADIUS to select all particles inside rCut
  *
  * \return Operator Dz which is a function on Vector_dist_Expressions
  *
@@ -965,8 +952,7 @@ public:
 	 * \param parts particle set
 	 * \param ord order of convergence of the operator
 	 * \param rCut Argument for cell list construction
-	 * \param oversampling_factor multiplier to the minimum no. of particles required by the operator in support
-	 * \param support_options default:N_particles, Radius can be used to select all particles inside rCut. Overrides oversampling.
+	 * \param support_options default: RADIUS to select all particles inside rCut
 	 *
 	 * \return Operator Dz which is a function on Vector_dist_Expressions
 	 *
@@ -977,14 +963,13 @@ public:
 		VerletList_type& verletList,
 		unsigned int ord,
 		typename particles_type::stype rCut,
-		double oversampling_factor = dcpse_oversampling_factor,
 		support_options opt = support_options::RADIUS
 	) {
 		Point<particles_type::dims, unsigned int> p;
 		p.zero();
 		p.get(2) = 1;
 
-		dcpse = new Dcpse_type<particles_type::dims, VerletList_type, particles_type>(parts, verletList, p, ord, rCut, oversampling_factor, opt);
+		dcpse = new Dcpse_type<particles_type::dims, VerletList_type, particles_type>(parts, verletList, p, ord, rCut, opt);
 	}
 
 	/*! \brief Constructor for Creating the DCPSE Operator Dz and objects and computes DCPSE Kernels.
@@ -994,8 +979,7 @@ public:
 	 * \param parts set of domain particles
 	 * \param ord order of convergence of the operator
 	 * \param rCut Argument for cell list construction
-	 * \param oversampling_factor multiplier to the minimum no. of particles required by the operator in support
-	 * \param support_options default:N_particles, Radius can be used to select all particles inside rCut. Overrides oversampling.
+	 * \param support_options default: RADIUS to select all particles inside rCut
 	 *
 	 * \return Operator Dz which is a function on Vector_dist_Expressions
 	 *
@@ -1010,7 +994,6 @@ public:
 		VerletList_type& verletList,
 		unsigned int ord,
 		typename vector_type::stype rCut,
-		double oversampling_factor = dcpse_oversampling_factor,
 		support_options opt = support_options::RADIUS
 	) {
 		Point<vector_type::dims, unsigned int> p;
@@ -1024,7 +1007,6 @@ public:
 			p,
 			ord,
 			rCut,
-			oversampling_factor,
 			opt
 		);
 	}
@@ -1091,8 +1073,7 @@ public:
 	 * \param parts particle set
 	 * \param ord order of convergence of the operator
 	 * \param rCut Argument for cell list construction
-	 * \param oversampling_factor multiplier to the minimum no. of particles required by the operator in support
-	 * \param support_options default:N_particles, Radius can be used to select all particles inside rCut. Overrides oversampling.
+	 * \param support_options default: RADIUS to select all particles inside rCut
 	 *
 	 * \return Operator Grad which is a function on Vector_dist_Expressions
 	 *
@@ -1111,8 +1092,7 @@ public:
 	 * \param parts particle set
 	 * \param ord order of convergence of the operator
 	 * \param rCut Argument for cell list construction
-	 * \param oversampling_factor multiplier to the minimum no. of particles required by the operator in support
-	 * \param support_options default:N_particles, Radius can be used to select all particles inside rCut. Overrides oversampling.
+	 * \param support_options default: RADIUS to select all particles inside rCut
 	 *
 	 * \return Operator Grad which is a function on Vector_dist_Expressions
 	 *
@@ -1123,7 +1103,6 @@ public:
 		VerletList_type& verletList,
 		unsigned int ord,
 		typename particles_type::stype rCut,
-		double oversampling_factor = dcpse_oversampling_factor,
 		support_options opt = support_options::RADIUS
 	) {
 		typedef Dcpse_type<particles_type::dims, VerletList_type, particles_type> DCPSE_type;
@@ -1138,9 +1117,9 @@ public:
 			p.get(i) = 1;
 
 			if (i)
-				new(&dcpse_ptr[i]) Dcpse_type<particles_type::dims, VerletList_type, particles_type>(parts, verletList, dcpse_ptr[0], p, ord, rCut, oversampling_factor, opt);
+				new(&dcpse_ptr[i]) Dcpse_type<particles_type::dims, VerletList_type, particles_type>(parts, verletList, dcpse_ptr[0], p, ord, rCut, opt);
 			else
-				new(&dcpse_ptr[i]) Dcpse_type<particles_type::dims, VerletList_type, particles_type>(parts, verletList, p, ord, rCut, oversampling_factor, opt);
+				new(&dcpse_ptr[i]) Dcpse_type<particles_type::dims, VerletList_type, particles_type>(parts, verletList, p, ord, rCut, opt);
 		}
 	}
 
@@ -1152,8 +1131,7 @@ public:
 	 * \param parts set of domain particles
 	 * \param ord order of convergence of the operator
 	 * \param rCut Argument for cell list construction
-	 * \param oversampling_factor multiplier to the minimum no. of particles required by the operator in support
-	 * \param support_options default:N_particles, Radius can be used to select all particles inside rCut. Overrides oversampling.
+	 * \param support_options default: RADIUS to select all particles inside rCut
 	 *
 	 * \return Operator Grad which is a function on Vector_dist_Expressions
 	 *
@@ -1168,7 +1146,6 @@ public:
 		VerletList_type& verletList,
 		unsigned int ord,
 		typename vector_type::stype rCut,
-		double oversampling_factor = dcpse_oversampling_factor,
 		support_options opt = support_options::RADIUS
 	) {
 		typedef Dcpse_type<vector_type::dims, VerletList_type, vector_type, vector_type2> DCPSE_type;
@@ -1191,7 +1168,6 @@ public:
 					p,
 					ord,
 					rCut,
-					oversampling_factor,
 					opt
 				);
 			else
@@ -1202,7 +1178,6 @@ public:
 					p,
 					ord,
 					rCut,
-					oversampling_factor,
 					opt
 				);
 		}
@@ -1258,8 +1233,7 @@ public:
 	 * \param parts particle set
 	 * \param ord order of convergence of the operator
 	 * \param rCut Argument for cell list construction
-	 * \param oversampling_factor multiplier to the minimum no. of particles required by the operator in support
-	 * \param support_options default:N_particles, Radius can be used to select all particles inside rCut. Overrides oversampling.
+	 * \param support_options default: RADIUS to select all particles inside rCut
 	 *
 	 * \return Operator which is a function on Vector_dist_Expressions
 	 *
@@ -1277,8 +1251,7 @@ public:
 	 * \param parts particle set
 	 * \param ord order of convergence of the operator
 	 * \param rCut Argument for cell list construction
-	 * \param oversampling_factor multiplier to the minimum no. of particles required by the operator in support
-	 * \param support_options default:N_particles, Radius can be used to select all particles inside rCut. Overrides oversampling.
+	 * \param support_options default: RADIUS to select all particles inside rCut
 	 *
 	 * \return Operator which is a function on Vector_dist_Expressions
 	 *
@@ -1289,7 +1262,6 @@ public:
 		VerletList_type& verletList,
 		unsigned int ord,
 		typename particles_type::stype rCut,
-		double oversampling_factor = dcpse_oversampling_factor,
 		support_options opt = support_options::RADIUS
 	) {
 		typedef Dcpse_type<particles_type::dims, VerletList_type, particles_type> DCPSE_type;
@@ -1301,11 +1273,11 @@ public:
 
 		p.zero();
 		p.get(1) = 1;
-		new(dcpse_ptr) Dcpse_type<particles_type::dims, VerletList_type, particles_type>(parts, verletList, p, ord, rCut, oversampling_factor, opt);
+		new(dcpse_ptr) Dcpse_type<particles_type::dims, VerletList_type, particles_type>(parts, verletList, p, ord, rCut, opt);
 
 		p.zero();
 		p.get(0) = 1;
-		new(dcpse_ptr+1) Dcpse_type<particles_type::dims, VerletList_type, particles_type>(parts, verletList, dcpse_ptr[0], p, ord, rCut, oversampling_factor, opt);
+		new(dcpse_ptr+1) Dcpse_type<particles_type::dims, VerletList_type, particles_type>(parts, verletList, dcpse_ptr[0], p, ord, rCut, opt);
 
 	}
 
@@ -1318,8 +1290,7 @@ public:
 	 * \param parts set of domain particles
 	 * \param ord order of convergence of the operator
 	 * \param rCut Argument for cell list construction
-	 * \param oversampling_factor multiplier to the minimum no. of particles required by the operator in support
-	 * \param support_options default:N_particles, Radius can be used to select all particles inside rCut. Overrides oversampling.
+	 * \param support_options default: RADIUS to select all particles inside rCut
 	 *
 	 * \return Operator which is a function on Vector_dist_Expressions
 	 *
@@ -1334,7 +1305,7 @@ public:
 		VerletList_type& verletList,
 		unsigned int ord,
 		typename vector_type::stype rCut,
-		double oversampling_factor = dcpse_oversampling_factor, support_options opt = support_options::RADIUS
+		support_options opt = support_options::RADIUS
 	) {
 		typedef Dcpse_type<vector_type::dims, VerletList_type, vector_type, vector_type2> DCPSE_type;
 
@@ -1352,7 +1323,6 @@ public:
 			p,
 			ord,
 			rCut,
-			oversampling_factor,
 			opt
 		);
 
@@ -1366,7 +1336,6 @@ public:
 			p,
 			ord,
 			rCut,
-			oversampling_factor,
 			opt
 		);
 
@@ -1389,8 +1358,7 @@ public:
 	 * \param parts particle set
 	 * \param ord order of convergence of the operator
 	 * \param rCut Argument for cell list construction
-	 * \param oversampling_factor multiplier to the minimum no. of particles required by the operator in support
-	 * \param support_options default:N_particles, Radius can be used to select all particles inside rCut. Overrides oversampling.
+	 * \param support_options default: RADIUS to select all particles inside rCut
 	 *
 	 * \return Operator which is a function on Vector_dist_Expressions
 	 *
@@ -1409,8 +1377,7 @@ public:
 	 * \param parts particle set
 	 * \param ord order of convergence of the operator
 	 * \param rCut Argument for cell list construction
-	 * \param oversampling_factor multiplier to the minimum no. of particles required by the operator in support
-	 * \param support_options default:N_particles, Radius can be used to select all particles inside rCut. Overrides oversampling.
+	 * \param support_options default: RADIUS to select all particles inside rCut
 	 *
 	 * \return Operator which is a function on Vector_dist_Expressions
 	 *
@@ -1421,7 +1388,6 @@ public:
 		VerletList_type& verletList,
 		unsigned int ord,
 		typename particles_type::stype rCut,
-		double oversampling_factor = dcpse_oversampling_factor,
 		support_options opt = support_options::RADIUS
 	) {
 		typedef Dcpse_type<particles_type::dims, VerletList_type, particles_type> DCPSE_type;
@@ -1435,9 +1401,9 @@ public:
 			p.get(i) = 2;
 
 			if (i)
-				new(&dcpse_ptr[i]) Dcpse_type<particles_type::dims, VerletList_type, particles_type>(parts, verletList, dcpse_ptr[0], p, ord, rCut, oversampling_factor, opt);
+				new(&dcpse_ptr[i]) Dcpse_type<particles_type::dims, VerletList_type, particles_type>(parts, verletList, dcpse_ptr[0], p, ord, rCut, opt);
 			else
-				new(&dcpse_ptr[i]) Dcpse_type<particles_type::dims, VerletList_type, particles_type>(parts, verletList, p, ord, rCut, oversampling_factor, opt);
+				new(&dcpse_ptr[i]) Dcpse_type<particles_type::dims, VerletList_type, particles_type>(parts, verletList, p, ord, rCut, opt);
 		}
 	}
 
@@ -1450,8 +1416,7 @@ public:
 	 * \param parts set of domain particles
 	 * \param ord order of convergence of the operator
 	 * \param rCut Argument for cell list construction
-	 * \param oversampling_factor multiplier to the minimum no. of particles required by the operator in support
-	 * \param support_options default:N_particles, Radius can be used to select all particles inside rCut. Overrides oversampling.
+	 * \param support_options default: RADIUS to select all particles inside rCut
 	 *
 	 * \return Operator which is a function on Vector_dist_Expressions
 	 *
@@ -1466,7 +1431,6 @@ public:
 		VerletList_type& verletList,
 		unsigned int ord,
 		typename vector_type::stype rCut,
-		double oversampling_factor = dcpse_oversampling_factor,
 		support_options opt = support_options::RADIUS
 	) {
 		typedef Dcpse_type<vector_type::dims, VerletList_type, vector_type, vector_type2> DCPSE_type;
@@ -1488,7 +1452,6 @@ public:
 					p,
 					ord,
 					rCut,
-					oversampling_factor,
 					opt
 				);
 			else
@@ -1499,7 +1462,6 @@ public:
 					p,
 					ord,
 					rCut,
-					oversampling_factor,
 					opt
 				);
 		}
@@ -1563,8 +1525,7 @@ public:
 	 * \param parts particle set
 	 * \param ord order of convergence of the operator
 	 * \param rCut Argument for cell list construction
-	 * \param oversampling_factor multiplier to the minimum no. of particles required by the operator in support
-	 * \param support_options default:N_particles, Radius can be used to select all particles inside rCut. Overrides oversampling.
+	 * \param support_options default: RADIUS to select all particles inside rCut
 	 *
 	 * \return Operator which is a function on Vector_dist_Expressions. Computes Divergence of Vectors
 	 *
@@ -1583,8 +1544,7 @@ public:
 	 * \param parts particle set
 	 * \param ord order of convergence of the operator
 	 * \param rCut Argument for cell list construction
-	 * \param oversampling_factor multiplier to the minimum no. of particles required by the operator in support
-	 * \param support_options default:N_particles, Radius can be used to select all particles inside rCut. Overrides oversampling.
+	 * \param support_options default: RADIUS to select all particles inside rCut
 	 *
 	 * \return Operator which is a function on Vector_dist_Expressions. Computes Divergence of Vectors
 	 *
@@ -1595,7 +1555,6 @@ public:
 		VerletList_type& verletList,
 		unsigned int ord,
 		typename particles_type::stype rCut,
-		double oversampling_factor = dcpse_oversampling_factor,
 		support_options opt = support_options::RADIUS
 	) {
 		typedef Dcpse_type<particles_type::dims, VerletList_type, particles_type> DCPSE_type;
@@ -1610,9 +1569,9 @@ public:
 			p.get(i) = 1;
 
 			if (i)
-				new(&dcpse_ptr[i]) Dcpse_type<particles_type::dims, VerletList_type, particles_type>(parts, verletList, dcpse_ptr[0], p, ord, rCut, oversampling_factor, opt);
+				new(&dcpse_ptr[i]) Dcpse_type<particles_type::dims, VerletList_type, particles_type>(parts, verletList, dcpse_ptr[0], p, ord, rCut, opt);
 			else
-				new(&dcpse_ptr[i]) Dcpse_type<particles_type::dims, VerletList_type, particles_type>(parts, verletList, p, ord, rCut, oversampling_factor, opt);
+				new(&dcpse_ptr[i]) Dcpse_type<particles_type::dims, VerletList_type, particles_type>(parts, verletList, p, ord, rCut, opt);
 		}
 	}
 
@@ -1625,8 +1584,7 @@ public:
 	 * \param parts set of domain particles
 	 * \param ord order of convergence of the operator
 	 * \param rCut Argument for cell list construction
-	 * \param oversampling_factor multiplier to the minimum no. of particles required by the operator in support
-	 * \param support_options default:N_particles, Radius can be used to select all particles inside rCut. Overrides oversampling.
+	 * \param support_options default: RADIUS to select all particles inside rCut
 	 *
 	 * \return Operator which is a function on Vector_dist_Expressions. Computes Divergence of Vectors
 	 *
@@ -1641,7 +1599,6 @@ public:
 		VerletList_type& verletList,
 		unsigned int ord,
 		typename vector_type::stype rCut,
-		double oversampling_factor = dcpse_oversampling_factor,
 		support_options opt = support_options::RADIUS
 	) {
 		typedef Dcpse_type<vector_type::dims, VerletList_type, vector_type, vector_type2> DCPSE_type;
@@ -1664,7 +1621,6 @@ public:
 					p,
 					ord,
 					rCut,
-					oversampling_factor,
 					opt
 				);
 			else
@@ -1675,7 +1631,6 @@ public:
 					p,
 					ord,
 					rCut,
-					oversampling_factor,
 					opt
 				);
 		}
@@ -1714,8 +1669,7 @@ public:
 	 * \param parts particle set
 	 * \param ord order of convergence of the operator
 	 * \param rCut Argument for cell list construction
-	 * \param oversampling_factor multiplier to the minimum no. of particles required by the operator in support
-	 * \param support_options default:N_particles, Radius can be used to select all particles inside rCut. Overrides oversampling.
+	 * \param support_options default: RADIUS to select all particles inside rCut
 	 *
 	 * \return Operator which is a function on Vector_dist_Expressions. Computes Advection of Vectors Adv(v,u) = v.Grad(u)
 	 *
@@ -1734,8 +1688,7 @@ public:
 	 * \param parts particle set
 	 * \param ord order of convergence of the operator
 	 * \param rCut Argument for cell list construction
-	 * \param oversampling_factor multiplier to the minimum no. of particles required by the operator in support
-	 * \param support_options default:N_particles, Radius can be used to select all particles inside rCut. Overrides oversampling.
+	 * \param support_options default: RADIUS to select all particles inside rCut
 	 *
 	 * \return Operator which is a function on Vector_dist_Expressions. Computes Advection of Vectors Adv(v,u) = v.Grad(u)
 	 *
@@ -1746,7 +1699,6 @@ public:
 		VerletList_type& verletList,
 		unsigned int ord,
 		typename particles_type::stype rCut,
-		double oversampling_factor = dcpse_oversampling_factor,
 		support_options opt = support_options::RADIUS
 	) {
 		typedef Dcpse_type<particles_type::dims, VerletList_type, particles_type> DCPSE_type;
@@ -1761,9 +1713,9 @@ public:
 			p.get(i) = 1;
 
 			if (i)
-				new(&dcpse_ptr[i]) Dcpse_type<particles_type::dims, VerletList_type, particles_type>(parts, verletList, dcpse_ptr[0], p, ord, rCut, oversampling_factor, opt);
+				new(&dcpse_ptr[i]) Dcpse_type<particles_type::dims, VerletList_type, particles_type>(parts, verletList, dcpse_ptr[0], p, ord, rCut, opt);
 			else
-				new(&dcpse_ptr[i]) Dcpse_type<particles_type::dims, VerletList_type, particles_type>(parts, verletList, p, ord, rCut, oversampling_factor, opt);
+				new(&dcpse_ptr[i]) Dcpse_type<particles_type::dims, VerletList_type, particles_type>(parts, verletList, p, ord, rCut, opt);
 		}
 
 
@@ -1777,8 +1729,7 @@ public:
 	 * \param parts set of domain particles
 	 * \param ord order of convergence of the operator
 	 * \param rCut Argument for cell list construction
-	 * \param oversampling_factor multiplier to the minimum no. of particles required by the operator in support
-	 * \param support_options default:N_particles, Radius can be used to select all particles inside rCut. Overrides oversampling.
+	 * \param support_options default: RADIUS to select all particles inside rCut
 	 *
 	 * \return Operator which is a function on Vector_dist_Expressions. Computes Advection of Vectors Adv(v,u) = v.Grad(u)
 	 *
@@ -1793,7 +1744,6 @@ public:
 		VerletList_type& verletList,
 		unsigned int ord,
 		typename vector_type::stype rCut,
-		double oversampling_factor = dcpse_oversampling_factor,
 		support_options opt = support_options::RADIUS
 	) {
 		typedef Dcpse_type<vector_type::dims, VerletList_type, vector_type, vector_type2> DCPSE_type;
@@ -1816,7 +1766,6 @@ public:
 					p,
 					ord,
 					rCut,
-					oversampling_factor,
 					opt
 				);
 			else
@@ -1827,7 +1776,6 @@ public:
 					p,
 					ord,
 					rCut,
-					oversampling_factor,
 					opt
 				);
 		}
@@ -1888,8 +1836,7 @@ public:
 	 * \param parts particle set
 	 * \param ord order of convergence of the operator
 	 * \param rCut Argument for cell list construction
-	 * \param oversampling_factor multiplier to the minimum no. of particles required by the operator in support
-	 * \param support_options default:N_particles, Radius can be used to select all particles inside rCut. Overrides oversampling.
+	 * \param support_options default: RADIUS to select all particles inside rCut
 	 *
 	 * \return Operator Dxy which is a function on Vector_dist_Expressions
 	 *
@@ -1906,8 +1853,7 @@ public:
 	 * \param parts particle set
 	 * \param ord order of convergence of the operator
 	 * \param rCut Argument for cell list construction
-	 * \param oversampling_factor multiplier to the minimum no. of particles required by the operator in support
-	 * \param support_options default:N_particles, Radius can be used to select all particles inside rCut. Overrides oversampling.
+	 * \param support_options default: RADIUS to select all particles inside rCut
 	 *
 	 * \return Operator Dxy which is a function on Vector_dist_Expressions
 	 *
@@ -1918,7 +1864,6 @@ public:
 		VerletList_type& verletList,
 		unsigned int ord,
 		typename particles_type::stype rCut,
-		double oversampling_factor = dcpse_oversampling_factor,
 		support_options opt = support_options::RADIUS
 	) {
 		Point<particles_type::dims, unsigned int> p;
@@ -1926,7 +1871,7 @@ public:
 		p.get(0) = 1;
 		p.get(1) = 1;
 
-		dcpse = new Dcpse_type<particles_type::dims, VerletList_type, particles_type>(parts, verletList, p, ord, rCut, oversampling_factor, opt);
+		dcpse = new Dcpse_type<particles_type::dims, VerletList_type, particles_type>(parts, verletList, p, ord, rCut, opt);
 	}
 
 	/*! \brief Constructor for Creating the DCPSE Operator Dxy and objects and computes DCPSE Kernels.
@@ -1936,8 +1881,7 @@ public:
 	 * \param parts set of domain particles
 	 * \param ord order of convergence of the operator
 	 * \param rCut Argument for cell list construction
-	 * \param oversampling_factor multiplier to the minimum no. of particles required by the operator in support
-	 * \param support_options default:N_particles, Radius can be used to select all particles inside rCut. Overrides oversampling.
+	 * \param support_options default: RADIUS to select all particles inside rCut
 	 *
 	 * \return Operator Dxy which is a function on Vector_dist_Expressions
 	 *
@@ -1952,7 +1896,6 @@ public:
 		VerletList_type& verletList,
 		unsigned int ord,
 		typename vector_type::stype rCut,
-		double oversampling_factor = dcpse_oversampling_factor,
 		support_options opt = support_options::RADIUS
 	) {
 		Point<vector_type::dims, unsigned int> p;
@@ -1967,7 +1910,6 @@ public:
 			p,
 			ord,
 			rCut,
-			oversampling_factor,
 			opt
 		);
 	}
@@ -2038,8 +1980,7 @@ public:
 	 * \param parts particle set
 	 * \param ord order of convergence of the operator
 	 * \param rCut Argument for cell list construction
-	 * \param oversampling_factor multiplier to the minimum no. of particles required by the operator in support
-	 * \param support_options default:N_particles, Radius can be used to select all particles inside rCut. Overrides oversampling.
+	 * \param support_options default: RADIUS to select all particles inside rCut
 	 *
 	 * \return Operator Dyz which is a function on Vector_dist_Expressions
 	 *
@@ -2056,8 +1997,7 @@ public:
 	 * \param parts particle set
 	 * \param ord order of convergence of the operator
 	 * \param rCut Argument for cell list construction
-	 * \param oversampling_factor multiplier to the minimum no. of particles required by the operator in support
-	 * \param support_options default:N_particles, Radius can be used to select all particles inside rCut. Overrides oversampling.
+	 * \param support_options default: RADIUS to select all particles inside rCut
 	 *
 	 * \return Operator Dyz which is a function on Vector_dist_Expressions
 	 *
@@ -2068,7 +2008,6 @@ public:
 		VerletList_type& verletList,
 		unsigned int ord,
 		typename particles_type::stype rCut,
-		double oversampling_factor = dcpse_oversampling_factor,
 		support_options opt = support_options::RADIUS
 	) {
 		Point<particles_type::dims, unsigned int> p;
@@ -2076,7 +2015,7 @@ public:
 		p.get(1) = 1;
 		p.get(2) = 1;
 
-		dcpse = new Dcpse_type<particles_type::dims, VerletList_type, particles_type>(parts, verletList, p, ord, rCut, oversampling_factor, opt);
+		dcpse = new Dcpse_type<particles_type::dims, VerletList_type, particles_type>(parts, verletList, p, ord, rCut, opt);
 	}
 
 	/*! \brief Constructor for Creating the DCPSE Operator Dyz and objects and computes DCPSE Kernels.
@@ -2086,8 +2025,7 @@ public:
 	 * \param parts set of domain particles
 	 * \param ord order of convergence of the operator
 	 * \param rCut Argument for cell list construction
-	 * \param oversampling_factor multiplier to the minimum no. of particles required by the operator in support
-	 * \param support_options default:N_particles, Radius can be used to select all particles inside rCut. Overrides oversampling.
+	 * \param support_options default: RADIUS to select all particles inside rCut
 	 *
 	 * \return Operator Dyz which is a function on Vector_dist_Expressions
 	 *
@@ -2102,7 +2040,6 @@ public:
 		VerletList_type& verletList,
 		unsigned int ord,
 		typename vector_type::stype rCut,
-		double oversampling_factor = dcpse_oversampling_factor,
 		support_options opt = support_options::RADIUS
 	) {
 		Point<vector_type::dims, unsigned int> p;
@@ -2117,7 +2054,6 @@ public:
 			p,
 			ord,
 			rCut,
-			oversampling_factor,
 			opt
 		);
 	}
@@ -2188,8 +2124,7 @@ public:
 	 * \param parts particle set
 	 * \param ord order of convergence of the operator
 	 * \param rCut Argument for cell list construction
-	 * \param oversampling_factor multiplier to the minimum no. of particles required by the operator in support
-	 * \param support_options default:N_particles, Radius can be used to select all particles inside rCut. Overrides oversampling.
+	 * \param support_options default: RADIUS to select all particles inside rCut
 	 *
 	 * \return Operator Dxz which is a function on Vector_dist_Expressions
 	 *
@@ -2206,8 +2141,7 @@ public:
 	 * \param parts particle set
 	 * \param ord order of convergence of the operator
 	 * \param rCut Argument for cell list construction
-	 * \param oversampling_factor multiplier to the minimum no. of particles required by the operator in support
-	 * \param support_options default:N_particles, Radius can be used to select all particles inside rCut. Overrides oversampling.
+	 * \param support_options default: RADIUS to select all particles inside rCut
 	 *
 	 * \return Operator Dxz which is a function on Vector_dist_Expressions
 	 *
@@ -2218,7 +2152,6 @@ public:
 		VerletList_type& verletList,
 		unsigned int ord,
 		typename particles_type::stype rCut,
-		double oversampling_factor = dcpse_oversampling_factor,
 		support_options opt = support_options::RADIUS
 	) {
 		Point<particles_type::dims, unsigned int> p;
@@ -2226,7 +2159,7 @@ public:
 		p.get(0) = 1;
 		p.get(2) = 1;
 
-		dcpse = new Dcpse_type<particles_type::dims, VerletList_type, particles_type>(parts, verletList, p, ord, rCut, oversampling_factor, opt);
+		dcpse = new Dcpse_type<particles_type::dims, VerletList_type, particles_type>(parts, verletList, p, ord, rCut, opt);
 	}
 
 	/*! \brief Constructor for Creating the DCPSE Operator Dxz and objects and computes DCPSE Kernels.
@@ -2236,8 +2169,7 @@ public:
 	 * \param parts set of domain particles
 	 * \param ord order of convergence of the operator
 	 * \param rCut Argument for cell list construction
-	 * \param oversampling_factor multiplier to the minimum no. of particles required by the operator in support
-	 * \param support_options default:N_particles, Radius can be used to select all particles inside rCut. Overrides oversampling.
+	 * \param support_options default: RADIUS to select all particles inside rCut
 	 *
 	 * \return Operator Dxz which is a function on Vector_dist_Expressions
 	 *
@@ -2252,7 +2184,6 @@ public:
 		VerletList_type& verletList,
 		unsigned int ord,
 		typename vector_type::stype rCut,
-		double oversampling_factor = dcpse_oversampling_factor,
 		support_options opt = support_options::RADIUS
 	) {
 		Point<vector_type::dims, unsigned int> p;
@@ -2267,7 +2198,6 @@ public:
 			p,
 			ord,
 			rCut,
-			oversampling_factor,
 			opt
 		);
 	}
@@ -2339,8 +2269,7 @@ public:
 	 * \param parts particle set
 	 * \param ord order of convergence of the operator
 	 * \param rCut Argument for cell list construction
-	 * \param oversampling_factor multiplier to the minimum no. of particles required by the operator in support
-	 * \param support_options default:N_particles, Radius can be used to select all particles inside rCut. Overrides oversampling.
+	 * \param support_options default: RADIUS to select all particles inside rCut
 	 *
 	 * \return Operator Dxx which is a function on Vector_dist_Expressions
 	 *
@@ -2357,8 +2286,7 @@ public:
 	 * \param parts particle set
 	 * \param ord order of convergence of the operator
 	 * \param rCut Argument for cell list construction
-	 * \param oversampling_factor multiplier to the minimum no. of particles required by the operator in support
-	 * \param support_options default:N_particles, Radius can be used to select all particles inside rCut. Overrides oversampling.
+	 * \param support_options default: RADIUS to select all particles inside rCut
 	 *
 	 * \return Operator Dxx which is a function on Vector_dist_Expressions
 	 *
@@ -2369,7 +2297,6 @@ public:
 		VerletList_type& verletList,
 		unsigned int ord,
 		typename particles_type::stype rCut,
-		double oversampling_factor = dcpse_oversampling_factor,
 		support_options opt = support_options::RADIUS
 	) {
 		Point<particles_type::dims, unsigned int> p;
@@ -2377,7 +2304,7 @@ public:
 		p.get(0) = 2;
 		p.get(1) = 0;
 
-		dcpse = new Dcpse_type<particles_type::dims, VerletList_type, particles_type>(parts, verletList, p, ord, rCut, oversampling_factor, opt);
+		dcpse = new Dcpse_type<particles_type::dims, VerletList_type, particles_type>(parts, verletList, p, ord, rCut, opt);
 	}
 
 	/*! \brief Class for Creating the DCPSE Operator Dxx and objects and computes DCPSE Kernels.
@@ -2387,8 +2314,7 @@ public:
 	 * \param parts set of domain particles
 	 * \param ord order of convergence of the operator
 	 * \param rCut Argument for cell list construction
-	 * \param oversampling_factor multiplier to the minimum no. of particles required by the operator in support
-	 * \param support_options default:N_particles, Radius can be used to select all particles inside rCut. Overrides oversampling.
+	 * \param support_options default: RADIUS to select all particles inside rCut
 	 *
 	 * \return Operator Dxx which is a function on Vector_dist_Expressions
 	 *
@@ -2403,7 +2329,6 @@ public:
 		VerletList_type& verletList,
 		unsigned int ord,
 		typename vector_type::stype rCut,
-		double oversampling_factor = dcpse_oversampling_factor,
 		support_options opt = support_options::RADIUS
 	) {
 		Point<vector_type::dims, unsigned int> p;
@@ -2418,7 +2343,6 @@ public:
 			p,
 			ord,
 			rCut,
-			oversampling_factor,
 			opt
 		);
 	}
@@ -2489,8 +2413,7 @@ public:
  * \param parts particle set
  * \param ord order of convergence of the operator
  * \param rCut Argument for cell list construction
- * \param oversampling_factor multiplier to the minimum no. of particles required by the operator in support
- * \param support_options default:N_particles, Radius can be used to select all particles inside rCut. Overrides oversampling.
+ * \param support_options default: RADIUS to select all particles inside rCut
  *
  * \return Operator Dyy which is a function on Vector_dist_Expressions
  *
@@ -2507,8 +2430,7 @@ public:
 	 * \param parts particle set
 	 * \param ord order of convergence of the operator
 	 * \param rCut Argument for cell list construction
-	 * \param oversampling_factor multiplier to the minimum no. of particles required by the operator in support
-	 * \param support_options default:N_particles, Radius can be used to select all particles inside rCut. Overrides oversampling.
+	 * \param support_options default: RADIUS to select all particles inside rCut
 	 *
 	 * \return Operator Dyy which is a function on Vector_dist_Expressions
 	 *
@@ -2519,7 +2441,6 @@ public:
 		VerletList_type& verletList,
 		unsigned int ord,
 		typename particles_type::stype rCut,
-		double oversampling_factor = dcpse_oversampling_factor,
 		support_options opt = support_options::RADIUS
 	) {
 		Point<particles_type::dims, unsigned int> p;
@@ -2527,7 +2448,7 @@ public:
 		p.get(0) = 0;
 		p.get(1) = 2;
 
-		dcpse = new Dcpse_type<particles_type::dims, VerletList_type, particles_type>(parts, verletList, p, ord, rCut, oversampling_factor, opt);
+		dcpse = new Dcpse_type<particles_type::dims, VerletList_type, particles_type>(parts, verletList, p, ord, rCut, opt);
 	}
 
 	/*! \brief Constructor for Creating the DCPSE Operator Dyy and objects and computes DCPSE Kernels.
@@ -2538,8 +2459,7 @@ public:
 	 * \param parts set of domain particles
 	 * \param ord order of convergence of the operator
 	 * \param rCut Argument for cell list construction
-	 * \param oversampling_factor multiplier to the minimum no. of particles required by the operator in support
-	 * \param support_options default:N_particles, Radius can be used to select all particles inside rCut. Overrides oversampling.
+	 * \param support_options default: RADIUS to select all particles inside rCut
 	 *
 	 * \return Operator Dyy which is a function on Vector_dist_Expressions
 	 *
@@ -2554,7 +2474,6 @@ public:
 		VerletList_type& verletList,
 		unsigned int ord,
 		typename vector_type::stype rCut,
-		double oversampling_factor = dcpse_oversampling_factor,
 		support_options opt = support_options::RADIUS
 	) {
 		Point<vector_type::dims, unsigned int> p;
@@ -2569,7 +2488,6 @@ public:
 			p,
 			ord,
 			rCut,
-			oversampling_factor,
 			opt
 		);
 	}
@@ -2639,8 +2557,7 @@ public:
 	 * \param parts particle set
 	 * \param ord order of convergence of the operator
 	 * \param rCut Argument for cell list construction
-	 * \param oversampling_factor multiplier to the minimum no. of particles required by the operator in support
-	 * \param support_options default:N_particles, Radius can be used to select all particles inside rCut. Overrides oversampling.
+	 * \param support_options default: RADIUS to select all particles inside rCut
 	 *
 	 * \return Operator Dzz which is a function on Vector_dist_Expressions
 	 *
@@ -2657,8 +2574,7 @@ public:
 	 * \param parts particle set
 	 * \param ord order of convergence of the operator
 	 * \param rCut Argument for cell list construction
-	 * \param oversampling_factor multiplier to the minimum no. of particles required by the operator in support
-	 * \param support_options default:N_particles, Radius can be used to select all particles inside rCut. Overrides oversampling.
+	 * \param support_options default: RADIUS to select all particles inside rCut
 	 *
 	 * \return Operator Dzz which is a function on Vector_dist_Expressions
 	 *
@@ -2669,14 +2585,13 @@ public:
 		VerletList_type& verletList,
 		unsigned int ord,
 		typename particles_type::stype rCut,
-		double oversampling_factor = dcpse_oversampling_factor,
 		support_options opt = support_options::RADIUS
 	) {
 		Point<particles_type::dims, unsigned int> p;
 		p.zero();
 		p.get(2) = 2;
 
-		dcpse = new Dcpse_type<particles_type::dims, VerletList_type, particles_type>(parts, verletList, p, ord, rCut, oversampling_factor, opt);
+		dcpse = new Dcpse_type<particles_type::dims, VerletList_type, particles_type>(parts, verletList, p, ord, rCut, opt);
 	}
 
 	/*! \brief Constructor for Creating the DCPSE Operator Dzz and objects and computes DCPSE Kernels.
@@ -2687,8 +2602,7 @@ public:
 	 * \param parts set of domain particles
 	 * \param ord order of convergence of the operator
 	 * \param rCut Argument for cell list construction
-	 * \param oversampling_factor multiplier to the minimum no. of particles required by the operator in support
-	 * \param support_options default:N_particles, Radius can be used to select all particles inside rCut. Overrides oversampling.
+	 * \param support_options default: RADIUS to select all particles inside rCut
 	 *
 	 * \return Operator Dzz which is a function on Vector_dist_Expressions
 	 *
@@ -2703,7 +2617,6 @@ public:
 		VerletList_type& verletList,
 		unsigned int ord,
 		typename vector_type::stype rCut,
-		double oversampling_factor = dcpse_oversampling_factor,
 		support_options opt = support_options::RADIUS
 	) {
 		Point<vector_type::dims, unsigned int> p;
@@ -2717,7 +2630,6 @@ public:
 			p,
 			ord,
 			rCut,
-			oversampling_factor,
 			opt
 		);
 	}
@@ -2795,7 +2707,6 @@ public:
 		VerletList_type& verletList,
 		unsigned int ord,
 		typename particles_type::stype rCut,
-		double oversampling_factor = dcpse_oversampling_factor,
 		support_options opt = support_options::RADIUS
 	) {
 		Point<particles_type::dims, unsigned int> p;
@@ -2803,7 +2714,7 @@ public:
 		p.get(0) = 3;
 		p.get(1) = 0;
 
-		dcpse = new Dcpse_type<particles_type::dims, VerletList_type, particles_type>(parts, verletList, p, ord, rCut, oversampling_factor, opt);
+		dcpse = new Dcpse_type<particles_type::dims, VerletList_type, particles_type>(parts, verletList, p, ord, rCut, opt);
 	}
 
 	template<
@@ -2816,7 +2727,6 @@ public:
 		VerletList_type& verletList,
 		unsigned int ord,
 		typename vector_type::stype rCut,
-		double oversampling_factor = dcpse_oversampling_factor,
 		support_options opt = support_options::RADIUS
 	) {
 		Point<vector_type::dims, unsigned int> p;
@@ -2831,7 +2741,6 @@ public:
 			p,
 			ord,
 			rCut,
-			oversampling_factor,
 			opt
 		);
 	}
@@ -2905,7 +2814,6 @@ public:
 		VerletList_type& verletList,
 		unsigned int ord,
 		typename particles_type::stype rCut,
-		double oversampling_factor = dcpse_oversampling_factor,
 		support_options opt = support_options::RADIUS
 	) {
 		Point<particles_type::dims, unsigned int> p;
@@ -2913,7 +2821,7 @@ public:
 		p.get(0) = 2;
 		p.get(1) = 1;
 
-		dcpse = new Dcpse_type<particles_type::dims, VerletList_type, particles_type>(parts, verletList, p, ord, rCut, oversampling_factor, opt);
+		dcpse = new Dcpse_type<particles_type::dims, VerletList_type, particles_type>(parts, verletList, p, ord, rCut, opt);
 	}
 
 	template<
@@ -2926,7 +2834,6 @@ public:
 		VerletList_type& verletList,
 		unsigned int ord,
 		typename vector_type::stype rCut,
-		double oversampling_factor = dcpse_oversampling_factor,
 		support_options opt = support_options::RADIUS
 	) {
 		Point<vector_type::dims, unsigned int> p;
@@ -2941,7 +2848,6 @@ public:
 			p,
 			ord,
 			rCut,
-			oversampling_factor,
 			opt
 		);
 	}
@@ -3015,7 +2921,6 @@ public:
 		VerletList_type& verletList,
 		unsigned int ord,
 		typename particles_type::stype rCut,
-		double oversampling_factor = dcpse_oversampling_factor,
 		support_options opt = support_options::RADIUS
 	) {
 		Point<particles_type::dims, unsigned int> p;
@@ -3023,7 +2928,7 @@ public:
 		p.get(0) = 1;
 		p.get(1) = 2;
 
-		dcpse = new Dcpse_type<particles_type::dims, VerletList_type, particles_type>(parts, verletList, p, ord, rCut, oversampling_factor, opt);
+		dcpse = new Dcpse_type<particles_type::dims, VerletList_type, particles_type>(parts, verletList, p, ord, rCut, opt);
 	}
 
 	template<
@@ -3036,7 +2941,6 @@ public:
 		VerletList_type& verletList,
 		unsigned int ord,
 		typename vector_type::stype rCut,
-		double oversampling_factor = dcpse_oversampling_factor,
 		support_options opt = support_options::RADIUS
 	) {
 		Point<vector_type::dims, unsigned int> p;
@@ -3051,7 +2955,6 @@ public:
 			p,
 			ord,
 			rCut,
-			oversampling_factor,
 			opt
 		);
 	}
@@ -3125,7 +3028,6 @@ public:
 		VerletList_type& verletList,
 		unsigned int ord,
 		typename particles_type::stype rCut,
-		double oversampling_factor = dcpse_oversampling_factor,
 		support_options opt = support_options::RADIUS
 	) {
 		Point<particles_type::dims, unsigned int> p;
@@ -3133,7 +3035,7 @@ public:
 		p.get(0) = 0;
 		p.get(1) = 3;
 
-		dcpse = new Dcpse_type<particles_type::dims, VerletList_type, particles_type>(parts, verletList, p, ord, rCut, oversampling_factor, opt);
+		dcpse = new Dcpse_type<particles_type::dims, VerletList_type, particles_type>(parts, verletList, p, ord, rCut, opt);
 	}
 
 	template<
@@ -3146,7 +3048,6 @@ public:
 		VerletList_type& verletList,
 		unsigned int ord,
 		typename vector_type::stype rCut,
-		double oversampling_factor = dcpse_oversampling_factor,
 		support_options opt = support_options::RADIUS
 	) {
 		Point<vector_type::dims, unsigned int> p;
@@ -3161,7 +3062,6 @@ public:
 			p,
 			ord,
 			rCut,
-			oversampling_factor,
 			opt
 		);
 	}
@@ -3236,7 +3136,6 @@ public:
 		VerletList_type& verletList,
 		unsigned int ord,
 		typename particles_type::stype rCut,
-		double oversampling_factor = dcpse_oversampling_factor,
 		support_options opt = support_options::RADIUS
 	) {
 		Point<particles_type::dims, unsigned int> p;
@@ -3244,7 +3143,7 @@ public:
 		p.get(0) = 4;
 		p.get(1) = 0;
 
-		dcpse = new Dcpse_type<particles_type::dims, VerletList_type, particles_type>(parts, verletList, p, ord, rCut, oversampling_factor, opt);
+		dcpse = new Dcpse_type<particles_type::dims, VerletList_type, particles_type>(parts, verletList, p, ord, rCut, opt);
 	}
 
 	template<
@@ -3257,7 +3156,6 @@ public:
 		VerletList_type& verletList,
 		unsigned int ord,
 		typename vector_type::stype rCut,
-		double oversampling_factor = dcpse_oversampling_factor,
 		support_options opt = support_options::RADIUS
 	) {
 		Point<vector_type::dims, unsigned int> p;
@@ -3272,7 +3170,6 @@ public:
 			p,
 			ord,
 			rCut,
-			oversampling_factor,
 			opt
 		);
 	}
@@ -3346,7 +3243,6 @@ public:
 		VerletList_type& verletList,
 		unsigned int ord,
 		typename particles_type::stype rCut,
-		double oversampling_factor = dcpse_oversampling_factor,
 		support_options opt = support_options::RADIUS
 	) {
 		Point<particles_type::dims, unsigned int> p;
@@ -3354,7 +3250,7 @@ public:
 		p.get(0) = 0;
 		p.get(1) = 4;
 
-		dcpse = new Dcpse_type<particles_type::dims, VerletList_type, particles_type>(parts, verletList, p, ord, rCut, oversampling_factor, opt);
+		dcpse = new Dcpse_type<particles_type::dims, VerletList_type, particles_type>(parts, verletList, p, ord, rCut, opt);
 	}
 
 	template<
@@ -3367,7 +3263,6 @@ public:
 		VerletList_type& verletList,
 		unsigned int ord,
 		typename vector_type::stype rCut,
-		double oversampling_factor = dcpse_oversampling_factor,
 		support_options opt = support_options::RADIUS
 	) {
 		Point<vector_type::dims, unsigned int> p;
@@ -3382,7 +3277,6 @@ public:
 			p,
 			ord,
 			rCut,
-			oversampling_factor,
 			opt
 		);
 	}
@@ -3455,7 +3349,6 @@ public:
 		VerletList_type& verletList,
 		unsigned int ord,
 		typename particles_type::stype rCut,
-		double oversampling_factor = dcpse_oversampling_factor,
 		support_options opt = support_options::RADIUS
 	) {
 		Point<particles_type::dims, unsigned int> p;
@@ -3463,7 +3356,7 @@ public:
 		p.get(0) = 2;
 		p.get(1) = 2;
 
-		dcpse = new Dcpse_type<particles_type::dims, VerletList_type, particles_type>(parts, verletList, p, ord, rCut, oversampling_factor, opt);
+		dcpse = new Dcpse_type<particles_type::dims, VerletList_type, particles_type>(parts, verletList, p, ord, rCut, opt);
 	}
 
 	template<
@@ -3476,7 +3369,6 @@ public:
 		VerletList_type& verletList,
 		unsigned int ord,
 		typename vector_type::stype rCut,
-		double oversampling_factor = dcpse_oversampling_factor,
 		support_options opt = support_options::RADIUS
 	) {
 		Point<vector_type::dims, unsigned int> p;
@@ -3491,7 +3383,6 @@ public:
 			p,
 			ord,
 			rCut,
-			oversampling_factor,
 			opt
 		);
 	}
@@ -3567,10 +3458,9 @@ public:
 		unsigned int ord,
 		typename particles_type::stype rCut,
 		const Point<particles_type::dims, unsigned int> &p,
-		double oversampling_factor = dcpse_oversampling_factor,
 		support_options opt = support_options::RADIUS
 	) {
-		dcpse = new Dcpse_type<particles_type::dims, VerletList_type, particles_type>(parts, verletList, p, ord, rCut, oversampling_factor, opt);
+		dcpse = new Dcpse_type<particles_type::dims, VerletList_type, particles_type>(parts, verletList, p, ord, rCut, opt);
 	}
 
 	template<
@@ -3584,7 +3474,6 @@ public:
 		unsigned int ord,
 		typename vector_type::stype rCut,
 		const Point<vector_type::dims, unsigned int> &p,
-		double oversampling_factor = dcpse_oversampling_factor,
 		support_options opt = support_options::RADIUS
 	) {
 		dcpse = new Dcpse_type<vector_type::dims, VerletList_type, vector_type, vector_type2>(
@@ -3594,7 +3483,6 @@ public:
 			p,
 			ord,
 			rCut,
-			oversampling_factor,
 			opt
 		);
 	}

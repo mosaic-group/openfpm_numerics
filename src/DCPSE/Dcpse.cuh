@@ -68,7 +68,6 @@ private:
     vector_type & particles;
     double rCut;
     unsigned int convergenceOrder;
-    double supportSizeFactor;
 
     size_t maxSupportSize;
     size_t supportKeysTotalN;
@@ -91,7 +90,6 @@ public:
         Point<dim, unsigned int> differentialSignature,
         unsigned int convergenceOrder,
         T rCut,
-        T supportSizeFactor = 1,
         support_options opt = support_options::RADIUS
     ):
         particles(particles),
@@ -103,7 +101,7 @@ public:
         opt(opt)
     {
         particles.ghost_get_subset();
-        initializeStaticSize(particles, convergenceOrder, rCut, supportSizeFactor);
+        initializeStaticSize(particles, convergenceOrder, rCut);
     }
 
     Dcpse_gpu(
@@ -113,7 +111,6 @@ public:
         Point<dim, unsigned int> differentialSignature,
         unsigned int convergenceOrder,
         T rCut,
-        T supportSizeFactor = 1,
         support_options opt = support_options::RADIUS
     ):
         particles(particles), opt(opt),
@@ -128,7 +125,7 @@ public:
         isSharedSupport(true)
     {
         particles.ghost_get_subset();
-        initializeStaticSize(particles, convergenceOrder, rCut, supportSizeFactor);
+        initializeStaticSize(particles, convergenceOrder, rCut);
     }
 
     template<unsigned int prp>
@@ -470,7 +467,7 @@ public:
         localEpsInvPow.clear();
         calcKernels.clear();
 
-        initializeStaticSize(particles, convergenceOrder, rCut, supportSizeFactor);
+        initializeStaticSize(particles, convergenceOrder, rCut);
     }
 
     /*
@@ -565,15 +562,15 @@ public:
 
 private:
     template <typename U>
-    void initializeStaticSize(vector_type &particles,
-                              unsigned int convergenceOrder,
-                              U rCut,
-                              U supportSizeFactor) {
+    void initializeStaticSize(
+        vector_type &particles,
+        unsigned int convergenceOrder,
+        U rCut
+    ) {
 #ifdef SE_CLASS1
         this->update_ctr=particles.getMapCtr();
 #endif
         this->rCut=rCut;
-        this->supportSizeFactor=supportSizeFactor;
         this->convergenceOrder=convergenceOrder;
 
         if (!isSharedSupport) {
@@ -596,38 +593,11 @@ std::chrono::high_resolution_clock::time_point t1 = std::chrono::high_resolution
                 SupportBuilderGPU<vector_type> supportBuilder(particles, rCut);
                 supportBuilder.getSupport(supportRefs.size(), kerOffsets, supportKeys1D, maxSupportSize, supportKeysTotalN);
             }
-        } else {
-            if (!isSharedSupport){
-                openfpm::vector<openfpm::vector<size_t>> tempSupportKeys(supportRefs.size());
-                size_t requiredSupportSize = monomialBasis.size() * supportSizeFactor;
-                // need to resize supportKeys1D to yet unknown supportKeysTotalN
-                // add() takes too long
-                SupportBuilder<vector_type,vector_type> supportBuilder(particles, particles, differentialSignature, rCut, differentialOrder == 0);
-                kerOffsets.resize(supportRefs.size()+1);
+        }
 
-                while (it.isNext()) {
-                    auto key = it.get();
-
-                    Support support = supportBuilder.getSupport(it, requiredSupportSize, opt);
-                    supportRefs.get(key.getKey()) = key.getKey();
-                    tempSupportKeys.get(key.getKey()) = support.getKeys();
-                    kerOffsets.get(key.getKey()) = supportKeysTotalN;
-
-                    if (maxSupportSize < support.size()) maxSupportSize = support.size();
-                    supportKeysTotalN += support.size();
-                    ++it;
-                }
-
-                kerOffsets.get(supportRefs.size()) = supportKeysTotalN;
-                supportKeys1D.resize(supportKeysTotalN);
-
-                size_t offset = 0;
-                for (size_t i = 0; i < tempSupportKeys.size(); ++i)
-                    for (size_t j = 0; j < tempSupportKeys.get(i).size(); ++j, ++offset)
-                        supportKeys1D.get(offset) = tempSupportKeys.get(i).get(j);
-            }
-
-            kerOffsets.hostToDevice(); supportKeys1D.hostToDevice();
+        else
+        {
+            std::cerr<<__FILE__<<":"<<__LINE__<<" Error: DC-PSE on GPU supports support_options::RADIUS only!"<<std::endl;
         }
 
 std::chrono::high_resolution_clock::time_point t2 = std::chrono::high_resolution_clock::now();

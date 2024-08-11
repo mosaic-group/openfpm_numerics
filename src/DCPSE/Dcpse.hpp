@@ -66,7 +66,7 @@ protected:
 	VerletList_type & verletList;
 	vector_type & particlesSupport;
 	vector_type2 & particlesDomain;
-	double rCut,supportSizeFactor=1;
+	double rCut;
 	unsigned int convergenceOrder;
 
 	support_options opt;
@@ -96,7 +96,6 @@ public:
 		Point<dim, unsigned int> differentialSignature,
 		unsigned int convergenceOrder,
 		T rCut,
-		T supportSizeFactor = 1,                               //Maybe change this to epsilon/h or h/epsilon = c 0.9. Benchmark
 		support_options opt = support_options::RADIUS
 	):
 		particlesSupport(particles),
@@ -108,7 +107,7 @@ public:
 		opt(opt)
 	{
 		particles.ghost_get_subset();         // This communicates which ghost particles to be excluded from support
-		initializeStaticSize(particles, particles, convergenceOrder, rCut, supportSizeFactor);
+		initializeStaticSize(particles, particles, convergenceOrder, rCut);
 	}
 
 	Dcpse(
@@ -118,7 +117,6 @@ public:
 		Point<dim, unsigned int> differentialSignature,
 		unsigned int convergenceOrder,
 		T rCut,
-		T supportSizeFactor = 1,
 		support_options opt = support_options::RADIUS
 	):
 		particlesSupport(particles),
@@ -132,7 +130,7 @@ public:
 	{
 		particles.ghost_get_subset();
 
-		initializeStaticSize(particles, particles, convergenceOrder, rCut, supportSizeFactor);
+		initializeStaticSize(particles, particles, convergenceOrder, rCut);
 	}
 
 	Dcpse(
@@ -142,7 +140,6 @@ public:
 		Point<dim, unsigned int> differentialSignature,
 		unsigned int convergenceOrder,
 		T rCut,
-		T supportSizeFactor = 1,
 		support_options opt = support_options::RADIUS
 	):
 		particlesSupport(particlesSupport),
@@ -154,7 +151,7 @@ public:
 		opt(opt)
 	{
 		particlesSupport.ghost_get_subset();
-		initializeStaticSize(particlesSupport,particlesDomain,convergenceOrder, rCut, supportSizeFactor);
+		initializeStaticSize(particlesSupport,particlesDomain,convergenceOrder, rCut);
 	}
 
 	Dcpse(
@@ -165,7 +162,6 @@ public:
 		Point<dim, unsigned int> differentialSignature,
 		unsigned int convergenceOrder,
 		T rCut,
-		T supportSizeFactor = 1,
 		support_options opt = support_options::RADIUS
 	):
 		particlesSupport(particlesSupport),
@@ -179,7 +175,7 @@ public:
 
 	{
 		particlesSupport.ghost_get_subset();
-		initializeStaticSize(particlesSupport,particlesDomain,convergenceOrder, rCut, supportSizeFactor);
+		initializeStaticSize(particlesSupport,particlesDomain,convergenceOrder, rCut);
 	}
 
 	// Default constructor to call from SurfaceDcpse
@@ -650,7 +646,7 @@ public:
 		calcKernels.clear();
 		kerOffsets.clear();
 
-		initializeStaticSize(particlesSupport, particlesDomain, convergenceOrder, rCut, supportSizeFactor);
+		initializeStaticSize(particlesSupport, particlesDomain, convergenceOrder, rCut);
 	}
 
 	void initializeUpdate(vector_type &particles)
@@ -664,7 +660,7 @@ public:
 		calcKernels.clear();
 		kerOffsets.clear();
 
-		initializeStaticSize(particles, particles, convergenceOrder, rCut, supportSizeFactor);
+		initializeStaticSize(particles, particles, convergenceOrder, rCut);
 	}
 
 protected:
@@ -672,15 +668,12 @@ protected:
 		vector_type &particlesSupport,
 		vector_type2 &particlesDomain,
 		unsigned int convergenceOrder,
-		T rCut,
-		T supportSizeFactor,
-		T adaptiveSizeFactor = 1.0
+		T rCut
 	) {
 #ifdef SE_CLASS1
 		this->update_ctr=particlesSupport.getMapCtr();
 #endif
 		this->rCut=rCut;
-		this->supportSizeFactor=supportSizeFactor;
 		this->convergenceOrder=convergenceOrder;
 		auto & v_cl=create_vcluster();
 		if(this->opt==LOAD){
@@ -688,10 +681,6 @@ protected:
 			{std::cout<<"Warning: Creating empty DC-PSE operator! Please use update or load to get kernels."<<std::endl;}
 			return;
 		}
-		SupportBuilder<vector_type,vector_type2>
-				supportBuilder(particlesSupport, particlesDomain, differentialSignature, rCut, differentialOrder == 0);
-		unsigned int requiredSupportSize = monomialBasis.size() * supportSizeFactor;
-		supportBuilder.setAdapFac(adaptiveSizeFactor);
 
 		localEps.resize(particlesSupport.size_local());
 		localEpsInvPow.resize(particlesSupport.size_local());
@@ -824,7 +813,7 @@ protected:
 	openfpm::vector<size_t> accKerOffsets;
 	openfpm::vector<T> accCalcKernels;
 	openfpm::vector<T> nSpacings;
-	double nSpacing, adaptiveSizeFactor;
+	double nSpacing;
 	unsigned int nCount;
 
 	bool isSurfaceDerivative=false;
@@ -958,8 +947,6 @@ public:
 		this->rCut = rCut;
 
 		if(opt==support_options::ADAPTIVE) {
-			adaptiveSizeFactor=nSpacing;
-
 			auto it = particles.getDomainIterator();
 
 			while (it.isNext()) {
@@ -998,9 +985,7 @@ public:
 			particles,
 			particles,
 			convergenceOrder,
-			rCut,
-			this->supportSizeFactor,
-			adaptiveSizeFactor
+			rCut
 		);
 
 		if(opt!=support_options::LOAD) {

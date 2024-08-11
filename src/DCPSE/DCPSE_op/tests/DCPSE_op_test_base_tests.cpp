@@ -153,8 +153,8 @@ BOOST_AUTO_TEST_CASE(dcpse_op_tests) {
         v2 = 2*Dx(P) + Dy(P);
         Dx.save(domain,"DX_test");
         Dy.save(domain,"DY_test");
-        Derivative_x<decltype(verletList)> DxLoaded(domain, verletList, 2, rCut,1,support_options::LOAD);
-        Derivative_y<decltype(verletList)> DyLoaded(domain, verletList, 2, rCut,1,support_options::LOAD);
+        Derivative_x<decltype(verletList)> DxLoaded(domain, verletList, 2, rCut, support_options::LOAD);
+        Derivative_y<decltype(verletList)> DyLoaded(domain, verletList, 2, rCut, support_options::LOAD);
         DxLoaded.load(domain,"DX_test");
         DyLoaded.load(domain,"DY_test");
         v= 2*DxLoaded(P)+DyLoaded(P);
@@ -221,8 +221,8 @@ BOOST_AUTO_TEST_CASE(dcpse_op_tests) {
         auto v2 = getV<3>(domain);
         auto P = getV<0>(domain);
         auto verletList = domain.template getVerlet<VL_NON_SYMMETRIC|VL_SKIP_REF_PART>(rCut);
-        Derivative_x<decltype(verletList)> DxLoaded(domain, verletList, 2, rCut,1,support_options::LOAD);
-        Derivative_y<decltype(verletList)> DyLoaded(domain, verletList, 2, rCut,1,support_options::LOAD);
+        Derivative_x<decltype(verletList)> DxLoaded(domain, verletList, 2, rCut, support_options::LOAD);
+        Derivative_y<decltype(verletList)> DyLoaded(domain, verletList, 2, rCut, support_options::LOAD);
         DxLoaded.load(domain,"DX_test");
         DyLoaded.load(domain,"DY_test");
         v= 2*DxLoaded(P)+DyLoaded(P);
@@ -722,7 +722,7 @@ BOOST_AUTO_TEST_CASE(dcpse_op_tests) {
 
 
         auto verletList = Particles.template getVerlet<VL_NON_SYMMETRIC|VL_SKIP_REF_PART>(rCut);
-        Derivative_x<decltype(verletList)> Dx(Particles, verletList, 2, rCut,2);
+        Derivative_x<decltype(verletList)> Dx(Particles, verletList, 2, rCut);
 
         P = Dx(V[0]);
         S = V[0]*V[0] + V[1]*V[1];
@@ -811,7 +811,7 @@ BOOST_AUTO_TEST_CASE(dcpse_op_tests) {
         auto Sig = getV<3>(Particles);
 
         auto verletList = Particles.template getVerlet<VL_NON_SYMMETRIC|VL_SKIP_REF_PART>(rCut);
-        Derivative_x<decltype(verletList)> Dx(Particles, verletList, 2, rCut,2);
+        Derivative_x<decltype(verletList)> Dx(Particles, verletList, 2, rCut);
 
         P = Dx(V[0]);
         S = V[0]*V[0] + V[1]*V[1]+V[2]*V[2];

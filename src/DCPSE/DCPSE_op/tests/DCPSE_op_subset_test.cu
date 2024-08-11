@@ -133,8 +133,8 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_subset_suite_tests_cu)
         Derivative_y Dy(Particles, 2, rCut);
         Derivative_x Dx_bulk(Particles_bulk, 2, rCut);
 */
-        Derivative_x_gpu Dx_bulk(Particles_bulk, 2, rCut,sampling_factor, support_options::RADIUS);
-        Derivative_y_gpu Dy_bulk(Particles_bulk, 2, rCut,sampling_factor, support_options::RADIUS);
+        Derivative_x_gpu Dx_bulk(Particles_bulk, 2, rCut, support_options::RADIUS);
+        Derivative_y_gpu Dy_bulk(Particles_bulk, 2, rCut, support_options::RADIUS);
 
         Out_bulk = Dx_bulk(P);
         Out_V_bulk[0] = P + Dx_bulk(P);
@@ -288,12 +288,12 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_subset_suite_tests_cu)
 
         P_bulk = 0;
 
-        Derivative_x_gpu Dx(Particles, 2, rCut,sampling_factor, support_options::RADIUS);
-        Derivative_xx_gpu Dxx(Particles, 2, rCut,sampling_factor, support_options::RADIUS);
-        Derivative_yy_gpu Dyy(Particles, 2, rCut,sampling_factor, support_options::RADIUS);
-        Derivative_y_gpu Dy(Particles, 2, rCut,sampling_factor, support_options::RADIUS);
-        Derivative_x_gpu Bulk_Dx(Particles_bulk, 2, rCut,sampling_factor, support_options::RADIUS);
-        Derivative_y_gpu Bulk_Dy(Particles_bulk, 2, rCut,sampling_factor, support_options::RADIUS);
+        Derivative_x_gpu Dx(Particles, 2, rCut, support_options::RADIUS);
+        Derivative_xx_gpu Dxx(Particles, 2, rCut, support_options::RADIUS);
+        Derivative_yy_gpu Dyy(Particles, 2, rCut, support_options::RADIUS);
+        Derivative_y_gpu Dy(Particles, 2, rCut, support_options::RADIUS);
+        Derivative_x_gpu Bulk_Dx(Particles_bulk, 2, rCut, support_options::RADIUS);
+        Derivative_y_gpu Bulk_Dy(Particles_bulk, 2, rCut, support_options::RADIUS);
 
         int n = 0, nmax = 5, ctr = 0, errctr=1, Vreset = 0;
         double V_err=1;
@@ -494,11 +494,11 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_subset_suite_tests_cu)
 
         P_bulk = 0;
 
-        Derivative_x Dx(Particles, 2, rCut,sampling_factor, support_options::RADIUS);
-        Derivative_x Bulk_Dx(Particles_subset, 2, rCut,sampling_factor, support_options::RADIUS);
-        Derivative_xx Dxx(Particles, 2, rCut,sampling_factor, support_options::RADIUS);
-        Derivative_yy Dyy(Particles, 2, rCut,sampling_factor, support_options::RADIUS);
-        Derivative_y Dy(Particles, 2, rCut,sampling_factor, support_options::RADIUS),Bulk_Dy(Particles_subset, 2, rCut,sampling_factor, support_options::RADIUS);;
+        Derivative_x Dx(Particles, 2, rCut, support_options::RADIUS);
+        Derivative_x Bulk_Dx(Particles_subset, 2, rCut, support_options::RADIUS);
+        Derivative_xx Dxx(Particles, 2, rCut, support_options::RADIUS);
+        Derivative_yy Dyy(Particles, 2, rCut, support_options::RADIUS);
+        Derivative_y Dy(Particles, 2, rCut, support_options::RADIUS),Bulk_Dy(Particles_subset, 2, rCut, support_options::RADIUS);;
 
         int n = 0, nmax = 5, ctr = 0, errctr=0, Vreset = 0;
         double V_err=1;
