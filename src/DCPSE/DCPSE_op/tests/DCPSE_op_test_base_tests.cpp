@@ -870,6 +870,157 @@ BOOST_AUTO_TEST_CASE(dcpse_op_tests) {
         BOOST_REQUIRE(err5 < 0.03);
     }
 
+
+// Added by foggia on 08.03.2024
+BOOST_AUTO_TEST_CASE(slicer_3index_tensor) {
+
+  Vcluster<> & v_cl = create_vcluster();
+
+  constexpr int VEC{0};           // vector - [27] linearized version of [DIM]x[DIM]x[DIM]
+  constexpr int MAT{1};           // matrix - [DIM]x[DIM]x[DIM]
+  constexpr int ERR{2};
+
+  typedef aggregate<double[3*3*3],double[3][3][3],double[3*3*3]> prop_part;
+  openfpm::vector<std::string> propNames{"vector","matrix","err"};
+  typedef vector_dist<3,double,prop_part> vector_type;
+  
+  int n_part{1};
+  double rCut{3.0};
+  double grid_spacing{2.0/32.0};
+  Box<3,double> domain{{-1,-1,-1},{1,1,1}};    
+  Ghost<3,double> ghost{rCut*grid_spacing + grid_spacing/8.0};
+  size_t bc[3] = {NON_PERIODIC,NON_PERIODIC,NON_PERIODIC};
+  
+  vector_type part{0,domain,bc,ghost};
+  part.setPropNames(propNames);
+
+  std::array<double,3> center{0,0,0};
+  std::array<double,3> coord;
+  
+  if (v_cl.rank() == 0) {
+    std::cout << "1. Creating particles\n";
+      
+    // Created using the Fibonacci sphere algorithm
+    const double pi{3.14159265358979323846};
+    const double golden_ang = pi*(3.0 - std::sqrt(5.0));
+    const double prefactor{std::sqrt(0.75/pi)};
+    double rad, theta, arg, thetaB, phi, phi_norm;
+    
+    for (int i = 0; i < n_part; ++i) {
+      
+      coord[1] = 1.0 - 2.0*(i/double(n_part-1));
+      rad = std::sqrt(1.0 - (coord[1]-center[1])*(coord[1]-center[1]));
+      theta = golden_ang * i;
+      coord[0] = std::cos(theta) * rad;
+      coord[2] = std::sin(theta) * rad;
+
+      arg = (coord[0]-center[0]) * (coord[0]-center[0]) + (coord[1]-center[1]) * (coord[1]-center[1]);
+      thetaB = std::atan2(std::sqrt(arg),(coord[2]-center[2]));
+      phi = std::atan2((coord[1]-center[1]),(coord[0]-center[0]));
+      
+      part.add();
+      part.getLastPos()[0] = coord[0];
+      part.getLastPos()[1] = coord[1];
+      part.getLastPos()[2] = coord[2];
+      
+      for (int l = 0; l < 3; ++l)
+	for (int k = 0; k < 3; ++k)
+	  for (int m = 0; m < 3; ++m) {
+
+	    int linIdx = (l*3 + k)*3 + m;
+      
+	    part.getLastProp<VEC>()[linIdx] = double(linIdx);
+	    part.getLastProp<MAT>()[l][k][m] = double(linIdx);
+	  }
+    }
+  }
+
+  part.map();
+  part.ghost_get<VEC>();
+
+  double eps{1e-13};
+  auto vec{getV<VEC>(part)};
+  auto mat{getV<MAT>(part)};
+  auto err{getV<ERR>(part)};
+
+  err[0] = mat[0][0][0] - vec[0];
+  err[1] = mat[0][0][1] - vec[1];
+  err[2] = mat[0][0][2] - vec[2];
+  err[3] = mat[0][1][0] - vec[3];
+  err[4] = mat[0][1][1] - vec[4];
+  err[5] = mat[0][1][2] - vec[5];
+  err[6] = mat[0][2][0] - vec[6];
+  err[7] = mat[0][2][1] - vec[7];
+  err[8] = mat[0][2][2] - vec[8];
+  err[9] = mat[1][0][0] - vec[9];
+  err[10] = mat[1][0][1] - vec[10];
+  err[11] = mat[1][0][2] - vec[11];
+  err[12] = mat[1][1][0] - vec[12];
+  err[13] = mat[1][1][1] - vec[13];
+  err[14] = mat[1][1][2] - vec[14];
+  err[15] = mat[1][2][0] - vec[15];
+  err[16] = mat[1][2][1] - vec[16];
+  err[17] = mat[1][2][2] - vec[17];
+  err[18] = mat[2][0][0] - vec[18];
+  err[19] = mat[2][0][1] - vec[19];
+  err[20] = mat[2][0][2] - vec[20];
+  err[21] = mat[2][1][0] - vec[21];
+  err[22] = mat[2][1][1] - vec[22];
+  err[23] = mat[2][1][2] - vec[23];
+  err[24] = mat[2][2][0] - vec[24];
+  err[25] = mat[2][2][1] - vec[25];
+  err[26] = mat[2][2][2] - vec[26];
+   
+  auto pit{part.getDomainIterator()};
+  while (pit.isNext()) {
+    auto key{pit.get()};
+
+    // Uncomment to check the values
+    // for (int l = 0; l < 3; ++l)
+    //   for (int k = 0; k < 3; ++k)
+    // 	for (int m = 0; m < 3; ++m)
+    // 	  std::cout << "mat[" << l << "][" << k << "][" << m << "]: " << part.getProp<MAT>(key)[l][k][m] << std::endl;
+
+    // for (int i = 0; i < 3*3*3; ++i) {
+    //   std::cout << "vec[" << i << "]: " << part.getProp<VEC>(key)[i] << std::endl;
+    //   std::cout << "err[" << i << "]: " << part.getProp<ERR>(key)[i] << std::endl;
+    // }
+
+    for (int i = 0; i < 3*3*3; ++i) {
+      BOOST_REQUIRE_CLOSE(part.getProp<ERR>(key)[0],0, eps);
+      BOOST_REQUIRE_CLOSE(part.getProp<ERR>(key)[1],0, eps);
+      BOOST_REQUIRE_CLOSE(part.getProp<ERR>(key)[2],0, eps);
+      BOOST_REQUIRE_CLOSE(part.getProp<ERR>(key)[3],0, eps);
+      BOOST_REQUIRE_CLOSE(part.getProp<ERR>(key)[4],0, eps);
+      BOOST_REQUIRE_CLOSE(part.getProp<ERR>(key)[5],0, eps);
+      BOOST_REQUIRE_CLOSE(part.getProp<ERR>(key)[6],0, eps);
+      BOOST_REQUIRE_CLOSE(part.getProp<ERR>(key)[7],0, eps);
+      BOOST_REQUIRE_CLOSE(part.getProp<ERR>(key)[8],0, eps);
+      BOOST_REQUIRE_CLOSE(part.getProp<ERR>(key)[9],0, eps);
+      BOOST_REQUIRE_CLOSE(part.getProp<ERR>(key)[10],0, eps);
+      BOOST_REQUIRE_CLOSE(part.getProp<ERR>(key)[11],0, eps);
+      BOOST_REQUIRE_CLOSE(part.getProp<ERR>(key)[12],0, eps);
+      BOOST_REQUIRE_CLOSE(part.getProp<ERR>(key)[13],0, eps);
+      BOOST_REQUIRE_CLOSE(part.getProp<ERR>(key)[14],0, eps);
+      BOOST_REQUIRE_CLOSE(part.getProp<ERR>(key)[15],0, eps);
+      BOOST_REQUIRE_CLOSE(part.getProp<ERR>(key)[16],0, eps);
+      BOOST_REQUIRE_CLOSE(part.getProp<ERR>(key)[17],0, eps);
+      BOOST_REQUIRE_CLOSE(part.getProp<ERR>(key)[18],0, eps);
+      BOOST_REQUIRE_CLOSE(part.getProp<ERR>(key)[19],0, eps);
+      BOOST_REQUIRE_CLOSE(part.getProp<ERR>(key)[20],0, eps);
+      BOOST_REQUIRE_CLOSE(part.getProp<ERR>(key)[21],0, eps);
+      BOOST_REQUIRE_CLOSE(part.getProp<ERR>(key)[22],0, eps);
+      BOOST_REQUIRE_CLOSE(part.getProp<ERR>(key)[23],0, eps);
+      BOOST_REQUIRE_CLOSE(part.getProp<ERR>(key)[24],0, eps);
+      BOOST_REQUIRE_CLOSE(part.getProp<ERR>(key)[25],0, eps);
+    }
+
+    ++pit;
+  }
+  part.deleteGhost();
+  // part.write("test_3index");
+}
+
     BOOST_AUTO_TEST_CASE(dcpse_op_convection) {
         size_t edgeSemiSize = 20;
         const size_t sz[2] = {2 * edgeSemiSize+1, 2 * edgeSemiSize+1};
@@ -1002,8 +1153,6 @@ BOOST_AUTO_TEST_CASE(dcpse_op_tests) {
         }*/
 
     }
-
-
 
 BOOST_AUTO_TEST_SUITE_END()
 

@@ -1122,7 +1122,326 @@ BOOST_AUTO_TEST_CASE(dcpse_surface_sphere_old) {
 
     }
 
+// Added by foggia on 08.03.2024                                                                                                                                                                      
+BOOST_AUTO_TEST_CASE(tensor_surface_gradient) {
 
+  // DIM is 3
+  Vcluster<> & v_cl = create_vcluster();
+  constexpr int VEC{0};           // vector - [DIM]                                                                                                                                                  
+  constexpr int NORMAL{1};        // vector - [DIM]                                                                                                                                                  
+  constexpr int PROJMAT{2};       // matrix - [DIM]x[DIM]                                                                                                                                            
+  constexpr int EUCGRAD{3};       // matrix - [DIM]x[DIM]                                                                                                                                            
+  constexpr int SGRAD{4};         // matrix - [DIM]x[DIM]
+  constexpr int DSGRAD{5};        // matrix - [DIM]x[DIM]x[DIM]
+  constexpr int LAP{6};           // vector - [DIM]
+  constexpr int ANALYTLAP{7};     // vector - [DIM]
+  
+  typedef aggregate<double[3],double[3],double[3][3],double[3][3],double[3][3],double[3][3][3],double[3],double[3]> prop_part;
+  // vector field, normal field, projection matrix, euclidean gradient, surface gradient, derivative of surface gradient, surface laplacian, analytical surf laplacian
+  
+  openfpm::vector<std::string> propNames{"vector","normal","projmat","eucGrad","surfGrad","DSurfGrad","lap","analyt_lap"};
+  typedef vector_dist<3,double,prop_part> vector_type;
+
+  size_t part_set_size[3] = {4000, 8000, 16000};
+  double L2norms_conv[3] = {0,0,0};
+  double Linfnorms_conv[3] = {0,0,0};
+  
+  // Test for three different configurations to check for convergence
+  for (int ll = 0; ll < 3; ++ll) {
+
+    size_t n_part{part_set_size[ll]};
+    double rCut{3.1};
+    
+    size_t sz[3] = {n_part,n_part,n_part};
+    double grid_spacing{0.8/((std::pow(sz[0],1/3.0)-1))};
+    double grid_spacing_surf{grid_spacing};
+    
+    Box<3,double> domain{{-2,-2,-2},{2,2,2}};
+    Ghost<3,double> ghost{rCut*grid_spacing + grid_spacing/8.0};
+    size_t bc[3] = {NON_PERIODIC,NON_PERIODIC,NON_PERIODIC};
+    
+    vector_type part{0,domain,bc,ghost};
+    part.setPropNames(propNames);
+    
+    std::array<double,3> center{0,0,0};
+    std::array<double,3> coord;
+    
+    if (v_cl.rank() == 0) {
+
+      // Created using the Fibonacci sphere algorithm                                                                                                                                                   
+      const double pi{3.14159265358979323846};
+      const double golden_ang = pi*(3.0 - std::sqrt(5.0));
+      const double prefactor{std::sqrt(0.75/pi)};
+      double rad, theta, arg, thetaB, phi, phi_norm;
+
+      for (int i = 0; i < n_part; ++i) {
+
+	coord[1] = 1.0 - 2.0*(i/double(n_part-1));
+	rad = std::sqrt(1.0 - (coord[1]-center[1])*(coord[1]-center[1]));
+	theta = golden_ang * i;
+	coord[0] = std::cos(theta) * rad;
+	coord[2] = std::sin(theta) * rad;
+
+	arg = (coord[0]-center[0]) * (coord[0]-center[0]) + (coord[1]-center[1]) * (coord[1]-center[1]);
+	thetaB = std::atan2(std::sqrt(arg),(coord[2]-center[2]));
+	phi = std::atan2((coord[1]-center[1]),(coord[0]-center[0]));
+
+	part.add();
+	part.getLastPos()[0] = coord[0];
+	part.getLastPos()[1] = coord[1];
+	part.getLastPos()[2] = coord[2];
+
+	// Vector field
+	// \Phi_{30} = \hat{r} \times \nabla_S Y_{30}
+	// \Phi_{30} = 3/4 * sqrt(7/pi) * (1 - 5*cos(theta)*cos(theta)) * sin(theta) \hat(e_phi or phi)
+	part.getLastProp<VEC>()[0] = - 3.0/4.0 * std::sqrt(7.0/pi) * (1.0 - 5.0 * std::cos(thetaB) * std::cos(thetaB)) * std::sin(thetaB) * std::sin(phi);
+	part.getLastProp<VEC>()[1] =   3.0/4.0 * std::sqrt(7.0/pi) * (1.0 - 5.0 * std::cos(thetaB) * std::cos(thetaB)) * std::sin(thetaB) * std::cos(phi);
+	part.getLastProp<VEC>()[2] =   0.0;
+
+	// \Phi_{10} = \hat{r} \times \nabla_S Y_{10} = -sqrt(3/4pi) sin(theta) \hat(e_phi or phi) --> normalized basis, convariant/contravariant
+	// \Phi_{10} = -sqrt(3/4pi) \hat(phi) --> non-normalized basis, contravariant
+	// part.getLastProp<VEC>()[0] =   std::sqrt(3.0/(4.0*pi)) * std::sin(thetaB) * std::sin(phi);
+	// part.getLastProp<VEC>()[1] = - std::sqrt(3.0/(4.0*pi)) * std::sin(thetaB) * std::cos(phi);
+	// part.getLastProp<VEC>()[2] = 0;
+	
+	// Analytical solution
+	part.getLastProp<ANALYTLAP>()[0] =   11.0 * 3.0/4.0 * std::sqrt(7.0/pi) * (1.0 - 5.0 * std::cos(thetaB) * std::cos(thetaB)) * std::sin(thetaB) * std::sin(phi);
+	part.getLastProp<ANALYTLAP>()[1] = - 11.0 * 3.0/4.0 * std::sqrt(7.0/pi) * (1.0 - 5.0 * std::cos(thetaB) * std::cos(thetaB)) * std::sin(thetaB) * std::cos(phi);
+	part.getLastProp<ANALYTLAP>()[2] =   0.0;
+
+	// part.getLastProp<ANALYTLAP>()[0] = -1.0 *    std::sqrt(3.0/(4.0*pi)) * std::sin(thetaB) * std::sin(phi);
+	// part.getLastProp<ANALYTLAP>()[1] = -1.0 * (- std::sqrt(3.0/(4.0*pi)) * std::sin(thetaB) * std::cos(phi));
+	// part.getLastProp<ANALYTLAP>()[2] = 0;
+	
+	// Normal field
+	part.getLastProp<NORMAL>()[0] = std::sin(thetaB)*std::cos(phi);
+	part.getLastProp<NORMAL>()[1] = std::sin(thetaB)*std::sin(phi);
+	part.getLastProp<NORMAL>()[2] = std::cos(thetaB);
+
+	// Projection matrix
+	double ni, nj;
+	for (int i = 0; i < 3; ++i) {
+	  ni = part.getLastProp<NORMAL>()[i];
+	  for (int j = 0; j < 3; ++j) {
+	    nj = part.getLastProp<NORMAL>()[j];
+	    part.getLastProp<PROJMAT>()[i][j] = (i==j)*(1-ni*nj) - !(i==j)*(ni*nj);
+	  }
+	}
+      } // particle creation loop              
+    } // v_cl.rank == 0
+
+    part.map();
+    part.ghost_get<VEC,PROJMAT,NORMAL>();
+
+    // Create Surface DC-PSE operators
+    SurfaceDerivative_x<NORMAL> Sdx{part,3,rCut*grid_spacing,grid_spacing_surf};
+    SurfaceDerivative_y<NORMAL> Sdy{part,3,rCut*grid_spacing,grid_spacing_surf};
+    SurfaceDerivative_z<NORMAL> Sdz{part,3,rCut*grid_spacing,grid_spacing_surf};
+
+    // Create expressions for fields
+    auto vec{getV<VEC>(part)};
+    auto projMat{getV<PROJMAT>(part)};
+    auto eucGrad{getV<EUCGRAD>(part)};
+    auto SGrad{getV<SGRAD>(part)};
+    auto dSGrad{getV<DSGRAD>(part)};
+    auto lap{getV<LAP>(part)};
+
+    // Set LAP and SGRAD to zero
+    SGrad[0][0] = 0;
+    SGrad[0][1] = 0;
+    SGrad[0][2] = 0;
+
+    SGrad[1][0] = 0;
+    SGrad[1][1] = 0;
+    SGrad[1][2] = 0;
+
+    SGrad[2][0] = 0;
+    SGrad[2][1] = 0;
+    SGrad[2][2] = 0;
+
+    lap[0] = 0;
+    lap[1] = 0;
+    lap[2] = 0;
+    part.template ghost_get<SGRAD,LAP>();
+
+    // 1) Surface gradient
+    eucGrad[0][0] = Sdx(vec[0]);
+    eucGrad[0][1] = Sdy(vec[0]);
+    eucGrad[0][2] = Sdz(vec[0]);
+
+    eucGrad[1][0] = Sdx(vec[1]);
+    eucGrad[1][1] = Sdy(vec[1]);
+    eucGrad[1][2] = Sdz(vec[1]);
+
+    eucGrad[2][0] = Sdx(vec[2]);
+    eucGrad[2][1] = Sdy(vec[2]);
+    eucGrad[2][2] = Sdz(vec[2]);
+    part.template ghost_get<EUCGRAD>();
+
+    for (int l = 0; l < 3; ++l)
+      for (int k = 0; k < 3; ++k)
+	for (int t = 0; t < 3; ++t)
+	  for (int h = 0; h < 3; ++h)
+	    SGrad[l][k] = projMat[l][t] * projMat[k][h] * eucGrad[t][h] + SGrad[l][k];
+    part.template ghost_get<SGRAD>();
+
+    {
+      // Check if quantities involved (v) are tangent: n.v = 0? direction 1                                                                                                                             
+      double dot_prod[3];
+      auto it1{part.getDomainIterator()};
+      while (it1.isNext()) {
+	auto key{it1.get()};
+
+	for (int d1 = 0; d1 < 3; ++d1) {
+	  dot_prod[d1] = 0.0;
+	  for (int d2 = 0; d2 < 3; ++d2)
+	    dot_prod[d1] += part.template getProp<SGRAD>(key)[d1][d2] * part.template getProp<NORMAL>(key)[d2];
+
+	  if (std::fabs(dot_prod[d1]) > 1e-14)
+	    std::cout << key.to_string() << " not tangent\n";
+	}
+
+	++it1;
+      }
+    }
+
+    {
+      // Check if quantities involved (v) are tangent: n.v = 0? direction 2                                                                                                                             
+      double dot_prod[3];
+      auto it1{part.getDomainIterator()};
+      while (it1.isNext()) {
+	auto key{it1.get()};
+
+	for (int d1 = 0; d1 < 3; ++d1) {
+	  dot_prod[d1] = 0.0;
+	  for (int d2 = 0; d2 < 3; ++d2)
+	    dot_prod[d1] += part.template getProp<SGRAD>(key)[d2][d1] * part.template getProp<NORMAL>(key)[d2];
+
+	  if (std::fabs(dot_prod[d1]) > 1e-14)
+	    std::cout << key.to_string() << " not tangent\n";
+	}
+
+	++it1;
+      }
+    }
+
+    // 2) Surface Laplacian
+    for (int d1 = 0; d1 < 3; ++d1)
+      for (int d2 = 0; d2 < 3; ++d2) {
+	dSGrad[d1][d2][0] = Sdx(SGrad[d1][d2]);
+	dSGrad[d1][d2][1] = Sdy(SGrad[d1][d2]);
+	dSGrad[d1][d2][2] = Sdz(SGrad[d1][d2]);
+      }
+    
+    // dSGrad[0][0][0] = Sdx(SGrad[0][0]);
+    // dSGrad[0][0][1] = Sdy(SGrad[0][0]);
+    // dSGrad[0][0][2] = Sdz(SGrad[0][0]);
+
+    // dSGrad[0][1][0] = Sdx(SGrad[0][1]);
+    // dSGrad[0][1][1] = Sdy(SGrad[0][1]);
+    // dSGrad[0][1][2] = Sdz(SGrad[0][1]);
+
+    // dSGrad[0][2][0] = Sdx(SGrad[0][2]);
+    // dSGrad[0][2][1] = Sdy(SGrad[0][2]);
+    // dSGrad[0][2][2] = Sdz(SGrad[0][2]);
+
+
+    // dSGrad[1][0][0] = Sdx(SGrad[1][0]);
+    // dSGrad[1][0][1] = Sdy(SGrad[1][0]);
+    // dSGrad[1][0][2] = Sdz(SGrad[1][0]);
+
+    // dSGrad[1][1][0] = Sdx(SGrad[1][1]);
+    // dSGrad[1][1][1] = Sdy(SGrad[1][1]);
+    // dSGrad[1][1][2] = Sdz(SGrad[1][1]);
+
+    // dSGrad[1][2][0] = Sdx(SGrad[1][2]);
+    // dSGrad[1][2][1] = Sdy(SGrad[1][2]);
+    // dSGrad[1][2][2] = Sdz(SGrad[1][2]);
+
+
+    // dSGrad[2][0][0] = Sdx(SGrad[2][0]);
+    // dSGrad[2][0][1] = Sdy(SGrad[2][0]);
+    // dSGrad[2][0][2] = Sdz(SGrad[2][0]);
+
+    // dSGrad[2][1][0] = Sdx(SGrad[2][1]);
+    // dSGrad[2][1][1] = Sdy(SGrad[2][1]);
+    // dSGrad[2][1][2] = Sdz(SGrad[2][1]);
+
+    // dSGrad[2][2][0] = Sdx(SGrad[2][2]);
+    // dSGrad[2][2][1] = Sdy(SGrad[2][2]);
+    // dSGrad[2][2][2] = Sdz(SGrad[2][2]);
+    part.template ghost_get<DSGRAD>();
+
+    for (int i = 0; i < 3; ++i)
+      for (int l = 0; l < 3; ++l)
+	for (int k = 0; k < 3; ++k)
+	  for (int m = 0; m < 3; ++m) {
+	    lap[i] = projMat[i][l] * projMat[k][m] * dSGrad[l][k][m] + lap[i];
+	  }
+    part.template ghost_get<LAP>();
+  
+    {
+      // Check if quantities involved (v) are tangent: n.v = 0?
+      auto it1{part.getDomainIterator()};
+      while (it1.isNext()) {
+	double dot_prod{0};
+	auto key{it1.get()};
+	for (int d1 = 0; d1 < 3; ++d1)
+	  dot_prod += part.template getProp<LAP>(key)[d1] * part.template getProp<NORMAL>(key)[d1];
+      
+	if (std::fabs(dot_prod) > 1e-14)
+	  std::cout << key.to_string() << " not tangent\n";
+    
+	++it1;
+      }
+    }
+
+    // 2. Norm and angle with theta unit vector ------------------------------------------
+    {
+      double maxErr{0}, l2err{0};
+      double err, abs_lap;
+      auto pit{part.getDomainIterator()};
+      while (pit.isNext()) {
+	auto key{pit.get()};
+
+	err = 0.0;
+	abs_lap = 0;
+	for (int d = 0; d < 3; ++d) {
+	  err += (part.getProp<ANALYTLAP>(key)[d] - part.getProp<LAP>(key)[d]) * (part.getProp<ANALYTLAP>(key)[d] - part.getProp<LAP>(key)[d]);
+	  abs_lap += part.getProp<LAP>(key)[d] * part.getProp<LAP>(key)[d];
+	}	
+	l2err += err;
+	err = std::sqrt(err);
+	maxErr = std::max(maxErr,err);
+            
+	++pit;
+      }
+      v_cl.max(maxErr);
+      v_cl.sum(l2err);
+      v_cl.execute();
+
+      // L2 and Linf norms
+      double linf_normLap{maxErr};
+      double l2_normLap{std::sqrt(l2err/double(n_part))};
+
+      L2norms_conv[ll] = l2_normLap;
+      Linfnorms_conv[ll] = linf_normLap;
+      
+      if (v_cl.rank() == 0)
+	std::cout << n_part << " " << std::setprecision(6) << std::scientific << grid_spacing << " " << l2_normLap << " " << linf_normLap << std::endl;
+    }
+    
+    part.deleteGhost();
+    part.write("tensor_surface_derivative_N" + std::to_string(n_part),VTK_WRITER);
+  } // end ll loop to test forconvergence
+
+  BOOST_TEST_MESSAGE("Test convergence of surface vector Laplacian");
+  BOOST_TEST_MESSAGE("L2 error for N=4000 / L2 error for N=8000 = " + std::to_string(L2norms_conv[0]/L2norms_conv[1]));
+  BOOST_TEST_MESSAGE("L2 error for N=8000 / L2 error for N=16000 = " + std::to_string(L2norms_conv[1]/L2norms_conv[2]));
+  BOOST_REQUIRE(L2norms_conv[0]/L2norms_conv[1] > 2);
+  BOOST_REQUIRE(L2norms_conv[1]/L2norms_conv[2] > 1.8);
+
+}
 BOOST_AUTO_TEST_SUITE_END()
 
 #endif
