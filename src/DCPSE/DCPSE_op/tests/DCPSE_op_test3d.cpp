@@ -309,7 +309,6 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests3)
         BOOST_REQUIRE(worst1 < 0.031);
     }
 
-//Is failing on Ubuntu CI with 5 cores. Needs investigation.
     BOOST_AUTO_TEST_CASE(Sph_harm) {
         BOOST_REQUIRE(openfpm::math::Y(2,1,0.5,0)+0.459674<0.00001);
         //These would be a requirement once Boost releases their fix
@@ -505,6 +504,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests3)
         double sampling2=1.9;
         double rCut2=3.9*spacing;
 
+        Particles.ghost_get_subset();
         auto verletList = Particles.template getVerlet<VL_NON_SYMMETRIC|VL_SKIP_REF_PART>(rCut);
         auto verletList2 = Particles.template getVerlet<VL_NON_SYMMETRIC|VL_SKIP_REF_PART>(rCut2);
         auto verletList_bulk = Particles_bulk.template getVerlet<VL_NON_SYMMETRIC|VL_SKIP_REF_PART>(rCut);
@@ -513,7 +513,6 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests3)
         Derivative_y<decltype(verletList)> Dy(Particles, verletList, 2, rCut, support_options::RADIUS);
         Derivative_z<decltype(verletList)> Dz(Particles, verletList, 2, rCut, support_options::RADIUS);
 
-        // ?
         Derivative_x<decltype(verletList_bulk)> B_Dx(Particles_bulk, verletList_bulk, 2, rCut, support_options::RADIUS);
         Derivative_y<decltype(verletList_bulk)> B_Dy(Particles_bulk, verletList_bulk, 2, rCut, support_options::RADIUS);
         Derivative_z<decltype(verletList_bulk)> B_Dz(Particles_bulk, verletList_bulk, 2, rCut, support_options::RADIUS);
@@ -839,6 +838,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests3)
         double sampling2=1.9;
         double rCut2=3.9*spacing;
 
+        Particles.ghost_get_subset();
         auto verletList = Particles.template getVerlet<VL_NON_SYMMETRIC|VL_SKIP_REF_PART>(rCut);
         auto verletList2 = Particles.template getVerlet<VL_NON_SYMMETRIC|VL_SKIP_REF_PART>(rCut2);
         auto verletList_bulk = Particles_bulk.template getVerlet<VL_NON_SYMMETRIC|VL_SKIP_REF_PART>(rCut2);
