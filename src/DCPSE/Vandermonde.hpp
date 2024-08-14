@@ -7,7 +7,6 @@
 
 #include "MonomialBasis.hpp"
 #include "VandermondeRowBuilder.hpp"
-#include "Support.hpp"
 
 template<unsigned int dim, typename T, typename MatrixType>
 class Vandermonde
@@ -19,21 +18,6 @@ private:
     T eps,HOverEpsilon,minSpacing;
 
 public:
-/*    Vandermonde(const Point<dim, T> &point, const std::vector<Point<dim, T>> &neighbours,
-                const MonomialBasis<dim> &monomialBasis);*/
-
-    template<typename vector_type,
-             typename vector_type2>
-    Vandermonde(const Support &support,
-                const MonomialBasis<dim> &monomialBasis,
-                const vector_type & particlesSupport,
-                const vector_type2 & particlesDomain,T HOverEpsilon=0.5)    //0.5 for the test
-    : point(particlesDomain.getPos(support.getReferencePointKey())),
-                  monomialBasis(monomialBasis),HOverEpsilon(HOverEpsilon)
-    {
-        initialize(support,particlesSupport,particlesDomain);
-    }
-
     template<typename verletIterator_type, typename vector_type, typename vector_type2>
     Vandermonde(
         size_t p,
@@ -105,28 +89,6 @@ private:
             absSum += fabs(x.value(i));
         }
         return absSum;
-    }
-
-    template<typename vector_type, typename vector_type2>
-    void initialize(const Support &sup, const vector_type & particlesSupport, vector_type2 &particlesDomain)
-    {
-    	auto & keys = sup.getKeys();
-
-    	for (int i = 0 ; i < keys.size() ; i++)
-    	{
-            Point<dim,T> p = particlesDomain.getPos(sup.getReferencePointKey());
-            p -= particlesSupport.getPos(keys.get(i));
-            offsets.add(p);
-    	}
-
-        // First check that the number of points given is enough for building the Vandermonde matrix
-        if (offsets.size() < monomialBasis.size())
-        {
-            ACTION_ON_ERROR(std::length_error("Not enough neighbour points passed for Vandermonde matrix construction!"));
-        }
-        // Compute eps for this point
-        //factor here. This is C factor.
-        computeEps(HOverEpsilon);
     }
 
     template<typename verletIterator_type, typename vector_type, typename vector_type2>

@@ -7,7 +7,6 @@
 
 #include <Space/Shape/Point.hpp>
 #include <Vector/vector_dist.hpp>
-#include "Support.hpp"
 #include <utility>
 #include "SupportBuilder.hpp"
 

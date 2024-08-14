@@ -11,7 +11,6 @@
 #include "MonomialBasis.hpp"
 #include "DMatrix/EMatrix.hpp"
 #include "SupportBuilder.hpp"
-#include "Support.hpp"
 #include "Vandermonde.hpp"
 #include "DcpseDiagonalScalingMatrix.hpp"
 #include "DcpseRhs.hpp"

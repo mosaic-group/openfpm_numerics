@@ -10,7 +10,6 @@
 #include "MonomialBasis.hpp"
 #include "SupportBuilder.hpp"
 #include "SupportBuilder.cuh"
-#include "Support.hpp"
 #include "Vandermonde.hpp"
 #include "DcpseDiagonalScalingMatrix.hpp"
 #include "DcpseRhs.hpp"

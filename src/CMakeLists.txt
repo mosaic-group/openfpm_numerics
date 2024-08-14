@@ -306,7 +306,6 @@ install(FILES DCPSE/Dcpse.hpp
 	DCPSE/Monomial.hpp
 	DCPSE/Monomial.cuh
 	DCPSE/MonomialBasis.hpp
-	DCPSE/Support.hpp
 	DCPSE/SupportBuilder.cuh
 	DCPSE/SupportBuilder.hpp
 	DCPSE/Vandermonde.hpp
