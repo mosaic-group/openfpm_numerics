@@ -1116,10 +1116,7 @@ public:
 			p.zero();
 			p.get(i) = 1;
 
-			if (i)
-				new(&dcpse_ptr[i]) Dcpse_type<particles_type::dims, VerletList_type, particles_type>(parts, verletList, dcpse_ptr[0], p, ord, rCut, opt);
-			else
-				new(&dcpse_ptr[i]) Dcpse_type<particles_type::dims, VerletList_type, particles_type>(parts, verletList, p, ord, rCut, opt);
+			new(&dcpse_ptr[i]) Dcpse_type<particles_type::dims, VerletList_type, particles_type>(parts, verletList, p, ord, rCut, opt);
 		}
 	}
 
@@ -1159,27 +1156,15 @@ public:
 			p.zero();
 			p.get(i) = 1;
 
-			if (i)
-				new(&dcpse_ptr[i]) Dcpse_type<vector_type::dims, VerletList_type, vector_type, vector_type2>(
-					particlesSupport,
-					particlesDomain,
-					verletList,
-					dcpse_ptr[0],
-					p,
-					ord,
-					rCut,
-					opt
-				);
-			else
-				new(&dcpse_ptr[i]) Dcpse_type<vector_type::dims, VerletList_type, vector_type, vector_type2>(
-					particlesSupport,
-					particlesDomain,
-					verletList,
-					p,
-					ord,
-					rCut,
-					opt
-				);
+			new(&dcpse_ptr[i]) Dcpse_type<vector_type::dims, VerletList_type, vector_type, vector_type2>(
+				particlesSupport,
+				particlesDomain,
+				verletList,
+				p,
+				ord,
+				rCut,
+				opt
+			);
 		}
 	}
 
@@ -1277,7 +1262,7 @@ public:
 
 		p.zero();
 		p.get(0) = 1;
-		new(dcpse_ptr+1) Dcpse_type<particles_type::dims, VerletList_type, particles_type>(parts, verletList, dcpse_ptr[0], p, ord, rCut, opt);
+		new(dcpse_ptr+1) Dcpse_type<particles_type::dims, VerletList_type, particles_type>(parts, verletList, p, ord, rCut, opt);
 
 	}
 
@@ -1332,7 +1317,6 @@ public:
 			particlesSupport,
 			particlesDomain,
 			verletList,
-			dcpse_ptr[0],
 			p,
 			ord,
 			rCut,
@@ -1400,10 +1384,7 @@ public:
 			p.zero();
 			p.get(i) = 2;
 
-			if (i)
-				new(&dcpse_ptr[i]) Dcpse_type<particles_type::dims, VerletList_type, particles_type>(parts, verletList, dcpse_ptr[0], p, ord, rCut, opt);
-			else
-				new(&dcpse_ptr[i]) Dcpse_type<particles_type::dims, VerletList_type, particles_type>(parts, verletList, p, ord, rCut, opt);
+			new(&dcpse_ptr[i]) Dcpse_type<particles_type::dims, VerletList_type, particles_type>(parts, verletList, p, ord, rCut, opt);
 		}
 	}
 
@@ -1443,27 +1424,15 @@ public:
 			p.zero();
 			p.get(i) = 2;
 
-			if (i)
-				new(&dcpse_ptr[i]) Dcpse_type<vector_type::dims, VerletList_type, vector_type, vector_type2>(
-					particlesSupport,
-					particlesDomain,
-					verletList,
-					dcpse_ptr[0],
-					p,
-					ord,
-					rCut,
-					opt
-				);
-			else
-				new(&dcpse_ptr[i]) Dcpse_type<vector_type::dims, VerletList_type, vector_type, vector_type2>(
-					particlesSupport,
-					particlesDomain,
-					verletList,
-					p,
-					ord,
-					rCut,
-					opt
-				);
+			new(&dcpse_ptr[i]) Dcpse_type<vector_type::dims, VerletList_type, vector_type, vector_type2>(
+				particlesSupport,
+				particlesDomain,
+				verletList,
+				p,
+				ord,
+				rCut,
+				opt
+			);
 		}
 	}
 
@@ -1568,10 +1537,7 @@ public:
 			p.zero();
 			p.get(i) = 1;
 
-			if (i)
-				new(&dcpse_ptr[i]) Dcpse_type<particles_type::dims, VerletList_type, particles_type>(parts, verletList, dcpse_ptr[0], p, ord, rCut, opt);
-			else
-				new(&dcpse_ptr[i]) Dcpse_type<particles_type::dims, VerletList_type, particles_type>(parts, verletList, p, ord, rCut, opt);
+			new(&dcpse_ptr[i]) Dcpse_type<particles_type::dims, VerletList_type, particles_type>(parts, verletList, p, ord, rCut, opt);
 		}
 	}
 
@@ -1612,27 +1578,15 @@ public:
 			p.zero();
 			p.get(i) = 1;
 
-			if (i)
-				new(&dcpse_ptr[i]) Dcpse_type<vector_type::dims, VerletList_type, vector_type, vector_type2>(
-					particlesSupport,
-					particlesDomain,
-					verletList,
-					dcpse_ptr[0],
-					p,
-					ord,
-					rCut,
-					opt
-				);
-			else
-				new(&dcpse_ptr[i]) Dcpse_type<vector_type::dims, VerletList_type, vector_type, vector_type2>(
-					particlesSupport,
-					particlesDomain,
-					verletList,
-					p,
-					ord,
-					rCut,
-					opt
-				);
+			new(&dcpse_ptr[i]) Dcpse_type<vector_type::dims, VerletList_type, vector_type, vector_type2>(
+				particlesSupport,
+				particlesDomain,
+				verletList,
+				p,
+				ord,
+				rCut,
+				opt
+			);
 		}
 	}
 
@@ -1712,10 +1666,7 @@ public:
 			p.zero();
 			p.get(i) = 1;
 
-			if (i)
-				new(&dcpse_ptr[i]) Dcpse_type<particles_type::dims, VerletList_type, particles_type>(parts, verletList, dcpse_ptr[0], p, ord, rCut, opt);
-			else
-				new(&dcpse_ptr[i]) Dcpse_type<particles_type::dims, VerletList_type, particles_type>(parts, verletList, p, ord, rCut, opt);
+			new(&dcpse_ptr[i]) Dcpse_type<particles_type::dims, VerletList_type, particles_type>(parts, verletList, p, ord, rCut, opt);
 		}
 
 
@@ -1757,27 +1708,15 @@ public:
 			p.zero();
 			p.get(i) = 1;
 
-			if (i)
-				new(&dcpse_ptr[i]) Dcpse_type<vector_type::dims, VerletList_type, vector_type, vector_type2>(
-					particlesSupport,
-					particlesDomain,
-					verletList,
-					dcpse_ptr[0],
-					p,
-					ord,
-					rCut,
-					opt
-				);
-			else
-				new(&dcpse_ptr[i]) Dcpse_type<vector_type::dims, VerletList_type, vector_type, vector_type2>(
-					particlesSupport,
-					particlesDomain,
-					verletList,
-					p,
-					ord,
-					rCut,
-					opt
-				);
+			new(&dcpse_ptr[i]) Dcpse_type<vector_type::dims, VerletList_type, vector_type, vector_type2>(
+				particlesSupport,
+				particlesDomain,
+				verletList,
+				p,
+				ord,
+				rCut,
+				opt
+			);
 		}
 
 

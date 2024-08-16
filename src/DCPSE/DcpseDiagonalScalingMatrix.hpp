@@ -41,20 +41,20 @@ public:
     }
 
     template <typename T, typename vector_type, typename vector_type2>
-    __host__ __device__ void buildMatrix(T* M, size_t supportRefKey, size_t supportKeysSize, const size_t* supportKeys, T eps, vector_type & particlesSupport, vector_type2 & particlesDomain)
+    __host__ __device__ void buildMatrix(T* M, size_t p, size_t supportKeysSize, const size_t* supportKeys, T eps, vector_type & particlesSupport, vector_type2 & particlesDomain)
     {
         // Check that all the dimension constraints are met
         assert(supportKeysSize >= monomialBasis.size());
 
-        Point<dim,typename vector_type::stype> ref_p = particlesDomain.getPos(supportRefKey);
+        Point<dim,typename vector_type::stype> xp = particlesDomain.getPos(p);
 
         for (size_t i = 0; i < supportKeysSize; ++i)
         {
-            size_t pt = supportKeys[i];
-            Point<dim,typename vector_type::stype> p = ref_p;
-            p -= particlesSupport.getPos(pt);
+            size_t q = supportKeys[i];
+            Point<dim,typename vector_type::stype> _xp = xp;
+            _xp -= particlesSupport.getPos(q);
 
-            M[i] = exp(- norm2(p) / (2.0 * eps * eps));
+            M[i] = exp(- norm2(_xp) / (2.0 * eps * eps));
         }
     }
 };

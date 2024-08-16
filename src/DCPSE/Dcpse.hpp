@@ -55,13 +55,11 @@ protected:
 	const unsigned int differentialOrder;
 	const MonomialBasis<dim> monomialBasis;
 
-	bool isSharedLocalSupport = false;
 	openfpm::vector<T> localEps; // Each MPI rank has just access to the local ones
 	openfpm::vector<T> localEpsInvPow; // Each MPI rank has just access to the local ones
 
 	openfpm::vector<size_t> kerOffsets;
 	openfpm::vector<T> calcKernels;
-	openfpm::vector<T> nSpacings;
 	VerletList_type & verletList;
 	vector_type & particlesSupport;
 	vector_type2 & particlesDomain;
@@ -110,29 +108,6 @@ public:
 	}
 
 	Dcpse(
-		vector_type &particles,
-		VerletList_type& verletList,
-		const Dcpse<dim, VerletList_type, vector_type>& other,
-		Point<dim, unsigned int> differentialSignature,
-		unsigned int convergenceOrder,
-		T rCut,
-		support_options opt = support_options::RADIUS
-	):
-		particlesSupport(particles),
-		particlesDomain(particles),
-		verletList(verletList),
-		opt(opt),
-		differentialSignature(differentialSignature),
-		differentialOrder(Monomial<dim>(differentialSignature).order()),
-		monomialBasis(differentialSignature.asArray(), convergenceOrder),
-		isSharedLocalSupport(true)
-	{
-		particles.ghost_get_subset();
-
-		initializeStaticSize(particles, particles, convergenceOrder, rCut);
-	}
-
-	Dcpse(
 		vector_type &particlesSupport,
 		vector_type2 &particlesDomain,
 		VerletList_type& verletList,
@@ -148,30 +123,6 @@ public:
 		differentialOrder(Monomial<dim>(differentialSignature).order()),
 		monomialBasis(differentialSignature.asArray(), convergenceOrder),
 		opt(opt)
-	{
-		particlesSupport.ghost_get_subset();
-		initializeStaticSize(particlesSupport,particlesDomain,convergenceOrder, rCut);
-	}
-
-	Dcpse(
-		vector_type &particlesSupport,
-		vector_type2 &particlesDomain,
-		VerletList_type& verletList,
-		const Dcpse<dim, VerletList_type, vector_type>& other,
-		Point<dim, unsigned int> differentialSignature,
-		unsigned int convergenceOrder,
-		T rCut,
-		support_options opt = support_options::RADIUS
-	):
-		particlesSupport(particlesSupport),
-		particlesDomain(particlesDomain),
-		verletList(verletList),
-		differentialSignature(differentialSignature),
-		differentialOrder(Monomial<dim>(differentialSignature).order()),
-		monomialBasis(differentialSignature.asArray(), convergenceOrder),
-		opt(opt),
-		isSharedLocalSupport(true)
-
 	{
 		particlesSupport.ghost_get_subset();
 		initializeStaticSize(particlesSupport,particlesDomain,convergenceOrder, rCut);
