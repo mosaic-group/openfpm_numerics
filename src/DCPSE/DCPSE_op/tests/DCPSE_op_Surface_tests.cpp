@@ -1235,9 +1235,9 @@ BOOST_AUTO_TEST_CASE(tensor_surface_gradient) {
 
     // Create Surface DC-PSE operators
     auto verletList = part.template getVerlet<VL_NON_SYMMETRIC|VL_SKIP_REF_PART>(rCut*grid_spacing);
-    SurfaceDerivative_x<NORMAL,decltype(verletList)> Sdx{part,verletList,3,rCut*grid_spacing,grid_spacing_surf,rCut*grid_spacing/grid_spacing_surf};
-    SurfaceDerivative_y<NORMAL,decltype(verletList)> Sdy{part,verletList,3,rCut*grid_spacing,grid_spacing_surf,rCut*grid_spacing/grid_spacing_surf};
-    SurfaceDerivative_z<NORMAL,decltype(verletList)> Sdz{part,verletList,3,rCut*grid_spacing,grid_spacing_surf,rCut*grid_spacing/grid_spacing_surf};
+    SurfaceDerivative_x<NORMAL,decltype(verletList)> Sdx{part,verletList,3,rCut*grid_spacing,grid_spacing_surf,static_cast<unsigned int>(rCut*grid_spacing/grid_spacing_surf)};
+    SurfaceDerivative_y<NORMAL,decltype(verletList)> Sdy{part,verletList,3,rCut*grid_spacing,grid_spacing_surf,static_cast<unsigned int>(rCut*grid_spacing/grid_spacing_surf)};
+    SurfaceDerivative_z<NORMAL,decltype(verletList)> Sdz{part,verletList,3,rCut*grid_spacing,grid_spacing_surf,static_cast<unsigned int>(rCut*grid_spacing/grid_spacing_surf)};
 
     // Create expressions for fields
     auto vec{getV<VEC>(part)};
