@@ -63,8 +63,8 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
         //Here template parameters are Normal property no.
         auto verletList = Sparticles.template getVerlet<VL_NON_SYMMETRIC|VL_SKIP_REF_PART>(rCut);
 
-        SurfaceDerivative_xx<2,decltype(verletList)> SDxx(Sparticles, verletList, 2, rCut, grid_spacing, rCut/grid_spacing);
-        SurfaceDerivative_yy<2,decltype(verletList)> SDyy(Sparticles, verletList, 2, rCut, grid_spacing, rCut/grid_spacing);
+        SurfaceDerivative_xx<2,decltype(verletList)> SDxx(Sparticles, verletList, 2, rCut, grid_spacing, static_cast<unsigned int>(rCut/grid_spacing));
+        SurfaceDerivative_yy<2,decltype(verletList)> SDyy(Sparticles, verletList, 2, rCut, grid_spacing, static_cast<unsigned int>(rCut/grid_spacing));
         //SurfaceDerivative_x<2,decltype(verletList)> SDx(Sparticles, 4, rCut, grid_spacing, rCut/grid_spacing);
         //SurfaceDerivative_y<2,decltype(verletList)> SDy(Sparticles, 4, rCut, grid_spacing, rCut/grid_spacing);
         auto INICONC = getV<3>(Sparticles);
@@ -145,8 +145,8 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
         //Here template parameters are Normal property no.
         auto verletList = Sparticles.template getVerlet<VL_NON_SYMMETRIC|VL_SKIP_REF_PART>(rCut);
 
-        SurfaceDerivative_xx<2,decltype(verletList)> SDxx(Sparticles, verletList, 2, rCut, grid_spacing, rCut/grid_spacing);
-        SurfaceDerivative_yy<2,decltype(verletList)> SDyy(Sparticles, verletList, 2, rCut, grid_spacing, rCut/grid_spacing);
+        SurfaceDerivative_xx<2,decltype(verletList)> SDxx(Sparticles, verletList, 2, rCut, grid_spacing, static_cast<unsigned int>(rCut/grid_spacing));
+        SurfaceDerivative_yy<2,decltype(verletList)> SDyy(Sparticles, verletList, 2, rCut, grid_spacing, static_cast<unsigned int>(rCut/grid_spacing));
         //SurfaceDerivative_xy<2,decltype(verletList)> SDxy(Sparticles, 3, rCut, grid_spacing, rCut/grid_spacing);
         //SurfaceDerivative_x<2,decltype(verletList)> SDx(Sparticles, 3, rCut, grid_spacing, rCut/grid_spacing);
         //SurfaceDerivative_y<2,decltype(verletList)> SDy(Sparticles, 3, rCut, grid_spacing, rCut/grid_spacing);
@@ -240,8 +240,8 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests)
         //Here template parameters are Normal property no.
         auto verletList = Sparticles.template getVerlet<VL_NON_SYMMETRIC|VL_SKIP_REF_PART>(rCut);
 
-        SurfaceDerivative_xx<2,decltype(verletList)> SDxx(Sparticles, verletList, 2, rCut, grid_spacing, rCut/grid_spacing);
-        SurfaceDerivative_yy<2,decltype(verletList)> SDyy(Sparticles, verletList, 2, rCut, grid_spacing, rCut/grid_spacing);
+        SurfaceDerivative_xx<2,decltype(verletList)> SDxx(Sparticles, verletList, 2, rCut, grid_spacing, static_cast<unsigned int>(rCut/grid_spacing));
+        SurfaceDerivative_yy<2,decltype(verletList)> SDyy(Sparticles, verletList, 2, rCut, grid_spacing, static_cast<unsigned int>(rCut/grid_spacing));
         auto INICONC = getV<3>(Sparticles);
         auto CONC = getV<0>(Sparticles);
         auto TEMP = getV<4>(Sparticles);
