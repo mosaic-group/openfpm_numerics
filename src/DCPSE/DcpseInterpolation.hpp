@@ -1,22 +1,26 @@
 //
 // Created by Abhinav Singh on 03.11.21.
+// Surface interpolation: Lennt Schulze and Ale Foggia on 06.03.24
 //
 
 #ifndef OPENFPM_PDATA_DCPSEINTERPOLATION_HPP
 #define OPENFPM_PDATA_DCPSEINTERPOLATION_HPP
 #include "DCPSE/Dcpse.hpp"
 
-/*! \brief Class for Creating the DCPSE Operator For the function approximation objects and computes DCPSE Kernels.
+/*!\class PPInterpolation 
+ * \brief Class to perform particle to particle interpolation using DC-PSE kernels.
  *
+ * \tparam particlesSupport_type Type of the particle set from which to interpolate.
+ * \tparam particlesDomain_type Type of the particle set to which to interpolate.
+ * \tparam VerletList_type Type of the Verlet List of the particle support set (particlesSupport)
+ * \tparam NORMAL_ID Property ID for the normal field of the particle set. If not passed, interpolation is performed on the bulk.
+ * 
  *
- * \param parts particle set
- * \param ord order of convergence of the operator
- * \param rCut Argument for cell list construction
- * \param support_options default: RADIUS to select all particles inside rCut*
- * \return Operator Dx which is a function on Vector_dist_Expressions
- *
+ * The interpolation is performed using the (Surface) DC-PSE operators corresponding to the zeroth order derivative.
+ * Inside the constructor, the differential signature vector is set to zero, and a Dcpse object is created.
+ * Interpolation is then performed when calling the p2p method passing the property ID of the two sets <prop_From,prop_To>.
  */
-template<typename particlesSupport_type, typename particlesDomain_type, typename VerletList_type>
+template<typename particlesSupport_type, typename particlesDomain_type, typename VerletList_type, size_t NORMAL_ID = INT_MAX>
 class PPInterpolation 
 {
 
@@ -24,18 +28,20 @@ class PPInterpolation
 
     particlesSupport_type & particlesSupport;
     particlesDomain_type & particlesDomain;
+    bool isSurfaceInterpolation=false;
+
 
 public:
     /*! \brief Constructor for Creating the DCPSE Operator Dx and objects and computes DCPSE Kernels.
      *
-     *
-     * \param parts particle set
-     * \param ord order of convergence of the operator
-     * \param rCut Argument for cell list construction
-     * \param support_options default: RADIUS to select all particles inside rCut
+     * \param particlesSupport Particle set from which to interpolate.
+     * \param particlesDomain Particle set to which to interpolate.
+     * \param VerletList Verlet List of the particle support set (particlesSupport)
+     * \param ord Convergence order of the numerical operator.
+     * \param rCut Size of the support/argument for cell list construction. It has to include sufficient enough particles to create the support.
+     * \param support_options default:RADIUS (selects all particles inside rCut, overrides oversampling).
      *
      * \return Operator F which is a function on Vector_dist_Expressions
-     *
      */
     PPInterpolation(
         particlesSupport_type &particlesSupport,
@@ -66,6 +72,38 @@ public:
         );
     }
 
+    /*!\fn PPInterpolation
+    * \tparam NORMAL_ID Enables the constructor for surface interpolation operator
+    * 
+    * \param particlesSupport Particle set from which to interpolate.
+    * \param particlesDomain Particle set to which to interpolate.
+    * \param VerletList Verlet List of the particle support set (particlesSupport)
+    * \param ord Convergence order of the numerical operator.
+    * \param rCut Size of the support/argument for cell list construction. It has to include sufficient enough particles to create the support.
+    * \param support_options default:RADIUS (selects all particles inside rCut, overrides oversampling).
+    *
+    * \return Operator F which is a function on Vector_dist_Expressions
+    *
+    * \brief Constructor for the surface particle to particle interpolation. Only enabled when the property ID of the normal to the surface is passed as the third template parameter. 
+    */
+    template<std::enable_if_t< (NORMAL_ID > 0),int> =0>
+    PPInterpolation(
+        particlesSupport_type &particlesSupport,
+        particlesDomain_type &particlesDomain,
+        unsigned int ord,
+        typename particlesSupport_type::stype rCut,
+        typename particlesSupport_type::stype nSpacing,
+        support_options opt = support_options::RADIUS
+    ):
+        particlesSupport(particlesSupport),
+        particlesDomain(particlesDomain),
+        isSurfaceInterpolation(true)
+    {
+        Point<particlesSupport_type::dims, unsigned int> p;
+        p.zero();
+        dcpse = new Dcpse<particlesSupport_type::dims,particlesSupport_type,particlesDomain_type>(particlesSupport,particlesDomain, p, ord, rCut, nSpacing,value_t<NORMAL_ID>(), opt);
+    }
+
     void deallocate() {
         delete (Dcpse<particlesSupport_type::dims, VerletList_type, particlesSupport_type, particlesDomain_type> *) dcpse;
     }
@@ -77,11 +115,18 @@ public:
         return vector_dist_expression_op<operand_type, dcpse_type, VECT_DCPSE>(arg, *(dcpse_type *) dcpse);
     }*/
 
-   template<unsigned int prp1,unsigned int prp2>
+  /*!\fn p2p()
+   *
+   * \brief Method to perform the particle to particle interpolation using DC-PSE kernels.
+   *  
+   * \tparam propSupport Property ID for the property to interpolate from.
+   * \tparam propDomain Property ID for the property to interpolate to.
+   *
+   */
+   template<unsigned int propSupport,unsigned int propDomain>
    void p2p() {
        auto dcpse_temp = (Dcpse<particlesSupport_type::dims, VerletList_type, particlesSupport_type, particlesDomain_type>*) dcpse;
-       dcpse_temp->template p2p<prp1,prp2>();
-
+       dcpse_temp->template p2p<propSupport,propDomain>();
    }
 
     // template<unsigned int prp, typename particles_type>
@@ -107,15 +152,11 @@ public:
 
     /*! \brief Method for Updating the DCPSE Operator by recomputing DCPSE Kernels.
      *
-     *
-     * \param parts particle set
      */
     void update() {
         auto dcpse_temp = (Dcpse<particlesSupport_type::dims, VerletList_type, particlesSupport_type, particlesDomain_type> *) dcpse;
         dcpse_temp->initializeUpdate(particlesSupport,particlesDomain);
-
     }
-
 };
 
 
