@@ -97,7 +97,7 @@ public:
         auto dcpse_temp = (Dcpse<particles_type::dims, particles_type, particles_type> *) dcpse;
         dcpse_temp->template createNormalParticles<NORMAL_ID>(particles);
         dcpse_temp->initializeUpdate(particles);
-        dcpse_temp->accumulateAndDeleteNormalParticles(particles);
+        dcpse_temp->accumulateAndDeleteNormalParticles(particles,particles);
     }
 };
 
@@ -189,7 +189,7 @@ public:
         auto dcpse_temp = (Dcpse<particles_type::dims, particles_type, particles_type> *) dcpse;
         dcpse_temp->template createNormalParticles<NORMAL_ID>(particles);
         dcpse_temp->initializeUpdate(particles);
-        dcpse_temp->accumulateAndDeleteNormalParticles(particles);
+        dcpse_temp->accumulateAndDeleteNormalParticles(particles,particles);
 
     }
 };
@@ -282,7 +282,7 @@ public:
         auto dcpse_temp = (Dcpse<particles_type::dims, particles_type, particles_type> *) dcpse;
         dcpse_temp->template createNormalParticles<NORMAL_ID>(particles);
         dcpse_temp->initializeUpdate(particles);
-        dcpse_temp->accumulateAndDeleteNormalParticles(particles);
+        dcpse_temp->accumulateAndDeleteNormalParticles(particles,particles);
 
     }
 };
@@ -378,7 +378,7 @@ public:
         dcpse_temp->template createNormalParticles<NORMAL_ID>(particles);
         dcpse_temp->template createNormalParticles<NORMAL_ID>(particles);
         dcpse_temp->initializeUpdate(particles);
-        dcpse_temp->accumulateAndDeleteNormalParticles(particles);
+        dcpse_temp->accumulateAndDeleteNormalParticles(particles,particles);
     }
 };
 
@@ -471,7 +471,7 @@ public:
         dcpse_temp->template createNormalParticles<NORMAL_ID>(particles);
         dcpse_temp->template createNormalParticles<NORMAL_ID>(particles);
         dcpse_temp->initializeUpdate(particles);
-        dcpse_temp->accumulateAndDeleteNormalParticles(particles);
+        dcpse_temp->accumulateAndDeleteNormalParticles(particles,particles);
     }
 };
 
@@ -562,7 +562,7 @@ public:
         auto dcpse_temp = (Dcpse<particles_type::dims, particles_type, particles_type> *) dcpse;
         dcpse_temp->template createNormalParticles<NORMAL_ID>(particles);
         dcpse_temp->initializeUpdate(particles);
-        dcpse_temp->accumulateAndDeleteNormalParticles(particles);
+        dcpse_temp->accumulateAndDeleteNormalParticles(particles,particles);
 
     }
 };
@@ -655,7 +655,7 @@ public:
         dcpse_temp->template createNormalParticles<NORMAL_ID>(particles);
         particles.write("With Normal");
         dcpse_temp->initializeUpdate(particles);
-        dcpse_temp->accumulateAndDeleteNormalParticles(particles);
+        dcpse_temp->accumulateAndDeleteNormalParticles(particles,particles);
 
     }
 };
@@ -746,7 +746,7 @@ public:
         auto dcpse_temp = (Dcpse<particles_type::dims, particles_type, particles_type> *) dcpse;
         dcpse_temp->template createNormalParticles<NORMAL_ID>(particles);
         dcpse_temp->initializeUpdate(particles);
-        dcpse_temp->accumulateAndDeleteNormalParticles(particles);
+        dcpse_temp->accumulateAndDeleteNormalParticles(particles,particles);
 
     }
 };
@@ -839,7 +839,7 @@ public:
         auto dcpse_temp = (Dcpse<particles_type::dims, particles_type, particles_type> *) dcpse;
         dcpse_temp->template createNormalParticles<NORMAL_ID>(particles);
         dcpse_temp->initializeUpdate(particles);
-        dcpse_temp->accumulateAndDeleteNormalParticles(particles);
+        dcpse_temp->accumulateAndDeleteNormalParticles(particles,particles);
 
     }
 };
@@ -932,7 +932,7 @@ public:
         auto dcpse_temp = (Dcpse<particles_type::dims, particles_type, particles_type> *) dcpse;
         dcpse_temp->template createNormalParticles<NORMAL_ID>(particles);
         dcpse_temp->initializeUpdate(particles);
-        dcpse_temp->accumulateAndDeleteNormalParticles(particles);
+        dcpse_temp->accumulateAndDeleteNormalParticles(particles,particles);
 
     }
 };
@@ -1022,7 +1022,7 @@ public:
         auto dcpse_temp = (Dcpse<particles_type::dims, particles_type, particles_type> *) dcpse;
         dcpse_temp->template createNormalParticles<NORMAL_ID>(particles);
         dcpse_temp->initializeUpdate(particles);
-        dcpse_temp->accumulateAndDeleteNormalParticles(particles);
+        dcpse_temp->accumulateAndDeleteNormalParticles(particles,particles);
 
     }
 };
