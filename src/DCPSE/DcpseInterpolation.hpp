@@ -12,12 +12,13 @@
  *
  * \tparam particlesFrom_type Type of the particle set from which to interpolate.
  * \tparam particlesTo_type Type of the particle set to which to interpolate.
- * \tparam NORMAL_ID Property ID for the normal field of the particle set. If not passed, interpolation is performed on the bulk.
+ * \tparam NORMAL_ID Property ID for the normal field of the particle set.
  * 
  * \param particlesFrom Particle set from which to interpolate.
  * \param particlesTo Particle set to which to interpolate.
  * \param ord Convergence order of the numerical operator.
  * \param rCut Size of the support/argument for cell list construction. It has to include sufficient enough particles to create the support.
+ * \param isSurfaceInterpolation If not passed as true, interpolation is performed on the bulk.
  * \param oversampling_factor Multiplier to the minimum no. of particles required by the operator in support.
  * \param support_options default:RADIUS (selects all particles inside rCut, overrides oversampling).
  *
@@ -25,7 +26,7 @@
  * Inside the constructor, the differential signature vector is set to zero, and a Dcpse object is created.
  * Interpolation is then performed when calling the p2p method passing the property ID of the two sets <prop_From,prop_To>.
  */
-template<typename particlesFrom_type, typename particlesTo_type, size_t NORMAL_ID = INT_MAX>
+template<typename particlesFrom_type, typename particlesTo_type, size_t NORMAL_ID=INT_MAX>
 class PPInterpolation 
 {
 
@@ -51,13 +52,13 @@ public:
 
   /*!\fn PPInterpolation
    *
-   * \brief Constructor for the surface particle to particle interpolation. Only enabled when the property ID of the normal to the surface is passed as the third template parameter. 
+   * \brief Constructor for the surface particle to particle interpolation.
+   *
    */
-  template<std::enable_if_t< (NORMAL_ID > 0),int> =0>
   PPInterpolation(particlesFrom_type &particlesFrom,particlesTo_type &particlesTo, unsigned int ord, typename particlesFrom_type::stype rCut,
 		  typename particlesFrom_type::stype nSpacing,
+		  bool isSurfaceInterpolation,
 		  support_options opt = support_options::RADIUS)
-//		  bool isSurfaceInterpolation = true)
     :particlesFrom(particlesFrom),particlesTo(particlesTo),isSurfaceInterpolation(true)
   {
     Point<particlesFrom_type::dims, unsigned int> p;
@@ -78,10 +79,10 @@ public:
 
   /*!\fn p2p()
    *
-   * \brief Method to perform the particle to particle interpolation using DC-PSE kernels.
+   * \brief Method to perform the particle to particle interpolation of SCALAR fields using DC-PSE kernels.
    *  
-   * \tparam propFrom Property ID for the property to interpolate from.
-   * \tparam propTo Property ID for the property to interpolate to.
+   * \tparam propFrom Property ID for the property to interpolate from (scalar property, e.g. double).
+   * \tparam propTo Property ID for the property to interpolate to (scalar property, e.g. double).
    *
    */
    template<unsigned int propFrom,unsigned int propTo>
@@ -90,6 +91,22 @@ public:
        dcpse_temp->template p2p<propFrom,propTo>();
 
    }
+
+  // foggia 16.09.24
+   /*!\fn p2p()
+   *
+   * \brief Method to perform the particle to particle interpolation of VECTOR fields using DC-PSE kernels.
+   *  
+   * \tparam propFrom Property ID for the property to interpolate from (vector property, e.g. double[3]).
+   * \tparam propTo Property ID for the property to interpolate to (vector property, e.g. double[3]).
+   * \tparam N1 Number of elements in the vector property (e.g., for double[3], N1=3).
+   *
+   */
+  template<unsigned int propFrom,unsigned int propTo, size_t N1>
+  void p2p() {
+    auto dcpse_temp = (Dcpse<particlesFrom_type::dims, particlesFrom_type, particlesTo_type>*) dcpse;
+    dcpse_temp->template p2p<propFrom,propTo,N1>();
+  }
 
     // template<unsigned int prp, typename particles_type>
     // void DrawKernel(particles_type &particles, int k) {

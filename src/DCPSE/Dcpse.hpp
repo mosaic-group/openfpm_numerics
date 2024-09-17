@@ -16,6 +16,7 @@
 #include "DcpseDiagonalScalingMatrix.hpp"
 #include "DcpseRhs.hpp"
 #include "hash_map/hopscotch_map.h"
+#include <type_traits>
 
 template<unsigned int N> struct value_t {};
 
@@ -359,6 +360,70 @@ public:
             particles.template getProp<prp>(xqK)[i] += calcKernels.get(kerOff+i);
         }
     }
+
+  // foggia 16.09.24
+  /*!\fn p2p()
+   *
+   * \brief Method to perform the particle to particle interpolation of VECTOR fields using DC-PSE kernels.
+   *  
+   * \tparam propFrom Property ID for the property to interpolate from (vector property, e.g. double[3]).
+   * \tparam propTo Property ID for the property to interpolate to (vector property, e.g. double[3]).
+   * \tparam N1 Number of elements in the vector property (e.g., for double[3], N1=3).
+   *
+   */
+  template<unsigned int prp1,unsigned int prp2, size_t N1>
+  void p2p()
+  {
+    typedef typename std::remove_reference<decltype(particlesTo.template getProp<prp2>(0)[0])>::type T2;
+
+    // Using this one could probably get rid of the N1 tparam. It requires some thought.
+    // size_t extent_prp2{std::extent<typename std::remove_reference<decltype(particlesTo.template getProp<prp2>(0))>::type,0>::value};
+    // std::cout << "extent: " << extent_prp2 << std::endl;
+    
+    auto it = particlesTo.getDomainIterator();
+    auto supportsIt = localSupports.begin();
+    auto epsItInvPow = localEpsInvPow.begin();
+    while (it.isNext()){
+      double epsInvPow = *epsItInvPow;
+      T2 Dfxp[N1];
+      for (size_t i1 = 0; i1 < N1; ++i1)
+	{
+	  Dfxp[i1] = 0;
+	}
+      Support support = *supportsIt;
+      size_t xpK = support.getReferencePointKey();
+      //Point<dim, typename vector_type::stype> xp = particlesTo.getPos(xpK);
+      //T fxp = sign * particlesTo.template getProp<fValuePos>(xpK);
+      size_t kerOff = kerOffsets.get(xpK);
+      auto & keys = support.getKeys();
+      for (int i = 0 ; i < keys.size() ; i++)
+	{
+	  size_t xqK = keys.get(i);
+	  T2 fxq[N1];
+	  for (size_t i1 = 0; i1 < N1; ++i1)
+	    {
+	      fxq[i1] = particlesFrom.template getProp<prp1>(xqK)[i1];
+	      Dfxp[i1] += fxq[i1] * calcKernels.get(kerOff+i);
+	    }
+	}
+      for (size_t i1 = 0; i1 < N1; ++i1)
+	{
+	  Dfxp[i1] = epsInvPow*Dfxp[i1];
+	}
+      //
+      //T trueDfxp = particles.template getProp<2>(xpK);
+      // Store Dfxp in the right position
+      for (size_t i1 = 0; i1 < N1; ++i1)
+	{
+	  particlesTo.template getProp<prp2>(xpK)[i1] = Dfxp[i1];
+	}
+      //
+      ++it;
+      ++supportsIt;
+      ++epsItInvPow;
+    }
+  }
+  
     /*
      * breif Particle to Particle Interpolation Evaluation
      */
@@ -366,7 +431,7 @@ public:
     void p2p()
     {
         typedef typename std::remove_reference<decltype(particlesTo.template getProp<prp2>(0))>::type T2;
-
+	
         auto it = particlesTo.getDomainIterator();
         auto supportsIt = localSupports.begin();
         auto epsItInvPow = localEpsInvPow.begin();

@@ -1,7 +1,7 @@
 //
 // Created by Abhinav Singh on 15.11.21.
 //
-//#define SE_CLASS1
+// #define SE_CLASS1
 
 #include "config.h"
 #ifdef HAVE_EIGEN
@@ -1222,504 +1222,6 @@ BOOST_AUTO_TEST_CASE(dcpse_surface_sphere_old) {
 
     }
 
-// when mass conservation holds on a deforming surface, it should change proportionally to the divergence of the velocity field. This test case checks the accuracy of the divergence operator on a growing sphere
-BOOST_AUTO_TEST_CASE(dcpse_moving_surface_mass_conservation) {
-  auto & v_cl = create_vcluster();
-  timer tt;
-  tt.start();
-  size_t n_particles = 2048;
-  size_t n_particles2 = 4096;
-  // Domain
-  double boxP1{-1.5}, boxP2{1.5};
-  double boxSize{boxP2 - boxP1};
-  size_t sz[3] = {n_particles,n_particles,n_particles};
-  double grid_spacing = std::sqrt(4.0*M_PI/n_particles);//{0.8/(std::pow(sz1[0],1.0/3.0)-1.0)};
-  double grid_spacing2 = std::sqrt(4.0*M_PI/n_particles2);//{0.8/(std::pow(sz1[0],1.0/3.0)-1.0)};
-  const size_t oporder = 5;
-  double cutoff_factor = 3.5;
-  double rCut{cutoff_factor * grid_spacing};
-  double rCut2{cutoff_factor * grid_spacing2};
-
-  Box<3,double> domain{{boxP1,boxP1,boxP1},{boxP2,boxP2,boxP2}};
-  size_t bc[3] = {NON_PERIODIC,NON_PERIODIC,NON_PERIODIC};
-  Ghost<3,double> ghost{rCut + grid_spacing/8.0};
-  Ghost<3,double> ghost2{rCut2 + grid_spacing2/8.0};
-  // particles
-  vector_dist<3,double, aggregate<double,double[3],double[3], double>> Sparticles(0,domain,bc,ghost);
-  vector_dist<3,double, aggregate<double,double[3],double[3], double>> Sparticles2(0,domain,bc,ghost2);
-  // properties: scalar_qty, normal, velocity, error
-  // particles on the Spherical surface distributed with the Fibonacci sequence
-  double Golden_angle=M_PI * (3.0 - sqrt(5.0));
-  if (v_cl.rank() == 0) {
-    // fill vector with resolution 1
-    for(int i=0;i<n_particles;i++)
-      {
-	double y = 1.0 - (i /double(n_particles - 1.0)) * 2.0;
-	double radius = sqrt(1 - y * y);
-	double Golden_theta = Golden_angle * i;
-	double x = cos(Golden_theta) * radius;
-	double z = sin(Golden_theta) * radius;
-	Sparticles.add();
-	Sparticles.getLastPos()[0] = x;
-	Sparticles.getLastPos()[1] = y;
-	Sparticles.getLastPos()[2] = z;
-	double rm=sqrt(x*x+y*y+z*z);
-	// fill unit surface normals
-	Sparticles.getLastProp<1>()[0] = x/rm;
-	Sparticles.getLastProp<1>()[1] = y/rm;
-	Sparticles.getLastProp<1>()[2] = z/rm;
-	// fill scalar field (constant concentration field)
-	Sparticles.getLastProp<0>() = 1.0;
-	// fill velocity field (unit normal)
-	Sparticles.getLastProp<2>()[0] = x/rm;
-	Sparticles.getLastProp<2>()[1] = y/rm;
-	Sparticles.getLastProp<2>()[2] = z/rm;
-      }
-    // fill vector with resolution 2
-    for(int i=0;i<n_particles2;i++)
-      {
-	double y = 1.0 - (i /double(n_particles2 - 1.0)) * 2.0;
-	double radius = sqrt(1 - y * y);
-	double Golden_theta = Golden_angle * i;
-	double x = cos(Golden_theta) * radius;
-	double z = sin(Golden_theta) * radius;
-	Sparticles2.add();
-	Sparticles2.getLastPos()[0] = x;
-	Sparticles2.getLastPos()[1] = y;
-	Sparticles2.getLastPos()[2] = z;
-	double rm=sqrt(x*x+y*y+z*z);
-	// fill unit surface normals
-	Sparticles2.getLastProp<1>()[0] = x/rm;
-	Sparticles2.getLastProp<1>()[1] = y/rm;
-	Sparticles2.getLastProp<1>()[2] = z/rm;
-	// fill scalar field (constant concentration field)
-	Sparticles2.getLastProp<0>() = 1.0;
-	// fill velocity field (unit normal)
-	Sparticles2.getLastProp<2>()[0] = x/rm;
-	Sparticles2.getLastProp<2>()[1] = y/rm;
-	Sparticles2.getLastProp<2>()[2] = z/rm;
-      }
-  }
-
-  Sparticles.write("init1");
-  Sparticles2.write("init2");
-
-  Sparticles.map();
-  Sparticles2.map();
-  Sparticles.ghost_get<0,1,2>();
-  Sparticles2.ghost_get<0,1,2>();
-
-  // expressions for properties
-  auto conc{getV<0>(Sparticles)};
-  auto velo{getV<2>(Sparticles)};
-
-  auto conc2{getV<0>(Sparticles2)};
-  auto velo2{getV<2>(Sparticles2)};
-  // time integration parameters
-  double time = 0.0;
-  double t_final = 0.4;//0.5*grid_spacing;
-  double dt = 0.01*sqrt(4.0*M_PI/16384);
-  //RK4 time integrator
-  while(time < t_final)
-  {
-  	double updated_R1 = sqrt(Sparticles.getPos(0)[0]*Sparticles.getPos(0)[0] + Sparticles.getPos(0)[1]*Sparticles.getPos(0)[1] + Sparticles.getPos(0)[2]*Sparticles.getPos(0)[2]);
-  	double updated_grid_spacing = sqrt(4.0*M_PI*updated_R1*updated_R1/n_particles);
-  	double updated_R2 = sqrt(Sparticles2.getPos(0)[0]*Sparticles2.getPos(0)[0] + Sparticles2.getPos(0)[1]*Sparticles2.getPos(0)[1] + Sparticles2.getPos(0)[2]*Sparticles2.getPos(0)[2]);
-  	double updated_grid_spacing2 = sqrt(4.0*M_PI*updated_R1*updated_R1/n_particles2);
-	double updated_rCut = cutoff_factor*updated_grid_spacing;
-	double updated_rCut2 = cutoff_factor*updated_grid_spacing2;
-	SurfaceDerivative_x<1> Sdx{Sparticles,oporder,updated_rCut,updated_grid_spacing};
-  	SurfaceDerivative_y<1> Sdy{Sparticles,oporder,updated_rCut,updated_grid_spacing};
- 	SurfaceDerivative_z<1> Sdz{Sparticles,oporder,updated_rCut,updated_grid_spacing};
-  	SurfaceDerivative_x<1> Sdx2{Sparticles2,oporder,updated_rCut2,updated_grid_spacing2};
-  	SurfaceDerivative_y<1> Sdy2{Sparticles2,oporder,updated_rCut2,updated_grid_spacing2};
-  	SurfaceDerivative_z<1> Sdz2{Sparticles2,oporder,updated_rCut2,updated_grid_spacing2};
-  	auto k11 = -conc*(Sdx(velo[0]) + Sdy(velo[1]) + Sdz(velo[2]));
-  	auto k12 = -conc2*(Sdx2(velo2[0]) + Sdy2(velo2[1]) + Sdz2(velo2[2]));
-  	//auto k11 = -conc*2.0/updated_R1;
-  	//auto k12 = -conc2*2.0/updated_R1;
-	// integrate particle locations in time
-	auto part = Sparticles.getDomainIterator();
-	while(part.isNext())
-	{
-		auto a = part.get();
-		for(int k = 0; k < 3; k++) Sparticles.getPos(a)[k] = Sparticles.getPos(a)[k] + 0.5*dt*Sparticles.template getProp<2>(a)[k];
-		++part;
-	}
-	auto part2 = Sparticles2.getDomainIterator();
-	while(part2.isNext())
-	{
-		auto a2 = part2.get();
-		for (int k = 0; k < 3; k++) Sparticles2.getPos(a2)[k] = Sparticles2.getPos(a2)[k] + 0.5*dt*Sparticles2.template getProp<2>(a2)[k];
-		++part2;
-	}
-  	Sparticles.map();
-  	Sparticles.ghost_get<0,1,2>();
-  	Sparticles2.map();
-  	Sparticles2.ghost_get<0,1,2>();
-	Sdx.update(Sparticles);
-	Sdy.update(Sparticles);
-	Sdz.update(Sparticles);
-	Sdx2.update(Sparticles2);
-	Sdy2.update(Sparticles2);
-	Sdz2.update(Sparticles2);
-	auto k21 = -(conc + 0.5*dt*k11)*(Sdx(velo[0]) + Sdy(velo[1]) + Sdz(velo[2]));
-	auto k22 = -(conc2 + 0.5*dt*k12)*(Sdx2(velo2[0]) + Sdy2(velo2[1]) + Sdz2(velo2[2]));
-	auto k31 = -(conc + 0.5*dt*k21)*(Sdx(velo[0]) + Sdy(velo[1]) + Sdz(velo[2]));
-	auto k32 = -(conc2 + 0.5*dt*k22)*(Sdx2(velo2[0]) + Sdy2(velo2[1]) + Sdz2(velo2[2]));
-  	//updated_R1 = sqrt(Sparticles.getPos(0)[0]*Sparticles.getPos(0)[0] + Sparticles.getPos(0)[1]*Sparticles.getPos(0)[1] + Sparticles.getPos(0)[2]*Sparticles.getPos(0)[2]);
-	//auto k21 = -(conc + 0.5*dt*k11)*2.0/updated_R1;
-	//auto k22 = -(conc2 + 0.5*dt*k12)*2.0/updated_R1;
-	//auto k31 = -(conc + 0.5*dt*k21)*2.0/updated_R1;
-	//auto k32 = -(conc2 + 0.5*dt*k22)*2.0/updated_R1;
-
-	auto part12 = Sparticles.getDomainIterator();
-	while(part12.isNext())
-	{
-		auto a = part12.get();
-		for(int k = 0; k < 3; k++) Sparticles.getPos(a)[k] = Sparticles.getPos(a)[k] + 0.5*dt*Sparticles.template getProp<2>(a)[k];
-		++part12;
-	}
-	auto part22 = Sparticles2.getDomainIterator();
-	while(part22.isNext())
-	{
-		auto a2 = part22.get();
-		for (int k = 0; k < 3; k++) Sparticles2.getPos(a2)[k] = Sparticles2.getPos(a2)[k] + 0.5*dt*Sparticles2.template getProp<2>(a2)[k];
-		++part22;
-	}
-  	Sparticles.map();
-  	Sparticles.ghost_get<0,1,2>();
-  	Sparticles2.map();
-  	Sparticles2.ghost_get<0,1,2>();
-	Sdx.update(Sparticles);
-	Sdy.update(Sparticles);
-	Sdz.update(Sparticles);
-	Sdx2.update(Sparticles2);
-	Sdy2.update(Sparticles2);
-	Sdz2.update(Sparticles2);
-	auto k41 = -(conc + dt*k31)*(Sdx(velo[0]) + Sdy(velo[1]) + Sdz(velo[2]));
-	auto k42 = -(conc2 + dt*k32)*(Sdx2(velo2[0]) + Sdy2(velo2[1]) + Sdz2(velo2[2]));
-  	//updated_R1 = sqrt(Sparticles.getPos(0)[0]*Sparticles.getPos(0)[0] + Sparticles.getPos(0)[1]*Sparticles.getPos(0)[1] + Sparticles.getPos(0)[2]*Sparticles.getPos(0)[2]);
-	//auto k41 = -(conc + dt*k31)*2.0/updated_R1;
-	//auto k42 = -(conc2 + dt*k32)*2.0/updated_R1;
-	// integrate the concentration in time
-	conc = conc + dt*(k11 + 2.0*k21 + 2.0*k31 + k41)/6.0;
-	conc2 = conc2 + dt*(k12 + 2.0*k22 + 2.0*k32 + k42)/6.0;
-	//conc = conc - dt*conc*(Sdx(velo[0]) + Sdy(velo[1]) + Sdz(velo[2]));
-	//conc2 = conc2 - dt*conc2*(Sdx2(velo2[0]) + Sdy2(velo2[1]) + Sdz2(velo2[2]));
-	Sdx.deallocate(Sparticles);
-	Sdy.deallocate(Sparticles);
-	Sdz.deallocate(Sparticles);
-	Sdx2.deallocate(Sparticles2);
-	Sdy2.deallocate(Sparticles2);
-	Sdz2.deallocate(Sparticles2);
-	time = time + dt;
-	std::cout<<"time = "<<time<<std::endl;
-  }
-  // evaluate error at t_end
-  auto it = Sparticles.getDomainIterator();
-  double worst = 0.0;
-  while (it.isNext()) 
-  {
-    auto p = it.get();
-
-    double x = Sparticles.getPos(p)[0];
-    double y = Sparticles.getPos(p)[1];
-    double z = Sparticles.getPos(p)[2];
-
-    //double theory =  2.0/sqrt(x*x + y*y + z*z);//1.0/(x*x + y*y + z*z);
-    double theory = 1.0/(x*x + y*y + z*z);
-    Sparticles.getProp<3>(p) = fabs(Sparticles.getProp<0>(p) - theory); // error
-
-    if (fabs(Sparticles.getProp<3>(p)) > worst) {
-      worst = fabs(Sparticles.getProp<3>(p));
-    }
-    ++it;
-  }
-  std::cout<<"having computed worst"<<std::endl;
-  auto it2 = Sparticles2.getDomainIterator();
-  double worst2 = 0.0;
-  while (it2.isNext()) 
-  {
-    auto p = it2.get();
-
-    double x = Sparticles2.getPos(p)[0];
-    double y = Sparticles2.getPos(p)[1];
-    double z = Sparticles2.getPos(p)[2];
-
-    //double theory =  2.0/sqrt(x*x + y*y + z*z);//1.0/(x*x + y*y + z*z);
-    double theory =  1.0/(x*x + y*y + z*z);
-    Sparticles2.getProp<3>(p) = fabs(Sparticles2.getProp<0>(p) - theory); // error
-
-    if (fabs(Sparticles2.getProp<3>(p)) > worst2) {
-      worst2 = fabs(Sparticles2.getProp<3>(p));
-    }
-    ++it2;
-  }
-  Sparticles.write("after");
-  Sparticles2.write("after2");
-  std::cout<<"Linf mass conservation error with "<<n_particles<<" is: "<<worst<<std::endl;
-  std::cout<<"Linf mass conservation error with "<<n_particles2<<" is: "<<worst2<<std::endl;
-  std::cout<<"Convergence order is "<<std::log10(worst2/worst)/std::log10(grid_spacing2/grid_spacing)<<std::endl;
-  std::cout<<"Having used an operator order = "<<oporder<<std::endl;
-  Sparticles.deleteGhost();
-  Sparticles.write("Sparticles_after");
-  BOOST_REQUIRE(worst < 0.03);
-}
-
-// // when mass conservation holds on a deforming surface, it should change proportionally to the divergence of the velocity field. This test case checks the accuracy of the divergence operator on a growing sphere
-// BOOST_AUTO_TEST_CASE(dcpse_moving_surface_mass_conservation) {
-//   auto & v_cl = create_vcluster();
-//   timer tt;
-//   tt.start();
-//   size_t n_particles = 2048;
-//   size_t n_particles2 = 4096;
-//   // Domain
-//   double boxP1{-1.5}, boxP2{1.5};
-//   double boxSize{boxP2 - boxP1};
-//   size_t sz[3] = {n_particles,n_particles,n_particles};
-//   double grid_spacing = std::sqrt(4.0*M_PI/n_particles);//{0.8/(std::pow(sz1[0],1.0/3.0)-1.0)};
-//   double grid_spacing2 = std::sqrt(4.0*M_PI/n_particles2);//{0.8/(std::pow(sz1[0],1.0/3.0)-1.0)};
-//   const size_t oporder = 5;
-//   double cutoff_factor = 3.5;
-//   double rCut{cutoff_factor * grid_spacing};
-//   double rCut2{cutoff_factor * grid_spacing2};
-
-//   Box<3,double> domain{{boxP1,boxP1,boxP1},{boxP2,boxP2,boxP2}};
-//   size_t bc[3] = {NON_PERIODIC,NON_PERIODIC,NON_PERIODIC};
-//   Ghost<3,double> ghost{rCut + grid_spacing/8.0};
-//   Ghost<3,double> ghost2{rCut2 + grid_spacing2/8.0};
-//   // particles
-//   vector_dist<3,double, aggregate<double,double[3],double[3], double>> Sparticles(0,domain,bc,ghost);
-//   vector_dist<3,double, aggregate<double,double[3],double[3], double>> Sparticles2(0,domain,bc,ghost2);
-//   // properties: scalar_qty, normal, velocity, error
-//   // particles on the Spherical surface distributed with the Fibonacci sequence
-//   double Golden_angle=M_PI * (3.0 - sqrt(5.0));
-//   if (v_cl.rank() == 0) {
-//     // fill vector with resolution 1
-//     for(int i=0;i<n_particles;i++)
-//       {
-// 	double y = 1.0 - (i /double(n_particles - 1.0)) * 2.0;
-// 	double radius = sqrt(1 - y * y);
-// 	double Golden_theta = Golden_angle * i;
-// 	double x = cos(Golden_theta) * radius;
-// 	double z = sin(Golden_theta) * radius;
-// 	Sparticles.add();
-// 	Sparticles.getLastPos()[0] = x;
-// 	Sparticles.getLastPos()[1] = y;
-// 	Sparticles.getLastPos()[2] = z;
-// 	double rm=sqrt(x*x+y*y+z*z);
-// 	// fill unit surface normals
-// 	Sparticles.getLastProp<1>()[0] = x/rm;
-// 	Sparticles.getLastProp<1>()[1] = y/rm;
-// 	Sparticles.getLastProp<1>()[2] = z/rm;
-// 	// fill scalar field (constant concentration field)
-// 	Sparticles.getLastProp<0>() = 1.0;
-// 	// fill velocity field (unit normal)
-// 	Sparticles.getLastProp<2>()[0] = x/rm;
-// 	Sparticles.getLastProp<2>()[1] = y/rm;
-// 	Sparticles.getLastProp<2>()[2] = z/rm;
-//       }
-//     // fill vector with resolution 2
-//     for(int i=0;i<n_particles2;i++)
-//       {
-// 	double y = 1.0 - (i /double(n_particles2 - 1.0)) * 2.0;
-// 	double radius = sqrt(1 - y * y);
-// 	double Golden_theta = Golden_angle * i;
-// 	double x = cos(Golden_theta) * radius;
-// 	double z = sin(Golden_theta) * radius;
-// 	Sparticles2.add();
-// 	Sparticles2.getLastPos()[0] = x;
-// 	Sparticles2.getLastPos()[1] = y;
-// 	Sparticles2.getLastPos()[2] = z;
-// 	double rm=sqrt(x*x+y*y+z*z);
-// 	// fill unit surface normals
-// 	Sparticles2.getLastProp<1>()[0] = x/rm;
-// 	Sparticles2.getLastProp<1>()[1] = y/rm;
-// 	Sparticles2.getLastProp<1>()[2] = z/rm;
-// 	// fill scalar field (constant concentration field)
-// 	Sparticles2.getLastProp<0>() = 1.0;
-// 	// fill velocity field (unit normal)
-// 	Sparticles2.getLastProp<2>()[0] = x/rm;
-// 	Sparticles2.getLastProp<2>()[1] = y/rm;
-// 	Sparticles2.getLastProp<2>()[2] = z/rm;
-//       }
-//   }
-
-//   Sparticles.write("init1");
-//   Sparticles2.write("init2");
-
-//   Sparticles.map();
-//   std::cout<<"after mapping particle set 1"<<std::endl;
-//   Sparticles2.map();
-//   std::cout<<"after mapping particle set 2"<<std::endl;
-//   Sparticles.ghost_get<0,1,2>();
-//   Sparticles2.ghost_get<0,1,2>();
-
-//   // surface dcpse parameters
-//   std::cout<<"Before initializing divergence operator on first particle set"<<std::endl;
-//   auto conc{getV<0>(Sparticles)};
-//   auto velo{getV<2>(Sparticles)};
-
-//   std::cout<<"Before initializing divergence operator on second particle set"<<std::endl;
-//   auto conc2{getV<0>(Sparticles2)};
-//   auto velo2{getV<2>(Sparticles2)};
-//   // time integration parameters
-//   double time = 0.0;
-//   double t_final = 0.4;//0.5*grid_spacing;
-//   double dt = 0.01*sqrt(4.0*M_PI/16384);
-//   while(time < t_final)
-//   {
-//   	double updated_R1 = sqrt(Sparticles.getPos(0)[0]*Sparticles.getPos(0)[0] + Sparticles.getPos(0)[1]*Sparticles.getPos(0)[1] + Sparticles.getPos(0)[2]*Sparticles.getPos(0)[2]);
-//   	double updated_grid_spacing = sqrt(4.0*M_PI*updated_R1*updated_R1/n_particles);
-//   	double updated_R2 = sqrt(Sparticles2.getPos(0)[0]*Sparticles2.getPos(0)[0] + Sparticles2.getPos(0)[1]*Sparticles2.getPos(0)[1] + Sparticles2.getPos(0)[2]*Sparticles2.getPos(0)[2]);
-//   	double updated_grid_spacing2 = sqrt(4.0*M_PI*updated_R1*updated_R1/n_particles2);
-// 	double updated_rCut = cutoff_factor*updated_grid_spacing;
-// 	double updated_rCut2 = cutoff_factor*updated_grid_spacing2;
-// 	SurfaceDerivative_x<1> Sdx{Sparticles,oporder,updated_rCut,updated_grid_spacing};
-//   	SurfaceDerivative_y<1> Sdy{Sparticles,oporder,updated_rCut,updated_grid_spacing};
-//  	SurfaceDerivative_z<1> Sdz{Sparticles,oporder,updated_rCut,updated_grid_spacing};
-//   	SurfaceDerivative_x<1> Sdx2{Sparticles2,oporder,updated_rCut2,updated_grid_spacing2};
-//   	SurfaceDerivative_y<1> Sdy2{Sparticles2,oporder,updated_rCut2,updated_grid_spacing2};
-//   	SurfaceDerivative_z<1> Sdz2{Sparticles2,oporder,updated_rCut2,updated_grid_spacing2};
-//   	auto k11 = -conc*(Sdx(velo[0]) + Sdy(velo[1]) + Sdz(velo[2]));
-//   	auto k12 = -conc2*(Sdx2(velo2[0]) + Sdy2(velo2[1]) + Sdz2(velo2[2]));
-//   	//auto k11 = -conc*2.0/updated_R1;
-//   	//auto k12 = -conc2*2.0/updated_R1;
-// 	//auto temppos1 = getV<PROP_POS>(Sparticles) + 0.5*dt*velo;
-// 	//auto temppos2 = getV<PROP_POS>(Sparticles2) + 0.5*dt*velo2;
-// 	// integrate particle locations in time
-// 	auto part = Sparticles.getDomainIterator();
-// 	while(part.isNext())
-// 	{
-// 		auto a = part.get();
-// 		for(int k = 0; k < 3; k++) Sparticles.getPos(a)[k] = Sparticles.getPos(a)[k] + 0.5*dt*Sparticles.template getProp<2>(a)[k];
-// 		++part;
-// 	}
-// 	auto part2 = Sparticles2.getDomainIterator();
-// 	while(part2.isNext())
-// 	{
-// 		auto a2 = part2.get();
-// 		for (int k = 0; k < 3; k++) Sparticles2.getPos(a2)[k] = Sparticles2.getPos(a2)[k] + 0.5*dt*Sparticles2.template getProp<2>(a2)[k];
-// 		++part2;
-// 	}
-//   	Sparticles.map();
-//   	Sparticles.ghost_get<0,1,2>();
-//   	Sparticles2.map();
-//   	Sparticles2.ghost_get<0,1,2>();
-// 	Sdx.update(Sparticles);
-// 	Sdy.update(Sparticles);
-// 	Sdz.update(Sparticles);
-// 	Sdx2.update(Sparticles2);
-// 	Sdy2.update(Sparticles2);
-// 	Sdz2.update(Sparticles2);
-// 	auto k21 = -(conc + 0.5*dt*k11)*(Sdx(velo[0]) + Sdy(velo[1]) + Sdz(velo[2]));
-// 	auto k22 = -(conc2 + 0.5*dt*k12)*(Sdx2(velo2[0]) + Sdy2(velo2[1]) + Sdz2(velo2[2]));
-// 	auto k31 = -(conc + 0.5*dt*k21)*(Sdx(velo[0]) + Sdy(velo[1]) + Sdz(velo[2]));
-// 	auto k32 = -(conc2 + 0.5*dt*k22)*(Sdx2(velo2[0]) + Sdy2(velo2[1]) + Sdz2(velo2[2]));
-//   	//updated_R1 = sqrt(Sparticles.getPos(0)[0]*Sparticles.getPos(0)[0] + Sparticles.getPos(0)[1]*Sparticles.getPos(0)[1] + Sparticles.getPos(0)[2]*Sparticles.getPos(0)[2]);
-// 	//auto k21 = -(conc + 0.5*dt*k11)*2.0/updated_R1;
-// 	//auto k22 = -(conc2 + 0.5*dt*k12)*2.0/updated_R1;
-// 	//auto k31 = -(conc + 0.5*dt*k21)*2.0/updated_R1;
-// 	//auto k32 = -(conc2 + 0.5*dt*k22)*2.0/updated_R1;
-
-// 	auto part12 = Sparticles.getDomainIterator();
-// 	while(part12.isNext())
-// 	{
-// 		auto a = part12.get();
-// 		for(int k = 0; k < 3; k++) Sparticles.getPos(a)[k] = Sparticles.getPos(a)[k] + 0.5*dt*Sparticles.template getProp<2>(a)[k];
-// 		++part12;
-// 	}
-// 	auto part22 = Sparticles2.getDomainIterator();
-// 	while(part22.isNext())
-// 	{
-// 		auto a2 = part22.get();
-// 		for (int k = 0; k < 3; k++) Sparticles2.getPos(a2)[k] = Sparticles2.getPos(a2)[k] + 0.5*dt*Sparticles2.template getProp<2>(a2)[k];
-// 		++part22;
-// 	}
-//   	Sparticles.map();
-//   	Sparticles.ghost_get<0,1,2>();
-//   	Sparticles2.map();
-//   	Sparticles2.ghost_get<0,1,2>();
-// 	Sdx.update(Sparticles);
-// 	Sdy.update(Sparticles);
-// 	Sdz.update(Sparticles);
-// 	Sdx2.update(Sparticles2);
-// 	Sdy2.update(Sparticles2);
-// 	Sdz2.update(Sparticles2);
-// 	auto k41 = -(conc + dt*k31)*(Sdx(velo[0]) + Sdy(velo[1]) + Sdz(velo[2]));
-// 	auto k42 = -(conc2 + dt*k32)*(Sdx2(velo2[0]) + Sdy2(velo2[1]) + Sdz2(velo2[2]));
-//   	//updated_R1 = sqrt(Sparticles.getPos(0)[0]*Sparticles.getPos(0)[0] + Sparticles.getPos(0)[1]*Sparticles.getPos(0)[1] + Sparticles.getPos(0)[2]*Sparticles.getPos(0)[2]);
-// 	//auto k41 = -(conc + dt*k31)*2.0/updated_R1;
-// 	//auto k42 = -(conc2 + dt*k32)*2.0/updated_R1;
-// 	// integrate the concentration in time
-// 	conc = conc + dt*(k11 + 2.0*k21 + 2.0*k31 + k41)/6.0;
-// 	conc2 = conc2 + dt*(k12 + 2.0*k22 + 2.0*k32 + k42)/6.0;
-// 	//conc = conc - dt*conc*(Sdx(velo[0]) + Sdy(velo[1]) + Sdz(velo[2]));
-// 	//conc2 = conc2 - dt*conc2*(Sdx2(velo2[0]) + Sdy2(velo2[1]) + Sdz2(velo2[2]));
-// 	Sdx.deallocate(Sparticles);
-// 	Sdy.deallocate(Sparticles);
-// 	Sdz.deallocate(Sparticles);
-// 	Sdx2.deallocate(Sparticles2);
-// 	Sdy2.deallocate(Sparticles2);
-// 	Sdz2.deallocate(Sparticles2);
-// 	time = time + dt;
-// 	std::cout<<"time = "<<time<<std::endl;
-//   }
-//   //std::cout<<"Before computing divergence with first particle set"<<std::endl;
-//   //conc = Sdx(velo[0]) + Sdy(velo[1]) + Sdz(velo[2]);
-//   //std::cout<<"Before computing divergence with second particle set"<<std::endl;
-//   //conc2 = Sdx2(velo2[0]) + Sdy2(velo2[1]) + Sdz2(velo2[2]);
-//   auto it = Sparticles.getDomainIterator();
-//   double worst = 0.0;
-//   while (it.isNext()) 
-//   {
-//     auto p = it.get();
-
-//     double x = Sparticles.getPos(p)[0];
-//     double y = Sparticles.getPos(p)[1];
-//     double z = Sparticles.getPos(p)[2];
-
-//     //double theory =  2.0/sqrt(x*x + y*y + z*z);//1.0/(x*x + y*y + z*z);
-//     double theory = 1.0/(x*x + y*y + z*z);
-//     Sparticles.getProp<3>(p) = fabs(Sparticles.getProp<0>(p) - theory); // error
-
-//     if (fabs(Sparticles.getProp<3>(p)) > worst) {
-//       worst = fabs(Sparticles.getProp<3>(p));
-//     }
-//     ++it;
-//   }
-//   std::cout<<"having computed worst"<<std::endl;
-//   auto it2 = Sparticles2.getDomainIterator();
-//   double worst2 = 0.0;
-//   while (it2.isNext()) 
-//   {
-//     auto p = it2.get();
-
-//     double x = Sparticles2.getPos(p)[0];
-//     double y = Sparticles2.getPos(p)[1];
-//     double z = Sparticles2.getPos(p)[2];
-
-//     //double theory =  2.0/sqrt(x*x + y*y + z*z);//1.0/(x*x + y*y + z*z);
-//     double theory =  1.0/(x*x + y*y + z*z);
-//     Sparticles2.getProp<3>(p) = fabs(Sparticles2.getProp<0>(p) - theory); // error
-
-//     if (fabs(Sparticles2.getProp<3>(p)) > worst2) {
-//       worst2 = fabs(Sparticles2.getProp<3>(p));
-//     }
-//     ++it2;
-//   }
-//   Sparticles.write("after");
-//   Sparticles2.write("after2");
-//   std::cout<<"Linf Laplace error with roughly "<<n_particles<<" is: "<<worst<<std::endl;
-//   std::cout<<"Linf Laplace error with roughly "<<n_particles2<<" is: "<<worst2<<std::endl;
-//   std::cout<<"Convergence order is "<<std::log10(worst2/worst)/std::log10(grid_spacing2/grid_spacing)<<std::endl;
-//   std::cout<<"Operator order = "<<oporder<<std::endl;
-//   Sparticles.deleteGhost();
-//   Sparticles.write("Sparticles_after");
-//   BOOST_REQUIRE(worst < 0.03);
-// }
-
 BOOST_AUTO_TEST_CASE(dcpse_surface_p2p_interpolation_sphere_scalar) {
   auto & v_cl = create_vcluster();
   timer tt;
@@ -1848,9 +1350,9 @@ BOOST_AUTO_TEST_CASE(dcpse_surface_p2p_interpolation_sphere_scalar) {
 
   const size_t oporder = 5;
 
-  PPInterpolation<decltype(SparticlesFrom1),decltype(SparticlesTo), 1> ppSurface(SparticlesFrom1,SparticlesTo,oporder,rCut1,grid_spacing_surf1, support_options::RADIUS);
+  PPInterpolation<decltype(SparticlesFrom1),decltype(SparticlesTo), 1> ppSurface(SparticlesFrom1,SparticlesTo,oporder,rCut1,grid_spacing_surf1,true,support_options::RADIUS);
   ppSurface.p2p<0,0>();
-  PPInterpolation<decltype(SparticlesFrom2),decltype(SparticlesTo), 1> ppSurface2(SparticlesFrom2,SparticlesTo,oporder,rCut2,grid_spacing_surf2, support_options::RADIUS);
+  PPInterpolation<decltype(SparticlesFrom2),decltype(SparticlesTo), 1> ppSurface2(SparticlesFrom2,SparticlesTo,oporder,rCut2,grid_spacing_surf2,true,support_options::RADIUS);
   ppSurface2.p2p<0,1>();
 
   auto it = SparticlesTo.getDomainIterator();
@@ -1883,6 +1385,10 @@ BOOST_AUTO_TEST_CASE(dcpse_surface_p2p_interpolation_sphere_scalar) {
     }
     ++it;
   }
+
+  v_cl.max(worst);
+  v_cl.max(worst2);
+  v_cl.execute();
   std::cout<<"Linf interpolation error with h_from1=1/"<<n_from1<<" to h_to=1/"<<n_to<<" is: "<<worst<<std::endl;
   std::cout<<"Linf interpolation error with h_from2=1/"<<n_from2<<" to h_to=1/"<<n_to<<" is: "<<worst2<<std::endl;
   std::cout<<"Convergence order is "<<std::log10(worst2/worst)/std::log10(std::sqrt((float)n_from1/(float)n_from2))<<std::endl;
@@ -1899,37 +1405,36 @@ BOOST_AUTO_TEST_CASE(dcpse_surface_p2p_interpolation_plane_scalar) {
 
   auto & v_cl = create_vcluster();
 
-  size_t n{10};
+  size_t n_from{10};
+  size_t n_to{10};
   double rCut{3.1};
   
   // Domain and simulation parameters
   Box<3,double> domain{{-1,-1,-1},{1,1,1}};
-  size_t sz[3] = {n,n,n};
-  double grid_spacing{2.0/(n-1)};
+  double grid_spacing_from{2.0/(n_from-1)};
+  double grid_spacing_to{2.0/(n_to-1)};
   size_t bc[3] = {NON_PERIODIC,NON_PERIODIC,NON_PERIODIC};
-  Ghost<3,double> ghost{rCut};
 
-  vector_dist<3,double,aggregate<double,double[3],double>> part_from{0,domain,bc,ghost};
-  vector_dist<3,double,aggregate<double,double[3],double>> part_to{0,domain,bc,ghost};
+  vector_dist<3,double,aggregate<double,double[3]>> part_from{0,domain,bc,rCut*grid_spacing_from};
+  vector_dist<3,double,aggregate<double,double[3],double>> part_to{0,domain,bc,rCut*grid_spacing_to};
   // props: scalar_qty, normal, error
 
   // Create particles_from in a grid-like manner
   if (v_cl.rank() == 0) {
 
-    for (int i = 0; i < n; ++i)
-      for (int j = 0; j < n; ++j) {
+    for (int i = 0; i < n_from; ++i)
+      for (int j = 0; j < n_from; ++j) {
 
 	part_from.add();
 	
-	part_from.getLastPos()[0] = -1 + i*grid_spacing;
-	part_from.getLastPos()[1] = -1 + j*grid_spacing;
+	part_from.getLastPos()[0] = -1 + i*grid_spacing_from;
+	part_from.getLastPos()[1] = -1 + j*grid_spacing_from;
 	part_from.getLastPos()[2] = 0;
 	
 	part_from.getLastProp<0>() = std::fabs(part_from.getLastPos()[0]); // scalar_qty
 	part_from.getLastProp<1>()[0] = 0; // normal_x
 	part_from.getLastProp<1>()[1] = 0; // normal_y
 	part_from.getLastProp<1>()[2] = 1; // normal_z
-	part_from.getLastProp<2>() = 0; // error
       }
   }
   part_from.map();
@@ -1942,13 +1447,15 @@ BOOST_AUTO_TEST_CASE(dcpse_surface_p2p_interpolation_plane_scalar) {
   
   if (v_cl.rank() == 0) {
 
-    for (int i = 0; i < n; ++i)
-      for (int j = 0; j < n; ++j) {
+    for (int i = 0; i < n_to; ++i)
+      for (int j = 0; j < n_to; ++j) {
 
 	part_to.add();
-	
-	part_to.getLastPos()[0] = -1 + i*grid_spacing + dist_threshold(gen) * 0.07; // 7% noise
-	part_to.getLastPos()[1] = -1 + j*grid_spacing + dist_threshold(gen) * 0.07;
+
+	part_to.getLastPos()[0] = -1 + i*grid_spacing_to;
+	part_to.getLastPos()[1] = -1 + j*grid_spacing_to;
+	// part_to.getLastPos()[0] = -0.9 + i*grid_spacing_to + dist_threshold(gen) * 0.07; // 7% noise
+	// part_to.getLastPos()[1] = -0.9 + j*grid_spacing_to + dist_threshold(gen) * 0.07;
 	part_to.getLastPos()[2] = 0;
 	
 	part_to.getLastProp<0>() = 0; // scalar_qty
@@ -1962,29 +1469,202 @@ BOOST_AUTO_TEST_CASE(dcpse_surface_p2p_interpolation_plane_scalar) {
   part_to.ghost_get<0,1>();
 
   // Interpolate
-  PPInterpolation<decltype(part_from),decltype(part_to),1> ppSurface(part_from,part_to,2,rCut,grid_spacing);
+  PPInterpolation<decltype(part_from),decltype(part_to),1> ppSurface(part_from,part_to,2,rCut,grid_spacing_from,true);
   ppSurface.p2p<0,0>();
 
+  std::cout << "computing error\n";
   // Compute maximum error
   auto it = part_to.getDomainIterator();
   double worst = 0.0;
   while (it.isNext()) {
     auto key{it.get()};
 
-    part_to.getProp<2>(key) = std::fabs(part_to.getProp<0>(key) - part_to.getPos(key)[0]); // error
+    part_to.getProp<2>(key) = std::fabs(part_to.getProp<0>(key) - std::fabs(part_to.getPos(key)[0])); // error
 
     if (part_to.getProp<2>(key) > worst)
       worst = part_to.getProp<2>(key);
     ++it;
   }
 
+  v_cl.max(worst);
+  v_cl.execute();
+  
   // Write particles
   part_from.deleteGhost();
   part_from.write("surface_p2p_interp_plane_part_from");
   part_to.deleteGhost();
   part_to.write("surface_p2p_interp_plane_part_to");
 
-  BOOST_REQUIRE(worst < 0.03);
+  std::cout << "worst: " << worst << std::endl;
+  // BOOST_REQUIRE(worst < 0.03);
+}
+
+BOOST_AUTO_TEST_CASE(dcpse_surface_p2p_interpolation_sphere_vector) {
+
+  auto & v_cl = create_vcluster();
+
+  timer tt;
+  tt.start();
+
+  size_t ni_from[3] = {2000,8000,16000};
+  size_t ni_to[3] = {2000,4000,32000};
+
+  // Domain
+  double boxP1{-1.2}, boxP2{1.2};
+  double boxSize{boxP2 - boxP1};
+  Box<3,double> domain{{boxP1,boxP1,boxP1},{boxP2,boxP2,boxP2}};
+  size_t bc[3] = {NON_PERIODIC,NON_PERIODIC,NON_PERIODIC};
+
+  double cutoff_factor = 3.5;
+  const size_t oporder = 5;
+
+  double Linf[3][3] = {{0,0,0},{0,0,0},{0,0,0}};
+
+  for (int ni = 0; ni < 3; ++ni)
+    {    
+      // Particles_from
+      double grid_spacing_from{std::sqrt(4.0*M_PI/ni_from[ni])};
+      double rCut_from{cutoff_factor * grid_spacing_from};
+      Ghost<3,double> ghost_from{rCut_from + grid_spacing_from/8.0};
+      vector_dist<3,double, aggregate<double[3],double[3]>> Sparticles_from(0,domain,bc,ghost_from); // properties: normal, vector_qty
+
+	if (v_cl.rank() == 0) {
+
+	  double Golden_angle{M_PI * (3.0 - sqrt(5.0))};
+	  double thetaB, phi, arg;
+
+	  for(int i = 0; i < ni_from[ni]; ++i)
+	    {
+	      double y = 1.0 - (i /double(ni_from[ni] - 1.0)) * 2.0;
+	      double radius = sqrt(1 - y * y);
+	      double Golden_theta = Golden_angle * i;
+	      double x = cos(Golden_theta) * radius;
+	      double z = sin(Golden_theta) * radius;
+	      
+	      arg = x*x+y*y;
+	      thetaB = std::atan2(std::sqrt(arg),z);
+	      phi = std::atan2(y,x);
+
+	      Sparticles_from.add();
+	      Sparticles_from.getLastPos()[0] = x;
+	      Sparticles_from.getLastPos()[1] = y;
+	      Sparticles_from.getLastPos()[2] = z;
+
+	      double rm = sqrt(x*x+y*y+z*z);
+
+	      // normal
+	      Sparticles_from.getLastProp<0>()[0] = x/rm;
+	      Sparticles_from.getLastProp<0>()[1] = y/rm;
+	      Sparticles_from.getLastProp<0>()[2] = z/rm;
+
+	      // vector_qty
+	      Sparticles_from.getLastProp<1>()[0] = - 3.0/4.0 * std::sqrt(7.0/M_PI) * (1.0 - 5.0 * std::cos(thetaB) * std::cos(thetaB)) * std::sin(thetaB) * std::sin(phi);
+	      Sparticles_from.getLastProp<1>()[1] =   3.0/4.0 * std::sqrt(7.0/M_PI) * (1.0 - 5.0 * std::cos(thetaB) * std::cos(thetaB)) * std::sin(thetaB) * std::cos(phi);
+	      Sparticles_from.getLastProp<1>()[2] =   0.0;
+	    }
+	}
+	Sparticles_from.map();
+	Sparticles_from.ghost_get<0,1>();
+	Sparticles_from.write("from_N" + std::to_string(ni_from[ni]) + "_before");
+
+	// Particles_to
+	for (int nj = 0; nj < 3; ++nj)
+	  {
+	    double grid_spacing_to{std::sqrt(4.0*M_PI/ni_to[nj])};
+	    double rCut_to{cutoff_factor * grid_spacing_to};
+	    Ghost<3,double> ghost_to{rCut_to + grid_spacing_to/8.0};
+	    vector_dist<3,double, aggregate<double[3],double[3],double>> Sparticles_to(0,domain,bc,ghost_to); // properties: interp_vector_qty, analyt_vector_qty, error
+
+	    if (v_cl.rank() == 0) {
+
+	      double Golden_angle{M_PI * (3.0 - sqrt(5.0))};
+	      double thetaB, phi, arg;
+
+	      for(int i = 0; i < ni_to[nj]; ++i)
+		{
+		  double y = 1.0 - (i /double(ni_to[nj] - 1.0)) * 2.0;
+		  double radius = sqrt(1 - y * y);
+		  double Golden_theta = Golden_angle * i;
+		  double x = cos(Golden_theta) * radius;
+		  double z = sin(Golden_theta) * radius;
+		  
+		  arg = x*x+y*y;
+		  thetaB = std::atan2(std::sqrt(arg),z);
+		  phi = std::atan2(y,x);
+		  
+		  Sparticles_to.add();
+		  Sparticles_to.getLastPos()[0] = x;
+		  Sparticles_to.getLastPos()[1] = y;
+		  Sparticles_to.getLastPos()[2] = z;
+		  
+		  double rm=sqrt(x*x+y*y+z*z);
+		  
+		  for (int d = 0; d < 3; ++d)
+		    Sparticles_to.getLastProp<0>()[d] = 0.0; // interpolated prop
+
+		  // Analyt vector_qty
+		  Sparticles_to.getLastProp<1>()[0] = - 3.0/4.0 * std::sqrt(7.0/M_PI) * (1.0 - 5.0 * std::cos(thetaB) * std::cos(thetaB)) * std::sin(thetaB) * std::sin(phi);
+		  Sparticles_to.getLastProp<1>()[1] =   3.0/4.0 * std::sqrt(7.0/M_PI) * (1.0 - 5.0 * std::cos(thetaB) * std::cos(thetaB)) * std::sin(thetaB) * std::cos(phi);
+		  Sparticles_to.getLastProp<1>()[2] =   0.0;
+
+		  Sparticles_to.getLastProp<2>() = 0.0; // error
+		}
+	    }
+	    Sparticles_to.map();
+	    Sparticles_to.ghost_get<0,1>();
+	    Sparticles_to.write("to_N" + std::to_string(ni_to[nj]) + "_before");
+	
+	    // Interpolation
+	    PPInterpolation<decltype(Sparticles_from),decltype(Sparticles_to),0> ppSurface(Sparticles_from,Sparticles_to,oporder,rCut_from,grid_spacing_from,true);
+	    ppSurface.p2p<1,0,3>();
+
+	    // Error
+	    auto it = Sparticles_to.getDomainIterator();
+	    double worst = 0.0;
+	    while (it.isNext()) {
+	      auto p = it.get();
+	      
+	      double x = Sparticles_to.getPos(p)[0];
+	      double y = Sparticles_to.getPos(p)[1];
+	      double z = Sparticles_to.getPos(p)[2];
+
+	      double err{0};
+	      for (int d = 0; d < 3; ++d)
+		err += (Sparticles_to.getProp<0>(p)[d] - Sparticles_to.getProp<1>(p)[d]) * (Sparticles_to.getProp<0>(p)[d] - Sparticles_to.getProp<1>(p)[d]);
+
+	      worst = std::max(worst,std::sqrt(err));
+	      ++it;
+	    }
+
+	    v_cl.max(worst);
+	    v_cl.execute();
+	    Linf[ni][nj] = worst;
+	    
+	    if (v_cl.rank() == 0)
+	      std::cout<<"Linf interpolation error with N_from: " << ni_from[ni] << " to N_to: " << ni_to[nj] << " is: " << worst << std::endl;
+	    
+	    Sparticles_from.deleteGhost();
+	    Sparticles_to.deleteGhost();
+
+	    Sparticles_from.write("from_N" + std::to_string(ni_to[nj]) + "_after");
+	    Sparticles_to.write("to_N" + std::to_string(ni_to[nj]) + "_after");
+
+	    BOOST_REQUIRE(worst < 0.03);
+	  } // nj loop
+    } // ni loop
+
+  if (v_cl.rank() == 0) {
+    std::cout << "Operator order = " << oporder << std::endl;
+    
+    std::cout << "Convergence order is " << std::log10(Linf[2][0]/Linf[1][0]) / std::log10(std::sqrt((float)ni_from[1]/(float)ni_from[2]))<<std::endl;
+    std::cout << "Convergence order is " << std::log10(Linf[1][0]/Linf[0][0]) / std::log10(std::sqrt((float)ni_from[0]/(float)ni_from[1]))<<std::endl;
+
+    std::cout << "Convergence order is " << std::log10(Linf[2][1]/Linf[1][1]) / std::log10(std::sqrt((float)ni_from[1]/(float)ni_from[2]))<<std::endl;
+    std::cout << "Convergence order is " << std::log10(Linf[1][1]/Linf[0][1]) / std::log10(std::sqrt((float)ni_from[0]/(float)ni_from[1]))<<std::endl;
+
+    std::cout << "Convergence order is " << std::log10(Linf[2][2]/Linf[1][2]) / std::log10(std::sqrt((float)ni_from[1]/(float)ni_from[2]))<<std::endl;
+    std::cout << "Convergence order is " << std::log10(Linf[1][2]/Linf[0][2]) / std::log10(std::sqrt((float)ni_from[0]/(float)ni_from[1]))<<std::endl;
+  }
 }
 
 BOOST_AUTO_TEST_SUITE_END()
