@@ -225,6 +225,68 @@ struct state_type_5d_ofp{
     }
 };
 
+// On 17.09.24 - foggia
+/*! \brief A 6d Odeint and Openfpm compatible structure.
+ *
+ * Use the method this.data.get<d>() to refer to property of all the particles in the dimension d.
+ *
+ * d starts with 0.
+ *
+ */
+struct state_type_6d_ofp{
+  state_type_6d_ofp(){
+  }
+  typedef size_t size_type;
+  typedef size_t index_type;
+  typedef int is_state_vector;
+  aggregate<texp_v<double>,texp_v<double>,texp_v<double>,texp_v<double>,texp_v<double>,texp_v<double>> data;
+  
+  size_t size() const
+  { return data.get<0>().size(); }
+  
+  void resize(size_t n)
+  {
+    data.get<0>().resize(n);
+    data.get<1>().resize(n);
+    data.get<2>().resize(n);
+    data.get<3>().resize(n);
+    data.get<4>().resize(n);
+    data.get<5>().resize(n);
+  }
+};
+
+// On 17.09.24 - foggia
+/*! \brief A 7d Odeint and Openfpm compatible structure.
+ *
+ * Use the method this.data.get<d>() to refer to property of all the particles in the dimension d.
+ *
+ * d starts with 0.
+ *
+ */
+struct state_type_7d_ofp{
+  state_type_7d_ofp(){
+  }
+  typedef size_t size_type;
+  typedef size_t index_type;
+  typedef int is_state_vector;
+  aggregate<texp_v<double>,texp_v<double>,texp_v<double>,texp_v<double>,texp_v<double>,texp_v<double>,texp_v<double>> data;
+  
+  size_t size() const
+  { return data.get<0>().size(); }
+  
+  void resize(size_t n)
+  {
+    data.get<0>().resize(n);
+    data.get<1>().resize(n);
+    data.get<2>().resize(n);
+    data.get<3>().resize(n);
+    data.get<4>().resize(n);
+    data.get<5>().resize(n);
+    data.get<6>().resize(n);
+  }
+};
+
+
 template<int counter, typename state_type, typename ... list>
 struct state_type_ofpm_add_elements
 {
@@ -302,6 +364,19 @@ namespace boost {
                 static const bool value = type::value;
             };
 
+	  // On 17.09.24 - foggia
+	  template<>
+	  struct is_resizeable<state_type_6d_ofp> {
+	    typedef boost::true_type type;
+	    static const bool value = type::value;
+	  };
+
+	  // On 17.09.24 - foggia
+	  template<>
+	  struct is_resizeable<state_type_7d_ofp> {
+	    typedef boost::true_type type;
+	    static const bool value = type::value;
+	  };
 
 
             template<>
@@ -334,7 +409,21 @@ namespace boost {
                 typedef double result_type;
             };
 
-            // For GRIDs
+	  // On 17.09.24 - foggia
+	  template<>
+	  struct vector_space_norm_inf<state_type_6d_ofp>
+	  {
+	    typedef double result_type;
+	  };
+
+	  // On 17.09.24 - foggia
+	  template<>
+	  struct vector_space_norm_inf<state_type_7d_ofp>
+	  {
+	    typedef double result_type;
+	  };
+
+	    // For GRIDs
 
             template<typename state_type>
             struct is_resizeable<state_type_ofpm_impl<1,state_type> > {
@@ -365,6 +454,21 @@ namespace boost {
             typedef boost::true_type type;
             static const bool value = type::value;
             };
+
+	  // On 17.09.24 - foggia
+	  template<typename state_type>
+	  struct is_resizeable<state_type_ofpm_impl<6,state_type> > {
+            typedef boost::true_type type;
+            static const bool value = type::value;
+	  };
+
+	  // On 17.09.24 - foggia
+	  template<typename state_type>
+	  struct is_resizeable<state_type_ofpm_impl<7,state_type> > {
+            typedef boost::true_type type;
+            static const bool value = type::value;
+	  };
+
 
 /*            template<>
             struct is_resizeable<state_type_2d_ofp> {
@@ -425,6 +529,21 @@ namespace boost {
             {
                 typedef double result_type;
             };
+
+	  // On 17.09.24 - foggia
+	  template<typename state_type>
+	  struct vector_space_norm_inf<state_type_ofpm_impl<6,state_type>>
+	  {
+	    typedef double result_type;
+	  };
+
+	  // On 17.09.24 - foggia
+	  template<typename state_type>
+	  struct vector_space_norm_inf<state_type_ofpm_impl<7,state_type>>
+	  {
+	    typedef double result_type;
+	  };
+
 
         }
     }

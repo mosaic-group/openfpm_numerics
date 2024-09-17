@@ -1391,6 +1391,8 @@ BOOST_AUTO_TEST_CASE(dcpse_surface_p2p_interpolation_sphere_scalar) {
   v_cl.execute();
   std::cout<<"Linf interpolation error with h_from1=1/"<<n_from1<<" to h_to=1/"<<n_to<<" is: "<<worst<<std::endl;
   std::cout<<"Linf interpolation error with h_from2=1/"<<n_from2<<" to h_to=1/"<<n_to<<" is: "<<worst2<<std::endl;
+  // for the covergence order, h is computed like h=sqrt(1/N), then the denominator is log10(h1/h2)=log10(sqrt((1/N1) / (1/N2))) = log10(sqrt(N2/N1))
+  // with this the convergence order is log10(err1/err2) / log10(sqrt(N2/N1))
   std::cout<<"Convergence order is "<<std::log10(worst2/worst)/std::log10(std::sqrt((float)n_from1/(float)n_from2))<<std::endl;
   std::cout<<"Operator order = "<<oporder<<std::endl;
   SparticlesTo.deleteGhost();
@@ -1655,7 +1657,9 @@ BOOST_AUTO_TEST_CASE(dcpse_surface_p2p_interpolation_sphere_vector) {
 
   if (v_cl.rank() == 0) {
     std::cout << "Operator order = " << oporder << std::endl;
-    
+
+    // for the covergence order, h is computed like h=sqrt(1/N), then the denominator is log10(h1/h2)=log10(sqrt((1/N1) / (1/N2))) = log10(sqrt(N2/N1))
+    // with this the convergence order is log10(err1/err2) / log10(sqrt(N2/N1))
     std::cout << "Convergence order is " << std::log10(Linf[2][0]/Linf[1][0]) / std::log10(std::sqrt((float)ni_from[1]/(float)ni_from[2]))<<std::endl;
     std::cout << "Convergence order is " << std::log10(Linf[1][0]/Linf[0][0]) / std::log10(std::sqrt((float)ni_from[0]/(float)ni_from[1]))<<std::endl;
 
