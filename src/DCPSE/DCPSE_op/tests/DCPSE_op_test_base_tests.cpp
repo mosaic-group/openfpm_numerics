@@ -321,10 +321,11 @@ BOOST_AUTO_TEST_CASE(dcpse_op_tests) {
         double sigma2 = spacing[0] * spacing[1] / ( 4);
         std::normal_distribution<> gaussian{0, sigma2};
         std::mt19937 rng{6666666};
-        typedef vector_dist<2, double, aggregate<double, double, double, VectorS<2, double>, VectorS<2, double>>> vector_dist;
+        typedef vector_dist<2, double, aggregate<double, double, double, VectorS<2, double>, VectorS<2, double>>> vector_dist1;
+        typedef vector_dist<2, double, aggregate<double, double, double, VectorS<2, double>, VectorS<2, double>, VectorS<2, double>>> vector_dist2;
 
-        vector_dist domain(0, box,bc,ghost);
-        vector_dist domain2(domain.getDecomposition(),0);
+        vector_dist1 domain(0, box,bc,ghost);
+        vector_dist2 domain2(domain.getDecomposition(),0);
 
         //Init_DCPSE(domain)
         BOOST_TEST_MESSAGE("Init domain...");
@@ -368,7 +369,7 @@ BOOST_AUTO_TEST_CASE(dcpse_op_tests) {
         auto cellListDomain2 = domain2.getCellList(rCut);
         auto verletList = createVerlet(domain,domain2,cellListDomain2,rCut);
 
-        PPInterpolation<vector_dist,vector_dist,decltype(verletList)> Fx(domain2, domain, verletList, 2, rCut);
+        PPInterpolation<vector_dist2,vector_dist1,decltype(verletList)> Fx(domain2, domain, verletList, 2, rCut);
         //auto v = getV<1>(domain);
         //auto P = getV<0>(domain);
         Fx.p2p<0,1>();

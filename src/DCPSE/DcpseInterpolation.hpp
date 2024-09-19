@@ -28,7 +28,6 @@ class PPInterpolation
 
     particlesSupport_type & particlesSupport;
     particlesDomain_type & particlesDomain;
-    bool isSurfaceInterpolation=false;
 
 
 public:
@@ -86,22 +85,22 @@ public:
     *
     * \brief Constructor for the surface particle to particle interpolation. Only enabled when the property ID of the normal to the surface is passed as the third template parameter. 
     */
-    template<std::enable_if_t< (NORMAL_ID > 0),int> =0>
     PPInterpolation(
         particlesSupport_type &particlesSupport,
         particlesDomain_type &particlesDomain,
+        VerletList_type& verletList,
         unsigned int ord,
         typename particlesSupport_type::stype rCut,
         typename particlesSupport_type::stype nSpacing,
+        bool isSurfaceInterpolation,
         support_options opt = support_options::RADIUS
     ):
         particlesSupport(particlesSupport),
-        particlesDomain(particlesDomain),
-        isSurfaceInterpolation(true)
+        particlesDomain(particlesDomain)
     {
         Point<particlesSupport_type::dims, unsigned int> p;
         p.zero();
-        dcpse = new Dcpse<particlesSupport_type::dims,particlesSupport_type,particlesDomain_type>(particlesSupport,particlesDomain, p, ord, rCut, nSpacing,value_t<NORMAL_ID>(), opt);
+        dcpse = new SurfaceDcpse<particlesSupport_type::dims,VerletList_type,particlesSupport_type,particlesDomain_type>(particlesSupport, particlesDomain, verletList, p, ord, rCut, nSpacing, static_cast<unsigned int>(rCut/nSpacing), value_t<NORMAL_ID>(), opt);
     }
 
     void deallocate() {

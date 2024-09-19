@@ -795,26 +795,39 @@ protected:
 			if (this->opt == support_options::ADAPTIVE)
 				nSpacing_p = nSpacings.get(p);
 
-
-			for(int i=1;i<=nCount;i++){
+			for(int i=1;i<=nCount;i++) {
 				particlesSupport.appendLocal();
 				for(size_t j=0;j<dim;j++)
-					particlesSupport.getLastPosEnd()[j]=xp[j]+i*nSpacing_p*Normals[j];
+					particlesSupport.getLastPosEnd()[j] = xp[j]+i*nSpacing_p*Normals[j];
 
 				particlesSupport.appendLocal();
 				for(size_t j=0;j<dim;j++)
-					particlesSupport.getLastPosEnd()[j]=xp[j]-i*nSpacing_p*Normals[j];
+					particlesSupport.getLastPosEnd()[j] = xp[j]-i*nSpacing_p*Normals[j];
 			}
 			++it;
 		}
 
 		if (this->opt==support_options::ADAPTIVE)
 		{
-			particlesSupport.updateVerlet(this->verletList, 1.25*nCount*nSpacing);
+		// 	particlesSupport.updateVerlet(this->verletList, 1.25*nCount*nSpacing);
 		}
 		else
 		{
-			particlesSupport.updateVerlet(this->verletList, this->rCut);
+			this->verletList.initCl(
+				this->verletList.getInternalCellList(),
+				this->particlesSupport.getPosVector(),
+				this->particlesSupport.size_local()
+			);
+
+			auto domainIt = this->particlesDomain.getDomainIterator();
+			this->verletList.Initialize(
+				this->verletList.getInternalCellList(),
+				this->verletList.getRCut(),
+				domainIt,
+				this->particlesDomain.getPosVector(),
+				this->particlesSupport.getPosVector(),
+				initialParticleSize
+			);
 		}
 	}
 
