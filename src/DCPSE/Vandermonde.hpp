@@ -69,7 +69,7 @@ private:
         for (size_t i = 0; i < N; ++i)
         {
             const auto& offset = offsets.get(i);
-            double dist=norm(offset);
+            T dist=norm(offset);
             avgNeighbourSpacing += computeAbsSum(offset);
             if(minSpacing>dist)
             {

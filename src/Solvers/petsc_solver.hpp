@@ -50,13 +50,13 @@ enum AMG_type
  *
  * \param T precision
  *
- */
+ *//*
 template<typename T>
 class petsc_solver
 {
 public:
 
-	/*! \brief Solve the linear system.
+	*//*! \brief Solve the linear system.
 	 *
 	 * In this case just return an error
 	 *
@@ -65,12 +65,12 @@ public:
 	 *
 	 * \return the solution
 	 *
-	 */
+	 *//*
 	template<typename impl> static Vector<T> solve(const SparseMatrix<T,impl> & A, const Vector<T> & b)
 	{
-		std::cerr << "Error Petsc only suppor double precision" << "/n";
+		std::cerr << "Error Petsc only suppor T precision" << "/n";
 	}
-};
+};*/
 
 #define SOLVER_NOOPTION 0
 #define SOLVER_PRINT_RESIDUAL_NORM_INFINITY 1
@@ -97,8 +97,8 @@ struct solError
  * \snippet eq_unit_test.hpp lid-driven cavity 2D
  *
  */
-template<>
-class petsc_solver<double>
+template<typename T>
+class petsc_solver
 {
 	//! contain the infinity norm of the residual at each iteration
 	struct itError
@@ -123,7 +123,7 @@ class petsc_solver<double>
 		std::string smethod;
 
 		//! time to converge in milliseconds
-		double time;
+		T time;
 
 		//! Solution error
 		solError err;
@@ -165,9 +165,9 @@ class petsc_solver<double>
 	 * \return the residual
 	 *
 	 */
-	static double calculate_it(double t, solv_bench_info & slv)
+	static T calculate_it(T t, solv_bench_info & slv)
 	{
-		double s_int = slv.time / slv.res.size();
+		T s_int = slv.time / slv.res.size();
 
 		// Calculate the discrete point in time
 		size_t pt = std::floor(t / s_int);
@@ -188,9 +188,9 @@ class petsc_solver<double>
 			return;
 
 		openfpm::vector<std::string> x;
-		openfpm::vector<openfpm::vector<double>> y;
+		openfpm::vector<openfpm::vector<T>> y;
 		openfpm::vector<std::string> yn;
-		openfpm::vector<double> xd;
+		openfpm::vector<T> xd;
 
 		for (size_t i = 0 ; i < bench.size() ; i++)
 			x.add(bench.get(i).smethod);
@@ -204,7 +204,7 @@ class petsc_solver<double>
 		// Each colums can have multiple data-set
 
 		for (size_t i = 0 ; i < bench.size() ; i++)
-			y.add({bench.get(i).err.err_inf,bench.get(i).err.err_norm,(double)bench.get(i).err.its});
+			y.add({bench.get(i).err.err_inf,bench.get(i).err.err_norm,(T)bench.get(i).err.its});
 
 		// Google charts options
 		GCoptions options;
@@ -243,7 +243,7 @@ class petsc_solver<double>
 
 		// Get the maximum in time across all the solvers
 
-		double max_time = 0.0;
+		T max_time = 0.0;
 
 		for (size_t i = 0 ; i < bench.size() ; i++)
 		{
@@ -255,13 +255,13 @@ class petsc_solver<double>
 
 		// calculate dt
 
-		double dt = max_time / n_int;
+		T dt = max_time / n_int;
 
 		// Add
 
 		// For each solver we have a convergence plot
 
-		for (double t = dt ; t <= max_time + 0.05 * max_time ; t += dt)
+		for (T t = dt ; t <= max_time + 0.05 * max_time ; t += dt)
 		{
 			y.add();
 			xd.add(t);
@@ -338,7 +338,7 @@ class petsc_solver<double>
 	 */
 	static PetscErrorCode monitor_progress_residual(KSP ksp,PetscInt it,PetscReal res,void* data)
 	{
-		petsc_solver<double> * pts = (petsc_solver *)data;
+		petsc_solver<T> * pts = (petsc_solver *)data;
 
 		pts->progress(it);
 
@@ -491,7 +491,7 @@ class petsc_solver<double>
 	 * \param best_sol best solution
 	 *
 	 */
-	void copy_if_better(double res, Vec & sol, double & best_res, Vec & best_sol)
+	void copy_if_better(T res, Vec & sol, T & best_res, Vec & best_sol)
 	{
 		if (res < best_res)
 		{
@@ -516,7 +516,7 @@ class petsc_solver<double>
 		PETSC_SAFE_CALL(VecDuplicate(x_,&best_sol));
 
 		// Best residual
-		double best_res = std::numeric_limits<double>::max();
+		T best_res = std::numeric_limits<T>::max();
 
 		// Create a new VCluster
 		auto & v_cl = create_vcluster();
@@ -776,7 +776,7 @@ class petsc_solver<double>
 		PetscReal norm_inf;
 
 		// Get a vector r for the residual
-		Vector<double,PETSC_BASE> r(row,row_loc);
+		Vector<T,PETSC_BASE> r(row,row_loc);
 		Vec & r_ = r.getVec();
 
 		PETSC_SAFE_CALL(MatMult(A_,x_,r_));
@@ -796,7 +796,7 @@ class petsc_solver<double>
 public:
 
 	//! Type of the solution object
-	typedef Vector<double,PETSC_BASE> return_type;
+	typedef Vector<T,PETSC_BASE> return_type;
 
 	~petsc_solver()
 	{
@@ -1303,7 +1303,8 @@ public:
 	 * \return the solution
 	 *
 	 */
-	Vector<double,PETSC_BASE> solve(SparseMatrix<double,int,PETSC_BASE> & A, const Vector<double,PETSC_BASE> & b, bool initial_guess = false)
+	Vector<T,PETSC_BASE> solve(SparseMatrix<T,int,PETSC_BASE> & A, const Vector<T,PETSC_BASE> & b, bool
+    initial_guess = false)
 	{
 		Mat & A_ = A.getMat();
 		const Vec & b_ = b.getVec();
@@ -1318,7 +1319,7 @@ public:
 		PETSC_SAFE_CALL(MatGetSize(A_,&row,&col));
 		PETSC_SAFE_CALL(MatGetLocalSize(A_,&row_loc,&col_loc));
 
-		Vector<double,PETSC_BASE> x(row,row_loc);
+		Vector<T,PETSC_BASE> x(row,row_loc);
 		Vec & x_ = x.getVec();
 
 		pre_solve_impl(A_,b_,x_);
@@ -1338,7 +1339,8 @@ public:
      * \return true if succeed
      *
      */
-    Vector<double,PETSC_BASE> solve(SparseMatrix<double,int,PETSC_BASE> & A, Vector<double,PETSC_BASE> & x, const Vector<double,PETSC_BASE> & b)
+    Vector<T,PETSC_BASE> solve(SparseMatrix<T,int,PETSC_BASE> & A, Vector<T,PETSC_BASE> & x, const
+    Vector<T,PETSC_BASE> & b)
     {
         Mat & A_ = A.getMat();
         const Vec & b_ = b.getVec();
@@ -1378,7 +1380,7 @@ public:
      * \return true if succeed
      *
      */
-    Vector<double,PETSC_BASE> solve_successive(const Vector<double,PETSC_BASE> & b,bool initial_guess = false)
+    Vector<T,PETSC_BASE> solve_successive(const Vector<T,PETSC_BASE> & b,bool initial_guess = false)
     {
         const Vec & b_ = b.getVec();
         // We set the size of x according to the Matrix A
@@ -1389,7 +1391,7 @@ public:
 
         PETSC_SAFE_CALL(VecGetSize(b_,&row));
         PETSC_SAFE_CALL(VecGetLocalSize(b_,&row_loc));
-        Vector<double,PETSC_BASE> x(row,row_loc);
+        Vector<T,PETSC_BASE> x(row,row_loc);
 		Vec & x_ = x.getVec();
         PETSC_SAFE_CALL(KSPSetNormType(ksp,KSP_NORM_UNPRECONDITIONED));
         solve_simple(b_,x_);
@@ -1414,7 +1416,7 @@ public:
      * \return true if succeed
      *
      */
-    Vector<double,PETSC_BASE> solve_successive(Vector<double,PETSC_BASE> & x, const Vector<double,PETSC_BASE> & b)
+    Vector<T,PETSC_BASE> solve_successive(Vector<T,PETSC_BASE> & x, const Vector<T,PETSC_BASE> & b)
     {
         const Vec & b_ = b.getVec();
         Vec & x_ = x.getVec();
@@ -1460,7 +1462,8 @@ public:
      * \return the solution
      *
      */
-    Vector<double,PETSC_BASE> with_nullspace_solve(SparseMatrix<double,int,PETSC_BASE> & A, const Vector<double,PETSC_BASE> & b, bool initial_guess = false,bool symmetric = false)
+    Vector<T,PETSC_BASE> with_nullspace_solve(SparseMatrix<T,int,PETSC_BASE> & A, const Vector<T,
+            PETSC_BASE> & b, bool initial_guess = false,bool symmetric = false)
     {
 #ifndef __arm64__
 	Mat & A_ = A.getMat();
@@ -1476,7 +1479,7 @@ public:
         PETSC_SAFE_CALL(MatGetLocalSize(A_,&row_loc,&col_loc));
 
 
-        Vector<double,PETSC_BASE> x(row,row_loc);
+        Vector<T,PETSC_BASE> x(row,row_loc);
         Vec & x_ = x.getVec();
 
         PETSC_SAFE_CALL(KSPSetFromOptions(ksp));
@@ -1550,7 +1553,8 @@ public:
 	 * \return the solution error norms
 	 *
 	 */
-	solError get_residual_error(SparseMatrix<double,int,PETSC_BASE> & A, const Vector<double,PETSC_BASE> & x, const Vector<double,PETSC_BASE> & b)
+	solError get_residual_error(SparseMatrix<T,int,PETSC_BASE> & A, const Vector<T,PETSC_BASE> & x, const
+    Vector<T,PETSC_BASE> & b)
 	{
 		return getSolNormError(A.getMat(),b.getVec(),x.getVec());
 	}
@@ -1563,7 +1567,7 @@ public:
 	 * \return the solution error norms
 	 *
 	 */
-	solError get_residual_error(const Vector<double,PETSC_BASE> & x, const Vector<double,PETSC_BASE> & b)
+	solError get_residual_error(const Vector<T,PETSC_BASE> & x, const Vector<T,PETSC_BASE> & b)
 	{
 		return getSolNormError(b.getVec(),x.getVec(),ksp);
 	}
@@ -1575,7 +1579,7 @@ public:
 	 * \return true if succeed
 	 *
 	 */
-	Vector<double,PETSC_BASE> solve(const Vector<double,PETSC_BASE> & b)
+	Vector<T,PETSC_BASE> solve(const Vector<T,PETSC_BASE> & b)
 	{
 		const Vec & b_ = b.getVec();
 
@@ -1587,7 +1591,7 @@ public:
 		PETSC_SAFE_CALL(VecGetSize(b_,&row));
 		PETSC_SAFE_CALL(VecGetLocalSize(b_,&row_loc));
 
-		Vector<double,PETSC_BASE> x(row,row_loc);
+		Vector<T,PETSC_BASE> x(row,row_loc);
 		Vec & x_ = x.getVec();
 
 		solve_simple(b_,x_);
@@ -1610,7 +1614,7 @@ public:
 	 * \return true if succeed
 	 *
 	 */
-	bool solve(Vector<double,PETSC_BASE> & x, const Vector<double,PETSC_BASE> & b)
+	bool solve(Vector<T,PETSC_BASE> & x, const Vector<T,PETSC_BASE> & b)
 	{
 		const Vec & b_ = b.getVec();
 		Vec & x_ = x.getVec();
@@ -1645,7 +1649,7 @@ public:
 	 * \return the solution
 	 *
 	 */
-	Vector<double,PETSC_BASE> try_solve(SparseMatrix<double,int,PETSC_BASE> & A, const Vector<double,PETSC_BASE> & b)
+	Vector<T,PETSC_BASE> try_solve(SparseMatrix<T,int,PETSC_BASE> & A, const Vector<T,PETSC_BASE> & b)
 	{
 		Mat & A_ = A.getMat();
 		const Vec & b_ = b.getVec();
@@ -1660,7 +1664,7 @@ public:
 		PETSC_SAFE_CALL(MatGetSize(A_,&row,&col));
 		PETSC_SAFE_CALL(MatGetLocalSize(A_,&row_loc,&col_loc));
 
-		Vector<double,PETSC_BASE> x(row,row_loc);
+		Vector<T,PETSC_BASE> x(row,row_loc);
 		Vec & x_ = x.getVec();
 
 		pre_solve_impl(A_,b_,x_);

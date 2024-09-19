@@ -63,7 +63,7 @@ protected:
 	VerletList_type & verletList;
 	vector_type & particlesSupport;
 	vector_type2 & particlesDomain;
-	double rCut;
+	T rCut;
 	unsigned int convergenceOrder;
 
 	support_options opt;
@@ -76,7 +76,7 @@ public:
 	// 3) The user can then call an evaluate(point) method to get the evaluation of the differential operator
 	//    on the given point.
 	////c=HOverEpsilon. Note that the Eps value is computed by <h>/c (<h>=local average spacing for each particle and its support). This factor c is used in the Vandermonde.hpp.
-	double HOverEpsilon=0.9;
+	T HOverEpsilon=0.9;
 
 #ifdef SE_CLASS1
 	int getUpdateCtr() const
@@ -202,7 +202,7 @@ public:
 		auto it = particlesDomain.getDomainIterator();
 		auto epsItInvPow = localEpsInvPow.begin();
 		while (it.isNext()){
-			double epsInvPow = *epsItInvPow;
+			T epsInvPow = *epsItInvPow;
 			T2 Dfxp = 0;
 
 			size_t p = it.get();
@@ -308,8 +308,8 @@ public:
 
 	void checkMomenta(vector_type &particles)
 	{
-		openfpm::vector<aggregate<double,double>> momenta;
-		openfpm::vector<aggregate<double,double>> momenta_accu;
+		openfpm::vector<aggregate<T,T>> momenta;
+		openfpm::vector<aggregate<T,T>> momenta_accu;
 
 		momenta.resize(monomialBasis.size());
 		momenta_accu.resize(monomialBasis.size());
@@ -324,7 +324,7 @@ public:
 		auto epsIt = localEps.begin();
 		while (it.isNext())
 		{
-			double eps = *epsIt;
+			T eps = *epsIt;
 
 			for (int i = 0 ; i < momenta.size() ; i++)
 			{
@@ -402,7 +402,7 @@ public:
 		auto it = particles.getDomainIterator();
 		auto epsItInvPow = localEpsInvPow.begin();
 		while (it.isNext()) {
-			double epsInvPow = *epsItInvPow;
+			T epsInvPow = *epsItInvPow;
 
 			T Dfxp = 0;
 			size_t p = it.get();
@@ -497,8 +497,8 @@ public:
 			sign = -1;
 		}
 
-		double eps = localEps.get(p.getKey());
-		double epsInvPow = localEpsInvPow.get(p.getKey());
+		T eps = localEps.get(p.getKey());
+		T epsInvPow = localEpsInvPow.get(p.getKey());
 
 		auto &particles = o1.getVector();
 
@@ -553,8 +553,8 @@ public:
 			sign = -1;
 		}
 
-		double eps = localEps.get(p.getKey());
-		double epsInvPow = localEpsInvPow.get(p.getKey());
+		T eps = localEps.get(p.getKey());
+		T epsInvPow = localEpsInvPow.get(p.getKey());
 
 		auto &particles = o1.getVector();
 #ifdef SE_CLASS1
@@ -764,7 +764,7 @@ protected:
 	openfpm::vector<size_t> accKerOffsets;
 	openfpm::vector<T> accCalcKernels;
 	openfpm::vector<T> nSpacings;
-	double nSpacing;
+	T nSpacing;
 	unsigned int nCount;
 
 	bool isSurfaceDerivative=false;
@@ -784,7 +784,7 @@ protected:
 	{
 		particlesSupport.template ghost_get<NORMAL_ID>(SKIP_LABELLING);
 		initialParticleSize=particlesSupport.size_local_with_ghost();
-		double nSpacing_p = nSpacing;
+		T nSpacing_p = nSpacing;
 
 		auto it = particlesSupport.getDomainAndGhostIterator();
 		while (it.isNext()) {
@@ -939,7 +939,7 @@ public:
 	template<unsigned int NORMAL_ID>
 	SurfaceDcpse(
 		vector_type& particlesSupport,
-		vector_type2& particlesDomain, 
+		vector_type2& particlesDomain,
 		VerletList_type& verletList,
 		Point<dim, unsigned int> differentialSignature,
 		unsigned int convergenceOrder,
@@ -974,7 +974,7 @@ public:
 						Point<dim, T> xq = particlesSupport.getPos(q);
 						Point<dim, T> diffXpq = xp - xq;
 
-						double dist = norm(diffXpq);
+						T dist = norm(diffXpq);
 						if (minSpacing > dist) minSpacing = dist;
 					}
 					++verletIt;
