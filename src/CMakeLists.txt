@@ -161,6 +161,13 @@ if(CUDA_FOUND)
 	target_link_libraries(numerics -lcublas)
 endif()
 
+if (ENABLE_ASAN)
+	target_compile_options(numerics PUBLIC $<$<COMPILE_LANGUAGE:CUDA>: -Xcompiler "-fsanitize=address -fno-optimize-sibling-calls -fsanitize-address-use-after-scope -fno-omit-frame-pointer -g" >)
+	target_compile_options(numerics PRIVATE $<$<COMPILE_LANGUAGE:CXX>: -fsanitize=address -fno-optimize-sibling-calls -fsanitize-address-use-after-scope -fno-omit-frame-pointer -g >)
+	set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -fsanitize=address -fno-optimize-sibling-calls -fsanitize-address-use-after-scope -fno-omit-frame-pointer")
+	add_definitions(-DENABLE_ASAN)
+endif()
+
 target_include_directories (numerics PUBLIC ${CMAKE_CUDA_TOOLKIT_INCLUDE_DIRECTORIES})
 target_include_directories (numerics PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 target_include_directories (numerics PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/../../openfpm_devices/src/)

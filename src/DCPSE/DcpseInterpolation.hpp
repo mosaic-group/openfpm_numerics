@@ -13,8 +13,15 @@
  * \tparam particlesSupport_type Type of the particle set from which to interpolate.
  * \tparam particlesDomain_type Type of the particle set to which to interpolate.
  * \tparam VerletList_type Type of the Verlet List of the particle support set (particlesSupport)
- * \tparam NORMAL_ID Property ID for the normal field of the particle set. If not passed, interpolation is performed on the bulk.
+ * \tparam NORMAL_ID Property ID for the normal field of the particle set.
  * 
+ * \param particlesFrom Particle set from which to interpolate.
+ * \param particlesTo Particle set to which to interpolate.
+ * \param ord Convergence order of the numerical operator.
+ * \param rCut Size of the support/argument for cell list construction. It has to include sufficient enough particles to create the support.
+ * \param isSurfaceInterpolation If not passed as true, interpolation is performed on the bulk.
+ * \param oversampling_factor Multiplier to the minimum no. of particles required by the operator in support.
+ * \param support_options default:RADIUS (selects all particles inside rCut, overrides oversampling).
  *
  * The interpolation is performed using the (Surface) DC-PSE operators corresponding to the zeroth order derivative.
  * Inside the constructor, the differential signature vector is set to zero, and a Dcpse object is created.
@@ -116,10 +123,10 @@ public:
 
   /*!\fn p2p()
    *
-   * \brief Method to perform the particle to particle interpolation using DC-PSE kernels.
+   * \brief Method to perform the particle to particle interpolation of SCALAR fields using DC-PSE kernels.
    *  
-   * \tparam propSupport Property ID for the property to interpolate from.
-   * \tparam propDomain Property ID for the property to interpolate to.
+   * \tparam propSupport Property ID for the property to interpolate from (scalar property, e.g. double).
+   * \tparam propDomain Property ID for the property to interpolate to (scalar property, e.g. double).
    *
    */
    template<unsigned int propSupport,unsigned int propDomain>
@@ -127,6 +134,22 @@ public:
        auto dcpse_temp = (Dcpse<particlesSupport_type::dims, VerletList_type, particlesSupport_type, particlesDomain_type>*) dcpse;
        dcpse_temp->template p2p<propSupport,propDomain>();
    }
+
+  // foggia 16.09.24
+   /*!\fn p2p()
+   *
+   * \brief Method to perform the particle to particle interpolation of VECTOR fields using DC-PSE kernels.
+   *  
+   * \tparam propSupport Property ID for the property to interpolate from (vector property, e.g. double[3]).
+   * \tparam propDomain Property ID for the property to interpolate to (vector property, e.g. double[3]).
+   * \tparam N1 Number of elements in the vector property (e.g., for double[3], N1=3).
+   *
+   */
+  template<unsigned int propSupport,unsigned int propDomain, size_t N1>
+  void p2p() {
+    auto dcpse_temp = (Dcpse<particlesSupport_type::dims, VerletList_type, particlesSupport_type, particlesDomain_type>*) dcpse;
+    dcpse_temp->template p2p<propSupport,propDomain,N1>();
+  }
 
     // template<unsigned int prp, typename particles_type>
     // void DrawKernel(particles_type &particles, int k) {

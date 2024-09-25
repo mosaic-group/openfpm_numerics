@@ -15,6 +15,7 @@
 #include "DcpseDiagonalScalingMatrix.hpp"
 #include "DcpseRhs.hpp"
 #include "hash_map/hopscotch_map.h"
+#include <type_traits>
 
 template<unsigned int N> struct value_t {};
 
@@ -219,6 +220,77 @@ public:
 			}
 			Dfxp = epsInvPow*Dfxp;
 			particlesDomain.template getProp<prp2>(p) = Dfxp;
+			++it;
+			++epsItInvPow;
+		}
+	}
+
+	// foggia 16.09.24
+	/*!\fn p2p()
+	*
+	* \brief Method to perform the particle to particle interpolation of VECTOR fields using DC-PSE kernels.
+	*  
+	* \tparam propFrom Property ID for the property to interpolate from (vector property, e.g. double[3]).
+	* \tparam propTo Property ID for the property to interpolate to (vector property, e.g. double[3]).
+	* \tparam N1 Number of elements in the vector property (e.g., for double[3], N1=3).
+	*
+	*/
+	template<unsigned int prp1,unsigned int prp2, size_t N1>
+	void p2p()
+	{
+		typedef typename std::remove_reference<decltype(particlesDomain.template getProp<prp2>(0)[0])>::type T2;
+
+		// Using this one could probably get rid of the N1 tparam. It requires some thought.
+		// size_t extent_prp2{std::extent<typename std::remove_reference<decltype(particlesDomain.template getProp<prp2>(0))>::type,0>::value};
+		// std::cout << "extent: " << extent_prp2 << std::endl;
+
+		auto it = particlesDomain.getDomainIterator();
+		auto epsItInvPow = localEpsInvPow.begin();
+		while (it.isNext()){
+			double epsInvPow = *epsItInvPow;
+			T2 Dfxp[N1];
+
+			for (size_t i1 = 0; i1 < N1; ++i1)
+			{
+				Dfxp[i1] = 0;
+			}
+
+			size_t p = it.get();
+			auto verletIt = this->verletList.getNNIterator(p);
+			//Point<dim, typename vector_type::stype> xp = particlesDomain.getPos(p);
+			//T fxp = sign * particlesDomain.template getProp<fValuePos>(p);
+			size_t kerOff = kerOffsets.get(p);
+
+			int i = 0;
+			while (verletIt.isNext())
+			{
+				size_t q = verletIt.get();
+				T2 fxq[N1];
+
+				for (size_t i1 = 0; i1 < N1; ++i1)
+				{
+					fxq[i1] = particlesSupport.template getProp<prp1>(q)[i1];
+					Dfxp[i1] += fxq[i1] * calcKernels.get(kerOff+i);
+				}
+
+				++verletIt; ++i;
+			}
+
+			for (size_t i1 = 0; i1 < N1; ++i1)
+			{
+				Dfxp[i1] = epsInvPow*Dfxp[i1];
+			}
+
+			//
+			//T trueDfxp = particles.template getProp<2>(p);
+			// Store Dfxp in the right position
+
+			for (size_t i1 = 0; i1 < N1; ++i1)
+			{
+				particlesDomain.template getProp<prp2>(p)[i1] = Dfxp[i1];
+			}
+
+			//
 			++it;
 			++epsItInvPow;
 		}
@@ -826,7 +898,7 @@ protected:
 				domainIt,
 				this->particlesDomain.getPosVector(),
 				this->particlesSupport.getPosVector(),
-				initialParticleSize
+				this->particlesDomain.size_local()
 			);
 		}
 	}
@@ -845,11 +917,11 @@ protected:
    * on the corresponding surfSupport particle.
    * In the end, the normalSupport particles are deleted: the vector is resized to its original size.
    */
-    void accumulateAndDeleteNormalParticles(vector_type &particlesSupport, vector_type2 &particlesDomain)
+	void accumulateAndDeleteNormalParticles(vector_type &particlesSupport, vector_type2 &particlesDomain)
 	{
 		accCalcKernels.clear();
 		accKerOffsets.clear();
-		accKerOffsets.resize(initialParticleSize);
+		accKerOffsets.resize(particlesDomain.size_local());
 		accKerOffsets.fill(-1);
 
 		tsl::hopscotch_map<size_t, size_t> nMap;
