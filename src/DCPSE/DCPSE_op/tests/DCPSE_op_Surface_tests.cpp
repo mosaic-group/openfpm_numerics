@@ -1694,10 +1694,10 @@ BOOST_AUTO_TEST_CASE(dcpse_surface_p2p_interpolation_sphere_scalar) {
   const size_t oporder = 5;
 
   auto cellListSparticlesFrom1 = SparticlesFrom1.getCellList(rCut1);
-  auto verletListSparticlesTo1 = createVerlet(SparticlesTo,SparticlesFrom1,cellListSparticlesFrom1,rCut1);
+  auto verletListSparticlesTo1 = createVerletTwoPhase(SparticlesTo,SparticlesFrom1,cellListSparticlesFrom1,rCut1);
 
   auto cellListSparticlesFrom2 = SparticlesFrom2.getCellList(rCut2);
-  auto verletListSparticlesTo2 = createVerlet(SparticlesTo,SparticlesFrom2,cellListSparticlesFrom2,rCut2);
+  auto verletListSparticlesTo2 = createVerletTwoPhase(SparticlesTo,SparticlesFrom2,cellListSparticlesFrom2,rCut2);
 
   PPInterpolation<decltype(SparticlesFrom1),decltype(SparticlesTo), decltype(verletListSparticlesTo1), 1> ppSurface(SparticlesFrom1,SparticlesTo, verletListSparticlesTo1, oporder,rCut1,grid_spacing1,true,support_options::RADIUS);
   ppSurface.p2p<0,0>();
@@ -1821,7 +1821,7 @@ BOOST_AUTO_TEST_CASE(dcpse_surface_p2p_interpolation_plane_scalar) {
 
   // Interpolate
   auto cellList = part_from.getCellList(rCut);
-  auto verletList = createVerlet(part_to,part_from,cellList,rCut);
+  auto verletList = createVerletTwoPhase(part_to,part_from,cellList,rCut);
 
   PPInterpolation<decltype(part_from),decltype(part_to),decltype(verletList),1> ppSurface(part_from,part_to,verletList,2,rCut,grid_spacing_from,true);
   ppSurface.p2p<0,0>();
@@ -1970,7 +1970,7 @@ BOOST_AUTO_TEST_CASE(dcpse_surface_p2p_interpolation_sphere_vector) {
         // Interpolation
 
         auto cellList = Sparticles_from.getCellList(rCut_from);
-        auto verletList = createVerlet(Sparticles_to,Sparticles_from,cellList,rCut_from);
+        auto verletList = createVerletTwoPhase(Sparticles_to,Sparticles_from,cellList,rCut_from);
 
         PPInterpolation<decltype(Sparticles_from),decltype(Sparticles_to), decltype(verletList),0> ppSurface(Sparticles_from,Sparticles_to,verletList,oporder,rCut_from,grid_spacing_from,true);
         ppSurface.p2p<1,0,3>();

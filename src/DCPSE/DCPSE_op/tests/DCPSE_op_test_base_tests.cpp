@@ -367,7 +367,7 @@ BOOST_AUTO_TEST_CASE(dcpse_op_tests) {
         domain2.ghost_get<0>();
 
         auto cellListDomain2 = domain2.getCellList(rCut);
-        auto verletList = createVerlet(domain,domain2,cellListDomain2,rCut);
+        auto verletList = createVerletTwoPhase(domain,domain2,cellListDomain2,rCut);
 
         PPInterpolation<vector_dist2,vector_dist1,decltype(verletList)> Fx(domain2, domain, verletList, 2, rCut);
         //auto v = getV<1>(domain);
