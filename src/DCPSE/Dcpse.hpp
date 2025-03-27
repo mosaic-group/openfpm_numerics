@@ -770,13 +770,15 @@ protected:
 			Point<dim, T> xp = particlesDomain.getPos(p);
 
 			verletIt.reset();
+			unsigned matVRow = 0;
 			while (verletIt.isNext())
 			{
 				size_t q = verletIt.get();
 				Point<dim, T> xq = particlesSupport.getPos(q);
-				Point<dim, T> normalizedArg = (xp - xq) / eps;
-				calcKernels.add(computeKernel(normalizedArg, a));
+				Point<dim, T> x_pqNorm = (xp - xq) / eps;
+				calcKernels.add(computeKernel(x_pqNorm, a, V, matVRow, monomialBasis.getElements().size()));
 				++verletIt;
+				++matVRow;
 			}
 			++it;
 			++Counter;
@@ -793,20 +795,15 @@ protected:
 #endif
 	}
 
-	T computeKernel(Point<dim, T> x, EMatrix<T, Eigen::Dynamic, 1> & a) const {
+	T computeKernel(Point<dim, T> x, EMatrix<T, Eigen::Dynamic, 1> & a, EMatrix<T, Eigen::Dynamic, Eigen::Dynamic>& V, size_t matVRow, size_t monomialBasisSize) const {
 		T res = 0;
-		unsigned int counter = 0;
 		T expFactor = exp(-norm2(x));
 
-		size_t N = monomialBasis.getElements().size();
-		for (size_t i = 0; i < N; ++i)
+		for (size_t i = 0; i < monomialBasisSize; ++i)
 		{
-			const Monomial<dim> &m = monomialBasis.getElement(i);
-
-			T coeff = a(counter);
-			T mbValue = m.evaluate(x);
+			T coeff = a(i);
+			T mbValue = V(matVRow, i);
 			res += coeff * mbValue * expFactor;
-			++counter;
 		}
 		return res;
 	}

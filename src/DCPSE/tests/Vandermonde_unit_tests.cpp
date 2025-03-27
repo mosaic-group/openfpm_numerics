@@ -23,7 +23,7 @@ BOOST_AUTO_TEST_SUITE(Vandermonde_tests)
         Point<2, double> x({2, 2});
         double eps = 2;
         VandermondeRowBuilder<2, double> vrb(mb);
-        vrb.buildRow(row, 0, x, eps);
+        vrb.buildRow(row, 0, x / eps);
         // For the way the row has been constructed, it should be composed of only 1s
         bool isRowAllOnes = true;
         for (int i = 0; i < mb.size(); ++i)
@@ -40,7 +40,7 @@ BOOST_AUTO_TEST_SUITE(Vandermonde_tests)
         Point<2, double> x({1, 0});
         double eps = 1;
         VandermondeRowBuilder<2, double> vrb(mb);
-        vrb.buildRow(row, 0, x, eps);
+        vrb.buildRow(row, 0, x / eps);
         // For the way the row has been constructed, it should be composed of only 1s
         bool areValuesOk = true;
         for (int i = 0; i < mb.size(); ++i)
@@ -59,7 +59,7 @@ BOOST_AUTO_TEST_SUITE(Vandermonde_tests)
         Point<2, double> x({0, 1});
         double eps = 1;
         VandermondeRowBuilder<2, double> vrb(mb);
-        vrb.buildRow(row, 0, x, eps);
+        vrb.buildRow(row, 0, x / eps);
         // For the way the row has been constructed, it should be composed of only 1s
         bool areValuesOk = true;
         for (int i = 0; i < mb.size(); ++i)
