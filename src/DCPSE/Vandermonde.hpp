@@ -13,7 +13,7 @@ class Vandermonde
 {
 private:
     const Point<dim, T> point;
-    openfpm::vector_std<Point<dim, T>> offsets;
+    openfpm::vector_std<Point<dim, T>> x_pqDists;
     const MonomialBasis<dim> monomialBasis;
     T eps,HOverEpsilon,minSpacing;
 
@@ -35,15 +35,25 @@ public:
 
     MatrixType &getMatrix(MatrixType &M)
     {
+        // Precompute eps to the power m as those don't change row-wise
+        openfpm::vector<T> epsPowPrecomp(monomialBasis.size());
+        auto& basisElements = monomialBasis.getElements();
+
+        for (size_t i = 0; i < basisElements.size(); ++i)
+        {
+            Monomial<dim> m = basisElements.get(i);
+            epsPowPrecomp.get(i) = openfpm::math::intpowlog(eps, m.order());
+        }
+
         // Build the Vandermonde matrix, row-by-row
         VandermondeRowBuilder<dim, T> vrb(monomialBasis);
         unsigned int row = 0;
 
-        size_t N = offsets.size();
+        size_t N = x_pqDists.size();
         for (size_t i = 0; i < N; ++i)
         {
-            const auto& offset = offsets.get(i);
-            vrb.buildRow(M, row, offset, eps);
+            const auto& x_pq = x_pqDists.get(i);
+            vrb.buildRow(M, row, x_pq, epsPowPrecomp);
             ++row;
         }
         return M;
@@ -65,18 +75,18 @@ private:
     {
         T avgNeighbourSpacing = 0;
         minSpacing=std::numeric_limits<T>::max();
-        size_t N = offsets.size();
+        size_t N = x_pqDists.size();
         for (size_t i = 0; i < N; ++i)
         {
-            const auto& offset = offsets.get(i);
-            T dist=norm(offset);
-            avgNeighbourSpacing += computeAbsSum(offset);
+            const auto& x_pq = x_pqDists.get(i);
+            T dist=norm(x_pq);
+            avgNeighbourSpacing += computeAbsSum(x_pq);
             if(minSpacing>dist)
             {
                 minSpacing=dist;
             }
         }
-        avgNeighbourSpacing /= offsets.size();
+        avgNeighbourSpacing /= x_pqDists.size();
         eps = avgNeighbourSpacing/factor;
         assert(eps != 0);
     }
@@ -100,14 +110,14 @@ private:
 
             Point<dim,T> xp = particlesDomain.getPos(p);
             xp -= particlesSupport.getPos(q);
-            offsets.add(xp);
+            x_pqDists.add(xp);
 
             ++it;
         }
 
 
         // First check that the number of points given is enough for building the Vandermonde matrix
-        if (offsets.size() < monomialBasis.size())
+        if (x_pqDists.size() < monomialBasis.size())
         {
             ACTION_ON_ERROR(std::length_error("Not enough neighbour points passed for Vandermonde matrix construction!"));
         }
