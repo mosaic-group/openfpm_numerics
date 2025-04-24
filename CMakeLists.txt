@@ -33,23 +33,6 @@ if(SUITESPARSE_FOUND AND SuiteSparse_UMFPACK_FOUND)
 	set(DEFINE_HAVE_SUITESPARSE "#define HAVE_SUITESPARSE")
 endif()
 
-#include Minter as a dependency project
-#TODO: make optional
-include(ExternalProject)
-ExternalProject_Add(
-	minter
-	PREFIX ${CMAKE_CURRENT_SOURCE_DIR}/minter
-	GIT_REPOSITORY https://git.mpi-cbg.de/mosaic/software/math/minter.git
-	GIT_TAG origin/header_only
-	CONFIGURE_COMMAND ""
-	UPDATE_COMMAND ""
-	BUILD_COMMAND ""
-	INSTALL_COMMAND ${CMAKE_COMMAND} -E copy_directory
-		<SOURCE_DIR> ${CMAKE_CURRENT_SOURCE_DIR}/src/regression/minter
-	LOG_DOWNLOAD ON
-	LOG_INSTALL ON
-)
-
 add_subdirectory (src)
 
 get_directory_property(hasParent PARENT_DIRECTORY)

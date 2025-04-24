@@ -221,6 +221,10 @@ if(SuiteSparse_FOUND)
 	target_link_libraries(numerics ${BLAS_LIBRARIES})
 endif()
 
+if(MINTER_ROOT)
+	target_include_directories (numerics PUBLIC ${MINTER_ROOT})
+endif()
+
 if(OpenMP_CXX_FOUND)
 	target_link_libraries(numerics OpenMP::OpenMP_CXX)
 endif()
@@ -387,8 +391,3 @@ install(FILES regression/regression.hpp
 	regression/poly_levelset.hpp
 	DESTINATION openfpm_numerics/include/regression
 	COMPONENT OpenFPM)
-
-install(DIRECTORY regression/minter
-	DESTINATION openfpm_numerics/include/regression
-	COMPONENT OpenFPM)
-
