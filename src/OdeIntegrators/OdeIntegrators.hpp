@@ -81,8 +81,6 @@ struct state_type_1d_ofp_gpu{
         return s1_ker;
     }
 };
-template<> struct has_vector_kernel< state_type_1d_ofp_gpu >
-    : std::true_type { };
 
 /*! \brief A 2d Odeint and Openfpm compatible structure.
  *
@@ -134,8 +132,6 @@ struct state_type_2d_ofp_gpu{
     }
 };
 
-template<> struct has_vector_kernel< state_type_2d_ofp_gpu >
-    : std::true_type { };
 #endif
 
 namespace boost { namespace numeric { namespace odeint {
