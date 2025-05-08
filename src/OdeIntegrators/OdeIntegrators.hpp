@@ -81,6 +81,61 @@ struct state_type_1d_ofp_gpu{
         return s1_ker;
     }
 };
+template<> struct has_vector_kernel< state_type_1d_ofp_gpu >
+    : std::true_type { };
+
+/*! \brief A 2d Odeint and Openfpm compatible structure.
+ *
+ *  Use the method this.data.get<d>() to refer to property of all the particles in the dimension d.
+ *
+ * d starts with 0.
+ *
+ */
+struct state_type_2d_ofp_ker{
+    state_type_2d_ofp_ker(){
+    }
+    typedef decltype(std::declval<texp_v_gpu<double>>().getVector().toKernel()) state_kernel;
+    typedef size_t size_type;
+    typedef int is_state_vector;
+    aggregate<state_kernel,state_kernel> data;
+
+    __host__ __device__ size_t size() const
+    { return data.get<0>().size(); }
+
+};
+/*! \brief A 1d Odeint and Openfpm compatible structure.
+ *
+ *  Use the method this.data.get<d>() to refer to property of all the particles in the dimension d.
+ *
+ * d starts with 0.
+ *
+ */
+struct state_type_2d_ofp_gpu{
+    state_type_2d_ofp_gpu(){
+    }
+    typedef size_t size_type;
+    typedef int is_state_vector;
+    aggregate<texp_v_gpu<double>,texp_v_gpu<double>> data;
+
+    size_t size() const
+    { return data.get<0>().size(); }
+
+    void resize(size_t n)
+    {
+        data.get<0>().resize(n);
+        data.get<1>().resize(n);
+    }
+    state_type_2d_ofp_ker toKernel() const
+    {
+        state_type_2d_ofp_ker s2_ker;
+        s2_ker.data.get<0>()=data.get<0>().getVector().toKernel();
+        s2_ker.data.get<1>()=data.get<1>().getVector().toKernel();
+        return s2_ker;
+    }
+};
+
+template<> struct has_vector_kernel< state_type_2d_ofp_gpu >
+    : std::true_type { };
 #endif
 
 namespace boost { namespace numeric { namespace odeint {
