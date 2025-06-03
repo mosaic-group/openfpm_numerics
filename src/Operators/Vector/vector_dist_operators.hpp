@@ -811,6 +811,11 @@ struct vector_dist_expression_comp_proxy_sel
     static void compute(v_type &v,exp_type &v_exp)
     { vector_dist_op_compute_op<0,vector_dist_expression_comp_sel<comp_dev,cond_>::type::value>
         ::compute_expr(v,v_exp);}
+
+	template<bool cond_, unsigned int n, typename v_type, typename exp_type>
+    static void compute(v_type &v,exp_type &v_exp, int (& comp)[n])
+	{ vector_dist_op_compute_op<0,vector_dist_expression_comp_sel<comp_dev,cond_>::type::value>
+		::compute_expr_slice(v,v_exp,comp);}
 };
 
 template<unsigned int prp, typename vector>
@@ -845,7 +850,17 @@ struct vector_dist_expression_comp_proxy_sel<false>
     {   auto v_ker=v.toKernel();
         auto v_exp_transformed = transform_if_temporal<typename std::remove_const<exp_type>::type>::transform(v_exp);
         vector_dist_op_compute_op<0,vector_dist_expression_comp_sel<comp_dev,cond>::type::value>
-        ::compute_expr(v_ker,v_exp_transformed);}
+        ::compute_expr(v_ker,v_exp_transformed);
+	}
+	
+	template<bool cond, unsigned int n, typename v_type, typename exp_type>
+    static void compute(v_type &v, exp_type &v_exp, int (& comp)[n])
+    {   auto v_ker=v.toKernel();
+        auto v_exp_transformed = transform_if_temporal<typename std::remove_const<exp_type>::type>::transform(v_exp);
+        vector_dist_op_compute_op<0,vector_dist_expression_comp_sel<comp_dev,cond>::type::value>
+        ::compute_expr_slice(v_ker,v_exp_transformed, comp);
+	}
+		
 };
 
 template<typename vector, bool is_ker = has_vector_kernel<vector>::type::value>
@@ -1370,20 +1385,16 @@ public:
         }
 
         v.resize(v_exp.getVector().size_local());
+        constexpr bool cond=has_vector_kernel<vector>::type::value || std::is_same<vector,openfpm::vector<aggregate<T>,CudaMemory,memory_traits_inte>>::value;
 
-        if (has_vector_kernel<vector>::type::value == false)
+        if (has_vector_kernel<vector>::type::value == false && !std::is_same<vector,openfpm::vector<aggregate<T>,CudaMemory,memory_traits_inte>>::value)
         {
-            vector_dist_op_compute_op<0,
-                    vector_dist_expression_comp_sel<comp_host,
-                            has_vector_kernel<vector>::type::value>::type::value>
-            ::compute_expr(v,v_exp);
-        }
+			vector_dist_op_compute_op<0,
+									  vector_dist_expression_comp_sel<comp_host, cond>::type::value>::compute_expr(v, v_exp);
+		}
         else
         {
-            vector_dist_op_compute_op<0,
-                    vector_dist_expression_comp_sel<comp_dev,
-                            has_vector_kernel<vector>::type::value>::type::value>
-            ::compute_expr(v,v_exp);
+			vector_dist_expression_comp_proxy_sel<!std::is_same<vector,openfpm::vector<aggregate<T>,CudaMemory,memory_traits_inte>>::value>::template compute<cond>(v,v_exp);
         }
 
         return v;
@@ -1661,6 +1672,7 @@ public:
         typedef boost::mpl::bool_<false> NN_type;
 
 	typedef typename exp1::vtype vtype;
+	typedef typename boost::mpl::at<typename vtype::value_type::type,boost::mpl::int_<0>>::type T;
 
 	//! constructor from an expresssion
 
@@ -1855,19 +1867,22 @@ public:
             std::cout << __FILE__ << ":" << __LINE__ << " error on the right hand side of the expression you have to use non-subset properties" << std::endl;
             return this->getVector();
         }
+        v_exp.init();
+		auto &v = o1.getVector();
+        //v.resize(v_exp.getVector().size_local());
+        constexpr bool cond=has_vector_kernel<vtype>::type::value || std::is_same<vtype,openfpm::vector<aggregate<T>,CudaMemory,memory_traits_inte>>::value;
 
-		if (has_vector_kernel<vtype>::type::value == false)
+        if (has_vector_kernel<vtype>::type::value == false && !std::is_same<vtype,openfpm::vector<aggregate<T>,CudaMemory,memory_traits_inte>>::value)
 		{
-			vector_dist_op_compute_op<exp1::prop,vector_dist_expression_comp_sel<comp_host,
-																	   	  has_vector_kernel<vtype>::type::value>::type::value>
-			::compute_expr_slice(o1.getVector(),v_exp,comp);
+			vector_dist_op_compute_op<exp1::prop,vector_dist_expression_comp_sel<comp_host,cond>::type::value>
+			::compute_expr_slice(v,v_exp,comp);
 		}
 		else
 		{
-			vector_dist_op_compute_op<exp1::prop,vector_dist_expression_comp_sel<comp_dev,
-		   	  	  	  	  	  	  	  	  	  	  	  	  	  	  	  	  has_vector_kernel<vtype>::type::value>::type::value>
-			::compute_expr_slice(o1.getVector(),v_exp,comp);
+			constexpr bool cond_slice = !std::is_same<vtype,openfpm::vector<aggregate<T>,CudaMemory,memory_traits_inte>>::value;
+			vector_dist_expression_comp_proxy_sel<cond_slice>::template compute<cond>(v,v_exp,comp);
 		}
+		
 
 		return this->getVector();
 	}
