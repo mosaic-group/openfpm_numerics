@@ -89,23 +89,23 @@
 template<bool cond, typename exp1, typename exp2>
 struct first_or_second
 {
-    typedef typename exp2::vtype vtype;
+	typedef typename exp2::vtype vtype;
 
-    static auto getVector(const exp1 & o1, const exp2 & o2) -> decltype(o2.getVector())
-    {
-        return o2.getVector();
-    }
+	static auto getVector(const exp1 & o1, const exp2 & o2) -> decltype(o2.getVector())
+	{
+		return o2.getVector();
+	}
 };
 
 template<typename exp1, typename exp2>
 struct first_or_second<true,exp1,exp2>
 {
-    typedef typename exp1::vtype vtype;
+	typedef typename exp1::vtype vtype;
 
-    static auto getVector(const exp1 & o1, const exp2 & o2) -> decltype(o1.getVector())
-    {
-        return o1.getVector();
-    }
+	static auto getVector(const exp1 & o1, const exp2 & o2) -> decltype(o1.getVector())
+	{
+		return o1.getVector();
+	}
 };
 
 template<typename T, typename Sfinae = void>
@@ -354,7 +354,7 @@ public:
 	*/
 	const vtype & getVector() const
 	{
-        	return first_or_second<has_vtype<exp1>::value,exp1,exp2>::getVector(o1,o2);
+		return first_or_second<has_vtype<exp1>::value,exp1,exp2>::getVector(o1,o2);
 	}
 
 	/*! \brief Evaluate the expression
@@ -450,38 +450,38 @@ public:
 		return o1.value(key) - o2.value(key);
 	}
 
-    /*! \brief Return the vector on which is acting
-    *
-    * It return the vector used in getVExpr, to get this object
-    *
-    * \return the vector
-    *
-    */
+	/*! \brief Return the vector on which is acting
+	*
+	* It return the vector used in getVExpr, to get this object
+	*
+	* \return the vector
+	*
+	*/
 
-    const vtype & getVector()
-    {
-        return first_or_second<has_vtype<exp1>::value,exp1,exp2>::getVector(o1,o2);
-    }
+	const vtype & getVector()
+	{
+		return first_or_second<has_vtype<exp1>::value,exp1,exp2>::getVector(o1,o2);
+	}
 
-    /*! \brief Return the vector on which is acting
-    *
-    * It return the vector used in getVExpr, to get this object
-    *
-    * \return the vector
-    *
-    */
-    const vtype & getVector() const
-    {
-        return first_or_second<has_vtype<exp1>::value,exp1,exp2>::getVector(o1,o2);
-    }
+	/*! \brief Return the vector on which is acting
+	*
+	* It return the vector used in getVExpr, to get this object
+	*
+	* \return the vector
+	*
+	*/
+	const vtype & getVector() const
+	{
+		return first_or_second<has_vtype<exp1>::value,exp1,exp2>::getVector(o1,o2);
+	}
 
-    template<typename Sys_eqs,typename pmap_type, typename unordered_map_type, typename coeff_type>
-    inline void value_nz(pmap_type & p_map, const vect_dist_key_dx & key, unordered_map_type & cols, coeff_type & coeff, unsigned int comp) const
-    {
-        o1.template value_nz<Sys_eqs>(p_map,key,cols,coeff,comp);
-        coeff_type tmp = -coeff;
-        o2.template value_nz<Sys_eqs>(p_map,key,cols,tmp,comp);
-    }
+	template<typename Sys_eqs,typename pmap_type, typename unordered_map_type, typename coeff_type>
+	inline void value_nz(pmap_type & p_map, const vect_dist_key_dx & key, unordered_map_type & cols, coeff_type & coeff, unsigned int comp) const
+	{
+		o1.template value_nz<Sys_eqs>(p_map,key,cols,coeff,comp);
+		coeff_type tmp = -coeff;
+		o2.template value_nz<Sys_eqs>(p_map,key,cols,tmp,comp);
+	}
 };
 
 /*! \brief Multiplication operation
@@ -541,10 +541,10 @@ public:
 	template<typename Sys_eqs,typename pmap_type, typename unordered_map_type, typename coeff_type>
 	inline void value_nz(pmap_type & p_map, const vect_dist_key_dx & key, unordered_map_type & cols, coeff_type & coeff, unsigned int comp) const
 	{
-        	//o1.template value_nz<Sys_eqs>(p_map,key,cols,coeff,comp);
-    		auto coeff_tmp = o1.value(key) * coeff;
-        	o2.template value_nz<Sys_eqs>(p_map,key,cols,coeff_tmp,comp);
-    	}
+		//o1.template value_nz<Sys_eqs>(p_map,key,cols,coeff,comp);
+		auto coeff_tmp = o1.value(key) * coeff;
+		o2.template value_nz<Sys_eqs>(p_map,key,cols,coeff_tmp,comp);
+	}
 
 	/*! \brief Return the vector on which is acting
 	 *
@@ -555,7 +555,7 @@ public:
 	 */
 	const vtype & getVector()
 	{
-        	return first_or_second<has_vtype<exp1>::value,exp1,exp2>::getVector(o1,o2);
+		return first_or_second<has_vtype<exp1>::value,exp1,exp2>::getVector(o1,o2);
 	}
 
 	/*! \brief Return the vector on which is acting
@@ -567,8 +567,8 @@ public:
 	*/
 	const vtype & getVector() const
 	{
-        	return first_or_second<has_vtype<exp1>::value,exp1,exp2>::getVector(o1,o2);
- 	}
+		return first_or_second<has_vtype<exp1>::value,exp1,exp2>::getVector(o1,o2);
+	}
 
 	/*! \brief Evaluate the expression
 	 *
@@ -648,48 +648,48 @@ public:
 		return o1.value(key) / o2.value(key);
 	}
 
-    template<typename Sys_eqs,typename pmap_type, typename unordered_map_type, typename coeff_type>
-    inline void value_nz(pmap_type & p_map, const vect_dist_key_dx & key, unordered_map_type & cols, coeff_type & coeff, unsigned int comp) const
-    {
-    	std::cout << __FILE__ << ":" << __LINE__ << " You are trying to divide by an operator,  this is not possible " << std::endl;
-    }
+	template<typename Sys_eqs,typename pmap_type, typename unordered_map_type, typename coeff_type>
+	inline void value_nz(pmap_type & p_map, const vect_dist_key_dx & key, unordered_map_type & cols, coeff_type & coeff, unsigned int comp) const
+	{
+		std::cout << __FILE__ << ":" << __LINE__ << " You are trying to divide by an operator,  this is not possible " << std::endl;
+	}
 
-    /*! \brief Return the vector on which is acting
+	/*! \brief Return the vector on which is acting
  *
  * It return the vector used in getVExpr, to get this object
  *
  * \return the vector
  *
  */
-    const vtype & getVector()
-    {
-        return first_or_second<has_vtype<exp1>::value,exp1,exp2>::getVector(o1,o2);
-    }
+	const vtype & getVector()
+	{
+		return first_or_second<has_vtype<exp1>::value,exp1,exp2>::getVector(o1,o2);
+	}
 
-    /*! \brief Return the vector on which is acting
-    *
-    * It return the vector used in getVExpr, to get this object
-    *
-    * \return the vector
-    *
-    */
-    const vtype & getVector() const
-    {
-        return first_or_second<has_vtype<exp1>::value,exp1,exp2>::getVector(o1,o2);
-    }
+	/*! \brief Return the vector on which is acting
+	*
+	* It return the vector used in getVExpr, to get this object
+	*
+	* \return the vector
+	*
+	*/
+	const vtype & getVector() const
+	{
+		return first_or_second<has_vtype<exp1>::value,exp1,exp2>::getVector(o1,o2);
+	}
 
-        /*! \brief Evaluate the expression
-         *
-         * \param key where to evaluate the expression
-         *
-         * \return the result of the expression
-         *
-         */
-        template<typename r_type=typename std::remove_reference<decltype(o1.value(vect_dist_key_dx()) / o2.value(vect_dist_key_dx()))>::type >
-        __device__ __host__ inline r_type value(const unsigned int & key) const
-        {
-                return o1.value(key) / o2.value(key);
-        }
+	/*! \brief Evaluate the expression
+	 *
+	 * \param key where to evaluate the expression
+	 *
+	 * \return the result of the expression
+	 *
+	 */
+	template<typename r_type=typename std::remove_reference<decltype(o1.value(vect_dist_key_dx()) / o2.value(vect_dist_key_dx()))>::type >
+	__device__ __host__ inline r_type value(const unsigned int & key) const
+	{
+		return o1.value(key) / o2.value(key);
+	}
 };
 
 
@@ -745,17 +745,17 @@ public:
 		o1.init();
 	}
 
-    /*! \brief Return the vector on which is acting
-    *
-    * It return the vector used in getVExpr, to get this object
-    *
-    * \return the vector
-    *
-    */
-    const vtype & getVector() const
-    {
-        return o1.getVector();
-    }
+	/*! \brief Return the vector on which is acting
+	*
+	* It return the vector used in getVExpr, to get this object
+	*
+	* \return the vector
+	*
+	*/
+	const vtype & getVector() const
+	{
+		return o1.getVector();
+	}
 
 
 	//! return the result of the expression
@@ -765,12 +765,12 @@ public:
 		return -(o1.value(key));
 	}
 
-    template<typename Sys_eqs, typename pmap_type, typename unordered_map_type, typename coeff_type>
-    inline void value_nz(pmap_type & p_map, const vect_dist_key_dx & key, unordered_map_type & cols, coeff_type & coeff, unsigned int comp) const
-    {
-	    coeff_type coeff_tmp = -coeff;
-        o1.template value_nz<Sys_eqs>(p_map,key,cols,coeff_tmp, comp);
-    }
+	template<typename Sys_eqs, typename pmap_type, typename unordered_map_type, typename coeff_type>
+	inline void value_nz(pmap_type & p_map, const vect_dist_key_dx & key, unordered_map_type & cols, coeff_type & coeff, unsigned int comp) const
+	{
+		coeff_type coeff_tmp = -coeff;
+		o1.template value_nz<Sys_eqs>(p_map,key,cols,coeff_tmp, comp);
+	}
 	//! return the result of the expression
 	template<typename r_type=typename std::remove_reference<decltype(-(o1.value(vect_dist_key_dx(0))))>::type >
 	__device__ __host__ inline r_type value(const unsigned int & key) const
@@ -807,13 +807,13 @@ struct vector_dist_expression_comp_sel<comp_dev,false>
 template<bool cond>
 struct vector_dist_expression_comp_proxy_sel
 {
-    template<bool cond_, typename v_type, typename exp_type>
-    static void compute(v_type &v,exp_type &v_exp)
-    { vector_dist_op_compute_op<0,vector_dist_expression_comp_sel<comp_dev,cond_>::type::value>
-        ::compute_expr(v,v_exp);}
+	template<bool cond_, typename v_type, typename exp_type>
+	static void compute(v_type &v,exp_type &v_exp)
+	{ vector_dist_op_compute_op<0,vector_dist_expression_comp_sel<comp_dev,cond_>::type::value>
+		::compute_expr(v,v_exp);}
 
 	template<bool cond_, unsigned int n, typename v_type, typename exp_type>
-    static void compute(v_type &v,exp_type &v_exp, int (& comp)[n])
+	static void compute(v_type &v,exp_type &v_exp, int (& comp)[n])
 	{ vector_dist_op_compute_op<0,vector_dist_expression_comp_sel<comp_dev,cond_>::type::value>
 		::compute_expr_slice(v,v_exp,comp);}
 };
@@ -824,43 +824,43 @@ class vector_dist_expression;
 template<typename v_exp>
 struct transform_if_temporal
 {
-    template<typename T>
-    static auto transform(T & v) -> decltype(v)
-    {
-        return v;
-    }
+	template<typename T>
+	static auto transform(T & v) -> decltype(v)
+	{
+		return v;
+	}
 };
 
 template<typename T>
 struct transform_if_temporal<vector_dist_expression<0,openfpm::vector_gpu<aggregate<T>>>>
 {
-    template<typename T_>
-    static auto transform(T_ & v) -> decltype(v.getVector().toKernel())
-    {
-        return v.getVector().toKernel();
-    }
+	template<typename T_>
+	static auto transform(T_ & v) -> decltype(v.getVector().toKernel())
+	{
+		return v.getVector().toKernel();
+	}
 };
 
 
 template<>
 struct vector_dist_expression_comp_proxy_sel<false>
 {
-    template<bool cond, typename v_type, typename exp_type>
-    static void compute(v_type &v, exp_type &v_exp)
-    {   auto v_ker=v.toKernel();
-        auto v_exp_transformed = transform_if_temporal<typename std::remove_const<exp_type>::type>::transform(v_exp);
-        vector_dist_op_compute_op<0,vector_dist_expression_comp_sel<comp_dev,cond>::type::value>
-        ::compute_expr(v_ker,v_exp_transformed);
+	template<bool cond, typename v_type, typename exp_type>
+	static void compute(v_type &v, exp_type &v_exp)
+	{   auto v_ker=v.toKernel();
+		auto v_exp_transformed = transform_if_temporal<typename std::remove_const<exp_type>::type>::transform(v_exp);
+		vector_dist_op_compute_op<0,vector_dist_expression_comp_sel<comp_dev,cond>::type::value>
+		::compute_expr(v_ker,v_exp_transformed);
 	}
-	
+
 	template<bool cond, unsigned int n, typename v_type, typename exp_type>
-    static void compute(v_type &v, exp_type &v_exp, int (& comp)[n])
-    {   auto v_ker=v.toKernel();
-        auto v_exp_transformed = transform_if_temporal<typename std::remove_const<exp_type>::type>::transform(v_exp);
-        vector_dist_op_compute_op<0,vector_dist_expression_comp_sel<comp_dev,cond>::type::value>
-        ::compute_expr_slice(v_ker,v_exp_transformed, comp);
+	static void compute(v_type &v, exp_type &v_exp, int (& comp)[n])
+	{   auto v_ker=v.toKernel();
+		auto v_exp_transformed = transform_if_temporal<typename std::remove_const<exp_type>::type>::transform(v_exp);
+		vector_dist_op_compute_op<0,vector_dist_expression_comp_sel<comp_dev,cond>::type::value>
+		::compute_expr_slice(v_ker,v_exp_transformed, comp);
 	}
-		
+
 };
 
 template<typename vector, bool is_ker = has_vector_kernel<vector>::type::value>
@@ -1034,10 +1034,10 @@ public:
 		return pos_or_propR<vector,prp>::value(v.v,k);
 	}
 
-    inline auto get(const vect_dist_key_dx & key) const -> decltype(value(key))
-    {
-        return this->value(key);
-    }
+	inline auto get(const vect_dist_key_dx & key) const -> decltype(value(key))
+	{
+		return this->value(key);
+	}
 
 	/*! \brief Fill the vector property with the evaluated expression
 	 *
@@ -1048,22 +1048,22 @@ public:
 	 */
 	template<unsigned int prp2> vector & operator=(const vector_dist_expression<prp2,vector> & v_exp)
 	{
-        if (v_exp.getVector().isSubset() == true)
-        {
-                        std::cout << __FILE__ << ":" << __LINE__ << " error on the right hand side of the expression you have to use non-subset properties" << std::endl;
-                        return v.v;
-        }
+		if (v_exp.getVector().isSubset() == true)
+		{
+			std::cout << __FILE__ << ":" << __LINE__ << " error on the right hand side of the expression you have to use non-subset properties" << std::endl;
+			return v.v;
+		}
 
 		if (has_vector_kernel<vector>::type::value == false)
 		{
 			vector_dist_op_compute_op<prp,vector_dist_expression_comp_sel<comp_host,
-																	   	  has_vector_kernel<vector>::type::value>::type::value>
+				has_vector_kernel<vector>::type::value>::type::value>
 			::compute_expr(v.v,v_exp);
 		}
 		else
 		{
 			vector_dist_op_compute_op<prp,vector_dist_expression_comp_sel<comp_dev,
-		   	  	  	  	  	  	  	  	  	  	  	  	  	  	  	  	  has_vector_kernel<vector>::type::value>::type::value>
+				has_vector_kernel<vector>::type::value>::type::value>
 			::compute_expr(v.v,v_exp);
 		}
 
@@ -1079,29 +1079,29 @@ public:
 	 */
 	template<typename T,typename memory,template <typename> class layout_base > vector & operator=(const vector_dist_expression<0,openfpm::vector<aggregate<T>, memory, layout_base>> & v_exp)
 	{
-            vector_dist_op_compute_op<prp,vector_dist_expression_comp_sel<comp_host,
-                    has_vector_kernel<vector>::type::value>::type::value>
-            ::compute_expr(v.v,v_exp);
+		vector_dist_op_compute_op<prp,vector_dist_expression_comp_sel<comp_host,
+				has_vector_kernel<vector>::type::value>::type::value>
+		::compute_expr(v.v,v_exp);
 
 
 		return v.v;
 	}
 
-    /*! \brief Fill the vector property with the evaluated expression
+	/*! \brief Fill the vector property with the evaluated expression
  *
  * \param v_exp expression to evaluate
  *
  * \return itself
  *
  */
-    template<typename T> vector & operator=(const vector_dist_expression<0,openfpm::vector_gpu<aggregate<T>>> & v_exp)
-    {
-            vector_dist_op_compute_op<prp,vector_dist_expression_comp_sel<comp_dev,
-                    has_vector_kernel<vector>::type::value>::type::value>
-            ::compute_expr(v.v,v_exp.getVector().toKernel());
+	template<typename T> vector & operator=(const vector_dist_expression<0,openfpm::vector_gpu<aggregate<T>>> & v_exp)
+	{
+		vector_dist_op_compute_op<prp,vector_dist_expression_comp_sel<comp_dev,
+			has_vector_kernel<vector>::type::value>::type::value>
+		::compute_expr(v.v,v_exp.getVector().toKernel());
 
-        return v.v;
-    }
+		return v.v;
+	}
 
 	/*! \brief Fill the vector property with the evaluated expression
 	 *
@@ -1113,24 +1113,22 @@ public:
 	template<typename exp1, typename exp2, unsigned int op>
 	vector & operator=(const vector_dist_expression_op<exp1,exp2,op> & v_exp)
 	{
-        if (v_exp.getVector().isSubset() == true)
-        {
-        	std::cout << __FILE__ << ":" << __LINE__ << " error on the right hand side of the expression you have to use non-subset properties" << std::endl;
-            return v.v;
-        }
+		if (v_exp.getVector().isSubset() == true)
+		{
+			std::cout << __FILE__ << ":" << __LINE__ << " error on the right hand side of the expression you have to use non-subset properties" << std::endl;
+			return v.v;
+		}
 
 		if (has_vector_kernel<vector>::type::value == false)
 		{
 			vector_dist_op_compute_op<prp,
-									  vector_dist_expression_comp_sel<comp_host,
-																	  has_vector_kernel<vector>::type::value>::type::value>
+				vector_dist_expression_comp_sel<comp_host,has_vector_kernel<vector>::type::value>::type::value>
 			::compute_expr(v.v,v_exp);
 		}
 		else
 		{
 			vector_dist_op_compute_op<prp,
-									  vector_dist_expression_comp_sel<comp_dev,
-		   	  	  	  	  	  	  	  	  	  	  	  	  	  	  	  has_vector_kernel<vector>::type::value>::type::value>
+				vector_dist_expression_comp_sel<comp_dev,has_vector_kernel<vector>::type::value>::type::value>
 			::compute_expr(v.v,v_exp);
 		}
 
@@ -1149,15 +1147,13 @@ public:
 		if (has_vector_kernel<vector>::type::value == false)
 		{
 			vector_dist_op_compute_op<prp,
-									  vector_dist_expression_comp_sel<comp_host,
-																	  has_vector_kernel<vector>::type::value>::type::value>
+				vector_dist_expression_comp_sel<comp_host, has_vector_kernel<vector>::type::value>::type::value>
 			::compute_const(v.v,d);
 		}
 		else
 		{
 			vector_dist_op_compute_op<prp,
-									  vector_dist_expression_comp_sel<comp_dev,
-		   	  	  	  	  	  	  	  	  	  	  	  	  	  	  	  has_vector_kernel<vector>::type::value>::type::value>
+				vector_dist_expression_comp_sel<comp_dev, has_vector_kernel<vector>::type::value>::type::value>
 			::compute_const(v.v,d);
 		}
 
@@ -1165,22 +1161,22 @@ public:
 	}
 
 
-    template<typename Sys_eqs, typename pmap_type, typename unordered_map_type, typename coeff_type>
-    inline void value_nz(pmap_type & p_map, const vect_dist_key_dx & key, unordered_map_type & cols, coeff_type & coeff, unsigned int comp) const
-    {
-            cols[p_map. template getProp<0>(key)*Sys_eqs::nvar + var_id + comp] += coeff;
-    }
+	template<typename Sys_eqs, typename pmap_type, typename unordered_map_type, typename coeff_type>
+	inline void value_nz(pmap_type & p_map, const vect_dist_key_dx & key, unordered_map_type & cols, coeff_type & coeff, unsigned int comp) const
+	{
+		cols[p_map. template getProp<0>(key)*Sys_eqs::nvar + var_id + comp] += coeff;
+	}
 
-    inline vector_dist_expression_op<vector_dist_expression<prp,vector>,boost::mpl::int_<1>,VECT_COMP> operator[](int comp)
-    {
-        int comp_n[1];
+	inline vector_dist_expression_op<vector_dist_expression<prp,vector>,boost::mpl::int_<1>,VECT_COMP> operator[](int comp)
+	{
+		int comp_n[1];
 
-        comp_n[0] = comp;
+		comp_n[0] = comp;
 
-        vector_dist_expression_op<vector_dist_expression<prp,vector>,boost::mpl::int_<1>,VECT_COMP> v_exp(*this,comp_n,var_id);
+		vector_dist_expression_op<vector_dist_expression<prp,vector>,boost::mpl::int_<1>,VECT_COMP> v_exp(*this,comp_n,var_id);
 
-        return v_exp;
-    }
+		return v_exp;
+	}
 };
 
 /*! \brief Main class that encapsulate a vector properties operand to be used for expressions construction
@@ -1192,243 +1188,243 @@ public:
 template<typename vector_type>
 class vector_dist_expression_impl
 {
-    //! Internal vector
-    typedef vector_type vector;
-    typedef typename boost::mpl::at<typename vector_type::value_type::type,boost::mpl::int_<0>>::type T;
-    //! The temporal vector
-    mutable vector v;
+	//! Internal vector
+	typedef vector_type vector;
+	typedef typename boost::mpl::at<typename vector_type::value_type::type,boost::mpl::int_<0>>::type T;
+	//! The temporal vector
+	mutable vector v;
 
 public:
 
-    typedef T * iterator;
-    typedef const  T * const_iterator;
+	typedef T * iterator;
+	typedef const  T * const_iterator;
 
-    typedef typename has_vector_kernel<vector>::type is_ker;
+	typedef typename has_vector_kernel<vector>::type is_ker;
 
-    //! The type of the internal vector
-    typedef vector vtype;
+	//! The type of the internal vector
+	typedef vector vtype;
 
-    //! The type of the internal value
-    typedef T value_type;
+	//! The type of the internal value
+	typedef T value_type;
 
-    //! NN_type
-    typedef void NN_type;
+	//! NN_type
+	typedef void NN_type;
 
-    //! Property id of the point
-    static const unsigned int prop = 0;
+	//! Property id of the point
+	static const unsigned int prop = 0;
 
-    int var_id = 0;
+	int var_id = 0;
 
-    void setVarId(int var_id)
-    {
-        this->var_id = var_id;
-    }
+	void setVarId(int var_id)
+	{
+		this->var_id = var_id;
+	}
 
-    ///////// BOOST ODEINT interface
-    iterator begin()
-    { return &v.template get<0>(0); }
+	///////// BOOST ODEINT interface
+	iterator begin()
+	{ return &v.template get<0>(0); }
 
-    const_iterator begin() const
-    { return &v.template get<0>(0); }
+	const_iterator begin() const
+	{ return &v.template get<0>(0); }
 
-    iterator end()
-    { return &v.template get<0>(v.size()-1)+1; }
+	iterator end()
+	{ return &v.template get<0>(v.size()-1)+1; }
 
-    const_iterator end() const
-    { return &v.template get<0>(v.size()-1)+1; }
+	const_iterator end() const
+	{ return &v.template get<0>(v.size()-1)+1; }
 
-    size_t size() const
-    { return v.size(); }
+	size_t size() const
+	{ return v.size(); }
 
-    void resize(size_t n)
-    {
-        // Here
+	void resize(size_t n)
+	{
+		// Here
 
-        v.resize(n);
-    }
+		v.resize(n);
+	}
 
 /*	T * begin() {
-        return &v.template get<0>(0);
-    }
+		return &v.template get<0>(0);
+	}
 
-    T * end() {
-	    return &v.template get<0>(v.size()-1);
+	T * end() {
+		return &v.template get<0>(v.size()-1);
 	}*/
 
-    // ... [ implement container interface ]
+	// ... [ implement container interface ]
 //]
-    //const double & operator[]( const size_t n ) const
-    //{ return m_v[n]; }
+	//const double & operator[]( const size_t n ) const
+	//{ return m_v[n]; }
 
-    //double & operator[]( const size_t n )
-    //{ return m_v[n]; }
-
-
-    ////////////////////////////////////
-
-    vector_dist_expression_impl()
-    {}
-
-    template<unsigned int prp2, typename vector2>
-    vector_dist_expression_impl(const vector_dist_expression<prp2,vector2> & v_exp)
-    {
-        this->operator=(v_exp);
-    };
-
-    template<typename exp1, typename exp2, unsigned int op>
-    vector_dist_expression_impl(const vector_dist_expression_op<exp1,exp2,op> & v_exp)
-    {
-        this->operator=(v_exp);
-    }
-
-    /*! \brief get the NN object
-     *
-     * \return the NN object
-     *
-     */
-    inline void * getNN() const
-    {
-        return NULL;
-    }
-
-    /*! \brief Return the vector on which is acting
-     *
-     * It return the vector used in getVExpr, to get this object
-     *
-     * \return the vector
-     *
-     */
-    __device__ __host__ const vector & getVector() const
-    {
-        return v;
-    }
-
-    /*! \brief Return the vector on which is acting
-     *
-     * It return the vector used in getVExpr, to get this object
-     *
-     * \return the vector
-     *
-     */
-    __device__ __host__ vector & getVector()
-    {
-        return v;
-    }
-
-    /*! \brief This function must be called before value
-     *
-     * it initialize the expression if needed
-     *
-     */
-    inline void init() const
-    {}
-
-    /*! \brief Evaluate the expression
-     *
-     * \param k where to evaluate the expression
-     *
-     * \return the result of the expression
-     *
-     */
-    __host__ __device__ inline auto value(const vect_dist_key_dx & k) const -> decltype(v.template get<0>(k.getKey()))
-    {
-        return v.template get<0>(k.getKey());
-    }
+	//double & operator[]( const size_t n )
+	//{ return m_v[n]; }
 
 
-    /*! \brief Fill the vector property with the evaluated expression
-     *
-     * \param v_exp expression to evaluate
-     *
-     * \return itself
-     *
-     */
-    template<unsigned int prp2, typename vector2> vector & operator=(const vector_dist_expression<prp2,vector2> & v_exp)
-    {
-        if (v_exp.getVector().isSubset() == true)
-        {
-            std::cout << __FILE__ << ":" << __LINE__ << " error on the right hand side of the expression you have to use non-subset properties" << std::endl;
-            return v;
-        }
+	////////////////////////////////////
 
-        v.resize(v_exp.getVector().size_local());
-        constexpr bool cond=has_vector_kernel<vector>::type::value || std::is_same<vector,openfpm::vector<aggregate<T>,CudaMemory,memory_traits_inte>>::value;
+	vector_dist_expression_impl()
+	{}
 
-        if (has_vector_kernel<vector>::type::value == false && !std::is_same<vector,openfpm::vector<aggregate<T>,CudaMemory,memory_traits_inte>>::value)
-        {
-            vector_dist_op_compute_op<0,vector_dist_expression_comp_sel<comp_host,cond>::type::value>
-            ::compute_expr(v,v_exp);
-        }
-        else
-        {
-            vector_dist_expression_comp_proxy_sel<!std::is_same<vector,openfpm::vector<aggregate<T>,CudaMemory,memory_traits_inte>>::value>::template compute<cond>(v,v_exp);
-        }
+	template<unsigned int prp2, typename vector2>
+	vector_dist_expression_impl(const vector_dist_expression<prp2,vector2> & v_exp)
+	{
+		this->operator=(v_exp);
+	};
 
-        return v;
-    }
+	template<typename exp1, typename exp2, unsigned int op>
+	vector_dist_expression_impl(const vector_dist_expression_op<exp1,exp2,op> & v_exp)
+	{
+		this->operator=(v_exp);
+	}
+
+	/*! \brief get the NN object
+	 *
+	 * \return the NN object
+	 *
+	 */
+	inline void * getNN() const
+	{
+		return NULL;
+	}
+
+	/*! \brief Return the vector on which is acting
+	 *
+	 * It return the vector used in getVExpr, to get this object
+	 *
+	 * \return the vector
+	 *
+	 */
+	__device__ __host__ const vector & getVector() const
+	{
+		return v;
+	}
+
+	/*! \brief Return the vector on which is acting
+	 *
+	 * It return the vector used in getVExpr, to get this object
+	 *
+	 * \return the vector
+	 *
+	 */
+	__device__ __host__ vector & getVector()
+	{
+		return v;
+	}
+
+	/*! \brief This function must be called before value
+	 *
+	 * it initialize the expression if needed
+	 *
+	 */
+	inline void init() const
+	{}
+
+	/*! \brief Evaluate the expression
+	 *
+	 * \param k where to evaluate the expression
+	 *
+	 * \return the result of the expression
+	 *
+	 */
+	__host__ __device__ inline auto value(const vect_dist_key_dx & k) const -> decltype(v.template get<0>(k.getKey()))
+	{
+		return v.template get<0>(k.getKey());
+	}
 
 
-    /*! \brief Fill the vector property with the evaluated expression
-     *
-     * \param v_exp expression to evaluate
-     *
-     * \return itself
-     *
-     */
-    template<typename exp1, typename exp2, unsigned int op>
-    vector & operator=(const vector_dist_expression_op<exp1,exp2,op> & v_exp)
-    {
-        if (v_exp.getVector().isSubset() == true)
-        {
-            std::cout << __FILE__ << ":" << __LINE__ << " error on the right hand side of the expression you have to use non-subset properties" << std::endl;
-            return v;
-        }
-
-        v.resize(v_exp.getVector().size_local());
-        constexpr bool cond=has_vector_kernel<vector>::type::value || std::is_same<vector,openfpm::vector<aggregate<T>,CudaMemory,memory_traits_inte>>::value;
-
-        if (has_vector_kernel<vector>::type::value == false && !std::is_same<vector,openfpm::vector<aggregate<T>,CudaMemory,memory_traits_inte>>::value)
-        {
-			vector_dist_op_compute_op<0,
-									  vector_dist_expression_comp_sel<comp_host, cond>::type::value>::compute_expr(v, v_exp);
+	/*! \brief Fill the vector property with the evaluated expression
+	 *
+	 * \param v_exp expression to evaluate
+	 *
+	 * \return itself
+	 *
+	 */
+	template<unsigned int prp2, typename vector2> vector & operator=(const vector_dist_expression<prp2,vector2> & v_exp)
+	{
+		if (v_exp.getVector().isSubset() == true)
+		{
+			std::cout << __FILE__ << ":" << __LINE__ << " error on the right hand side of the expression you have to use non-subset properties" << std::endl;
+			return v;
 		}
-        else
-        {
+
+		v.resize(v_exp.getVector().size_local());
+		constexpr bool cond=has_vector_kernel<vector>::type::value || std::is_same<vector,openfpm::vector<aggregate<T>,CudaMemory,memory_traits_inte>>::value;
+
+		if (has_vector_kernel<vector>::type::value == false && !std::is_same<vector,openfpm::vector<aggregate<T>,CudaMemory,memory_traits_inte>>::value)
+		{
+			vector_dist_op_compute_op<0,vector_dist_expression_comp_sel<comp_host,cond>::type::value>
+			::compute_expr(v,v_exp);
+		}
+		else
+		{
 			vector_dist_expression_comp_proxy_sel<!std::is_same<vector,openfpm::vector<aggregate<T>,CudaMemory,memory_traits_inte>>::value>::template compute<cond>(v,v_exp);
-        }
+		}
 
-        return v;
-    }
-
-    /*! \brief Fill the vector property with the double
-     *
-     * \param d value to fill
-     *
-     * \return the internal vector
-     *
-     */
-    vector & operator=(double d)
-    {
-        std::cout << __FILE__ << ":" << __LINE__ << " Error: temporal with constants is unsupported" << std::endl;
-    }
+		return v;
+	}
 
 
-    template<typename Sys_eqs, typename pmap_type, typename unordered_map_type, typename coeff_type>
-    inline void value_nz(pmap_type & p_map, const vect_dist_key_dx & key, unordered_map_type & cols, coeff_type & coeff, unsigned int comp) const
-    {
-        std::cout << __FILE__ << ":" << __LINE__ << " Error: use of temporal is not supported to construct equations";
-    }
+	/*! \brief Fill the vector property with the evaluated expression
+	 *
+	 * \param v_exp expression to evaluate
+	 *
+	 * \return itself
+	 *
+	 */
+	template<typename exp1, typename exp2, unsigned int op>
+	vector & operator=(const vector_dist_expression_op<exp1,exp2,op> & v_exp)
+	{
+		if (v_exp.getVector().isSubset() == true)
+		{
+			std::cout << __FILE__ << ":" << __LINE__ << " error on the right hand side of the expression you have to use non-subset properties" << std::endl;
+			return v;
+		}
 
-    inline vector_dist_expression_op<vector_dist_expression<0,vector>,boost::mpl::int_<1>,VECT_COMP> operator[](int comp)
-    {
-        int comp_n[1];
+		v.resize(v_exp.getVector().size_local());
+		constexpr bool cond=has_vector_kernel<vector>::type::value || std::is_same<vector,openfpm::vector<aggregate<T>,CudaMemory,memory_traits_inte>>::value;
 
-        comp_n[0] = comp;
+		if (has_vector_kernel<vector>::type::value == false && !std::is_same<vector,openfpm::vector<aggregate<T>,CudaMemory,memory_traits_inte>>::value)
+		{
+			vector_dist_op_compute_op<0,
+				vector_dist_expression_comp_sel<comp_host, cond>::type::value>::compute_expr(v, v_exp);
+		}
+		else
+		{
+			vector_dist_expression_comp_proxy_sel<!std::is_same<vector,openfpm::vector<aggregate<T>,CudaMemory,memory_traits_inte>>::value>::template compute<cond>(v,v_exp);
+		}
 
-        vector_dist_expression_op<vector_dist_expression<0,vector>,boost::mpl::int_<1>,VECT_COMP> v_exp(*this,comp_n,var_id);
+		return v;
+	}
 
-        return v_exp;
-    }
+	/*! \brief Fill the vector property with the double
+	 *
+	 * \param d value to fill
+	 *
+	 * \return the internal vector
+	 *
+	 */
+	vector & operator=(double d)
+	{
+		std::cout << __FILE__ << ":" << __LINE__ << " Error: temporal with constants is unsupported" << std::endl;
+	}
+
+
+	template<typename Sys_eqs, typename pmap_type, typename unordered_map_type, typename coeff_type>
+	inline void value_nz(pmap_type & p_map, const vect_dist_key_dx & key, unordered_map_type & cols, coeff_type & coeff, unsigned int comp) const
+	{
+		std::cout << __FILE__ << ":" << __LINE__ << " Error: use of temporal is not supported to construct equations";
+	}
+
+	inline vector_dist_expression_op<vector_dist_expression<0,vector>,boost::mpl::int_<1>,VECT_COMP> operator[](int comp)
+	{
+		int comp_n[1];
+
+		comp_n[0] = comp;
+
+		vector_dist_expression_op<vector_dist_expression<0,vector>,boost::mpl::int_<1>,VECT_COMP> v_exp(*this,comp_n,var_id);
+
+		return v_exp;
+	}
 };
 
 /*! \brief Sub class that encapsulate a vector properties operand to be used for expressions construction
@@ -1440,35 +1436,35 @@ public:
 template<typename T, typename memory,template <typename> class layout_base >
 class vector_dist_expression<0,openfpm::vector<aggregate<T>,memory, layout_base> > : public vector_dist_expression_impl<openfpm::vector<aggregate<T>,memory, layout_base>>
 {
-    typedef openfpm::vector<aggregate<T>,memory, layout_base> vector;
-    typedef vector_dist_expression_impl<vector> base;
+	typedef openfpm::vector<aggregate<T>,memory, layout_base> vector;
+	typedef vector_dist_expression_impl<vector> base;
 
 public:
-    vector_dist_expression()
-    {
-    }
+	vector_dist_expression()
+	{
+	}
 
-    template<unsigned int prp2, typename vector2>
-    vector_dist_expression(const vector_dist_expression<prp2,vector2> & v_exp)
-            :base(v_exp)
-    {
-    }
+	template<unsigned int prp2, typename vector2>
+	vector_dist_expression(const vector_dist_expression<prp2,vector2> & v_exp)
+		:base(v_exp)
+	{
+	}
 
-    template<typename exp1, typename exp2, unsigned int op>
-    vector_dist_expression(const vector_dist_expression_op<exp1,exp2,op> & v_exp)
-    : base(v_exp)
-    {
-    }
+	template<typename exp1, typename exp2, unsigned int op>
+	vector_dist_expression(const vector_dist_expression_op<exp1,exp2,op> & v_exp)
+		:base(v_exp)
+	{
+	}
 
-    template<unsigned int prp2, typename vector2> vector & operator=(const vector_dist_expression<prp2,vector2> & v_exp)
-    {
-        return base::operator=(v_exp);
-    }
-    template<typename exp1, typename exp2, unsigned int op>
-    vector & operator=(const vector_dist_expression_op<exp1,exp2,op> & v_exp)
-    {
-        return base::operator=(v_exp);
-    }
+	template<unsigned int prp2, typename vector2> vector & operator=(const vector_dist_expression<prp2,vector2> & v_exp)
+	{
+		return base::operator=(v_exp);
+	}
+	template<typename exp1, typename exp2, unsigned int op>
+	vector & operator=(const vector_dist_expression_op<exp1,exp2,op> & v_exp)
+	{
+		return base::operator=(v_exp);
+	}
 };
 
 /*! \brief Sub class that encapsulate a GPU vector properties operand to be used for expressions construction
@@ -1480,45 +1476,45 @@ public:
 template<typename T>
 class vector_dist_expression<0,openfpm::vector_gpu<aggregate<T>>> : public vector_dist_expression_impl<openfpm::vector_gpu<aggregate<T>>>
 {
-    typedef openfpm::vector_gpu<aggregate<T>> vector;
-    typedef vector_dist_expression_impl<vector> base;
+	typedef openfpm::vector_gpu<aggregate<T>> vector;
+	typedef vector_dist_expression_impl<vector> base;
 public:
-    vector_dist_expression()
-    {
-    }
+	vector_dist_expression()
+	{
+	}
 
-    template<unsigned int prp2, typename vector2>
-    vector_dist_expression(const vector_dist_expression<prp2,vector2> & v_exp)
-            :base(v_exp)
-    {
-    }
+	template<unsigned int prp2, typename vector2>
+	vector_dist_expression(const vector_dist_expression<prp2,vector2> & v_exp)
+		:base(v_exp)
+	{
+	}
 
-    template<typename exp1, typename exp2, unsigned int op>
-    vector_dist_expression(const vector_dist_expression_op<exp1,exp2,op> & v_exp)
-            : base(v_exp)
-    {
-    }
+	template<typename exp1, typename exp2, unsigned int op>
+	vector_dist_expression(const vector_dist_expression_op<exp1,exp2,op> & v_exp)
+		:base(v_exp)
+	{
+	}
 
-    template<unsigned int prp2, typename vector2> vector & operator=(const vector_dist_expression<prp2,vector2> & v_exp)
-    {
-        return base::operator=(v_exp);
-    }
+	template<unsigned int prp2, typename vector2> vector & operator=(const vector_dist_expression<prp2,vector2> & v_exp)
+	{
+		return base::operator=(v_exp);
+	}
 
-    vector & operator=(const vector_dist_expression<0,openfpm::vector_gpu<aggregate<T>>> & v_exp)
-    {
-        return base::operator=(v_exp);
-    }
+	vector & operator=(const vector_dist_expression<0,openfpm::vector_gpu<aggregate<T>>> & v_exp)
+	{
+		return base::operator=(v_exp);
+	}
 
-    vector & equalGPU(const vector_dist_expression<0,openfpm::vector_gpu<aggregate<T>>> & v_exp)
-    {
-        return base::operator=(v_exp);
-    }
+	vector & equalGPU(const vector_dist_expression<0,openfpm::vector_gpu<aggregate<T>>> & v_exp)
+	{
+		return base::operator=(v_exp);
+	}
 
-    template<typename exp1, typename exp2, unsigned int op>
-    vector & operator=(const vector_dist_expression_op<exp1,exp2,op> & v_exp)
-    {
-        return base::operator=(v_exp);
-    }
+	template<typename exp1, typename exp2, unsigned int op>
+	vector & operator=(const vector_dist_expression_op<exp1,exp2,op> & v_exp)
+	{
+		return base::operator=(v_exp);
+	}
 
 
 };
@@ -1658,18 +1654,18 @@ class vector_dist_expression_op<exp1,boost::mpl::int_<n>,VECT_COMP>
 	int comp[n];
 
 	int var_id = 0;
-    void setVarId(int var_id)
-    {
-        this->var_id = var_id;
-    }
+	void setVarId(int var_id)
+	{
+		this->var_id = var_id;
+	}
 
 	typedef vector_dist_expression_op<exp1,boost::mpl::int_<n>,VECT_COMP> myself;
 
 public:
 
-        typedef std::false_type is_ker;
+	typedef std::false_type is_ker;
 
-        typedef boost::mpl::bool_<false> NN_type;
+	typedef boost::mpl::bool_<false> NN_type;
 
 	typedef typename exp1::vtype vtype;
 	typedef typename boost::mpl::at<typename vtype::value_type::type,boost::mpl::int_<0>>::type T;
@@ -1683,29 +1679,29 @@ public:
 		{this->comp[i] = comp[i];}
 	}
 
-    /*! \brief Return the vector on which is acting
-    *
-    * It return the vector used in getVExpr, to get this object
-    *
-    * \return the vector
-    *
-    */
-    __device__ __host__ const vtype & getVector() const
-    {
-        return o1.getVector();
-    }
+	/*! \brief Return the vector on which is acting
+	*
+	* It return the vector used in getVExpr, to get this object
+	*
+	* \return the vector
+	*
+	*/
+	__device__ __host__ const vtype & getVector() const
+	{
+		return o1.getVector();
+	}
 
-    /*! \brief Return the vector on which is acting
-    *
-    * It return the vector used in getVExpr, to get this object
-    *
-    * \return the vector
-    *
-    */
-    __device__ __host__ vtype & getVector()
-    {
-        return o1.getVector();
-    }
+	/*! \brief Return the vector on which is acting
+	*
+	* It return the vector used in getVExpr, to get this object
+	*
+	* \return the vector
+	*
+	*/
+	__device__ __host__ vtype & getVector()
+	{
+		return o1.getVector();
+	}
 
 	//! initialize the expression tree
 	inline void init() const
@@ -1762,65 +1758,65 @@ public:
 		return this->value(key);
 	}
 
-    template<typename Sys_eqs, typename pmap_type, typename unordered_map_type, typename coeff_type>
-    inline void value_nz(pmap_type & p_map, const vect_dist_key_dx & key, unordered_map_type & cols, coeff_type & coeff, unsigned int comp_) const
-    {
+	template<typename Sys_eqs, typename pmap_type, typename unordered_map_type, typename coeff_type>
+	inline void value_nz(pmap_type & p_map, const vect_dist_key_dx & key, unordered_map_type & cols, coeff_type & coeff, unsigned int comp_) const
+	{
 #ifdef SE_CLASS1
 
-    	if (n != 1)
-    	{
-    		std::cout << __FILE__ << ":" << __LINE__ << " Error it only work for tensore of rank 1 ... like vectors " << std::endl;
-    	}
+		if (n != 1)
+		{
+			std::cout << __FILE__ << ":" << __LINE__ << " Error it only work for tensore of rank 1 ... like vectors " << std::endl;
+		}
 
 #endif
 
-        o1.template value_nz<Sys_eqs>(p_map,key,cols,coeff,comp_ + var_id + comp[0]);
-    }
+		o1.template value_nz<Sys_eqs>(p_map,key,cols,coeff,comp_ + var_id + comp[0]);
+	}
 
-    inline vector_dist_expression_op<exp1,boost::mpl::int_<n+1>,VECT_COMP> operator[](int comp_)
-    {
-    	int comp_n[n+1];
+	inline vector_dist_expression_op<exp1,boost::mpl::int_<n+1>,VECT_COMP> operator[](int comp_)
+	{
+		int comp_n[n+1];
 
-    	for (int i = 0 ; i < n ; i++)
-    	{comp_n[i] = comp[i];}
-    	comp_n[n] = comp_;
+		for (int i = 0 ; i < n ; i++)
+		{comp_n[i] = comp[i];}
+		comp_n[n] = comp_;
 
 	vector_dist_expression_op<exp1,boost::mpl::int_<n+1>,VECT_COMP> v_exp(o1,comp_n,var_id);
 
-    	return v_exp;
-    }
+		return v_exp;
+	}
 
-    /*! \brief Fill the vector property with the evaluated expression
+	/*! \brief Fill the vector property with the evaluated expression
 	 *
 	 * \param v_exp expression to evaluate
 	 *
 	 * \return itself
 	 *
 	 */
-    template<typename T, typename memory> vtype & operator=(const vector_dist_expression<0,openfpm::vector<aggregate<T>,memory>> & v_exp)
-    {
-        v_exp.init();
+	template<typename T, typename memory> vtype & operator=(const vector_dist_expression<0,openfpm::vector<aggregate<T>,memory>> & v_exp)
+	{
+		v_exp.init();
 
-        auto & v = getVector();
+		auto & v = getVector();
 /*#ifdef SE_CLASS1
-        auto &v2=v_exp.getVector();
+		auto &v2=v_exp.getVector();
 
-        SubsetSelector_impl<std::remove_reference<decltype(v)>::type::is_it_a_subset::value>::check(v2,v);
+		SubsetSelector_impl<std::remove_reference<decltype(v)>::type::is_it_a_subset::value>::check(v2,v);
 #endif*/
 
-        auto it = v.getDomainIterator();
+		auto it = v.getDomainIterator();
 
-        while (it.isNext())
-        {
-            auto key = it.get();
+		while (it.isNext())
+		{
+			auto key = it.get();
 
-            get_vector_dist_expression_op<n,n == rank_gen<property_act>::type::value>::template assign<exp1::prop>(v_exp,v,key,comp);
+			get_vector_dist_expression_op<n,n == rank_gen<property_act>::type::value>::template assign<exp1::prop>(v_exp,v,key,comp);
 
-            ++it;
-        }
+			++it;
+		}
 
-        return v;
-    }
+		return v;
+	}
 
 	/*! \brief Fill the vector property with the evaluated expression
 	 *
@@ -1837,7 +1833,7 @@ public:
 #ifdef SE_CLASS1
 		auto &v2=v_exp.getVector();
 
-        SubsetSelector_impl<std::remove_reference<decltype(v)>::type::is_it_a_subset::value>::check(v2,v);
+		SubsetSelector_impl<std::remove_reference<decltype(v)>::type::is_it_a_subset::value>::check(v2,v);
 #endif
 		auto it = v.getDomainIterator();
 
@@ -1862,17 +1858,17 @@ public:
 	 */
 	template<typename exp1_, typename exp2_, unsigned int op> vtype & operator=(const vector_dist_expression_op<exp1_,exp2_,op> & v_exp)
 	{
-        if (v_exp.getVector().isSubset() == true)
-        {
-            std::cout << __FILE__ << ":" << __LINE__ << " error on the right hand side of the expression you have to use non-subset properties" << std::endl;
-            return this->getVector();
-        }
-        v_exp.init();
+		if (v_exp.getVector().isSubset() == true)
+		{
+			std::cout << __FILE__ << ":" << __LINE__ << " error on the right hand side of the expression you have to use non-subset properties" << std::endl;
+			return this->getVector();
+		}
+		v_exp.init();
 		auto &v = o1.getVector();
-        //v.resize(v_exp.getVector().size_local());
-        constexpr bool cond=has_vector_kernel<vtype>::type::value || std::is_same<vtype,openfpm::vector<aggregate<T>,CudaMemory,memory_traits_inte>>::value;
+		//v.resize(v_exp.getVector().size_local());
+		constexpr bool cond=has_vector_kernel<vtype>::type::value || std::is_same<vtype,openfpm::vector<aggregate<T>,CudaMemory,memory_traits_inte>>::value;
 
-        if (has_vector_kernel<vtype>::type::value == false && !std::is_same<vtype,openfpm::vector<aggregate<T>,CudaMemory,memory_traits_inte>>::value)
+		if (has_vector_kernel<vtype>::type::value == false && !std::is_same<vtype,openfpm::vector<aggregate<T>,CudaMemory,memory_traits_inte>>::value)
 		{
 			vector_dist_op_compute_op<exp1::prop,vector_dist_expression_comp_sel<comp_host,cond>::type::value>
 			::compute_expr_slice(v,v_exp,comp);
@@ -1882,7 +1878,7 @@ public:
 			constexpr bool cond_slice = !std::is_same<vtype,openfpm::vector<aggregate<T>,CudaMemory,memory_traits_inte>>::value;
 			vector_dist_expression_comp_proxy_sel<cond_slice>::template compute<cond>(v,v_exp,comp);
 		}
-		
+
 
 		return this->getVector();
 	}
@@ -1977,11 +1973,11 @@ public:
 	}
 
 
-    template<typename Sys_eqs, typename pmap_type, typename unordered_map_type, typename coeff_type>
-    inline void value_nz(pmap_type & p_map, const vect_dist_key_dx & key, unordered_map_type & cols, coeff_type & coeff, unsigned int comp) const
-    {
-        cols[p_map. template getProp<0>(key)*Sys_eqs::nvar + comp] += coeff;
-    }
+	template<typename Sys_eqs, typename pmap_type, typename unordered_map_type, typename coeff_type>
+	inline void value_nz(pmap_type & p_map, const vect_dist_key_dx & key, unordered_map_type & cols, coeff_type & coeff, unsigned int comp) const
+	{
+		cols[p_map. template getProp<0>(key)*Sys_eqs::nvar + comp] += coeff;
+	}
 	/*! \brief Evaluate the expression
 	 *
 	 * \param k ignored position in the vector
