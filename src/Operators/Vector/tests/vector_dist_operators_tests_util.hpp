@@ -1163,7 +1163,7 @@ struct check_all_expressions
 		auto vVB = getV<VB>(vd);
 		auto vVC = getV<VC>(vd);
 
-		auto vPOS = getV<PROP_POS>(vd);
+		auto vPOS = getV<POS_PROP>(vd);
 
 		check_all_expressions_imp<impl>(vd,vA,vB,vC,vVA,vVB,vVC,vPOS);
 	}
@@ -1184,7 +1184,7 @@ struct check_all_expressions<comp_dev>
 		auto vVB = getV<VB>(vdk);
 		auto vVC = getV<VC>(vdk);
 
-		auto vPOS = getV<PROP_POS>(vdk);
+		auto vPOS = getV<POS_PROP>(vdk);
 
 		check_all_expressions_imp<comp_dev>(vd,vA,vB,vC,vVA,vVB,vVC,vPOS);
 	}

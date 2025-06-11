@@ -69,7 +69,7 @@ BOOST_AUTO_TEST_SUITE(temporal_test_suite)
 		constexpr int dScalar = 3;
 		constexpr int dVector = 4;
 		constexpr int dTensor = 5;
-		auto Pos = getV<PROP_POS>(Particles);
+		auto Pos = getV<POS_PROP>(Particles);
 		auto sS = getV<sScalar>(Particles);
 		auto sV = getV<sVector>(Particles);
 		auto sT = getV<sTensor>(Particles);

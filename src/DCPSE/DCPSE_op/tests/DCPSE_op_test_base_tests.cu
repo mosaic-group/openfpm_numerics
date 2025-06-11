@@ -644,7 +644,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests_cu)
         auto C = getV<0>(domain);
         auto V = getV<3>(domain);
         auto Cnew = getV<1>(domain);
-        auto Pos = getV<PROP_POS>(domain);
+        auto Pos = getV<POS_PROP>(domain);
         timer tt;
         //domain.write_frame("Convection_init",0);
         int ctr=0;

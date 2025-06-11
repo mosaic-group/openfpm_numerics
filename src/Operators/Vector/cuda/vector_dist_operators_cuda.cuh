@@ -35,8 +35,6 @@ struct SubsetSelector_impl<true>
 };
 #endif
 
-constexpr unsigned int PROP_POS =(unsigned int)-1;
-
 /*! \brief selector for position or properties left side expression
  *
  * \tparam vector type of the original vector
@@ -88,7 +86,7 @@ struct pos_or_propL_ker
  *
  */
 template <typename vector>
-struct pos_or_propL<vector,PROP_POS>
+struct pos_or_propL<vector,POS_PROP>
 {
 	typedef typename Point<vector::dims,typename vector::stype>::type_native property_act;
 
@@ -125,7 +123,7 @@ struct pos_or_propL<vector,PROP_POS>
  *
  */
 template <typename vector>
-struct pos_or_propL_ker<vector,PROP_POS>
+struct pos_or_propL_ker<vector,POS_PROP>
 {
 #ifdef SE_CLASS3
 
@@ -178,7 +176,7 @@ struct pos_or_propR
  *
  */
 template <typename vector>
-struct pos_or_propR<vector,PROP_POS>
+struct pos_or_propR<vector,POS_PROP>
 {
 	//! return the value (position or property) of the particle k in the vector v
 	__device__ __host__ static inline auto value(vector & v, const vect_dist_key_dx & k) -> decltype(ger<vector::dims,typename vector::stype>::getExprR(v.getPos(k)))
