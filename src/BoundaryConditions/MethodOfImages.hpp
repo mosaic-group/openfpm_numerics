@@ -101,7 +101,7 @@ public:
 		}
 		// No vd.map() since this would change the IDs of the particles and then we wouldn't know which source and
 		// which mirror belong to each other
-		vd.template ghost_get();
+		vd.ghost_get();
 		////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 		Mirror.update();
 		pid_mirror = Mirror.getIds();
