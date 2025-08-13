@@ -18,20 +18,19 @@ public:
     VandermondeRowBuilder(const MonomialBasis_type &monomialBasis) : monomialBasis(monomialBasis) {}
 
     template <typename MatrixType>
-    void buildRow(MatrixType &M, unsigned int row, Point<dim, T> x, T eps);
+    void buildRow(MatrixType &V, unsigned int row, Point<dim, T> x);
 };
 
 template<unsigned int dim, typename T,typename MonomialBasis_type>
 template <typename MatrixType>
-void VandermondeRowBuilder<dim, T, MonomialBasis_type>::buildRow(MatrixType &M, unsigned int row, Point<dim, T> x, T eps)
+void VandermondeRowBuilder<dim, T, MonomialBasis_type>::buildRow(MatrixType &V, unsigned int row, Point<dim, T> x)
 {
     auto& basisElements = monomialBasis.getElements();
 
     for (size_t col = 0; col < basisElements.size(); ++col)
     {
         Monomial<dim> m = basisElements.get(col);
-        M(row, col) = m.evaluate(x);
-        M(row, col) /= openfpm::math::intpowlog(eps, m.order());
+        V(row, col) = m.evaluate(x);
     }
 }
 

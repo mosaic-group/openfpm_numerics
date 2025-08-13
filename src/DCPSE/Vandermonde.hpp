@@ -7,48 +7,45 @@
 
 #include "MonomialBasis.hpp"
 #include "VandermondeRowBuilder.hpp"
-#include "Support.hpp"
 
 template<unsigned int dim, typename T, typename MatrixType>
 class Vandermonde
 {
 private:
     const Point<dim, T> point;
-    openfpm::vector_std<Point<dim, T>> offsets;
+    openfpm::vector_std<Point<dim, T>> x_pqVec;
     const MonomialBasis<dim> monomialBasis;
     T eps,HOverEpsilon,minSpacing;
 
 public:
-/*    Vandermonde(const Point<dim, T> &point, const std::vector<Point<dim, T>> &neighbours,
-                const MonomialBasis<dim> &monomialBasis);*/
-
-    template<typename vector_type,
-             typename vector_type2>
-    Vandermonde(const Support &support,
-                const MonomialBasis<dim> &monomialBasis,
-                const vector_type & particlesFrom,
-                const vector_type2 & particlesTo,T HOverEpsilon=0.5)    //0.5 for the test
-    : point(particlesTo.getPosOrig(support.getReferencePointKey())),
-                  monomialBasis(monomialBasis),HOverEpsilon(HOverEpsilon)
+    template<typename verletIterator_type, typename vector_type, typename vector_type2>
+    Vandermonde(
+        size_t p,
+        verletIterator_type &it,
+        const MonomialBasis<dim> &monomialBasis,
+        const vector_type & particlesSupport,
+        const vector_type2 & particlesDomain,T HOverEpsilon=0.5
+    ):
+        monomialBasis(monomialBasis),
+        HOverEpsilon(HOverEpsilon)
     {
-        initialize(support,particlesFrom,particlesTo);
+        initialize(p, it, particlesSupport, particlesDomain);
     }
 
 
-    MatrixType &getMatrix(MatrixType &M)
+    MatrixType &getMatrix(MatrixType &V)
     {
         // Build the Vandermonde matrix, row-by-row
         VandermondeRowBuilder<dim, T> vrb(monomialBasis);
         unsigned int row = 0;
 
-        size_t N = offsets.size();
-        for (size_t i = 0; i < N; ++i)
+        size_t N = x_pqVec.size();
+        for (unsigned int row = 0; row < N; ++row)
         {
-            const auto& offset = offsets.get(i);
-            vrb.buildRow(M, row, offset, eps);
-            ++row;
+            const auto& x_pq = x_pqVec.get(row);
+            vrb.buildRow(V, row, x_pq / eps);
         }
-        return M;
+        return V;
     }
 
     T getEps()
@@ -67,18 +64,18 @@ private:
     {
         T avgNeighbourSpacing = 0;
         minSpacing=std::numeric_limits<T>::max();
-        size_t N = offsets.size();
+        size_t N = x_pqVec.size();
         for (size_t i = 0; i < N; ++i)
         {
-            const auto& offset = offsets.get(i);
-            double dist=norm(offset);
-            avgNeighbourSpacing += computeAbsSum(offset);
+            const auto& x_pq = x_pqVec.get(i);
+            T dist=norm(x_pq);
+            avgNeighbourSpacing += computeAbsSum(x_pq);
             if(minSpacing>dist)
             {
                 minSpacing=dist;
             }
         }
-        avgNeighbourSpacing /= offsets.size();
+        avgNeighbourSpacing /= x_pqVec.size();
         eps = avgNeighbourSpacing/factor;
         assert(eps != 0);
     }
@@ -93,25 +90,28 @@ private:
         return absSum;
     }
 
-    template<typename vector_type, typename vector_type2>
-    void initialize(const Support &sup, const vector_type & particlesFrom, vector_type2 &particlesTo)
+    template<typename verletIterator_type, typename vector_type, typename vector_type2>
+    void initialize(size_t p, verletIterator_type &it, const vector_type & particlesSupport, vector_type2 &particlesDomain)
     {
-    	auto & keys = sup.getKeys();
+        while (it.isNext())
+        {
+            size_t q = it.get();
 
-    	for (int i = 0 ; i < keys.size() ; i++)
-    	{
-    		Point<dim,T> p = particlesTo.getPosOrig(sup.getReferencePointKey());
-            p -= particlesFrom.getPosOrig(keys.get(i));
-            offsets.add(p);
-    	}
+            Point<dim,T> xp = particlesDomain.getPos(p);
+            xp -= particlesSupport.getPos(q);
+            x_pqVec.add(xp);
+
+            ++it;
+        }
+
 
         // First check that the number of points given is enough for building the Vandermonde matrix
-        if (offsets.size() < monomialBasis.size())
+        if (x_pqVec.size() < monomialBasis.size())
         {
             ACTION_ON_ERROR(std::length_error("Not enough neighbour points passed for Vandermonde matrix construction!"));
         }
         // Compute eps for this point
-        //factor here. This is C factor.
+        // factor here. This is C factor.
         computeEps(HOverEpsilon);
     }
 

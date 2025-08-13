@@ -22,6 +22,7 @@
 #include "DCPSE/DCPSE_op/DCPSE_Solver.hpp"
 #include "Operators/Vector/vector_dist_operators.hpp"
 #include "Vector/vector_dist_subset.hpp"
+#include "Vector/vector_dist_multiphase_functions.hpp"
 #include "DCPSE/DCPSE_op/EqnsStruct.hpp"
 #include "DCPSE/DcpseInterpolation.hpp"
 
@@ -69,10 +70,13 @@ BOOST_AUTO_TEST_CASE(dcpse_op_tests) {
 
         domain.map();
         domain.ghost_get<0>();
-        Derivative_x Dx(domain, 2, rCut);
-        Derivative_y Dy(domain, 2, rCut);
-        Gradient Grad(domain, 2, rCut);
-        Laplacian Lap(domain, 2, rCut);
+
+        auto verletList = domain.template getVerlet<VL_NON_SYMMETRIC|VL_SKIP_REF_PART>(rCut);
+
+        Derivative_x<decltype(verletList)> Dx(domain, verletList, 2, rCut);
+        Derivative_y<decltype(verletList)> Dy(domain, verletList, 2, rCut);
+        Gradient<decltype(verletList)> Grad(domain, verletList, 2, rCut);
+        Laplacian<decltype(verletList)> Lap(domain, verletList, 2, rCut);
         auto v = getV<1>(domain);
         auto P = getV<0>(domain);
 
@@ -139,16 +143,18 @@ BOOST_AUTO_TEST_CASE(dcpse_op_tests) {
 
         domain.map();
         domain.ghost_get<0>();
-        Derivative_x Dx(domain, 2, rCut);
-        Derivative_y Dy(domain, 2, rCut);
+
+        auto verletList = domain.template getVerlet<VL_NON_SYMMETRIC|VL_SKIP_REF_PART>(rCut);
+        Derivative_x<decltype(verletList)> Dx(domain, verletList, 2, rCut);
+        Derivative_y<decltype(verletList)> Dy(domain, verletList, 2, rCut);
         auto v = getV<1>(domain);
         auto v2 = getV<3>(domain);
         auto P = getV<0>(domain);
         v2 = 2*Dx(P) + Dy(P);
         Dx.save(domain,"DX_test");
         Dy.save(domain,"DY_test");
-        Derivative_x DxLoaded(domain, 2, rCut,1,support_options::LOAD);
-        Derivative_y DyLoaded(domain, 2, rCut,1,support_options::LOAD);
+        Derivative_x<decltype(verletList)> DxLoaded(domain, verletList, 2, rCut, support_options::LOAD);
+        Derivative_y<decltype(verletList)> DyLoaded(domain, verletList, 2, rCut, support_options::LOAD);
         DxLoaded.load(domain,"DX_test");
         DyLoaded.load(domain,"DY_test");
         v= 2*DxLoaded(P)+DyLoaded(P);
@@ -214,8 +220,9 @@ BOOST_AUTO_TEST_CASE(dcpse_op_tests) {
         auto v = getV<1>(domain);
         auto v2 = getV<3>(domain);
         auto P = getV<0>(domain);
-        Derivative_x DxLoaded(domain, 2, rCut,1,support_options::LOAD);
-        Derivative_y DyLoaded(domain, 2, rCut,1,support_options::LOAD);
+        auto verletList = domain.template getVerlet<VL_NON_SYMMETRIC|VL_SKIP_REF_PART>(rCut);
+        Derivative_x<decltype(verletList)> DxLoaded(domain, verletList, 2, rCut, support_options::LOAD);
+        Derivative_y<decltype(verletList)> DyLoaded(domain, verletList, 2, rCut, support_options::LOAD);
         DxLoaded.load(domain,"DX_test");
         DyLoaded.load(domain,"DY_test");
         v= 2*DxLoaded(P)+DyLoaded(P);
@@ -244,7 +251,7 @@ BOOST_AUTO_TEST_CASE(dcpse_op_tests) {
         spacing[0] = 2 * M_PI / (sz[0] - 1);
         spacing[1] = 2 * M_PI / (sz[1] - 1);
         Ghost<2, double> ghost(spacing[0] * 3.9);
-        double rCut = 3.9 * spacing[0];
+        double rCut = 4.1 * spacing[0];
         BOOST_TEST_MESSAGE("Init vector_dist...");
         double sigma2 = spacing[0] * spacing[1] / (2 * 4);
 
@@ -279,7 +286,8 @@ BOOST_AUTO_TEST_CASE(dcpse_op_tests) {
         domain.map();
         domain.ghost_get<0>();
 
-        PPInterpolation<vector_type,vector_type> Fx(domain,domain, 2, rCut);
+        auto verletList = domain.template getVerlet<VL_NON_SYMMETRIC>(rCut);
+        PPInterpolation<vector_type,vector_type,decltype(verletList)> Fx(domain, domain, verletList, 2, rCut);
         auto v = getV<1>(domain);
         auto P = getV<0>(domain);
 
@@ -313,10 +321,11 @@ BOOST_AUTO_TEST_CASE(dcpse_op_tests) {
         double sigma2 = spacing[0] * spacing[1] / ( 4);
         std::normal_distribution<> gaussian{0, sigma2};
         std::mt19937 rng{6666666};
-        typedef vector_dist<2, double, aggregate<double, double, double, VectorS<2, double>, VectorS<2, double>>> vector_dist;
+        typedef vector_dist<2, double, aggregate<double, double, double, VectorS<2, double>, VectorS<2, double>>> vector_dist1;
+        typedef vector_dist<2, double, aggregate<double, double, double, VectorS<2, double>, VectorS<2, double>, VectorS<2, double>>> vector_dist2;
 
-        vector_dist domain(0, box,bc,ghost);
-        vector_dist domain2(domain.getDecomposition(),0);
+        vector_dist1 domain(0, box,bc,ghost);
+        vector_dist2 domain2(domain.getDecomposition(),0);
 
         //Init_DCPSE(domain)
         BOOST_TEST_MESSAGE("Init domain...");
@@ -357,7 +366,10 @@ BOOST_AUTO_TEST_CASE(dcpse_op_tests) {
         domain.ghost_get<0>();
         domain2.ghost_get<0>();
 
-        PPInterpolation<vector_dist,vector_dist> Fx(domain2,domain, 2, rCut);
+        auto cellListDomain2 = domain2.getCellList(rCut);
+        auto verletList = createVerletTwoPhase(domain,domain2,cellListDomain2,rCut);
+
+        PPInterpolation<vector_dist2,vector_dist1,decltype(verletList)> Fx(domain2, domain, verletList, 2, rCut);
         //auto v = getV<1>(domain);
         //auto P = getV<0>(domain);
         Fx.p2p<0,1>();
@@ -428,7 +440,8 @@ BOOST_AUTO_TEST_CASE(dcpse_op_tests) {
         domain.map();
         domain.ghost_get<0>();
 
-        Laplacian Lap(domain, 2, rCut);
+        auto verletList = domain.template getVerlet<VL_NON_SYMMETRIC|VL_SKIP_REF_PART>(rCut);
+        Laplacian<decltype(verletList)> Lap(domain, verletList, 2, rCut);
         auto v = getV<1>(domain);
         auto P = getV<0>(domain);
         auto vv = getV<2>(domain);
@@ -515,9 +528,10 @@ BOOST_AUTO_TEST_CASE(dcpse_op_tests) {
         domain.map();
         domain.ghost_get<0>();
 
-        Divergence Div(domain, 2, rCut);
-        Derivative_x Dx(domain, 2, rCut);
-        Derivative_y Dy(domain, 2, rCut);
+        auto verletList = domain.template getVerlet<VL_NON_SYMMETRIC|VL_SKIP_REF_PART>(rCut);
+        Divergence<decltype(verletList)> Div(domain, verletList, 2, rCut);
+        Derivative_x<decltype(verletList)> Dx(domain, verletList, 2, rCut);
+        Derivative_y<decltype(verletList)> Dy(domain, verletList, 2, rCut);
 
         auto v = getV<1>(domain);
         auto anasol = getV<0>(domain);
@@ -620,7 +634,8 @@ BOOST_AUTO_TEST_CASE(dcpse_op_tests) {
         domain.map();
         domain.ghost_get<0>();
 
-        Advection Adv(domain, 2, rCut);
+        auto verletList = domain.template getVerlet<VL_NON_SYMMETRIC|VL_SKIP_REF_PART>(rCut);
+        Advection<decltype(verletList)> Adv(domain, verletList, 2, rCut);
         auto v = getV<1>(domain);
         auto P = getV<0>(domain);
         auto dv = getV<3>(domain);
@@ -707,7 +722,8 @@ BOOST_AUTO_TEST_CASE(dcpse_op_tests) {
         auto Sig = getV<3>(Particles);
 
 
-        Derivative_x Dx(Particles, 2, rCut,2);
+        auto verletList = Particles.template getVerlet<VL_NON_SYMMETRIC|VL_SKIP_REF_PART>(rCut);
+        Derivative_x<decltype(verletList)> Dx(Particles, verletList, 2, rCut);
 
         P = Dx(V[0]);
         S = V[0]*V[0] + V[1]*V[1];
@@ -795,8 +811,8 @@ BOOST_AUTO_TEST_CASE(dcpse_op_tests) {
         auto S = getV<2>(Particles);
         auto Sig = getV<3>(Particles);
 
-
-        Derivative_x Dx(Particles, 2, rCut,2);
+        auto verletList = Particles.template getVerlet<VL_NON_SYMMETRIC|VL_SKIP_REF_PART>(rCut);
+        Derivative_x<decltype(verletList)> Dx(Particles, verletList, 2, rCut);
 
         P = Dx(V[0]);
         S = V[0]*V[0] + V[1]*V[1]+V[2]*V[2];
@@ -855,6 +871,157 @@ BOOST_AUTO_TEST_CASE(dcpse_op_tests) {
         BOOST_REQUIRE(err5 < 0.03);
     }
 
+
+// Added by foggia on 08.03.2024
+BOOST_AUTO_TEST_CASE(slicer_3index_tensor) {
+
+  Vcluster<> & v_cl = create_vcluster();
+
+  constexpr int VEC{0};           // vector - [27] linearized version of [DIM]x[DIM]x[DIM]
+  constexpr int MAT{1};           // matrix - [DIM]x[DIM]x[DIM]
+  constexpr int ERR{2};
+
+  typedef aggregate<double[3*3*3],double[3][3][3],double[3*3*3]> prop_part;
+  openfpm::vector<std::string> propNames{"vector","matrix","err"};
+  typedef vector_dist<3,double,prop_part> vector_type;
+  
+  int n_part{1};
+  double rCut{3.0};
+  double grid_spacing{2.0/32.0};
+  Box<3,double> domain{{-1,-1,-1},{1,1,1}};    
+  Ghost<3,double> ghost{rCut*grid_spacing + grid_spacing/8.0};
+  size_t bc[3] = {NON_PERIODIC,NON_PERIODIC,NON_PERIODIC};
+  
+  vector_type part{0,domain,bc,ghost};
+  part.setPropNames(propNames);
+
+  std::array<double,3> center{0,0,0};
+  std::array<double,3> coord;
+  
+  if (v_cl.rank() == 0) {
+    std::cout << "1. Creating particles\n";
+      
+    // Created using the Fibonacci sphere algorithm
+    const double pi{3.14159265358979323846};
+    const double golden_ang = pi*(3.0 - std::sqrt(5.0));
+    const double prefactor{std::sqrt(0.75/pi)};
+    double rad, theta, arg, thetaB, phi, phi_norm;
+    
+    for (int i = 0; i < n_part; ++i) {
+      
+      coord[1] = 1.0 - 2.0*(i/double(n_part-1));
+      rad = std::sqrt(1.0 - (coord[1]-center[1])*(coord[1]-center[1]));
+      theta = golden_ang * i;
+      coord[0] = std::cos(theta) * rad;
+      coord[2] = std::sin(theta) * rad;
+
+      arg = (coord[0]-center[0]) * (coord[0]-center[0]) + (coord[1]-center[1]) * (coord[1]-center[1]);
+      thetaB = std::atan2(std::sqrt(arg),(coord[2]-center[2]));
+      phi = std::atan2((coord[1]-center[1]),(coord[0]-center[0]));
+      
+      part.add();
+      part.getLastPos()[0] = coord[0];
+      part.getLastPos()[1] = coord[1];
+      part.getLastPos()[2] = coord[2];
+      
+      for (int l = 0; l < 3; ++l)
+	for (int k = 0; k < 3; ++k)
+	  for (int m = 0; m < 3; ++m) {
+
+	    int linIdx = (l*3 + k)*3 + m;
+      
+	    part.getLastProp<VEC>()[linIdx] = double(linIdx);
+	    part.getLastProp<MAT>()[l][k][m] = double(linIdx);
+	  }
+    }
+  }
+
+  part.map();
+  part.ghost_get<VEC>();
+
+  double eps{1e-13};
+  auto vec{getV<VEC>(part)};
+  auto mat{getV<MAT>(part)};
+  auto err{getV<ERR>(part)};
+
+  err[0] = mat[0][0][0] - vec[0];
+  err[1] = mat[0][0][1] - vec[1];
+  err[2] = mat[0][0][2] - vec[2];
+  err[3] = mat[0][1][0] - vec[3];
+  err[4] = mat[0][1][1] - vec[4];
+  err[5] = mat[0][1][2] - vec[5];
+  err[6] = mat[0][2][0] - vec[6];
+  err[7] = mat[0][2][1] - vec[7];
+  err[8] = mat[0][2][2] - vec[8];
+  err[9] = mat[1][0][0] - vec[9];
+  err[10] = mat[1][0][1] - vec[10];
+  err[11] = mat[1][0][2] - vec[11];
+  err[12] = mat[1][1][0] - vec[12];
+  err[13] = mat[1][1][1] - vec[13];
+  err[14] = mat[1][1][2] - vec[14];
+  err[15] = mat[1][2][0] - vec[15];
+  err[16] = mat[1][2][1] - vec[16];
+  err[17] = mat[1][2][2] - vec[17];
+  err[18] = mat[2][0][0] - vec[18];
+  err[19] = mat[2][0][1] - vec[19];
+  err[20] = mat[2][0][2] - vec[20];
+  err[21] = mat[2][1][0] - vec[21];
+  err[22] = mat[2][1][1] - vec[22];
+  err[23] = mat[2][1][2] - vec[23];
+  err[24] = mat[2][2][0] - vec[24];
+  err[25] = mat[2][2][1] - vec[25];
+  err[26] = mat[2][2][2] - vec[26];
+   
+  auto pit{part.getDomainIterator()};
+  while (pit.isNext()) {
+    auto key{pit.get()};
+
+    // Uncomment to check the values
+    // for (int l = 0; l < 3; ++l)
+    //   for (int k = 0; k < 3; ++k)
+    // 	for (int m = 0; m < 3; ++m)
+    // 	  std::cout << "mat[" << l << "][" << k << "][" << m << "]: " << part.getProp<MAT>(key)[l][k][m] << std::endl;
+
+    // for (int i = 0; i < 3*3*3; ++i) {
+    //   std::cout << "vec[" << i << "]: " << part.getProp<VEC>(key)[i] << std::endl;
+    //   std::cout << "err[" << i << "]: " << part.getProp<ERR>(key)[i] << std::endl;
+    // }
+
+    for (int i = 0; i < 3*3*3; ++i) {
+      BOOST_REQUIRE_CLOSE(part.getProp<ERR>(key)[0],0, eps);
+      BOOST_REQUIRE_CLOSE(part.getProp<ERR>(key)[1],0, eps);
+      BOOST_REQUIRE_CLOSE(part.getProp<ERR>(key)[2],0, eps);
+      BOOST_REQUIRE_CLOSE(part.getProp<ERR>(key)[3],0, eps);
+      BOOST_REQUIRE_CLOSE(part.getProp<ERR>(key)[4],0, eps);
+      BOOST_REQUIRE_CLOSE(part.getProp<ERR>(key)[5],0, eps);
+      BOOST_REQUIRE_CLOSE(part.getProp<ERR>(key)[6],0, eps);
+      BOOST_REQUIRE_CLOSE(part.getProp<ERR>(key)[7],0, eps);
+      BOOST_REQUIRE_CLOSE(part.getProp<ERR>(key)[8],0, eps);
+      BOOST_REQUIRE_CLOSE(part.getProp<ERR>(key)[9],0, eps);
+      BOOST_REQUIRE_CLOSE(part.getProp<ERR>(key)[10],0, eps);
+      BOOST_REQUIRE_CLOSE(part.getProp<ERR>(key)[11],0, eps);
+      BOOST_REQUIRE_CLOSE(part.getProp<ERR>(key)[12],0, eps);
+      BOOST_REQUIRE_CLOSE(part.getProp<ERR>(key)[13],0, eps);
+      BOOST_REQUIRE_CLOSE(part.getProp<ERR>(key)[14],0, eps);
+      BOOST_REQUIRE_CLOSE(part.getProp<ERR>(key)[15],0, eps);
+      BOOST_REQUIRE_CLOSE(part.getProp<ERR>(key)[16],0, eps);
+      BOOST_REQUIRE_CLOSE(part.getProp<ERR>(key)[17],0, eps);
+      BOOST_REQUIRE_CLOSE(part.getProp<ERR>(key)[18],0, eps);
+      BOOST_REQUIRE_CLOSE(part.getProp<ERR>(key)[19],0, eps);
+      BOOST_REQUIRE_CLOSE(part.getProp<ERR>(key)[20],0, eps);
+      BOOST_REQUIRE_CLOSE(part.getProp<ERR>(key)[21],0, eps);
+      BOOST_REQUIRE_CLOSE(part.getProp<ERR>(key)[22],0, eps);
+      BOOST_REQUIRE_CLOSE(part.getProp<ERR>(key)[23],0, eps);
+      BOOST_REQUIRE_CLOSE(part.getProp<ERR>(key)[24],0, eps);
+      BOOST_REQUIRE_CLOSE(part.getProp<ERR>(key)[25],0, eps);
+    }
+
+    ++pit;
+  }
+  part.deleteGhost();
+  // part.write("test_3index");
+}
+
     BOOST_AUTO_TEST_CASE(dcpse_op_convection) {
         size_t edgeSemiSize = 20;
         const size_t sz[2] = {2 * edgeSemiSize+1, 2 * edgeSemiSize+1};
@@ -910,14 +1077,16 @@ BOOST_AUTO_TEST_CASE(dcpse_op_tests) {
         domain.map();
         domain.ghost_get<0>();
 
-        //Derivative_x Dx(domain, 2, rCut);
-        Derivative_xx Dxx(domain, 2, rCut);
-        //Derivative_y Dy(domain, 2, rCut);
-        Derivative_yy Dyy(domain, 2, rCut);
+        auto verletList = domain.template getVerlet<VL_NON_SYMMETRIC|VL_SKIP_REF_PART>(rCut);
+
+        //Derivative_x<decltype(verletList)> Dx(domain, verletList, 2, rCut);
+        Derivative_xx<decltype(verletList)> Dxx(domain, verletList, 2, rCut);
+        //Derivative_y<decltype(verletList)> Dy(domain, verletList, 2, rCut);
+        Derivative_yy<decltype(verletList)> Dyy(domain, verletList, 2, rCut);
         auto C = getV<0>(domain);
         auto V = getV<3>(domain);
         auto Cnew = getV<1>(domain);
-        auto Pos = getV<PROP_POS>(domain);
+        auto Pos = getV<POS_PROP>(domain);
         timer tt;
         //domain.write_frame("Convection_init",0);
         int ctr=0;
@@ -948,6 +1117,7 @@ BOOST_AUTO_TEST_CASE(dcpse_op_tests) {
                 ++it2;
             }
             tt.start();
+            domain.updateVerlet(verletList,rCut);
             Dxx.update(domain);
             Dyy.update(domain);
             tt.stop();
@@ -984,8 +1154,6 @@ BOOST_AUTO_TEST_CASE(dcpse_op_tests) {
         }*/
 
     }
-
-
 
 BOOST_AUTO_TEST_SUITE_END()
 

@@ -12,14 +12,14 @@
 #include "Space/Shape/Point.hpp"
 #include "DMatrix/EMatrix.hpp"
 #include "DCPSE/SupportBuilder.hpp"
-#include "minter/include/minter.h"
+#include "minter/minter.h"
 
 
 template<typename vector_type_support, typename NN_type>
 class RegressionSupport
 {
 	openfpm::vector<size_t> keys;
-	
+
 public:
 
 	template<typename iterator_type>
@@ -29,7 +29,6 @@ public:
 		rCut = cellList_in.getCellBox().getHigh(0);
 		// Get spatial position from point iterator
 		vect_dist_key_dx p = itPoint.get();
-		vect_dist_key_dx pOrig = itPoint.getOrig();
 		Point<vector_type_support::dims, typename vector_type_support::stype> pos = domain.getPos(p.getKey());
 
 		// Get cell containing current point and add it to the set of cell keys
@@ -41,10 +40,16 @@ public:
 		enlargeSetOfCellsUntilSize(supportCells, requiredSize + 1,
                                    opt); // NOTE: this +1 is because we then remove the point itself
 
-        	// Now return all the points from the support into a vector
-        	keys = getPointsInSetOfCells(supportCells, p, pOrig, requiredSize, opt);
+		// Now return all the points from the support into a vector
+		keys = getPointsInSetOfCells(supportCells, p, requiredSize, opt);
 	}
-	
+
+	// additional constructor if keys are known already
+	RegressionSupport(openfpm::vector<size_t> keysIn, vector_type_support &vd, NN_type &cellList_in) : keys(keysIn), domain(vd), cellList(cellList_in)
+	{
+		rCut = cellList_in.getCellBox().getHigh(0);
+	}
+
 	auto getKeys()
 	{
 		return keys;
@@ -91,7 +96,7 @@ private:
             	auto cell = *set.begin();
             	grid_key_dx<vector_type_support::dims> middle;
 		size_t sz[vector_type_support::dims];
-		
+
 		while(true) // loop for the number of cells enlarged per dimension
 		{
 			std::set<grid_key_dx<vector_type_support::dims>> temp_set;
@@ -111,7 +116,7 @@ private:
                 		++g_k;
             		}
 			if (getNumElementsInSetOfCells(temp_set) < requiredSize) n++;
-			else 
+			else
 			{
 				set = temp_set;
 				break;
@@ -136,13 +141,12 @@ private:
                     	}
                 	}
 
-            	}	
-		}   	
+            	}
+		}
     }
 
     openfpm::vector<size_t> getPointsInSetOfCells(std::set<grid_key_dx<vector_type_support::dims>> set,
                                               vect_dist_key_dx &p,
-                                              vect_dist_key_dx &pOrig,
                                               size_t requiredSupportSize,
                                               support_options opt) {
         struct reord {
@@ -161,7 +165,7 @@ private:
             for (size_t k = 0; k < elemsInCell; ++k) {
                 size_t el = cellList.get(cellLinId, k);
 
-                Point<vector_type_support::dims, typename vector_type_support::stype> xq = domain.getPosOrig(el);
+                Point<vector_type_support::dims, typename vector_type_support::stype> xq = domain.getPos(el);
                 //points.push_back(el);
 
                 reord pr;
@@ -198,7 +202,7 @@ private:
         //MinSpacing=MinSpacing/requiredSupportSize
         return points;
     }
-    
+
     size_t getCellLinId(const grid_key_dx<vector_type_support::dims> &cellKey) {
         mem_id id = cellList.getGrid().LinId(cellKey);
         return static_cast<size_t>(id);
@@ -241,7 +245,7 @@ class RegressionModel
 public:
 	minter::PolyModel<spatial_dim, MatType, VecType> *model = nullptr;
 	minter::PolyModel<spatial_dim, MatType, VecType> *deriv_model[spatial_dim];
-	
+
 	RegressionModel(unsigned int poly_degree, float lp_degree) {
 		// construct polynomial model
     		model = new minter::PolyModel<spatial_dim, MatType, VecType>();
@@ -260,7 +264,7 @@ public:
 
 		MatType points(num_particles, dim);
 		VecType values(num_particles);
-		
+
 		auto keys = support->getKeys();
 		for(int i = 0;i < num_particles;++i)
 		{
@@ -277,7 +281,7 @@ public:
 			deriv_model[i] = nullptr;
 	}
 
-	
+
 	// Constructor for all points in a proc (domain + ghost) and a specified poly_degree
 	template<typename vector_type>
 	RegressionModel(vector_type &vd, unsigned int poly_degree, float lp_degree = 2.0)
@@ -287,7 +291,7 @@ public:
 
 		MatType points(num_particles, dim);
 		VecType values(num_particles);
-		
+
 		auto it = vd.getDomainAndGhostIterator();
 		int i = 0;
 		while (it.isNext())
@@ -302,7 +306,7 @@ public:
 			++i;
 		}
 
-		// construct polynomial model 
+		// construct polynomial model
 		model = new minter::PolyModel<spatial_dim, MatType, VecType>(points, values, poly_degree, lp_degree);
 
 		for(i = 0;i < dim;++i)
@@ -318,7 +322,7 @@ public:
 
 		MatType points(num_particles, dim);
 		VecType values(num_particles);
-		
+
 		auto it = vd.getDomainAndGhostIterator();
 		int i = 0;
 		while (it.isNext())
@@ -336,7 +340,7 @@ public:
 		int poly_degree = 1;
 		double error = -1.0;
 		minter::PolyModel<spatial_dim, MatType, VecType> *mdl = nullptr;
-		
+
 		do
 		{
 			++poly_degree;
@@ -363,7 +367,7 @@ public:
 
 	    for(i = 0;i < dim;++i)
 			deriv_model[i] = nullptr;
-	    
+
 	}
 
 	template<typename vector_type, typename reg_support_type>
@@ -375,13 +379,35 @@ public:
 
         	Eigen::MatrixXd points(num_particles, dim);
         	Eigen::VectorXd values(num_particles);
-	
+
 		auto keys = support.getKeys();
 		for(int i = 0;i < num_particles;++i)
 		{
 			for(int j = 0;j < dim;++j)
 				points(i,j) = vd.getPos(keys.get(i))[j];
 			values(i) = vd.template getProp<prp_id>(keys.get(i));
+		}
+
+	        model->computeCoeffs(points, values);
+    	}
+
+	// overload for multidimensional property
+	template<typename vector_type, typename reg_support_type>
+	void computeCoeffs(vector_type& vd, reg_support_type& support, size_t component)
+    	{
+
+        	unsigned int dim = vector_type::dims;
+		auto num_particles = support.getNumParticles();
+
+        	Eigen::MatrixXd points(num_particles, dim);
+        	Eigen::VectorXd values(num_particles);
+
+		auto keys = support.getKeys();
+		for(int i = 0;i < num_particles;++i)
+		{
+			for(int j = 0;j < dim;++j)
+				points(i,j) = vd.getPos(keys.get(i))[j];
+			values(i) = vd.template getProp<prp_id>(keys.get(i))[component];
 		}
 
 	        model->computeCoeffs(points, values);
@@ -400,7 +426,7 @@ public:
 		}
 	}
 
-	template<typename T> // Typical: Point<vector_type::dims, typename vector_type::stype> 
+	template<typename T> // Typical: Point<vector_type::dims, typename vector_type::stype>
 	double eval(T pos)
 	{
 		int dim = pos.dims;
@@ -413,7 +439,7 @@ public:
 
 	// T1 : Point<vector_type::dims, typename vector_type::stype>
 	// T2 : Point<vector_type::dims, int>
-	template<typename T1, typename T2> 
+	template<typename T1, typename T2>
 	double deriv(T1 pos, T2 deriv_order)
 	{
 

@@ -33,8 +33,6 @@ public:\
 \
 	typedef typename vector_result<typename exp1::vtype,void>::type vtype;\
 \
-	typedef typename vector_is_sort_result<exp1::is_sort::value,false>::type is_sort;\
-\
 	typedef typename nn_type_result<typename exp1::NN_type,void>::type NN_type;\
 \
 	vector_dist_expression_op(const exp1 & o1)\
@@ -157,8 +155,6 @@ public:\
 \
 	typedef typename vector_result<typename exp1::vtype,typename exp2::vtype>::type vtype;\
 \
-	typedef typename vector_is_sort_result<exp1::is_sort::value,exp2::is_sort::value>::type is_sort;\
-\
 	typedef typename nn_type_result<typename exp1::NN_type,typename exp2::NN_type>::type NN_type;\
 \
 	inline NN_type * getNN()\
@@ -269,7 +265,7 @@ CREATE_VDIST_ARG2_FUNC(pmul,pmul,VECT_PMUL)
 
 ////////// Special function reduce /////////////////////////
 
-template<typename val_type, bool is_sort, bool is_scalar = is_Point<val_type>::type::value>
+template<typename val_type, bool is_scalar = is_Point<val_type>::type::value>
 struct point_scalar_process
 {
 	typedef aggregate<val_type> type;
@@ -280,7 +276,7 @@ struct point_scalar_process
 #ifdef __NVCC__
 
 		auto vek = ve.toKernel();
-		vector_dist_op_compute_op<0,is_sort,comp_dev>::compute_expr_v(vek,o1);
+		vector_dist_op_compute_op<0,comp_dev>::compute_expr_v(vek,o1);
 
 		exp_tmp2[0].resize(sizeof(val_type));
 
@@ -297,8 +293,8 @@ struct point_scalar_process
 	}
 };
 
-template<typename val_type, bool is_sort>
-struct point_scalar_process<val_type,is_sort,true>
+template<typename val_type>
+struct point_scalar_process<val_type,true>
 {
 	typedef val_type type;
 
@@ -312,7 +308,7 @@ struct point_scalar_process<val_type,is_sort,true>
 //		compute_expr_ker_vv<0,val_type::dims><<<ite.wthr,ite.thr>>>(ve.toKernel(),o1);
 
 		auto vek = ve.toKernel();
-		vector_dist_op_compute_op<0,is_sort,comp_dev>::template compute_expr_vv<val_type::dims>(vek,o1);
+		vector_dist_op_compute_op<0,comp_dev>::template compute_expr_vv<val_type::dims>(vek,o1);
 
 		exp_tmp2[0].resize(sizeof(val_type));
 
@@ -345,7 +341,7 @@ struct point_scalar_process<val_type,is_sort,true>
 template<bool is_device>
 struct vector_reduce_selector
 {
-	template<typename is_sort, typename o1_type, typename val_type>
+	template<typename o1_type, typename val_type>
 	static void red(o1_type & o1, val_type & val)
 	{
 
@@ -353,7 +349,7 @@ struct vector_reduce_selector
 
 			// we have to do it on GPU
 
-			openfpm::vector<typename point_scalar_process<val_type,is_sort::value>::type,
+			openfpm::vector<typename point_scalar_process<val_type>::type,
 							CudaMemory,
 							memory_traits_inte,
 							openfpm::grow_policy_identity> ve;
@@ -366,7 +362,7 @@ struct vector_reduce_selector
 			ve.setMemory(exp_tmp);
 			ve.resize(orig_v.size_local());
 
-			point_scalar_process<val_type,is_sort::value>::process(val,ve,o1);
+			point_scalar_process<val_type>::process(val,ve,o1);
 #else
 			std::cout << __FILE__ << ":" << __LINE__ << " error, to use expression on GPU you must compile with nvcc compiler " << std::endl;
 #endif
@@ -376,7 +372,7 @@ struct vector_reduce_selector
 template<>
 struct vector_reduce_selector<false>
 {
-	template<typename is_sort, typename o1_type, typename val_type>
+	template<typename o1_type, typename val_type>
 	static void red(o1_type & o1, val_type & val)
 	{
 			const auto & orig_v = o1.getVector();
@@ -425,9 +421,6 @@ public:
 	//! return the vector type on which this expression operate
 	typedef typename vector_result<typename exp1::vtype,void>::type vtype;
 
-	//! result for is sort
-	typedef typename vector_is_sort_result<exp1::is_sort::value,false>::type is_sort;
-
 	//! NN_type
 	typedef typename nn_type_result<typename exp1::NN_type,void>::type NN_type;
 
@@ -440,7 +433,7 @@ public:
 	// this produce a cache for the calculated value
 	inline void init() const
 	{
-		vector_reduce_selector<exp1::is_ker::value>::template red<is_sort>(o1,val);
+		vector_reduce_selector<exp1::is_ker::value>::red(o1,val);
 	}
 
 	/*! \brief get the NN object
@@ -552,9 +545,6 @@ public:
     //! return the vector type on which this expression operate
     typedef typename vector_result<typename exp1::vtype,void>::type vtype;
 
-    //! result for is sort
-    typedef typename vector_is_sort_result<exp1::is_sort::value,false>::type is_sort;
-
     //! NN_type
     typedef typename nn_type_result<typename exp1::NN_type,void>::type NN_type;
 
@@ -575,7 +565,7 @@ public:
 
 			// we have to do it on GPU
 
-			openfpm::vector<typename point_scalar_process<val_type,is_sort::value>::type,
+			openfpm::vector<typename point_scalar_process<val_type>::type,
 							CudaMemory,
 							memory_traits_inte,
 							openfpm::grow_policy_identity> ve;
@@ -588,7 +578,7 @@ public:
 			ve.setMemory(exp_tmp);
 			ve.resize(orig_v.size_local());
 
-			point_scalar_process<val_type,is_sort::value>::process(val,ve,o1);
+			point_scalar_process<val_type>::process(val,ve,o1);
 #else
             std::cout << __FILE__ << ":" << __LINE__ << " error, to use expression on GPU you must compile with nvcc compiler " << std::endl;
 #endif

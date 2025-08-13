@@ -28,7 +28,7 @@
 #include "Vector/vector_dist.hpp"
 #include "regression/regression.hpp"
 
-template<unsigned int dim, unsigned int n_c> using particles_surface = vector_dist<dim, double, aggregate<int, int, double, double[dim], double[n_c]>>;
+template<unsigned int dim, unsigned int n_c> using particles_surface = vector_dist<dim, double, aggregate<int, int, double, double[dim], double[n_c], double[dim]>>;
 struct Redist_options
 {
 	size_t max_iter = 1000;	// params for the Newton algorithm for the solution of the constrained
@@ -54,6 +54,9 @@ struct Redist_options
 				   // particle is at the corner of a cell and hence only has neighbors in certain directions)
 	float r_cutoff_factor_min_num_particles; // this is the rcut for the celllist
 	int only_narrowband = 1; // only redistance particles with phi < sampling_radius, or all particles if only_narrowband = 0
+	int project_particles = 0; // change the actual position of the particles by projection onto their respective closest points.
+				   // to perform this, verbose needs to be 0 as it interferes with the surface flag which is queried
+				   // for the projection.
 };
 
 template <typename particles_in_type, size_t phi_field, size_t closest_point_field, size_t normal_field, size_t curvature_field, unsigned int num_minter_coeffs>
@@ -81,7 +84,30 @@ public:
 
 		interpolate_sdf_field();
 
-		find_closest_point();
+		find_closest_point(vd_in);
+	}
+
+	void redistance_separate_particle_set(particles_in_type & vd_generic)
+	{
+		find_closest_point(vd_generic);
+	}
+
+	// compute and return sample particles
+	particles_in_type initialize_surface_discretization()
+	{
+		detect_surface_particles();
+
+		interpolate_sdf_field();
+
+		particles_in_type sampleParticles = format_vd_s();
+
+		return(sampleParticles);
+	}
+
+	// interpolate field to given particle positions
+	template <size_t prp_id, size_t prp_id_to> void regress_field(particles_in_type & vd_generic)
+	{
+		regress_field_to_particles<prp_id, prp_id_to>(vd_generic);
 	}
 
 private:
@@ -90,10 +116,11 @@ private:
 	static constexpr size_t vd_s_sdf = 2;
 	static constexpr size_t vd_s_sample = 3;
 	static constexpr size_t minter_coeff = 4;
-	// static constexpr size_t vd_s_minter_model = 5;
+	// static constexpr size_t vd_s_velocity_field = 5;
 	static constexpr size_t vd_in_sdf = phi_field; // this is really required in the vd_in vector, so users need to know about it.
-	static constexpr size_t vd_in_close_part = 4; // this is not needed by the method, but more for debugging purposes, as it shows all particles for which
-						      // interpolation and sampling is performed.
+	static constexpr size_t vd_in_close_part = 4; // this is not needed by the method, but is used for debugging purposes, as it shows all particles for which
+						      // interpolation and sampling is performed. Also, it flags particles that are supposed to be moved (or projected)
+						      // onto the surface.
 	static constexpr size_t vd_in_normal = normal_field;
 	static constexpr size_t vd_in_curvature = curvature_field;
 	static constexpr size_t	vd_in_cp = closest_point_field;
@@ -114,7 +141,7 @@ private:
 	{
 		if (phi > 0) return 1;
 		if (phi < 0) return -1;
-		return 0;
+		return 1;
 	}
 
 	// this function lays the groundwork for the interpolation step. It classifies particles according to two possible classes:
@@ -150,17 +177,17 @@ private:
 			if (redistOptions.verbose) vd_in.template getProp<vd_in_close_part>(akey) = 0;
 			int isclose = 0;
 
-			auto Np = NN.getNNIterator(NN.getCell(xa));
+			auto Np = NN.getNNIteratorBox(NN.getCell(xa));
 			while (Np.isNext())
 			{
 				vect_dist_key_dx bkey = Np.get();
 				int sgn_b = return_sign(vd_in.template getProp<vd_in_sdf>(bkey));
 				Point<dim, double> xb = vd_in.getPos(bkey);
-	            		Point<dim,double> dr = xa - xb;
+				Point<dim, double> dr = xa - xb;
 	            		double r2 = norm2(dr);
 
 	            		// check if the particle will provide a polynomial interpolation and a sample point on the interface
-	            		if ((sqrt(r2) < (1.5*redistOptions.H)) && (sgn_a != sgn_b)) isclose = 1;
+	            		if ((sqrt(r2) < (1.5*redistOptions.H)) and (sgn_a != sgn_b)) isclose = 1;
 
 	            		// count how many particles are in the neighborhood and will be part of the interpolation
 	            		if (r2 < r_cutoff2)	++num_neibs_a;
@@ -272,7 +299,7 @@ private:
                 					<<" given tolerance for some particles"<<std::endl;
 
 	}
-	
+
 	// This function now finds the exact closest point on the surface to any given particle.
 	// For this, it iterates through all particles in the input vector (since all need to be redistanced),
 	// and finds the closest sample point on the surface. Then, it uses this sample point as an initial guess
@@ -283,15 +310,14 @@ private:
 	// The polynomial that is used for checking if the constraint is fulfilled is the interpolation polynomial
 	// carried by the sample point.
 
-	void find_closest_point()
+	void find_closest_point(particles_in_type & vd_generic)
 	{
 		// iterate over all particles, i.e. do closest point optimisation for all particles, and initialize
 		// all relevant variables.
 
 		vd_s.template ghost_get<vd_s_close_part,vd_s_sample,minter_coeff>();
-
 		auto NN_s = vd_s.getCellList(redistOptions.sampling_radius);
-		auto part = vd_in.getDomainIterator();
+		auto part = vd_generic.getDomainIterator();
 
 		int message_step_limitation = 0;
 		int message_convergence_problem = 0;
@@ -301,7 +327,7 @@ private:
 		{
 			vect_dist_key_dx a = part.get();
 
-			if ((redistOptions.only_narrowband) && (std::abs(vd_in.template getProp<vd_in_sdf>(a)) > redistOptions.sampling_radius))
+			if ((redistOptions.only_narrowband) && (std::abs(vd_generic.template getProp<vd_in_sdf>(a)) > redistOptions.sampling_radius))
 			{
 				++part;
 				continue;
@@ -309,7 +335,7 @@ private:
 
 			// initialise all variables specific to the query particle
 			EMatrix<double, Eigen::Dynamic, 1> xa(dim_r, 1);
-			for(int k = 0; k < dim; k++) xa[k] = vd_in.getPos(a)[k];
+			for(int k = 0; k < dim; k++) xa[k] = vd_generic.getPos(a)[k];
 
 			double val;
 			// spatial variable that is optimized
@@ -333,7 +359,7 @@ private:
 			}
 
 			EMatrix<double, Eigen::Dynamic, 1> c(n_c_r, 1);
-			for (int k = 0; k < n_c; k++) c[k] = 0.0;
+			for (int k = 0; k < n_c_r; k++) c[k] = 0.0;
 
 			// f(x, lambda) is the Lagrangian, initialize its gradient and Hessian
 			EMatrix<double, Eigen::Dynamic, 1> nabla_f(dim_r + 1, 1);
@@ -347,12 +373,12 @@ private:
 			// Initialise variables for searching the closest sample point. Note that this is not a very elegant
 			// solution to initialise another x_a vector, but it is done because of the two different types EMatrix and
 			// point vector, and can probably be made nicer.
-			Point<dim, double> xaa = vd_in.getPos(a);
+			Point<dim, double> xaa = vd_generic.getPos(a);
 
 			// Now we will iterate over the sample points, which means iterating over vd_s.
-			auto Np = NN_s.getNNIterator(NN_s.getCell(vd_in.getPos(a)));
+			auto Np = NN_s.getNNIteratorBox(NN_s.getCell(vd_generic.getPos(a)));
 
-			vect_dist_key_dx b_min = get_closest_neighbor<decltype(NN_s)>(xaa, vd_s, NN_s);
+			vect_dist_key_dx b_min = get_closest_neighbor<decltype(NN_s)>(xaa, NN_s);
 
 			// set x0 to the sample point which was closest to the query particle
 			for(int k = 0; k < dim; k++) x[k] = vd_s.template getProp<vd_s_sample>(b_min)[k];
@@ -366,10 +392,8 @@ private:
 			for(int k = 0; k < dim; k++) x00x[k] = 0.0;
 
             		auto& model = minterModelpcp.model;
-			EVectorXd temp(n_c_r, 1);
-			for(int k = 0; k < n_c; k++) temp[k] = vd_s.template getProp<minter_coeff>(b_min)[k];
-		    	Point<dim, int> derivOrder;
-			Point<dim, double> grad_p_minter;
+			EVectorXd temp(n_c_r,1);
+			for(int k = 0; k < n_c_r; k++) temp[k] = vd_s.template getProp<minter_coeff>(b_min)[k];
 			model->setCoeffs(temp);
 
 			if(redistOptions.verbose)
@@ -418,7 +442,7 @@ private:
 				// compute Newton increment
 				dx = - H_f.inverse()*nabla_f;
 
-				// prevent Newton algorithm from leaving the support radius by scaling step size. It is invoked in case 
+				// prevent Newton algorithm from leaving the support radius by scaling step size. It is invoked in case
 				// the increment exceeds 50% of the cutoff radius and simply scales the step length down to 10% until it
 				// does not exceed 50% of the cutoff radius.
 
@@ -466,15 +490,21 @@ private:
 			// And finally, compute the new sdf value as the distance of the query particle x_a and the result of the
 			// optimization scheme x. We conserve the initial sign of the sdf, since the particle moves with the phase
 			// and does not cross the interface.
-			if (redistOptions.write_sdf) vd_in.template getProp<vd_in_sdf>(a) = return_sign(vd_in.template getProp<vd_in_sdf>(a))*xax.norm();
-			if (redistOptions.write_cp) for(int k = 0; k <dim; k++) vd_in.template getProp<vd_in_cp>(a)[k] = x[k];
+			if (redistOptions.write_sdf) vd_generic.template getProp<vd_in_sdf>(a) = return_sign(vd_generic.template getProp<vd_in_sdf>(a))*xax.norm();
+			if (redistOptions.write_cp) for(int k = 0; k <dim; k++) vd_generic.template getProp<vd_in_cp>(a)[k] = x[k];
+			// If particles contain a flag in position 4 and the redistOptions is set accordingly, project particles onto their closest point on
+			// the surface.
+			if ((!redistOptions.verbose) and (vd_generic.template getProp<vd_in_close_part>(a)) and redistOptions.project_particles)
+			{
+				for(int k = 0; k < dim; k++) vd_generic.getPos(a)[k] = vd_generic.template getProp<vd_in_cp>(a)[k];
+			}
 	    		// This is to avoid loss of mass conservation - in some simulations, a particle can get assigned a 0-sdf, so
 	   		// that it lies on the surface and cannot be distinguished from the one phase or the other. The reason for
 	    		// this probably lies in the numerical tolerance. As a quick fix, we introduce an error of the tolerance,
 	    		// but keep the sign.
             		if ((k_newton == 0) && (xax.norm() < redistOptions.tolerance))
             		{
-                		vd_in.template getProp<vd_in_sdf>(a) = return_sign(vd_in.template getProp<vd_in_sdf>(a))*redistOptions.tolerance;
+                		vd_generic.template getProp<vd_in_sdf>(a) = return_sign(vd_generic.template getProp<vd_in_sdf>(a))*redistOptions.tolerance;
             		}
 
             		// debug optimisation
@@ -490,24 +520,19 @@ private:
 
 			if (redistOptions.compute_normals)
 			{
-				for(int k = 0; k<dim; k++) vd_in.template getProp<vd_in_normal>(a)[k] = return_sign(vd_in.template getProp<vd_in_sdf>(a))*grad_p(k)*1/grad_p.norm();
+				EMatrix<double, Eigen::Dynamic, 1> normal = get_normal(grad_p, return_sign(vd_generic.template getProp<vd_in_sdf>(a)));
+				for(int k = 0; k<dim; k++) vd_generic.template getProp<vd_in_normal>(a)[k] = normal[k];
+
+				EMatrix<double, Eigen::Dynamic, 1> grad_p_iso(dim_r, 1);
+				grad_p_iso = get_grad_p_minter(xa, model);
+				//vd_generic.template getProp<11>(a)[0] = grad_p_iso[0];
+				//vd_generic.template getProp<11>(a)[1] = grad_p_iso[1];
 			}
 
 			if (redistOptions.compute_curvatures)
 			{
 				H_p = get_H_p_minter(x, model);
-				// divergence of normalized gradient field:
-				if (dim == 2)
-				{
-					vd_in.template getProp<vd_in_curvature>(a) = (H_p(0,0)*grad_p(1)*grad_p(1) - 2*grad_p(1)*grad_p(0)*H_p(0,1) + H_p(1,1)*grad_p(0)*grad_p(0))/std::pow(sqrt(grad_p(0)*grad_p(0) + grad_p(1)*grad_p(1)),3);
-				}
-				else if (dim == 3)
-				{	// Mean curvature is 0.5*fluid mechanical curvature (see https://link.springer.com/article/10.1007/s00466-021-02128-9), but here we get fluidmechanical curvature, which is the divergence of the normalized gradient field
-					vd_in.template getProp<vd_in_curvature>(a) =
-					((H_p(1,1) + H_p(2,2))*std::pow(grad_p(0), 2) + (H_p(0,0) + H_p(2,2))*std::pow(grad_p(1), 2) + (H_p(0,0) + H_p(1,1))*std::pow(grad_p(2), 2)
-					- 2*grad_p(0)*grad_p(1)*H_p(0,1) - 2*grad_p(0)*grad_p(2)*H_p(0,2) - 2*grad_p(1)*grad_p(2)*H_p(1,2))*std::pow(std::pow(grad_p(0), 2) + std::pow(grad_p(1), 2) + std::pow(grad_p(2), 2), -1.5);
-				}
-
+				vd_generic.template getProp<vd_in_curvature>(a) = get_curvature(grad_p, H_p);
 			}
 			++part;
 		}
@@ -522,9 +547,9 @@ private:
 
 	}
 
-	template<typename NNlist_type> vect_dist_key_dx get_closest_neighbor(Point<dim, double> & xa, particles_surface<dim, n_c> & vd_surface, NNlist_type & NN_s)
+	template<typename NNlist_type> vect_dist_key_dx get_closest_neighbor(Point<dim, double> & xa, NNlist_type & NN_s)
 	{
-		auto Np = NN_s.getNNIterator(NN_s.getCell(xa));
+		auto Np = NN_s.getNNIteratorBox(NN_s.getCell(xa));
 
 		// distance is the the minimum distance to be beaten
                 double distance = 1000000.0;
@@ -554,6 +579,98 @@ private:
 		}
 		return(b_min);
 	}
+	// reformat vd_s, such that it only contains the sample particles on the surface with their respective properties.
+	// Note that currently only domain particles are formatted, and ghost particles stay as is. A deleteGhost() call erases them in the main.
+	particles_in_type format_vd_s()
+	{
+		//vd_s.template ghost_get<vd_s_close_part, vd_s_sample>();
+		auto part = vd_s.getDomainIterator();
+		particles_in_type sampleParticles(vd_in.getDecomposition(), 0);
+
+		while(part.isNext())
+		{
+			vect_dist_key_dx a = part.get();
+			// decide here whether the reformatted sample particles should be originating from both sides or only one side
+			// if (vd_s.template getProp<vd_s_close_part>(a) != 1) keys.add(a.getKey());
+			if ((vd_s.template getProp<vd_s_sdf>(a) < 0) and (vd_s.template getProp<vd_s_close_part>(a)))
+			{
+				sampleParticles.add();
+				for(int k = 0; k < dim; k++) sampleParticles.getLastPos()[k] = vd_s.template getProp<vd_s_sample>(a)[k];
+				sampleParticles.template getLastProp<vd_in_sdf>() = 0.0;
+				for(int k = 0; k < dim; k++) sampleParticles.template getLastProp<vd_in_cp>()[k] = vd_s.template getProp<vd_s_sample>(a)[k];
+				sampleParticles.template getLastProp<vd_in_close_part>() = 1;
+
+            			auto& model = minterModelpcp.model;
+				EVectorXd temp(n_c,1);
+				for(int k = 0; k < n_c; k++) temp[k] = vd_s.template getProp<minter_coeff>(a)[k];
+				model->setCoeffs(temp);
+				EMatrix<double, Eigen::Dynamic, 1> grad_p(dim, 1);
+				EMatrix<double, Eigen::Dynamic, Eigen::Dynamic> H_p(dim, dim);
+				EMatrix<double, Eigen::Dynamic, 1> normal(dim, 1);
+				EMatrix<double, Eigen::Dynamic, 1> x(dim, 1);
+				for (int k = 0; k < dim; k++) x[k] = vd_s.template getProp<vd_s_sample>(a)[k];
+				grad_p = get_grad_p_minter(x, model);
+				H_p = get_H_p_minter(x, model);
+				normal = get_normal(grad_p, 1);
+
+				for (int k = 0; k < dim; k++) sampleParticles.template getLastProp<vd_in_normal>()[k] = normal[k];
+				sampleParticles.template getLastProp<vd_in_curvature>() = get_curvature(grad_p, H_p);
+			}
+			++part;
+		}
+
+		return(sampleParticles);
+	}
+
+	template <size_t prp_id, size_t prp_id_to> void regress_field_to_particles(particles_in_type & vd_generic)
+	{
+		int message_insufficient_support = 0;
+		double r_cutoff_celllist = sqrt(r_cutoff2);
+		auto NN = vd_in.getCellList(r_cutoff_celllist);
+		auto part = vd_generic.getDomainIterator();
+		auto genericMinterModel = RegressionModel<dim, prp_id>(redistOptions.minter_poly_degree, redistOptions.minter_lp_degree);
+
+		while(part.isNext())
+		{
+			vect_dist_key_dx a = part.get();
+			Point<dim, double> xa = vd_generic.getPos(a);
+			auto Np = NN.getNNIterator(NN.getCell(xa));
+			openfpm::vector<size_t> keys;
+
+			while(Np.isNext())
+			{
+				vect_dist_key_dx b = Np.get();
+				Point<dim, double> xb = vd_in.getPos(b);
+				double dist2 = norm2(xb - xa);
+
+				if(dist2 < r_cutoff2) keys.add(b.getKey());
+
+				++Np;
+			}
+
+			auto regSupport = RegressionSupport<particles_in_type, decltype(NN)>(keys, vd_in, NN);
+			if (regSupport.getNumParticles() < n_c) message_insufficient_support = 1;
+			double divergence = 0.0;
+			for(int k = 0; k < dim; k++)
+			{
+				genericMinterModel.computeCoeffs(vd_in, regSupport, k);
+				auto& minterModel = genericMinterModel.model;
+				EMatrix<double, Eigen::Dynamic, 1> x(dim, 1);
+				EMatrix<double, Eigen::Dynamic, 1> grad_p_minter(dim, 1);
+				for (int l = 0; l < dim; l++) x[l] = xa[l];
+				vd_generic.template getProp<prp_id_to>(a)[k] = get_p_minter(x, minterModel);
+				// experimental: compute divergence of bulk velocity field
+				grad_p_minter = get_grad_p_minter(x, minterModel);
+				divergence = divergence + grad_p_minter[k];
+			}
+			vd_generic.template getProp<5>(a) = divergence;
+			++part;
+		}
+
+		if (message_insufficient_support) std::cout<<"Warning: less number of neighbours than required for property regression"
+   							<<" for some particles. Consider using at least N particles function."<<std::endl;
+
+	}
 
 	// minterface
 	template<typename PolyType>
@@ -567,8 +684,8 @@ private:
 	inline EMatrix<double, Eigen::Dynamic, 1> get_grad_p_minter(EMatrix<double, Eigen::Dynamic, 1> xvector, PolyType model)
     	{
         	EMatrix<double, Eigen::Dynamic, 1> grad_p(dim_r, 1);
-        	std::vector<int> derivOrder(dim, 0);
-       		for(int k = 0; k < dim; k++){
+        	std::vector<int> derivOrder(dim_r, 0);
+       		for(int k = 0; k < dim_r; k++){
             		std::fill(derivOrder.begin(), derivOrder.end(), 0);
             		derivOrder[k] = 1;
             		grad_p[k] = model->deriv_eval(xvector.transpose(), derivOrder)(0);
@@ -580,10 +697,10 @@ private:
     	inline EMatrix<double, Eigen::Dynamic, Eigen::Dynamic> get_H_p_minter(EMatrix<double, Eigen::Dynamic, 1> xvector, PolyType model)
     	{
         	EMatrix<double, Eigen::Dynamic, Eigen::Dynamic> H_p(dim_r, dim_r);
-       		std::vector<int> derivOrder(dim, 0);
+       		std::vector<int> derivOrder(dim_r, 0);
 
-        	for(int k = 0; k < dim; k++){
-            		for(int l = 0; l < dim; l++)
+        	for(int k = 0; k < dim_r; k++){
+            		for(int l = 0; l < dim_r; l++)
             		{
                 		std::fill(derivOrder.begin(), derivOrder.end(), 0);
                 		derivOrder[k]++;
@@ -594,5 +711,31 @@ private:
         	return(H_p);
     	}
 
+	inline EMatrix<double, Eigen::Dynamic, 1> get_normal(EMatrix<double, Eigen::Dynamic, 1> grad_p, float direction)
+	{
+		EMatrix<double, Eigen::Dynamic, 1> normal(dim_r, 1);
+
+		for(int k = 0; k<dim_r; k++) normal[k] = direction*grad_p(k)*1/grad_p.norm();
+
+		return(normal);
+	}
+
+	inline double get_curvature(EMatrix<double, Eigen::Dynamic, 1> grad_p, EMatrix<double, Eigen::Dynamic, Eigen::Dynamic> H_p)
+	{
+		double kappa = 0.0;
+		// divergence of normalized gradient field:
+		if (dim == 2)
+		{
+			kappa = (H_p(0,0)*grad_p(1)*grad_p(1) - 2*grad_p(1)*grad_p(0)*H_p(0,1) + H_p(1,1)*grad_p(0)*grad_p(0))/std::pow(sqrt(grad_p(0)*grad_p(0) + grad_p(1)*grad_p(1)),3);
+		}
+		else if (dim == 3)
+		{	// Mean curvature is 0.5*fluid mechanical curvature (see https://link.springer.com/article/10.1007/s00466-021-02128-9)
+			kappa = ((H_p(1,1) + H_p(2,2))*std::pow(grad_p(0), 2) + (H_p(0,0) + H_p(2,2))*std::pow(grad_p(1), 2) + (H_p(0,0) + H_p(1,1))*std::pow(grad_p(2), 2)
+			- 2*grad_p(0)*grad_p(1)*H_p(0,1) - 2*grad_p(0)*grad_p(2)*H_p(0,2) - 2*grad_p(1)*grad_p(2)*H_p(1,2))*std::pow(std::pow(grad_p(0), 2) + std::pow(grad_p(1), 2) + std::pow(grad_p(2), 2), -1.5);
+		}
+		return(kappa);
+	}
+
 };
+
 

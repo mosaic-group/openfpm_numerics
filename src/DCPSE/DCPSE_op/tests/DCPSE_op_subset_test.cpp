@@ -97,6 +97,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_subset_suite_tests)
 
         Particles.map();
         Particles.ghost_get<0>();
+        Particles.ghost_get_subset();
 
         auto git = Particles.getGhostIterator();
 
@@ -135,8 +136,10 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_subset_suite_tests)
         Derivative_y Dy(Particles, 2, rCut);
         Derivative_x Dx_bulk(Particles_bulk, 2, rCut);
 */
-        Derivative_x Dx_bulk(Particles_bulk, 2, rCut,sampling_factor, support_options::RADIUS);
-        Derivative_y Dy_bulk(Particles_bulk, 2, rCut,sampling_factor, support_options::RADIUS);
+        auto verletList_bulk = Particles_bulk.template getVerlet<VL_NON_SYMMETRIC|VL_SKIP_REF_PART>(rCut);
+
+        Derivative_x<decltype(verletList_bulk)> Dx_bulk(Particles, Particles_bulk, verletList_bulk, 2, rCut, support_options::RADIUS);
+        Derivative_y<decltype(verletList_bulk)> Dy_bulk(Particles, Particles_bulk, verletList_bulk, 2, rCut, support_options::RADIUS);
 
         Out_bulk = Dx_bulk(P);
 	    Out_V_bulk[0] = P + Dx_bulk(P);
@@ -247,6 +250,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_subset_suite_tests)
         BOOST_TEST_MESSAGE("Sync Particles across processors...");
         Particles.map();
         Particles.ghost_get<0>();
+        Particles.ghost_get_subset();
 
         auto it2 = Particles.getDomainIterator();
         while (it2.isNext()) {
@@ -290,12 +294,15 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_subset_suite_tests)
 
         P_bulk = 0;
 
-        Derivative_x Dx(Particles, 2, rCut,sampling_factor, support_options::RADIUS);
-        Derivative_xx Dxx(Particles, 2, rCut,sampling_factor, support_options::RADIUS);
-        Derivative_yy Dyy(Particles, 2, rCut,sampling_factor, support_options::RADIUS);
-        Derivative_y Dy(Particles, 2, rCut,sampling_factor, support_options::RADIUS);
-        Derivative_x Bulk_Dx(Particles_bulk, 2, rCut,sampling_factor, support_options::RADIUS);
-        Derivative_y Bulk_Dy(Particles_bulk, 2, rCut,sampling_factor, support_options::RADIUS);
+        auto verletList = Particles.template getVerlet<VL_NON_SYMMETRIC|VL_SKIP_REF_PART>(rCut);
+        auto verletList_bulk = Particles_bulk.template getVerlet<VL_NON_SYMMETRIC|VL_SKIP_REF_PART>(rCut);
+
+        Derivative_x<decltype(verletList)> Dx(Particles, verletList, 2, rCut, support_options::RADIUS);
+        Derivative_xx<decltype(verletList)> Dxx(Particles, verletList, 2, rCut, support_options::RADIUS);
+        Derivative_yy<decltype(verletList)> Dyy(Particles, verletList, 2, rCut, support_options::RADIUS);
+        Derivative_y<decltype(verletList)> Dy(Particles, verletList, 2, rCut, support_options::RADIUS);
+        Derivative_x<decltype(verletList_bulk)> Bulk_Dx(Particles, Particles_bulk, verletList_bulk, 2, rCut, support_options::RADIUS);
+        Derivative_y<decltype(verletList_bulk)> Bulk_Dy(Particles, Particles_bulk, verletList_bulk, 2, rCut, support_options::RADIUS);
 
         int n = 0, nmax = 5, ctr = 0, errctr=1, Vreset = 0;
         double V_err=1;
@@ -452,6 +459,7 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_subset_suite_tests)
         BOOST_TEST_MESSAGE("Sync Particles across processors...");
         Particles.map();
         Particles.ghost_get<0>();
+        Particles.ghost_get_subset();
         auto it2 = Particles.getDomainIterator();
         while (it2.isNext()) {
             auto p = it2.get();
@@ -496,11 +504,16 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_subset_suite_tests)
 
         P_bulk = 0;
 
-        Derivative_x Dx(Particles, 2, rCut,sampling_factor, support_options::RADIUS);
-        Derivative_x Bulk_Dx(Particles_subset, 2, rCut,sampling_factor, support_options::RADIUS);
-        Derivative_xx Dxx(Particles, 2, rCut,sampling_factor, support_options::RADIUS);
-        Derivative_yy Dyy(Particles, 2, rCut,sampling_factor, support_options::RADIUS);
-        Derivative_y Dy(Particles, 2, rCut,sampling_factor, support_options::RADIUS),Bulk_Dy(Particles_subset, 2, rCut,sampling_factor, support_options::RADIUS);;
+        auto verletList = Particles.template getVerlet<VL_NON_SYMMETRIC|VL_SKIP_REF_PART>(rCut);
+        auto verletList_subset = Particles_subset.template getVerlet<VL_NON_SYMMETRIC|VL_SKIP_REF_PART>(rCut);
+
+        Derivative_x<decltype(verletList)> Dx(Particles, verletList, 2, rCut, support_options::RADIUS);
+        Derivative_xx<decltype(verletList)> Dxx(Particles, verletList, 2, rCut, support_options::RADIUS);
+        Derivative_yy<decltype(verletList)> Dyy(Particles, verletList, 2, rCut, support_options::RADIUS);
+        Derivative_y<decltype(verletList)> Dy(Particles, verletList, 2, rCut, support_options::RADIUS);
+
+        Derivative_y<decltype(verletList_subset)> Bulk_Dy(Particles_subset, verletList_subset, 2, rCut, support_options::RADIUS);
+        Derivative_x<decltype(verletList_subset)> Bulk_Dx(Particles_subset, verletList_subset, 2, rCut, support_options::RADIUS);
 
         int n = 0, nmax = 5, ctr = 0, errctr=0, Vreset = 0;
         double V_err=1;

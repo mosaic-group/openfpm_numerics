@@ -11,7 +11,7 @@ if (CUDA_ON_BACKEND STREQUAL "CUDA")
 	set(CUDA_SOURCES ${CUDA_SOURCES} DCPSE/DCPSE_op/tests/DCPSE_op_Solver_test.cu
 		DCPSE/DCPSE_op/tests/DCPSE_op_test_base_tests.cu
 		#DCPSE/DCPSE_op/tests/DCPSE_op_subset_test.cu
-		#OdeIntegrators/tests/Odeintegrators_test_gpu.cu
+		OdeIntegrators/tests/Odeintegrators_test_gpu.cu
 		DCPSE/DCPSE_op/tests/DCPSE_op_test_temporal.cu)
 endif()
 
@@ -40,7 +40,7 @@ if ( CUDA_ON_BACKEND STREQUAL "HIP" AND HIP_FOUND )
 		list(APPEND HIP_HIPCC_FLAGS -O0)
 	endif()
 
-	list(APPEND HIP_HIPCC_FLAGS -D__NVCC__ -D__HIP__  -DCUDART_VERSION=11000 -D__CUDACC__ -D__CUDACC_VER_MAJOR__=11 -D__CUDACC_VER_MINOR__=0 -D__CUDACC_VER_BUILD__=0 --std=c++14)
+	list(APPEND HIP_HIPCC_FLAGS -D__NVCC__ -D__HIP__  -DCUDART_VERSION=11000 -D__CUDACC__ -D__CUDACC_VER_MAJOR__=11 -D__CUDACC_VER_MINOR__=0 -D__CUDACC_VER_BUILD__=0 --std=c++17)
 	set_source_files_properties(${CUDA_SOURCES} PROPERTIES LANGUAGE CXX)
 
 	hip_add_executable(numerics ${OPENFPM_INIT_FILE} ${CUDA_SOURCES}
@@ -58,7 +58,6 @@ if ( CUDA_ON_BACKEND STREQUAL "HIP" AND HIP_FOUND )
 		DCPSE/tests/Dcpse_unit_tests.cpp
 		DCPSE/tests/DcpseRhs_unit_tests.cpp
 		DCPSE/tests/MonomialBasis_unit_tests.cpp
-		DCPSE/tests/Support_unit_tests.cpp
 		DCPSE/tests/Vandermonde_unit_tests.cpp
 		main.cpp
 		Matrix/SparseMatrix_unit_tests.cpp
@@ -100,7 +99,6 @@ else()
 		DCPSE/tests/Dcpse_unit_tests.cpp
 		DCPSE/tests/DcpseRhs_unit_tests.cpp
 		DCPSE/tests/MonomialBasis_unit_tests.cpp
-		DCPSE/tests/Support_unit_tests.cpp
 		DCPSE/tests/Vandermonde_unit_tests.cpp
 		main.cpp
 		Matrix/SparseMatrix_unit_tests.cpp
@@ -163,6 +161,13 @@ if(CUDA_FOUND)
 	target_link_libraries(numerics -lcublas)
 endif()
 
+if (ENABLE_ASAN)
+	target_compile_options(numerics PUBLIC $<$<COMPILE_LANGUAGE:CUDA>: -Xcompiler "-fsanitize=address -fno-optimize-sibling-calls -fsanitize-address-use-after-scope -fno-omit-frame-pointer -g" >)
+	target_compile_options(numerics PRIVATE $<$<COMPILE_LANGUAGE:CXX>: -fsanitize=address -fno-optimize-sibling-calls -fsanitize-address-use-after-scope -fno-omit-frame-pointer -g >)
+	set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -fsanitize=address -fno-optimize-sibling-calls -fsanitize-address-use-after-scope -fno-omit-frame-pointer")
+	add_definitions(-DENABLE_ASAN)
+endif()
+
 target_include_directories (numerics PUBLIC ${CMAKE_CUDA_TOOLKIT_INCLUDE_DIRECTORIES})
 target_include_directories (numerics PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 target_include_directories (numerics PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/../../openfpm_devices/src/)
@@ -216,6 +221,10 @@ if(SuiteSparse_FOUND)
 	target_link_libraries(numerics ${BLAS_LIBRARIES})
 endif()
 
+if(MINTER_ROOT)
+	target_include_directories (numerics PUBLIC ${MINTER_ROOT})
+endif()
+
 if(OpenMP_CXX_FOUND)
 	target_link_libraries(numerics OpenMP::OpenMP_CXX)
 endif()
@@ -226,10 +235,10 @@ if (TEST_COVERAGE)
 	target_link_libraries(numerics -lgcov)
 endif()
 
-# Request that particles be built with -std=c++11
+# Request that particles be built with -std=c++17
 # As this is a public compile feature anything that links to particles
-# will also build with -std=c++11
-target_compile_features(numerics PUBLIC cxx_std_11)
+# will also build with -std=c++17
+target_compile_features(numerics PUBLIC cxx_std_17)
 target_link_libraries(numerics ${MPI_C_LIBRARIES})
 
 if (NOT APPLE)
@@ -308,7 +317,6 @@ install(FILES DCPSE/Dcpse.hpp
 	DCPSE/Monomial.hpp
 	DCPSE/Monomial.cuh
 	DCPSE/MonomialBasis.hpp
-	DCPSE/Support.hpp
 	DCPSE/SupportBuilder.cuh
 	DCPSE/SupportBuilder.hpp
 	DCPSE/Vandermonde.hpp
@@ -383,8 +391,3 @@ install(FILES regression/regression.hpp
 	regression/poly_levelset.hpp
 	DESTINATION openfpm_numerics/include/regression
 	COMPONENT OpenFPM)
-
-install(DIRECTORY regression/minter
-	DESTINATION openfpm_numerics/include/regression
-	COMPONENT OpenFPM)
-

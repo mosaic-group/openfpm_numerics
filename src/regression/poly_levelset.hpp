@@ -12,7 +12,7 @@
 #include "Space/Shape/Point.hpp"
 #include "DMatrix/EMatrix.hpp"
 
-#include "minter/include/minter.h"
+#include "minter/minter.h"
 
 
 template<int spatial_dim, typename MatType = EMatrixXd, typename VecType = EVectorXd>

@@ -39,9 +39,6 @@ public:
 
 	typedef void vtype;
 
-	//! result for is sort
-	typedef boost::mpl::bool_<false> is_sort;
-
 	//! NN_type
 	typedef void NN_type;
 

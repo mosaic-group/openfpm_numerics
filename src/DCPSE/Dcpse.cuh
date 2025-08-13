@@ -10,7 +10,6 @@
 #include "MonomialBasis.hpp"
 #include "SupportBuilder.hpp"
 #include "SupportBuilder.cuh"
-#include "Support.hpp"
 #include "Vandermonde.hpp"
 #include "DcpseDiagonalScalingMatrix.hpp"
 #include "DcpseRhs.hpp"
@@ -31,7 +30,7 @@ __global__ void assembleLocalMatrices_gpu( particles_type, Point<dim, unsigned i
     T**, T**, localEps_type, localEps_type, matrix_type, size_t, size_t);
 
 
-template<unsigned int dim, typename vector_type, class T = typename vector_type::stype>
+template<unsigned int dim, typename VerletList_type, typename vector_type, class T = typename vector_type::stype>
 class Dcpse_gpu {
     static_assert(std::is_floating_point<T>::value, "CUBLAS supports only float or double");
 
@@ -65,12 +64,9 @@ private:
     openfpm::vector_custd<T> localEpsInvPow; // Each MPI rank has just access to the local ones
     openfpm::vector_custd<T> calcKernels;
 
-    openfpm::vector_custd<size_t> subsetKeyPid;
-
     vector_type & particles;
     double rCut;
     unsigned int convergenceOrder;
-    double supportSizeFactor;
 
     size_t maxSupportSize;
     size_t supportKeysTotalN;
@@ -87,45 +83,48 @@ public:
 
     // Here we require the first element of the aggregate to be:
     // 1) the value of the function f on the point
-    Dcpse_gpu(vector_type &particles,
-          Point<dim, unsigned int> differentialSignature,
-          unsigned int convergenceOrder,
-          T rCut,
-          T supportSizeFactor = 1,
-          support_options opt = support_options::N_PARTICLES)
-        :particles(particles),
-            differentialSignature(differentialSignature),
-            differentialOrder(Monomial<dim>(differentialSignature).order()),
-            monomialBasis(differentialSignature.asArray(), convergenceOrder),
-            maxSupportSize(0),
-            supportKeysTotalN(0),
-            opt(opt)
+    Dcpse_gpu(
+        vector_type &particles,
+        VerletList_type& verletList,
+        Point<dim, unsigned int> differentialSignature,
+        unsigned int convergenceOrder,
+        T rCut,
+        support_options opt = support_options::RADIUS
+    ):
+        particles(particles),
+        differentialSignature(differentialSignature),
+        differentialOrder(Monomial<dim>(differentialSignature).order()),
+        monomialBasis(differentialSignature.asArray(), convergenceOrder),
+        maxSupportSize(0),
+        supportKeysTotalN(0),
+        opt(opt)
     {
         particles.ghost_get_subset();
-        initializeStaticSize(particles, convergenceOrder, rCut, supportSizeFactor);
+        initializeStaticSize(particles, convergenceOrder, rCut);
     }
 
-    Dcpse_gpu(vector_type &particles,
-          const Dcpse_gpu<dim, vector_type, T>& other,
-          Point<dim, unsigned int> differentialSignature,
-          unsigned int convergenceOrder,
-          T rCut,
-          T supportSizeFactor = 1,
-          support_options opt = support_options::N_PARTICLES)
-        :particles(particles), opt(opt),
-            differentialSignature(differentialSignature),
-            differentialOrder(Monomial<dim>(differentialSignature).order()),
-            monomialBasis(differentialSignature.asArray(), convergenceOrder),
-            subsetKeyPid(other.subsetKeyPid),
-            supportRefs(other.supportRefs),
-            supportKeys1D(other.supportKeys1D),
-            kerOffsets(other.kerOffsets),
-            maxSupportSize(other.maxSupportSize),
-            supportKeysTotalN(other.supportKeysTotalN),
-            isSharedSupport(true)
+    Dcpse_gpu(
+        vector_type &particles,
+        VerletList_type& verletList,
+        const Dcpse_gpu<dim, VerletList_type, vector_type, T>& other,
+        Point<dim, unsigned int> differentialSignature,
+        unsigned int convergenceOrder,
+        T rCut,
+        support_options opt = support_options::RADIUS
+    ):
+        particles(particles), opt(opt),
+        differentialSignature(differentialSignature),
+        differentialOrder(Monomial<dim>(differentialSignature).order()),
+        monomialBasis(differentialSignature.asArray(), convergenceOrder),
+        supportRefs(other.supportRefs),
+        supportKeys1D(other.supportKeys1D),
+        kerOffsets(other.kerOffsets),
+        maxSupportSize(other.maxSupportSize),
+        supportKeysTotalN(other.supportKeysTotalN),
+        isSharedSupport(true)
     {
         particles.ghost_get_subset();
-        initializeStaticSize(particles, convergenceOrder, rCut, supportSizeFactor);
+        initializeStaticSize(particles, convergenceOrder, rCut);
     }
 
     template<unsigned int prp>
@@ -364,9 +363,8 @@ public:
             sign = -1;
         }
 
-        size_t localKey = subsetKeyPid.get(key.getKey());
-        double eps = localEps.get(localKey);
-        double epsInvPow = localEpsInvPow.get(localKey);
+        double eps = localEps.get(key.getKey());
+        double epsInvPow = localEpsInvPow.get(key.getKey());
 
         auto &particles = o1.getVector();
 
@@ -378,13 +376,13 @@ public:
 #endif
 
         expr_type Dfxp = 0;
-        size_t xpK = supportRefs.get(localKey);
+        size_t xpK = supportRefs.get(key.getKey());
         Point<dim, T> xp = particles.getPos(xpK);
         expr_type fxp = sign * o1.value(key);
         size_t kerOff = kerOffsets.get(xpK);
 
-        size_t  supportKeysSize = kerOffsets.get(localKey+1)-kerOffsets.get(localKey);
-        size_t* supportKeys = &((size_t*)supportKeys1D.getPointer())[kerOffsets.get(localKey)];
+        size_t  supportKeysSize = kerOffsets.get(key.getKey()+1)-kerOffsets.get(key.getKey());
+        size_t* supportKeys = &((size_t*)supportKeys1D.getPointer())[kerOffsets.get(key.getKey())];
 
         for (int i = 0; i < supportKeysSize; i++)
         {
@@ -421,9 +419,8 @@ public:
             sign = -1;
         }
 
-        size_t localKey = subsetKeyPid.get(key.getKey());
-        double eps = localEps.get(localKey);
-        double epsInvPow = localEpsInvPow.get(localKey);
+        double eps = localEps.get(key.getKey());
+        double epsInvPow = localEpsInvPow.get(key.getKey());
 
         auto &particles = o1.getVector();
 
@@ -435,13 +432,13 @@ public:
 #endif
 
         expr_type Dfxp = 0;
-        size_t xpK = supportRefs.get(localKey);
+        size_t xpK = supportRefs.get(key.getKey());
 
         Point<dim, T> xp = particles.getPos(xpK);
         expr_type fxp = sign * o1.value(key)[i];
         size_t kerOff = kerOffsets.get(xpK);
-        size_t  supportKeysSize = kerOffsets.get(localKey+1)-kerOffsets.get(localKey);
-        size_t* supportKeys = &((size_t*)supportKeys1D.getPointer())[kerOffsets.get(localKey)];
+        size_t  supportKeysSize = kerOffsets.get(key.getKey()+1)-kerOffsets.get(key.getKey());
+        size_t* supportKeys = &((size_t*)supportKeys1D.getPointer())[kerOffsets.get(key.getKey())];
 
         for (int j = 0; j < supportKeysSize; j++)
         {
@@ -468,9 +465,8 @@ public:
         localEps.clear();
         localEpsInvPow.clear();
         calcKernels.clear();
-        subsetKeyPid.clear();
 
-        initializeStaticSize(particles, convergenceOrder, rCut, supportSizeFactor);
+        initializeStaticSize(particles, convergenceOrder, rCut);
     }
 
     /*
@@ -488,7 +484,6 @@ public:
         Packer<decltype(localEps),CudaMemory>::packRequest(localEps,req);
         Packer<decltype(localEpsInvPow),CudaMemory>::packRequest(localEpsInvPow,req);
         Packer<decltype(calcKernels),CudaMemory>::packRequest(calcKernels,req);
-        Packer<decltype(subsetKeyPid),CudaMemory>::packRequest(subsetKeyPid,req);
 
         // allocate the memory
         CudaMemory pmem;
@@ -503,7 +498,6 @@ public:
         Packer<decltype(localEps),CudaMemory>::pack(mem,localEps,sts);
         Packer<decltype(localEpsInvPow),CudaMemory>::pack(mem,localEpsInvPow,sts);
         Packer<decltype(calcKernels),CudaMemory>::pack(mem,calcKernels,sts);
-        Packer<decltype(subsetKeyPid),CudaMemory>::pack(mem,subsetKeyPid,sts);
 
         // Save into a binary file
         std::ofstream dump (file+"_"+std::to_string(v_cl.rank()), std::ios::out | std::ios::binary);
@@ -563,24 +557,22 @@ public:
         Unpacker<decltype(localEps),CudaMemory>::unpack(mem,localEps,ps);
         Unpacker<decltype(localEpsInvPow),CudaMemory>::unpack(mem,localEpsInvPow,ps);
         Unpacker<decltype(calcKernels),CudaMemory>::unpack(mem,calcKernels,ps);
-        Unpacker<decltype(subsetKeyPid),CudaMemory>::unpack(mem,subsetKeyPid,ps);
     }
 
 private:
     template <typename U>
-    void initializeStaticSize(vector_type &particles,
-                              unsigned int convergenceOrder,
-                              U rCut,
-                              U supportSizeFactor) {
+    void initializeStaticSize(
+        vector_type &particles,
+        unsigned int convergenceOrder,
+        U rCut
+    ) {
 #ifdef SE_CLASS1
         this->update_ctr=particles.getMapCtr();
 #endif
         this->rCut=rCut;
-        this->supportSizeFactor=supportSizeFactor;
         this->convergenceOrder=convergenceOrder;
 
         if (!isSharedSupport) {
-            subsetKeyPid.resize(particles.size_local_orig());
             supportRefs.resize(particles.size_local());
         }
         localEps.resize(particles.size_local());
@@ -592,46 +584,19 @@ std::chrono::high_resolution_clock::time_point t1 = std::chrono::high_resolution
         if (opt==support_options::RADIUS) {
             if (!isSharedSupport) {
                 while (it.isNext()) {
-                    auto key_o = it.get(); subsetKeyPid.get(particles.getOriginKey(key_o).getKey()) = key_o.getKey();
-                    supportRefs.get(key_o.getKey()) = key_o.getKey();
+                    auto key = it.get();
+                    supportRefs.get(key.getKey()) = key.getKey();
                     ++it;
                 }
 
                 SupportBuilderGPU<vector_type> supportBuilder(particles, rCut);
                 supportBuilder.getSupport(supportRefs.size(), kerOffsets, supportKeys1D, maxSupportSize, supportKeysTotalN);
             }
-        } else {
-            if (!isSharedSupport){
-                openfpm::vector<openfpm::vector<size_t>> tempSupportKeys(supportRefs.size());
-                size_t requiredSupportSize = monomialBasis.size() * supportSizeFactor;
-                // need to resize supportKeys1D to yet unknown supportKeysTotalN
-                // add() takes too long
-                SupportBuilder<vector_type,vector_type> supportBuilder(particles, particles, differentialSignature, rCut, differentialOrder == 0);
-                kerOffsets.resize(supportRefs.size()+1);
+        }
 
-                while (it.isNext()) {
-                    auto key_o = it.get(); subsetKeyPid.get(particles.getOriginKey(key_o).getKey()) = key_o.getKey();
-
-                    Support support = supportBuilder.getSupport(it, requiredSupportSize, opt);
-                    supportRefs.get(key_o.getKey()) = key_o.getKey();
-                    tempSupportKeys.get(key_o.getKey()) = support.getKeys();
-                    kerOffsets.get(key_o.getKey()) = supportKeysTotalN;
-
-                    if (maxSupportSize < support.size()) maxSupportSize = support.size();
-                    supportKeysTotalN += support.size();
-                    ++it;
-                }
-
-                kerOffsets.get(supportRefs.size()) = supportKeysTotalN;
-                supportKeys1D.resize(supportKeysTotalN);
-
-                size_t offset = 0;
-                for (size_t i = 0; i < tempSupportKeys.size(); ++i)
-                    for (size_t j = 0; j < tempSupportKeys.get(i).size(); ++j, ++offset)
-                        supportKeys1D.get(offset) = tempSupportKeys.get(i).get(j);
-            }
-
-            kerOffsets.hostToDevice(); supportKeys1D.hostToDevice();
+        else
+        {
+            std::cerr<<__FILE__<<":"<<__LINE__<<" Error: DC-PSE on GPU supports support_options::RADIUS only!"<<std::endl;
         }
 
 std::chrono::high_resolution_clock::time_point t2 = std::chrono::high_resolution_clock::now();
@@ -833,7 +798,7 @@ __global__ void assembleLocalMatrices_gpu(
 
         T FACTOR = 2, avgNeighbourSpacing = 0;
         for (int i = 0 ; i < supportKeysSize; i++) {
-            Point<dim,T> off = xa; off -= particles.getPosOrig(supportKeys[i]);
+            Point<dim,T> off = xa; off -= particles.getPos(supportKeys[i]);
             for (size_t j = 0; j < dim; ++j)
                 avgNeighbourSpacing += fabs(off.value(j));
         }
@@ -849,7 +814,7 @@ __global__ void assembleLocalMatrices_gpu(
         // EMatrix<T, Eigen::Dynamic, Eigen::Dynamic> B = E * V;
         for (int i = 0; i < supportKeysSize; ++i)
             for (int j = 0; j < monomialBasisSize; ++j) {
-                Point<dim,T> off = xa; off -= particles.getPosOrig(supportKeys[i]);
+                Point<dim,T> off = xa; off -= particles.getPos(supportKeys[i]);
                 const Monomial_gpu<dim>& m = basisElements.get(j);
 
                 T V_ij = m.evaluate(off) / pow(eps, m.order());
@@ -893,7 +858,7 @@ __global__ void calcKernels_gpu(particles_type particles, monomialBasis_type mon
     for (size_t j = 0; j < supportKeysSize; ++j)
     {
         size_t xqK = supportKeys[j];
-        Point<dim, T> xq = particles.getPosOrig(xqK);
+        Point<dim, T> xq = particles.getPos(xqK);
         Point<dim, T> offNorm = (xa - xq) / eps;
         T expFactor = exp(-norm2(offNorm));
 

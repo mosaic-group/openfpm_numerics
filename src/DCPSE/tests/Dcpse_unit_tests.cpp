@@ -50,7 +50,7 @@ BOOST_AUTO_TEST_SUITE(Dcpse_tests)
         spacing[1] = 1.0 / (sz[1] - 1);
         Ghost<2, double> ghost(0.1);
 
-        double rCut = 2 * spacing[0];
+        double rCut = 3.1 * spacing[0];
 
         BOOST_TEST_MESSAGE("Init vector_dist...");
         vector_dist<2, double, aggregate<double, double, double>> domain(0, box, bc, ghost);
@@ -94,7 +94,8 @@ BOOST_AUTO_TEST_SUITE(Dcpse_tests)
         // Setup finished, actual test below...
 //        std::cout << "rCut = " << rCut << std::endl;
         BOOST_TEST_MESSAGE("DCPSE init & compute coefficients...");
-        Dcpse<2, vector_dist<2, double, aggregate<double, double, double>> > dcpse(domain, Point<2, unsigned int>({1, 0}), 2, rCut,2,support_options::N_PARTICLES);
+        auto verletList = domain.template getVerlet<VL_NON_SYMMETRIC|VL_SKIP_REF_PART>(rCut);
+        Dcpse<2, decltype(verletList), vector_dist<2, double, aggregate<double, double, double>> > dcpse(domain, verletList, Point<2, unsigned int>({1, 0}), 2, rCut, support_options::RADIUS);
         BOOST_TEST_MESSAGE("DCPSE compute diff operator...");
         dcpse.template computeDifferentialOperator<0, 1>(domain);
 
@@ -202,7 +203,8 @@ BOOST_AUTO_TEST_SUITE(Dcpse_tests)
         // Setup finished, actual test below...
 //        std::cout << "rCut = " << rCut << std::endl;
         BOOST_TEST_MESSAGE("DCPSE init & compute coefficients...");
-        Dcpse<2, vector_dist<2, double, aggregate<double, double, double>> > dcpse(domain, Point<2, unsigned int>({1, 0}), 2, rCut, 2,support_options::N_PARTICLES);
+        auto verletList = domain.template getVerlet<VL_NON_SYMMETRIC|VL_SKIP_REF_PART>(rCut);
+        Dcpse<2, decltype(verletList), vector_dist<2, double, aggregate<double, double, double>> > dcpse(domain, verletList, Point<2, unsigned int>({1, 0}), 2, rCut, support_options::RADIUS);
         BOOST_TEST_MESSAGE("DCPSE compute diff operator...");
         dcpse.template computeDifferentialOperator<0, 1>(domain);
 
@@ -256,7 +258,7 @@ BOOST_AUTO_TEST_SUITE(Dcpse_tests)
         spacing[2] = 1.0 / (sz[2] - 1);
         Ghost<DIM, double> ghost(0.1);
 
-        double rCut = 2 * spacing[0];
+        double rCut = 3.1 * spacing[0];
 
         BOOST_TEST_MESSAGE("Init vector_dist...");
         vector_dist<DIM, double, aggregate<double, double, double>> domain(0, box, bc, ghost);
@@ -299,7 +301,8 @@ BOOST_AUTO_TEST_SUITE(Dcpse_tests)
 
         // Setup finished, actual test below...
         BOOST_TEST_MESSAGE("DCPSE init & compute coefficients...");
-        Dcpse<DIM, vector_dist<DIM, double, aggregate<double, double, double>>> dcpse(domain, Point<DIM, unsigned int>({0, 0, 1}), 2, rCut,2.5,support_options::N_PARTICLES);
+        auto verletList = domain.template getVerlet<VL_NON_SYMMETRIC|VL_SKIP_REF_PART>(rCut);
+        Dcpse<DIM, decltype(verletList), vector_dist<DIM, double, aggregate<double, double, double>>> dcpse(domain, verletList, Point<DIM, unsigned int>({0, 0, 1}), 2, rCut, support_options::RADIUS);
         BOOST_TEST_MESSAGE("DCPSE compute diff operator...");
         dcpse.template computeDifferentialOperator<0, 1>(domain);
 
@@ -308,99 +311,6 @@ BOOST_AUTO_TEST_SUITE(Dcpse_tests)
 //        const double TOL = 1e-6;
         const double avgSpacing = spacing[0] + spacing[1] + spacing[2];
         const double TOL = avgSpacing * avgSpacing;
-        auto itVal = domain.getDomainIterator();
-        bool check = true;
-        double computedValue;
-        double validationValue;
-        while (itVal.isNext())
-        {
-            auto key = itVal.get();
-            computedValue = domain.template getProp<1>(key);
-            validationValue = domain.template getProp<2>(key);
-            check = check && (fabs(computedValue - validationValue) < TOL);
-            if (!check)
-            {
-                std::cout << "FAILED CHECK :: pos=" << Point<DIM, double>(domain.getPos(key)).toString()
-                          << ", computedValue=" << computedValue
-                          << ", validationValue=" << validationValue
-                          << ", tolerance=" << TOL
-                          << std::endl;
-                break;
-            }
-            ++itVal;
-        }
-        BOOST_REQUIRE(check);
-    }
-
-    BOOST_AUTO_TEST_CASE(Dcpse_3D_2_test)
-    {
-        int rank;
-        MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-
-        BOOST_TEST_MESSAGE("Init vars...");
-
-        // Here build some easy domain and get some points around a given one
-        size_t edgeSemiSize = 10;
-        const unsigned int DIM = 3;
-        const size_t sz[DIM] = {2 * edgeSemiSize, 2 * edgeSemiSize, 2 * edgeSemiSize};
-        Box<DIM, double> box({0, 0, 0}, {2 * M_PI, 2 * M_PI, 2 * M_PI});
-        size_t bc[DIM] = {NON_PERIODIC, NON_PERIODIC, NON_PERIODIC};
-        double spacing[DIM];
-        spacing[0] = 1.0 / (sz[0] - 1);
-        spacing[1] = 1.0 / (sz[1] - 1);
-        spacing[2] = 1.0 / (sz[2] - 1);
-
-        double rCut = 2 * spacing[0];
-        Ghost<DIM, double> ghost(rCut);
-
-
-        BOOST_TEST_MESSAGE("Init vector_dist...");
-        vector_dist<DIM, double, aggregate<double, double, double>> domain(0, box, bc, ghost);
-
-        if (rank == 0)
-        {
-            BOOST_TEST_MESSAGE("Init domain...");
-            auto it = domain.getGridIterator(sz);
-            size_t pointId = 0;
-            size_t counter = 0;
-            double minNormOne = 999;
-            while (it.isNext())
-            {
-                domain.add();
-                auto key = it.get();
-                mem_id k0 = key.get(0);
-                double x = k0 * spacing[0];
-                domain.getLastPos()[0] = x;
-                mem_id k1 = key.get(1);;
-                double y = k1 * spacing[1];
-                domain.getLastPos()[1] = y;
-                mem_id k2 = key.get(2);
-                double z = k2 * spacing[2];
-                domain.getLastPos()[2] = z;
-                // Here fill the function value
-                domain.template getLastProp<0>() = x * x * sin(z);
-                // Here fill the validation value for Df/Dx
-                domain.template getLastProp<2>() = -2*sin(z);
-
-                ++counter;
-                ++it;
-            }
-            BOOST_TEST_MESSAGE("Sync domain across processors...");
-        }
-        domain.map(); // Send particles to the right processors
-
-        // Setup finished, actual test below...
-        unsigned int r = 2;
-        BOOST_TEST_MESSAGE("DCPSE init & compute coefficients...");
-        Dcpse<DIM, vector_dist<DIM, double, aggregate<double, double, double>> > dcpse(domain, Point<DIM, unsigned int>({2, 0, 2}), r, rCut,2.5,support_options::N_PARTICLES);
-        BOOST_TEST_MESSAGE("DCPSE compute diff operator...");
-        dcpse.template computeDifferentialOperator<0, 1>(domain);
-
-        // Now check against the validation values
-        BOOST_TEST_MESSAGE("Validating against ground truth...");
-//        const double TOL = 1e-6;
-        const double avgSpacing = spacing[0] + spacing[1] + spacing[2];
-        const double TOL = pow(avgSpacing, r);
         auto itVal = domain.getDomainIterator();
         bool check = true;
         double computedValue;

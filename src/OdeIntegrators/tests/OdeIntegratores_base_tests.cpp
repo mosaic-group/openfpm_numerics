@@ -535,14 +535,15 @@ BOOST_AUTO_TEST_CASE(dcpse_op_react_diff_test) {
         //Gradient Grad(domain, 2, rCut);
         vectorGlobal=(void *) &domain;
 
-        Laplacian Lap(domain, 2, rCut);
+        auto verletList = domain.template getVerlet<VL_NON_SYMMETRIC|VL_SKIP_REF_PART>(rCut);
+        Laplacian<decltype(verletList)> Lap(domain, verletList, 2, rCut);
 
         auto u = getV<0>(domain);
         auto v = getV<1>(domain);
         auto fu = getV<2>(domain);
         auto fv = getV<3>(domain);
 
-        Fitz<Laplacian> System(Lap);
+        Fitz<Laplacian<decltype(verletList)>> System(Lap);
         state_type_2d_ofp x0;
         x0.data.get<0>()=u;
         x0.data.get<1>()=v;

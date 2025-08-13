@@ -69,7 +69,7 @@ BOOST_AUTO_TEST_SUITE(temporal_test_suite)
 		constexpr int dScalar = 3;
 		constexpr int dVector = 4;
 		constexpr int dTensor = 5;
-		auto Pos = getV<PROP_POS>(Particles);
+		auto Pos = getV<POS_PROP>(Particles);
 		auto sS = getV<sScalar>(Particles);
 		auto sV = getV<sVector>(Particles);
 		auto sT = getV<sTensor>(Particles);
@@ -78,9 +78,10 @@ BOOST_AUTO_TEST_SUITE(temporal_test_suite)
 		auto dT = getV<dTensor>(Particles);
 
 		//Particles_subset.write("Pars");
-		Derivative_x Dx(Particles, ord, rCut, sampling_factor, support_options::RADIUS), Bulk_Dx(Particles, ord,
-																								 rCut, sampling_factor,
-																								 support_options::RADIUS);
+		auto verletList = Particles.template getVerlet<VL_NON_SYMMETRIC|VL_SKIP_REF_PART>(rCut);
+
+		Derivative_x<decltype(verletList)> Dx(Particles, verletList, ord, rCut, support_options::RADIUS);
+		Derivative_x<decltype(verletList)> Bulk_Dx(Particles, verletList, ord, rCut, support_options::RADIUS);
         texp_v<double> TVx,TdxVx;
 		texp_v<VectorS<3, double>> TV;
         texp_v<double[3][3]> TT;

@@ -31,8 +31,8 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests_cu)
         Box<2, double> box({0, 0}, {1.0, 1.0});
         size_t bc[2] = {NON_PERIODIC, NON_PERIODIC};
         double spacing = box.getHigh(0) / (sz[0] - 1);
-        Ghost<2, double> ghost(spacing * 3);
-        double rCut = 2.0 * spacing;
+        Ghost<2, double> ghost(spacing * 4);
+        double rCut = 4.0 * spacing;
         BOOST_TEST_MESSAGE("Init vector_dist...");
 
         vector_dist_gpu<2, double, aggregate<double,double,double,double>> domain(0, box, bc, ghost);
@@ -58,7 +58,9 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests_cu)
         domain.map();
         domain.ghost_get<0>();
 
-        Laplacian_gpu Lap(domain, 2, rCut, 2,support_options::N_PARTICLES);
+        auto verletList = domain.template getVerlet<VL_NON_SYMMETRIC|VL_SKIP_REF_PART>(rCut);
+
+        Laplacian_gpu<decltype(verletList)> Lap(domain, verletList, 2, rCut, support_options::RADIUS);
 
         DCPSE_scheme_gpu<equations2d1_gpu,decltype(domain)> Solver( domain);
 
@@ -293,9 +295,11 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests_cu)
         domain.map();
         domain.ghost_get<0>();
 
-        Derivative_x_gpu Dx(domain, 2, rCut/3.0 ,1.9,support_options::N_PARTICLES);
-        Derivative_y_gpu Dy(domain, 2, rCut/3.0,1.9,support_options::N_PARTICLES);
-        Laplacian_gpu Lap(domain, 2, rCut/3.0 ,1.9,support_options::N_PARTICLES);
+        auto verletList = domain.template getVerlet<VL_NON_SYMMETRIC|VL_SKIP_REF_PART>(rCut);
+
+        Derivative_x_gpu<decltype(verletList)> Dx(domain, verletList, 2, rCut, support_options::RADIUS);
+        Derivative_y_gpu<decltype(verletList)> Dy(domain, verletList, 2, rCut, support_options::RADIUS);
+        Laplacian_gpu<decltype(verletList)> Lap(domain, verletList, 2, rCut, support_options::RADIUS);
 
         openfpm::vector<aggregate<int>> bulk;
         openfpm::vector<aggregate<int>> up_p;
@@ -460,9 +464,11 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests_cu)
         domain.map();
         domain.ghost_get<0>();
 
-        Derivative_x_gpu Dx(domain, 2, rCut,1.9,support_options::RADIUS);
-        Derivative_y_gpu Dy(domain, 2, rCut,1.9,support_options::RADIUS);
-        Laplacian_gpu Lap(domain, 2, rCut, 1.9,support_options::RADIUS);
+        auto verletList = domain.template getVerlet<VL_NON_SYMMETRIC|VL_SKIP_REF_PART>(rCut);
+
+        Derivative_x_gpu<decltype(verletList)> Dx(domain, verletList, 2, rCut, support_options::RADIUS);
+        Derivative_y_gpu<decltype(verletList)> Dy(domain, verletList, 2, rCut, support_options::RADIUS);
+        Laplacian_gpu<decltype(verletList)> Lap(domain, verletList, 2, rCut, support_options::RADIUS);
 
         openfpm::vector<aggregate<int>> bulk;
         openfpm::vector<aggregate<int>> bulkF;
@@ -635,8 +641,9 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests_cu)
         domain.map();
         domain.ghost_get<0>();
 
+        auto verletList = domain.template getVerlet<VL_NON_SYMMETRIC|VL_SKIP_REF_PART>(rCut);
 
-        Laplacian_gpu Lap(domain, 2, rCut, 1.9, support_options::RADIUS);
+        Laplacian_gpu<decltype(verletList)> Lap(domain, verletList, 2, rCut, support_options::RADIUS);
 
         DCPSE_scheme_gpu<equations2d1p_gpu,decltype(domain)> Solver( domain);
 
@@ -736,8 +743,8 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests_cu)
         Box<2, double> box({0, 0}, {1.0, 1.0});
         size_t bc[2] = {NON_PERIODIC, NON_PERIODIC};
         double spacing = box.getHigh(0) / (sz[0] - 1);
-        Ghost<2, double> ghost(spacing * 3);
-        double rCut = 2.0 * spacing;
+        Ghost<2, double> ghost(spacing * 3.1);
+        double rCut = 3.1 * spacing;
         BOOST_TEST_MESSAGE("Init vector_dist...");
 
         vector_dist_gpu<2, double, aggregate<double,double,double,double,double,VectorS<2, double>>> domain(0, box, bc, ghost);
@@ -763,8 +770,10 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests_cu)
         domain.map();
         domain.ghost_get<0>();
 
-        Derivative_y_gpu Dy(domain, 2, rCut,2,support_options::N_PARTICLES);
-        Laplacian_gpu Lap(domain, 2, rCut, 3,support_options::N_PARTICLES);
+        auto verletList = domain.template getVerlet<VL_NON_SYMMETRIC|VL_SKIP_REF_PART>(rCut);
+
+        Derivative_y_gpu<decltype(verletList)> Dy(domain, verletList, 2, rCut, support_options::RADIUS);
+        Laplacian_gpu<decltype(verletList)> Lap(domain, verletList, 2, rCut, support_options::RADIUS);
 
         DCPSE_scheme_gpu<equations2d1_gpu,decltype(domain)> Solver(domain);
 
@@ -910,9 +919,11 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests_cu)
         domain.map();
         domain.ghost_get<0>();
 
-        Derivative_x_gpu Dx(domain, 2, rCut,1.9,support_options::N_PARTICLES);
-        Derivative_y_gpu Dy(domain, 2, rCut,1.9,support_options::N_PARTICLES);
-        Laplacian_gpu Lap(domain, 2, rCut, 1.9,support_options::N_PARTICLES);
+        auto verletList = domain.template getVerlet<VL_NON_SYMMETRIC|VL_SKIP_REF_PART>(rCut);
+
+        Derivative_x_gpu<decltype(verletList)> Dx(domain, verletList, 2, rCut, support_options::RADIUS);
+        Derivative_y_gpu<decltype(verletList)> Dy(domain, verletList, 2, rCut, support_options::RADIUS);
+        Laplacian_gpu<decltype(verletList)> Lap(domain, verletList, 2, rCut, support_options::RADIUS);
 
         petsc_solver<double> solver;
         solver.setRestart(500);
@@ -1053,9 +1064,11 @@ BOOST_AUTO_TEST_SUITE(dcpse_op_suite_tests_cu)
         domain.map();
         domain.ghost_get<0>();
 
-        Derivative_x Dx(domain, 2, rCut,1.9,support_options::RADIUS);
-        Derivative_y Dy(domain, 2, rCut,1.9,support_options::RADIUS);
-        Laplacian Lap(domain, 2, rCut,1.9,support_options::RADIUS);
+        auto verletList = domain.template getVerlet<VL_NON_SYMMETRIC|VL_SKIP_REF_PART>(rCut);
+
+        Derivative_x<decltype(verletList)> Dx(domain, verletList, 2, rCut, support_options::RADIUS);
+        Derivative_y<decltype(verletList)> Dy(domain, verletList, 2, rCut, support_options::RADIUS);
+        Laplacian<decltype(verletList)> Lap(domain, verletList, 2, rCut, support_options::RADIUS);
 
         openfpm::vector<aggregate<int>> bulk;
         openfpm::vector<aggregate<int>> up_p;
