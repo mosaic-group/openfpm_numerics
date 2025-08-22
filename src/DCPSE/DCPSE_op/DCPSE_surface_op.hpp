@@ -48,7 +48,7 @@ public:
 
     template<typename particles_type>
     void deallocate(particles_type &parts) {
-        delete (Dcpse<particles_type::dims, VerletList_type, particles_type> *) dcpse;
+        delete (SurfaceDcpse<particles_type::dims, VerletList_type, particles_type> *) dcpse;
     }
 
     template<typename operand_type>
@@ -147,7 +147,7 @@ public:
 
     template<typename particles_type>
     void deallocate(particles_type &parts) {
-        delete (Dcpse<particles_type::dims, VerletList_type, particles_type> *) dcpse;
+        delete (SurfaceDcpse<particles_type::dims, VerletList_type, particles_type> *) dcpse;
     }
 
     template<typename operand_type>
@@ -247,7 +247,7 @@ public:
 
     template<typename particles_type>
     void deallocate(particles_type &parts) {
-        delete (Dcpse<particles_type::dims, VerletList_type, particles_type> *) dcpse;
+        delete (SurfaceDcpse<particles_type::dims, VerletList_type, particles_type> *) dcpse;
     }
 
     template<typename operand_type>
@@ -349,7 +349,7 @@ public:
 
     template<typename particles_type>
     void deallocate(particles_type &parts) {
-        delete (Dcpse<particles_type::dims, VerletList_type, particles_type> *) dcpse;
+        delete (SurfaceDcpse<particles_type::dims, VerletList_type, particles_type> *) dcpse;
     }
 
     template<typename operand_type>
@@ -448,7 +448,7 @@ public:
 
     template<typename particles_type>
     void deallocate(particles_type &parts) {
-        delete (Dcpse<particles_type::dims, VerletList_type, particles_type> *) dcpse;
+        delete (SurfaceDcpse<particles_type::dims, VerletList_type, particles_type> *) dcpse;
     }
 
     template<typename operand_type>
@@ -546,7 +546,7 @@ public:
 
     template<typename particles_type>
     void deallocate(particles_type &parts) {
-        delete (Dcpse<particles_type::dims, VerletList_type, particles_type> *) dcpse;
+        delete (SurfaceDcpse<particles_type::dims, VerletList_type, particles_type> *) dcpse;
     }
 
     template<typename operand_type>
@@ -645,7 +645,7 @@ public:
 
     template<typename particles_type>
     void deallocate(particles_type &parts) {
-        delete (Dcpse<particles_type::dims, VerletList_type, particles_type> *) dcpse;
+        delete (SurfaceDcpse<particles_type::dims, VerletList_type, particles_type> *) dcpse;
     }
 
     template<typename operand_type>
@@ -744,7 +744,7 @@ public:
 
     template<typename particles_type>
     void deallocate(particles_type &parts) {
-        delete (Dcpse<particles_type::dims, VerletList_type, particles_type> *) dcpse;
+        delete (SurfaceDcpse<particles_type::dims, VerletList_type, particles_type> *) dcpse;
     }
 
     template<typename operand_type>
@@ -844,7 +844,7 @@ public:
 
     template<typename particles_type>
     void deallocate(particles_type &parts) {
-        delete (Dcpse<particles_type::dims, VerletList_type, particles_type> *) dcpse;
+        delete (SurfaceDcpse<particles_type::dims, VerletList_type, particles_type> *) dcpse;
     }
 
     template<typename operand_type>
@@ -944,7 +944,7 @@ public:
 
     template<typename particles_type>
     void deallocate(particles_type &parts) {
-        delete (Dcpse<particles_type::dims, VerletList_type, particles_type> *) dcpse;
+        delete (SurfaceDcpse<particles_type::dims, VerletList_type, particles_type> *) dcpse;
     }
 
     template<typename operand_type>
@@ -1041,7 +1041,7 @@ public:
 
     template<typename particles_type>
     void deallocate(particles_type &parts) {
-        delete (Dcpse<particles_type::dims, VerletList_type, particles_type> *) dcpse;
+        delete (SurfaceDcpse<particles_type::dims, VerletList_type, particles_type> *) dcpse;
     }
 
     template<typename operand_type>
