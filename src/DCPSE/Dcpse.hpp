@@ -851,37 +851,65 @@ protected:
    * Creates the particles along the normal of each surface particle.
    */
 	template<unsigned int NORMAL_ID>
-	void createNormalParticles(vector_type &particlesSupport)
+	void createNormalParticles()
 	{
-		particlesSupport.template ghost_get<NORMAL_ID>(SKIP_LABELLING);
-		initialParticleSize=particlesSupport.size_local_with_ghost();
+		this->particlesSupport.template ghost_get<NORMAL_ID>(SKIP_LABELLING);
+		initialParticleSize=this->particlesSupport.size_local_with_ghost();
 		T nSpacing_p = nSpacing;
 
-		auto it = particlesSupport.getDomainAndGhostIterator();
+		auto it = this->particlesSupport.getDomainAndGhostIterator();
 		while (it.isNext()) {
 			size_t p = it.get();
 
-			Point<dim,T> xp=particlesSupport.getPos(p), Normals=particlesSupport.template getProp<NORMAL_ID>(p);
+			Point<dim,T> xp=this->particlesSupport.getPos(p), Normals=this->particlesSupport.template getProp<NORMAL_ID>(p);
 
 			if (this->opt == support_options::ADAPTIVE)
 				nSpacing_p = nSpacings.get(p);
 
 			for(int i=1;i<=nCount;i++) {
-				particlesSupport.appendLocal();
+			  this->particlesSupport.appendLocal(); // TODO: this creates them locally, shouldn't we call map()?
 				for(size_t j=0;j<dim;j++)
-					particlesSupport.getLastPosEnd()[j] = xp[j]+i*nSpacing_p*Normals[j];
+					this->particlesSupport.getLastPosEnd()[j] = xp[j]+i*nSpacing_p*Normals[j];
 
-				particlesSupport.appendLocal();
+				this->particlesSupport.appendLocal();
 				for(size_t j=0;j<dim;j++)
-					particlesSupport.getLastPosEnd()[j] = xp[j]-i*nSpacing_p*Normals[j];
+					this->particlesSupport.getLastPosEnd()[j] = xp[j]-i*nSpacing_p*Normals[j];
 			}
 			++it;
 		}
 
+		std::cout << "normal beg after adding particles DCPSE domPosSize: " << this->particlesDomain.getPosVector().size_local() << std::endl;
+
 		if (this->opt==support_options::ADAPTIVE)
-		{
-		// 	particlesSupport.updateVerlet(this->verletList, 1.25*nCount*nSpacing);
-		}
+		  {
+		    // Get all rCuts
+		    openfpm::vector<T> rCuts;
+		    auto it = this->particlesDomain.getDomainIterator();
+		    while (it.isNext()) {
+		      size_t p = it.get();
+		      rCuts.add();
+		      rCuts.get(rCuts.size()-1) = this->verletList.getRCuts(p);
+		      this->verletList.clear(p); // clear the Verlet list before refilling it
+		      ++it;
+		    }
+#ifdef SE_CLASS1
+		    if (rCuts.size() != initialParticleSize)
+		      {
+			std::cerr << __FILE__ << ":" << __LINE__
+				  << " ERROR: when constructing adaptive cut-off Verlet list, rCuts.size() != pos.size_local(), ["
+				  << rCuts.size() << "!=" << initialParticleSize << "]" << std::endl;
+			std::runtime_error("Runtime adaptive cut-off Verlet list error");
+		      }
+#endif
+		    // Fill out the Verlet list
+		    auto domainIt = this->particlesDomain.getDomainIterator();
+		    this->verletList.fillNonSymmAdaptiveIterator(domainIt,
+								 this->particlesDomain.getPosVector(),
+								 this->particlesSupport.getPosVector(),
+								 rCuts,
+								 this->particlesDomain.size_local()
+								 );
+		  }
 		else
 		{
 			this->verletList.initCl(
@@ -916,17 +944,17 @@ protected:
    * on the corresponding surfSupport particle.
    * In the end, the normalSupport particles are deleted: the vector is resized to its original size.
    */
-	void accumulateAndDeleteNormalParticles(vector_type &particlesSupport, vector_type2 &particlesDomain)
+	void accumulateAndDeleteNormalParticles()
 	{
 		accCalcKernels.clear();
 		accKerOffsets.clear();
-		accKerOffsets.resize(particlesDomain.size_local());
+		accKerOffsets.resize(this->particlesDomain.size_local());
 		accKerOffsets.fill(-1);
 
 		tsl::hopscotch_map<size_t, size_t> nMap;
-		openfpm::vector_std<size_t> supportBuffer;
+		openfpm::vector_std<size_t> supportBuffer; // list of real (surface) particles
 
-		auto it = particlesDomain.getDomainIterator();
+		auto it = this->particlesDomain.getDomainIterator();
 		while (it.isNext()) {
 			supportBuffer.clear();
 			nMap.clear();
@@ -948,10 +976,10 @@ protected:
 				// error here, last element is overflown
 				// find out whether particle is a real particle (surfSupport) or a virtual normal particle (normalSupport)
 				if (std::signbit(difference))
-					// it's a real particle
+					// it's a real (surface) particle
 					real_particle = q;
 				else
-					// it's not
+					// it's not (it's a particle along the normal)
 					real_particle = difference / (2 * nCount);
 
 				auto found=nMap.find(real_particle);
@@ -971,7 +999,8 @@ protected:
 			}
 
 			this->verletList.clear(p);
-
+			
+			// Verlet list ends up with only one particle per particle (themselves)
 			for (int i = 0; i < supportBuffer.size(); ++i)
 				this->verletList.addPart(p, supportBuffer.get(i));
 
@@ -979,7 +1008,7 @@ protected:
 		}
 
 		// Delete all normal particles in the particlesSupport
-		particlesSupport.discardLocalAppend(initialParticleSize);
+		this->particlesSupport.discardLocalAppend(initialParticleSize);
 		// this->localEps.resize(initialParticleSize);
 		// this->localEpsInvPow.resize(initialParticleSize);
 		// store accumulated kernels (including normalSupport) into surfSupport particles
@@ -994,16 +1023,14 @@ public:
    * \tparam NORMAL_ID Property ID for the normal field of the particle set.
    * \param particlesSupport Particle set from which the support is constructed. The two sets are different only when used for interpolation.
    * \param particlesDomain Particle set on which the operator is constructed. The two sets are different only when used for interpolation.
+   * \param verletList Verlet list for the particle set.
    * \param differentialSignature Vector that contains the information on the order of the derivative. For example, df/(dxdy) on a 3D domain: [1,1,0].
    * \param convergenceOrder Convergence order of the numerical operator.
-   * \param rCut Size of the support/argument for cell list construction. It has to include sufficient enough particles to create the support.
-   * \param nSpacing Spacing of the particlesDomain (on the surface).
+   * \param rCut DEPRECARTED - Size of the support/argument for cell list construction. It has to include sufficient enough particles to create the support.
+   * \param nSpacing Spacing of the particlesDomain (on the surface). Used for the default mode, where normal spacing is the same for all surface particles.
+   * \param nCount Number of particles along the normal on each side of the surface.
    * \param NORMAL_ID Property ID for the normal field of the particle set.
-   * \param opt Type of support.
-   *
-   * \note The number of particles along the normal is determined as nCount = floor(rCut/nSpacing). The ghost layer has to be at at least as big as rCut.
-   *
-   * \attention If opt = support_options::ADAPTIVE, the meaning of the rCut and nSpacing parameters changes. rCut is a slightly bigger number than the distance between two particlesDomain (on the surface). nSpacing is a factor by which rCut is multiplied in order to determine the size of the support.  In this case, the algorithm takes the rCut as a suggestion in order to find the minimum distance in each particle's neighbourhood. Then, to construct the support for the operator, it multiplies that minimum distance by the nSpacing factor. In this case, the number of particles along the normal is set to be (hardcoded) 2 for a 3D problem and 3 for a 2D problem. The ghost layer has to be at least as big as rCut*nSpacing.
+   * \param opt Type of support. Default: RADIUS, where normal spacing is the same for all surface particles; ADAPTIVE, where the normal spacing is obtaned from the adaptive Verlet list: nSpacing_p = rCut_p/nCount.
    *
    * \note When NOT used for particle to particle interpolation, particlesDomain is set to be the same as particlesSupport.
    */
@@ -1029,38 +1056,22 @@ public:
 		this->rCut = rCut;
 
 		if(opt==support_options::ADAPTIVE) {
-			auto it = particlesDomain.getDomainIterator();
 
-			while (it.isNext()) {
-				size_t p = it.get();
-				T minSpacing = std::numeric_limits<T>::max();
-
-				auto verletIt = verletList.getNNIterator(p);
-
-				while (verletIt.isNext()) {
-					size_t q = verletIt.get();
-					if (p != q)
-					{
-						Point<dim, T> xp = particlesDomain.getPos(p);
-						Point<dim, T> xq = particlesSupport.getPos(q);
-						Point<dim, T> diffXpq = xp - xq;
-
-						T dist = norm(diffXpq);
-						if (minSpacing > dist) minSpacing = dist;
-					}
-					++verletIt;
-				}
-				nSpacings.add(minSpacing);
-
-				++it;
-			}
+		  // Get the normal spacing for each particle
+		  nSpacings.clear();
+		  auto it = particlesDomain.getDomainIterator();
+		  while (it.isNext()) {
+		    size_t p = it.get();
+		    nSpacings.add(verletList.getRCuts(p)/nCount);
+		    ++it;
+		  }
 		}
 
 		if(opt!=support_options::LOAD) {
-			createNormalParticles<NORMAL_ID>(particlesSupport);
-#ifdef SE_CLASS1
+			createNormalParticles<NORMAL_ID>();
+			// #ifdef SE_CLASS1
 			particlesSupport.write("WithNormalParticlesQC");
-#endif
+			//#endif
 		}
 
 		this->initializeStaticSize(
@@ -1071,7 +1082,7 @@ public:
 		);
 
 		if(opt!=support_options::LOAD) {
-			accumulateAndDeleteNormalParticles(particlesSupport, particlesDomain);
+			accumulateAndDeleteNormalParticles();
 		}
 	}
 };
