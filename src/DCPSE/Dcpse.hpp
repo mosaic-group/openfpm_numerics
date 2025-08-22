@@ -878,8 +878,6 @@ protected:
 			++it;
 		}
 
-		std::cout << "normal beg after adding particles DCPSE domPosSize: " << this->particlesDomain.getPosVector().size_local() << std::endl;
-
 		if (this->opt==support_options::ADAPTIVE)
 		  {
 		    // Get all rCuts
@@ -896,7 +894,7 @@ protected:
 		    if (rCuts.size() != initialParticleSize)
 		      {
 			std::cerr << __FILE__ << ":" << __LINE__
-				  << " ERROR: when constructing adaptive cut-off Verlet list, rCuts.size() != pos.size_local(), ["
+				  << " ERROR: when constructing adaptive cut-off Verlet list, rCuts.size() != initialParticleSize, ["
 				  << rCuts.size() << "!=" << initialParticleSize << "]" << std::endl;
 			std::runtime_error("Runtime adaptive cut-off Verlet list error");
 		      }

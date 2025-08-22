@@ -857,6 +857,134 @@ BOOST_AUTO_TEST_CASE(dcpse_surface_adaptive_planeCart) {
   part.write("Cheby");
 }
 
+BOOST_AUTO_TEST_CASE(dcpse_surface_adaptive_peanut) {
+
+  auto & v_cl = create_vcluster();
+  
+  // Plane in 2D, Chebyshev distribution
+  typedef vector_dist<3,double,aggregate<double[3],double,double,double,double>> vector_type;
+  openfpm::vector<std::string> propNames{"normal","rCut","function","derivative","analyt"};
+  
+  const int n{50}; // number of particles
+  size_t sz[3] = {n,n,n};
+  double spacing{0.04};
+  
+  Box<3,double> domain{{-1.3,-3.3,-1.5}, {1.3,3.3,1.5}};
+  Ghost<3,double> ghost{spacing*0.1};
+  size_t bc[3] = {NON_PERIODIC,NON_PERIODIC,NON_PERIODIC};
+
+  vector_type part{0,domain,bc,ghost};
+  part.setPropNames(propNames);
+  
+  openfpm::vector<double> rCuts;
+  
+  if (v_cl.rank() == 0) {
+
+    // Read CSV file with points
+    std::array<std::array<double,3>,7746> pointsCSV;
+    std::array<std::array<double,3>,7746> normalCSV;
+    std::string pointsFilename{"./peanut_midResolution.csv"};
+
+    {
+      std::ifstream file;
+      std::string line, word;
+  
+      // Open file
+      file.open(pointsFilename);
+      if (!file.is_open())
+	throw std::runtime_error("Could not open file.");
+
+      if (file.good()) {
+
+	int ni{0}; // Row counter
+
+	// Read each line
+	while (std::getline(file,line)) {
+
+	  std::stringstream ss(line);
+
+	  // Get position
+	  for (int d = 0; d < 3; ++d) {
+	    std::getline(ss,word,' ');
+	    pointsCSV[ni][d] = std::stod(word);
+	  }
+
+	  // Get normal
+	  for (int d = 0; d < 3; ++d) {
+	    std::getline(ss,word,' ');
+	    normalCSV[ni][d] = std::stod(word);
+	  }
+
+	  ++ni;
+	}
+	std::cout << "ni: " << ni << std::endl;
+      }
+      // Close file
+      file.close();
+    }
+    
+    for (int i = 0; i < 7746; ++i) {
+      
+      part.add();
+      for (int d1 = 0; d1 < 3; ++d1) {
+	part.getLastPos()[d1] = pointsCSV[i][d1];
+	part.getLastProp<0>()[d1] = normalCSV[i][d1];
+      }
+      part.getLastProp<1>() = 0.02+std::fabs(std::sin(2*M_PI*part.getLastPos()[1]/3.0))*0.05;
+      part.getLastProp<2>() = 2.0;
+      part.getLastProp<3>() = 0.0;
+      part.getLastProp<4>() = 0.0;
+    }
+  }
+  part.map();
+  part.ghost_get<0,1,2,3>();
+
+  int minSupSize = getMinSupportSize(3,2,2);
+  std::cout << minSupSize << std::endl;
+
+  size_t total_n{part.size_local()};
+  v_cl.sum(total_n);
+  v_cl.execute();
+  std::cout << "n: " << total_n << std::endl;
+  
+  // Get rCuts
+  auto it = part.getDomainIterator();
+  while (it.isNext()) {
+    auto p = it.get();
+    rCuts.add();
+    rCuts.get(rCuts.size()-1) = 5*part.getProp<1>(p);
+    ++it;
+  }
+  part.write("peanut");
+  std::cout << "rCuts n: " << rCuts.size() << std::endl;
+  std::cout << "size of pos: " << part.getPosVector().size_local() << std::endl;
+  // auto verletList = part.template getVerlet(0.2);
+  auto verletList = part.template getVerletAdaptRCut(rCuts);
+  {
+    int count = 0;
+    auto it = part.getDomainIterator();
+    while (it.isNext()) {
+      auto p = it.get();
+      if (verletList.getNNPart(p) < minSupSize) {
+	std::cout << "smaller: " << p << " " << verletList.getNNPart(p)  << std::endl;
+	count++;
+      }
+      ++it;
+    }
+    std::cout << "count: " << count << std::endl;
+  }
+
+  // Point<vector_type::dims, unsigned int> p;
+  // p.zero();
+  // p.get(1) = 1;
+  // SurfaceDcpse<vector_type::dims,decltype(verletList),vector_type>(part,part,verletList,p,2,0.0,, nCount, value_t<NORMAL_ID>(), opt)
+  SurfaceDerivative_y<0,decltype(verletList)> Sdy{part,verletList,2,0.0,0.0,2,support_options::ADAPTIVE}; // rCut is not used in the function
+  auto f = getV<2>(part);
+  auto Df = getV<3>(part);
+  Df = Sdy(f);
+  part.write("peanut");
+}
+
 /*BOOST_AUTO_TEST_CASE(dcpse_surface_sphere_proj) {
   auto & v_cl = create_vcluster();
   timer tt;
