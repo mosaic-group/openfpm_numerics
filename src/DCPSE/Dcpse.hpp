@@ -1039,7 +1039,7 @@ public:
 		VerletList_type& verletList,
 		Point<dim, unsigned int> differentialSignature,
 		unsigned int convergenceOrder,
-		T rCut,
+		T rCut, // TODO: delete this parameter, it is not used
 		T nSpacing,
 		unsigned int nCount,
 		value_t< NORMAL_ID >,
@@ -1068,7 +1068,7 @@ public:
 		if(opt!=support_options::LOAD) {
 			createNormalParticles<NORMAL_ID>();
 			// #ifdef SE_CLASS1
-			particlesSupport.write("WithNormalParticlesQC");
+			particlesSupport.write("WithNormalParticlesQC"); // TODO: this gives an error in ParaView: the properties of the particles are not there I think.
 			//#endif
 		}
 

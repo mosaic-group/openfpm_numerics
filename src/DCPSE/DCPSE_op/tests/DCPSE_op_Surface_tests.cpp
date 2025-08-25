@@ -770,16 +770,16 @@ BOOST_AUTO_TEST_CASE(dcpse_surface_adaptive_planeCart) {
 
   auto & v_cl = create_vcluster();
   
-  // Plane in 2D, Chebyshev distribution
-  typedef vector_dist<3,double,aggregate<double[3],double,double,double,double>> vector_type;
-  openfpm::vector<std::string> propNames{"normal","rCut","function","derivative","analyt"};
+  // Plane in 2D, regular Cartesian distribution
+  typedef vector_dist<3,double,aggregate<double[3],double,double,double,double,double>> vector_type;
+  openfpm::vector<std::string> propNames{"normal","rCut","function","derivative","analyt","err"};
   
   const int n{50}; // number of particles
   size_t sz[3] = {n,n,n};
-  double spacing{0.04};
+  double spacing{0.02};
   
-  Box<3,double> domain{{-1.1,-1.1,-2},{1.1,1.1,2}};
-  Ghost<3,double> ghost{spacing*0.1};
+  Box<3,double> domain{{-0.3,-0.3,-1.5},{1.3,1.3,1.5}};
+  Ghost<3,double> ghost{spacing*2};
   size_t bc[3] = {NON_PERIODIC,NON_PERIODIC,NON_PERIODIC};
 
   vector_type part{0,domain,bc,ghost};
@@ -793,68 +793,82 @@ BOOST_AUTO_TEST_CASE(dcpse_surface_adaptive_planeCart) {
       for (int j = 0; j < n; ++j) {
 	part.add();
 	
-	part.getLastPos()[0] = -1 + spacing*i;
-	part.getLastPos()[1] = -1 + spacing*j;
+	part.getLastPos()[0] = spacing*i;
+	part.getLastPos()[1] = spacing*j;
 	part.getLastPos()[2] = 0.0;
 	
 	part.getLastProp<0>()[0] = 0;
 	part.getLastProp<0>()[1] = 0;
 	part.getLastProp<0>()[2] = 1.0;
 	
-	part.getLastProp<2>() = part.getLastPos()[1];// std::sin(M_PI * double(j)/double(n));
+	part.getLastProp<2>() = std::sin(M_PI * part.getLastPos()[1]);
 	part.getLastProp<3>() = 0;
-	part.getLastProp<4>() = 1;// M_PI * std::cos(M_PI * double(j)/double(n));
-	part.getLastProp<1>() = 0.04;
+	part.getLastProp<4>() = M_PI * std::cos(M_PI * part.getLastPos()[1]);
+	part.getLastProp<1>() = spacing;
       }
     }
   }
   part.map();
   part.ghost_get<0,1,2,3>();
 
-  int minSupSize = getMinSupportSize(3,2,2);
-  std::cout << minSupSize << std::endl;
-
   size_t total_n{part.size_local()};
   v_cl.sum(total_n);
   v_cl.execute();
-  std::cout << "n: " << total_n << std::endl;
   
   // Get rCuts
   auto it = part.getDomainIterator();
   while (it.isNext()) {
     auto p = it.get();
     rCuts.add();
-    rCuts.get(rCuts.size()-1) =3*part.getProp<1>(p);
+    rCuts.get(rCuts.size()-1) =2*part.getProp<1>(p);
     ++it;
   }
 
-  std::cout << "rCuts n: " << rCuts.size() << std::endl;
-  std::cout << "size of pos: " << part.getPosVector().size_local() << std::endl;
-  // auto verletList = part.template getVerlet(0.2);
   auto verletList = part.template getVerletAdaptRCut(rCuts);
-  {
-    int count = 0;
-    auto it = part.getDomainIterator();
-    while (it.isNext()) {
-      auto p = it.get();
-      if (verletList.getNNPart(p) < minSupSize) {
-	std::cout << "smaller: " << p << " " << verletList.getNNPart(p)  << std::endl;
-	count++;
-      }
-      ++it;
-    }
-    std::cout << "count: " << count << std::endl;
-  }
-
-  // Point<vector_type::dims, unsigned int> p;
-  // p.zero();
-  // p.get(1) = 1;
-  // SurfaceDcpse<vector_type::dims,decltype(verletList),vector_type>(part,part,verletList,p,2,0.0,, nCount, value_t<NORMAL_ID>(), opt)
-  SurfaceDerivative_y<0,decltype(verletList)> Sdy{part,verletList,2,0.0,0.0,3,support_options::ADAPTIVE}; // rCut is not used in the function
+  
+  SurfaceDerivative_y<0,decltype(verletList)> Sdy{part,verletList,2,0,0,2,support_options::ADAPTIVE}; // rCut is not used in the function
   auto f = getV<2>(part);
   auto Df = getV<3>(part);
   Df = Sdy(f);
-  part.write("Cheby");
+
+  // "normal","rCut","function","derivative","analyt","err"
+  // Computing error -------------------------------------------------------------------
+  {
+    double maxErr{0}, l2err{0}, maxRel_err{0}, l2rel_err{0};
+    double err, rel_err;
+    auto pit{part.getDomainIterator()};
+    while (pit.isNext()) {
+      auto key{pit.get()};
+
+      err = std::abs(part.getProp<4>(key) - part.getProp<3>(key));
+      rel_err = err/std::abs(part.getProp<4>(key));
+      part.getProp<5>(key) = err;
+      
+      maxErr = std::max(maxErr,err);
+      maxRel_err = std::max(maxRel_err,rel_err);
+      l2err += err*err;
+      l2rel_err += rel_err*rel_err;
+
+      ++pit;
+    }
+    v_cl.max(maxErr);
+    v_cl.max(maxRel_err);
+    v_cl.sum(l2err);
+    v_cl.sum(l2rel_err);
+    v_cl.execute();
+
+    // L2 and Linf norms
+    double linf_norm{maxErr};
+    double l2_norm{std::sqrt(l2err/double(total_n))};
+
+    double linf_rel_norm{maxRel_err};
+    double l2_rel_norm{std::sqrt(l2rel_err/double(total_n))};
+ 
+    // if (v_cl.rank() == 0)
+    //   std::cout << total_n << " " << std::setprecision(6) << std::scientific << " " << l2_norm << " " << linf_norm << " " << l2_rel_norm << " " << linf_rel_norm << std::endl;
+    BOOST_REQUIRE_CLOSE(l2_norm,8.657329e-02,0.1);
+    BOOST_REQUIRE_CLOSE(linf_norm,7.108664e-01,0.1);
+  }
 }
 
 BOOST_AUTO_TEST_CASE(dcpse_surface_adaptive_peanut) {
@@ -983,6 +997,341 @@ BOOST_AUTO_TEST_CASE(dcpse_surface_adaptive_peanut) {
   auto Df = getV<3>(part);
   Df = Sdy(f);
   part.write("peanut");
+}
+
+BOOST_AUTO_TEST_CASE(dcpse_surface_adaptive_plane_ring) {
+
+  auto & v_cl = create_vcluster();
+  
+  // Plane in 2D, ring on a plane
+  typedef vector_dist<3,double,aggregate<double[3],double,double,double,double,double,double>> vector_type;
+  openfpm::vector<std::string> propNames{"normal","rCut","function","derivative","analyt","Dcut","err"};
+  
+  const int n{50}; // number of particles
+  size_t sz[3] = {n,n,n};
+  double spacing{0.04};
+  
+  Box<3,double> domain{{-0.5,-0.5,-1.5}, {1.5,1.5,1.5}};
+  Ghost<3,double> ghost{spacing*0.1};
+  size_t bc[3] = {NON_PERIODIC,NON_PERIODIC,NON_PERIODIC};
+
+  vector_type part{0,domain,bc,ghost};
+  part.setPropNames(propNames);
+  
+  if (v_cl.rank() == 0) {
+
+    // Read CSV file with points
+    std::array<std::array<double,3>,2903> pointsCSV;
+    std::array<std::array<double,3>,2903> normalCSV;
+    std::array<double,2903> functionCSV, DcutCSV, rCutCSV;
+    std::string pointsFilename{"./plane_ring_adaptive.csv"};
+
+    {
+      std::ifstream file;
+      std::string line, word;
+  
+      // Open file
+      file.open(pointsFilename);
+      if (!file.is_open())
+	throw std::runtime_error("Could not open file.");
+
+      if (file.good()) {
+
+	int ni{0}; // Row counter
+
+	// Ignore first line (name of columns)
+	std::getline(file,line);
+	
+	// Read each line
+	while (std::getline(file,line)) {
+
+	  std::stringstream ss(line);
+
+	  // Get function
+	  std::getline(ss,word,',');
+	  functionCSV[ni] = std::stod(word);
+	  
+	  std::getline(ss,word,','); // gradx
+	  std::getline(ss,word,','); // grady
+	  std::getline(ss,word,','); // gradz
+
+	  // Get Dcut
+	  std::getline(ss,word,',');
+	  DcutCSV[ni] = std::stod(word);
+
+	  // Get rCut = r_star * Dcut
+	  std::getline(ss,word,',');
+	  rCutCSV[ni] = std::stod(word);
+	  
+	  // Get position
+	  for (int d = 0; d < 3; ++d) {
+	    std::getline(ss,word,',');
+	    pointsCSV[ni][d] = std::stod(word);
+	  }
+
+	  ++ni;
+	}
+	std::cout << "ni: " << ni << std::endl;
+      }
+      // Close file
+      file.close();
+    }
+    
+    for (int i = 0; i < 2903; ++i) {
+
+      part.add();
+      for (int d1 = 0; d1 < 3; ++d1) {
+	part.getLastPos()[d1] = pointsCSV[i][d1];
+	part.getLastProp<0>()[d1] = 0.0;
+      }
+      part.getLastProp<0>()[2] = 1.0;
+      part.getLastProp<1>() = rCutCSV[i];
+      part.getLastProp<2>() = std::sin(M_PI*part.getLastPos()[1]); // functionCSV[i];
+      part.getLastProp<3>() = 0.0;
+      part.getLastProp<4>() = M_PI * std::cos(M_PI*part.getLastPos()[1]);
+      part.getLastProp<5>() = DcutCSV[i];
+    }
+  }
+  part.map();
+  part.ghost_get<0,1,2,3,4,5>();
+
+  int minSupSize = getMinSupportSize(3,2,2);
+  std::cout << minSupSize << std::endl;
+
+  size_t total_n{part.size_local()};
+  v_cl.sum(total_n);
+  v_cl.execute();
+  std::cout << "n: " << total_n << std::endl;
+  
+  // Get rCuts
+  openfpm::vector<double> rCuts;
+  auto it = part.getDomainIterator();
+  while (it.isNext()) {
+    auto p = it.get();
+    rCuts.add();
+    rCuts.get(rCuts.size()-1) = part.getProp<1>(p);
+    ++it;
+  }
+  
+  auto verletList = part.template getVerletAdaptRCut(rCuts);
+  {
+    int count = 0;
+    auto it = part.getDomainIterator();
+    while (it.isNext()) {
+      auto p = it.get();
+      if (verletList.getNNPart(p) < minSupSize) {
+	// std::cout << "smaller: " << p << " " << verletList.getNNPart(p)  << std::endl;
+	count++;
+      }
+      ++it;
+    }
+    std::cout << "count: " << count << std::endl;
+  }
+
+  SurfaceDerivative_y<0,decltype(verletList)> Sdy{part,verletList,2,0.0,0.0,2,support_options::ADAPTIVE}; // rCut is not used in the function
+  auto f = getV<2>(part);
+  auto Df = getV<3>(part);
+  Df = Sdy(f);
+
+  // 0: "normal" 1: "rCut" 2: "function" 3: "derivative" 4: "analyt" 5: "Dcut" 6: "err"
+  // Computing error -------------------------------------------------------------------
+  {
+    double maxErr{0}, l2err{0}, maxRel_err{0}, l2rel_err{0};
+    double err, rel_err;
+    auto pit{part.getDomainIterator()};
+    while (pit.isNext()) {
+      auto key{pit.get()};
+
+      err = std::abs(part.getProp<4>(key) - part.getProp<3>(key));
+      rel_err = err/std::abs(part.getProp<4>(key));
+      part.getProp<6>(key) = err;
+      
+      maxErr = std::max(maxErr,err);
+      maxRel_err = std::max(maxRel_err,rel_err);
+      l2err += err*err;
+      l2rel_err += rel_err*rel_err;
+
+      ++pit;
+    }
+    v_cl.max(maxErr);
+    v_cl.max(maxRel_err);
+    v_cl.sum(l2err);
+    v_cl.sum(l2rel_err);
+    v_cl.execute();
+
+    // L2 and Linf norms
+    double linf_norm{maxErr};
+    double l2_norm{std::sqrt(l2err/double(total_n))};
+
+    double linf_rel_norm{maxRel_err};
+    double l2_rel_norm{std::sqrt(l2rel_err/double(total_n))};
+ 
+    if (v_cl.rank() == 0)
+      std::cout << total_n << " " << std::setprecision(6) << std::scientific << " " << l2_norm << " " << linf_norm << " " << l2_rel_norm << " " << linf_rel_norm << std::endl;
+  }
+
+  part.write("plane_ring");
+}
+
+BOOST_AUTO_TEST_CASE(dcpse_surface_adaptive_unitSphere) {
+    
+  auto & v_cl = create_vcluster();
+
+  typedef vector_dist<3,double,aggregate<double[3],double,double,double,double,double,double,double>> vector_type;
+  openfpm::vector<std::string> propNames{"normal","rCut","function","lap_adaptive","lap_regular","analyt","err_adaptive","err_regular"};
+
+  size_t n{2000};
+  double part_spacing{std::sqrt(4*3.14159265358979323846/n)};
+  Box<3,double> domain{{-1.5,-1.5,-1.5},{1.5,1.5,1.5}};
+  Ghost<3,double> ghost{2*part_spacing};
+  size_t bc[3] = {NON_PERIODIC,NON_PERIODIC,NON_PERIODIC};
+  std::array<double,3> center{0,0,0};
+  
+  vector_type part{0,domain,bc,ghost};
+  part.setPropNames(propNames);
+
+  if (v_cl.rank() == 0) {
+      
+    // Created using the Fibonacci sphere algorithm
+    // const double M_PI{3.14159265358979323846};
+    const double golden_ang = M_PI*(3.0 - std::sqrt(5.0));
+    const double prefactor{std::sqrt(0.75/M_PI)};
+    double rad, theta, arg, thetaB, phi, phi_norm;
+    std::array<double,3> coord;
+    
+    for (int i = 0; i < n; ++i) {
+      
+      coord[1] = 1.0 - 2.0*(i/double(n-1));
+      rad = std::sqrt(1.0 - (coord[1]-center[1])*(coord[1]-center[1]));
+      theta = golden_ang * i;
+      coord[0] = std::cos(theta) * rad;
+      coord[2] = std::sin(theta) * rad;
+
+      arg = (coord[0]-center[0]) * (coord[0]-center[0]) + (coord[1]-center[1]) * (coord[1]-center[1]);
+      thetaB = std::atan2(std::sqrt(arg),(coord[2]-center[2]));
+      phi = std::atan2((coord[1]-center[1]),(coord[0]-center[0]));
+      
+      part.add();
+      part.getLastPos()[0] = coord[0];
+      part.getLastPos()[1] = coord[1];
+      part.getLastPos()[2] = coord[2];
+
+      // normal
+      part.getLastProp<0>()[0] = std::sin(thetaB)*std::cos(phi);
+      part.getLastProp<0>()[1] = std::sin(thetaB)*std::sin(phi);
+      part.getLastProp<0>()[2] = std::cos(thetaB);
+      
+      part.getLastProp<1>() = 2*part_spacing; // rcut
+      part.getLastProp<2>() = 0.25*std::sqrt(5/M_PI) * (3 * std::cos(thetaB) * std::cos(thetaB) - 1); // function: Y_{20}
+      part.getLastProp<3>() = 0.0; // lap_adapt
+      part.getLastProp<4>() = 0.0; // lap_reg
+      part.getLastProp<5>() = -6 * part.getLastProp<2>(); // analyt
+      
+    }
+  }
+  part.map();
+  part.ghost_get<0,1,2>();
+
+  size_t total_n{part.size_local()};
+  v_cl.sum(total_n);
+  v_cl.execute();
+
+  // Verlet_reg
+  auto verletList_reg = part.template getVerlet(2*part_spacing);
+
+  // Get rCuts
+  openfpm::vector<double> rCuts;
+  auto it = part.getDomainIterator();
+  while (it.isNext()) {
+    auto p = it.get();
+    rCuts.add();
+    rCuts.get(rCuts.size()-1) = part.getProp<1>(p);
+    ++it;
+  }
+
+  // Verlet_adapt
+  auto verletList_adapt = part.template getVerletAdaptRCut(rCuts);
+
+  // Lap_reg
+  SurfaceDerivative_xx<0,decltype(verletList_reg)> Sdxx_reg{part,verletList_reg,2,0,part_spacing,2};
+  SurfaceDerivative_yy<0,decltype(verletList_reg)> Sdyy_reg{part,verletList_reg,2,0,part_spacing,2};
+  SurfaceDerivative_zz<0,decltype(verletList_reg)> Sdzz_reg{part,verletList_reg,2,0,part_spacing,2};
+
+  // Lap_adapt
+  SurfaceDerivative_xx<0,decltype(verletList_adapt)> Sdxx_adapt{part,verletList_adapt,2,0,0,2,support_options::ADAPTIVE};
+  SurfaceDerivative_yy<0,decltype(verletList_adapt)> Sdyy_adapt{part,verletList_adapt,2,0,0,2,support_options::ADAPTIVE};
+  SurfaceDerivative_zz<0,decltype(verletList_adapt)> Sdzz_adapt{part,verletList_adapt,2,0,0,2,support_options::ADAPTIVE};
+
+  auto f{getV<2>(part)};
+  auto lap_reg{getV<4>(part)};
+  auto lap_adapt{getV<3>(part)};
+  lap_reg = Sdxx_reg(f) + Sdyy_reg(f)+ Sdzz_reg(f);
+  lap_adapt = Sdxx_adapt(f) + Sdyy_adapt(f)+ Sdzz_adapt(f);
+
+  // Computing error -------------------------------------------------------------------
+  {
+    double maxErr_reg{0}, l2err_reg{0}, maxRel_err_reg{0}, l2rel_err_reg{0};
+    double err_reg, rel_err_reg;
+    double maxErr_adapt{0}, l2err_adapt{0}, maxRel_err_adapt{0}, l2rel_err_adapt{0};
+    double err_adapt, rel_err_adapt;
+    auto pit{part.getDomainIterator()};
+    while (pit.isNext()) {
+      auto key{pit.get()};
+
+      err_reg = std::abs(part.getProp<4>(key) - part.getProp<5>(key));
+      rel_err_reg = err_reg/std::abs(part.getProp<5>(key));
+      part.getProp<7>(key) = err_reg;
+      
+      maxErr_reg = std::max(maxErr_reg,err_reg);
+      maxRel_err_reg = std::max(maxRel_err_reg,rel_err_reg);
+      l2err_reg += err_reg*err_reg;
+      l2rel_err_reg += rel_err_reg*rel_err_reg;
+
+      err_adapt = std::abs(part.getProp<3>(key) - part.getProp<5>(key));
+      rel_err_adapt = err_adapt/std::abs(part.getProp<5>(key));
+      part.getProp<6>(key) = err_adapt;
+      
+      maxErr_adapt = std::max(maxErr_adapt,err_adapt);
+      maxRel_err_adapt = std::max(maxRel_err_adapt,rel_err_adapt);
+      l2err_adapt += err_adapt*err_adapt;
+      l2rel_err_adapt += rel_err_adapt*rel_err_adapt;
+
+      ++pit;
+    }
+    v_cl.max(maxErr_reg);
+    v_cl.max(maxRel_err_reg);
+    v_cl.sum(l2err_reg);
+    v_cl.sum(l2rel_err_reg);
+    v_cl.max(maxErr_adapt);
+    v_cl.max(maxRel_err_adapt);
+    v_cl.sum(l2err_adapt);
+    v_cl.sum(l2rel_err_adapt);
+    v_cl.execute();
+
+    // L2 and Linf norms
+    double linf_norm_reg{maxErr_reg};
+    double l2_norm_reg{std::sqrt(l2err_reg/double(total_n))};
+
+    double linf_rel_norm_reg{maxRel_err_reg};
+    double l2_rel_norm_reg{std::sqrt(l2rel_err_reg/double(total_n))};
+
+    double linf_norm_adapt{maxErr_adapt};
+    double l2_norm_adapt{std::sqrt(l2err_adapt/double(total_n))};
+
+    double linf_rel_norm_adapt{maxRel_err_adapt};
+    double l2_rel_norm_adapt{std::sqrt(l2rel_err_adapt/double(total_n))};
+
+    // In case of debugging
+  //   if (v_cl.rank() == 0) {
+  //     std::cout << "reg: " << total_n << " " << std::setprecision(6) << std::scientific << " " << l2_norm_reg << " " << linf_norm_reg << " " << l2_rel_norm_reg << " " << linf_rel_norm_reg << std::endl;
+  //     std::cout << "adapt: " << total_n << " " << std::setprecision(6) << std::scientific << " " << l2_norm_adapt << " " << linf_norm_adapt << " " << l2_rel_norm_adapt << " " << linf_rel_norm_adapt << std::endl;
+  //   }
+  // }
+    BOOST_REQUIRE_CLOSE(l2_norm_reg,l2_norm_adapt,0.001);
+    BOOST_REQUIRE_CLOSE(linf_norm_reg,linf_norm_adapt,0.001);
+    BOOST_REQUIRE_CLOSE(l2_rel_norm_reg,l2_rel_norm_adapt,0.001);
+    BOOST_REQUIRE_CLOSE(linf_rel_norm_reg,linf_rel_norm_adapt,0.001);
+  }
 }
 
 /*BOOST_AUTO_TEST_CASE(dcpse_surface_sphere_proj) {
