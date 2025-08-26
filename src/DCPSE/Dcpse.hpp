@@ -1067,9 +1067,9 @@ public:
 
 		if(opt!=support_options::LOAD) {
 			createNormalParticles<NORMAL_ID>();
-			// #ifdef SE_CLASS1
+#ifdef SE_CLASS1
 			particlesSupport.write("WithNormalParticlesQC"); // TODO: this gives an error in ParaView: the properties of the particles are not there I think.
-			//#endif
+#endif
 		}
 
 		this->initializeStaticSize(
