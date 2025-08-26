@@ -59,6 +59,7 @@ if ( CUDA_ON_BACKEND STREQUAL "HIP" AND HIP_FOUND )
 		DCPSE/tests/DcpseRhs_unit_tests.cpp
 		DCPSE/tests/MonomialBasis_unit_tests.cpp
 		DCPSE/tests/Vandermonde_unit_tests.cpp
+		DCPSE/DCPSE_op/tests/DCPSE_op_Surface_tests.cpp
 		main.cpp
 		Matrix/SparseMatrix_unit_tests.cpp
 		#interpolation/interpolation_unit_tests.cpp
@@ -91,6 +92,7 @@ else()
 		OdeIntegrators/tests/OdeIntegrator_grid_tests.cpp
 		DCPSE/DCPSE_op/tests/DCPSE_op_subset_test.cpp
 		DCPSE/DCPSE_op/tests/DCPSE_op_test_base_tests.cpp
+		DCPSE/DCPSE_op/tests/DCPSE_op_Surface_tests.cpp
 		FiniteDifference/FD_Solver_test.cpp
 		FiniteDifference/FD_op_Tests.cpp
 		DCPSE/DCPSE_op/tests/DCPSE_op_test3d.cpp
@@ -119,11 +121,11 @@ else()
 		#level_set/redistancing_Sussman/tests/redistancingSussman_unit_test.cpp
 		#level_set/redistancing_Sussman/tests/convergence_test.cpp
 		level_set/particle_cp/pcp_unit_tests.cpp
-		DCPSE/DCPSE_op/tests/DCPSE_op_Surface_tests.cpp
 		#BoundaryConditions/tests/method_of_images_cylinder_unit_test.cpp
 		level_set/redistancing_Sussman/tests/redistancingSussman_fast_unit_test.cpp
 		#level_set/redistancing_Sussman/tests/help_functions_unit_test.cpp
-		level_set/redistancing_Sussman/tests/narrowBand_unit_test.cpp)
+		level_set/redistancing_Sussman/tests/narrowBand_unit_test.cpp
+		)
 
 	set_property(TARGET numerics PROPERTY CUDA_ARCHITECTURES OFF)
 
