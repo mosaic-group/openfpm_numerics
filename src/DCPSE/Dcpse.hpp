@@ -867,7 +867,7 @@ protected:
 				nSpacing_p = nSpacings.get(p);
 
 			for(int i=1;i<=nCount;i++) {
-			  this->particlesSupport.appendLocal(); // TODO: this creates them locally, shouldn't we call map()?
+			  this->particlesSupport.appendLocal();
 				for(size_t j=0;j<dim;j++)
 					this->particlesSupport.getLastPosEnd()[j] = xp[j]+i*nSpacing_p*Normals[j];
 
@@ -891,11 +891,11 @@ protected:
 		      ++it;
 		    }
 #ifdef SE_CLASS1
-		    if (rCuts.size() != initialParticleSize)
+		    if (rCuts.size() != this->particlesDomain.size_local())
 		      {
 			std::cerr << __FILE__ << ":" << __LINE__
-				  << " ERROR: when constructing adaptive cut-off Verlet list, rCuts.size() != initialParticleSize, ["
-				  << rCuts.size() << "!=" << initialParticleSize << "]" << std::endl;
+				  << " ERROR: when updating adaptive cut-off Verlet list in createNormalParticles, rCuts.size() != particlesDomain.size_local(), ["
+				  << rCuts.size() << "!=" << this->particlesDomain.size_local() << "]" << std::endl;
 			std::runtime_error("Runtime adaptive cut-off Verlet list error");
 		      }
 #endif
@@ -1050,7 +1050,7 @@ public:
 		nSpacing(nSpacing),
 		nCount(nCount)
 	{
-		particlesSupport.ghost_get_subset();         // This communicates which ghost particles to be excluded from support
+	        particlesSupport.ghost_get_subset(); // TODO: Delete -- This does nothing as that function definition is empty
 		this->rCut = rCut;
 
 		if(opt==support_options::ADAPTIVE) {
