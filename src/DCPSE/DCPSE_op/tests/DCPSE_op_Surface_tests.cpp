@@ -657,8 +657,8 @@ BOOST_AUTO_TEST_CASE(dcpse_surface_adaptive_planeCart) {
   auto & v_cl = create_vcluster();
   
   // Plane in 2D, regular Cartesian distribution
-  typedef vector_dist<3,double,aggregate<double[3],double,double,double,double,double>> vector_type;
-  openfpm::vector<std::string> propNames{"normal","rCut","function","derivative","analyt","err"};
+  typedef vector_dist<3,double,aggregate<double[3],double,double,double,double,double,double>> vector_type;
+  openfpm::vector<std::string> propNames{"normal","rCut","function","derivative","analyt","err","rCut"};
   
   const int n{50}; // number of particles
   size_t sz[3] = {n,n,n};
@@ -670,8 +670,6 @@ BOOST_AUTO_TEST_CASE(dcpse_surface_adaptive_planeCart) {
 
   vector_type part{0,domain,bc,ghost};
   part.setPropNames(propNames);
-  
-  openfpm::vector<double> rCuts;
   
   if (v_cl.rank() == 0) {
 
@@ -691,6 +689,8 @@ BOOST_AUTO_TEST_CASE(dcpse_surface_adaptive_planeCart) {
 	part.getLastProp<3>() = 0;
 	part.getLastProp<4>() = M_PI * std::cos(M_PI * part.getLastPos()[1]);
 	part.getLastProp<1>() = spacing;
+	// rCut is always stored in the last property
+	part.getLastProp<6>() = 2*spacing;
       }
     }
   }
@@ -700,17 +700,8 @@ BOOST_AUTO_TEST_CASE(dcpse_surface_adaptive_planeCart) {
   size_t total_n{part.size_local()};
   v_cl.sum(total_n);
   v_cl.execute();
-  
-  // Get rCuts
-  auto it = part.getDomainIterator();
-  while (it.isNext()) {
-    auto p = it.get();
-    rCuts.add();
-    rCuts.get(rCuts.size()-1) =2*part.getProp<1>(p);
-    ++it;
-  }
 
-  auto verletList = part.template getVerletAdaptRCut(rCuts);
+  auto verletList = part.template getVerletAdaptRCut();
   
   SurfaceDerivative_y<0,decltype(verletList)> Sdy{part,verletList,2,0,0,2,support_options::ADAPTIVE}; // rCut is not used in the function
   auto f = getV<2>(part);
@@ -761,8 +752,8 @@ BOOST_AUTO_TEST_CASE(dcpse_surface_adaptive_unitSphere) {
     
   auto & v_cl = create_vcluster();
 
-  typedef vector_dist<3,double,aggregate<double[3],double,double,double,double,double,double,double>> vector_type;
-  openfpm::vector<std::string> propNames{"normal","rCut","function","lap_adaptive","lap_regular","analyt","err_adaptive","err_regular"};
+  typedef vector_dist<3,double,aggregate<double[3],double,double,double,double,double,double,double,double>> vector_type;
+  openfpm::vector<std::string> propNames{"normal","rCut","function","lap_adaptive","lap_regular","analyt","err_adaptive","err_regular","rCut"};
 
   size_t n{2000};
   double part_spacing{std::sqrt(4*3.14159265358979323846/n)};
@@ -806,6 +797,8 @@ BOOST_AUTO_TEST_CASE(dcpse_surface_adaptive_unitSphere) {
       part.getLastProp<0>()[2] = std::cos(thetaB);
       
       part.getLastProp<1>() = 2*part_spacing; // rcut
+      // rCut is always stored in the last property
+      part.getLastProp<8>() = 2*part_spacing; // rcut
       part.getLastProp<2>() = 0.25*std::sqrt(5/M_PI) * (3 * std::cos(thetaB) * std::cos(thetaB) - 1); // function: Y_{20}
       part.getLastProp<3>() = 0.0; // lap_adapt
       part.getLastProp<4>() = 0.0; // lap_reg
@@ -823,18 +816,8 @@ BOOST_AUTO_TEST_CASE(dcpse_surface_adaptive_unitSphere) {
   // Verlet_reg
   auto verletList_reg = part.template getVerlet(2*part_spacing);
 
-  // Get rCuts
-  openfpm::vector<double> rCuts;
-  auto it = part.getDomainIterator();
-  while (it.isNext()) {
-    auto p = it.get();
-    rCuts.add();
-    rCuts.get(rCuts.size()-1) = part.getProp<1>(p);
-    ++it;
-  }
-
   // Verlet_adapt
-  auto verletList_adapt = part.template getVerletAdaptRCut(rCuts);
+  auto verletList_adapt = part.template getVerletAdaptRCut();
 
   // Lap_reg
   SurfaceDerivative_xx<0,decltype(verletList_reg)> Sdxx_reg{part,verletList_reg,2,0,part_spacing,2};
