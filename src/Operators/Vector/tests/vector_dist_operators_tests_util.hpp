@@ -1798,7 +1798,7 @@ void vector_dist_op_ap_ker_impl(vector & vd,
 {
 	// we apply an exponential kernel to calculate something
 
-	auto cl_host = vd.template getCellList(0.05);
+	auto cl_host = vd.template getCellList<>(0.05);
 	exp_kernel ker(0.2);
 
 	vA = applyKernel_in(vVC * vVB + norm(vVB),vd,cl,ker) + vC;
@@ -1855,7 +1855,7 @@ struct check_all_apply_ker
 		auto vVB = getV<VB>(vd);
 		auto vVC = getV<VC>(vd);
 
-		auto cl = vd.template getCellList(0.05);
+		auto cl = vd.template getCellList<>(0.05);
 
 		vector_dist_op_ap_ker_impl<impl>(vd,vA,vC,vVA,vVB,vVC,cl,NONE);
 	}
@@ -1882,7 +1882,7 @@ struct check_all_apply_ker<comp_dev>
 		vd.template deviceToHostProp<0,1,2,3,4,5,6>();
 		vd.deviceToHostPos();
 
-		auto cl = vd.template getCellListGPU(0.05);
+		auto cl = vd.template getCellListGPU<>(0.05);
 		vd.updateCellListGPU(cl);
 
 		vector_dist_op_ap_ker_impl<comp_dev>(vd,vA,vC,vVA,vVB,vVC,cl,RUN_ON_DEVICE);
