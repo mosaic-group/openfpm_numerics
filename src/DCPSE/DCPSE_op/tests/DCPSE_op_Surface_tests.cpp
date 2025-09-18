@@ -701,7 +701,7 @@ BOOST_AUTO_TEST_CASE(dcpse_surface_adaptive_planeCart) {
   v_cl.sum(total_n);
   v_cl.execute();
 
-  auto verletList = part.template getVerletAdaptRCut();
+  auto verletList = part.template getVerletAdaptRCut<>();
   
   SurfaceDerivative_y<0,decltype(verletList)> Sdy{part,verletList,2,0,0,2,support_options::ADAPTIVE}; // rCut is not used in the function
   auto f = getV<2>(part);
@@ -814,10 +814,10 @@ BOOST_AUTO_TEST_CASE(dcpse_surface_adaptive_unitSphere) {
   v_cl.execute();
 
   // Verlet_reg
-  auto verletList_reg = part.template getVerlet(2*part_spacing);
+  auto verletList_reg = part.template getVerlet<>(2*part_spacing);
 
   // Verlet_adapt
-  auto verletList_adapt = part.template getVerletAdaptRCut();
+  auto verletList_adapt = part.template getVerletAdaptRCut<>();
 
   // Lap_reg
   SurfaceDerivative_xx<0,decltype(verletList_reg)> Sdxx_reg{part,verletList_reg,2,0,part_spacing,2};
