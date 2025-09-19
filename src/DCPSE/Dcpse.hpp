@@ -1054,6 +1054,7 @@ public:
 		this->rCut = rCut;
 
 		if(opt==support_options::ADAPTIVE) {
+<<<<<<< Updated upstream
 
 		  // Get the normal spacing for each particle
 		  nSpacings.clear();
@@ -1063,6 +1064,17 @@ public:
 		    nSpacings.add(verletList.getRCuts(p)/nCount);
 		    ++it;
 		  }
+=======
+			// Get the normal spacing for each particle
+			nSpacings.clear();
+			auto it = particlesDomain.getDomainIterator();
+		  	while (it.isNext()) {
+		    		size_t p = it.get();
+		    		nSpacings.add(this->particlesDomain.template getProp<std::remove_reference<decltype(this->particlesDomain)>::type::value_type::size-1>(p)/nCount);
+		  		std::cerr << "debug p " << p << " " << this->particlesDomain.template getProp<std::remove_reference<decltype(this->particlesDomain)>::type::value_type::size-1>(p)/nCount << " " << getPropSFINAE<T, vector_type2>::get(particlesDomain, p) << std::endl;
+				++it;
+			}
+>>>>>>> Stashed changes
 		}
 
 		if(opt!=support_options::LOAD) {
