@@ -123,7 +123,7 @@ template<typename T, typename Kernel> void PSE_test(size_t Npart, size_t overlap
     T prp_x = vd.template getProp<0>(key);
 
     // Get the neighborhood of the particles
-    auto NN = cl.template getNNIteratorBox(cl.getCell(p));
+    auto NN = cl.template getNNIteratorBox<>(cl.getCell(p));
     while(NN.isNext())
     {
     	auto nnp = NN.get();

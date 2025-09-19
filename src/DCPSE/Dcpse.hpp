@@ -825,6 +825,21 @@ protected:
 
 };
 
+/*
+ * SFINAE version of getter function for cut-off radius when
+ * adaptive cut-off mode is used and the radii are stored as
+ * the last property in vProp vector of vector_dist
+ */
+template<typename T, typename VectorType, typename = void>
+struct getPropSFINAE {
+	static T get(VectorType const& vectorDist, unsigned p) { /*Default case*/ return 0.0; }
+};
+
+template<typename T, typename VectorType>
+struct getPropSFINAE<T, VectorType, std::enable_if_t<std::is_same<typename boost::fusion::result_of::at_c<typename VectorType::value_type::type, VectorType::value_type::size-1>::type, int>::value>> {
+	static T get(VectorType const& vectorDist, unsigned p) { /*Special case for adaptive verlet list*/ return vectorDist.template getProp<VectorType::value_type::size-1>(p); }
+};
+
 
 template<unsigned int dim, typename VerletList_type, typename vector_type, typename vector_type2=vector_type>
 class SurfaceDcpse : Dcpse<dim, VerletList_type, vector_type, vector_type2> {
@@ -1054,17 +1069,6 @@ public:
 		this->rCut = rCut;
 
 		if(opt==support_options::ADAPTIVE) {
-<<<<<<< Updated upstream
-
-		  // Get the normal spacing for each particle
-		  nSpacings.clear();
-		  auto it = particlesDomain.getDomainIterator();
-		  while (it.isNext()) {
-		    size_t p = it.get();
-		    nSpacings.add(verletList.getRCuts(p)/nCount);
-		    ++it;
-		  }
-=======
 			// Get the normal spacing for each particle
 			nSpacings.clear();
 			auto it = particlesDomain.getDomainIterator();
@@ -1074,7 +1078,6 @@ public:
 		  		std::cerr << "debug p " << p << " " << this->particlesDomain.template getProp<std::remove_reference<decltype(this->particlesDomain)>::type::value_type::size-1>(p)/nCount << " " << getPropSFINAE<T, vector_type2>::get(particlesDomain, p) << std::endl;
 				++it;
 			}
->>>>>>> Stashed changes
 		}
 
 		if(opt!=support_options::LOAD) {
