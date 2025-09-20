@@ -836,8 +836,8 @@ struct getPropSFINAE {
 };
 
 template<typename T, typename VectorType>
-struct getPropSFINAE<T, VectorType, std::enable_if_t<std::is_same<typename boost::fusion::result_of::at_c<typename VectorType::value_type::type, VectorType::value_type::size-1>::type, int>::value>> {
-	static T get(VectorType const& vectorDist, unsigned p) { /*Special case for adaptive verlet list*/ return vectorDist.template getProp<VectorType::value_type::size-1>(p); }
+struct getPropSFINAE<T, VectorType, std::enable_if_t<std::is_same<typename boost::fusion::result_of::at_c<typename VectorType::value_type::type, 0>::type, int>::value>> {
+	static T get(VectorType const& vectorDist, unsigned p) { /*Special case for adaptive verlet list*/ return vectorDist.template getProp<0>(p); }
 };
 
 
@@ -1075,7 +1075,7 @@ public:
 		  	while (it.isNext()) {
 		    		size_t p = it.get();
 		    		nSpacings.add(verletList.getRCuts(p)/nCount);
-		  		std::cerr << "debug p " << p << " " << this->particlesDomain.template getProp<std::remove_reference<decltype(this->particlesDomain)>::type::value_type::size-1>(p) << " " << getPropSFINAE<T, vector_type2>::get(particlesDomain, p) << std::endl;
+		  		std::cerr << "debug p " << p << " " << this->particlesDomain.template getProp<0>(p) << " " << getPropSFINAE<T, vector_type2>::get(particlesDomain, p) << std::endl;
 				++it;
 			}
 		}
