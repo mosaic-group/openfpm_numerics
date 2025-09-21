@@ -657,8 +657,8 @@ BOOST_AUTO_TEST_CASE(dcpse_surface_adaptive_planeCart) {
   auto & v_cl = create_vcluster();
   
   // Plane in 2D, regular Cartesian distribution
-  typedef vector_dist<3,double,aggregate<double[3],double,double,double,double,double,double>> vector_type;
-  openfpm::vector<std::string> propNames{"normal","rCut","function","derivative","analyt","err","rCut"};
+  typedef vector_dist<3,double,aggregate<double,double[3],double,double,double,double>> vector_type;
+  openfpm::vector<std::string> propNames{"rCut","normal","function","derivative","analyt","err"};
   
   const int n{50}; // number of particles
   size_t sz[3] = {n,n,n};
@@ -681,16 +681,15 @@ BOOST_AUTO_TEST_CASE(dcpse_surface_adaptive_planeCart) {
 	part.getLastPos()[1] = spacing*j;
 	part.getLastPos()[2] = 0.0;
 	
-	part.getLastProp<0>()[0] = 0;
-	part.getLastProp<0>()[1] = 0;
-	part.getLastProp<0>()[2] = 1.0;
+	part.getLastProp<1>()[0] = 0;
+	part.getLastProp<1>()[1] = 0;
+	part.getLastProp<1>()[2] = 1.0;
 	
 	part.getLastProp<2>() = std::sin(M_PI * part.getLastPos()[1]);
 	part.getLastProp<3>() = 0;
 	part.getLastProp<4>() = M_PI * std::cos(M_PI * part.getLastPos()[1]);
-	part.getLastProp<1>() = spacing;
 	// rCut is always stored in the last property
-	part.getLastProp<6>() = 2*spacing;
+	part.getLastProp<0>() = 2*spacing;
       }
     }
   }
@@ -703,12 +702,12 @@ BOOST_AUTO_TEST_CASE(dcpse_surface_adaptive_planeCart) {
 
   auto verletList = part.template getVerletAdaptRCut<>();
   
-  SurfaceDerivative_y<0,decltype(verletList)> Sdy{part,verletList,2,0,0,2,support_options::ADAPTIVE}; // rCut is not used in the function
+  SurfaceDerivative_y<1,decltype(verletList)> Sdy{part,verletList,2,0,0,2,support_options::ADAPTIVE}; // rCut is not used in the function
   auto f = getV<2>(part);
   auto Df = getV<3>(part);
   Df = Sdy(f);
 
-  // "normal","rCut","function","derivative","analyt","err"
+  // "rCut","normal","function","derivative","analyt","err"
   // Computing error -------------------------------------------------------------------
   {
     double maxErr{0}, l2err{0}, maxRel_err{0}, l2rel_err{0};
@@ -752,8 +751,8 @@ BOOST_AUTO_TEST_CASE(dcpse_surface_adaptive_unitSphere) {
     
   auto & v_cl = create_vcluster();
 
-  typedef vector_dist<3,double,aggregate<double[3],double,double,double,double,double,double,double,double>> vector_type;
-  openfpm::vector<std::string> propNames{"normal","rCut","function","lap_adaptive","lap_regular","analyt","err_adaptive","err_regular","rCut"};
+  typedef vector_dist<3,double,aggregate<double,double[3],double,double,double,double,double,double>> vector_type;
+  openfpm::vector<std::string> propNames{"rCut","normal","function","lap_adaptive","lap_regular","analyt","err_adaptive","err_regular"};
 
   size_t n{2000};
   double part_spacing{std::sqrt(4*3.14159265358979323846/n)};
@@ -792,13 +791,12 @@ BOOST_AUTO_TEST_CASE(dcpse_surface_adaptive_unitSphere) {
       part.getLastPos()[2] = coord[2];
 
       // normal
-      part.getLastProp<0>()[0] = std::sin(thetaB)*std::cos(phi);
-      part.getLastProp<0>()[1] = std::sin(thetaB)*std::sin(phi);
-      part.getLastProp<0>()[2] = std::cos(thetaB);
+      part.getLastProp<1>()[0] = std::sin(thetaB)*std::cos(phi);
+      part.getLastProp<1>()[1] = std::sin(thetaB)*std::sin(phi);
+      part.getLastProp<1>()[2] = std::cos(thetaB);
       
-      part.getLastProp<1>() = 2*part_spacing; // rcut
+      part.getLastProp<0>() = 2*part_spacing; // rcut
       // rCut is always stored in the last property
-      part.getLastProp<8>() = 2*part_spacing; // rcut
       part.getLastProp<2>() = 0.25*std::sqrt(5/M_PI) * (3 * std::cos(thetaB) * std::cos(thetaB) - 1); // function: Y_{20}
       part.getLastProp<3>() = 0.0; // lap_adapt
       part.getLastProp<4>() = 0.0; // lap_reg
@@ -820,14 +818,14 @@ BOOST_AUTO_TEST_CASE(dcpse_surface_adaptive_unitSphere) {
   auto verletList_adapt = part.template getVerletAdaptRCut<>();
 
   // Lap_reg
-  SurfaceDerivative_xx<0,decltype(verletList_reg)> Sdxx_reg{part,verletList_reg,2,0,part_spacing,2};
-  SurfaceDerivative_yy<0,decltype(verletList_reg)> Sdyy_reg{part,verletList_reg,2,0,part_spacing,2};
-  SurfaceDerivative_zz<0,decltype(verletList_reg)> Sdzz_reg{part,verletList_reg,2,0,part_spacing,2};
+  SurfaceDerivative_xx<1,decltype(verletList_reg)> Sdxx_reg{part,verletList_reg,2,0,part_spacing,2};
+  SurfaceDerivative_yy<1,decltype(verletList_reg)> Sdyy_reg{part,verletList_reg,2,0,part_spacing,2};
+  SurfaceDerivative_zz<1,decltype(verletList_reg)> Sdzz_reg{part,verletList_reg,2,0,part_spacing,2};
 
   // Lap_adapt
-  SurfaceDerivative_xx<0,decltype(verletList_adapt)> Sdxx_adapt{part,verletList_adapt,2,0,0,2,support_options::ADAPTIVE};
-  SurfaceDerivative_yy<0,decltype(verletList_adapt)> Sdyy_adapt{part,verletList_adapt,2,0,0,2,support_options::ADAPTIVE};
-  SurfaceDerivative_zz<0,decltype(verletList_adapt)> Sdzz_adapt{part,verletList_adapt,2,0,0,2,support_options::ADAPTIVE};
+  SurfaceDerivative_xx<1,decltype(verletList_adapt)> Sdxx_adapt{part,verletList_adapt,2,0,0,2,support_options::ADAPTIVE};
+  SurfaceDerivative_yy<1,decltype(verletList_adapt)> Sdyy_adapt{part,verletList_adapt,2,0,0,2,support_options::ADAPTIVE};
+  SurfaceDerivative_zz<1,decltype(verletList_adapt)> Sdzz_adapt{part,verletList_adapt,2,0,0,2,support_options::ADAPTIVE};
 
   auto f{getV<2>(part)};
   auto lap_reg{getV<4>(part)};
