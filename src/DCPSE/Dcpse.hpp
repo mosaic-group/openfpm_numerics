@@ -825,21 +825,6 @@ protected:
 
 };
 
-/*
- * SFINAE version of getter function for cut-off radius when
- * adaptive cut-off mode is used and the radii are stored as
- * the last property in vProp vector of vector_dist
- */
-template<typename T, typename VectorType, typename = void>
-struct getPropSFINAE {
-	static T get(VectorType const& vectorDist, unsigned p) { /*Default case*/ return 0.0; }
-};
-
-template<typename T, typename VectorType>
-struct getPropSFINAE<T, VectorType, std::enable_if_t<std::is_same<typename boost::fusion::result_of::at_c<typename VectorType::value_type::type, 0>::type, int>::value>> {
-	static T get(VectorType const& vectorDist, unsigned p) { /*Special case for adaptive verlet list*/ return vectorDist.template getProp<0>(p); }
-};
-
 
 template<unsigned int dim, typename VerletList_type, typename vector_type, typename vector_type2=vector_type>
 class SurfaceDcpse : Dcpse<dim, VerletList_type, vector_type, vector_type2> {
@@ -1075,7 +1060,7 @@ public:
 		  	while (it.isNext()) {
 		    		size_t p = it.get();
 		    		nSpacings.add(verletList.getRCuts(p)/nCount);
-		  		std::cerr << "debug p " << p << " " << this->particlesDomain.template getProp<0>(p) << " " << getPropSFINAE<T, vector_type2>::get(particlesDomain, p) << std::endl;
+				std::cerr << "debug p " << p << " " << getPropSFINAE<T, vector_type2, 0>::get(particlesDomain, p) << std::endl;
 				++it;
 			}
 		}
