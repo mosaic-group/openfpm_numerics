@@ -1222,16 +1222,36 @@ public:
 
 	///////// BOOST ODEINT interface
 	iterator begin()
-	{ return &v.template get<0>(0); }
+	{
+		if (v.size() > 0)
+			return &v.template get<0>(0);
+
+		return NULL;
+	}
 
 	const_iterator begin() const
-	{ return &v.template get<0>(0); }
+	{
+		if (v.size() > 0)
+			return &v.template get<0>(0);
+
+		return NULL;
+	}
 
 	iterator end()
-	{ return &v.template get<0>(v.size()-1)+1; }
+	{
+		if (v.size() > 0)
+			return &v.template get<0>(v.size()-1)+1;
+
+		return NULL;
+	}
 
 	const_iterator end() const
-	{ return &v.template get<0>(v.size()-1)+1; }
+	{
+		if (v.size() > 0)
+			return &v.template get<0>(v.size()-1)+1;
+
+		return NULL;
+	}
 
 	size_t size() const
 	{ return v.size(); }
