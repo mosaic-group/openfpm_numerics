@@ -1060,7 +1060,6 @@ public:
 		  	while (it.isNext()) {
 		    		size_t p = it.get();
 		    		nSpacings.add(verletList.getRCuts(p)/nCount);
-				std::cerr << "debug p " << p << " " << getPropSFINAE<T, vector_type2, 0>::get(particlesDomain, p) << std::endl;
 				++it;
 			}
 		}
