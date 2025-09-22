@@ -21,7 +21,7 @@ BOOST_AUTO_TEST_CASE ( Regression_local )
     // Here we define the boundary conditions of our problem
     size_t bc[2]={PERIODIC,PERIODIC};
     // extended boundary around the domain, and the processor domain
-    Ghost<2,float> g(0.01);
+    Ghost<2,float> g(0.1);
 
     using vectorType = vector_dist<2,float, aggregate<double> >;
     vectorType vd(2048,domain,bc,g);
