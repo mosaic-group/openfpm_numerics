@@ -1655,8 +1655,8 @@ BOOST_AUTO_TEST_CASE(dcpse_surface_p2p_interpolation_plane_scalar) {
   double grid_spacing_to{2.0/(n_to-1)};
   size_t bc[3] = {NON_PERIODIC,NON_PERIODIC,NON_PERIODIC};
 
-  vector_dist<3,double,aggregate<double,double[3]>> part_from{0,domain,bc,rCut*grid_spacing_from};
-  vector_dist<3,double,aggregate<double,double[3],double>> part_to{0,domain,bc,rCut*grid_spacing_to};
+  vector_dist<3,double,aggregate<double,double[3]>> part_from{0,domain,bc,rCut};
+  vector_dist<3,double,aggregate<double,double[3],double>> part_to{0,domain,bc,rCut};
   // props: scalar_qty, normal, error
 
   // Create particles_from in a grid-like manner
