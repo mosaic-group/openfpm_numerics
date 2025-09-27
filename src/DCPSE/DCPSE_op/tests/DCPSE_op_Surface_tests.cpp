@@ -651,101 +651,106 @@ BOOST_AUTO_TEST_CASE(dcpse_surface_sphere_old) {
         //std::cout<<"Worst: "<<worst<<std::endl;
         BOOST_REQUIRE(worst < 0.03);
 }
-//
-//BOOST_AUTO_TEST_CASE(dcpse_surface_adaptive_planeCart) {
-//
-//  auto & v_cl = create_vcluster();
-//  
-//  // Plane in 2D, regular Cartesian distribution
-//  typedef vector_dist<3,double,aggregate<double,double[3],double,double,double,double>> vector_type;
-//  openfpm::vector<std::string> propNames{"rCut","normal","function","derivative","analyt","err"};
-//  
-//  const int n{50}; // number of particles
-//  size_t sz[3] = {n,n,n};
-//  double spacing{0.02};
-//  
-//  Box<3,double> domain{{-0.3,-0.3,-1.5},{1.3,1.3,1.5}};
-//  Ghost<3,double> ghost{spacing*2};
-//  size_t bc[3] = {NON_PERIODIC,NON_PERIODIC,NON_PERIODIC};
-//
-//  vector_type part{0,domain,bc,ghost};
-//  part.setPropNames(propNames);
-//  
-//  if (v_cl.rank() == 0) {
-//
-//    for (int i = 0; i < n; ++i) {
-//      for (int j = 0; j < n; ++j) {
-//	part.add();
-//	
-//	part.getLastPos()[0] = spacing*i;
-//	part.getLastPos()[1] = spacing*j;
-//	part.getLastPos()[2] = 0.0;
-//	
-//	part.getLastProp<1>()[0] = 0;
-//	part.getLastProp<1>()[1] = 0;
-//	part.getLastProp<1>()[2] = 1.0;
-//	
-//	part.getLastProp<2>() = std::sin(M_PI * part.getLastPos()[1]);
-//	part.getLastProp<3>() = 0;
-//	part.getLastProp<4>() = M_PI * std::cos(M_PI * part.getLastPos()[1]);
-//	// rCut is always stored in the last property
-//	part.getLastProp<0>() = 2*spacing;
-//      }
-//    }
-//  }
-//  part.map();
-//  part.ghost_get<0,1,2,3>();
-//
-//  size_t total_n{part.size_local()};
-//  v_cl.sum(total_n);
-//  v_cl.execute();
-//
-//  auto verletList = part.template getVerletAdaptRCut<>();
-//  
-//  SurfaceDerivative_y<1,decltype(verletList)> Sdy{part,verletList,2,0,0,2,support_options::ADAPTIVE}; // rCut is not used in the function
-//  auto f = getV<2>(part);
-//  auto Df = getV<3>(part);
-//  Df = Sdy(f);
-//
-//  // "rCut","normal","function","derivative","analyt","err"
-//  // Computing error -------------------------------------------------------------------
-//  {
-//    double maxErr{0}, l2err{0}, maxRel_err{0}, l2rel_err{0};
-//    double err, rel_err;
-//    auto pit{part.getDomainIterator()};
-//    while (pit.isNext()) {
-//      auto key{pit.get()};
-//
-//      err = std::abs(part.getProp<4>(key) - part.getProp<3>(key));
-//      rel_err = err/std::abs(part.getProp<4>(key));
-//      part.getProp<5>(key) = err;
-//      
-//      maxErr = std::max(maxErr,err);
-//      maxRel_err = std::max(maxRel_err,rel_err);
-//      l2err += err*err;
-//      l2rel_err += rel_err*rel_err;
-//
-//      ++pit;
-//    }
-//    v_cl.max(maxErr);
-//    v_cl.max(maxRel_err);
-//    v_cl.sum(l2err);
-//    v_cl.sum(l2rel_err);
-//    v_cl.execute();
-//
-//    // L2 and Linf norms
-//    double linf_norm{maxErr};
-//    double l2_norm{std::sqrt(l2err/double(total_n))};
-//
-//    double linf_rel_norm{maxRel_err};
-//    double l2_rel_norm{std::sqrt(l2rel_err/double(total_n))};
-// 
-//    // if (v_cl.rank() == 0)
-//    //   std::cout << total_n << " " << std::setprecision(6) << std::scientific << " " << l2_norm << " " << linf_norm << " " << l2_rel_norm << " " << linf_rel_norm << std::endl;
-//    BOOST_REQUIRE_CLOSE(l2_norm,8.657329e-02,0.1);
-//    BOOST_REQUIRE_CLOSE(linf_norm,7.108664e-01,0.1);
-//  }
-//}
+
+BOOST_AUTO_TEST_CASE(dcpse_surface_adaptive_planeCart) {
+
+  auto & v_cl = create_vcluster();
+  
+  // lane in 2D, regular Cartesian distribution
+  typedef vector_dist<3,double,aggregate<double,double[3],double,double,double,double>> vector_type;
+  openfpm::vector<std::string> propNames{"rCut","normal","function","derivative","analyt","err"};
+  
+  const int n{50}; // number of particles
+  size_t sz[3] = {n,n,n};
+  double spacing{0.02};
+  
+  Box<3,double> domain{{-0.3,-0.3,-1.5},{1.3,1.3,1.5}};
+  Ghost<3,double> ghost{spacing*2};
+  size_t bc[3] = {NON_PERIODIC,NON_PERIODIC,NON_PERIODIC};
+
+  vector_type part{0,domain,bc,ghost};
+  part.setPropNames(propNames);
+  
+  if (v_cl.rank() == 0) {
+
+    for (int i = 0; i < n; ++i) {
+      for (int j = 0; j < n; ++j) {
+	part.add();
+	
+	part.getLastPos()[0] = spacing*i;
+	part.getLastPos()[1] = spacing*j;
+	part.getLastPos()[2] = 0.0;
+	
+	part.getLastProp<1>()[0] = 0;
+	part.getLastProp<1>()[1] = 0;
+	part.getLastProp<1>()[2] = 1.0;
+	
+	part.getLastProp<2>() = std::sin(M_PI * part.getLastPos()[1]);
+	part.getLastProp<3>() = 0;
+	part.getLastProp<4>() = M_PI * std::cos(M_PI * part.getLastPos()[1]);
+	// rCut is always stored in the last property
+	part.getLastProp<0>() = 2*spacing;
+      }
+    }
+  }
+  part.addComputationCosts();
+  part.getDecomposition().decompose(); 
+  part.map();
+  part.ghost_get<0,1,2,3>();
+
+  size_t total_n{part.size_local()};
+  v_cl.sum(total_n);
+  v_cl.execute();
+
+
+  std::cerr << "size local " << part.size_local() << std::endl;
+
+  auto verletList = part.template getVerletAdaptRCut<>();
+  
+  SurfaceDerivative_y<1,decltype(verletList)> Sdy{part,verletList,2,0,0,2,support_options::ADAPTIVE}; // rCut is not used in the function
+  auto f = getV<2>(part);
+  auto Df = getV<3>(part);
+  Df = Sdy(f);
+
+  // "rCut","normal","function","derivative","analyt","err"
+  // Computing error -------------------------------------------------------------------
+  {
+    double maxErr{0}, l2err{0}, maxRel_err{0}, l2rel_err{0};
+    double err, rel_err;
+    auto pit{part.getDomainIterator()};
+    while (pit.isNext()) {
+      auto key{pit.get()};
+
+      err = std::abs(part.getProp<4>(key) - part.getProp<3>(key));
+      rel_err = err/std::abs(part.getProp<4>(key));
+      part.getProp<5>(key) = err;
+      
+      maxErr = std::max(maxErr,err);
+      maxRel_err = std::max(maxRel_err,rel_err);
+      l2err += err*err;
+      l2rel_err += rel_err*rel_err;
+
+      ++pit;
+    }
+    v_cl.max(maxErr);
+    v_cl.max(maxRel_err);
+    v_cl.sum(l2err);
+    v_cl.sum(l2rel_err);
+    v_cl.execute();
+
+    // L2 and Linf norms
+    double linf_norm{maxErr};
+    double l2_norm{std::sqrt(l2err/double(total_n))};
+
+    double linf_rel_norm{maxRel_err};
+    double l2_rel_norm{std::sqrt(l2rel_err/double(total_n))};
+ 
+    // if (v_cl.rank() == 0)
+    //   std::cout << total_n << " " << std::setprecision(6) << std::scientific << " " << l2_norm << " " << linf_norm << " " << l2_rel_norm << " " << linf_rel_norm << std::endl;
+    BOOST_REQUIRE_CLOSE(l2_norm,8.657329e-02,0.1);
+    BOOST_REQUIRE_CLOSE(linf_norm,7.108664e-01,0.1);
+  }
+}
 //
 //BOOST_AUTO_TEST_CASE(dcpse_surface_adaptive_unitSphere) {
 //    
