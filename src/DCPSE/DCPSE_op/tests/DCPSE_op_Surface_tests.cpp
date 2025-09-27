@@ -750,158 +750,158 @@ BOOST_AUTO_TEST_CASE(dcpse_surface_adaptive_planeCart) {
     BOOST_REQUIRE_CLOSE(linf_norm,7.108664e-01,0.1);
   }
 }
-//
-//BOOST_AUTO_TEST_CASE(dcpse_surface_adaptive_unitSphere) {
-//    
-//  auto & v_cl = create_vcluster();
-//
-//  typedef vector_dist<3,double,aggregate<double,double[3],double,double,double,double,double,double>> vector_type;
-//  openfpm::vector<std::string> propNames{"rCut","normal","function","lap_adaptive","lap_regular","analyt","err_adaptive","err_regular"};
-//
-//  size_t n{2000};
-//  double part_spacing{std::sqrt(4*3.14159265358979323846/n)};
-//  Box<3,double> domain{{-1.5,-1.5,-1.5},{1.5,1.5,1.5}};
-//  Ghost<3,double> ghost{2*part_spacing};
-//  size_t bc[3] = {NON_PERIODIC,NON_PERIODIC,NON_PERIODIC};
-//  std::array<double,3> center{0,0,0};
-//  
-//  vector_type part{0,domain,bc,ghost};
-//  part.setPropNames(propNames);
-//
-//  if (v_cl.rank() == 0) {
-//      
-//    // Created using the Fibonacci sphere algorithm
-//    // const double M_PI{3.14159265358979323846};
-//    const double golden_ang = M_PI*(3.0 - std::sqrt(5.0));
-//    const double prefactor{std::sqrt(0.75/M_PI)};
-//    double rad, theta, arg, thetaB, phi, phi_norm;
-//    std::array<double,3> coord;
-//    
-//    for (int i = 0; i < n; ++i) {
-//      
-//      coord[1] = 1.0 - 2.0*(i/double(n-1));
-//      rad = std::sqrt(1.0 - (coord[1]-center[1])*(coord[1]-center[1]));
-//      theta = golden_ang * i;
-//      coord[0] = std::cos(theta) * rad;
-//      coord[2] = std::sin(theta) * rad;
-//
-//      arg = (coord[0]-center[0]) * (coord[0]-center[0]) + (coord[1]-center[1]) * (coord[1]-center[1]);
-//      thetaB = std::atan2(std::sqrt(arg),(coord[2]-center[2]));
-//      phi = std::atan2((coord[1]-center[1]),(coord[0]-center[0]));
-//      
-//      part.add();
-//      part.getLastPos()[0] = coord[0];
-//      part.getLastPos()[1] = coord[1];
-//      part.getLastPos()[2] = coord[2];
-//
-//      // normal
-//      part.getLastProp<1>()[0] = std::sin(thetaB)*std::cos(phi);
-//      part.getLastProp<1>()[1] = std::sin(thetaB)*std::sin(phi);
-//      part.getLastProp<1>()[2] = std::cos(thetaB);
-//      
-//      part.getLastProp<0>() = 2*part_spacing; // rcut
-//      // rCut is always stored in the last property
-//      part.getLastProp<2>() = 0.25*std::sqrt(5/M_PI) * (3 * std::cos(thetaB) * std::cos(thetaB) - 1); // function: Y_{20}
-//      part.getLastProp<3>() = 0.0; // lap_adapt
-//      part.getLastProp<4>() = 0.0; // lap_reg
-//      part.getLastProp<5>() = -6 * part.getLastProp<2>(); // analyt
-//      
-//    }
-//  }
-//  part.map();
-//  part.ghost_get<0,1,2>();
-//
-//  size_t total_n{part.size_local()};
-//  v_cl.sum(total_n);
-//  v_cl.execute();
-//
-//  // Verlet_reg
-//  auto verletList_reg = part.template getVerlet<>(2*part_spacing);
-//
-//  // Verlet_adapt
-//  auto verletList_adapt = part.template getVerletAdaptRCut<>();
-//
-//  // Lap_reg
-//  SurfaceDerivative_xx<1,decltype(verletList_reg)> Sdxx_reg{part,verletList_reg,2,0,part_spacing,2};
-//  SurfaceDerivative_yy<1,decltype(verletList_reg)> Sdyy_reg{part,verletList_reg,2,0,part_spacing,2};
-//  SurfaceDerivative_zz<1,decltype(verletList_reg)> Sdzz_reg{part,verletList_reg,2,0,part_spacing,2};
-//
-//  // Lap_adapt
-//  SurfaceDerivative_xx<1,decltype(verletList_adapt)> Sdxx_adapt{part,verletList_adapt,2,0,0,2,support_options::ADAPTIVE};
-//  SurfaceDerivative_yy<1,decltype(verletList_adapt)> Sdyy_adapt{part,verletList_adapt,2,0,0,2,support_options::ADAPTIVE};
-//  SurfaceDerivative_zz<1,decltype(verletList_adapt)> Sdzz_adapt{part,verletList_adapt,2,0,0,2,support_options::ADAPTIVE};
-//
-//  auto f{getV<2>(part)};
-//  auto lap_reg{getV<4>(part)};
-//  auto lap_adapt{getV<3>(part)};
-//  lap_reg = Sdxx_reg(f) + Sdyy_reg(f)+ Sdzz_reg(f);
-//  lap_adapt = Sdxx_adapt(f) + Sdyy_adapt(f)+ Sdzz_adapt(f);
-//
-//  // Computing error -------------------------------------------------------------------
-//  {
-//    double maxErr_reg{0}, l2err_reg{0}, maxRel_err_reg{0}, l2rel_err_reg{0};
-//    double err_reg, rel_err_reg;
-//    double maxErr_adapt{0}, l2err_adapt{0}, maxRel_err_adapt{0}, l2rel_err_adapt{0};
-//    double err_adapt, rel_err_adapt;
-//    auto pit{part.getDomainIterator()};
-//    while (pit.isNext()) {
-//      auto key{pit.get()};
-//
-//      err_reg = std::abs(part.getProp<4>(key) - part.getProp<5>(key));
-//      rel_err_reg = err_reg/std::abs(part.getProp<5>(key));
-//      part.getProp<7>(key) = err_reg;
-//      
-//      maxErr_reg = std::max(maxErr_reg,err_reg);
-//      maxRel_err_reg = std::max(maxRel_err_reg,rel_err_reg);
-//      l2err_reg += err_reg*err_reg;
-//      l2rel_err_reg += rel_err_reg*rel_err_reg;
-//
-//      err_adapt = std::abs(part.getProp<3>(key) - part.getProp<5>(key));
-//      rel_err_adapt = err_adapt/std::abs(part.getProp<5>(key));
-//      part.getProp<6>(key) = err_adapt;
-//      
-//      maxErr_adapt = std::max(maxErr_adapt,err_adapt);
-//      maxRel_err_adapt = std::max(maxRel_err_adapt,rel_err_adapt);
-//      l2err_adapt += err_adapt*err_adapt;
-//      l2rel_err_adapt += rel_err_adapt*rel_err_adapt;
-//
-//      ++pit;
-//    }
-//    v_cl.max(maxErr_reg);
-//    v_cl.max(maxRel_err_reg);
-//    v_cl.sum(l2err_reg);
-//    v_cl.sum(l2rel_err_reg);
-//    v_cl.max(maxErr_adapt);
-//    v_cl.max(maxRel_err_adapt);
-//    v_cl.sum(l2err_adapt);
-//    v_cl.sum(l2rel_err_adapt);
-//    v_cl.execute();
-//
-//    // L2 and Linf norms
-//    double linf_norm_reg{maxErr_reg};
-//    double l2_norm_reg{std::sqrt(l2err_reg/double(total_n))};
-//
-//    double linf_rel_norm_reg{maxRel_err_reg};
-//    double l2_rel_norm_reg{std::sqrt(l2rel_err_reg/double(total_n))};
-//
-//    double linf_norm_adapt{maxErr_adapt};
-//    double l2_norm_adapt{std::sqrt(l2err_adapt/double(total_n))};
-//
-//    double linf_rel_norm_adapt{maxRel_err_adapt};
-//    double l2_rel_norm_adapt{std::sqrt(l2rel_err_adapt/double(total_n))};
-//
-//    // In case of debugging
-//  //   if (v_cl.rank() == 0) {
-//  //     std::cout << "reg: " << total_n << " " << std::setprecision(6) << std::scientific << " " << l2_norm_reg << " " << linf_norm_reg << " " << l2_rel_norm_reg << " " << linf_rel_norm_reg << std::endl;
-//  //     std::cout << "adapt: " << total_n << " " << std::setprecision(6) << std::scientific << " " << l2_norm_adapt << " " << linf_norm_adapt << " " << l2_rel_norm_adapt << " " << linf_rel_norm_adapt << std::endl;
-//  //   }
-//  // }
-//    BOOST_REQUIRE_CLOSE(l2_norm_reg,l2_norm_adapt,0.001);
-//    BOOST_REQUIRE_CLOSE(linf_norm_reg,linf_norm_adapt,0.001);
-//    BOOST_REQUIRE_CLOSE(l2_rel_norm_reg,l2_rel_norm_adapt,0.001);
-//    BOOST_REQUIRE_CLOSE(linf_rel_norm_reg,linf_rel_norm_adapt,0.001);
-//  }
-//}
+
+BOOST_AUTO_TEST_CASE(dcpse_surface_adaptive_unitSphere) {
+    
+  auto & v_cl = create_vcluster();
+
+  typedef vector_dist<3,double,aggregate<double,double[3],double,double,double,double,double,double>> vector_type;
+  openfpm::vector<std::string> propNames{"rCut","normal","function","lap_adaptive","lap_regular","analyt","err_adaptive","err_regular"};
+
+  size_t n{2000};
+  double part_spacing{std::sqrt(4*3.14159265358979323846/n)};
+  Box<3,double> domain{{-1.5,-1.5,-1.5},{1.5,1.5,1.5}};
+  Ghost<3,double> ghost{2*part_spacing};
+  size_t bc[3] = {NON_PERIODIC,NON_PERIODIC,NON_PERIODIC};
+  std::array<double,3> center{0,0,0};
+  
+  vector_type part{0,domain,bc,ghost};
+  part.setPropNames(propNames);
+
+  if (v_cl.rank() == 0) {
+      
+    // Created using the Fibonacci sphere algorithm
+    // const double M_PI{3.14159265358979323846};
+    const double golden_ang = M_PI*(3.0 - std::sqrt(5.0));
+    const double prefactor{std::sqrt(0.75/M_PI)};
+    double rad, theta, arg, thetaB, phi, phi_norm;
+    std::array<double,3> coord;
+    
+    for (int i = 0; i < n; ++i) {
+      
+      coord[1] = 1.0 - 2.0*(i/double(n-1));
+      rad = std::sqrt(1.0 - (coord[1]-center[1])*(coord[1]-center[1]));
+      theta = golden_ang * i;
+      coord[0] = std::cos(theta) * rad;
+      coord[2] = std::sin(theta) * rad;
+
+      arg = (coord[0]-center[0]) * (coord[0]-center[0]) + (coord[1]-center[1]) * (coord[1]-center[1]);
+      thetaB = std::atan2(std::sqrt(arg),(coord[2]-center[2]));
+      phi = std::atan2((coord[1]-center[1]),(coord[0]-center[0]));
+      
+      part.add();
+      part.getLastPos()[0] = coord[0];
+      part.getLastPos()[1] = coord[1];
+      part.getLastPos()[2] = coord[2];
+
+      // normal
+      part.getLastProp<1>()[0] = std::sin(thetaB)*std::cos(phi);
+      part.getLastProp<1>()[1] = std::sin(thetaB)*std::sin(phi);
+      part.getLastProp<1>()[2] = std::cos(thetaB);
+      
+      part.getLastProp<0>() = 2*part_spacing; // rcut
+      // rCut is always stored in the last property
+      part.getLastProp<2>() = 0.25*std::sqrt(5/M_PI) * (3 * std::cos(thetaB) * std::cos(thetaB) - 1); // function: Y_{20}
+      part.getLastProp<3>() = 0.0; // lap_adapt
+      part.getLastProp<4>() = 0.0; // lap_reg
+      part.getLastProp<5>() = -6 * part.getLastProp<2>(); // analyt
+      
+    }
+  }
+  part.map();
+  part.ghost_get<0,1,2>();
+
+  size_t total_n{part.size_local()};
+  v_cl.sum(total_n);
+  v_cl.execute();
+
+  // Verlet_reg
+  auto verletList_reg = part.template getVerlet<>(2*part_spacing);
+
+  // Verlet_adapt
+  auto verletList_adapt = part.template getVerletAdaptRCut<>();
+
+  // Lap_reg
+  SurfaceDerivative_xx<1,decltype(verletList_reg)> Sdxx_reg{part,verletList_reg,2,0,part_spacing,2};
+  SurfaceDerivative_yy<1,decltype(verletList_reg)> Sdyy_reg{part,verletList_reg,2,0,part_spacing,2};
+  SurfaceDerivative_zz<1,decltype(verletList_reg)> Sdzz_reg{part,verletList_reg,2,0,part_spacing,2};
+
+  // Lap_adapt
+  SurfaceDerivative_xx<1,decltype(verletList_adapt)> Sdxx_adapt{part,verletList_adapt,2,0,0,2,support_options::ADAPTIVE};
+  SurfaceDerivative_yy<1,decltype(verletList_adapt)> Sdyy_adapt{part,verletList_adapt,2,0,0,2,support_options::ADAPTIVE};
+  SurfaceDerivative_zz<1,decltype(verletList_adapt)> Sdzz_adapt{part,verletList_adapt,2,0,0,2,support_options::ADAPTIVE};
+
+  auto f{getV<2>(part)};
+  auto lap_reg{getV<4>(part)};
+  auto lap_adapt{getV<3>(part)};
+  lap_reg = Sdxx_reg(f) + Sdyy_reg(f)+ Sdzz_reg(f);
+  lap_adapt = Sdxx_adapt(f) + Sdyy_adapt(f)+ Sdzz_adapt(f);
+
+  // Computing error -------------------------------------------------------------------
+  {
+    double maxErr_reg{0}, l2err_reg{0}, maxRel_err_reg{0}, l2rel_err_reg{0};
+    double err_reg, rel_err_reg;
+    double maxErr_adapt{0}, l2err_adapt{0}, maxRel_err_adapt{0}, l2rel_err_adapt{0};
+    double err_adapt, rel_err_adapt;
+    auto pit{part.getDomainIterator()};
+    while (pit.isNext()) {
+      auto key{pit.get()};
+
+      err_reg = std::abs(part.getProp<4>(key) - part.getProp<5>(key));
+      rel_err_reg = err_reg/std::abs(part.getProp<5>(key));
+      part.getProp<7>(key) = err_reg;
+      
+      maxErr_reg = std::max(maxErr_reg,err_reg);
+      maxRel_err_reg = std::max(maxRel_err_reg,rel_err_reg);
+      l2err_reg += err_reg*err_reg;
+      l2rel_err_reg += rel_err_reg*rel_err_reg;
+
+      err_adapt = std::abs(part.getProp<3>(key) - part.getProp<5>(key));
+      rel_err_adapt = err_adapt/std::abs(part.getProp<5>(key));
+      part.getProp<6>(key) = err_adapt;
+      
+      maxErr_adapt = std::max(maxErr_adapt,err_adapt);
+      maxRel_err_adapt = std::max(maxRel_err_adapt,rel_err_adapt);
+      l2err_adapt += err_adapt*err_adapt;
+      l2rel_err_adapt += rel_err_adapt*rel_err_adapt;
+
+      ++pit;
+    }
+    v_cl.max(maxErr_reg);
+    v_cl.max(maxRel_err_reg);
+    v_cl.sum(l2err_reg);
+    v_cl.sum(l2rel_err_reg);
+    v_cl.max(maxErr_adapt);
+    v_cl.max(maxRel_err_adapt);
+    v_cl.sum(l2err_adapt);
+    v_cl.sum(l2rel_err_adapt);
+    v_cl.execute();
+
+    // L2 and Linf norms
+    double linf_norm_reg{maxErr_reg};
+    double l2_norm_reg{std::sqrt(l2err_reg/double(total_n))};
+
+    double linf_rel_norm_reg{maxRel_err_reg};
+    double l2_rel_norm_reg{std::sqrt(l2rel_err_reg/double(total_n))};
+
+    double linf_norm_adapt{maxErr_adapt};
+    double l2_norm_adapt{std::sqrt(l2err_adapt/double(total_n))};
+
+    double linf_rel_norm_adapt{maxRel_err_adapt};
+    double l2_rel_norm_adapt{std::sqrt(l2rel_err_adapt/double(total_n))};
+
+    // In case of debugging
+  //   if (v_cl.rank() == 0) {
+  //     std::cout << "reg: " << total_n << " " << std::setprecision(6) << std::scientific << " " << l2_norm_reg << " " << linf_norm_reg << " " << l2_rel_norm_reg << " " << linf_rel_norm_reg << std::endl;
+  //     std::cout << "adapt: " << total_n << " " << std::setprecision(6) << std::scientific << " " << l2_norm_adapt << " " << linf_norm_adapt << " " << l2_rel_norm_adapt << " " << linf_rel_norm_adapt << std::endl;
+  //   }
+  // }
+    BOOST_REQUIRE_CLOSE(l2_norm_reg,l2_norm_adapt,0.001);
+    BOOST_REQUIRE_CLOSE(linf_norm_reg,linf_norm_adapt,0.001);
+    BOOST_REQUIRE_CLOSE(l2_rel_norm_reg,l2_rel_norm_adapt,0.001);
+    BOOST_REQUIRE_CLOSE(linf_rel_norm_reg,linf_rel_norm_adapt,0.001);
+  }
+}
 //
 //     BOOST_AUTO_TEST_CASE(dcpse_surface_adaptive_load) {
 // //  int rank;
