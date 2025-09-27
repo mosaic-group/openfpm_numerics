@@ -1056,7 +1056,7 @@ public:
 		if(opt==support_options::ADAPTIVE) {
 			// Get the normal spacing for each particle
 			nSpacings.clear();
-			auto it = particlesDomain.getDomainIterator();
+			auto it = particlesDomain.getDomainAndGhostIterator();
 		  	while (it.isNext()) {
 		    		size_t p = it.get();
 		    		nSpacings.add(verletList.getRCuts(p)/nCount);
