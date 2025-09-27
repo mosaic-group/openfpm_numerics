@@ -653,7 +653,6 @@ BOOST_AUTO_TEST_CASE(dcpse_surface_sphere_old) {
 }
 
 BOOST_AUTO_TEST_CASE(dcpse_surface_adaptive_planeCart) {
-
   auto & v_cl = create_vcluster();
   
   // lane in 2D, regular Cartesian distribution

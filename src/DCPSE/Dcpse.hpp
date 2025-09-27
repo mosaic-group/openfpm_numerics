@@ -880,16 +880,16 @@ protected:
 
 		if (this->opt==support_options::ADAPTIVE)
 		  {
-		    // Get all rCuts
+		    // Get all rCuts from particlesDomain
 		    openfpm::vector<T> rCuts;
 		    auto it = this->particlesDomain.getDomainIterator();
 		    while (it.isNext()) {
 		      size_t p = it.get();
 		      rCuts.add();
 		      rCuts.get(rCuts.size()-1) = this->verletList.getRCuts(p);
-		      this->verletList.clear(p); // clear the Verlet list before refilling it
 		      ++it;
 		    }
+		    this->verletList.clear(); // clear the Verlet list before refilling it
 #ifdef SE_CLASS1
 		    if (rCuts.size() != this->particlesDomain.size_local())
 		      {
@@ -1050,16 +1050,16 @@ public:
 		nSpacing(nSpacing),
 		nCount(nCount)
 	{
-	        particlesSupport.ghost_get_subset(); // TODO: Delete -- This does nothing as that function definition is empty
 		this->rCut = rCut;
 
 		if(opt==support_options::ADAPTIVE) {
-			// Get the normal spacing for each particle
+		        // The spacing along the normal has to be similar to the surface spacing of the support particles
+		        particlesSupport.template ghost_get<0>(); // communicate the rCut to the ghost
 			nSpacings.clear();
-			auto it = particlesDomain.getDomainAndGhostIterator();
+			auto it = particlesSupport.getDomainAndGhostIterator();
 		  	while (it.isNext()) {
 		    		size_t p = it.get();
-		    		nSpacings.add(verletList.getRCuts(p)/nCount);
+				nSpacings.add(getPropSFINAE<T, vector_type, 0>::get(particlesSupport, p)/nCount);
 				++it;
 			}
 		}
