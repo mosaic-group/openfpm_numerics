@@ -804,17 +804,17 @@ struct vector_dist_expression_comp_sel<comp_dev,false>
 /*! \brief Expression implementation computation selector
  *
  */
-template<bool cond>
+template<bool cond, unsigned int prop = 0>
 struct vector_dist_expression_comp_proxy_sel
 {
 	template<bool cond_, typename v_type, typename exp_type>
 	static void compute(v_type &v,exp_type &v_exp)
-	{ vector_dist_op_compute_op<0,vector_dist_expression_comp_sel<comp_dev,cond_>::type::value>
+	{ vector_dist_op_compute_op<prop,vector_dist_expression_comp_sel<comp_dev,cond_>::type::value>
 		::compute_expr(v,v_exp);}
 
 	template<bool cond_, unsigned int n, typename v_type, typename exp_type>
 	static void compute(v_type &v,exp_type &v_exp, int (& comp)[n])
-	{ vector_dist_op_compute_op<0,vector_dist_expression_comp_sel<comp_dev,cond_>::type::value>
+	{ vector_dist_op_compute_op<prop,vector_dist_expression_comp_sel<comp_dev,cond_>::type::value>
 		::compute_expr_slice(v,v_exp,comp);}
 };
 
@@ -843,7 +843,7 @@ struct transform_if_temporal<vector_dist_expression<0,openfpm::vector_gpu<aggreg
 
 
 template<>
-struct vector_dist_expression_comp_proxy_sel<false>
+struct vector_dist_expression_comp_proxy_sel<false, 0>
 {
 	template<bool cond, typename v_type, typename exp_type>
 	static void compute(v_type &v, exp_type &v_exp)
@@ -1896,7 +1896,7 @@ public:
 		else
 		{
 			constexpr bool cond_slice = !std::is_same<vtype,openfpm::vector<aggregate<T>,CudaMemory,memory_traits_inte>>::value;
-			vector_dist_expression_comp_proxy_sel<cond_slice>::template compute<cond>(v,v_exp,comp);
+			vector_dist_expression_comp_proxy_sel<cond_slice,exp1::prop>::template compute<cond>(v,v_exp,comp);
 		}
 
 
