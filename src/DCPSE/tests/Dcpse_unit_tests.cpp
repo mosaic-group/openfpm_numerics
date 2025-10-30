@@ -148,7 +148,7 @@ BOOST_AUTO_TEST_SUITE(Dcpse_tests)
         spacing[0] = 1.0 / (sz[0] - 1);
         spacing[1] = 1.0 / (sz[1] - 1);
 
-        double sigma2 = spacing[0] * spacing[1] / (2 * 4);
+        double sigma2 = spacing[0] * spacing[1] / (4);
         //std::cout
         //        << "sigma2 = " << sigma2
         //        << ", spacing[0] = " << spacing[0]
@@ -199,6 +199,7 @@ BOOST_AUTO_TEST_SUITE(Dcpse_tests)
 
         }
         domain.map(); // Send particles to the right processors
+	domain.ghost_get();
 
         // Setup finished, actual test below...
 //        std::cout << "rCut = " << rCut << std::endl;
