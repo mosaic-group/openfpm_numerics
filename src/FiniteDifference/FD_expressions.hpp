@@ -61,7 +61,11 @@ namespace FD
 				long int x0 = k.getKeyRef().get(i);
 
 				k.getKeyRef().set_d(i, x0 + sign);
-				grid_dist_expression_value_impl_func_scal<i-1>::template inte<prp,base_type>(g,k,c_where,c_o1,inte_out,c);
+				if (g.getLocalGrid().get(k.getSub()).getGrid().size(i) > k.getKey().get(i)) {
+					grid_dist_expression_value_impl_func_scal<i-1>::template inte<prp,base_type>(g,k,c_where,c_o1,inte_out,c);
+				} else {
+					c += 1;
+				}
 				k.getKeyRef().set_d(i, x0);
 			}
 			else
@@ -841,6 +845,7 @@ namespace FD
 		{
 			comb<grid::dims> c_o1 = g.getStagPositions()[prp].get(0);
 
+
 			return grid_dist_expression_value_impl<type_proc>::template inte<prp>(g,k,c_where,c_o1);
 		}
 
@@ -854,7 +859,12 @@ namespace FD
 		template<unsigned int nc>
 		inline auto value(const grid_dist_key_dx<grid::dims> & k, comb<grid::dims> & c_where, const int (& comp)[nc]) const -> decltype(grid_dist_expression_value_impl<type_proc>::template inte<prp>(g,k,c_where,c_where,comp))
 		{
-			comb<grid::dims> c_o1 = g.getStagPositions()[prp].get(comp[0]);
+			comb<grid::dims> c_o1;
+
+			if (comp[0] < g.getStagPositions()[prp].size())
+				c_o1 = g.getStagPositions()[prp].get(comp[0]);
+			else
+				c_o1 = g.getStagPositions()[prp].get(0);
 
 			return grid_dist_expression_value_impl<type_proc>::template inte<prp>(g,k,c_where,c_o1,comp);
 //			return g.template getProp<prp>(k);
@@ -873,7 +883,7 @@ namespace FD
 
 			auto it = g.getDomainIterator();
 
-			comb<grid::dims> s_pos = g.getStagPosition()[prp].get(0);
+			comb<grid::dims> s_pos = g.getStagPositions()[prp].get(0);
 
 			while (it.isNext())
 			{
@@ -899,6 +909,7 @@ namespace FD
 			g_exp.init();
 
 			auto it = g.getDomainIterator();
+			const auto& gLocalGrid = g.getLocalGrid();
 
 			comb<grid::dims> s_pos = g.getStagPositions()[prp].get(0);
 
