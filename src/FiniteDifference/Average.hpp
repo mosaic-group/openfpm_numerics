@@ -79,7 +79,7 @@ class Avg<d,arg,Sys_eqs,CENTRAL>
 	 *
 	 * ### Example
 	 *
-	 * \snippet FDScheme_unit_tests.hpp Usage of stencil derivative
+	 * \snippet FDScheme_unit_tests.cpp Usage of stencil derivative
 	 *
 	 */
 	inline static void value(const typename stub_or_real<Sys_eqs,Sys_eqs::dims,typename Sys_eqs::stype,typename Sys_eqs::b_grid::decomposition::extended_type>::type & g_map, grid_dist_key_dx<Sys_eqs::dims> & kmap , const grid_sm<Sys_eqs::dims,void> & gs, typename Sys_eqs::stype (& spacing )[Sys_eqs::dims] , std::unordered_map<long int,typename Sys_eqs::stype > & cols, typename Sys_eqs::stype coeff)
@@ -162,7 +162,7 @@ class Avg<d,arg,Sys_eqs,FORWARD>
 	 *
 	 * ### Example
 	 *
-	 * \snippet FDScheme_unit_tests.hpp Usage of stencil derivative
+	 * \snippet FDScheme_unit_tests.cpp Usage of stencil derivative
 	 *
 	 */
 	inline static void value(const typename stub_or_real<Sys_eqs,Sys_eqs::dims,typename Sys_eqs::stype,typename Sys_eqs::b_grid::decomposition::extended_type>::type & g_map, grid_dist_key_dx<Sys_eqs::dims> & kmap , const grid_sm<Sys_eqs::dims,void> & gs, typename Sys_eqs::stype (& spacing )[Sys_eqs::dims] , std::unordered_map<long int,typename Sys_eqs::stype > & cols, typename Sys_eqs::stype coeff)
@@ -222,7 +222,7 @@ class Avg<d,arg,Sys_eqs,BACKWARD>
 	 *
 	 * ### Example
 	 *
-	 * \snippet FDScheme_unit_tests.hpp Usage of stencil derivative
+	 * \snippet FDScheme_unit_tests.cpp Usage of stencil derivative
 	 *
 	 */
 	inline static void value(const typename stub_or_real<Sys_eqs,Sys_eqs::dims,typename Sys_eqs::stype,typename Sys_eqs::b_grid::decomposition::extended_type>::type & g_map, grid_dist_key_dx<Sys_eqs::dims> & kmap , const grid_sm<Sys_eqs::dims,void> & gs, typename Sys_eqs::stype (& spacing )[Sys_eqs::dims], std::unordered_map<long int,typename Sys_eqs::stype > & cols, typename Sys_eqs::stype coeff)

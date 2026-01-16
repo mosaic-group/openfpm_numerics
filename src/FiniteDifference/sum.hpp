@@ -85,7 +85,7 @@
  *
  * ## Example
  *
- * \snippet FDScheme_unit_tests.hpp sum example
+ * \snippet FDScheme_unit_tests.cpp sum example
  *
  */
 template<typename ... expr>
@@ -111,7 +111,7 @@ struct sum
 	 *
 	 * ### Example
 	 *
-	 * \snippet FDScheme_unit_tests.hpp sum example
+	 * \snippet FDScheme_unit_tests.cpp sum example
 	 *
 	 */
 	inline static void value(const typename stub_or_real<Sys_eqs,Sys_eqs::dims,typename Sys_eqs::stype,typename Sys_eqs::b_grid::decomposition::extended_type>::type & g_map,
@@ -144,7 +144,7 @@ struct minus
 	 *
 	 * \tparam ord
 	 *
-	 * \snippet FDScheme_unit_tests.hpp minus example
+	 * \snippet FDScheme_unit_tests.cpp minus example
 	 *
 	 * \param g_map Grid mapping, it convert grid position into vector/Matrix row
 	 * \param kmap grid position

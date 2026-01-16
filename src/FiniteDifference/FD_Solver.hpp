@@ -107,15 +107,15 @@ v_x = 0, v_y = 0 \quad y = L \quad B4\\
  *
  * In order to solve such system first we define the general properties of the system
  *
- *	\snippet eq_unit_test.hpp Definition of the system
+ *	\snippet eq_unit_test.cpp Definition of the system
  *
  * ## Define the equations of the system
  *
- * \snippet eq_unit_test.hpp Definition of the equation of the system in the bulk and at the boundary
+ * \snippet eq_unit_test.cpp Definition of the equation of the system in the bulk and at the boundary
  *
  * ## Define the domain and impose the equations
  *
- * \snippet eq_unit_test.hpp lid-driven cavity 2D
+ * \snippet eq_unit_test.cpp lid-driven cavity 2D
  *
  * # 3D
  *
@@ -587,7 +587,7 @@ private:
 	 * Ax = b
 	 *
 	 * ## Stokes equation 2D, lid driven cavity with one splipping wall
-	 * \snippet eq_unit_test.hpp Copy the solution to grid
+	 * \snippet eq_unit_test.cpp Copy the solution to grid
 	 *
 	 * \param op Operator to impose (A term)
 	 * \param num right hand side of the term (b term)
@@ -898,7 +898,7 @@ public:
 	 * Ax = b
 	 *
 	 * ## Stokes equation, lid driven cavity with one splipping wall
-	 * \snippet eq_unit_test.hpp lid-driven cavity 2D
+	 * \snippet eq_unit_test.cpp lid-driven cavity 2D
 	 *
 	 * \param op Operator to impose (A term)
 	 * \param num right hand side of the term (b term)
@@ -929,7 +929,7 @@ public:
      * Ax = b
      *
      * ## Stokes equation, lid driven cavity with one splipping wall
-     * \snippet eq_unit_test.hpp lid-driven cavity 2D
+     * \snippet eq_unit_test.cpp lid-driven cavity 2D
      *
      * \param op Operator to impose (A term)
      * \param num right hand side of the term (b term)
@@ -990,7 +990,7 @@ public:
 	 * Ax = b
 	 *
 	 * ## Stokes equation, lid driven cavity with one splipping wall
-	 * \snippet eq_unit_test.hpp lid-driven cavity 2D
+	 * \snippet eq_unit_test.cpp lid-driven cavity 2D
 	 *
 	 * \param op Operator to impose (A term)
 	 * \param num right hand side of the term (b term)
@@ -1036,7 +1036,7 @@ public:
 	 * Ax = b
 	 *
 	 * ## Stokes equation, lid driven cavity with one splipping wall
-	 * \snippet eq_unit_test.hpp lid-driven cavity 2D
+	 * \snippet eq_unit_test.cpp lid-driven cavity 2D
 	 *
 	 * \param op Operator to impose (A term)
 	 * \param num right hand side of the term (b term)
@@ -1083,7 +1083,7 @@ public:
  * Ax = b
  *
  * ## Stokes equation, lid driven cavity with one splipping wall
- * \snippet eq_unit_test.hpp lid-driven cavity 2D
+ * \snippet eq_unit_test.cpp lid-driven cavity 2D
  *
  * \param op Operator to impose (A term)
  * \param num right hand side of the term (b term)
@@ -1293,7 +1293,7 @@ public:
 	/*! \brief Copy the vector into the grid
 	 *
 	 * ## Copy the solution into the grid
-	 * \snippet eq_unit_test.hpp Copy the solution to grid
+	 * \snippet eq_unit_test.cpp Copy the solution to grid
 	 *
 	 * \tparam scheme Discretization scheme
 	 * \tparam Grid_dst type of the target grid
@@ -1425,7 +1425,7 @@ public:
 	/*! \brief Copy the vector into the grid
 	 *
 	 * ## Copy the solution into the grid
-	 * \snippet eq_unit_test.hpp Copy the solution to grid
+	 * \snippet eq_unit_test.cpp Copy the solution to grid
 	 *
 	 * \tparam scheme Discretization scheme
 	 * \tparam Grid_dst type of the target grid

@@ -94,7 +94,7 @@ struct solError
  *
  * # Example of use of this class #
  *
- * \snippet eq_unit_test.hpp lid-driven cavity 2D
+ * \snippet eq_unit_test.cpp lid-driven cavity 2D
  *
  */
 template<typename T>

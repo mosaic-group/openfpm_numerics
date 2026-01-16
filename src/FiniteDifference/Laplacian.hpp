@@ -35,7 +35,7 @@ class Lap
 	 *
 	 * ### Example
 	 *
-	 * \snippet FDScheme_unit_tests.hpp Laplacian usage
+	 * \snippet FDScheme_unit_tests.cpp Laplacian usage
 	 *
 	 */
 	inline static void value(const typename stub_or_real<Sys_eqs,Sys_eqs::dims,typename Sys_eqs::stype,typename Sys_eqs::b_grid::decomposition::extended_type>::type & g_map,
@@ -84,7 +84,7 @@ public:
 	 *
 	 * ### Example
 	 *
-	 * \snippet FDScheme_unit_tests.hpp Laplacian usage
+	 * \snippet FDScheme_unit_tests.cpp Laplacian usage
 	 *
 	 */
 	inline static void value(const typename stub_or_real<Sys_eqs,Sys_eqs::dims,typename Sys_eqs::stype,typename Sys_eqs::b_grid::decomposition::extended_type>::type & g_map,
@@ -149,7 +149,7 @@ public:
 	 *
 	 * ### Example
 	 *
-	 * \snippet FDScheme_unit_tests.hpp Laplacian usage
+	 * \snippet FDScheme_unit_tests.cpp Laplacian usage
 	 *
 	 */
 	inline static void value(const typename stub_or_real<Sys_eqs,Sys_eqs::dims,typename Sys_eqs::stype,typename Sys_eqs::b_grid::decomposition::extended_type>::type & g_map, grid_dist_key_dx<Sys_eqs::dims> & kmap , const grid_sm<Sys_eqs::dims,void> & gs, typename Sys_eqs::stype (& spacing )[Sys_eqs::dims] , std::unordered_map<long int,typename Sys_eqs::stype > & cols, typename Sys_eqs::stype coeff)
