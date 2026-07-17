@@ -7,6 +7,21 @@
 
 #include "Space/Shape/Point.hpp"
 
+template<typename T>
+__host__ __device__ inline T monomial_integer_power(T base,
+                                                    unsigned int exponent)
+{
+    T result = 1;
+    while (exponent != 0)
+    {
+        if ((exponent & 1u) != 0)
+            result *= base;
+        base *= base;
+        exponent >>= 1u;
+    }
+    return result;
+}
+
 
 template<unsigned int dim>
 class Monomial_gpu
@@ -66,7 +81,7 @@ __host__ __device__ Monomial_gpu<dim>::Monomial_gpu(const Point<dim, long int> &
 }
 
 template<unsigned int dim>
-__host__ __device__ Monomial_gpu<dim>::Monomial_gpu(const unsigned int other[dim]) : Monomial_gpu(Point<dim, unsigned int>(other))
+__host__ __device__ Monomial_gpu<dim>::Monomial_gpu(const unsigned int other[dim])
 {
     for (size_t i = 0; i < dim; ++i)
        exponents[i] = other[i];
@@ -157,7 +172,7 @@ __host__ __device__ T Monomial_gpu<dim>::evaluate(const Point<dim, T> x) const
 {
     T res = scalar;
     for (unsigned int i = 0; i < dim; ++i)
-        res *= pow(x[i], getExponent(i));
+        res *= monomial_integer_power(x[i], getExponent(i));
 
     return res;
 }
@@ -168,7 +183,7 @@ __host__ __device__ T Monomial_gpu<dim>::evaluate(const T (& x) [dim]) const
 {
     T res = scalar;
     for (unsigned int i = 0; i < dim; ++i)
-        res *= pow(x[i], getExponent(i));
+        res *= monomial_integer_power(x[i], getExponent(i));
 
     return res;
 }

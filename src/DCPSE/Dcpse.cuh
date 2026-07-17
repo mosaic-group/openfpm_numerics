@@ -4,7 +4,7 @@
 #ifndef OPENFPM_PDATA_DCPSE_CUH
 #define OPENFPM_PDATA_DCPSE_CUH
 
-#if defined(__NVCC__)
+#if defined(__NVCC__) && !defined(CUDA_ON_CPU)
 
 #include "Vector/vector_dist.hpp"
 #include "MonomialBasis.hpp"
@@ -17,9 +17,24 @@
 #include <chrono>
 
 // CUDA
+#if !defined(CUDIFY_USE_METAL)
 #include <cuda.h>
 #include <cuda_runtime.h>
-#include <cusolverDn.h>
+#include <cublas_v2.h>
+#endif
+
+template<typename T>
+__host__ __device__ inline T dcpse_gpu_exp(T value)
+{
+#if defined(CUDIFY_USE_METAL) && defined(__HIP_DEVICE_COMPILE__)
+    // Apple GPUs do not expose Float64 transcendental instructions through
+    // Vulkan. Preserve the double storage path while evaluating this smooth
+    // weighting function with the available Float32 device instruction.
+    return static_cast<T>(expf(static_cast<float>(value)));
+#else
+    return exp(value);
+#endif
+}
 
 
 template<unsigned int dim, typename particles_type, typename T, typename monomialBasis_type, typename supportKey_type, typename localEps_type, typename calcKernels_type>
@@ -612,10 +627,20 @@ std::cout << "Support building took " << time_span2.count() * 1000. << " millise
         throw std::invalid_argument("DCPSE operator error: CUBLAS supports only float or double"); }
 
     void assembleLocalMatrices_t(float rCut) {
-        assembleLocalMatrices(cublasSgetrfBatched, cublasStrsmBatched); }
+#if defined(CUDIFY_USE_METAL)
+        assembleLocalMatrices(nullptr, nullptr);
+#else
+        assembleLocalMatrices(cublasSgetrfBatched, cublasStrsmBatched);
+#endif
+    }
 
     void assembleLocalMatrices_t(double rCut) {
-        assembleLocalMatrices(cublasDgetrfBatched, cublasDtrsmBatched); }
+#if defined(CUDIFY_USE_METAL)
+        assembleLocalMatrices(nullptr, nullptr);
+#else
+        assembleLocalMatrices(cublasDgetrfBatched, cublasDtrsmBatched);
+#endif
+    }
 
     template<typename cublasLUDec_type, typename cublasTriangSolve_type>
     void assembleLocalMatrices(cublasLUDec_type cublasLUDecFunc, cublasTriangSolve_type cublasTriangSolveFunc) {
@@ -624,14 +649,21 @@ std::cout << "Support building took " << time_span2.count() * 1000. << " millise
         // move monomial basis to kernel
         auto& basis = monomialBasis.getBasis();
         openfpm::vector_custd<Monomial_gpu<dim>> basisTemp(basis.begin(), basis.end());
-        basisTemp.template hostToDevice();
+        basisTemp.hostToDevice();
         MonomialBasis<dim, aggregate<Monomial_gpu<dim>>, openfpm::vector_custd_ker, memory_traits_inte> monomialBasisKernel(basisTemp.toKernel());
 
         size_t numMatrices = supportRefs.size();
         size_t monomialBasisSize = monomialBasis.size();
 
         int numSMs, numSMsMult = 1;
+#if defined(CUDIFY_USE_METAL)
+        // The MoltenVK bridge has no CUDA-style SM count. One persistent
+        // workgroup is sufficient because this kernel strides over all local
+        // matrices.
+        numSMs = 1;
+#else
         cudaDeviceGetAttribute(&numSMs, cudaDevAttrMultiProcessorCount, 0);
+#endif
         size_t numThreads = numSMs*numSMsMult*256;
         std::cout << "numThreads " << numThreads << " numMatrices " << numMatrices << std::endl;
 
@@ -658,9 +690,9 @@ std::cout << "Support building took " << time_span2.count() * 1000. << " millise
         // assemble local matrices on GPU
         std::chrono::high_resolution_clock::time_point t9 = std::chrono::high_resolution_clock::now();
         particles.hostToDevicePos();
-        supportRefs.template hostToDevice();
-        AMatPointers.template hostToDevice();
-        bVecPointers.template hostToDevice();
+        supportRefs.hostToDevice();
+        AMatPointers.hostToDevice();
+        bVecPointers.hostToDevice();
 
         auto AMatPointersKernel = AMatPointers.toKernel(); T** AMatPointersKernelPointer = (T**) AMatPointersKernel.getPointer();
         auto bVecPointersKernel = bVecPointers.toKernel(); T** bVecPointersKernelPointer = (T**) bVecPointersKernel.getPointer();
@@ -668,15 +700,34 @@ std::cout << "Support building took " << time_span2.count() * 1000. << " millise
         assembleLocalMatrices_gpu<<<numSMsMult*numSMs, 256>>>(particles.toKernel(), differentialSignature, differentialOrder, monomialBasisKernel, supportRefs.toKernel(), kerOffsets.toKernel(), supportKeys1D.toKernel(),
             AMatPointersKernelPointer, bVecPointersKernelPointer, localEps.toKernel(), localEpsInvPow.toKernel(), BMat.toKernel(), numMatrices, maxSupportSize);
 
-        localEps.template deviceToHost();
-        localEpsInvPow.template deviceToHost();
+        localEps.deviceToHost();
+        localEpsInvPow.deviceToHost();
 
         std::chrono::high_resolution_clock::time_point t10 = std::chrono::high_resolution_clock::now();
         std::chrono::duration<double> time_span3 = std::chrono::duration_cast<std::chrono::duration<double>>(t10 - t9);
         std::cout << "assembleLocalMatrices_gpu took " << time_span3.count() * 1000. << " milliseconds." << std::endl;
 
-        //cublas lu solver
+        // Solve the independent local systems. CUDA uses the original batched
+        // cuBLAS path. MoltenVK has no cuBLAS implementation, so transfer this
+        // one-time setup data to the host and use Eigen before continuing with
+        // the existing GPU kernel calculation.
         std::chrono::high_resolution_clock::time_point t7 = std::chrono::high_resolution_clock::now();
+#if defined(CUDIFY_USE_METAL)
+        AMat.deviceToHost();
+        bVec.deviceToHost();
+        for (size_t matrix = 0; matrix < numMatrices; ++matrix)
+        {
+            T * matrixData = &AMat.get(matrix * monomialBasisSize * monomialBasisSize);
+            T * rhsData = &bVec.get(matrix * monomialBasisSize);
+            Eigen::Map<Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic,
+                Eigen::RowMajor>> localMatrix(matrixData, monomialBasisSize,
+                                               monomialBasisSize);
+            Eigen::Map<Eigen::Matrix<T, Eigen::Dynamic, 1>> localRhs(
+                rhsData, monomialBasisSize);
+            localRhs = localMatrix.partialPivLu().solve(localRhs);
+        }
+        bVec.hostToDevice();
+#else
         cublasHandle_t cublas_handle; cublasCreate_v2(&cublas_handle);
 
         openfpm::vector_custd<int> infoArray(numMatrices); auto infoArrayKernel = infoArray.toKernel();
@@ -691,25 +742,28 @@ std::cout << "Support building took " << time_span2.count() * 1000. << " millise
         cublasTriangSolveFunc(cublas_handle, CUBLAS_SIDE_LEFT, CUBLAS_FILL_MODE_LOWER, CUBLAS_OP_N, CUBLAS_DIAG_UNIT, monomialBasisSize, 1, &alpha, AMatPointersKernelPointer, monomialBasisSize, bVecPointersKernelPointer, monomialBasisSize, numMatrices);
         cublasTriangSolveFunc(cublas_handle, CUBLAS_SIDE_LEFT, CUBLAS_FILL_MODE_UPPER, CUBLAS_OP_N, CUBLAS_DIAG_NON_UNIT, monomialBasisSize, 1, &alpha, AMatPointersKernelPointer, monomialBasisSize, bVecPointersKernelPointer, monomialBasisSize, numMatrices);
         cudaDeviceSynchronize();
+#endif
 
         std::chrono::high_resolution_clock::time_point t8 = std::chrono::high_resolution_clock::now();
         std::chrono::duration<double> time_span4 = std::chrono::duration_cast<std::chrono::duration<double>>(t8 - t7);
-        std::cout << "cublas took " << time_span4.count() * 1000. << " milliseconds." << std::endl;
+        std::cout << "local solves took " << time_span4.count() * 1000. << " milliseconds." << std::endl;
 
         std::chrono::high_resolution_clock::time_point t5 = std::chrono::high_resolution_clock::now();
         // populate the calcKernels on GPU
         calcKernels.resize(supportKeysTotalN);
-        localEps.template hostToDevice();
+        localEps.hostToDevice();
         auto it2 = particles.getDomainIteratorGPU(512);
         calcKernels_gpu<dim><<<it2.wthr,it2.thr>>>(particles.toKernel(), monomialBasisKernel, kerOffsets.toKernel(), supportKeys1D.toKernel(), bVecPointersKernelPointer, localEps.toKernel(), numMatrices, calcKernels.toKernel());
-        calcKernels.template deviceToHost();
+        calcKernels.deviceToHost();
 
         std::chrono::high_resolution_clock::time_point t6 = std::chrono::high_resolution_clock::now();
         std::chrono::duration<double> time_span5 = std::chrono::duration_cast<std::chrono::duration<double>>(t6 - t5);
         std::cout << "calcKernels_gpu took " << time_span5.count() * 1000. << " milliseconds." << std::endl;
 
         // free the resources
+#if !defined(CUDIFY_USE_METAL)
         cublasDestroy_v2(cublas_handle);
+#endif
 
         std::chrono::high_resolution_clock::time_point t4 = std::chrono::high_resolution_clock::now();
         std::chrono::duration<double> time_span = std::chrono::duration_cast<std::chrono::duration<double>>(t4 - t3);
@@ -809,7 +863,8 @@ __global__ void assembleLocalMatrices_gpu(
     assert(eps != 0);
 
         localEps.get(p_key) = eps;
-        localEpsInvPow.get(p_key) = 1.0 / pow(eps,differentialOrder);
+        localEpsInvPow.get(p_key) =
+            1.0 / monomial_integer_power(eps, differentialOrder);
 
         // EMatrix<T, Eigen::Dynamic, Eigen::Dynamic> B = E * V;
         for (int i = 0; i < supportKeysSize; ++i)
@@ -817,8 +872,10 @@ __global__ void assembleLocalMatrices_gpu(
                 Point<dim,T> off = xa; off -= particles.getPos(supportKeys[i]);
                 const Monomial_gpu<dim>& m = basisElements.get(j);
 
-                T V_ij = m.evaluate(off) / pow(eps, m.order());
-                T E_ii = exp(- norm2(off) / (2.0 * eps * eps));
+                T V_ij = m.evaluate(off) /
+                    monomial_integer_power(eps, m.order());
+                T E_ii = dcpse_gpu_exp<T>(
+                    static_cast<T>(-norm2(off) / (2.0 * eps * eps)));
                 B[i*monomialBasisSize+j] = E_ii * V_ij;
             }
 
@@ -860,7 +917,7 @@ __global__ void calcKernels_gpu(particles_type particles, monomialBasis_type mon
         size_t xqK = supportKeys[j];
         Point<dim, T> xq = particles.getPos(xqK);
         Point<dim, T> offNorm = (xa - xq) / eps;
-        T expFactor = exp(-norm2(offNorm));
+        T expFactor = dcpse_gpu_exp<T>(static_cast<T>(-norm2(offNorm)));
 
         T res = 0;
         for (size_t i = 0; i < monomialBasisSize; ++i) {
@@ -876,4 +933,3 @@ __global__ void calcKernels_gpu(particles_type particles, monomialBasis_type mon
 
 #endif
 #endif //OPENFPM_PDATA_DCPSE_CUH
-
