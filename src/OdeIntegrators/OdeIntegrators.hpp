@@ -41,16 +41,17 @@ namespace boost{
  * d starts with 0.
  *
  */
-struct state_type_1d_ofp_ker{
-    state_type_1d_ofp_ker(){
+template<typename T>
+struct state_type_1d_ofp_ker_t{
+    state_type_1d_ofp_ker_t(){
     }
-    typedef decltype(std::declval<texp_v_gpu<double>>().getVector().toKernel()) state_kernel;
+    typedef decltype(std::declval<texp_v_gpu<T>>().getVector().toKernel()) state_kernel;
     typedef size_t size_type;
     typedef int is_state_vector;
     aggregate<state_kernel> data;
 
     __host__ __device__ size_t size() const
-    { return data.get<0>().size(); }
+    { return data.template get<0>().size(); }
 
 };
 /*! \brief A 1d Odeint and Openfpm compatible structure.
@@ -60,24 +61,25 @@ struct state_type_1d_ofp_ker{
  * d starts with 0.
  *
  */
-struct state_type_1d_ofp_gpu{
-    state_type_1d_ofp_gpu(){
+template<typename T>
+struct state_type_1d_ofp_gpu_t{
+    state_type_1d_ofp_gpu_t(){
     }
     typedef size_t size_type;
     typedef int is_state_vector;
-    aggregate<texp_v_gpu<double>> data;
+    aggregate<texp_v_gpu<T>> data;
 
     size_t size() const
-    { return data.get<0>().size(); }
+    { return data.template get<0>().size(); }
 
     void resize(size_t n)
     {
-        data.get<0>().resize(n);
+        data.template get<0>().resize(n);
     }
-    state_type_1d_ofp_ker toKernel() const
+    state_type_1d_ofp_ker_t<T> toKernel() const
     {
-        state_type_1d_ofp_ker s1_ker;
-        s1_ker.data.get<0>()=data.get<0>().getVector().toKernel();
+        state_type_1d_ofp_ker_t<T> s1_ker;
+        s1_ker.data.template get<0>()=data.template get<0>().getVector().toKernel();
         return s1_ker;
     }
 };
@@ -89,16 +91,17 @@ struct state_type_1d_ofp_gpu{
  * d starts with 0.
  *
  */
-struct state_type_2d_ofp_ker{
-    state_type_2d_ofp_ker(){
+template<typename T>
+struct state_type_2d_ofp_ker_t{
+    state_type_2d_ofp_ker_t(){
     }
-    typedef decltype(std::declval<texp_v_gpu<double>>().getVector().toKernel()) state_kernel;
+    typedef decltype(std::declval<texp_v_gpu<T>>().getVector().toKernel()) state_kernel;
     typedef size_t size_type;
     typedef int is_state_vector;
     aggregate<state_kernel,state_kernel> data;
 
     __host__ __device__ size_t size() const
-    { return data.get<0>().size(); }
+    { return data.template get<0>().size(); }
 
 };
 /*! \brief A 1d Odeint and Openfpm compatible structure.
@@ -108,29 +111,35 @@ struct state_type_2d_ofp_ker{
  * d starts with 0.
  *
  */
-struct state_type_2d_ofp_gpu{
-    state_type_2d_ofp_gpu(){
+template<typename T>
+struct state_type_2d_ofp_gpu_t{
+    state_type_2d_ofp_gpu_t(){
     }
     typedef size_t size_type;
     typedef int is_state_vector;
-    aggregate<texp_v_gpu<double>,texp_v_gpu<double>> data;
+    aggregate<texp_v_gpu<T>,texp_v_gpu<T>> data;
 
     size_t size() const
-    { return data.get<0>().size(); }
+    { return data.template get<0>().size(); }
 
     void resize(size_t n)
     {
-        data.get<0>().resize(n);
-        data.get<1>().resize(n);
+        data.template get<0>().resize(n);
+        data.template get<1>().resize(n);
     }
-    state_type_2d_ofp_ker toKernel() const
+    state_type_2d_ofp_ker_t<T> toKernel() const
     {
-        state_type_2d_ofp_ker s2_ker;
-        s2_ker.data.get<0>()=data.get<0>().getVector().toKernel();
-        s2_ker.data.get<1>()=data.get<1>().getVector().toKernel();
+        state_type_2d_ofp_ker_t<T> s2_ker;
+        s2_ker.data.template get<0>()=data.template get<0>().getVector().toKernel();
+        s2_ker.data.template get<1>()=data.template get<1>().getVector().toKernel();
         return s2_ker;
     }
 };
+
+using state_type_1d_ofp_ker = state_type_1d_ofp_ker_t<double>;
+using state_type_1d_ofp_gpu = state_type_1d_ofp_gpu_t<double>;
+using state_type_2d_ofp_ker = state_type_2d_ofp_ker_t<double>;
+using state_type_2d_ofp_gpu = state_type_2d_ofp_gpu_t<double>;
 
 #endif
 
@@ -152,20 +161,21 @@ namespace boost { namespace numeric { namespace odeint {
  * d starts with 0.
  *
  */
-struct state_type_1d_ofp{
-    state_type_1d_ofp(){
+template<typename T>
+struct state_type_1d_ofp_t{
+    state_type_1d_ofp_t(){
     }
     typedef size_t size_type;
     typedef size_t index_type;
     typedef int is_state_vector;
-    aggregate<texp_v<double>> data;
+    aggregate<texp_v<T>> data;
 
     size_t size() const
-    { return data.get<0>().size(); }
+    { return data.template get<0>().size(); }
 
     void resize(size_t n)
     {
-        data.get<0>().resize(n);
+        data.template get<0>().resize(n);
     }
 };
 
@@ -176,23 +186,27 @@ struct state_type_1d_ofp{
  * d starts with 0.
  *
  */
-struct state_type_2d_ofp{
-    state_type_2d_ofp(){
+template<typename T>
+struct state_type_2d_ofp_t{
+    state_type_2d_ofp_t(){
     }
     typedef size_t size_type;
     typedef size_t index_type;
     typedef int is_state_vector;
-    aggregate<texp_v<double>,texp_v<double>> data;
+    aggregate<texp_v<T>,texp_v<T>> data;
 
     size_t size() const
-    { return data.get<0>().size(); }
+    { return data.template get<0>().size(); }
 
     void resize(size_t n)
     {
-        data.get<0>().resize(n);
-        data.get<1>().resize(n);
+        data.template get<0>().resize(n);
+        data.template get<1>().resize(n);
     }
 };
+
+using state_type_1d_ofp = state_type_1d_ofp_t<double>;
+using state_type_2d_ofp = state_type_2d_ofp_t<double>;
 
 /*! \brief A 3d Odeint and Openfpm compatible structure.
  *
@@ -381,20 +395,20 @@ namespace boost {
 
             // FOR particles
 
-            template<>
-            struct is_resizeable<state_type_1d_ofp> {
+            template<typename T>
+            struct is_resizeable<state_type_1d_ofp_t<T>> {
             typedef boost::true_type type;
             static const bool value = type::value;
             };
 #ifdef __NVCC__
-            template<>
-            struct is_resizeable<state_type_1d_ofp_gpu> {
+            template<typename T>
+            struct is_resizeable<state_type_1d_ofp_gpu_t<T>> {
                 typedef boost::true_type type;
                 static const bool value = type::value;
             };
 #endif
-            template<>
-            struct is_resizeable<state_type_2d_ofp> {
+            template<typename T>
+            struct is_resizeable<state_type_2d_ofp_t<T>> {
                 typedef boost::true_type type;
                 static const bool value = type::value;
             };
@@ -430,16 +444,16 @@ namespace boost {
 	  };
 
 
-            template<>
-            struct vector_space_norm_inf<state_type_1d_ofp>
+            template<typename T>
+            struct vector_space_norm_inf<state_type_1d_ofp_t<T>>
             {
-                typedef double result_type;
+                typedef T result_type;
             };
 
-            template<>
-            struct vector_space_norm_inf<state_type_2d_ofp>
+            template<typename T>
+            struct vector_space_norm_inf<state_type_2d_ofp_t<T>>
             {
-                typedef double result_type;
+                typedef T result_type;
             };
 
             template<>

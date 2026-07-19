@@ -916,7 +916,8 @@ __global__ void calcKernels_gpu(particles_type particles, monomialBasis_type mon
     {
         size_t xqK = supportKeys[j];
         Point<dim, T> xq = particles.getPos(xqK);
-        Point<dim, T> offNorm = (xa - xq) / eps;
+        Point<dim, T> offNorm = xa - xq;
+        offNorm /= eps;
         T expFactor = dcpse_gpu_exp<T>(static_cast<T>(-norm2(offNorm)));
 
         T res = 0;
