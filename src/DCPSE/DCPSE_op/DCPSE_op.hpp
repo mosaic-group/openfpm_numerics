@@ -12,7 +12,7 @@
 #include "Decomposition/CartDecomposition.hpp"
 #include "DCPSE/Dcpse.hpp"
 #include "Operators/Vector/vector_dist_operators.hpp"
-#if defined(__NVCC__)
+#if defined(__NVCC__) && !defined(CUDA_ON_CPU)
 #include "DCPSE/Dcpse.cuh"
 #endif
 
@@ -3508,25 +3508,31 @@ template <typename VerletList_type> using Derivative_G = Derivative_G_T<VerletLi
 
 
 #if defined(__NVCC__)
-template <typename VerletList_type> using Derivative_x_gpu = Derivative_x_T<VerletList_type, Dcpse_gpu>;
-template <typename VerletList_type> using Derivative_y_gpu = Derivative_y_T<VerletList_type, Dcpse_gpu>;
-template <typename VerletList_type> using Derivative_z_gpu = Derivative_z_T<VerletList_type, Dcpse_gpu>;
-template <typename VerletList_type> using Gradient_gpu = Gradient_T<VerletList_type, Dcpse_gpu>;
-template <typename VerletList_type> using Curl2D_gpu = Curl2D_T<VerletList_type, Dcpse_gpu>;
-template <typename VerletList_type> using Laplacian_gpu = Laplacian_T<VerletList_type, Dcpse_gpu>;
-template <typename VerletList_type> using Divergence_gpu = Divergence_T<VerletList_type, Dcpse_gpu>;
-template <typename VerletList_type> using Advection_gpu = Advection_T<VerletList_type, Dcpse_gpu>;
-template <typename VerletList_type> using Derivative_xy_gpu = Derivative_xy_T<VerletList_type, Dcpse_gpu>;
-template <typename VerletList_type> using Derivative_yz_gpu = Derivative_yz_T<VerletList_type, Dcpse_gpu>;
-template <typename VerletList_type> using Derivative_xz_gpu = Derivative_xz_T<VerletList_type, Dcpse_gpu>;
-template <typename VerletList_type> using Derivative_xx_gpu = Derivative_xx_T<VerletList_type, Dcpse_gpu>;
-template <typename VerletList_type> using Derivative_yy_gpu = Derivative_yy_T<VerletList_type, Dcpse_gpu>;
-template <typename VerletList_type> using Derivative_zz_gpu = Derivative_zz_T<VerletList_type, Dcpse_gpu>;
-template <typename VerletList_type> using Derivative_xxx_gpu = Derivative_xxx_T<VerletList_type, Dcpse_gpu>;
-template <typename VerletList_type> using Derivative_xxy_gpu = Derivative_xxy_T<VerletList_type, Dcpse_gpu>;
-template <typename VerletList_type> using Derivative_yyx_gpu = Derivative_yyx_T<VerletList_type, Dcpse_gpu>;
-template <typename VerletList_type> using Derivative_yyy_gpu = Derivative_yyy_T<VerletList_type, Dcpse_gpu>;
-template <typename VerletList_type> using Derivative_G_gpu = Derivative_G_T<VerletList_type, Dcpse_gpu>;
+#if defined(CUDA_ON_CPU)
+#define OPENFPM_DCPSE_GPU_BACKEND Dcpse
+#else
+#define OPENFPM_DCPSE_GPU_BACKEND Dcpse_gpu
+#endif
+template <typename VerletList_type> using Derivative_x_gpu = Derivative_x_T<VerletList_type, OPENFPM_DCPSE_GPU_BACKEND>;
+template <typename VerletList_type> using Derivative_y_gpu = Derivative_y_T<VerletList_type, OPENFPM_DCPSE_GPU_BACKEND>;
+template <typename VerletList_type> using Derivative_z_gpu = Derivative_z_T<VerletList_type, OPENFPM_DCPSE_GPU_BACKEND>;
+template <typename VerletList_type> using Gradient_gpu = Gradient_T<VerletList_type, OPENFPM_DCPSE_GPU_BACKEND>;
+template <typename VerletList_type> using Curl2D_gpu = Curl2D_T<VerletList_type, OPENFPM_DCPSE_GPU_BACKEND>;
+template <typename VerletList_type> using Laplacian_gpu = Laplacian_T<VerletList_type, OPENFPM_DCPSE_GPU_BACKEND>;
+template <typename VerletList_type> using Divergence_gpu = Divergence_T<VerletList_type, OPENFPM_DCPSE_GPU_BACKEND>;
+template <typename VerletList_type> using Advection_gpu = Advection_T<VerletList_type, OPENFPM_DCPSE_GPU_BACKEND>;
+template <typename VerletList_type> using Derivative_xy_gpu = Derivative_xy_T<VerletList_type, OPENFPM_DCPSE_GPU_BACKEND>;
+template <typename VerletList_type> using Derivative_yz_gpu = Derivative_yz_T<VerletList_type, OPENFPM_DCPSE_GPU_BACKEND>;
+template <typename VerletList_type> using Derivative_xz_gpu = Derivative_xz_T<VerletList_type, OPENFPM_DCPSE_GPU_BACKEND>;
+template <typename VerletList_type> using Derivative_xx_gpu = Derivative_xx_T<VerletList_type, OPENFPM_DCPSE_GPU_BACKEND>;
+template <typename VerletList_type> using Derivative_yy_gpu = Derivative_yy_T<VerletList_type, OPENFPM_DCPSE_GPU_BACKEND>;
+template <typename VerletList_type> using Derivative_zz_gpu = Derivative_zz_T<VerletList_type, OPENFPM_DCPSE_GPU_BACKEND>;
+template <typename VerletList_type> using Derivative_xxx_gpu = Derivative_xxx_T<VerletList_type, OPENFPM_DCPSE_GPU_BACKEND>;
+template <typename VerletList_type> using Derivative_xxy_gpu = Derivative_xxy_T<VerletList_type, OPENFPM_DCPSE_GPU_BACKEND>;
+template <typename VerletList_type> using Derivative_yyx_gpu = Derivative_yyx_T<VerletList_type, OPENFPM_DCPSE_GPU_BACKEND>;
+template <typename VerletList_type> using Derivative_yyy_gpu = Derivative_yyy_T<VerletList_type, OPENFPM_DCPSE_GPU_BACKEND>;
+template <typename VerletList_type> using Derivative_G_gpu = Derivative_G_T<VerletList_type, OPENFPM_DCPSE_GPU_BACKEND>;
+#undef OPENFPM_DCPSE_GPU_BACKEND
 #endif
 
 #endif /*EIGEN */

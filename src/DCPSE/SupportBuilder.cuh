@@ -88,7 +88,7 @@ public:
 		// +1 to allow getting size from cumulative sum: "size[i+1] - size[i]"
 		kerOffsets.resize(N+1);
 		gatherSupportSize_gpu<vector_type::dims><<<it.wthr,it.thr>>>(domain.toKernel(), NN.toKernel(), kerOffsets.toKernel(), rCut);
-		kerOffsets.template deviceToHost();
+		kerOffsets.deviceToHost();
 
 		supportKeysTotalN = 0; maxSupport = 0;
 
@@ -101,9 +101,9 @@ public:
 		kerOffsets.get(N) = supportKeysTotalN;
 
 		supportKeys1D.resize(supportKeysTotalN);
-		kerOffsets.template hostToDevice();
+		kerOffsets.hostToDevice();
 		assembleSupport_gpu<vector_type::dims><<<it.wthr,it.thr>>>(domain.toKernel(), NN.toKernel(), kerOffsets.toKernel(), supportKeys1D.toKernel(), rCut);
-		supportKeys1D.template deviceToHost();
+		supportKeys1D.deviceToHost();
 	}
 };
 

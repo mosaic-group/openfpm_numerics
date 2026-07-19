@@ -569,8 +569,14 @@ __global__ void compute_expr_ker_slice(vector vd, expr v_exp, Point<n,int> comp)
 	get_vector_dist_expression_op<n,n == rank_gen<property_act>::type::value>::template assign<prp>(v_exp,vd,p,comp);
 }
 
+#ifdef CUDIFY_USE_METAL
+using vector_dist_device_constant = float;
+#else
+using vector_dist_device_constant = double;
+#endif
+
 template<unsigned int prp, typename vector>
-__global__ void compute_double_ker(vector vd, double d)
+__global__ void compute_double_ker(vector vd, vector_dist_device_constant d)
 {
 	unsigned int p = threadIdx.x + blockIdx.x * blockDim.x;
 
@@ -626,7 +632,7 @@ struct vector_dist_op_compute_op<prp,comp_dev>
 	}
 
 	template<typename vector>
-	static void compute_const(vector & v,double d)
+	static void compute_const(vector & v,vector_dist_device_constant d)
 	{
 		auto ite  = v.getDomainIteratorGPU(256);
 

@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.8 FATAL_ERROR)
 
 ########################### Executables
 
-if (NOT CUDA_ON_BACKEND STREQUAL "None")
+if (NOT CUDA_ON_BACKEND STREQUAL "NONE")
 	set(CUDA_SOURCES Operators/Vector/vector_dist_operators_unit_tests.cu
 		Operators/Vector/vector_dist_operators_apply_kernel_unit_tests.cu)
 endif()

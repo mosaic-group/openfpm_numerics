@@ -11,7 +11,31 @@
 #include "config.h"
 
 #ifdef HAVE_EIGEN
+#if defined(CUDIFY_USE_METAL) && defined(__HIPCC__) && defined(__NVCC__)
+// OpenFPM's legacy __NVCC__ guard denotes every GPU backend.  Eigen instead
+// treats it as the literal NVIDIA compiler and rejects seeing it together
+// with HIPCC.  Platform selection has already happened in the Metal frontend
+// compatibility header, so hide only the legacy guard while Eigen is parsed.
+#define OPENFPM_RESTORE_NVCC_AFTER_EIGEN
+#undef __NVCC__
+#define OPENFPM_UNSET_EIGEN_NO_CUDA
+#define EIGEN_NO_CUDA
+#define OPENFPM_UNSET_EIGEN_NO_HIP
+#define EIGEN_NO_HIP
+#endif
 #include <Eigen/Dense>
+#ifdef OPENFPM_RESTORE_NVCC_AFTER_EIGEN
+#define __NVCC__ 1
+#undef OPENFPM_RESTORE_NVCC_AFTER_EIGEN
+#endif
+#ifdef OPENFPM_UNSET_EIGEN_NO_CUDA
+#undef EIGEN_NO_CUDA
+#undef OPENFPM_UNSET_EIGEN_NO_CUDA
+#endif
+#ifdef OPENFPM_UNSET_EIGEN_NO_HIP
+#undef EIGEN_NO_HIP
+#undef OPENFPM_UNSET_EIGEN_NO_HIP
+#endif
 #include "memory/ExtPreAlloc.hpp"
 #include "memory/HeapMemory.hpp"
 #include "Packer_Unpacker/Packer_util.hpp"

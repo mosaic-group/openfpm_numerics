@@ -21,11 +21,11 @@ private:
 public:
     MonomialBasis() {}
 
-    MonomialBasis(const vector_type<unsigned int, Args...> &degrees, unsigned int convergenceOrder);
+    __host__ __device__ MonomialBasis(const vector_type<unsigned int, Args...> &degrees, unsigned int convergenceOrder);
 
     MonomialBasis(unsigned int orderLimit);
 
-    MonomialBasis(unsigned int degrees[dim], unsigned int convergenceOrder);
+    __host__ __device__ MonomialBasis(unsigned int degrees[dim], unsigned int convergenceOrder);
 
 //    explicit MonomialBasis(Point<dim, unsigned int> degrees, unsigned int convergenceOrder);
 

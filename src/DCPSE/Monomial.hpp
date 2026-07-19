@@ -89,7 +89,13 @@ Monomial<dim>::Monomial(const Point<dim, long int> &other, unsigned int scalar)
 
 template<unsigned int dim>
 Monomial<dim>::Monomial(const unsigned int other[dim])
-        : Monomial(Point<3, unsigned int>(other)) {}
+{
+    for (size_t i = 0; i < dim; ++i)
+    {
+        exponents.get(i) = other[i];
+    }
+    updateSum();
+}
 
 template<unsigned int dim>
 Monomial<dim>::Monomial(const Monomial<dim> &other)
